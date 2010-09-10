@@ -1,0 +1,30 @@
+<!--
+{{PluginCard
+| name=QuickSearch
+| name=QuickSearch Mod
+| dll=quicksearch.dll
+| author=Bethoven
+| mantainer=Awkward
+| fl=260
+| fl=3285
+| homepage=http://awkward.miranda.im/
+}}
+__TOC__
+-->
+{{PageAuthor|Awkward}}
+
+
+== Назначение ==
+Плагин позволяет быстро находить контакты по нику, имени, email, UIN и прочим данным в Вашем контакт-листе. Также он может отображать некоторую информацию о контакте, такую как группу, версию клиента или город.<br/>
+В модификации от [[Developer:Awkward|Awkward]] была произведена оптимизация кода, добавлена возможность показа пола, клиента контакта и экспорт информации в CSV формат, пригодный для использовании, например, в MS Excel.
+
+== Описание настроек ==
+== Ссылки ==
+*{{MirandaOrgFileListingURL|260}} оригинал от [[Developer:Bethoven|Bethoven]]
+*{{MirandaOrgFileListingURL|3285}} мод от [[Developer:Awkward|Awkward]]
+*{{MirandaRuThread|817}}
+*{{PluginURL|http://awkward.miranda.im/}}
+*{{PluginDirectURL|http://awkward.miranda.im/quicksearch.zip}}
+
+[[Category:Plugins]]
+[[Category:Interface]]
