@@ -1,0 +1,5 @@
+#include "player_ico.inc"
+
+LANGUAGE 0,0
+
+ICO_MRADIO ICON "mradio.ico"

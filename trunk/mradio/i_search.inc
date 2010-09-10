@@ -1,0 +1,297 @@
+{search station code}
+type
+  TMySearchFilter = record
+    lStation,
+    lStationURL,
+    lGenre:PAnsiChar;
+    lBitrate:integer;
+    lBitrateMode:integer;
+  end;
+
+const
+  AckHandle = 427;
+
+procedure LoadOneStation(ini,section:PAnsiChar;const filter:TMySearchFilter);
+var
+  buf:array [0..511] of AnsiChar;
+  bitrate:integer;
+  l:bool;
+  columns:array [0..3] of TCHAR;
+  csr:CUSTOMSEARCHRESULTS;
+begin
+  GetPrivateProfileStringA(section,'URL','',buf,SizeOf(buf),ini);
+  if buf[0]<>#0 then
+  begin
+    if (filter.lStationURL=nil) or (StrPos(CharLowerA(@buf),filter.lStationURL)<>nil) then
+    begin
+      FillChar(csr,SizeOf(csr),0);
+      csr.psr.cbSize:=SizeOf(csr.psr);
+      StrDup(csr.psr.firstname.a,buf);
+      GetPrivateProfileStringA(section,'Bitrate','0',buf,SizeOf(buf),ini);
+      bitrate:=StrToInt(buf);
+      if (bitrate<>0) and (filter.lbitrate<>0) then
+      begin
+        if      filter.lBitrateMode<0 then l:=bitrate<=filter.lBitrate
+        else if filter.lBitrateMode=0 then l:=bitrate =filter.lBitrate
+        else{if filter.lBitrateMode>0}     l:=bitrate>=filter.lBitrate;
+      end
+      else
+        l:=true;
+      if l then
+      begin
+        StrDup(csr.psr.email.a,buf);
+        GetPrivateProfileStringA(section,'Name',section,buf,SizeOf(buf),ini);
+        StrDup(csr.psr.nick.a,buf);
+        if (filter.lStation=nil) or (StrPos(CharLowerA(@buf),filter.lStation)<>nil) then
+        begin
+          GetPrivateProfileStringA(section,'Genre','unknown',buf,SizeOf(buf),ini);
+          StrDup(csr.psr.lastname.a,buf);
+          if (filter.lGenre<>nil) and (StrPos(CharLowerA(@buf),filter.lGenre)=nil) then
+            l:=false;
+        end
+        else
+          l:=false;
+        if l then
+        begin
+          ANSItoWide(csr.psr.nick.a     ,columns[0].w,MirandaCP); // Station name
+          // maybe use FastAnsiToWide?
+          ANSItoWide(csr.psr.firstname.a,columns[1].w,MirandaCP); // URL
+          ANSItoWide(csr.psr.lastname.a ,columns[2].w,MirandaCP); // Genre
+          ANSItoWide(csr.psr.email.a    ,columns[3].w,MirandaCP); // Bitrate
+
+          csr.nSize      :=SizeOf(csr);
+          csr.nFieldCount:=4;
+          csr.szFields   :=@columns;
+          ProtoBroadcastAck(PluginName,0,ACKTYPE_SEARCH,ACKRESULT_SEARCHRESULT,AckHandle,dword(@csr));
+        end;
+      end;
+      mFreeMem(csr.psr.nick);
+      mFreeMem(csr.psr.firstname);
+      mFreeMem(csr.psr.lastname);
+      mFreeMem(csr.psr.email);
+
+      mFreeMem(columns[0].w);
+      mFreeMem(columns[1].w);
+      mFreeMem(columns[2].w);
+      mFreeMem(columns[3].w);
+    end;
+  end;
+end;
+
+function ExtSearch(wnd:HWND):dword;// stdcall;
+var
+  filter:TMySearchFilter;
+  ltmp:longbool;
+  pc,buf:PAnsiChar;
+  csr:CUSTOMSEARCHRESULTS;
+  columns:array [0..3] of TCHAR;
+  ini1,ini:array [0..MAX_PATH-1] of AnsiChar;
+begin
+  FillChar(filter,SizeOf(filter),0);
+  with filter do
+  begin
+    ini1[0]:=#0;
+    GetDlgItemText(wnd,IDC_CUSTOMINI,@ini1,SizeOf(ini1));
+    if ini1[0]=#0 then
+      StrCopy(ini,storage)
+    else
+      ConvertFileName(ini1,ini);
+//      CallService(MS_UTILS_PATHTOABSOLUTE,dword(@ini1),dword(@ini));
+    lBitrate:=GetDlgItemInt(wnd,IDC_BITRATE,ltmp,false);
+    if      IsDlgButtonChecked(wnd,IDC_LT)=BST_CHECKED then lBitrateMode:=-1
+    else if IsDlgButtonChecked(wnd,IDC_EQ)=BST_CHECKED then lBitrateMode:=0
+    else{if IsDlgButtonChecked(lParam,IDC_GT)=BST_CHECKED}  lBitrateMode:=1;
+
+    lStation:=GetDlgText(wnd,IDC_STATION,true);
+    if lStation<>nil then
+      CharLowerA(lStation);
+
+    lStationURL:=GetDlgText(wnd,IDC_STATIONURL,true);
+    if lStationURL<>nil then
+      CharLowerA(lStationURL);
+
+    lGenre:=GetDlgText(wnd,IDC_GENRE,true);
+    if lGenre<>nil then
+      CharLowerA(lGenre);
+
+  end;
+  mGetMem(buf,32768);
+  buf^:=#0;
+  GetPrivateProfileSectionNamesA(buf,32768,ini);
+  pc:=buf;
+
+  columns[0].w:='Station Name';
+  columns[1].w:='Station URL';
+  columns[2].w:='Genre';
+  columns[3].w:='Bitrate';
+
+  csr.nSize      :=SizeOf(csr);
+  csr.nFieldCount:=4;
+  csr.szFields   :=@columns;
+  csr.psr.cbSize :=0;
+  ProtoBroadcastAck(PluginName,0,ACKTYPE_SEARCH,ACKRESULT_SEARCHRESULT,AckHandle,dword(@csr));
+
+  while pc^<>#0 do
+  begin
+    LoadOneStation(ini,pc,filter); //!!
+    while pc^<>#0 do inc(pc);
+    inc(pc);
+  end;
+  ProtoBroadcastAck(PluginName,0,ACKTYPE_SEARCH,ACKRESULT_SUCCESS,AckHandle,0);
+  mFreeMem(buf);
+  mFreeMem(filter.lStation);
+  mFreeMem(filter.lStationURL);
+  mFreeMem(filter.lGenre);
+  result:=0;
+end;
+
+function Service_SearchByAdvanced(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+var
+  res:dword;
+begin
+  if lParam=0 then
+    result:=0
+  else
+  begin
+    result:=AckHandle;
+    CloseHandle(BeginThread(nil,0,@ExtSearch,pointer(lParam),0,res));
+  end;
+end;
+
+function Service_GetCaps(wParam:WPARAM;lParam:LPARAM):int;cdecl; forward;
+
+function ExtSearchProc(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+var
+  buf:array [0..MAX_PATH-1] of AnsiChar;
+begin
+  result:=0;
+  case hMessage of
+    WM_INITDIALOG: begin
+      CheckDlgButton(Dialog,IDC_EQ,BST_CHECKED);
+      TranslateDialogDefault(Dialog);
+    end;
+
+    WM_COMMAND: if (wParam shr 16)=BN_CLICKED then
+    begin
+      if loword(wParam)=IDOK then
+      begin
+        SendMessage(GetParent(Dialog),WM_COMMAND,IDOK+(BN_CLICKED) shl 16,
+            GetDlgItem(GetParent(Dialog),IDOK));
+      end
+      else if loword(wParam)=IDC_BN_INIPATH then
+      begin
+        if ShowDlg(@buf,storage,'*.ini'#0'*.ini'#0#0) then
+          SetDlgItemText(Dialog,IDC_CUSTOMINI,@buf);
+      end;
+    end;
+  end;
+end;
+
+function Service_ExtSearchUI(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+type
+  PDLGTEMPLATEEX = ^TDLGTEMPLATEEX;
+  TDLGTEMPLATEEX = packed record
+    dlgVer:word;
+    signature:word;
+    helpID:dword;
+    exStyle:dword;
+    style:dword;
+    cDlgItems:word;
+    x:word;
+    y:word;
+    cx:word;
+    cy:word;
+{
+    sz_Or_Ord menu;
+    sz_Or_Ord windowClass;
+    title:array [0..titleLen] of WideChar;
+    pointsize:word;
+    weight:word;
+    italic:byte;
+    charset:byte;
+    typeface:array [0..stringLen] of WideChar;
+}
+  end;
+
+var
+  hr:HRSRC;
+  ptr:PDlgTemplateEx;
+begin
+  result:=0;
+  if lParam<>0 then
+  begin
+    hr:=FindResource(hInstance,MAKEINTRESOURCE(IDD_SEARCH),RT_DIALOG);
+    if hr<>0 then
+    begin
+      ptr:=PDlgTemplateEx(LoadResource(hInstance,hr));
+      if ptr<>nil then
+      begin
+        if (Service_GetCaps(PFLAGNUM_1,0) and PF1_EXTSEARCHUI)<>0 then
+          ptr^.style:=(ptr^.style and not WS_CHILD) or WS_POPUP or WS_BORDER;
+        result:=CreateDialogIndirect(hInstance,PDlgTemplate(ptr)^,lParam,@ExtSearchProc);
+      end;
+    end;
+  end;
+end;
+
+function Service_AddToList(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+var
+  hContact:THANDLE;
+  p:PAnsiChar;
+  l:bool;
+  status:integer;
+begin
+  result:=0;
+  if lParam<>0 then
+  begin
+    with PPROTOSEARCHRESULT(lParam)^ do
+    begin
+      if nick.a<>nil then
+      begin
+// find contact
+        hContact:=CallService(MS_DB_CONTACT_FINDFIRST,0,0);
+        while hContact<>0 do
+        begin
+          if StrCmp(PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,hContact,0)),
+             PluginName)=0 then
+          begin
+            p:=DBReadString(hContact,PluginName,optStationURL);
+            l:=StrCmp(p,firstname.a)=0;
+            mFreeMem(p);
+            if l then
+            begin
+              DBDeleteSetting(hContact,strCList,'NotOnList');
+              DBDeleteSetting(hContact,strCList,'Hidden');
+              result:=hContact;
+              exit;
+            end;
+          end;
+          hContact:=CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
+        end;
+// if not found
+        hContact:=CallService(MS_DB_CONTACT_ADD,0,0);
+        if hContact<>0 then
+        begin
+          CallService(MS_PROTO_ADDTOCONTACT,hContact,dword(PluginName));
+          DBWriteString(hContact,strCList,optMyHandle,nick.a);
+
+          DBWriteString(hContact,PluginName,optBitrate   ,email.a);
+          DBWriteString(hContact,PluginName,optGenre     ,lastname.a);
+          DBWriteString(hContact,PluginName,optStationURL,firstname.a);
+
+          DBWriteWord  (hContact,PluginName,optAge,StrToInt(email.a));
+          DBWriteString(hContact,PluginName,optNick     ,nick.a);
+          DBWriteString(hContact,PluginName,optLastName ,lastname.a);
+          DBWriteString(hContact,PluginName,optFirstName,firstname.a);
+
+          if (PluginStatus=ID_STATUS_OFFLINE){ or (asOffline<>BST_UNCHECKED)} then
+            status:=ID_STATUS_OFFLINE
+          else
+            status:=ID_STATUS_INVISIBLE;
+          SetStatus(hContact,status);
+          result:=hContact;
+        end;
+      end;
+    end;
+  end;
+end;

@@ -1,0 +1,573 @@
+unit protocols;
+
+interface
+
+uses windows,m_api;
+
+function FindProto(proto:PAnsiChar):integer;
+
+function GetStatusNum(status:integer):integer;
+function GetNumProto:cardinal;
+
+function  GetProtoSetting(ProtoNum:cardinal;param:boolean=false):dword;
+procedure SetProtoSetting(ProtoNum:cardinal;mask:dword;param:boolean=false);
+
+function IsTunesSupported  (ProtoNum:cardinal):bool;
+function IsXStatusSupported(ProtoNum:cardinal):bool;
+function IsChatSupported   (ProtoNum:cardinal):bool;
+
+function GetProtoStatus   (ProtoNum:cardinal):integer;
+function GetProtoStatusNum(ProtoNum:cardinal):integer;
+function GetProtoName     (ProtoNum:cardinal):PAnsiChar;
+
+procedure FillProtoList  (list:hwnd;withIcons:bool=false);
+procedure CheckProtoList (list:hwnd);
+procedure FillStatusList (proto:cardinal;list:hwnd;withIcons:bool=false);
+procedure CheckStatusList(list:hwnd;ProtoNum:cardinal);
+
+function  CreateProtoList:integer;
+procedure FreeProtoList;
+
+function SetStatus(proto:PAnsiChar;status:integer;txt:PAnsiChar=pointer(-1)):integer;
+function SetXStatus(proto:PAnsiChar;newstatus:integer;
+                    txt:pWideChar=nil;title:pWideChar=nil):integer;
+function GetXStatus(proto:PAnsiChar;txt:pointer=nil;title:pointer=nil):integer;
+
+const
+  psf_online     = $0001;
+  psf_invisible  = $0002;
+  psf_shortaway  = $0004;
+  psf_longaway   = $0008;
+  psf_lightdnd   = $0010;
+  psf_heavydnd   = $0020;
+  psf_freechat   = $0040;
+  psf_outtolunch = $0080;
+  psf_onthephone = $0100;
+  psf_enabled    = $0800;
+  psf_all        = $08FF;
+  psf_chat       = $1000;
+  psf_icq        = $2000;
+  psf_tunes      = $4000;
+
+implementation
+
+uses commctrl,common,dbsettings;
+
+{$include m_newawaysys.inc}
+
+const
+  defproto = '- default -';
+
+const
+  NumStatus = 10;
+  StatCodes:array [0..NumStatus-1] of integer=(
+    ID_STATUS_OFFLINE,
+    ID_STATUS_ONLINE,
+    ID_STATUS_INVISIBLE,
+    ID_STATUS_AWAY,
+    ID_STATUS_NA,
+    ID_STATUS_OCCUPIED,
+    ID_STATUS_DND,
+    ID_STATUS_FREECHAT,
+    ID_STATUS_OUTTOLUNCH,
+    ID_STATUS_ONTHEPHONE);
+const
+  StatNames:array [0..NumStatus-1] of PWideChar=(
+  'Default'{'Offline'},'Online','Invisible','Away','N/A','Occupied','DND',
+  'Free for chat','Out to lunch','On the Phone');
+
+type
+  pMyProto = ^tMyProto;
+  tMyProto = record
+    name    :PAnsiChar;
+//    xstat   :integer; // old ICQ XStatus
+    enabled :integer;
+    status  :integer; // mask
+    param   :dword;
+  end;
+  pMyProtos = ^tMyProtos;
+  tMyProtos = array [0..100] of tMyProto;
+
+var
+  protos:pMyProtos;
+  NumProto:cardinal;
+  NASPresents:bool;
+
+function FindProto(proto:PAnsiChar):integer;
+var
+  i:integer;
+begin
+  for i:=1 to NumProto do
+  begin
+    if StrCmp(proto,protos^[i].name)=0 then
+    begin
+      result:=i;
+      exit;
+    end;
+  end;
+  result:=0;
+end;
+
+function IsTunesSupported(ProtoNum:cardinal):bool;
+begin
+  if ProtoNum>100 then
+    ProtoNum:=FindProto(PAnsiChar(ProtoNum));
+  if (ProtoNum<=NumProto) and ((protos^[ProtoNum].status and psf_tunes)<>0) then
+    result:=true
+  else
+    result:=false;
+end;
+
+function IsXStatusSupported(ProtoNum:cardinal):bool;
+begin
+  if ProtoNum>100 then
+    ProtoNum:=FindProto(PAnsiChar(ProtoNum));
+  if (ProtoNum<=NumProto) and ((protos^[ProtoNum].status and psf_icq)<>0) then
+    result:=true
+  else
+    result:=false;
+end;
+
+function IsChatSupported(ProtoNum:cardinal):bool;
+begin
+  if ProtoNum>100 then
+    ProtoNum:=FindProto(PAnsiChar(ProtoNum));
+  if (ProtoNum<=NumProto) and ((protos^[ProtoNum].status and psf_chat)<>0) then
+    result:=true
+  else
+    result:=false;
+end;
+
+function GetProtoSetting(ProtoNum:cardinal;param:boolean=false):dword;
+begin
+  if ProtoNum>100 then
+    ProtoNum:=FindProto(PAnsiChar(ProtoNum));
+  if ProtoNum<=NumProto then
+  begin
+    if param then
+      result:=protos^[ProtoNum].param
+    else
+      result:=protos^[ProtoNum].enabled
+  end
+  else
+    result:=0;
+end;
+
+procedure SetProtoSetting(ProtoNum:cardinal;mask:dword;param:boolean=false);
+begin
+  if ProtoNum>100 then
+    ProtoNum:=FindProto(PAnsiChar(ProtoNum));
+  if ProtoNum<=NumProto then
+  begin
+    if param then
+      protos^[ProtoNum].param:=mask
+    else
+      protos^[ProtoNum].enabled:=mask;
+  end;
+end;
+
+function GetStatusNum(status:integer):integer;
+var
+  i:integer;
+begin
+  for i:=0 to NumStatus-1 do
+    if StatCodes[i]=status then
+    begin
+      result:=i;
+      exit;
+    end;
+  result:=0; //-1
+end;
+
+function GetProtoStatus(ProtoNum:cardinal):integer;
+begin
+  if ProtoNum>100 then
+    ProtoNum:=FindProto(PAnsiChar(ProtoNum));
+  result:=CallProtoService(protos^[ProtoNum].name,PS_GETSTATUS,0,0);
+end;
+
+function GetProtoStatusNum(ProtoNum:cardinal):integer;
+begin
+  if ProtoNum>100 then
+    ProtoNum:=FindProto(PAnsiChar(ProtoNum));
+  result:=GetStatusNum(GetProtoStatus(ProtoNum));
+end;
+
+function GetNumProto:cardinal;
+begin
+  result:=NumProto;
+end;
+
+function GetProtoName(ProtoNum:cardinal):PAnsiChar;
+begin
+  if ProtoNum<=NumProto then
+    result:=protos^[ProtoNum].name
+  else
+    result:=nil;
+end;
+
+procedure FillProtoList(list:hwnd;withIcons:bool=false);
+var
+  item:TLVITEMA;
+  lvc:TLVCOLUMN;
+  i,NewItem:integer;
+  cli:PCLIST_INTERFACE;
+begin
+  FillChar(lvc,SizeOf(lvc),0);
+  ListView_SetExtendedListViewStyle(list, LVS_EX_CHECKBOXES);
+  if withIcons then
+  begin
+    dword(cli):=CallService(MS_CLIST_RETRIEVE_INTERFACE,0,0);
+    SetWindowLongW(list,GWL_STYLE,
+        GetWindowLongW(list,GWL_STYLE) or LVS_SHAREIMAGELISTS);
+    ListView_SetImageList(list,
+      CallService(MS_CLIST_GETICONSIMAGELIST,0,0),LVSIL_SMALL);
+    lvc.mask:=LVCF_FMT+LVCF_IMAGE
+  end
+  else
+  begin
+    cli:=nil;
+    lvc.mask:=LVCF_FMT;
+  end;
+
+  lvc.fmt :={LVCFMT_IMAGE or} LVCFMT_LEFT;
+  ListView_InsertColumn(list,0,lvc);
+
+  FillChar(item,SizeOf(item),0);
+  if withIcons then
+    item.mask:=LVIF_TEXT+LVIF_IMAGE
+  else
+    item.mask:=LVIF_TEXT;
+  for i:=0 to NumProto do
+  begin
+    item.iItem:=i;
+    item.pszText:=protos^[i].name;
+    if withIcons and (i>0) then
+      item.iImage:=cli^.pfnIconFromStatusMode(item.pszText,ID_STATUS_ONLINE,0);
+    newItem:=ListView_InsertItemA(list,item);
+    if newItem>=0 then
+      ListView_SetCheckState(list,newItem,(protos^[i].enabled and psf_enabled)<>0)
+  end;
+  ListView_SetItemState (list,0,LVIS_FOCUSED or LVIS_SELECTED,LVIS_FOCUSED or LVIS_SELECTED);
+
+  ListView_SetColumnWidth(list,0,LVSCW_AUTOSIZE);
+end;
+
+procedure CheckProtoList(list:hwnd);
+var
+  i:integer;
+begin
+  for i:=1 to ListView_GetItemCount(list) do
+  begin
+    with protos^[i] do
+      if ListView_GetCheckState(list,i)=BST_CHECKED then
+        enabled:=enabled or psf_enabled
+      else
+        enabled:=enabled and not psf_enabled;
+  end;
+end;
+
+procedure FillStatusList(proto:cardinal;list:hwnd;withIcons:bool=false);
+
+  procedure AddString(num:integer;enabled:boolean;cli:PCLIST_INTERFACE);
+  var
+    item:LV_ITEMW;
+    NewItem:integer;
+  begin
+    FillChar(item,SizeOf(item),0);
+    item.iItem  :=num;
+    item.lParam :=StatCodes[num];
+    if cli<>nil then
+    begin
+      item.mask   :=LVIF_TEXT+LVIF_PARAM+LVIF_IMAGE;
+      item.iImage:=cli^.pfnIconFromStatusMode(protos^[proto].name,item.lParam,0);
+    end
+    else
+      item.mask   :=LVIF_TEXT+LVIF_PARAM;
+    item.pszText:=TranslateW(StatNames[num]);
+    newItem:=SendMessageW(list,LVM_INSERTITEMW,0,dword(@item));
+    if newItem>=0 then
+      ListView_SetCheckState(list,newItem,enabled);
+  end;
+
+var
+  lvc:TLVCOLUMN;
+  cli:PCLIST_INTERFACE;
+begin
+  if proto=0 then
+    withIcons:=false;
+  ListView_DeleteAllItems(list);
+  ListView_DeleteColumn(list,0);
+  FillChar(lvc,SizeOf(lvc),0);
+  ListView_SetExtendedListViewStyle(list, LVS_EX_CHECKBOXES);
+  if withIcons then
+  begin
+    dword(cli):=CallService(MS_CLIST_RETRIEVE_INTERFACE,0,0);
+    SetWindowLongW(list,GWL_STYLE,
+        GetWindowLongW(list,GWL_STYLE) or LVS_SHAREIMAGELISTS);
+    ListView_SetImageList(list,
+      CallService(MS_CLIST_GETICONSIMAGELIST,0,0),LVSIL_SMALL);
+    lvc.mask:=LVCF_FMT+LVCF_IMAGE
+  end
+  else
+  begin
+    cli:=nil;
+    SetWindowLongW(list,GWL_STYLE,
+        GetWindowLongW(list,GWL_STYLE) and not LVS_SHAREIMAGELISTS);
+//    ListView_SetImageList(list,0,LVSIL_SMALL);
+    lvc.mask:=LVCF_FMT;
+  end;
+  lvc.fmt:={LVCFMT_IMAGE or} LVCFMT_LEFT;
+  ListView_InsertColumn(list,0,lvc);
+
+  AddString(0,true,nil);
+  ListView_SetItemState (list,0,LVIS_FOCUSED or LVIS_SELECTED,$000F);
+  with protos^[proto] do
+  begin
+    if (status and psf_online    )<>0 then AddString(1,(enabled and psf_online    )<>0,cli);
+    if (status and psf_invisible )<>0 then AddString(2,(enabled and psf_invisible )<>0,cli);
+    if (status and psf_shortaway )<>0 then AddString(3,(enabled and psf_shortaway )<>0,cli);
+    if (status and psf_longaway  )<>0 then AddString(4,(enabled and psf_longaway  )<>0,cli);
+    if (status and psf_lightdnd  )<>0 then AddString(5,(enabled and psf_lightdnd  )<>0,cli);
+    if (status and psf_heavydnd  )<>0 then AddString(6,(enabled and psf_heavydnd  )<>0,cli);
+    if (status and psf_freechat  )<>0 then AddString(7,(enabled and psf_freechat  )<>0,cli);
+    if (status and psf_outtolunch)<>0 then AddString(8,(enabled and psf_outtolunch)<>0,cli);
+    if (status and psf_onthephone)<>0 then AddString(9,(enabled and psf_onthephone)<>0,cli);
+  end;
+  ListView_SetColumnWidth(list,0,LVSCW_AUTOSIZE);
+end;
+
+procedure CheckStatusList(list:hwnd;ProtoNum:cardinal);
+
+  procedure SetStatusMask(stat:integer;state:bool);
+  var
+    i:integer;
+  begin
+    case stat of
+      ID_STATUS_ONLINE:     i:=psf_online;
+      ID_STATUS_INVISIBLE:  i:=psf_invisible;
+      ID_STATUS_AWAY:       i:=psf_shortaway;
+      ID_STATUS_NA:         i:=psf_longaway;
+      ID_STATUS_OCCUPIED:   i:=psf_lightdnd;
+      ID_STATUS_DND:        i:=psf_heavydnd;
+      ID_STATUS_FREECHAT:   i:=psf_freechat;
+      ID_STATUS_OUTTOLUNCH: i:=psf_outtolunch;
+      ID_STATUS_ONTHEPHONE: i:=psf_onthephone;
+    else
+      exit;
+    end;
+    with protos^[ProtoNum] do
+      if state then
+        enabled:=enabled or i
+      else
+        enabled:=enabled and not i;
+  end;
+
+var
+  i:integer;
+  Item:TLVITEM;
+begin
+  for i:=1 to ListView_GetItemCount(list)-1 do //skip default
+  begin
+    Item.iItem:=i;
+    Item.mask:=LVIF_PARAM;
+    ListView_GetItem(list,Item);
+    SetStatusMask(Item.lParam,ListView_GetCheckState(list,i)=BST_CHECKED)
+  end;
+end;
+
+function CreateProtoList:integer;
+var
+  protoCount,i:integer;
+  proto:^PPROTOCOLDESCRIPTOR;
+  buf:array [0..127] of AnsiChar;
+  flag:integer;
+  p:pAnsichar;
+begin
+  CallService(MS_PROTO_ENUMPROTOCOLS,integer(@protoCount),dword(@proto));
+  mGetMem(protos,(protoCount+1)*SizeOf(tMyProto)); // 0 - default
+  NumProto:=0;
+  with protos^[0] do
+  begin
+    name   :=defproto;
+    status :=-1;
+    enabled:=-1;
+  end;
+  for i:=1 to protoCount do
+  begin
+    if proto^^._type=PROTOTYPE_PROTOCOL then
+    begin
+      inc(NumProto);
+      with protos^[NumProto] do
+      begin
+        name   :=proto^^.szName;
+//        xstat  :=-1;
+        enabled:=psf_all;//psf_enabled;
+        status :=0;
+        flag:=CallProtoService(name,PS_GETCAPS,PFLAGNUM_2,0);
+        if (flag and PF2_ONLINE)    <>0 then status:=status or psf_online;
+        if (flag and PF2_INVISIBLE) <>0 then status:=status or psf_invisible;
+        if (flag and PF2_SHORTAWAY) <>0 then status:=status or psf_shortaway;
+        if (flag and PF2_LONGAWAY)  <>0 then status:=status or psf_longaway;
+        if (flag and PF2_LIGHTDND)  <>0 then status:=status or psf_lightdnd;
+        if (flag and PF2_HEAVYDND)  <>0 then status:=status or psf_heavydnd;
+        if (flag and PF2_FREECHAT)  <>0 then status:=status or psf_freechat;
+        if (flag and PF2_OUTTOLUNCH)<>0 then status:=status or psf_outtolunch;
+        if (flag and PF2_ONTHEPHONE)<>0 then status:=status or psf_onthephone;
+
+        flag:=CallProtoService(name,PS_GETCAPS,PFLAGNUM_1,0);
+        if ((flag and PF1_CHAT)<>0) or
+           (DBReadByte(0,name,'CtcpChatAccept',13)<>13) or // IRC
+           (DBReadByte(0,name,'Jud',13)<>13) then          // Jabber
+//        flag:=CallProtoService(name,PS_GETCAPS,PFLAGNUM_1,0);
+//        if (flag and PF1_CHAT)<>0 then
+          status:=status or psf_chat;
+        p:=StrCopyE(buf,name);
+        StrCopy(p,PS_ICQ_GETCUSTOMSTATUS);
+        if PluginLink^.ServiceExists(buf)<>0 then
+          status:=status or psf_icq;
+
+        StrCopy(p,PS_SET_LISTENINGTO);
+        if PluginLink^.ServiceExists(buf)<>0 then
+          status:=status or psf_tunes;
+          
+      end;
+    end;
+    inc(proto);
+  end;
+
+  if PluginLink^.ServiceExists(MS_NAS_SETSTATEA)<>0 then
+    NASPresents:=true
+  else
+    NASPresents:=false;
+
+  result:=NumProto;
+end;
+
+procedure FreeProtoList;
+begin
+  mFreeMem(protos);
+  NumProto:=0;
+end;
+
+function SetStatus(proto:PAnsiChar;status:integer;txt:PAnsiChar=pointer(-1)):integer;
+var
+  nas:TNAS_PROTOINFO;
+begin
+  if status>0 then
+    result:=CallProtoService(proto,PS_SETSTATUS,status,0)
+  else
+    result:=-1;
+  if integer(txt)<>-1 then
+  begin
+    if not NASPresents then
+      result:=CallProtoService(proto,PS_SETAWAYMSG,abs(status),dword(txt))
+    else
+    begin
+  {
+      nas.Msg.w:=mmi.malloc((StrLenW(txt)+1)*SizeOf(WideChar));
+      nas.Msg.w^:=#0;
+      StrCopyW(nas.Msg.w,txt);
+  }
+      StrDup(nas.Msg.a,txt);
+      nas.Flags  :=0;
+      nas.cbSize :=SizeOf(nas);
+      nas.szProto:=proto;
+      nas.status :=abs(status){0};
+      result:=PluginLink^.CallService(MS_NAS_SETSTATEA,LPARAM(@nas),1);
+    end;
+  end;
+end;
+
+function SetXStatus(proto:PAnsiChar;newstatus:integer;
+                    txt:pWideChar=nil;title:pWideChar=nil):integer;
+var
+  ics:TICQ_CUSTOM_STATUS;
+begin
+  result:=0;
+  if IsXStatusSupported(dword(proto)) then
+  begin
+    with ics do
+    begin
+      cbSize:=SizeOf(ics);
+      flags:=CSSF_UNICODE;
+      if newstatus>=0 then
+      begin
+        flags:=flags or CSSF_MASK_STATUS;
+        status:=@newstatus;
+      end;
+      if integer(title)<>-1 then
+      begin
+        flags:=flags or CSSF_MASK_NAME;
+        szName.w:=title;
+      end;
+      if integer(title)<>-1 then
+      begin
+        flags:=flags or CSSF_MASK_MESSAGE;
+        szMessage.w:=txt;
+      end;
+    end;
+    result:=CallProtoService(proto,PS_ICQ_SETCUSTOMSTATUSEX,0,dword(@ics));
+  end;
+end;
+
+function GetXStatus(proto:PAnsiChar;txt:pointer=nil;title:pointer=nil):integer;
+var
+  buf:array [0..127] of AnsiChar;
+  pc:PAnsiChar;
+  param:array [0..63] of AnsiChar;
+
+//  ics:TICQ_CUSTOM_STATUS;
+//  i,j:integer;
+begin
+  result:=0;
+  if IsXStatusSupported(dword(proto)) then
+  begin
+{
+    with ics do
+    begin
+      cbSize:=SizeOf(ics);
+      flags:=CSSF_STR_SIZES;
+      wParam:=@i;
+      lParam:=@j;
+    end;
+    CallProtoService(0,PS_ICQ_GETCUSTOMSTATUSEX,0,dword(@ics));
+    if title<>nil then
+      mGetMem(title^,(i+1)*SizeOf(WideChar));
+    if txt<>nil then
+      mGetMem(txt^,(j+1)*SizeOf(WideChar));
+
+    with ics do
+    begin
+      cbSize:=SizeOf(ics);
+      flags:=CSSF_MASK_STATUS or CSSF_MASK_NAME or CSSF_MASK_MESSAGE or CSSF_UNICODE;
+      status:=@result;
+      szName.w   :=pdword(title)^;
+      szMessage.w:=pdword(txt)^;
+    end;
+    CallProtoService(0,PS_ICQ_GETCUSTOMSTATUSEX,0,dword(@ics));
+}
+
+    StrCopy(buf,proto);
+    StrCat (buf,PS_ICQ_GETCUSTOMSTATUS);
+    result:=PluginLink^.CallService(buf,0,0);
+    if (txt<>nil) or (title<>nil) then
+    begin
+      move('XStatus',param,7);
+      IntToStr(param+7,result);
+      pc:=strend(param);
+
+      if txt<>nil then
+      begin
+        StrCopy(pc,'Msg'); pWideChar(txt^):=DBReadUnicode(0,proto,param,nil);
+      end;
+      if title<>nil then
+      begin
+        StrCopy(pc,'Name'); pWideChar(title^):=DBReadUnicode(0,proto,param,nil);
+      end;
+    end;
+
+  end;
+end;
+
+end.

@@ -1,0 +1,29 @@
+LANGUAGE 0,0 
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 0,0,1,5
+ PRODUCTVERSION 0,0,8,0
+ FILEFLAGSMASK $3F
+ FILEOS 4 
+ FILETYPE 2 
+ FILESUBTYPE 0 
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "000004b0"
+    BEGIN
+      VALUE "CompanyName",""0 
+      VALUE "Comments", "Plugin to play Internet radio"0 
+      VALUE "FileDescription", "mRadio Mod plugin for Miranda IM"0 
+      VALUE "FileVersion", "0, 0, 1, 5 "0 
+      VALUE "InternalName", "mRadio Mod"0 
+      VALUE "OriginalFilename", "mradio.dll"0 
+      VALUE "ProductName", "mRadio Mod Dynamic Link Library (DLL)"0 
+      VALUE "ProductVersion", "0, 0, 8, 0 "0 
+      VALUE "SpecialBuild", "6.09.2010 "0 
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+      VALUE "Translation",0,1200 
+  END
+END
