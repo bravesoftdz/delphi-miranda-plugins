@@ -1,0 +1,11 @@
+#include "waticons.inc"
+LANGUAGE 0,0
+
+BTN_PREV   ICON "prev.ico"
+BTN_PLAY   ICON "play.ico"
+BTN_PAUSE  ICON "pause.ico"
+BTN_STOP   ICON "stop.ico"
+BTN_NEXT   ICON "next.ico"
+BTN_VOLDN  ICON "voldn.ico"
+BTN_VOLUP  ICON "volup.ico"
+BTN_SLIDER ICON "slider.ico"

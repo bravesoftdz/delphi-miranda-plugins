@@ -1,0 +1,29 @@
+LANGUAGE 0,0 
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 0,0,6,12 
+ PRODUCTVERSION 0,0,6,12 
+ FILEFLAGSMASK $3F
+ FILEOS 4 
+ FILETYPE 2 
+ FILESUBTYPE 0 
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "000004b0"
+    BEGIN
+      VALUE "CompanyName",""
+      VALUE "Comments", "Plugin to get, insert to messages and show currently played song info"
+      VALUE "FileDescription", "WATrack plugin for Miranda IM"
+      VALUE "FileVersion", "0, 0, 6, 12 "0 
+      VALUE "InternalName", "WATrack"
+      VALUE "OriginalFilename", "watrack.dll"
+      VALUE "ProductName", " WATrack Dynamic Link Library (DLL)"
+      VALUE "ProductVersion", "0, 0, 6, 12 "0 
+      VALUE "SpecialBuild", "17.11.2009 "0 
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+      VALUE "Translation",0,1200 
+  END
+END

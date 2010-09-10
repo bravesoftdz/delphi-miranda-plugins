@@ -1,0 +1,709 @@
+{BASS dll code}
+const
+  signMP3    = $FBFF;
+  signID3    = $00334449;
+  signOGG    = $5367674F;
+  OGGHdrSize = 26; // +1=NumSegments
+const
+  BASSName = 'bass.dll';
+  StationHeader:PByte=nil;
+const
+  basspath:PWideChar=nil;
+var
+  hdrlen:integer;
+  syncMETA,
+  syncOGG,
+  syncWMA,
+  syncEND:HSYNC;
+  SaveHeader:bool;
+
+procedure SetSndVol(arg:integer=-1);
+begin
+  if chan<>0 then
+  begin
+{
+    if arg<0 then
+      arg:=DBReadByte(0,'Skin','UseSound')
+    else
+}
+      arg:=Volume;
+    BASS_ChannelSetAttribute(chan,BASS_ATTRIB_VOL,arg/100);
+  end;
+end;
+
+procedure StopStation;
+begin
+  if chan<>0 then
+    BASS_StreamFree(chan); // close old stream
+  chan:=0;
+  mFreeMem(StationHeader);
+  mFreeMem(ActiveURLw);
+  mFreeMem(CurDescrW);
+  DBDeleteSetting(ActiveContact,strCList,optStatusMsg);
+end;
+
+procedure Error(text:PWideChar);
+begin
+  MessageboxW(0,TranslateW(text),TranslateW('Sorry!'),MB_ICONERROR)
+end;
+
+procedure EQ_OFF;
+var
+  i:dword;
+begin
+  if chan<>0 then
+    for i:=0 to 9 do
+      BASS_ChannelRemoveFX(chan,eq[i].fx);
+  isEQ_OFF:=BST_CHECKED;
+end;
+
+procedure EQ_ON;
+var
+  i:dword;
+begin
+  if chan<>0 then
+  begin
+    for i:=0 to 9 do
+      eq[i].fx:=BASS_ChannelSetFX(chan,BASS_FX_DX8_PARAMEQ,1);
+    for i:=0 to 9 do
+      BASS_FXSetParameters(eq[i].fx,@eq[i].param);
+    isEQ_OFF:=BST_UNCHECKED;
+  end;
+end;
+
+function MyLoadBASS(root:PwideChar;custom:pWideChar):bool;
+var
+  pc:PWideChar;
+  buf:array [0..MAX_PATH-1] of WideChar;
+begin
+  result:=true;
+  mGetMem(basspath,1024);
+  pc:=StrCopyEW(basspath,custom);
+  if (pc-1)^<>'\' then
+  begin
+    pc^:='\';
+    inc(pc);
+  end;
+  StrCopyW(pc,BASSName);
+  if not Load_BASSDLL(basspath) then
+  begin
+    pc:=StrCopyW(StrCopyEW(basspath,root),BASSName);
+    if not Load_BASSDLL(basspath) then
+    begin
+      pc:=StrCopyW(StrCopyEW(pc,'plugins\'),BASSName);
+      if not Load_BASSDLL(basspath) then
+      begin
+        pc:=StrCopyW(StrCopyEW(pc,'bass\'),BASSName);
+        if not Load_BASSDLL(basspath) then
+        begin
+          if (custom<>nil) and (custom^<>#0) then
+            Error('BASS.DLL not found!');
+          result:=false;
+        end;
+      end;
+    end;
+  end;
+
+  if (not result) and ((custom=nil) or (custom^=#0)) then
+  begin
+    if Messagebox(0,Translate('BASS.DLL not found! Choose BASS.dll path manually'),
+        'mRadio',MB_YESNO)=IDYES then
+    begin
+      pc := nil;
+      if SelectDirectory(TranslateW('Choose BASS.dll path'),pc,0,true) then
+      begin
+        PluginLink^.CallService(MS_UTILS_PATHTORELATIVEW,dword(pc),dword(@buf));
+        pc:=StrCopyEW(basspath,buf);
+        if (pc-1)^<>'\' then
+        begin
+          pc^:='\';
+          inc(pc);
+        end;
+        pc^:=#0;
+        DBWriteUnicode(0,PluginName,optBASSPath,basspath);
+        StrCopyW(pc,BASSName);
+
+        if not Load_BASSDLL(basspath) then
+          Error('BASS.DLL not found!')
+        else
+          result:=true;
+      end;
+    
+    end;
+  end;
+
+  if result then
+  begin
+    if (BASS_GetVersion shr 16)<BASSVERSION then
+    begin
+      Unload_BASSDLL;
+      result:=false;
+      Error('Wrong version of BASS.DLL');
+    end
+    else
+    begin
+      pc^:=#0; // cut BASSName
+      exit;
+    end;
+  end;
+  mFreeMem(basspath);
+end;
+
+procedure MyStopBASS;
+begin
+  if ActiveContact<>0 then
+  begin
+    if syncMETA<>0 then
+    begin
+      BASS_ChannelRemoveSync(chan,syncMETA);
+      syncMETA:=0
+    end;
+    if syncEND<>0 then
+    begin
+      BASS_ChannelRemoveSync(chan,syncEND);
+      syncEND:=0
+    end;
+    if syncWMA<>0 then
+    begin
+      BASS_ChannelRemoveSync(chan,syncWMA);
+      syncWMA:=0
+    end;
+//    ControlCenter(MRC_STOP,1);
+  end;
+end;
+
+procedure MyFreeBASS;
+begin
+  MyStopBass;
+  BASS_Free;
+  BASS_PluginFree(0);
+end;
+
+function MyInitBASS:int;
+var
+  fd:TWin32FindDataW;
+  fh:THANDLE;
+  buf:array [0..MAX_PATH-1] of WideChar;
+//  buf1:array [0..31] of WideChar;
+  pc:PWideChar;
+  p:Bool;
+begin
+  if Inited then
+  begin
+    result:=1;
+    exit;
+  end;
+
+  Inited:=true;
+  BASS_Free;
+  p:=BASS_Init(-1,44100,BASS_DEVICE_3D,0,nil);
+  if not p then
+    p:=BASS_Init(-1,44100,0,0,nil);
+  if not p then
+    p:=BASS_Init(1,44100,0,0,nil);
+  if not p then
+  begin
+    Error('Can''t initialize device');
+    result:=0;
+  end
+  else
+  begin
+    pc:=StrCopyW(StrCopyEW(buf,basspath),'bass*.dll');
+    fh:=FindFirstFileW(buf,fd);
+    if fh<>INVALID_HANDLE_VALUE then
+    begin
+      repeat
+        StrCopyW(pc,fd.cFileName);
+        if BASS_PluginLoad(pAnsiChar(@buf),BASS_UNICODE)=0 then
+//          messageboxw(0,inttostr(buf1,BASS_ErrorGetCode),pc,0);
+      until not FindNextFileW(fh,fd);
+      FindClose(fh);
+    end;
+    // enable ASX processing (if WMA loaded)
+    BASS_SetConfig(BASS_CONFIG_NET_PLAYLIST, 2); // 2 - enable internet and local playlists
+
+    fh:=DBReadByte(0,PluginName,optEAXType,0);
+    if fh=0 then
+      BASS_SetEAXParameters(-1,0,-1,-1)
+    else
+      BASS_SetEAXPreset(EAXItems[fh].code);
+    result:=1;
+  end;
+end;
+
+function GetMusicFormat:PAnsiChar;
+var
+  bci:BASS_CHANNELINFO;
+begin
+  BASS_ChannelGetInfo(chan,bci);
+  case bci.ctype of
+    BASS_CTYPE_STREAM_OGG: result:='OGG';
+    BASS_CTYPE_STREAM_MP1,
+    BASS_CTYPE_STREAM_MP2,
+    BASS_CTYPE_STREAM_MP3: result:='MP3';
+    BASS_CTYPE_STREAM_WMA,
+    BASS_CTYPE_STREAM_WMA_MP3: result:='WMA';
+    {BASS_CTYPE_STREAM_AAC,}$10b00: result:='AAC';
+    {BASS_CTYPE_STREAM_MP4:}$10b01: result:='MP4';
+    {BASS_CTYPE_STREAM_AC3:}$11000: result:='AC3';
+  else
+    result:=nil;
+  end;
+end;
+
+function GetFileExt(buf:pWideChar;sign:pointer):pWideChar;
+var
+  pc:pAnsiChar;
+begin
+  result:=buf;
+  pc:=GetMusicFormat;
+  if pc=nil then
+  begin
+    StrCopyW(buf,'sav');
+    if sign<>nil then
+    begin
+      if pdword(sign)^=signOGG then
+        StrCopyW(buf,'ogg')
+      else if ((pdword(sign)^ and $00FFFFFF)=signID3) or (pword(sign)^=signMP3) then
+        StrCopyW(buf,'mp3');
+    end;
+  end
+  else
+  begin
+    FastAnsiToWideBuf(pc,buf);
+    LowerCase(buf);
+  end;
+end;
+
+function MakeFileName(sign:pointer):pWideChar;
+var
+  pcw:PWideChar;
+  buf:pWideChar;
+begin
+// allocate buffer
+  mGetMem(buf,MAX_PATH*SizeOf(WideChar));
+// path
+  if recpath<>nil then
+  begin
+    ConvertFileName(recpath,buf,ActiveContact);
+//    pcw:=ParseVarString(recpath,ActiveContact);
+//    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTEW,dword(pcw),dword(buf));
+//    mFreeMem(pcw);
+    if not ForceDirectories(buf) then
+    begin
+      result:=nil;
+      exit;
+    end;
+    pcw:=StrEndW(buf);
+    if (pcw-1)^<>'\' then
+    begin
+      pcw^:='\';
+      inc(pcw);
+    end;
+  end
+  else
+    pcw:=buf;
+// name
+//!!  IntToHex(pcw,GetCurrentTime);
+  pcw:=StrCopyEW(pcw,CurDescrW);
+// ext
+  pcw^:='.'; inc(pcw);
+  GetFileExt(pcw,sign);
+
+  result:=buf;
+end;
+
+procedure StatusProc(buffer:Pointer;len,user:DWORD); stdcall;
+var
+  pc:pWideChar;
+  pb:PByte;
+  i,sum:integer;
+  flag:bool;
+  doRecord:bool;
+begin
+  flag:=true;
+  doRecord:=CallService(MS_RADIO_RECORD,1,0)<>0;
+  if (buffer<>nil) and (len<>0) and SaveHeader then
+  begin
+    SaveHeader:=false;
+    if pdword(buffer)^=signOGG then // if header ALL in buffer
+    begin
+      pb:=buffer;
+      flag:=false;
+      repeat
+        inc(pb,OGGHdrSize);
+        i:=pb^; //patterns
+        sum:=0;
+        inc(pb);
+        while i>0 do
+        begin
+          inc(sum,pb^);
+          inc(pb);
+          dec(i);
+        end;
+        inc(pb,sum); //here must be next sign
+        flag:=not flag;
+      until not flag;
+      hdrlen:=PAnsiChar(pb)-PAnsiChar(buffer);
+      mGetMem(StationHeader,hdrlen);
+      move(buffer^,StationHeader^,hdrlen);
+    end;
+  end;
+  if (buffer=nil) or not doRecord then // end of stream or stop record
+  begin
+    if not doRecord or (doContRec=BST_UNCHECKED) then
+      if hRecord<>0 then
+      begin
+        if buffer<>nil then // write tail
+          BlockWrite(hRecord,buffer^,len);
+        CloseHandle(hRecord);
+        hRecord:=0;
+      end;
+  end
+  else
+  begin
+    if len=0 then // HTTP or ICY tags
+    begin
+{
+while PAnsiChar(buffer)^<>#0 do
+begin
+messagebox(0,PAnsiChar(buffer),'ICY-HTTP',0);
+while PAnsiChar(buffer)^<>#0 do inc(PAnsiChar(buffer)); inc(PAnsiChar(buffer));
+end;
+}
+    end
+    else
+    begin
+      if doRecord then
+      begin
+        if hRecord=0 then
+        begin
+          pc:=MakeFileName(StationHeader);
+          if pc<>nil then
+            hRecord:=Rewrite(pc)
+          else
+            dword(hRecord):=INVALID_HANDLE_VALUE;
+          if dword(hRecord)=INVALID_HANDLE_VALUE then
+            hRecord:=0
+          else if flag and (StationHeader<>nil) then
+          begin
+            BlockWrite(hRecord,StationHeader^,hdrlen);
+// permissible to skip to the next Page (OggS) but this is not necessary
+          end;
+          mFreeMem(pc);
+        end;
+        if hRecord<>0 then
+          BlockWrite(hRecord,buffer^,len);
+      end;
+    end;
+  end;
+end;
+
+procedure DoMeta(handle:HSYNC;meta:PAnsiChar);
+var
+  p:Integer;
+  pcw:pWideChar;
+  buf:array [0..511] of AnsiChar;
+  artist,title:PAnsiChar;
+  ppc,pc:pAnsiChar;
+  OldDescr:pWideChar;
+  lcp:integer;
+  c:WideChar;
+begin
+  if meta=nil then
+    meta:=BASS_ChannelGetTags(chan,BASS_TAG_META);
+
+  if meta<>nil then
+  begin
+    lcp:=CP_UTF8;
+    OldDescr:=CurDescrW;
+    buf[0]:=#0;
+    artist:=nil;
+    title :=nil;
+
+    //----- media track start -----
+    if (handle=syncMETA) or (handle=0) then
+    begin
+      handle:=syncMETA;
+      // SHOUTCAST StreamTitle='xxx';StreamUrl='xxx';
+      // "Station=xyz" meta tag="Trackinfo"
+      pc:=StrPos(meta,'StreamTitle=');
+      if pc<>nil then
+      begin
+        inc(pc,13);
+        ppc:=StrScan(pc,';');
+        if (ppc-pc-1)>0 then
+        begin
+          StrCopy(buf,pc,ppc-pc-1);
+          lcp:=GetTextFormat(@buf,ppc-pc-1);
+        end;
+      end;
+      StatusProc(nil,0,0); // split records here
+    end
+
+    //----- media INFO start -----
+    else if (handle=syncOGG) or (handle=syncWMA) then
+    begin
+      if handle=syncWMA then
+        meta:=BASS_ChannelGetTags(chan,BASS_TAG_WMA)  // array of null-terminated UTF-8 strings
+      else
+        meta:=BASS_ChannelGetTags(chan,BASS_TAG_OGG); // array of null-terminated UTF-8 strings
+
+      while meta^<>#0 do
+      begin
+        if StrCmp(meta,'TITLE=',6)=0 then
+        begin
+          title:=meta+6;
+          DBWriteUTF8(0,PluginName,optTitle,title);
+        end
+        else if StrCmp(meta,'ARTIST=',7)=0 then
+        begin
+          artist:=meta+7;
+          DBWriteUTF8(0,PluginName,optArtist,artist);
+        end;
+        if (artist<>nil) and (title<>nil) then
+          break;
+        while meta^<>#0 do inc(meta); inc(meta);
+      end;
+
+      if artist<>nil then
+      begin
+        ppc:=StrCopyE(buf,artist);
+        if title<>nil then
+          ppc:=StrCopyE(ppc,' - ');
+      end
+      else
+      begin
+        ppc:=@buf;
+      end;
+      if title<>nil then
+      begin
+        StrCopy(ppc,title);
+      end;
+    end;
+
+    if buf[0]=#0 then
+    begin
+      CurDescrW:=nil;
+      p:=RD_STATUS_PLAYING
+    end
+    else
+    begin
+      p:=-1;
+      case lcp of
+        CP_UTF8: UTF8ToWide(buf,CurDescrW);
+        CP_ACP : AnsiToWide(buf,CurDescrW,MirandaCP);
+      end;
+      if artist=nil then
+      begin
+        pcw:=StrPosW(CurDescrW,' - ');
+        if pcw=nil then
+          pcw:=StrScanW(CurDescrW,'-');
+        if pcw<>nil then
+        begin
+          c:=pcw^;
+          pcw^:=#0;
+          DBWriteUnicode(0,PluginName,optArtist,CurDescrW);
+          pcw^:=c;
+        end
+        else
+          DBWriteUnicode(0,PluginName,optArtist,CurDescrW);
+      end;
+      if title=nil then
+      begin
+        pcw:=StrPosW(CurDescrW,' - ');
+        if pcw=nil then
+          pcw:=StrScanW(CurDescrW,'-');
+        if pcw<>nil then
+        begin
+          if pcw^=' ' then inc(pcw,3)
+          else inc(pcw);
+          DBWriteUnicode(0,PluginName,optTitle,pcw);
+        end
+        else
+          DBWriteUnicode(0,PluginName,optTitle,CurDescrW);
+      end;
+    end;
+
+    // make status info
+    if ((CurDescrW<>nil) or (handle=syncMETA)) and (StrCmpW(OldDescr,CurDescrW)<>0) then
+      ConstructMsg(CurDescrW,p);
+    mFreeMem(OldDescr);
+  end;
+end;
+
+procedure MetaSync(handle:HSYNC;channel,data,user:DWORD); stdcall;
+begin
+  DoMeta(handle,PAnsiChar(data));
+end;
+
+procedure EndSync(handle:HSYNC;channel,data,user:DWORD); stdcall;
+begin
+  if PlaylistUsed then
+    ControlCenter(MRC_NEXT,0)
+  else if doLoop=BST_UNCHECKED then
+    ControlCenter(MRC_STOP,0);
+end;
+
+function OpenURL(url:PWideChar):dword;// stdcall;
+var
+  icy:PAnsiChar;
+  Len,Progress:DWORD;
+  flags:dword;
+  EAXUsed:bool;
+  ansiurl:array [0..511] of AnsiChar;
+begin
+  result:=0;
+  if not PlaylistUsed then
+    ControlCenter(MRC_STATUS,RD_STATUS_CONNECT);
+
+  flags:=BASS_STREAM_STATUS;
+  EAXUsed:=DBReadByte(0,PluginName,optEAXType,0)<>0;
+  if EAXUsed then
+    flags:=BASS_STREAM_STATUS or BASS_SAMPLE_3D or BASS_SAMPLE_MONO;
+{
+  if RemoteSong then
+  begin
+    SaveHeader:=true;
+    chan:=BASS_StreamCreateURL(FastWideToAnsiBuf(url,ansiurl)
+        ,0,flags,@StatusProc,nil)
+  end
+  else
+  begin
+    flags:=flags or BASS_UNICODE;
+    if not PlaylistUsed and (doLoop<>BST_UNCHECKED) then
+      flags:=flags or BASS_SAMPLE_LOOP;
+    chan:=BASS_StreamCreateFile(FALSE,url,0,0,flags);
+  end;
+}
+  flags:=flags or BASS_UNICODE;
+  if RemoteSong then
+  begin
+    SaveHeader:=true;
+    chan:=BASS_StreamCreateURL(url,0,flags,@StatusProc,nil)
+  end
+  else
+  begin
+    if not PlaylistUsed and (doLoop<>BST_UNCHECKED) then
+      flags:=flags or BASS_SAMPLE_LOOP;
+  chan:=BASS_StreamCreateFile(FALSE,url,0,0,flags);
+  end;
+
+  if (chan=0) and EAXUsed then
+  begin
+    flags:=flags and not (BASS_SAMPLE_3D or BASS_SAMPLE_MONO);
+    if RemoteSong then
+      chan:=BASS_StreamCreateURL({ansi}url,0,flags,@StatusProc,nil)
+    else
+      chan:=BASS_StreamCreateFile(FALSE,url,0,0,flags);
+  end;
+
+  if (chan=0) and RemoteSong then
+  begin
+    if BASS_ErrorGetCode=2 then
+    begin
+      flags:=flags and not BASS_UNICODE;
+      chan:=BASS_StreamCreateURL(FastWideToAnsiBuf(url,ansiurl),0,flags,@StatusProc,nil)
+    end;
+  end;
+
+  if chan=0 then
+  begin
+    if PlayStatus=RD_STATUS_ABORT then
+    begin
+      ControlCenter(MRC_STOP,1);
+      exit;
+    end;
+    if PlaylistUsed then
+      ControlCenter(MRC_NEXT,0)
+    else
+      ControlCenter(MRC_STATUS,RD_STATUS_NOSTATION);
+  end
+  else
+  begin
+    if RemoteSong then
+    begin
+      if isEQ_OFF=BST_UNCHECKED then
+        EQ_ON;
+
+{$IFDEF CHANGE_NAME_BUFFERED}
+      icy:=DBReadString(ActiveContact,strCList,optMyHandle);
+      mGetMem(url,StrLen(icy)+6);
+      StrCopy(url+6,icy);
+      mFreeMem(icy);
+      url[0]:='[';
+      url[1]:=#0;
+      url[4]:=']';
+      url[5]:=' ';
+{$ENDIF}
+      repeat
+        if PlayStatus=RD_STATUS_ABORT then
+        begin
+          ControlCenter(MRC_STOP,1);
+          exit;
+        end;
+        len:=BASS_StreamGetFilePosition(chan,BASS_FILEPOS_END);
+        if len=DW_ERROR then
+          break;
+        progress:=BASS_StreamGetFilePosition(chan, BASS_FILEPOS_DOWNLOAD);
+        if progress=dword(-1) then
+          break;
+        progress:=(progress-
+          BASS_StreamGetFilePosition(chan,BASS_FILEPOS_CURRENT))*100 div len;
+        // percentage of buffer filled
+{$IFDEF CHANGE_NAME_BUFFERED}
+        IntToStr(url+1,progress,2);
+        url[3]:='%';
+        DBWriteString(ActiveContact,strCList,optMyHandle,url);
+{$ENDIF}
+      until progress>sPreBuf;
+{$IFDEF CHANGE_NAME_BUFFERED}
+      if url[1]<>#0 then
+        DBWriteString(ActiveContact,strCList,optMyHandle,url+6);
+      mFreeMem(url);
+{$ENDIF}
+
+      // get the broadcast name and bitrate
+      icy:=BASS_ChannelGetTags(chan,BASS_TAG_ICY);
+      if icy=nil then
+        icy:=BASS_ChannelGetTags(chan,BASS_TAG_HTTP); // no ICY tags, try HTTP
+      if icy<>nil then
+      begin
+        while icy^<>#0 do
+        begin
+          if StrCmp(icy,'icy-name:',9)=0 then
+          begin
+            if DBReadStringLength(ActiveContact,strCList,optMyHandle)=0 then
+              DBWriteString(ActiveContact,strCList,optMyHandle,icy+9);
+          end
+          else if StrCmp(icy,'icy-genre:',10)=0 then
+          begin
+            if DBReadStringLength(ActiveContact,PluginName,optGenre)=0 then
+              DBWriteString(ActiveContact,PluginName,optGenre,icy+10);
+          end
+          else if StrCmp(icy,'icy-br:',7)=0 then
+          begin
+            if DBReadStringLength(ActiveContact,PluginName,optBitrate)=0 then
+              DBWriteString(ActiveContact,PluginName,optBitrate,icy+7);
+          end;
+          while icy^<>#0 do inc(icy); inc(icy);
+        end;
+      end;
+
+     // get the stream title and set sync for subsequent titles
+      DoMeta(0,BASS_ChannelGetTags(chan,BASS_TAG_META));
+
+      syncMETA:=BASS_ChannelSetSync(chan,BASS_SYNC_META      ,0,@MetaSync,nil);
+      syncOGG :=BASS_ChannelSetSync(chan,BASS_SYNC_OGG_CHANGE,0,@MetaSync,nil);
+      syncWMA :=BASS_ChannelSetSync(chan,BASS_SYNC_WMA_CHANGE,0,@MetaSync,nil);
+    end;
+    syncEND :=BASS_ChannelSetSync(chan,BASS_SYNC_END,0,@EndSync,nil);
+    ControlCenter(MRC_STATUS,RD_STATUS_PLAYING);
+
+    SetSndVol;
+    // play it!
+//    if not Mute then
+//      BASS_ChannelSetAttributes(chan,-1,Volume,-101);
+    BASS_ChannelPlay(chan,FALSE);
+  end;
+end;
