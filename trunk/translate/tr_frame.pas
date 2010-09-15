@@ -174,11 +174,13 @@ begin
   end
   else
   begin
-    langstr[0]:='a';
+{    langstr[0]:='a';
     langstr[1]:='u';
     langstr[2]:='t';
     langstr[3]:='o';
     i:=4;
+}
+    i:=0;
   end;
   langstr[i]:='%'; inc(i);
   langstr[i]:='7'; inc(i);
