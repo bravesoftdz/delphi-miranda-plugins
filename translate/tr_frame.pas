@@ -209,7 +209,7 @@ begin
   end;
   langstr[i]:=#0;
 
-  mGetMem(buf,StrLen(pca)*3+HIGH(langstr)+1);
+  mGetMem(buf,StrLen(pca)*3+Length(qstart)+HIGH(langstr)+3+1);
   pc:=StrCopyE(StrCopyE(buf,qstart),langstr);
   pc^:='&'; inc(pc);
   pc^:='q'; inc(pc);
