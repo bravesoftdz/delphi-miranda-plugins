@@ -106,30 +106,33 @@ begin
   end;
 end;
 
+function MakeAction(var anAct:TPOPUPACTION;action:integer):PPOPUPACTION;
+begin
+  result:=@anAct;
+  anAct.cbSize :=SizeOf(TPOPUPACTION);
+  anAct.lchIcon:=GetIcon(action,AST_NORMAL);
+  anAct.flags  :=PAF_ENABLED;
+  anAct.wParam :=1;
+  anAct.lParam :=action;
+  StrCopy(StrCopyE(anAct.lpzTitle,'Watrack/'),GetIconDescr(action));
+end;
+
 function MakeActions:PPOPUPACTION;
 type
   anacts = array [0..6] of TPOPUPACTION;
 var
-  p:^anacts;
-  i:integer;
+  actions:^anacts;
 begin
-  mGetMem(p,SizeOf(p^));
-  result:=PPOPUPACTION(p);
-  FillChar(p^,SizeOf(p^),0);
-  for i:=0 to 6 do
-  begin
-    with p^[i] do
-    begin
-      cbSize:=SizeOf(TPOPUPACTION);
-      lchIcon:=PluginLink^.CallService(MS_SKIN2_GETICON,0,
-        dword(CtrlIcoNames[CtrlRemap[i+1]]));
-      StrCopy(lpzTitle,'Watrack/');
-      StrCat (lpzTitle,CtrlDescr[CtrlRemap[i+1]]);
-      flags:=PAF_ENABLED;
-      wParam:=1;
-      lParam:=CtrlButtons[i];
-    end;
-  end;
+  mGetMem(actions,SizeOf(actions^));
+  result:=PPOPUPACTION(actions);
+  FillChar(actions^,SizeOf(actions^),0);
+  MakeAction(actions[0],WAT_CTRL_PREV);
+  MakeAction(actions[1],WAT_CTRL_PLAY);
+  MakeAction(actions[2],WAT_CTRL_PAUSE);
+  MakeAction(actions[3],WAT_CTRL_STOP);
+  MakeAction(actions[4],WAT_CTRL_NEXT);
+  MakeAction(actions[5],WAT_CTRL_VOLDN);
+  MakeAction(actions[6],WAT_CTRL_VOLUP);
 end;
 
 function ThShowPopup(si:pSongInfo):dword; //stdcall;

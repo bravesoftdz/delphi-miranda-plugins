@@ -3,7 +3,6 @@ const
   Cover    :PAnsiChar=nil;
   lastbkpic:PAnsiChar=nil;
 var
-  FrameCtrl:PControl;
   FrameText:pWideChar;
   BMPFilter:PWideChar;
   FrameWnd:hwnd;
@@ -16,10 +15,8 @@ var
   HideFrameNoMusic,
   HideFrameNoPlayer:cardinal;
   padding:TRect;
-  CtrlPos:array [1..NumIcons] of TRECT;
-  CtrlPushed,CtrlHovered:dword;
   FrmBkPic:PAnsiChar;
-  ShowControls,
+  ShowControls:set of byte;
   FrmUsePic,
   FrmUseCover,
   StyledTrack,

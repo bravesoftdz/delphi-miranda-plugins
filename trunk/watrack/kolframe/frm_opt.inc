@@ -77,15 +77,9 @@ begin
   RollGap     :=DBReadByte (0,PluginShort,opt_RollGap   ,16);
   RollTail    :=DBReadByte (0,PluginShort,opt_RollTail  ,20);
   ShowControls:=DBReadDWord(0,PluginShort,opt_ShowCtrls ,scShowAll);
-  FrmUsePic   :=DBReadByte (0,PluginShort,opt_FrmUsePic ,BST_UNCHECKED);
-  FrmUseCover :=DBReadByte (0,PluginShort,opt_FrmUseCvr ,BST_UNCHECKED);
   FrmTxtColor :=DBReadDWord(0,PluginShort,opt_FrmTxtClr ,0);
-  FrmBkColor  :=DBReadDWord(0,PluginShort,opt_FrmBkColor,$00E0E0E0);
-  FrmBkMode   :=DBReadWord (0,PluginShort,opt_FrmBkMode ,0);
-  FrmAlpha    :=DBReadByte (0,PluginShort,opt_FrmAlpha  ,255);
   FrmEffect   :=DBReadByte (0,PluginShort,opt_FrmEffect ,effCut);
   StyledTrack :=DBReadByte (0,PluginShort,opt_StyledTrk ,BST_UNCHECKED);
-  ButtonGap   :=DBReadByte (0,PluginShort,opt_ButtonGap ,BST_UNCHECKED);
   AlignCenter :=DBReadByte (0,PluginShort,opt_AlgnCenter,BST_UNCHECKED);
 
   if DBGetSettingType(0,PluginShort,opt_FrameText)=DBVT_DELETED then
@@ -96,18 +90,12 @@ begin
   else
     FrameText:=DBReadUnicode(0,PluginShort,opt_FrameText);
   
-  padding.left  :=DBReadWord(0,PluginShort,opt_PadLeft  ,0);
-  padding.top   :=DBReadWord(0,PluginShort,opt_PadTop   ,0);
-  padding.right :=DBReadWord(0,PluginShort,opt_PadRight ,0);
-  padding.bottom:=DBReadWord(0,PluginShort,opt_PadBottom,0);
-
   vTxtTimer:=DBReadWord(0,PluginShort,opt_TxtTimer,10);
   vFrmTimer:=DBReadWord(0,PluginShort,opt_FrmTimer,200);
   if vFrmTimer<100 then
     vFrmTimer:=vFrmTimer*1000;
 //  if vFrmTimer<100 then
 //   vFrmTimer:=200;
-  FrmBkPic:=DBReadString(0,PluginShort,opt_FrmBkPic,nil);
   if DBReadStruct(0,PluginShort,opt_FrmFont,@FrameLF,SizeOf(FrameLF))=0 then
     InitFrame;
 }

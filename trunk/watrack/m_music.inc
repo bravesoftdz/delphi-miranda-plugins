@@ -139,7 +139,10 @@ const
 }
   MS_WAT_RETURNGLOBAL:PAnsiChar = 'WATrack/GetMainStructure';
 
+//!! DON'T CHANGE THESE VALUES!
 const
+  WAT_CTRL_FIRST = 1;
+
   WAT_CTRL_PREV  = 1;
   WAT_CTRL_PLAY  = 2;
   WAT_CTRL_PAUSE = 3;
@@ -148,6 +151,8 @@ const
   WAT_CTRL_VOLDN = 6;
   WAT_CTRL_VOLUP = 7;
   WAT_CTRL_SEEK  = 8; // lParam is new position (sec)
+
+  WAT_CTRL_LAST  = 8;
 
 {
   wParam: button code (WAT_CTRL_* const)

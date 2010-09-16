@@ -4,64 +4,76 @@ interface
 uses wat_api;
 
 {$resource icons\waticons.res}
-{$include icons\waticons.inc}
 
 procedure RegisterButtonIcons;
+function GetIcon(action:integer;stat:integer):cardinal;
+function GetIconDescr(action:integer):pAnsiChar;
 
 const
-  ICOCtrlName = 'watrack_buttons.dll';
-
-var
-  CtrlsLoaded:boolean;
-
-const
-  // numbers
-  NumIcons    = 8;
-  NumButtons  = NumIcons-1;
-  NumCtrls    = 5;
-  NumIconsExt = NumButtons*3+1;
-  BtnHovered  = NumCtrls;
-  BtnPushed   = BtnHovered+NumCtrls;
-
-  bstNormal  = 0;
-  bstHovered = 1;
-  bstPressed = 2;
-
-const
-  CtrlButtons:array [0..6] of byte=(
-    WAT_CTRL_PREV, WAT_CTRL_PLAY, WAT_CTRL_PAUSE, WAT_CTRL_STOP,
-    WAT_CTRL_NEXT, WAT_CTRL_VOLDN,WAT_CTRL_VOLUP);
-  CtrlRemap:array [1..NumIcons] of integer = (1,2,3,4,5,16,17,20);
-  // Description
-  CtrlDescr:array [1..NumIconsExt] of PAnsiChar=(
-    'Prev'        ,'Play'        ,'Pause'        ,'Stop'        ,'Next',
-    'Prev Hovered','Play Hovered','Pause Hovered','Stop Hovered','Next Hovered',
-    'Prev Pushed' ,'Play Pushed' ,'Pause Pushed' ,'Stop Pushed' ,'Next Pushed',
-    'Volume Down'        ,'Volume Up',
-    'Volume Down Hovered','Volume Up Hovered','Slider',
-    'Volume Down Pushed' ,'Volume Up Pushed');
-  // IcoLib names
-  CtrlIcoNames:array [1..NumIconsExt] of PAnsiChar=(
-    'WATrack_Prev' ,'WATrack_Play' ,'WATrack_Pause' ,'WATrack_Stop' ,'WATrack_Next',
-    'WATrack_PrevH','WATrack_PlayH','WATrack_PauseH','WATrack_StopH','WATrack_NextH',
-    'WATrack_PrevP','WATrack_PlayP','WATrack_PauseP','WATrack_StopP','WATrack_NextP',
-    'WATrack_VolDn' ,'WATrack_VolUp',
-    'WATrack_VolDnH','WATrack_VolUpH','WATrack_Slider',
-    'WATrack_VolDnP','WATrack_VolUpP');
+  AST_NORMAL  = 0;
+  AST_HOVERED = 1;
+  AST_PRESSED = 2;
 
 implementation
 
 uses m_api,windows,mirutils;
 
+{$include icons\waticons.inc}
+
 const
+  ICOCtrlName = 'watrack_buttons.dll';
+
+const
+  CtrlsLoaded  :bool = false; // custom DLL loaded
   ButtonsLoaded:bool = false;
 
+const
+  CtrlIcoLib:array [WAT_CTRL_FIRST..WAT_CTRL_LAST,AST_NORMAL..AST_PRESSED] of
+    record descr,name:PAnsiChar; id:integer end = (
+    ((descr:'Prev'               ;name:'WATrack_Prev'   ; id:IDI_PREV_NORMAL),
+     (descr:'Prev Hovered'       ;name:'WATrack_PrevH'  ; id:IDI_PREV_HOVERED),
+     (descr:'Prev Pushed'        ;name:'WATrack_PrevP'  ; id:IDI_PREV_PRESSED)),
+
+    ((descr:'Play'               ;name:'WATrack_Play'   ; id:IDI_PLAY_NORMAL),
+     (descr:'Play Hovered'       ;name:'WATrack_PlayH'  ; id:IDI_PLAY_HOVERED),
+     (descr:'Play Pushed'        ;name:'WATrack_PlayP'  ; id:IDI_PLAY_PRESSED)),
+    
+    ((descr:'Pause'              ;name:'WATrack_Pause'  ; id:IDI_PAUSE_NORMAL),
+     (descr:'Pause Hovered'      ;name:'WATrack_PauseH' ; id:IDI_PAUSE_HOVERED),
+     (descr:'Pause Pushed'       ;name:'WATrack_PauseP' ; id:IDI_PAUSE_PRESSED)),
+
+    ((descr:'Stop'               ;name:'WATrack_Stop'   ; id:IDI_STOP_NORMAL),
+     (descr:'Stop Hovered'       ;name:'WATrack_StopH'  ; id:IDI_STOP_HOVERED),
+     (descr:'Stop Pushed'        ;name:'WATrack_StopP'  ; id:IDI_STOP_PRESSED)),
+
+    ((descr:'Next'               ;name:'WATrack_Next'   ; id:IDI_NEXT_NORMAL),
+     (descr:'Next Hovered'       ;name:'WATrack_NextH'  ; id:IDI_NEXT_HOVERED),
+     (descr:'Next Pushed'        ;name:'WATrack_NextP'  ; id:IDI_NEXT_PRESSED)),
+
+    ((descr:'Volume Down'        ;name:'WATrack_VolDn'  ; id:IDI_VOLDN_NORMAL),
+     (descr:'Volume Down Hovered';name:'WATrack_VolDnH' ; id:IDI_VOLDN_HOVERED),
+     (descr:'Volume Down Pushed' ;name:'WATrack_VolDnP' ; id:IDI_VOLDN_PRESSED)),
+
+    ((descr:'Volume Up'          ;name:'WATrack_VolUp'  ; id:IDI_VOLUP_NORMAL),
+     (descr:'Volume Up Hovered'  ;name:'WATrack_VolUpH' ; id:IDI_VOLUP_HOVERED),
+     (descr:'Volume Up Pushed'   ;name:'WATrack_VolUpP' ; id:IDI_VOLUP_PRESSED)),
+
+    ((descr:'Slider'             ;name:'WATrack_Slider' ; id:IDI_SLIDER_NORMAL),
+     (descr:'Slider Hovered'     ;name:'WATrack_SliderH'; id:IDI_SLIDER_HOVERED),
+     (descr:'Slider Pushed'      ;name:'WATrack_SliderP'; id:IDI_SLIDER_PRESSED))
+    );
+{  
+type
+  CtrlButtons=(
+      WAT_CTRL_PREV, WAT_CTRL_PLAY,  WAT_CTRL_PAUSE, WAT_CTRL_STOP,
+      WAT_CTRL_NEXT, WAT_CTRL_VOLDN, WAT_CTRL_VOLUP, WAT_CTRL_SLIDER);
+}
 procedure RegisterButtonIcons;
 var
   sid:TSKINICONDESC;
   buf,buf1:array [0..511] of AnsiChar;
   hIconDLL:THANDLE;
-  i:integer;
+  i,j:integer;
 begin
   if ButtonsLoaded then exit;
   sid.flags:=0;
@@ -86,38 +98,58 @@ begin
 
   if hIconDLL<>0 then
   begin
-    for i:=1 to NumIconsExt do
-    begin
-      sid.iDefaultIndex  :=i;
-      sid.hDefaultIcon   :=LoadImage(hIconDLL,MAKEINTRESOURCE(i),IMAGE_ICON,16,16,0);
-      sid.pszName        :=CtrlIcoNames[i];
-      sid.szDescription.a:=CtrlDescr[i];
-      PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
-      DestroyIcon(sid.hDefaultIcon);
-    end;
+    for i:=WAT_CTRL_FIRST to WAT_CTRL_LAST do
+      for j:=AST_NORMAL to AST_PRESSED do
+      begin
+        sid.hDefaultIcon   :=LoadImage(hIconDLL,
+            MAKEINTRESOURCE(CtrlIcoLib[i][j].id),IMAGE_ICON,16,16,0);
+        if sid.hDefaultIcon=0 then continue;
+
+        sid.iDefaultIndex  :=CtrlIcoLib[i][j].id;
+        sid.pszName        :=CtrlIcoLib[i][j].name; 
+        sid.szDescription.a:=CtrlIcoLib[i][j].descr;
+
+        PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+        DestroyIcon(sid.hDefaultIcon);
+      end;
   end
   else
   begin
     GetModuleFileNameA(0,buf,SizeOf(buf));
     PluginLink^.CallService(MS_UTILS_PATHTORELATIVE,dword(@buf),dword(@buf1));
     sid.pszDefaultFile.a:=buf1;
-    for i:=1 to NumIcons do
+    for i:=WAT_CTRL_FIRST to WAT_CTRL_LAST do
     begin
-      sid.iDefaultIndex  :=i;
-      sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(i),IMAGE_ICON,16,16,0);
-      sid.pszName        :=CtrlIcoNames[CtrlRemap[i]];
-      sid.szDescription.a:=CtrlDescr[CtrlRemap[i]];
+      with CtrlIcoLib[i,AST_NORMAL] do
+      begin
+        sid.iDefaultIndex  :=id;
+        sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(id),IMAGE_ICON,16,16,0);
+        sid.pszName        :=name;
+        sid.szDescription.a:=descr;
+      end;
       PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
       DestroyIcon(sid.hDefaultIcon);
     end;
-
   end;
+
   if hIconDLL<>0 then
   begin
     CtrlsLoaded:=true;
     FreeLibrary(hIconDLL);
   end;
   ButtonsLoaded:=true;
+
+end;
+
+function GetIcon(action:integer;stat:integer):cardinal;
+begin
+  result:=PluginLink^.CallService(MS_SKIN2_GETICON,0,
+      dword(CtrlIcoLib[action][stat].name));
+end;
+
+function GetIconDescr(action:integer):pAnsiChar;
+begin
+  result:=CtrlIcoLib[action][AST_NORMAL].descr;
 end;
 
 end.
