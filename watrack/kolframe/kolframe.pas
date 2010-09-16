@@ -5,14 +5,18 @@ interface
 
 implementation
 
-uses kol, io,windows,commdlg,messages,common,commctrl,
+uses kol, io,windows,commdlg,messages,common,commctrl, KOLCCtrls,
      wat_api,wrapper,global,m_api,hlpdlg,macros,dbsettings,waticons,mirutils;
 
+{$include frm_data.inc}
 {$include frm_vars.inc}
 {$include frm_opt.inc}
 {$include frm_rc.inc}
-{$include frm_icons.inc}
 {$include frm_icobutton.inc}
+{$include frm_icogroup.inc}
+{$include frm_trackbar.inc}
+{$include frm_text.inc}
+{$include frm_frame.inc}
 
 // ---------------- basic frame functions ----------------
 
@@ -100,44 +104,13 @@ begin
   end;
 end;
 
-//TOnEvent = procedure( Sender: PObj ) of object;
-
-function CreateFrameWindow(parent:HWND):THANDLE;
+function IconChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
   result:=0;
-  FrameCtrl:=NewAlienPanel(parent,esNone);
-  if FrameCtrl<>nil then
+  if FrameId<>0 then
   begin
-    result:=FrameCtrl.GetWindowHandle;
-    // adding elements here: textblock(?), buttons, trackbar
-    with CreateIcoButton(FrameCtrl,'WATrack_VolDn','WATrack_VolDnH','WATrack_VolDnP')^ do // VolDn
-    begin
-      OnClick:=BtnClick(WAT_CTRL_VOLDN);
-    end;
-    with CreateIcoButton(FrameCtrl,'WATrack_VolUp','WATrack_VolUpH','WATrack_VolUpP')^ do // VolUp
-    begin
-      OnClick:=BtnClick(WAT_CTRL_VOLUP);
-    end;
-    with CreateIcoButton(FrameCtrl,'WATrack_Prev','WATrack_PrevH','WATrack_PrevP')^ do // Prev
-    begin
-      OnClick:=BtnClick(WAT_CTRL_PREV);
-    end;
-    with CreateIcoButton(FrameCtrl,'WATrack_Play','WATrack_PlayH','WATrack_PlayP')^ do // Play
-    begin
-      OnClick:=BtnClick(WAT_CTRL_PLAY);
-    end;
-    with CreateIcoButton(FrameCtrl,'WATrack_Pause','WATrack_PauseH','WATrack_PauseP')^ do // Pause
-    begin
-      OnClick:=BtnClick(WAT_CTRL_PAUSE);
-    end;
-    with CreateIcoButton(FrameCtrl,'WATrack_Stop','WATrack_StopH','WATrack_StopP')^ do // Stop
-    begin
-      OnClick:=BtnClick(WAT_CTRL_STOP);
-    end;
-    with CreateIcoButton(FrameCtrl,'WATrack_Next','WATrack_NextH','WATrack_NextP')^ do // Next
-    begin
-      OnClick:=BtnClick(WAT_CTRL_NEXT);
-    end;
+    ShowWindow(FrameWnd,SW_HIDE);
+    ShowWindow(FrameWnd,SW_SHOW);
   end;
 end;
 
@@ -145,8 +118,6 @@ procedure CreateFrame(parent:HWND);
 var
   CLFrame:TCLISTFrame;
   rc:TRECT;
-  tmp:HWND;
-  p:PSongInfo;
 begin
   if PluginLink^.ServiceExists(MS_CLIST_FRAMES_ADDFRAME)=0 then
     exit;
@@ -199,7 +170,7 @@ begin
   begin
     PluginLink^.UnhookEvent(plStatusHook);
     CallService(MS_CLIST_FRAMES_REMOVEFRAME,FrameId,0);
-    FrameCtrl.Free;
+    DestroyFrameWindow;
     FrameId:=-1;
   end;
   FrameWnd:=0;

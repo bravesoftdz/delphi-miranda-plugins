@@ -1,21 +1,54 @@
-{}
+{Buttons}
 type
-  pIcoButton = ^tIcoButton;
-  tIcoButton = object(TControl)
-    x: integer;
-    y: integer;
+  pIcoBtnData = ^tIcoBtnData;
+  tIcoBtnData = object(TObj)
     ico_normal :PIcon;
-    ico_hover  :PIcon;
+    ico_hovered:PIcon;
     ico_pressed:PIcon;
 
+    action:integer;
+    active:PIcon; // one of ico_*
+
     destructor Destroy; virtual;
+    procedure MouseEnter(Sender: PObj);
+    procedure MouseLeave(Sender: PObj);
+    procedure CtrlBtnClick(Sender: PObj);
   end;
 
-destructor tIcoButton.Destroy;
+procedure tIcoBtnData.CtrlBtnClick(Sender: PObj);
+var
+  D: PIcoBtnData;
 begin
-  ico_normal.Destroy;
-  if ico_hover  <>nil then ico_hover  .Destroy;
-  if ico_pressed<>nil then ico_pressed.Destroy;
+  D:=Pointer(PControl(Sender).CustomObj);
+  CallService(MS_WAT_PRESSBUTTON,D.action,0);
+end;
+
+procedure tIcoBtnData.MouseEnter(Sender: PObj);
+var
+  D: PIcoBtnData;
+begin
+  D:=Pointer(PControl(Sender).CustomObj);
+  D.active:=D.ico_hovered;
+  PControl(Sender).Update;
+  PControl(Sender).Parent.Update;
+end;
+
+procedure tIcoBtnData.MouseLeave(Sender: PObj);
+var
+  D: PIcoBtnData;
+begin
+  D:=Pointer(PControl(Sender).CustomObj);
+  if D.active=D.ico_hovered then //!!!! for case when mouse button pressed and mouse moved
+    D.active:=D.ico_normal;
+  PControl(Sender).Update;
+  PControl(Sender).Parent.Update;
+end;
+
+destructor tIcoBtnData.Destroy;
+begin
+  ico_normal.Free;
+  if ico_hovered<>nil then ico_hovered.Free;
+  if ico_pressed<>nil then ico_pressed.Free;
   inherited;
 end;
 
@@ -23,76 +56,94 @@ function WndProcIcoButton( Sender: PControl; var Msg: TMsg; var Rslt:Integer ): 
 var
   k:HDC;
   PaintStruct: TPaintStruct;
+  D: PIcoBtnData;
+  tp:TPOINT;
 begin
-//  D:=Pointer(Sender.CustomObj);
+  D:=Pointer(Sender.CustomObj);
   Result:=false;
   case msg.message of
-{
-    WM_CREATE : begin
-      If D.f_image.Handle<>0 then 
-      SetWindowRgn(Msg.hwnd,BitmapToRegion(D.f_image.Handle,D.ts_color), True);
-    end;
-}
+
     WM_PAINT: begin
       k:=Msg.wParam;
       if k=0 then k:= BeginPaint(Sender.Handle, PaintStruct);
-//      D.f_image.Draw(k,0,0);
+      D.active.Draw(k,0,0);
       if Msg.wParam=0 then EndPaint(Sender.Handle, PaintStruct);
       Result:=True;
     end;
-{
-    WM_DRAWITEM: begin
-    end;
-}
+
     WM_LBUTTONDBLCLK,
     WM_LBUTTONDOWN : begin  // Change from normal to pressed
-{
-      Sender.SetPosition(Sender.Position.X-2,Sender.Position.Y-2);
+
+      if D.ico_pressed<>nil then
+        D.active:=D.ico_pressed
+      else
+        Sender.SetPosition(Sender.Position.X-2,Sender.Position.Y-2);
       Sender.Update;
       Sender.Parent.Update;
-}
+
     end;
 
     WM_LBUTTONUP: begin // Change from pressed to normal
-{
-      Sender.SetPosition(sender.Position.X+2,sender.Position.Y+2);
+
+      if D.ico_pressed<>nil then
+      begin
+        tp.X:=Loword(msg.LParam);
+        tp.Y:=msg.LParam shr 16;
+        if PtInRect(Sender.BoundsRect,tp) then  //!! mouse still above button?
+          D.active:=D.ico_hovered
+        else
+          D.active:=D.ico_normal;
+      end
+      else
+        Sender.SetPosition(sender.Position.X+2,sender.Position.Y+2);
       Sender.Update;
       Sender.Parent.Update;
-}
+
     end;
   end;
 end;
 
 // variant - through remap array by number
 // one way more - to fill ico handles at start (hicon - can b cnhanged, so - hIcoLib)
-function CreateIcoButton(AOwner: PControl; normal,hover,pressed:pAnsiChar):pIcoButton;
+function CreateIcoButton(AOwner: PControl; action:integer):PControl;
 var
   ico:HICON;
+  D: PIcoBtnData;
 begin
-  Result:=pIcoButton(_NewControl( AOwner, 'BUTTON',
-                      WS_CHILD or WS_VISIBLE or
-                      BS_USERBUTTON or BS_CHECKBOX or
-                      BS_DEFPUSHBUTTON, False, nil ));
-  Result.AttachProc(WndProcIcoButton);
-  Result.ico_normal:=NewIcon;
-  Result.ico_normal.Size     :=16;
-  Result.ico_normal.Handle   :=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(normal));
-  Result.ico_normal.ShareIcon:=true;
+  Result:=NewBitBtn(AOwner,'',[bboNoBorder,bboNoCaption],glyphOver,0,0);
+  Result.LikeSpeedButton.Flat:=true;
+  Result.Transparent:=true;
 
-  ico:=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(hover));
+  New(D, Create);
+  Result.CustomObj:=D;
+
+  Result.OnMouseEnter:=D.MouseEnter;
+  Result.OnMouseLeave:=D.MouseLeave;
+  Result.OnClick     :=D.CtrlBtnClick;
+
+  D.action:=action;
+
+  D.ico_normal:=NewIcon;
+  D.ico_normal.ShareIcon:=true;
+  D.ico_normal.Handle   :=GetIcon(action,AST_NORMAL);
+  D.active:=D.ico_normal;
+
+  ico:=GetIcon(action,AST_HOVERED);
   if ico<>0 then
   begin
-    Result.ico_hover:=NewIcon;
-    Result.ico_hover.Size     :=16;
-    Result.ico_hover.Handle   :=ico;
-    Result.ico_hover.ShareIcon:=true;
+    D.ico_hovered:=NewIcon;
+    D.ico_hovered.ShareIcon:=true;
+    D.ico_hovered.Handle   :=ico;
   end;
-  ico:=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(pressed));
+  ico:=GetIcon(action,AST_PRESSED);
   if ico<>0 then
   begin
-    Result.ico_pressed:=NewIcon;
-    Result.ico_pressed.Size     :=16;
-    Result.ico_pressed.Handle   :=ico;
-    Result.ico_pressed.ShareIcon:=true;
+    D.ico_pressed:=NewIcon;
+    D.ico_pressed.ShareIcon:=true;
+    D.ico_pressed.Handle   :=ico;
   end;
+
+  Result.SetSize(16,16);
+  Result.SetPosition(0,0);
+  Result.AttachProc(WndProcIcoButton);
 end;
