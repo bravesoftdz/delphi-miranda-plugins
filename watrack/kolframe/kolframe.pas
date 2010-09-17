@@ -8,8 +8,62 @@ implementation
 uses kol, io,windows,commdlg,messages,common,commctrl, KOLCCtrls,
      wat_api,wrapper,global,m_api,hlpdlg,macros,dbsettings,waticons,mirutils;
 
+{$R frm.res}
+
 {$include frm_data.inc}
 {$include frm_vars.inc}
+
+// ---------------- frame functions ----------------
+
+procedure SetFrameTitle(FrameId:integer;title:PAnsiChar;icon:HICON);
+begin
+  CallService(MS_CLIST_FRAMES_SETFRAMEOPTIONS,(FrameId shl 16)+FO_TBNAME,dword(title));
+  CallService(MS_CLIST_FRAMES_SETFRAMEOPTIONS,(FrameId shl 16)+FO_ICON,icon);
+  CallService(MS_CLIST_FRAMES_UPDATEFRAME,FrameId,FU_TBREDRAW);
+end;
+
+// -----------------------
+
+function IsFrameMinimized(FrameId:integer):bool;
+begin
+  result:=(CallService(MS_CLIST_FRAMES_GETFRAMEOPTIONS,
+          (FrameId shl 16)+FO_FLAGS,0) and F_UNCOLLAPSED)=0;
+end;
+
+function IsFrameFloated(FrameId:integer):bool;
+begin
+  result:=CallService(MS_CLIST_FRAMES_GETFRAMEOPTIONS,
+          (FrameId shl 16)+FO_FLOATING,0)>0;
+end;
+
+function IsFrameHidden(FrameId:integer):bool;
+begin
+  result:=(CallService(MS_CLIST_FRAMES_GETFRAMEOPTIONS,
+          (FrameId shl 16)+FO_FLAGS,0) and F_VISIBLE)=0;
+end;
+
+procedure HideFrame(FrameId:integer);
+begin
+  if not IsFrameHidden(FrameId) then
+  begin
+    CallService(MS_CLIST_FRAMES_SHFRAME,FrameId,0);
+    HiddenByMe:=true;
+  end;
+end;
+
+function ShowFrame(FrameId:integer):integer;
+begin
+  result:=0;
+  if IsFrameHidden(FrameId) then
+    if HiddenByMe then
+    begin
+      CallService(MS_CLIST_FRAMES_SHFRAME,FrameId,0);
+      HiddenByMe:=false;
+    end
+    else
+      result:=1;
+end;
+
 {$include frm_opt.inc}
 {$include frm_rc.inc}
 {$include frm_icobutton.inc}
@@ -27,8 +81,11 @@ var
   buf:array [0..127] of AnsiChar;
   bufw:array [0..511] of WideChar;
   tmp:integer;
+  FrameWnd:HWND;
 begin
   result:=0;
+  FrameWnd:=FrameCtrl.Form.GetWindowHandle;
+
   case wParam of
 {
     WAT_EVENT_NEWTEMPLATE: begin
@@ -107,10 +164,13 @@ end;
 function IconChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
   result:=0;
-  if FrameId<>0 then
+  with FrameCtrl^ do
   begin
-    ShowWindow(FrameWnd,SW_HIDE);
-    ShowWindow(FrameWnd,SW_SHOW);
+    if FrameId<>0 then
+    begin
+      ShowWindow(Form.GetWindowHandle,SW_HIDE);
+      ShowWindow(Form.GetWindowHandle,SW_SHOW);
+    end;
   end;
 end;
 
@@ -118,6 +178,7 @@ procedure CreateFrame(parent:HWND);
 var
   CLFrame:TCLISTFrame;
   rc:TRECT;
+  FrameWnd:HWND;
 begin
   if PluginLink^.ServiceExists(MS_CLIST_FRAMES_ADDFRAME)=0 then
     exit;
@@ -143,10 +204,9 @@ begin
       TBName.a:=PluginShort;
     end;
     FrameHeight:=CLFrame.height;
-    FrmBrush:=CreateSolidBrush(FrmBkColor);
 
-    FrameId:=CallService(MS_CLIST_FRAMES_ADDFRAME,dword(@CLFrame),0);
-    if FrameId>=0 then
+    FrameCtrl.FrameId:=CallService(MS_CLIST_FRAMES_ADDFRAME,dword(@CLFrame),0);
+    if FrameCtrl.FrameId>=0 then
     begin
       plStatusHook:=PluginLink^.HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);
     end;
@@ -155,6 +215,7 @@ end;
 
 procedure DestroyFrame;
 begin
+{
   if hFrmTimer<>0 then
   begin
     KillTimer(FrameWnd,hFrmTimer);
@@ -165,24 +226,21 @@ begin
     KillTimer(FrameWnd,hTxtTimer);
     hTxtTimer:=0;
   end;
-
-  if FrameId>=0 then
+}
+  if FrameCtrl.FrameId>=0 then
   begin
     PluginLink^.UnhookEvent(plStatusHook);
-    CallService(MS_CLIST_FRAMES_REMOVEFRAME,FrameId,0);
+    CallService(MS_CLIST_FRAMES_REMOVEFRAME,FrameCtrl.FrameId,0);
     DestroyFrameWindow;
-    FrameId:=-1;
+    FrameCtrl.FrameId:=-1;
   end;
-  FrameWnd:=0;
 end;
+
+{$include frm_dlg1.inc}
 
 // ---------------- base interface procedures ----------------
 
 function InitProc(aGetStatus:boolean=false):integer;
-var
-  buf:array [0..255] of WideChar;
-  size:integer;
-  pc:pWideChar;
 begin
   if aGetStatus then
   begin
@@ -196,25 +254,12 @@ begin
     SetModStatus(1);
   result:=1;
 
-  FrameWnd:=0;
-  FrameId :=-1;
-  TotalTime:=0;
-  isFreeImagePresent:=PluginLink^.ServiceExists(MS_IMG_LOAD)<>0;
   loadframe;
 
   RegisterButtonIcons;
   sic:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
 
   CreateFrame(0);
-
-  FillChar(buf,SizeOf(buf),0);
-  StrCopyW(buf,TranslateW('All Bitmaps'));
-  StrCatW (buf,' (*.bmp;*.jpg;*.gif;*.png)');
-  pc:=StrEndW(buf)+1;
-  StrCopyW(pc,'*.BMP;*.RLE;*.JPG;*.JPEG;*.GIF;*.PNG');
-  size:=(StrEndW(pc)+2-@buf)*SizeOf(WideChar);
-  mGetMem(BMPFilter,size);
-  move(buf,BMPFilter^,size);
 end;
 
 procedure DeInitProc(aSetDisable:boolean);
@@ -223,22 +268,24 @@ begin
     SetModStatus(0);
 
   PluginLink^.UnhookEvent(sic);
-  mFreeMem(BMPFilter);
   mFreeMem(FrameText);
   DestroyFrame;
 end;
-{
+
 function AddOptionsPage(var tmpl:pAnsiChar;var proc:pointer;var name:PAnsiChar):integer;
 const
   count:integer=2;
 begin
+{
   if count=0 then
     count:=2;
   if count=2 then
   begin
+}
     tmpl:='FRAME';
-    proc:=@DlgProcOptions5;
+    proc:=@FrameViewDlg;
     name:='Frame (main)';
+{
   end
   else
   begin
@@ -249,8 +296,10 @@ begin
 
   dec(count);
   result:=count;
-end;
 }
+  result:=0;
+end;
+
 var
   Frame:twModule;
 
@@ -259,7 +308,7 @@ begin
   Frame.Next      :=ModuleLink;
   Frame.Init      :=@InitProc;
   Frame.DeInit    :=@DeInitProc;
-  Frame.AddOption :=nil;//@AddOptionsPage;
+  Frame.AddOption :=@AddOptionsPage;
   Frame.ModuleName:='Frame';
   ModuleLink      :=@Frame;
 end;

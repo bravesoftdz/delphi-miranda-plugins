@@ -26,7 +26,7 @@ const
   scText       = $0004;
   scVolume     = $0008;
   scGap        = $0010;
-//  scAll        = $000F;
+  scAll        = $000F;
 
   ppLeft   = 0;
   ppRight  = 1;

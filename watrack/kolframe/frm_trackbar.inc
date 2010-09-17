@@ -2,8 +2,6 @@
 type
   pAWKTrackbar = ^tAWKTrackbar;
   tAWKTrackbar = object(TObj)
-    tmpX:integer;
-
     procedure CtrlResize(Sender: PObj);
     procedure Erase(Sender: PControl; DC: HDC);
     procedure Paint(Sender: PControl; DC: HDC);
@@ -19,7 +17,7 @@ end;
 function CoordToPos(Trackbar:PTrackbar;x:integer):integer;
 var
   range:integer;
-  rmin,rmax,cl:integer;
+  rmin,rmax:integer;
   offsetthumb,width:integer;
   rc:TRect;
 begin
@@ -32,8 +30,6 @@ begin
   rc:=Trackbar.ChannelRect;
   width:= (rc.right-rc.left)-(offsetthumb*2)-1;
   result:=(range*(x-rc.left-offsetthumb)) div width;
-
-//  result:=rmin+((range*x) div (rc.right-rc.left)); // logic/phys * phys coord + start
 
   inc(result,rmin);
   if result>rmax then
@@ -94,9 +90,7 @@ procedure tAWKTrackbar.Paint(Sender: PControl; DC: HDC);
 var
   rc, rc1:TRECT;
   w:integer;
-  D:PIcoBtnData;
 begin
-  D:=Pointer(Sender.Children[0].CustomObj); // slider
   SendMessage(Sender.Handle,TBM_GETTHUMBRECT,0,dword(@rc));
 
   w:=rc.right-rc.left;
@@ -108,7 +102,6 @@ begin
   rc1.Bottom:=rc1.Top+4;
   DrawEdge(DC,rc1,EDGE_SUNKEN,BF_RECT or BF_ADJUST);
   Sender.Children[0].Left:=rc.Left;
-//  DrawIconEx(DC,rc.left,rc.top,D.active,16,16,0,0,DI_NORMAL);
 end;
 
 function MakeNewTrackBar(AOwner:PControl):PTrackbar;
@@ -119,7 +112,6 @@ begin
   New(D, Create);
   with result^ do
   begin
-//    Transparent:=true;
     CustomObj:=D;
     SetPosition(AOwner.Left+8,AOwner.Top+AOwner.Height-18);
     SetSize(AOwner.Width-16,18);
@@ -129,9 +121,9 @@ begin
     RangeMin:=0;
     RangeMax:=100;
 
-    OnResize:=D.CtrlResize;
+    OnResize    :=D.CtrlResize;
     OnEraseBkGnd:=D.Erase;
-    OnPaint :=D.Paint;
+    OnPaint     :=D.Paint;
   end;
 
   with CreateIcoButton(result,WAT_CTRL_SEEK)^ do
