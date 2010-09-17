@@ -5,14 +5,14 @@ const
 type
   pIcoGrpData = ^tIcoGrpData;
   tIcoGrpData = object(TObj)
+  private
+    ShowVolume:bool;
+    ButtonGap:bool;
+
     procedure GroupResize(Sender: PObj);
     procedure SaveSettings;
     procedure LoadSettings;
   end;
-
-procedure ShowHideVolBtn;
-begin
-end;
 
 procedure tIcoGrpData.SaveSettings;
 begin
@@ -20,28 +20,31 @@ end;
 
 procedure tIcoGrpData.LoadSettings;
 begin
-  ButtonGap   :=DBReadByte (0,PluginShort,opt_ButtonGap ,BST_UNCHECKED);
 end;
 
 procedure tIcoGrpData.GroupResize(Sender: PObj);
 var
   i,lWidth,lOffs,gap:integer;
 begin
-  if scGap in ShowControls then
+  if ButtonGap then
     gap:=BtnGap
   else
     gap:=0;
+
+  PControl(Sender)^.Children[0].Visible:=ShowVolume;
+  PControl(Sender)^.Children[1].Visible:=ShowVolume;
+
   with PControl(Sender)^ do
   begin
     lWidth:=(ChildCount-2)*(16+gap)-gap;
-    if scVolume in ShowControls  then
+    if ShowVolume then
       Inc(lWidth, VolBtnDist+2*(16+gap));
     Width:=lWidth; // reson to call this code twice
     Left:=(Parent.Width-Width) div 2;
   end;
 
   lOffs:=0;
-  if scVolume in ShowControls then
+  if ShowVolume then
   begin
     PControl(Sender)^.Children[0].Left:=lOffs;
     Inc(lOffs,16+gap);
@@ -57,7 +60,7 @@ begin
 
 end;
 
-function MakeNewButtonGroup(AOwner:PControl):PControl;
+function MakeNewButtonGroup(AOwner:PControl;aVolume,aGap:bool):PControl;
 var
   D:pIcoGrpData;
 begin
@@ -74,28 +77,15 @@ begin
     OnResize:=D.GroupResize;
   end;
 
-  include(ShowControls,scVolume);
+  CreateIcoButton(result,WAT_CTRL_VOLDN);
+  CreateIcoButton(result,WAT_CTRL_VOLUP);
+  CreateIcoButton(result,WAT_CTRL_PREV);
+  CreateIcoButton(result,WAT_CTRL_PLAY);
+  CreateIcoButton(result,WAT_CTRL_PAUSE);
+  CreateIcoButton(result,WAT_CTRL_STOP);
+  CreateIcoButton(result,WAT_CTRL_NEXT);
 
-  with CreateIcoButton(result,WAT_CTRL_VOLDN)^ do
-  begin
-  end;
-  with CreateIcoButton(result,WAT_CTRL_VOLUP)^ do
-  begin
-  end;
-  with CreateIcoButton(result,WAT_CTRL_PREV)^ do
-  begin
-  end;
-  with CreateIcoButton(result,WAT_CTRL_PLAY)^ do
-  begin
-  end;
-  with CreateIcoButton(result,WAT_CTRL_PAUSE)^ do
-  begin
-  end;
-  with CreateIcoButton(result,WAT_CTRL_STOP)^ do
-  begin
-  end;
-  with CreateIcoButton(result,WAT_CTRL_NEXT)^ do
-  begin
-  end;
+  D.ShowVolume:=aVolume;
+  D.ButtonGap :=aGap;
 
 end;

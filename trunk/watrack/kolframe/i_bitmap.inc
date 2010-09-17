@@ -24,36 +24,28 @@ begin
       dh:=dst.bottom;
     end;
   end
-  else
-  begin
-    dw:=src.right;
-    dh:=src.bottom;
-  end;
-{
-  if (Mode and frbkStretchX)<>0 then
+  else if (Mode and frbkStretchX)<>0 then
   begin
     dw:=dst.right;
     if (Mode and frbkProportional)<>0 then
       dh:=dw*src.bottom div src.right
     else
       dh:=src.bottom;
-  end;
-
-  if (Mode and frbkStretchY)<>0 then
+  end
+  else if (Mode and frbkStretchY)<>0 then
   begin
     dh:=dst.bottom;
     if (Mode and frbkProportional)<>0 then
       dw:=dh*src.right div src.bottom
     else
       dw:=src.right;
-  end;
-
-  if (Mode and frbkStretch)=0 then
+  end
+  else
   begin
     dw:=src.right;
     dh:=src.bottom;
   end;
-}
+
   if (Mode and frbkBottom)<>0 then
   begin
     if dh<=dst.bottom then
@@ -229,7 +221,8 @@ begin
 
   DeleteObject(SelectObject(BkDC,CreateDIB32(dc,rc.right-rc.left,rc.bottom-rc.top)));
 
-  br:=CreateSolidBrush(FrmBkColor);
+  //fill empty space by BK color
+  br:=CreateSolidBrush(BkColor);
   FillRect(BkDC,rc,br);
   DeleteObject(br);
 
@@ -245,10 +238,10 @@ begin
   if (padding.left+padding.right)<(dst.right-dst.left) then
     dec(dst.right,padding.left+padding.right);
 
-  CalcRect(src,dst,FrmBkMode);
+  CalcRect(src,dst,BkMode); // calculate final picture rect
 
   w:=1;
-  if (FrmBkMode and frbkTileX)<>0 then
+  if (BkMode and frbkTileX)<>0 then
   begin
     x:=dst.right;
     while x<rc.right do
@@ -258,7 +251,7 @@ begin
     end;
   end;
   h:=1;
-  if (FrmBkMode and frbkTileY)<>0 then
+  if (BkMode and frbkTileY)<>0 then
   begin
     y:=dst.bottom;
     while y<rc.bottom do
@@ -291,7 +284,6 @@ begin
       dec(w);
     end;
 
-  DeleteObject(SelectObject(hdcbmp,hOld));
+  SelectObject(hdcbmp,hOld);
   DeleteDC(hdcbmp);
-  BkBitmap:=0;
 end;
