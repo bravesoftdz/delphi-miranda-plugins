@@ -174,12 +174,6 @@ begin
   end
   else
   begin
-{    langstr[0]:='a';
-    langstr[1]:='u';
-    langstr[2]:='t';
-    langstr[3]:='o';
-    i:=4;
-}
     i:=0;
   end;
   langstr[i]:='%'; inc(i);
@@ -362,6 +356,12 @@ begin
           case loword(wParam) of
             IDC_FRAME_SWITCH: begin
               GetWindowTextA(GetDlgItem(Dialog,IDC_FRAME_FROM),tfrom,3);
+              if tfrom[0]='?' then
+              begin
+                tfrom[0]:='E';
+                tfrom[1]:='n';
+                tfrom[2]:=#0;
+              end;
               GetWindowTextA(GetDlgItem(Dialog,IDC_FRAME_TO  ),tto  ,3);
               SetWindowTextA(GetDlgItem(Dialog,IDC_FRAME_FROM),tto);
               SetWindowTextA(GetDlgItem(Dialog,IDC_FRAME_TO  ),tfrom);
