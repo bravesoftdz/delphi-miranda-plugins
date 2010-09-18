@@ -29,6 +29,7 @@ type
     Form     :PControl;
     Trackbar :PTrackbar;
     Buttons  :PControl;
+    TextBlock:PControl;
 
     destructor Destroy; virtual;
     procedure Paint(Sender: PControl; DC: HDC);
@@ -40,11 +41,30 @@ type
     procedure SaveSettings;
     procedure LoadSettings;
     procedure SetAlpha(value:integer);
+    procedure RefreshPicture(cover:PAnsiChar=nil);
 
   end;
 
 var
   FrameCtrl:PWATFrame;
+
+const
+//  opt_HiddenByMe:PAnsiChar = 'frame/hiddenbyme';
+  opt_ShowCtrls :PAnsiChar = 'frame/showcontrols';
+  opt_FrmUsePic :PAnsiChar = 'frame/frmusepic';
+  opt_FrmUseCvr :PAnsiChar = 'frame/frmusecover';
+  opt_FrmBkColor:PAnsiChar = 'frame/frmbkcolor';
+  opt_FrmBkPic  :PAnsiChar = 'frame/frmbkpic';
+  opt_FrmBkMode :PAnsiChar = 'frame/frmbkmode';
+//  opt_FrmHeight :PAnsiChar = 'frame/frmheight';
+  opt_FrmAlpha  :PAnsiChar = 'frame/frmalpha';
+  opt_HideFrameM:PAnsiChar = 'frame/hideframem';
+  opt_HideFrameP:PAnsiChar = 'frame/hideframep';
+  opt_FrmTimer  :PAnsiChar = 'frame/frametimer';
+  opt_PadLeft   :PAnsiChar = 'frame/paddingleft';
+  opt_PadTop    :PAnsiChar = 'frame/paddingtop';
+  opt_PadRight  :PAnsiChar = 'frame/paddingright';
+  opt_PadBottom :PAnsiChar = 'frame/paddingbottom';
 
 procedure TWATFrame.SaveSettings;
 var
@@ -65,9 +85,21 @@ begin
   DBWriteWord  (0,PluginShort,opt_PadBottom ,padding.bottom);
   DBWriteString(0,PluginShort,opt_FrmBkPic  ,BkDefFile);
 
+  RefreshPicture;
+  Trackbar.Visible:=(ShowControls and scTrackBar)<>0;
+  Buttons .Visible:=(ShowControls and scButtons )<>0;
+
   D:=Pointer(FrameCtrl.Buttons.CustomObj);
-  D.ShowVolume:=(ShowControls and scVolume)<>0;
+  D.ShowVolume:=(ShowControls and scVolume)<>0; // like Buttons.Childrens[0].Visible
   D.ButtonGap :=(ShowControls and scGap   )<>0;
+
+//  InvalidateRect(FrameCtrl.Buttons.GetWindowHandle,nil,true);
+  InvalidateRect(FrameCtrl.Form.GetWindowHandle,nil,true);
+//  FrameCtrl.Buttons.Update;
+  SendMessage(FrameCtrl.Buttons.GetWindowHandle,WM_SIZE,0,0);
+  FrameCtrl.Form.Update;
+//  RedrawWindow(FrameCtrl.Form.GetWindowHandle,nil,0,
+//      RDW_INVALIDATE or RDW_ALLCHILDREN	or RDW_UPDATENOW);
 end;
 
 procedure TWATFrame.LoadSettings;
@@ -139,6 +171,20 @@ begin
   FrameCtrl.BkBitmap:=0;
 end;
 
+procedure TWATFrame.RefreshPicture(cover:PAnsiChar=nil);
+begin
+  if BkBitmap<>0 then
+    BkTimerProc(0,0,0,0); // remove old picture
+
+  FrameResize(nil); // clear frame bitmap buffer
+
+  if UseBkPicture then
+    BkBitmap:=LoadBkPicture(cover,true,BkDefFile);
+
+  if FrameCtrl.BkBitmap=HBITMAP(-1) then // same file
+    FrameCtrl.BkBitmap:=0;
+end;
+
 procedure TWATFrame.Paint(Sender: PControl; DC: HDC);
 var
   rc: TRect;
@@ -148,9 +194,12 @@ begin
   if UseBkPicture then
   begin
    if BkDC=0 then
-    begin
+   begin
       if BkBitmap=0 then
-        BkBitmap:=LoadBkPicture(BkFile);
+      begin
+        if (BkFile<>nil) and (BkFile^<>#0) then
+          BkBitmap:=CallService(MS_UTILS_LOADBITMAP,0,dword(BkFile));
+      end;
 
       if BkBitmap<>0 then
       begin
@@ -257,6 +306,8 @@ begin
         (FrameCtrl.ShowControls and scGap)<>0);
 
     FrameCtrl.Trackbar:=MakeNewTrackbar(FrameCtrl.Form);
+
+    MakeNewTextBlock(FrameCtrl.Form);
 
     if FrameCtrl.UseBkPicture then
     begin

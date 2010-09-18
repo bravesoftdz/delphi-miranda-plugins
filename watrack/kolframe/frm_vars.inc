@@ -10,7 +10,7 @@ var
   FrameHeight:dword;
 
   FrameText:pWideChar;
-  FrameLF:TLOGFONT;
+  FrmBkColor,
   FrmTxtColor:TCOLORREF;
   RollStep,
   RollGap,

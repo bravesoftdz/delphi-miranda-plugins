@@ -64,11 +64,11 @@ begin
       result:=1;
 end;
 
-{$include frm_opt.inc}
 {$include frm_rc.inc}
 {$include frm_icobutton.inc}
 {$include frm_icogroup.inc}
 {$include frm_trackbar.inc}
+{$include frm_chunk.inc}
 {$include frm_text.inc}
 {$include frm_frame.inc}
 
@@ -174,6 +174,9 @@ begin
   end;
 end;
 
+const
+  opt_FrmHeight :PAnsiChar = 'frame/frmheight';
+
 procedure CreateFrame(parent:HWND);
 var
   CLFrame:TCLISTFrame;
@@ -214,6 +217,8 @@ begin
 end;
 
 procedure DestroyFrame;
+var
+  h:integer;
 begin
 {
   if hFrmTimer<>0 then
@@ -230,6 +235,12 @@ begin
   if FrameCtrl.FrameId>=0 then
   begin
     PluginLink^.UnhookEvent(plStatusHook);
+
+    h:=CallService(MS_CLIST_FRAMES_GETFRAMEOPTIONS,
+        FO_HEIGHT+(FrameCtrl.FrameId shl 16),0);
+    if h>0 then
+    DBWriteWord(0,PluginShort,opt_FrmHeight,h);
+
     CallService(MS_CLIST_FRAMES_REMOVEFRAME,FrameCtrl.FrameId,0);
     DestroyFrameWindow;
     FrameCtrl.FrameId:=-1;
@@ -237,6 +248,20 @@ begin
 end;
 
 {$include frm_dlg1.inc}
+{.$include frm_dlg2.inc}
+
+const
+  opt_ModStatus:PAnsiChar = 'module/frame';
+
+function GetModStatus:integer;
+begin
+  result:=DBReadByte(0,PluginShort,opt_ModStatus,1);
+end;
+
+procedure SetModStatus(stat:integer);
+begin
+  DBWriteByte(0,PluginShort,opt_modStatus,stat);
+end;
 
 // ---------------- base interface procedures ----------------
 
@@ -253,8 +278,6 @@ begin
   else
     SetModStatus(1);
   result:=1;
-
-  loadframe;
 
   RegisterButtonIcons;
   sic:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
@@ -290,7 +313,7 @@ begin
   else
   begin
     tmpl:='FRAME2';
-    proc:=@DlgProcOptions51;
+    proc:=@FrameTextDlg;
     name:='Frame (text)';
   end;
 

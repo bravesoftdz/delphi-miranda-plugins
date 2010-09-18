@@ -39,6 +39,8 @@ begin
 end;
 
 function FrameViewDlg(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+const
+  DlgInited:boolean=false;
 var
   tmp,tmp1:cardinal;
   buf1:PAnsiChar;
@@ -51,8 +53,9 @@ begin
   result:=0;
   case hMessage of
     WM_INITDIALOG: begin
+      DlgInited:=false;
+
       TranslateDialogDefault(Dialog);
-//      Changed:=DLGED_INIT;
       with FrameCtrl^ do
       begin
         SendDlgItemMessage(Dialog,IDC_FRMALPHA,TBM_SETRANGE,0,MAKELONG(0,255));
@@ -103,12 +106,12 @@ begin
       end;
       SwitchBk(Dialog);
 
-      changed:=0;
+      DlgInited:=true;
     end;
 
     WM_HSCROLL: begin
-      SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
-      changed:=2;
+      if DlgInited then
+        SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
     end;
 
     WM_COMMAND: begin
@@ -140,17 +143,17 @@ begin
         end;
       end;
 
-      if ((wParam shr 16)=BN_CLICKED) or
-         ((wParam shr 16)=EN_CHANGE) or
-         ((wParam shr 16)=CPN_COLOURCHANGED) then
-      begin
-        SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
-        changed:=2;
-      end;
+      if DlgInited then
+        if ((wParam shr 16)=BN_CLICKED) or
+           ((wParam shr 16)=EN_CHANGE) or
+           ((wParam shr 16)=CPN_COLOURCHANGED) then
+        begin
+          SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
+        end;
     end;
 
     WM_NOTIFY: begin
-      if (PNMHdr(lParam)^.code=PSN_APPLY) and (changed>0) then
+      if PNMHdr(lParam)^.code=PSN_APPLY then
       begin
         redraw:=false;
         with FrameCtrl^ do
@@ -161,7 +164,7 @@ begin
           begin
             FrmAlpha:=tmp;
             if FrameId>=0 then
-//              SendMessage(FrameWnd,WM_WAREFRESH,frcSetAlpha,0);
+              FrameCtrl.SetAlpha(FrmAlpha);
           end;
 
           // show/hide controls
@@ -178,16 +181,7 @@ begin
           if ((ShowControls and scTrackBar)<>0) xor ((tmp and scTrackBar)<>0) then tmp1:=tmp1 or scTrackBar;
           if ((ShowControls and scVolume  )<>0) xor ((tmp and scVolume  )<>0) then tmp1:=tmp1 or scVolume;
           ShowControls:=tmp;
-(*  {}
-          if (tmp1<>0) and (FrameId>=0) then
-            SendMessage(FrameWnd,WM_WAREFRESH,frcShowHide,tmp1);
-  {}
-          if (FrameId>=0) and ((tmp1<>0) or redraw) then
-          begin
-            SendMessage(FrameWnd,WM_SIZE,0,0);
-            redraw:=false;
-          end;
-*)  {}
+
           // Frame background
           tmp1:=0;
           tmpb:=IsDlgButtonChecked(Dialog,IDC_USECOVER)<>BST_UNCHECKED;
@@ -237,11 +231,6 @@ begin
           if (tmp<>BkMode) or (tmp1<>0) then
           begin
             BkMode:=tmp;
-            if FrameId>=0 then
-            begin
-//              SendMessage(FrameWnd,WM_WAREFRESH,frcBackPic,0);
-              redraw:=true;
-            end;
           end;
 
           // Hide frame option
@@ -277,25 +266,21 @@ begin
           if integer(tmp)<>padding.left then
           begin
             padding.left:=tmp;
-            redraw:=true;
           end;
           tmp:=GetDlgItemInt(Dialog,IDC_PADDING_TOP,tmpb,false);
           if integer(tmp)<>padding.top then
           begin
             padding.top:=tmp;
-            redraw:=true;
           end;
           tmp:=GetDlgItemInt(Dialog,IDC_PADDING_RIGHT,tmpb,false);
           if integer(tmp)<>padding.right then
           begin
             padding.right:=tmp;
-            redraw:=true;
           end;
           tmp:=GetDlgItemInt(Dialog,IDC_PADDING_BOTTOM,tmpb,false);
           if integer(tmp)<>padding.bottom then
           begin
             padding.bottom:=tmp;
-            redraw:=true;
           end;
 
           tmp:=GetDlgItemInt(Dialog,IDC_TIMER,tmpb,false);

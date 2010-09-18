@@ -45,6 +45,7 @@ DBSet=Genre
 Changelog:
 ----------
 0.0.1.5 (6 sep 2010)
+  Fixed simple form of M3U playlist reading
   Improved compatibility with Watrack plugin
   Restored ANSI URL processing if no Unicode possible (especially for BASSWMA)
   Fixed group choosing for "Add to List" of new stations
