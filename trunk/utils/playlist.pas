@@ -123,6 +123,7 @@ begin
 
   // Load into mem
   f:=Reset(fName);
+
   if dword(f)<>INVALID_HANDLE_VALUE then
   begin
     i:=integer(FileSize(f));
@@ -150,6 +151,7 @@ begin
       pltNew:=StrCmpW(pp,'#EXTM3U',7)=0;
       if pltNew then SkipLine(pp);
 
+      ldescr:=nil;
       repeat
         if pltNew then
         begin

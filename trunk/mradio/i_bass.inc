@@ -539,7 +539,7 @@ end;
 
 procedure EndSync(handle:HSYNC;channel,data,user:DWORD); stdcall;
 begin
-  if PlaylistUsed then
+  if plist<>nil then
     ControlCenter(MRC_NEXT,0)
   else if doLoop=BST_UNCHECKED then
     ControlCenter(MRC_STOP,0);
@@ -554,7 +554,7 @@ var
   ansiurl:array [0..511] of AnsiChar;
 begin
   result:=0;
-  if not PlaylistUsed then
+  if plist=nil then
     ControlCenter(MRC_STATUS,RD_STATUS_CONNECT);
 
   flags:=BASS_STREAM_STATUS;
@@ -571,7 +571,7 @@ begin
   else
   begin
     flags:=flags or BASS_UNICODE;
-    if not PlaylistUsed and (doLoop<>BST_UNCHECKED) then
+    if (plist=nil) and (doLoop<>BST_UNCHECKED) then
       flags:=flags or BASS_SAMPLE_LOOP;
     chan:=BASS_StreamCreateFile(FALSE,url,0,0,flags);
   end;
@@ -584,7 +584,7 @@ begin
   end
   else
   begin
-    if not PlaylistUsed and (doLoop<>BST_UNCHECKED) then
+    if (plist=nil) and (doLoop<>BST_UNCHECKED) then
       flags:=flags or BASS_SAMPLE_LOOP;
   chan:=BASS_StreamCreateFile(FALSE,url,0,0,flags);
   end;
@@ -614,7 +614,7 @@ begin
       ControlCenter(MRC_STOP,1);
       exit;
     end;
-    if PlaylistUsed then
+    if plist<>nil then
       ControlCenter(MRC_NEXT,0)
     else
       ControlCenter(MRC_STATUS,RD_STATUS_NOSTATION);

@@ -5,7 +5,6 @@ const
 type
   pIcoGrpData = ^tIcoGrpData;
   tIcoGrpData = object(TObj)
-  private
     ShowVolume:bool;
     ButtonGap:bool;
 
@@ -39,7 +38,7 @@ begin
     lWidth:=(ChildCount-2)*(16+gap)-gap;
     if ShowVolume then
       Inc(lWidth, VolBtnDist+2*(16+gap));
-    Width:=lWidth; // reson to call this code twice
+    Width:=lWidth; // reason to call this code twice
     Left:=(Parent.Width-Width) div 2;
   end;
 

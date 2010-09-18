@@ -70,7 +70,6 @@ var
 //  plFile:pWideChar; // playlist file name (for delete after using?)
 //  plLocal:boolean;  // true - no need to delete playlist
 var
-  PlaylistUsed:bool;
   RemoteSong:bool;
   PlayStatus:dword;
   Volume:dword;
