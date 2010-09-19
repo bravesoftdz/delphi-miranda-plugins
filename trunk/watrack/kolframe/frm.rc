@@ -75,11 +75,11 @@ FONT 8, "MS Shell Dlg", 0, 0
  LTEXT    "Text rotation speed (1-20)", -1, 32, 17, 114, 12, SS_CENTERIMAGE
  LTEXT    "Scroll step"               , -1, 32, 33, 114, 12, SS_CENTERIMAGE
  LTEXT    "Scroll gap"                , -1, 32, 49, 114, 12, SS_CENTERIMAGE
- LTEXT    "Minimum scroll tail"       , -1, 32, 65, 114, 12, SS_CENTERIMAGE
+// LTEXT    "Minimum scroll tail"       , -1, 32, 65, 114, 12, SS_CENTERIMAGE
  EDITTEXT IDC_TIMER   , 10, 17, 20, 12, ES_RIGHT | ES_NUMBER
  EDITTEXT IDC_ROLLSTEP, 10, 33, 20, 12, ES_RIGHT | ES_NUMBER
  EDITTEXT IDC_ROLLGAP , 10, 49, 20, 12, ES_RIGHT | ES_NUMBER
- EDITTEXT IDC_ROLLTAIL, 10, 65, 20, 12, ES_RIGHT | ES_NUMBER
+// EDITTEXT IDC_ROLLTAIL, 10, 65, 20, 12, ES_RIGHT | ES_NUMBER
 
  CONTROL    "M" ,IDC_MACRO_HELP ,"MButtonClass",WS_TABSTOP,284,156,16,16,$18000000
  RTEXT      "Frame Text", -1   , 4, 163, 274, 10

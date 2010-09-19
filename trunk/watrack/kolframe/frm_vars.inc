@@ -5,16 +5,9 @@ var
 
   HiddenByMe:bool;
 
-  FrmEffect,
   AlignCenter,
   FrameHeight:dword;
 
-  FrameText:pWideChar;
-  FrmBkColor,
-  FrmTxtColor:TCOLORREF;
-  RollStep,
-  RollGap,
-  RollTail:integer;
 //  TotalTime:cardinal;
 
   hFrmTimer,          // frame refresh

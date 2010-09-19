@@ -35,11 +35,6 @@ const
   effWrap = 1;
   effRoll = 2;
   effPong = 3;
-  // chunk
-  CT_TEXT    = $01;
-  CT_TAB     = $09;
-  CT_SPACE   = $20;
-  CT_NEWLINE = $0D;
   // Frame Control codes
   frcInit     = 0;
   frcClear    = 1;
