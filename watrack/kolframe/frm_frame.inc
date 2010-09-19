@@ -12,7 +12,7 @@ type
     BkDefFile   :PAnsiChar; // default background picture filename
     BkMode      :cardinal;
     BkTimer     :cardinal;  // timer to free original picture buffer
-    BkColor     :cardinal;
+    BkColor     :TCOLORREF;
     padding     :TRect;
     ShowControls:dword;
     UseBkPicture:bool;

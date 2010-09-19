@@ -72,6 +72,9 @@ end;
 {$include frm_text.inc}
 {$include frm_frame.inc}
 
+{$include frm_dlg1.inc}
+{$include frm_dlg2.inc}
+
 // ---------------- basic frame functions ----------------
 
 function NewPlStatus(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -247,9 +250,6 @@ begin
   end;
 end;
 
-{$include frm_dlg1.inc}
-{.$include frm_dlg2.inc}
-
 const
   opt_ModStatus:PAnsiChar = 'module/frame';
 
@@ -291,7 +291,6 @@ begin
     SetModStatus(0);
 
   PluginLink^.UnhookEvent(sic);
-  mFreeMem(FrameText);
   DestroyFrame;
 end;
 
