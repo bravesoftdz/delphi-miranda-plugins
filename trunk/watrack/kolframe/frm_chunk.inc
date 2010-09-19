@@ -7,18 +7,23 @@ const // chunk type
   CT_NEWLINE = $0D;
 
 const // macro codes
-  ctOpenBold       = 1;
-  ctCloseBold      = 2;
-  ctOpenItalic     = 3;
-  ctCloseItalic    = 4;
-  ctOpenUnderline  = 5;
-  ctCloseUnderline = 6;
-  ctOpenTextColor  = 7;
-  ctCloseTextColor = 8;
-  ctOpenBkColor    = 9;
-  ctCloseBkColor   = 10;
-  ctRGB            = 100; // special code for RGB color values
+  ctOpenBold       = $0001;
+  ctCloseBold      = $0002;
+  ctOpenItalic     = $0004;
+  ctCloseItalic    = $0008;
+  ctOpenUnderline  = $0010;
+  ctCloseUnderline = $0020;
+  ctOpenTextColor  = $0040;
+  ctCloseTextColor = $0080;
+  ctOpenBkColor    = $0100;
+  ctCloseBkColor   = $0200;
+  ctRGB            = $1000; // special code for RGB color values
 
+  ctFontChanging   =
+       ctOpenBold or ctCloseBold or
+       ctOpenItalic or ctCloseItalic or
+       ctOpenUnderline or ctCloseUnderline;
+{
 type
   pChunk = ^tChunk;
   tChunk = record
@@ -30,8 +35,8 @@ type
   end;
   pChunkArray = ^tChunkArray;
   tChunkArray = array [0..1000] of tChunk;
-
-procedure ProcessMacro(dc:hdc;Chunk:pChunk);
+}
+procedure ProcessMacro(dc:hdc;Chunk:pChunk;TextColor:TCOLORREF=0;BkColor:TCOLORREF=0);
 var
   lf:TLOGFONT;
   i:integer;
@@ -50,7 +55,7 @@ begin
       SetBkMode(dc,TRANSPARENT);
     end;
 
-    ctOpenBkColor: begin
+    ctOpenTextColor: begin
       case Chunk^.val of
         0:     i:=BkColor;
         1..16: i:=colors[Chunk^.val-1];
@@ -60,7 +65,7 @@ begin
       SetTextColor(dc,i);
     end;
 
-    ctOpenTextColor: begin
+    ctOpenBkColor: begin
       SetBkMode(dc,OPAQUE);
       case Chunk^.val of
         1..16: i:=colors[Chunk^.val-1];
@@ -71,11 +76,11 @@ begin
       SetBkColor(dc,i);
     end;
 
-    ctOpenTextColor+ctRGB: begin
+    ctOpenTextColor or ctRGB: begin
       SetTextColor(dc,Chunk^.val);
     end;
 
-    ctOpenBkColor+ctRGB: begin
+    ctOpenBkColor or ctRGB: begin
       SetBkMode(dc,OPAQUE);
       SetBkColor(dc,Chunk^.val);
     end;
@@ -106,10 +111,10 @@ const
   (txt:'{/i}' ; len:4; code:ctCloseItalic   ),
   (txt:'{u}'  ; len:3; code:ctOpenUnderline ),
   (txt:'{/u}' ; len:4; code:ctCloseUnderline),
-  (txt:'{/cf}'; len:5; code:ctOpenTextColor ),
-  (txt:'{/bg}'; len:5; code:ctCloseTextColor),
-  (txt:'{cf'  ; len:3; code:ctOpenBkColor   ),
-  (txt:'{bg'  ; len:3; code:ctCloseBkColor  ));
+  (txt:'{/cf}'; len:5; code:ctCloseTextColor),
+  (txt:'{/bg}'; len:5; code:ctCloseBkColor  ),
+  (txt:'{cf'  ; len:3; code:ctOpenTextColor ),
+  (txt:'{bg'  ; len:3; code:ctOpenBkColor   ));
 var
   pc,pc1:pWideChar;
   typ,i,lval:integer;
@@ -124,7 +129,7 @@ begin
     if StrCmpW(pc,macros[i].txt,macros[i].len)=0 then
     begin
       typ:=macros[i].code;
-      if typ in [ctOpenBkColor, ctOpenTextColor] then // processing color codes
+      if (typ=ctOpenBkColor) or (typ=ctOpenTextColor) then // processing color codes
       begin
         inc(pc,macros[i].len);
         if (pc^='#') or ((pc^>='0') and (pc^<='9')) then
@@ -146,7 +151,7 @@ begin
             result:=true;
             if (pc^='#') then // RGB
             begin
-              inc(typ,ctRGB);
+              typ:=typ or ctRGB;
               lval:=HexToInt(pc+1);
             end
             else
@@ -173,7 +178,7 @@ begin
       val  :=lval;
       dir  :=ppLeft;
     end;
-    inc(Chunk,SizeOf(tChunk));
+    inc(Chunk);
   end;
 end;
 
@@ -187,7 +192,7 @@ begin
         ((result^>='0') and (result^<='9')) or
         (ORD(result^)>127) do
     inc(result);
-  i:=src-result;
+  i:=result-src;
   if i>0 then // if no text (but what is this then?)
   begin
     with Chunk^ do
@@ -197,7 +202,7 @@ begin
       txt  :=src;
       val  :=i;
     end;
-    inc(Chunk,SizeOf(tChunk));
+    inc(Chunk);
   end;
 end;
 
@@ -212,19 +217,18 @@ begin
   end;
   result:=src;
   inc(result);
-  inc(Chunk,SizeOf(tChunk));
+  inc(Chunk);
 end;
 
 function Split(src:pWideChar):pChunkArray;
 var
-  p:pWideChar;
   Chunk:pChunk;
   i:integer;
 begin
   result:=nil;
   if src=nil then exit;
 
-  i:=StrLenW(src)*SizeOf(tChunk)+1; // last = 0 (powered finalization
+  i:=(StrLenW(src)+1)*SizeOf(tChunk); // last = 0 (powered finalization
   mGetMem(result,i);
   FillChar(result^,i,0);
   Chunk:=@result[0];
@@ -282,7 +286,7 @@ begin
   end
   else
   begin
-    if block then
+    if block and ((Chunk._type and ctFontChanging)<>0) then
       ProcessMacro(dc,Chunk);
     sz.cx:=0;
     sz.cy:=0;
@@ -321,7 +325,7 @@ begin
 //!!
     else if limit<>4096 then
       break;
-    inc(Chunk,SizeOf(tChunk));
+    inc(Chunk);
   end;
 
   DeleteObject(SelectObject(dc,CreateFontIndirect(lf)));
@@ -360,11 +364,11 @@ begin
     else if (Chunk^._type shr 16)<>0 then
       ProcessMacro(dc,Chunk);
     inc(rc.left,sz.cx);
-    inc(Chunk,SizeOf(tChunk));
+    inc(Chunk);
   end;
 end;
 
-procedure DrawLines(dc:HDC;Chunk:pChunk;rc:TRECT;justpaint:boolean);
+procedure tTxtBlockData.DrawLines(dc:HDC;Chunk:pChunk;rc:TRECT;justpaint:boolean);
 var
   sz:TSIZE;
   rc1:TRECT;
@@ -463,19 +467,20 @@ begin
     if rc.top>rc.bottom then
       break;
     if Chunk^._type<>0 then
-      inc(Chunk,SizeOf(tChunk));
+      inc(Chunk);
   end;
   SelectClipRgn(dc,0);
   DeleteObject(rgn);
 end;
 
-procedure DrawChunks(dc:HDC;Chunk:pChunk;rc:TRECT;justpaint:boolean);
+procedure tTxtBlockData.DrawChunks(dc:HDC;Chunk:pChunk;rc:TRECT;justpaint:boolean);
 var
   sz:TSIZE;
   rc1:TRECT;
   h:integer;
   w:integer;
 begin
+  SetBkMode(dc,TRANSPARENT);
   if (TextEffect=effRoll) or (TextEffect=effPong) then
   begin
     DrawLines(dc,Chunk,rc,justpaint);
@@ -507,7 +512,7 @@ begin
               DrawChunk(dc,Chunk,rc1);
             end;
 
-            inc(Chunk,SizeOf(tChunk));
+            inc(Chunk);
             inc(rc1.left,sz.cx);
             continue;
           end;
@@ -519,7 +524,7 @@ begin
               begin
                 if (Chunk^._type shr 16)<>0 then
                   ProcessMacro(dc,Chunk);
-                inc(Chunk,SizeOf(tChunk));
+                inc(Chunk);
               end;
               if Chunk=nil then
                 exit;
@@ -555,7 +560,7 @@ begin
     //!!
         if AlignCenter<>BST_UNCHECKED then
         begin
-          inc(Chunk,SizeOf(tChunk));
+          inc(Chunk);
           MeasureLine(dc,Chunk,sz,w);
 //          if sz.cx<w then
           inc(rc1.left,(w-sz.cx) div 2);
@@ -566,6 +571,6 @@ begin
         ProcessMacro(dc,Chunk);
 //        DrawChunk(dc,Chunk,rc1);
     end;
-    inc(Chunk,SizeOf(tChunk));
+    inc(Chunk);
   end;
 end;

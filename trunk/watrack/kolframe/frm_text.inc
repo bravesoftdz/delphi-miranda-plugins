@@ -4,6 +4,19 @@
   TextColor
 
 }
+
+type
+  pChunk = ^tChunk;
+  tChunk = record
+    _type:integer;   // type
+    val  :integer;   // sign value or text length
+    txt  :pWideChar; // text value pointer
+    add  :integer;   // offset for text effect
+    dir  :integer;   // ping-pong directon
+  end;
+  pChunkArray = ^tChunkArray;
+  tChunkArray = array [0..1000] of tChunk;
+
 const
   awkTextPad = 4; // text block pad from frame border
 
@@ -27,7 +40,13 @@ type
     procedure TextPaint(Sender: PControl; DC: HDC);
     procedure SaveSettings;
     procedure LoadSettings;
+
+procedure DrawChunks(dc:HDC;Chunk:pChunk;rc:TRECT;justpaint:boolean);
+procedure DrawLines(dc:HDC;Chunk:pChunk;rc:TRECT;justpaint:boolean);
+  
   end;
+
+{$include frm_chunk.inc}
 
 destructor tTxtBlockData.Destroy;
 begin

@@ -68,7 +68,6 @@ end;
 {$include frm_icobutton.inc}
 {$include frm_icogroup.inc}
 {$include frm_trackbar.inc}
-{$include frm_chunk.inc}
 {$include frm_text.inc}
 {$include frm_frame.inc}
 
@@ -87,7 +86,7 @@ var
   FrameWnd:HWND;
 begin
   result:=0;
-  FrameWnd:=FrameCtrl.Form.GetWindowHandle;
+//  FrameWnd:=FrameCtrl.Form.GetWindowHandle;
 
   case wParam of
 {
@@ -298,16 +297,13 @@ function AddOptionsPage(var tmpl:pAnsiChar;var proc:pointer;var name:PAnsiChar):
 const
   count:integer=2;
 begin
-{
   if count=0 then
     count:=2;
   if count=2 then
   begin
-}
     tmpl:='FRAME';
     proc:=@FrameViewDlg;
     name:='Frame (main)';
-{
   end
   else
   begin
@@ -318,8 +314,6 @@ begin
 
   dec(count);
   result:=count;
-}
-  result:=0;
 end;
 
 var
