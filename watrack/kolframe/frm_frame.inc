@@ -2,7 +2,7 @@
 
 function SetLayeredWindowAttributes(Hwnd: THandle; crKey: COLORREF; bAlpha: Byte; dwFlags: DWORD): Boolean; stdcall;
    external user32 name 'SetLayeredWindowAttributes';
-
+{
 type
   PWATFrame = ^TWATFrame;
   TWATFrame = object(TObj)
@@ -47,7 +47,7 @@ type
 
 var
   FrameCtrl:PWATFrame;
-
+}
 const
 //  opt_HiddenByMe:PAnsiChar = 'frame/hiddenbyme';
   opt_ShowCtrls :PAnsiChar = 'frame/showcontrols';
@@ -307,7 +307,7 @@ begin
 
     FrameCtrl.Trackbar:=MakeNewTrackbar(FrameCtrl.Form);
 
-    MakeNewTextBlock(FrameCtrl.Form);
+    FrameCtrl.TextBlock:=MakeNewTextBlock(FrameCtrl.Form);
 
     if FrameCtrl.UseBkPicture then
     begin
