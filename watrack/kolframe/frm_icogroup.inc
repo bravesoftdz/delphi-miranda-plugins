@@ -9,6 +9,8 @@ type
     ButtonGap:bool;
 
     procedure GroupResize(Sender: PObj);
+    procedure MouseDown(Sender:PControl;var Mouse:TMouseEventData);
+
     procedure SaveSettings;
     procedure LoadSettings;
   end;
@@ -59,6 +61,15 @@ begin
 
 end;
 
+procedure TIcoGrpData.MouseDown(Sender:PControl;var Mouse:TMouseEventData);
+var
+  wnd:HWND;
+begin
+  wnd:=GetParent(GetParent(Sender.GetWindowHandle));
+  SendMessage(wnd,WM_SYSCOMMAND,
+     SC_MOVE or HTCAPTION,MAKELPARAM(Mouse.x,Mouse.y));
+end;
+
 function MakeNewButtonGroup(AOwner:PControl;aVolume,aGap:bool):PControl;
 var
   D:pIcoGrpData;
@@ -73,16 +84,18 @@ begin
     SetSize(100,16);
     SetPosition(0,(AOwner.Top+AOwner.Height-18)-Height-2*BtnGap);
     Anchor(true,false,true,true); // good for button reposition
-    OnResize:=D.GroupResize;
+
+    OnResize   :=D.GroupResize;
+    OnMouseDown:=D.MouseDown;
   end;
 
-  CreateIcoButton(result,WAT_CTRL_VOLDN);
-  CreateIcoButton(result,WAT_CTRL_VOLUP);
-  CreateIcoButton(result,WAT_CTRL_PREV);
+  CreateIcoButton(result,WAT_CTRL_VOLDN,300);
+  CreateIcoButton(result,WAT_CTRL_VOLUP,300);
+  CreateIcoButton(result,WAT_CTRL_PREV,2000);
   CreateIcoButton(result,WAT_CTRL_PLAY);
   CreateIcoButton(result,WAT_CTRL_PAUSE);
   CreateIcoButton(result,WAT_CTRL_STOP);
-  CreateIcoButton(result,WAT_CTRL_NEXT);
+  CreateIcoButton(result,WAT_CTRL_NEXT,2000);
 
   D.ShowVolume:=aVolume;
   D.ButtonGap :=aGap;

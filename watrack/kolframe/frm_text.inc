@@ -33,23 +33,33 @@ type
     RollStep   :integer;
     RollGap    :integer;
 //    RollTail   :integer;
+    UpdInterval :cardinal;
+    UpdTimer    :cardinal;
 
     destructor Destroy; virtual;
     procedure InitFrame;
+
     procedure CtrlResize(Sender: PObj);
     procedure TextPaint(Sender: PControl; DC: HDC);
+    procedure MouseDown(Sender:PControl;var Mouse:TMouseEventData);
+
     procedure SaveSettings;
     procedure LoadSettings;
 
-procedure DrawChunks(dc:HDC;Chunk:pChunk;rc:TRECT;justpaint:boolean);
-procedure DrawLines(dc:HDC;Chunk:pChunk;rc:TRECT;justpaint:boolean);
-  
+    procedure DrawChunks(dc:HDC;Chunk:pChunk;rc:TRECT;justpaint:boolean);
+    procedure DrawLines(dc:HDC;Chunk:pChunk;rc:TRECT;justpaint:boolean);
   end;
 
 {$include frm_chunk.inc}
 
 destructor tTxtBlockData.Destroy;
 begin
+  if UpdTimer<>0 then
+  begin
+    KillTimer(0,UpdTimer);
+    UpdTimer:=0;
+  end;
+
   if TextFont<>0 then DeleteObject(TextFont);
   mFreeMem(CurrentText);
   mFreeMem(Template);
@@ -144,6 +154,15 @@ begin
   SelectObject(dc,fnt1);
 end;
 
+procedure TTxtBlockData.MouseDown(Sender:PControl;var Mouse:TMouseEventData);
+var
+  wnd:HWND;
+begin
+  wnd:=GetParent(GetParent(Sender.GetWindowHandle));
+  SendMessage(wnd,WM_SYSCOMMAND,
+     SC_MOVE or HTCAPTION,MAKELPARAM(Mouse.x,Mouse.y));
+end;
+
 function MakeNewTextBlock(AOwner:PControl):PControl;
 var
   D:pTxtBlockData;
@@ -163,7 +182,8 @@ begin
     StrDupW(D.CurrentText,'Sample {bg1}of{/bg} text'#13#10'second {b}line{/b} of text');
     D.TextChunk:=Split(D.CurrentText);
 
-    OnResize:=D.CtrlResize;
-    OnPaint :=D.TextPaint;
+    OnResize   :=D.CtrlResize;
+    OnPaint    :=D.TextPaint;
+    OnMouseDown:=D.MouseDown;
   end;
 end;

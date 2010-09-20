@@ -26,7 +26,7 @@ begin
         end;
         CheckDlgButton(Dialog,tmp,BST_CHECKED);
 
-        SetDlgItemInt(Dialog,IDC_TIMER,vTxtTimer,false);
+        SetDlgItemInt(Dialog,IDC_TIMER,UpdInterval,false);
 
         SetDlgItemInt(Dialog,IDC_ROLLSTEP,RollStep,false);
         SetDlgItemInt(Dialog,IDC_ROLLGAP ,RollGap ,false);
@@ -96,18 +96,20 @@ begin
           tmp:=GetDlgItemInt(Dialog,IDC_TIMER,tmpb,false);
           if tmp>MaxTxtScrollSpeed then
             tmp:=MaxTxtScrollSpeed;
-  {!
-          if dword(tmp)<>vTxtTimer then
+
+          if dword(tmp)<>UpdInterval then
           begin
-            vTxtTimer:=tmp;
-            if hTxtTimer<>0 then
-              KillTimer(FrameWnd,hTxtTimer);
-            if (vTxtTimer>0) and (FrameWnd<>0) then
-              hTxtTimer:=SetTimer(FrameWnd,TMR_TEXT,(MaxTxtScrollSpeed+1-vTxtTimer)*100,nil)
+            UpdInterval:=tmp;
+{
+            if UpdTimer<>0 then
+              KillTimer(FrameWnd,UpdTimer);
+            if (UpdInterval>0) and (FrameWnd<>0) then
+              UpdTimer:=SetTimer(FrameWnd,TMR_TEXT,(MaxTxtScrollSpeed+1-UpdInterval)*100,nil)
             else
-              hTxtTimer:=0;
+              UpdTimer:=0;
+}
           end;
-  }
+
           // Text effects
           if      IsDlgButtonChecked(Dialog,IDC_EFF_CUT )<>BST_UNCHECKED then tmp:=effCut
           else if IsDlgButtonChecked(Dialog,IDC_EFF_WRAP)<>BST_UNCHECKED then tmp:=effWrap
@@ -116,21 +118,25 @@ begin
           if dword(tmp)<>TextEffect then
           begin
             TextEffect:=tmp;
-  {!
+
           if ((tmp=effRoll) or (tmp=effPong)) and
              ((TextEffect=effCut) or (TextEffect=effWrap)) then
             begin
-              if (vTxtTimer>0) and (FrameWnd<>0) then
-                hTxtTimer:=SetTimer(FrameWnd,TMR_TEXT,(MaxTxtScrollSpeed+1-vTxtTimer)*100,nil)
+{
+              if (UpdInterval>0) and (FrameWnd<>0) then
+                UpdTimer:=SetTimer(FrameWnd,TMR_TEXT,(MaxTxtScrollSpeed+1-UpdInterval)*100,nil)
+}
             end;
           if ((TextEffect=effRoll) or (TextEffect=effPong)) and
              ((tmp=effCut) or (tmp=effWrap)) then
           begin
-            if hTxtTimer<>0 then
-              KillTimer(0,hTxtTimer);
-            hTxtTimer:=0;
+{
+            if UpdTimer<>0 then
+              KillTimer(0,UpdTimer);
+            UpdTimer:=0;
+}
           end;
-  }
+
   {!
             if (ShowControls and scShowText)<>0 then
               redraw:=true;
