@@ -21,7 +21,7 @@ const
   PluginInfo:TPLUGININFOEX=(
     cbSize     :sizeof(TPLUGININFOEX);
     shortName  :'mRadio Mod';
-    version    :$00000105;
+    version    :$00000106;
     description:'This plugin plays and records Internet radio streams.'+
                 ' Also local media files can be played.';
     author     :'Awkward';

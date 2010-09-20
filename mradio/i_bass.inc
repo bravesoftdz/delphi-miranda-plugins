@@ -399,7 +399,7 @@ end;
   end;
 end;
 
-procedure DoMeta(handle:HSYNC;meta:PAnsiChar);
+function DoMeta(meta:PAnsiChar;TagType:integer):Boolean;
 var
   p:Integer;
   pcw:pWideChar;
@@ -410,9 +410,10 @@ var
   lcp:integer;
   c:WideChar;
 begin
-  if meta=nil then
-    meta:=BASS_ChannelGetTags(chan,BASS_TAG_META);
+  result:=false;
 
+  if meta=nil then
+    meta:=BASS_ChannelGetTags(chan,TagType);
   if meta<>nil then
   begin
     lcp:=CP_UTF8;
@@ -421,64 +422,65 @@ begin
     artist:=nil;
     title :=nil;
 
-    //----- media track start -----
-    if (handle=syncMETA) or (handle=0) then
-    begin
-      handle:=syncMETA;
-      // SHOUTCAST StreamTitle='xxx';StreamUrl='xxx';
-      // "Station=xyz" meta tag="Trackinfo"
-      pc:=StrPos(meta,'StreamTitle=');
-      if pc<>nil then
-      begin
-        inc(pc,13);
-        ppc:=StrScan(pc,';');
-        if (ppc-pc-1)>0 then
+    case TagType of
+      BASS_TAG_META: begin
+        // SHOUTCAST StreamTitle='xxx';StreamUrl='xxx';
+        // "Station=xyz" meta tag="Trackinfo"
+        pc:=StrPos(meta,'StreamTitle=');
+        if pc<>nil then
         begin
-          StrCopy(buf,pc,ppc-pc-1);
-          lcp:=GetTextFormat(@buf,ppc-pc-1);
+          inc(pc,13);
+          ppc:=StrScan(pc,';');
+          if (ppc-pc-1)>0 then
+          begin
+            StrCopy(buf,pc,ppc-pc-1);
+            lcp:=GetTextFormat(@buf,ppc-pc-1);
+          end;
         end;
+        StatusProc(nil,0,0); // split records here
+        result:=true;
       end;
-      StatusProc(nil,0,0); // split records here
-    end
-
-    //----- media INFO start -----
-    else if (handle=syncOGG) or (handle=syncWMA) then
-    begin
-      if handle=syncWMA then
-        meta:=BASS_ChannelGetTags(chan,BASS_TAG_WMA)  // array of null-terminated UTF-8 strings
-      else
-        meta:=BASS_ChannelGetTags(chan,BASS_TAG_OGG); // array of null-terminated UTF-8 strings
-
-      while meta^<>#0 do
-      begin
-        if StrCmp(meta,'TITLE=',6)=0 then
+      BASS_TAG_ID3: begin // not realized, anyway - at the end of track
+      end;
+      BASS_TAG_ID3V2: begin
+      end;
+      BASS_TAG_APE, // not sure, need to check. maybe better process BASS_TAG_APEBINARY
+      BASS_TAG_WMA,
+      BASS_TAG_OGG: begin
+        while meta^<>#0 do
         begin
-          title:=meta+6;
-          DBWriteUTF8(0,PluginName,optTitle,title);
+          CharLowerA(StrCopy(buf,meta,10));
+          if StrCmp(buf,'title',5)=0 then
+          begin
+            title:=meta+6;
+            DBWriteUTF8(0,PluginName,optTitle,title);
+          end
+          else if StrCmp(buf,'artist',6)=0 then
+          begin
+            artist:=meta+7;
+            DBWriteUTF8(0,PluginName,optArtist,artist);
+          end;
+          if (artist<>nil) and (title<>nil) then
+            break;
+          while meta^<>#0 do inc(meta); inc(meta);
+        end;
+
+        if artist<>nil then
+        begin
+          ppc:=StrCopyE(buf,artist);
+          if title<>nil then
+            ppc:=StrCopyE(ppc,' - ');
         end
-        else if StrCmp(meta,'ARTIST=',7)=0 then
+        else
         begin
-          artist:=meta+7;
-          DBWriteUTF8(0,PluginName,optArtist,artist);
+          ppc:=@buf;
         end;
-        if (artist<>nil) and (title<>nil) then
-          break;
-        while meta^<>#0 do inc(meta); inc(meta);
-      end;
-
-      if artist<>nil then
-      begin
-        ppc:=StrCopyE(buf,artist);
         if title<>nil then
-          ppc:=StrCopyE(ppc,' - ');
-      end
-      else
-      begin
-        ppc:=@buf;
-      end;
-      if title<>nil then
-      begin
-        StrCopy(ppc,title);
+        begin
+          StrCopy(ppc,title);
+        end;
+        if (artist<>nil) or (title<>nil) then
+          result:=true;
       end;
     end;
 
@@ -526,15 +528,20 @@ begin
     end;
 
     // make status info
-    if ((CurDescrW<>nil) or (handle=syncMETA)) and (StrCmpW(OldDescr,CurDescrW)<>0) then
+    if ((CurDescrW<>nil) or (TagType=BASS_TAG_META)) and (StrCmpW(OldDescr,CurDescrW)<>0) then
       ConstructMsg(CurDescrW,p);
     mFreeMem(OldDescr);
   end;
 end;
 
 procedure MetaSync(handle:HSYNC;channel,data,user:DWORD); stdcall;
+var
+  tagtype:Integer;
 begin
-  DoMeta(handle,PAnsiChar(data));
+  if      handle=syncOGG  then tagtype:=BASS_TAG_OGG
+  else if handle=syncWMA  then tagtype:=BASS_TAG_WMA
+  else{if handle=syncMETA then}tagtype:=BASS_TAG_META;
+  DoMeta(PAnsiChar(data),tagtype);
 end;
 
 procedure EndSync(handle:HSYNC;channel,data,user:DWORD); stdcall;
@@ -691,12 +698,21 @@ begin
       end;
 
      // get the stream title and set sync for subsequent titles
-      DoMeta(0,BASS_ChannelGetTags(chan,BASS_TAG_META));
+      DoMeta(nil,BASS_TAG_META);
 
       syncMETA:=BASS_ChannelSetSync(chan,BASS_SYNC_META      ,0,@MetaSync,nil);
       syncOGG :=BASS_ChannelSetSync(chan,BASS_SYNC_OGG_CHANGE,0,@MetaSync,nil);
       syncWMA :=BASS_ChannelSetSync(chan,BASS_SYNC_WMA_CHANGE,0,@MetaSync,nil);
+    end
+    else
+    begin
+      if not DoMeta(nil,BASS_TAG_OGG) then
+        if not DoMeta(nil,BASS_TAG_ID3V2) then
+          if not DoMeta(nil,BASS_TAG_ID3) then
+           if not DoMeta(nil,BASS_TAG_APE) then
+
     end;
+
     syncEND :=BASS_ChannelSetSync(chan,BASS_SYNC_END,0,@EndSync,nil);
     ControlCenter(MRC_STATUS,RD_STATUS_PLAYING);
 
