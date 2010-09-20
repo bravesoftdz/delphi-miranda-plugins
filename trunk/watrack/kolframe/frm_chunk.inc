@@ -349,7 +349,7 @@ begin
       DT_LEFT or DT_TOP or DT_SINGLELINE or DT_NOPREFIX or DT_EXPANDTABS)
   end
   else
-    ProcessMacro(dc,Chunk);
+    ProcessMacro(dc,Chunk); //!! textcolor, bkcolor
 end;
 
 procedure DrawLine(dc:HDC;var Chunk:pChunk;rc:TRECT);
@@ -362,7 +362,7 @@ begin
     if (rc.left<rc.right) and ((rc.left+sz.cx)>0) then
       DrawChunk(dc,Chunk,rc)
     else if (Chunk^._type shr 16)<>0 then
-      ProcessMacro(dc,Chunk);
+      ProcessMacro(dc,Chunk); //!! textcolor, bkcolor
     inc(rc.left,sz.cx);
     inc(Chunk);
   end;
@@ -523,7 +523,7 @@ begin
               while (Chunk<>nil) and (Chunk^._type<>CT_NEWLINE) do
               begin
                 if (Chunk^._type shr 16)<>0 then
-                  ProcessMacro(dc,Chunk);
+                  ProcessMacro(dc,Chunk); //!! textcolor, bkcolor
                 inc(Chunk);
               end;
               if Chunk=nil then
@@ -568,7 +568,7 @@ begin
         end;
       end
       else
-        ProcessMacro(dc,Chunk);
+        ProcessMacro(dc,Chunk); //!! textcolor, bkcolor
 //        DrawChunk(dc,Chunk,rc1);
     end;
     inc(Chunk);

@@ -10,11 +10,6 @@ var
 
 //  TotalTime:cardinal;
 
-  hFrmTimer,          // frame refresh
-  hTxtTimer:cardinal; // text scroll speed
-  vFrmTimer,
-  vTxtTimer:cardinal;
-
 type
   PWATFrame = ^TWATFrame;
   TWATFrame = object(TObj)
@@ -46,6 +41,7 @@ type
     destructor Destroy; virtual;
     procedure Paint(Sender: PControl; DC: HDC);
     procedure FrameResize(Sender: PObj);
+    procedure MouseDown(Sender:PControl;var Mouse:TMouseEventData);
 
     procedure PreparePicture(dc:HDC;rc:TRECT);
     function LoadBkPicture(CoverFName:PAnsiChar;check:boolean=false;

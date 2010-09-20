@@ -34,6 +34,7 @@ type
     destructor Destroy; virtual;
     procedure Paint(Sender: PControl; DC: HDC);
     procedure FrameResize(Sender: PObj);
+    procedure MouseDown(Sender:PControl;var Mouse:TMouseEventData);
 
     procedure PreparePicture(dc:HDC;rc:TRECT);
     function LoadBkPicture(CoverFName:PAnsiChar;check:boolean=false;
@@ -270,10 +271,25 @@ begin
   end;
 end;
 
+procedure TWATFrame.MouseDown(Sender:PControl;var Mouse:TMouseEventData);
+var
+  wnd:HWND;
+begin
+  wnd:=GetParent(Sender.GetWindowHandle);
+  SendMessage(wnd,WM_SYSCOMMAND,
+     SC_MOVE or HTCAPTION,MAKELPARAM(Mouse.x,Mouse.y));
+end;
+
 destructor TWATFrame.Destroy;
 var
   tmpBmp:HBITMAP;
 begin
+  if UpdTimer<>0 then
+  begin
+    KillTimer(0,UpdTimer);
+    UpdTimer:=0;
+  end;
+
   mFreeMem(BkDefFile);
   mFreeMem(BkFile);
   if BkDC<>0 then
@@ -296,32 +312,37 @@ begin
   New(FrameCtrl,Create);
   if FrameCtrl<>nil then
   begin
-    FrameCtrl.LoadSettings;
-
-    FrameCtrl.Form:=NewAlienPanel(parent,esNone);
-    result:=FrameCtrl.Form.GetWindowHandle;
-
-    FrameCtrl.Buttons :=MakeNewButtonGroup(FrameCtrl.Form,
-        (FrameCtrl.ShowControls and scVolume)<>0,
-        (FrameCtrl.ShowControls and scGap)<>0);
-
-    FrameCtrl.Trackbar:=MakeNewTrackbar(FrameCtrl.Form);
-
-    FrameCtrl.TextBlock:=MakeNewTextBlock(FrameCtrl.Form);
-
-    if FrameCtrl.UseBkPicture then
+    with FrameCtrl^ do
     begin
-      FrameCtrl.BkBitmap:=FrameCtrl.LoadBkPicture(nil,true,FrameCtrl.BkDefFile);
-      if FrameCtrl.BkBitmap=HBITMAP(-1) then
-        FrameCtrl.BkBitmap:=0;
+      LoadSettings;
+
+      Form:=NewAlienPanel(parent,esNone);
+      result:=Form.GetWindowHandle;
+
+      Buttons :=MakeNewButtonGroup(Form,
+          (ShowControls and scVolume)<>0,
+          (ShowControls and scGap)<>0);
+
+      Trackbar:=MakeNewTrackbar(Form);
+
+      TextBlock:=MakeNewTextBlock(Form);
+
+      if UseBkPicture then
+      begin
+        BkBitmap:=LoadBkPicture(nil,true,BkDefFile);
+        if BkBitmap=HBITMAP(-1) then
+          BkBitmap:=0;
+      end;
     end;
 
     with FrameCtrl.Form^ do
     begin
       MinWidth :=80;
       MinHeight:=30;
-      OnPaint :=FrameCtrl.Paint;
-      OnResize:=FrameCtrl.FrameResize;
+
+      OnPaint    :=FrameCtrl.Paint;
+      OnResize   :=FrameCtrl.FrameResize;
+      OnMouseDown:=FrameCtrl.MouseDown;
     end;
   end;
 end;

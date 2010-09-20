@@ -9,6 +9,9 @@ type
     action:integer;
     active:PIcon; // one of ico_*
 
+    rptvalue:cardinal;
+    rpttimer:cardinal;
+
     destructor Destroy; virtual;
     procedure MouseEnter(Sender: PObj);
     procedure MouseLeave(Sender: PObj);
@@ -71,6 +74,10 @@ begin
       Result:=True;
     end;
 
+    WM_TIMER: begin
+      CallService(MS_WAT_PRESSBUTTON,D.action,0);
+    end;
+
     WM_LBUTTONDBLCLK,
     WM_LBUTTONDOWN : begin  // Change from normal to pressed
 
@@ -81,9 +88,19 @@ begin
       Sender.Update;
       Sender.Parent.Update;
 
+      if D.rptvalue<>0 then
+      begin
+        D.rpttimer:=SetTimer(Sender.GetWindowHandle,1,D.rptvalue,0);
+      end;
     end;
 
     WM_LBUTTONUP: begin // Change from pressed to normal
+
+      if D.rpttimer<>0 then
+      begin
+        KillTimer(0,D.rpttimer);
+        D.rpttimer:=0;
+      end;
 
       if D.ico_pressed<>nil then
       begin
@@ -105,7 +122,7 @@ end;
 
 // variant - through remap array by number
 // one way more - to fill ico handles at start (hicon - can b cnhanged, so - hIcoLib)
-function CreateIcoButton(AOwner: PControl; action:integer):PControl;
+function CreateIcoButton(AOwner: PControl; action:integer; repeattime:integer=0):PControl;
 var
   ico:HICON;
   D: PIcoBtnData;
@@ -121,7 +138,9 @@ begin
   Result.OnMouseLeave:=D.MouseLeave;
   Result.OnClick     :=D.CtrlBtnClick;
 
-  D.action:=action;
+  D.action  :=action;
+  D.rptvalue:=repeattime;
+  D.rpttimer:=0;
 
   D.ico_normal:=NewIcon;
   D.ico_normal.ShareIcon:=true;

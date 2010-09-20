@@ -37,19 +37,22 @@ type
     cbSize:size_t;
 
     createByName:function(tszName:TChar; dwFlags:dword):THANDLE; cdecl;
-    createByContact:function(hContact:THANDLE;  dwFlags:dword):THANDLE;
+    createByContact:function(hContact:THANDLE; dwFlags:dword):THANDLE;
     storeByContact:procedure(hContact:THANDLE; hTZ:THANDLE); cdecl;
 
-    printCurrentTime:function(hTZ:THANDLE; szFormat:TChar; szDest:TChar;
-                     cbDest:int; dwFlags:dword):int; cdecl;
-    printCurrentTimeByContact:function(hContact:THANDLE;szFormat:PChar; szDest:PChar;
-                     cbDest:int; dwFlags:dword):int; cdecl;
+    printDateTime:function(hTZ:THANDLE; szFormat:TChar; szDest:TChar;
+          cbDest:int; dwFlags:dword):int; cdecl;
+	  printTimeStamp:function(hTZ:THANDLE; ts:time_t; szFormat:TChar; szDest:TChar;
+	        cbDest:int; dwFlags:dword):int; cdecl;
 
-    //	LPTIME_ZONE_INFORMATION ( *getTzi )( HANDLE hTZ );
-    //	void    ( *printTimeStamp )( HANDLE hTZ, time_t ts, LPCTSTR szFormat, LPTSTR szDest, int cbDest, DWORD dwFlags );
+	  prepareList     :function (hContact:THANDLE; hWnd:HWND; dwFlags:dword):int; cdecl;
+	  selectListItem  :function (hContact:THANDLE; hWnd:HWND; dwFlags:dword):int; cdecl;
+	  storeListResults:procedure(hContact:THANDLE; hWnd:HWND; dwFlags:dword); cdecl;
 
-    prepareList:function(hContact:THANDLE; hWnd:HWND; dwFlags:dword):int; cdecl;
-    storeListResults:procedure(hContact:THANDLE; hWnd:HWND; dwFlags:dword); cdecl;
+	  getTimeZoneTime:function(hTZ:THANDLE; var st:SYSTEMTIME):int; cdecl;
+	  timeStampToTimeZoneTimeStamp:function(hTZ:THANDLE; ts:time_t):time_t; cdecl;
+
+    getTzi:function(hTZ:THANDLE):PTimeZoneInformation; cdecl;
   end;
 
 // every protocol should declare this variable to use the Time API

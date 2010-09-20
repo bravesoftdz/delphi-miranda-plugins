@@ -89,16 +89,13 @@ begin
 //  FrameWnd:=FrameCtrl.Form.GetWindowHandle;
 
   case wParam of
-{
-    WAT_EVENT_NEWTEMPLATE: begin
-      if lParam=TM_FRAMEINFO then
-        SendMessage(FrameWnd,WM_WAREFRESH,frcForce,0);
-    end;
-}
     WAT_EVENT_PLAYERSTATUS: begin
       case lParam of
-        WAT_PLS_NORMAL  : exit;//SetFrameTitle(PSongInfo(lParam));
+        WAT_PLS_NORMAL  : exit;
         WAT_PLS_NOMUSIC : begin
+          if FrameCtrl.HideNoMusic then
+            HideFrame(FrameCtrl.FrameId);
+          // clear text, slider to 0, picture to default
 {
           if HideFrameNoMusic<>BST_UNCHECKED then
           begin
@@ -113,20 +110,12 @@ begin
 }
         end;
         WAT_PLS_NOTFOUND: begin
-{
-          if HideFrameNoPlayer<>BST_UNCHECKED then
-            HideFrame;
-          SetFrameTitle('',0);
-          needToChange:=true;
-          CallService(MS_CLIST_FRAMES_SETFRAMEOPTIONS,(FrameId shl 16)+FO_TBNAME,
-                      dword(PluginShort));
-          SendMessage(FrameWnd,WM_WAREFRESH,frcClear,1);
-          if not IsFrameHidden then
-            CallService(MS_CLIST_FRAMES_UPDATEFRAME,FrameId,FU_TBREDRAW);
-}
+          if FrameCtrl.HideNoPlayer then
+            HideFrame(FrameCtrl.FrameId);
+
+          SetFrameTitle(FrameCtrl.FrameId,PluginShort,0); // frame update code there
         end;
       end;
-//      DrawFrame(DF_ALL);
 //      InvalidateRect(FrameWnd,0,false); //??
     end;
     WAT_EVENT_NEWTRACK: begin
@@ -150,7 +139,7 @@ begin
 }
     end;
     WAT_EVENT_NEWPLAYER: begin
-      needToChange:=true;
+      SetFrameTitle(FrameCtrl.FrameId,'',0);
     end;
     WAT_EVENT_PLUGINSTATUS: begin
 {
@@ -222,18 +211,6 @@ procedure DestroyFrame;
 var
   h:integer;
 begin
-{
-  if hFrmTimer<>0 then
-  begin
-    KillTimer(FrameWnd,hFrmTimer);
-    hFrmTimer:=0;
-  end;
-  if hTxtTimer<>0 then
-  begin
-    KillTimer(FrameWnd,hTxtTimer);
-    hTxtTimer:=0;
-  end;
-}
   if FrameCtrl.FrameId>=0 then
   begin
     PluginLink^.UnhookEvent(plStatusHook);
