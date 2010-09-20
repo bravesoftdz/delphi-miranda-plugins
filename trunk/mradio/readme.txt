@@ -44,6 +44,8 @@ DBSet=Genre
 
 Changelog:
 ----------
+0.0.1.6 (20 sep 2010)
+  Changed streams/files tag process
 0.0.1.5 (6 sep 2010)
   Fixed simple form of M3U playlist reading
   Improved compatibility with Watrack plugin
