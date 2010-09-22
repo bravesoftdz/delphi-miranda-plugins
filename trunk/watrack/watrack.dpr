@@ -6,7 +6,7 @@ uses
   Windows,messages,commctrl,//uxtheme,
   srv_format,srv_player,wat_api,wrapper,
   common,syswin,HlpDlg,mirutils
-  ,global,io,macros,hotkeys
+  ,global,waticons,io,macros
   ,lastfm    in 'lastfm\lastfm.pas'
   ,statlog   in 'stat\statlog.pas'
 //  ,frameunit in 'frame\frameunit.pas'
@@ -417,7 +417,11 @@ begin
 
   OleInitialize(nil);
 
-  RegisterIcons;
+  if RegisterIcons then
+    wsic:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged)
+  else
+    wsic:=0;
+
   CreateMenus;
 
   p:=GetAddonFileName(nil,'player','plugins','ini');
@@ -505,7 +509,7 @@ begin
 //  PluginLink^.UnhookEvent(plStatusHook);
   PluginLink^.UnhookEvent(hHookShutdown);
   PluginLink^.UnhookEvent(opthook);
-  PluginLink^.UnhookEvent(wsic);
+  if wsic<>0 then PluginLink^.UnhookEvent(wsic);
 
   FreeServices;
   FreeVariables;

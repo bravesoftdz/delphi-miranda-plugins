@@ -15,11 +15,12 @@ uses kol, io,windows,commdlg,messages,common,commctrl, KOLCCtrls,
 
 // ---------------- frame functions ----------------
 
-procedure SetFrameTitle(FrameId:integer;title:PAnsiChar;icon:HICON);
+procedure SetFrameTitle(title:pointer;icon:HICON;addflag:integer=FO_UNICODETEXT);
 begin
-  CallService(MS_CLIST_FRAMES_SETFRAMEOPTIONS,(FrameId shl 16)+FO_TBNAME,dword(title));
-  CallService(MS_CLIST_FRAMES_SETFRAMEOPTIONS,(FrameId shl 16)+FO_ICON,icon);
-  CallService(MS_CLIST_FRAMES_UPDATEFRAME,FrameId,FU_TBREDRAW);
+  CallService(MS_CLIST_FRAMES_SETFRAMEOPTIONS,
+      (FrameCtrl.FrameId shl 16)+FO_TBNAME+addflag,dword(title));
+  CallService(MS_CLIST_FRAMES_SETFRAMEOPTIONS,(FrameCtrl.FrameId shl 16)+FO_ICON,icon);
+  CallService(MS_CLIST_FRAMES_UPDATEFRAME,FrameCtrl.FrameId,FU_TBREDRAW);
 end;
 
 // -----------------------
@@ -84,6 +85,7 @@ var
   bufw:array [0..511] of WideChar;
   tmp:integer;
   FrameWnd:HWND;
+  Cover:pAnsiChar;
 begin
   result:=0;
 //  FrameWnd:=FrameCtrl.Form.GetWindowHandle;
@@ -94,60 +96,68 @@ begin
         WAT_PLS_NORMAL  : exit;
         WAT_PLS_NOMUSIC : begin
           if FrameCtrl.HideNoMusic then
-            HideFrame(FrameCtrl.FrameId);
-          // clear text, slider to 0, picture to default
-{
-          if HideFrameNoMusic<>BST_UNCHECKED then
-          begin
-            HideFrame;
-            tmp:=1;
-          end
+            HideFrame(FrameCtrl.FrameId)
           else
-          begin
-            tmp:=ShowFrame;
-          end;
-          SendMessage(FrameWnd,WM_WAREFRESH,frcClear,tmp);
-}
+            ShowFrame(FrameCtrl.FrameId); // if was hidden with "no player"
+
+          // clear text, slider to 0, picture to default
         end;
         WAT_PLS_NOTFOUND: begin
           if FrameCtrl.HideNoPlayer then
             HideFrame(FrameCtrl.FrameId);
 
-          SetFrameTitle(FrameCtrl.FrameId,PluginShort,0); // frame update code there
+          SetFrameTitle(PluginShort,0,0); // frame update code there
         end;
       end;
 //      InvalidateRect(FrameWnd,0,false); //??
     end;
+
     WAT_EVENT_NEWTRACK: begin
-{
-      mFreeMem(Cover);
+      // cover
       if (PSongInfo(lParam)^.Cover<>nil) and (PSongInfo(lParam)^.Cover^<>#0) then
       begin
         GetShortPathNameW(PSongInfo(lParam)^.Cover,bufw,SizeOf(bufw));
         WideToAnsi(bufw,Cover);
+        FrameCtrl.RefreshPicture(Cover);
+        mFreeMem(Cover);
       end;
 
-      TotalTime:=PSongInfo(lParam)^.total;
-      SendMessage(FrameWnd,WM_WAREFRESH,frcInit,0);
-      if needToChange then // only if not player replacing without pause
+      // trackbar
+      tmp:=(PSongInfo(lParam)^.total*1000) div FrameCtrl.UpdInterval;
+      with FrameCtrl.Trackbar^ do
       begin
-        FastWideToAnsiBuf(PSongInfo(lParam)^.player,buf);
-        SetFrameTitle(buf,PSongInfo(lParam)^.icon);
-        needToChange:=false;
+        RangeMax:=tmp;
+        LineSize:=tmp div 100;
+        PageSize:=tmp div 10;
       end;
-      ShowFrame;
-}
+//          FrameCtrl.UpdTimer:=SetTimer(0,0,FrameCtrl.UpdInterval,@);
+
+      // text
+
+      ShowFrame(FrameCtrl.FrameId);
     end;
+
     WAT_EVENT_NEWPLAYER: begin
-      SetFrameTitle(FrameCtrl.FrameId,'',0);
+      SetFrameTitle(PSongInfo(lParam)^.player,PSongInfo(lParam)^.icon);
+      // new player must call "no music" at least, so we have chance to show frame
     end;
+
     WAT_EVENT_PLUGINSTATUS: begin
-{
       case lParam of
-        dsEnabled: ShowFrame;
-        dsPermanent: HideFrame;
+        dsEnabled: begin
+          ShowFrame(FrameCtrl.FrameId);
+          // plus - start frame and text timers
+//          FrameCtrl.UpdTimer:=SetTimer(0,0,FrameCtrl.UpdInterval,@);
+        end;
+
+        dsPermanent: begin
+          HideFrame(FrameCtrl.FrameId);
+
+          // plus - stop frame and text timers
+          if FrameCtrl.UpdTimer<>0 then
+            KillTimer(0,FrameCtrl.UpdTimer);
+        end;
       end;
-}
     end;
   end;
 end;
@@ -168,7 +178,7 @@ end;
 const
   opt_FrmHeight :PAnsiChar = 'frame/frmheight';
 
-procedure CreateFrame(parent:HWND);
+function CreateFrame(parent:HWND):boolean;
 var
   CLFrame:TCLISTFrame;
   rc:TRECT;
@@ -205,6 +215,7 @@ begin
       plStatusHook:=PluginLink^.HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);
     end;
   end;
+  result:=FrameWnd<>0;
 end;
 
 procedure DestroyFrame;
@@ -243,22 +254,17 @@ end;
 
 function InitProc(aGetStatus:boolean=false):integer;
 begin
+  result:=0;
   if aGetStatus then
   begin
     if GetModStatus=0 then
-    begin
-      result:=0;
       exit;
-    end;
   end
   else
     SetModStatus(1);
-  result:=1;
 
-  RegisterButtonIcons;
   sic:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
-
-  CreateFrame(0);
+  result:=ord(CreateFrame(0));
 end;
 
 procedure DeInitProc(aSetDisable:boolean);

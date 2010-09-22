@@ -1,9 +1,5 @@
 {some visual stuff}
 
-const
-  IcoBtnEnable :PAnsiChar='WATrack_Enabled';
-  IcoBtnDisable:PAnsiChar='WATrack_Disabled';
-
 function OnTTBLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
   ttb:TTBButtonV2;
@@ -112,29 +108,4 @@ begin
     PluginLink^.CallService(MS_TTB_SETBUTTONOPTIONS,(ttbState shl 16)+TTBO_ALLDATA,dword(@ttb));
   end;
 }
-end;
-
-procedure RegisterIcons;
-var
-  sid:TSKINICONDESC;
-begin
-  FillChar(sid,SizeOf(TSKINICONDESC),0);
-  sid.cbSize:=SizeOf(TSKINICONDESC);
-  sid.cx:=16;
-  sid.cy:=16;
-  sid.szSection.a:='WATrack';
-
-  sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(BTN_ENABLE),IMAGE_ICON,16,16,0);
-  sid.pszName        :=IcoBtnEnable;
-  sid.szDescription.a:='Plugin Enabled';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
-  DestroyIcon(sid.hDefaultIcon);
-
-  sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(BTN_DISABLE),IMAGE_ICON,16,16,0);
-  sid.pszName        :=IcoBtnDisable;
-  sid.szDescription.a:='Plugin Disabled';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
-  DestroyIcon(sid.hDefaultIcon);
-//!!
-  wsic:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
 end;
