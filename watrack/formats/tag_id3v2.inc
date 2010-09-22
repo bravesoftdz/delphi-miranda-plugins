@@ -97,6 +97,16 @@ begin
 
     if alen>0 then
     begin
+{
+      if enc=0 then
+      begin
+        StrDup(buf,ptr,alen);
+        ANSItoWide(buf,dst)
+        mFreeMem(buf);
+      end
+      else
+        UTF8ToWide(buf,dst,alen);
+}
       StrDup(buf,ptr,alen);
       if enc=0 then
         ANSItoWide(buf,dst)
@@ -393,7 +403,7 @@ begin
       frmUSLT,frmULT: ID3v2_CheckLyric(frmUSLT,Info.lyric,buf,Frm.Size);
       frmSYLT,frmSLT: ID3v2_CheckLyric(frmSYLT,Info.lyric,buf,Frm.Size);
       frmTXX,frmTXXX: ID3v2_CheckLyric(frmTXXX,Info.lyric,buf,Frm.Size);
-      frmAPIC,frmPIC: ID3v2_CheckCover(Frm.ID,Info.cover,buf,Frm.Size);
+      frmAPIC,frmPIC: ID3v2_CheckCover(Frm.ID ,Info.cover,buf,Frm.Size);
 
       frmTPE1,frmTP1: begin
         if fArtist<(enc+10) then
