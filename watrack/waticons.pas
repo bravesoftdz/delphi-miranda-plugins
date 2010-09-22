@@ -3,9 +3,15 @@ interface
 
 uses wat_api;
 
-{$resource icons\waticons.res}
+// main Enable/Disable icons
+const // name in icolib
+  IcoBtnEnable :PAnsiChar='WATrack_Enabled';
+  IcoBtnDisable:PAnsiChar='WATrack_Disabled';
 
-procedure RegisterButtonIcons;
+function RegisterIcons:boolean;
+
+// frame button icons
+function RegisterButtonIcons:boolean;
 function GetIcon(action:integer;stat:integer):cardinal;
 function GetIconDescr(action:integer):pAnsiChar;
 
@@ -24,12 +30,65 @@ const
   ICOCtrlName = 'watrack_buttons.dll';
 
 const
-  CtrlsLoaded  :bool = false; // custom DLL loaded
-  ButtonsLoaded:bool = false;
+  IconsLoaded:bool = false;
 
+function RegisterIcons:boolean;
+var
+  sid:TSKINICONDESC;
+  buf:array [0..511] of AnsiChar;
+  hIconDLL:THANDLE;
+begin
+  result:=false;
+  sid.pszDefaultFile.a:='icons\'+ICOCtrlName;
+//    ConvertFileName(sid.pszDefaultFile.a,buf);
+  PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,dword(sid.pszDefaultFile),dword(@buf));
+
+  hIconDLL:=LoadLibraryA(buf);
+  if hIconDLL=0 then // not found
+  begin
+    sid.pszDefaultFile.a:='plugins\'+ICOCtrlName;
+//      ConvertFileName(sid.pszDefaultFile.a,buf);
+    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,dword(sid.pszDefaultFile),dword(@buf));
+    hIconDLL:=LoadLibraryA(buf);
+  end;
+
+  if hIconDLL<>0 then
+  begin
+    FillChar(sid,SizeOf(TSKINICONDESC),0);
+    sid.cbSize:=SizeOf(TSKINICONDESC);
+    sid.cx:=16;
+    sid.cy:=16;
+    sid.szSection.a:='WATrack';
+
+    sid.hDefaultIcon   :=LoadImage(hIconDLL,
+        MAKEINTRESOURCE(IDI_PLUGIN_ENABLE),IMAGE_ICON,16,16,0);
+    sid.pszName        :=IcoBtnEnable;
+    sid.szDescription.a:='Plugin Enabled';
+    PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+    DestroyIcon(sid.hDefaultIcon);
+
+    sid.hDefaultIcon   :=LoadImage(hIconDLL,
+        MAKEINTRESOURCE(IDI_PLUGIN_DISABLE),IMAGE_ICON,16,16,0);
+    sid.pszName        :=IcoBtnDisable;
+    sid.szDescription.a:='Plugin Disabled';
+    PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+    DestroyIcon(sid.hDefaultIcon);
+
+    FreeLibrary(hIconDLL);
+    result:=true;
+  end;
+end;
+
+type
+  PAWKIconButton = ^TAWKIconButton;
+  TAWKIconButton = record
+    descr:PAnsiChar;
+    name :PAnsiChar;
+    id   :integer;
+  end;
 const
   CtrlIcoLib:array [WAT_CTRL_FIRST..WAT_CTRL_LAST,AST_NORMAL..AST_PRESSED] of
-    record descr,name:PAnsiChar; id:integer end = (
+    TAWKIconButton = (
     ((descr:'Prev'               ;name:'WATrack_Prev'   ; id:IDI_PREV_NORMAL),
      (descr:'Prev Hovered'       ;name:'WATrack_PrevH'  ; id:IDI_PREV_HOVERED),
      (descr:'Prev Pushed'        ;name:'WATrack_PrevP'  ; id:IDI_PREV_PRESSED)),
@@ -68,77 +127,57 @@ type
       WAT_CTRL_PREV, WAT_CTRL_PLAY,  WAT_CTRL_PAUSE, WAT_CTRL_STOP,
       WAT_CTRL_NEXT, WAT_CTRL_VOLDN, WAT_CTRL_VOLUP, WAT_CTRL_SLIDER);
 }
-procedure RegisterButtonIcons;
+function RegisterButtonIcons:boolean;
 var
   sid:TSKINICONDESC;
-  buf,buf1:array [0..511] of AnsiChar;
+  buf:array [0..511] of AnsiChar;
   hIconDLL:THANDLE;
   i,j:integer;
 begin
-  if ButtonsLoaded then exit;
-  sid.flags:=0;
-  sid.cbSize:=SizeOf(TSKINICONDESC);
-  sid.cx:=16;
-  sid.cy:=16;
-
-  CtrlsLoaded:=false;
-  sid.szSection.a     :='WATrack/Frame Controls';
-  sid.pszDefaultFile.a:='icons\'+ICOCtrlName;
-  ConvertFileName(sid.pszDefaultFile.a,buf);
-//  PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,dword(sid.pszDefaultFile),dword(@buf));
-
-  hIconDLL:=LoadLibraryA(buf);
-  if hIconDLL=0 then // not found
+  if not IconsLoaded then
   begin
-    sid.pszDefaultFile.a:='plugins\'+ICOCtrlName;
-    ConvertFileName(sid.pszDefaultFile.a,buf);
-//    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,dword(sid.pszDefaultFile),dword(@buf));
+    sid.flags:=0;
+    sid.cbSize:=SizeOf(TSKINICONDESC);
+    sid.cx:=16;
+    sid.cy:=16;
+
+    sid.szSection.a     :='WATrack/Frame Controls';
+    sid.pszDefaultFile.a:='icons\'+ICOCtrlName;
+//    ConvertFileName(sid.pszDefaultFile.a,buf);
+    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,dword(sid.pszDefaultFile),dword(@buf));
+
     hIconDLL:=LoadLibraryA(buf);
-  end;
-
-  if hIconDLL<>0 then
-  begin
-    for i:=WAT_CTRL_FIRST to WAT_CTRL_LAST do
-      for j:=AST_NORMAL to AST_PRESSED do
-      begin
-        sid.hDefaultIcon   :=LoadImage(hIconDLL,
-            MAKEINTRESOURCE(CtrlIcoLib[i][j].id),IMAGE_ICON,16,16,0);
-        if sid.hDefaultIcon=0 then continue;
-
-        sid.iDefaultIndex  :=CtrlIcoLib[i][j].id;
-        sid.pszName        :=CtrlIcoLib[i][j].name; 
-        sid.szDescription.a:=CtrlIcoLib[i][j].descr;
-
-        PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
-        DestroyIcon(sid.hDefaultIcon);
-      end;
-  end
-  else
-  begin
-    GetModuleFileNameA(0,buf,SizeOf(buf));
-    PluginLink^.CallService(MS_UTILS_PATHTORELATIVE,dword(@buf),dword(@buf1));
-    sid.pszDefaultFile.a:=buf1;
-    for i:=WAT_CTRL_FIRST to WAT_CTRL_LAST do
+    if hIconDLL=0 then // not found
     begin
-      with CtrlIcoLib[i,AST_NORMAL] do
-      begin
-        sid.iDefaultIndex  :=id;
-        sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(id),IMAGE_ICON,16,16,0);
-        sid.pszName        :=name;
-        sid.szDescription.a:=descr;
-      end;
-      PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
-      DestroyIcon(sid.hDefaultIcon);
+      sid.pszDefaultFile.a:='plugins\'+ICOCtrlName;
+//      ConvertFileName(sid.pszDefaultFile.a,buf);
+      PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,dword(sid.pszDefaultFile),dword(@buf));
+      hIconDLL:=LoadLibraryA(buf);
+    end;
+
+    if hIconDLL<>0 then
+    begin
+      for i:=WAT_CTRL_FIRST to WAT_CTRL_LAST do
+        for j:=AST_NORMAL to AST_PRESSED do
+        begin
+          sid.hDefaultIcon   :=LoadImage(hIconDLL,
+              MAKEINTRESOURCE(CtrlIcoLib[i][j].id),IMAGE_ICON,16,16,0);
+          if sid.hDefaultIcon=0 then continue;
+
+          sid.iDefaultIndex  :=CtrlIcoLib[i][j].id;
+          sid.pszName        :=CtrlIcoLib[i][j].name; 
+          sid.szDescription.a:=CtrlIcoLib[i][j].descr;
+
+          PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+          DestroyIcon(sid.hDefaultIcon);
+        end;
+
+      FreeLibrary(hIconDLL);
+      IconsLoaded:=true;
     end;
   end;
 
-  if hIconDLL<>0 then
-  begin
-    CtrlsLoaded:=true;
-    FreeLibrary(hIconDLL);
-  end;
-  ButtonsLoaded:=true;
-
+  result:=IconsLoaded;
 end;
 
 function GetIcon(action:integer;stat:integer):cardinal;

@@ -2,53 +2,7 @@
 
 function SetLayeredWindowAttributes(Hwnd: THandle; crKey: COLORREF; bAlpha: Byte; dwFlags: DWORD): Boolean; stdcall;
    external user32 name 'SetLayeredWindowAttributes';
-{
-type
-  PWATFrame = ^TWATFrame;
-  TWATFrame = object(TObj)
-    BkDC        :HDC;       // "buffer" DC and associated bitmap
-    BkBitmap    :HBITMAP;   // original bitmap
-    BkFile      :PAnsiChar; // original bitmap filename
-    BkDefFile   :PAnsiChar; // default background picture filename
-    BkMode      :cardinal;
-    BkTimer     :cardinal;  // timer to free original picture buffer
-    BkColor     :TCOLORREF;
-    padding     :TRect;
-    ShowControls:dword;
-    UseBkPicture:bool;
-    UseCover    :bool;
-    HideNoMusic :bool;
-    HideNoPlayer:bool;
 
-    // not sure what will keep here
-    FrameId     :integer;
-    FrmAlpha    :integer;
-    UpdInterval :cardinal;
-    UpdTimer    :cardinal;  
-
-    Form     :PControl;
-    Trackbar :PTrackbar;
-    Buttons  :PControl;
-    TextBlock:PControl;
-
-    destructor Destroy; virtual;
-    procedure Paint(Sender: PControl; DC: HDC);
-    procedure FrameResize(Sender: PObj);
-    procedure MouseDown(Sender:PControl;var Mouse:TMouseEventData);
-
-    procedure PreparePicture(dc:HDC;rc:TRECT);
-    function LoadBkPicture(CoverFName:PAnsiChar;check:boolean=false;
-             BackFName:PAnsiChar=nil):integer;
-    procedure SaveSettings;
-    procedure LoadSettings;
-    procedure SetAlpha(value:integer);
-    procedure RefreshPicture(cover:PAnsiChar=nil);
-
-  end;
-
-var
-  FrameCtrl:PWATFrame;
-}
 const
 //  opt_HiddenByMe:PAnsiChar = 'frame/hiddenbyme';
   opt_ShowCtrls :PAnsiChar = 'frame/showcontrols';
@@ -87,17 +41,21 @@ begin
   DBWriteString(0,PluginShort,opt_FrmBkPic  ,BkDefFile);
 
   RefreshPicture;
-  Trackbar.Visible:=(ShowControls and scTrackBar)<>0;
-  Buttons .Visible:=(ShowControls and scButtons )<>0;
-
-  D:=Pointer(FrameCtrl.Buttons.CustomObj);
-  D.ShowVolume:=(ShowControls and scVolume)<>0; // like Buttons.Childrens[0].Visible
-  D.ButtonGap :=(ShowControls and scGap   )<>0;
 
 //  InvalidateRect(FrameCtrl.Buttons.GetWindowHandle,nil,true);
   InvalidateRect(FrameCtrl.Form.GetWindowHandle,nil,true);
 //  FrameCtrl.Buttons.Update;
-  SendMessage(FrameCtrl.Buttons.GetWindowHandle,WM_SIZE,0,0);
+  if Trackbar<>nil then
+    Trackbar.Visible:=(ShowControls and scTrackBar)<>0;
+  if Buttons<>nil then
+  begin
+    Buttons.Visible:=(ShowControls and scButtons )<>0;
+    D:=Pointer(Buttons.CustomObj);
+    D.ShowVolume:=(ShowControls and scVolume)<>0; // like Buttons.Childrens[0].Visible
+    D.ButtonGap :=(ShowControls and scGap   )<>0;
+    SendMessage(Buttons.GetWindowHandle,WM_SIZE,0,0);
+  end;
+
   FrameCtrl.Form.Update;
 //  RedrawWindow(FrameCtrl.Form.GetWindowHandle,nil,0,
 //      RDW_INVALIDATE or RDW_ALLCHILDREN	or RDW_UPDATENOW);
@@ -319,11 +277,19 @@ begin
       Form:=NewAlienPanel(parent,esNone);
       result:=Form.GetWindowHandle;
 
-      Buttons :=MakeNewButtonGroup(Form,
-          (ShowControls and scVolume)<>0,
-          (ShowControls and scGap)<>0);
+      if RegisterButtonIcons then
+      begin
+        Buttons :=MakeNewButtonGroup(Form,
+            (ShowControls and scVolume)<>0,
+            (ShowControls and scGap)<>0);
 
-      Trackbar:=MakeNewTrackbar(Form);
+        Trackbar:=MakeNewTrackbar(Form);
+      end
+      else
+      begin
+        Buttons :=nil;
+        Trackbar:=nil;
+      end;
 
       TextBlock:=MakeNewTextBlock(Form);
 

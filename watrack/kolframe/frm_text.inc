@@ -179,8 +179,11 @@ begin
     Anchor(true,true,true,true);
 
     D.InitFrame;
-    StrDupW(D.CurrentText,'Sample {bg1}of{/bg} text'#13#10'second {b}line{/b} of text');
-    D.TextChunk:=Split(D.CurrentText);
+{}
+//    StrDupW(D.CurrentText,'Sample {bg1}of{/bg} text'#13#10'second {b}line{/b} of text');
+//    D.TextChunk:=Split(D.CurrentText);
+{}
+    D.TextChunk:=nil;
 
     OnResize   :=D.CtrlResize;
     OnPaint    :=D.TextPaint;

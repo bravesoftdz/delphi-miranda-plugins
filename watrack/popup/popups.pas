@@ -440,18 +440,19 @@ begin
     IsFreeImagePresent:=PluginLink^.ServiceExists(MS_IMG_LOAD       )<>0;
     IsPopup2Present   :=PluginLink^.ServiceExists(MS_POPUP_ADDPOPUP2)<>0;
     PopupPresent:=true;
-    RegisterButtonIcons;
     opthook:=PluginLink^.HookEvent(ME_OPT_INITIALISE,@OnOptInitialise);
     loadpopup;
     regpophotkey;
 
+    ActionList:=nil;
     if PluginLink^.ServiceExists(MS_POPUP_REGISTERACTIONS)<>0 then
     begin
-      ActionList:=MakeActions;
-      CallService(MS_POPUP_REGISTERACTIONS,dword(ActionList),7);
-    end
-    else
-      ActionList:=nil;
+      if RegisterButtonIcons then
+      begin
+        ActionList:=MakeActions;
+        CallService(MS_POPUP_REGISTERACTIONS,dword(ActionList),7);
+      end;
+    end;
   end
   else
   begin
