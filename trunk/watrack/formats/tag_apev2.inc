@@ -34,6 +34,7 @@ var
   cf:THANDLE;
   buf0,buf1:array [0..MAX_PATH-1] of AnsiChar;
   b:AnsiChar;
+//  extw:array [0..7] of WideChar;
 begin
   result:=0;
   APE:=pointer(Buf);
@@ -71,6 +72,10 @@ begin
         flag:=GetImageType(pByte(buf));
         if flag<>0 then
         begin
+{
+    FastAnsiToWideBuf(PAnsiChar(@flag),pWideChar(@extw));
+    Info.Cover:=SaveTemporaryW(buf,ptr-buf,PWideChar(@extw));
+}
           GetTempPathA(SizeOf(buf0),buf0);
           GetTempFileNameA(buf0,'wat',GetCurrentTime,buf1);
           ChangeExt(buf1,PAnsiChar(@flag));

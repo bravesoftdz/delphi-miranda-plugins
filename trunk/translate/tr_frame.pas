@@ -331,6 +331,7 @@ begin
       OldEditProc:=pointer(SetWindowLongA(GetDlgItem(dialog,IDC_FRAME_EDIT),
          GWL_WNDPROC,integer(@NewEditProc)));
 
+      EnableWindow(GetDlgItem(Dialog,IDC_FRAME_START),false);
     end;
 
     WM_SIZE: begin
@@ -352,6 +353,11 @@ begin
 
     WM_COMMAND: begin
       case wParam shr 16 of
+        EN_CHANGE: begin
+          EnableWindow(GetDlgItem(Dialog,IDC_FRAME_START),
+            SendMessage(lParam,WM_GETTEXTLENGTH,0,0)>0);
+        end;
+
         BN_CLICKED: begin
           case loword(wParam) of
             IDC_FRAME_SWITCH: begin
