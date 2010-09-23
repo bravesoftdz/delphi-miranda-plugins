@@ -150,7 +150,8 @@ begin
   CopyRect(dst,Sender.BoundsRect);
   InflateRect(dst,-4,-2);
 
-  DrawChunks(dc,@TextChunk[0],dst,true); // i.e. only paint or roll
+  if TextChunk<>nil then
+    DrawChunks(dc,@TextChunk[0],dst,true); // i.e. only paint or roll
   SelectObject(dc,fnt1);
 end;
 
