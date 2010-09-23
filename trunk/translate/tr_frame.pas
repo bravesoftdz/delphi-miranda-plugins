@@ -392,25 +392,33 @@ begin
             end;
             IDC_FRAME_START : begin
               txt:=GetDlgText(Dialog,IDC_FRAME_EDIT);
-              GetWindowTextA(GetDlgItem(Dialog,IDC_FRAME_FROM),tfrom,3);
-              GetWindowTextA(GetDlgItem(Dialog,IDC_FRAME_TO  ),tto  ,3);
-              sres:=GetTranslatedText(txt,tfrom,tto);
-              mFreeMem(txt);
-              if sres=nil then
-                messagebox(0,'Oops! something wrong!','ERROR',MB_ICONERROR)
-              else
+              if txt<>nil then
               begin
-                mGetMem(txt,(StrLenW(sres)+StrLenW(AddText)+1)*SizeOf(WideChar));
-                StrCopyW(StrCopyEW(txt,sres),AddText);
-                if MessageBoxW(0,txt,TranslateW(MainTitle),
-                   MB_YESNO+MB_ICONINFORMATION)=IDYES then
-                begin
-                  CopyToClipboard(sres,false);
-                end;
-                mFreeMem(sres);
+                GetWindowTextA(GetDlgItem(Dialog,IDC_FRAME_FROM),tfrom,3);
+                GetWindowTextA(GetDlgItem(Dialog,IDC_FRAME_TO  ),tto  ,3);
+                sres:=GetTranslatedText(txt,tfrom,tto);
                 mFreeMem(txt);
+                if sres=nil then
+                begin
+                  if PluginLink^.ServiceExists(MS_POPUP_SHOWMESSAGE)<>0 then
+                    CallService(MS_POPUP_SHOWMESSAGE,
+                        integer(Translate('Translate: something wrong!')),SM_WARNING)
+                  else
+                    MessageBoxW(0,TranslateW('Translate: something wrong!'),'ERROR',MB_ICONERROR)
+                end
+                else
+                begin
+                  mGetMem(txt,(StrLenW(sres)+StrLenW(AddText)+1)*SizeOf(WideChar));
+                  StrCopyW(StrCopyEW(txt,sres),AddText);
+                  if MessageBoxW(0,txt,TranslateW(MainTitle),
+                     MB_YESNO+MB_ICONINFORMATION)=IDYES then
+                  begin
+                    CopyToClipboard(sres,false);
+                  end;
+                  mFreeMem(sres);
+                  mFreeMem(txt);
+                end;
               end;
-
             end;
           end;
         end;
