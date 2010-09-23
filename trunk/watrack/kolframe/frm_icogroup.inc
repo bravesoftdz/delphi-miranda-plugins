@@ -70,6 +70,23 @@ begin
      SC_MOVE or HTCAPTION,MAKELPARAM(Mouse.x,Mouse.y));
 end;
 
+procedure RefreshButtonIcons(Owner:PControl);
+var
+  D:pIcoBtnData;
+  i:integer;
+begin
+  for i:=0 to Owner.ChildCount-1 do
+  begin
+    D:=pointer(Owner.Children[i].CustomObj);
+    D.ico_normal.Handle:=GetIcon(D.action,AST_NORMAL);
+    if D.ico_hovered<>nil then
+      D.ico_hovered.Handle:=GetIcon(D.action,AST_HOVERED);
+    if D.ico_pressed<>nil then
+      D.ico_pressed.Handle:=GetIcon(D.action,AST_PRESSED);
+  end;
+  // refresh
+end;
+
 function MakeNewButtonGroup(AOwner:PControl;aVolume,aGap:bool):PControl;
 var
   D:pIcoGrpData;
@@ -99,5 +116,4 @@ begin
 
   D.ShowVolume:=aVolume;
   D.ButtonGap :=aGap;
-
 end;

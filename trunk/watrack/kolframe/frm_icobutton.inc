@@ -52,6 +52,7 @@ begin
   ico_normal.Free;
   if ico_hovered<>nil then ico_hovered.Free;
   if ico_pressed<>nil then ico_pressed.Free;
+
   inherited;
 end;
 
@@ -118,6 +119,10 @@ begin
 
     end;
   end;
+end;
+
+function IcoButtonChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+begin
 end;
 
 // variant - through remap array by number

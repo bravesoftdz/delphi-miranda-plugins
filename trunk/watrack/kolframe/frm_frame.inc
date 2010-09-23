@@ -263,6 +263,12 @@ begin
   inherited;
 end;
 
+procedure TWATFrame.RefreshAllFrameIcons;
+begin
+  RefreshButtonIcons(Buttons);
+  RefreshTrackbarIcons(Trackbar);
+end;
+
 function CreateFrameWindow(parent:HWND):THANDLE;
 begin
   result:=0;
