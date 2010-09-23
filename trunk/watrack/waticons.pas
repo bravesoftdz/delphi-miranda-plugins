@@ -157,21 +157,25 @@ begin
 
     if hIconDLL<>0 then
     begin
-      for i:=WAT_CTRL_FIRST to WAT_CTRL_LAST do
-        for j:=AST_NORMAL to AST_PRESSED do
-        begin
+      i:=WAT_CTRL_FIRST;
+      repeat
+        j:=AST_NORMAL;
+        repeat
           sid.hDefaultIcon   :=LoadImage(hIconDLL,
               MAKEINTRESOURCE(CtrlIcoLib[i][j].id),IMAGE_ICON,16,16,0);
           if sid.hDefaultIcon=0 then continue;
 
-          sid.iDefaultIndex  :=CtrlIcoLib[i][j].id;
-          sid.pszName        :=CtrlIcoLib[i][j].name; 
+          // increment from 1 by order, so - just decrease number (for iconpack import)
+          sid.iDefaultIndex  :=CtrlIcoLib[i][j].id-1;
+          sid.pszName        :=CtrlIcoLib[i][j].name;
           sid.szDescription.a:=CtrlIcoLib[i][j].descr;
 
           PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
           DestroyIcon(sid.hDefaultIcon);
-        end;
-
+          Inc(j);
+        until j>AST_PRESSED;
+        Inc(i);
+      until i>WAT_CTRL_LAST;
       FreeLibrary(hIconDLL);
       IconsLoaded:=true;
     end;
