@@ -102,6 +102,19 @@ begin
   Sender.Children[0].Left:=rc.Left;
 end;
 
+procedure RefreshTrackbarIcons(Owner:PControl);
+var
+  D:pIcoBtnData;
+begin
+  D:=Pointer(Owner.Children[0].CustomObj);
+  D.ico_normal.Handle:=GetIcon(D.action,AST_NORMAL); // WAT_CTRL_SEEK
+  if D.ico_hovered<>nil then
+    D.ico_hovered.Handle:=GetIcon(D.action,AST_HOVERED);
+  if D.ico_pressed<>nil then
+    D.ico_pressed.Handle:=GetIcon(D.action,AST_PRESSED);
+  // refresh
+end;
+
 function MakeNewTrackBar(AOwner:PControl):PTrackbar;
 var
   D:pAWKTrackbar;
@@ -131,5 +144,4 @@ begin
 //    OnMouseUp  :=D.UnPressButton;
     OnMouseMove:=D.DragButton;
   end;
-
 end;

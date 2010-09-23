@@ -169,6 +169,7 @@ begin
   begin
     if FrameId<>0 then
     begin
+      RefreshAllFrameIcons;
       ShowWindow(Form.GetWindowHandle,SW_HIDE);
       ShowWindow(Form.GetWindowHandle,SW_SHOW);
     end;
@@ -263,8 +264,9 @@ begin
   else
     SetModStatus(1);
 
-  sic:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
   result:=ord(CreateFrame(0));
+  if result<>0 then
+    sic:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
 end;
 
 procedure DeInitProc(aSetDisable:boolean);
@@ -272,7 +274,7 @@ begin
   if aSetDisable then
     SetModStatus(0);
 
-  PluginLink^.UnhookEvent(sic);
+  if sic<>0 then PluginLink^.UnhookEvent(sic);
   DestroyFrame;
 end;
 

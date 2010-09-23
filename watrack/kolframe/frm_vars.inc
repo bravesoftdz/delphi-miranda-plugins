@@ -42,6 +42,7 @@ type
     procedure Paint(Sender: PControl; DC: HDC);
     procedure FrameResize(Sender: PObj);
     procedure MouseDown(Sender:PControl;var Mouse:TMouseEventData);
+    procedure RefreshAllFrameIcons;
 
     procedure PreparePicture(dc:HDC;rc:TRECT);
     function LoadBkPicture(CoverFName:PAnsiChar;check:boolean=false;
