@@ -1,5 +1,8 @@
 {Frame + background}
 
+const
+  WS_EX_LAYERED = $00080000;
+
 function SetLayeredWindowAttributes(Hwnd: THandle; crKey: COLORREF; bAlpha: Byte; dwFlags: DWORD): Boolean; stdcall;
    external user32 name 'SetLayeredWindowAttributes';
 
@@ -24,6 +27,7 @@ const
 procedure TWATFrame.SaveSettings;
 var
   D:pIcoGrpData;
+  DT:pTxtBlockData;
 begin
   DBWriteByte  (0,PluginShort,opt_HideFrameM,ord(HideNoMusic));
   DBWriteByte  (0,PluginShort,opt_HideFrameP,ord(HideNoPlayer));
@@ -45,6 +49,11 @@ begin
 //  InvalidateRect(FrameCtrl.Buttons.GetWindowHandle,nil,true);
   InvalidateRect(FrameCtrl.Form.GetWindowHandle,nil,true);
 //  FrameCtrl.Buttons.Update;
+  if TextBlock<>nil then
+  begin
+    DT:=Pointer(TextBlock.CustomObj);
+    DT.ChangeBkColor(BkColor);
+  end;
   if Trackbar<>nil then
     Trackbar.Visible:=(ShowControls and scTrackBar)<>0;
   if Buttons<>nil then
@@ -59,6 +68,32 @@ begin
   FrameCtrl.Form.Update;
 //  RedrawWindow(FrameCtrl.Form.GetWindowHandle,nil,0,
 //      RDW_INVALIDATE or RDW_ALLCHILDREN	or RDW_UPDATENOW);
+{
+          if (tmp<>HideNoPlayer) or (tmp1<>HideNoMusic) then
+          begin
+            HideNoMusic :=tmp1;
+            HideNoPlayer:=tmp;
+            tmp:=CallService(MS_WAT_GETMUSICINFO,0,0);
+            if (FrameId>=0) and
+               (((HideNoPlayer<>BST_UNCHECKED) and (integer(tmp)=WAT_PLS_NOTFOUND)) or
+               (( HideNoMusic <>BST_UNCHECKED) and (tmp<>WAT_PLS_NORMAL))) then
+              HideFrame
+            else
+              ShowFrame;
+          end;
+}
+{
+            if hFrmTimer<>0 then // FrameWnd MUST be present
+              KillTimer(FrameWnd,hFrmTimer);
+            if (vFrmTimer>0) and (FrameWnd<>0) then
+            begin
+              hFrmTimer:=SetTimer(FrameWnd,TMR_FRAME,vFrmTimer,nil);
+              SendMessage(FrameWnd,WM_WAREFRESH,frcTimer,0);
+            end
+            else
+              hFrmTimer:=0;
+}
+
 end;
 
 procedure TWATFrame.LoadSettings;
@@ -265,7 +300,7 @@ end;
 
 procedure TWATFrame.RefreshAllFrameIcons;
 begin
-  RefreshButtonIcons(Buttons);
+  RefreshButtonIcons  (Buttons);
   RefreshTrackbarIcons(Trackbar);
 end;
 
@@ -297,7 +332,7 @@ begin
         Trackbar:=nil;
       end;
 
-      TextBlock:=MakeNewTextBlock(Form);
+      TextBlock:=MakeNewTextBlock(Form,BkColor);
 
       if UseBkPicture then
       begin

@@ -27,6 +27,7 @@ type
     TextLF     :TLOGFONT;
     TextFont   :HFONT;
     TextColor  :TCOLORREF;
+    BkColor    :TCOLORREF;
     Template   :PWideChar;
     CurrentText:PWideChar;
     TextEffect :dword;
@@ -45,9 +46,14 @@ type
 
     procedure SaveSettings;
     procedure LoadSettings;
+    procedure NewTemplate(src:pWideChar);
+    procedure RemakeText;
+    procedure ChangeBkColor(newBkColor:TCOLORREF);
 
+    function  Split(src:pWideChar):pChunkArray;
     procedure DrawChunks(dc:HDC;Chunk:pChunk;rc:TRECT;justpaint:boolean);
     procedure DrawLines(dc:HDC;Chunk:pChunk;rc:TRECT;justpaint:boolean);
+    function  Macro(var src:pWideChar;var Chunk:pChunk):boolean;
   end;
 
 {$include frm_chunk.inc}
@@ -60,6 +66,7 @@ begin
     UpdTimer:=0;
   end;
 
+  DeleteChunks(TextChunk);
   if TextFont<>0 then DeleteObject(TextFont);
   mFreeMem(CurrentText);
   mFreeMem(Template);
@@ -112,23 +119,29 @@ begin
 
   Template:=DBReadUnicode(0,PluginShort,opt_FrameText);
   
-//  vTxtTimer:=DBReadWord(0,PluginShort,opt_TxtTimer,10);
+  UpdInterval:=DBReadWord(0,PluginShort,opt_TxtTimer,10);
   if DBReadStruct(0,PluginShort,opt_FrmFont,@TextLF,SizeOf(TextLF))=0 then
     InitFrame;
 end;
 
 procedure tTxtBlockData.SaveSettings;
 begin
-  DBWriteDWord  (0,PluginShort,opt_FrmTxtClr ,TextColor);
+  DBWriteDWord  (0,PluginShort,opt_FrmTxtClr ,TextColor); // reaction on chunk?
   DBWriteByte   (0,PluginShort,opt_RollStep  ,RollStep);
   DBWriteByte   (0,PluginShort,opt_RollGap   ,RollGap);
 //  DBWriteByte   (0,PluginShort,opt_RollTail  ,RollTail);
   DBWriteByte   (0,PluginShort,opt_FrmEffect ,TextEffect);
 //!!  DBWriteByte   (0,PluginShort,opt_AlgnCenter,AlignCenter);
-//!!  DBWriteWord   (0,PluginShort,opt_TxtTimer  ,vTxtTimer);
+  DBWriteWord   (0,PluginShort,opt_TxtTimer  ,UpdInterval);
+
+  DBWriteStruct (0,PluginShort,opt_FrmFont   ,@TextLF,SizeOf(TextLF));
 
   DBWriteUnicode(0,PluginShort,opt_FrameText ,Template);
-  DBWriteStruct (0,PluginShort,opt_FrmFont   ,@TextLF,SizeOf(TextLF));
+  RemakeText;
+{
+              if (UpdInterval>0) and (FrameWnd<>0) then
+                UpdTimer:=SetTimer(FrameWnd,TMR_TEXT,(MaxTxtScrollSpeed+1-UpdInterval)*100,nil)
+}
 end;
 
 procedure tTxtBlockData.CtrlResize(Sender: PObj);
@@ -164,7 +177,28 @@ begin
      SC_MOVE or HTCAPTION,MAKELPARAM(Mouse.x,Mouse.y));
 end;
 
-function MakeNewTextBlock(AOwner:PControl):PControl;
+procedure TTxtBlockData.RemakeText;
+begin
+  DeleteChunks(TextChunk);
+  mFreeMem(CurrentText);
+  CurrentText:=pWideChar(CallService(MS_WAT_REPLACETEXT,0,dword(Template)));
+  TextChunk:=Split(CurrentText);
+end;
+
+procedure TTxtBlockData.NewTemplate(src:pWideChar);
+begin
+  mFreeMem(Template);
+  StrDupW(Template,src);
+
+  RemakeText;
+end;
+
+procedure TTxtBlockData.ChangeBkColor(newBkColor:TCOLORREF);
+begin
+  BkColor:=newBkColor;
+end;
+
+function MakeNewTextBlock(AOwner:PControl;BkColor:TCOLORREF):PControl;
 var
   D:pTxtBlockData;
 begin
@@ -179,7 +213,9 @@ begin
     Width:=AOwner.Width-awkTextPad*2;
     Anchor(true,true,true,true);
 
+    D.LoadSettings;
     D.InitFrame;
+    D.BkColor:=BkColor;
 {}
 //    StrDupW(D.CurrentText,'Sample {bg1}of{/bg} text'#13#10'second {b}line{/b} of text');
 //    D.TextChunk:=Split(D.CurrentText);

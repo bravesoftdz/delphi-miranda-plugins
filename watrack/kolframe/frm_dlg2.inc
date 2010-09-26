@@ -1,4 +1,6 @@
 {Frame}
+const
+  MaxTxtScrollSpeed = 20;
 
 function FrameTextDlg(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
 const
@@ -119,28 +121,25 @@ begin
           begin
             TextEffect:=tmp;
 
-          if ((tmp=effRoll) or (tmp=effPong)) and
-             ((TextEffect=effCut) or (TextEffect=effWrap)) then
+            if ((tmp=effRoll) or (tmp=effPong)) and
+               ((TextEffect=effCut) or (TextEffect=effWrap)) then
+              begin
+  {
+                if (UpdInterval>0) and (FrameWnd<>0) then
+                  UpdTimer:=SetTimer(FrameWnd,TMR_TEXT,(MaxTxtScrollSpeed+1-UpdInterval)*100,nil)
+  }
+              end;
+            if ((TextEffect=effRoll) or (TextEffect=effPong)) and
+               ((tmp=effCut) or (tmp=effWrap)) then
             begin
-{
-              if (UpdInterval>0) and (FrameWnd<>0) then
-                UpdTimer:=SetTimer(FrameWnd,TMR_TEXT,(MaxTxtScrollSpeed+1-UpdInterval)*100,nil)
-}
+  {
+              if UpdTimer<>0 then
+                KillTimer(0,UpdTimer);
+              UpdTimer:=0;
+  }
             end;
-          if ((TextEffect=effRoll) or (TextEffect=effPong)) and
-             ((tmp=effCut) or (tmp=effWrap)) then
-          begin
-{
-            if UpdTimer<>0 then
-              KillTimer(0,UpdTimer);
-            UpdTimer:=0;
-}
-          end;
 
-  {!
-            if (ShowControls and scShowText)<>0 then
-              redraw:=true;
-  }        end;
+          end;
 
           tmp1:=GetDlgItemInt(Dialog,IDC_ROLLSTEP,tmpb,false);
           if tmp1<>RollStep then
@@ -171,17 +170,7 @@ begin
 
           mFreeMem(Template);
           Template:=GetDlgText(Dialog,IDC_FRAME_TEXT);
-  //      WAFrameProc(Dialog,WM_WAREFRESH,frcForce,0);
-  {!
-          if FrameId>=0 then
-          begin
-            if (not IsFrameHidden) and redraw then
-            begin
-              InvalidateRect(FrameWnd,nil,true);
-              UpdateWindow(FrameWnd);
-            end;
-          end;
-  }
+
           SaveSettings;
         end;
       end;
