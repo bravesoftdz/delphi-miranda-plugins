@@ -81,10 +81,9 @@ function NewPlStatus(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 const
   needToChange:boolean=true;
 var
-  buf:array [0..127] of AnsiChar;
   bufw:array [0..511] of WideChar;
   tmp:integer;
-  FrameWnd:HWND;
+//  FrameWnd:HWND;
   Cover:pAnsiChar;
 begin
   result:=0;
@@ -99,8 +98,6 @@ begin
             HideFrame(FrameCtrl.FrameId)
           else
             ShowFrame(FrameCtrl.FrameId); // if was hidden with "no player"
-
-          // clear text, slider to 0, picture to default
         end;
         WAT_PLS_NOTFOUND: begin
           if FrameCtrl.HideNoPlayer then
@@ -108,6 +105,7 @@ begin
 
           SetFrameTitle(PluginShort,0,0); // frame update code there
         end;
+        // clear text, slider to 0, picture to default
       end;
 //      InvalidateRect(FrameWnd,0,false); //??
     end;
@@ -185,6 +183,7 @@ var
   rc:TRECT;
   FrameWnd:HWND;
 begin
+  result:=false;
   if PluginLink^.ServiceExists(MS_CLIST_FRAMES_ADDFRAME)=0 then
     exit;
 
@@ -223,7 +222,7 @@ procedure DestroyFrame;
 var
   h:integer;
 begin
-  if FrameCtrl.FrameId>=0 then
+  if (FrameCtrl<>nil) and (FrameCtrl.FrameId>=0) then
   begin
     PluginLink^.UnhookEvent(plStatusHook);
 
@@ -255,6 +254,7 @@ end;
 
 function InitProc(aGetStatus:boolean=false):integer;
 begin
+  FrameCtrl:=nil;
   result:=0;
   if aGetStatus then
   begin

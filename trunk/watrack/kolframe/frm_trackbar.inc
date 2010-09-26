@@ -10,10 +10,6 @@ type
     procedure DragButton   (Sender: PControl;var Mouse: TMouseEventData);
   end;
 
-procedure ShowHideTrackbar;
-begin
-end;
-
 function CoordToPos(Trackbar:PTrackbar;x:integer):integer;
 var
   range:integer;

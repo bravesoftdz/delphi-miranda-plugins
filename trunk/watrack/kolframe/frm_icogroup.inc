@@ -10,18 +10,7 @@ type
 
     procedure GroupResize(Sender: PObj);
     procedure MouseDown(Sender:PControl;var Mouse:TMouseEventData);
-
-    procedure SaveSettings;
-    procedure LoadSettings;
   end;
-
-procedure tIcoGrpData.SaveSettings;
-begin
-end;
-
-procedure tIcoGrpData.LoadSettings;
-begin
-end;
 
 procedure tIcoGrpData.GroupResize(Sender: PObj);
 var

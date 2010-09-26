@@ -36,7 +36,7 @@ type
   pChunkArray = ^tChunkArray;
   tChunkArray = array [0..1000] of tChunk;
 }
-procedure ProcessMacro(dc:hdc;Chunk:pChunk;TextColor:TCOLORREF=0;BkColor:TCOLORREF=0);
+procedure ProcessMacro(dc:hdc;Chunk:pChunk);
 var
   lf:TLOGFONT;
   i:integer;
@@ -47,20 +47,20 @@ begin
     exit;
   case Chunk^._type shr 16 of
     ctCloseTextColor: begin
-      SetTextColor(dc,TextColor);
+      SetTextColor(dc,Chunk^.add);
     end;
 
     ctCloseBkColor: begin
-      SetBkColor(dc,BkColor);
+      SetBkColor(dc,Chunk^.add);
       SetBkMode(dc,TRANSPARENT);
     end;
 
     ctOpenTextColor: begin
       case Chunk^.val of
-        0:     i:=BkColor;
+        0:     i:=Chunk^.add; //back
         1..16: i:=colors[Chunk^.val-1];
-      else // and 17
-        i:=TextColor;
+      else
+        i:=Chunk^.dir; // text
       end;
       SetTextColor(dc,i);
     end;
@@ -68,10 +68,10 @@ begin
     ctOpenBkColor: begin
       SetBkMode(dc,OPAQUE);
       case Chunk^.val of
+        0:     i:=Chunk^.add; // back
         1..16: i:=colors[Chunk^.val-1];
-        17:    i:=TextColor
-      else // and 0
-        i:=BkColor;
+      else
+        i:=Chunk^.dir; // text
       end;
       SetBkColor(dc,i);
     end;
@@ -101,7 +101,7 @@ begin
   end;
 end;
 
-function Macro(var src:pWideChar;var Chunk:pChunk):boolean;
+function tTxtBlockData.Macro(var src:pWideChar;var Chunk:pChunk):boolean;
 const
   NumMacro = 10;
   macros:array [0..NumMacro-1] of record txt:pWideChar; len:integer; code:integer; end = (
@@ -117,18 +117,73 @@ const
   (txt:'{bg'  ; len:3; code:ctOpenBkColor   ));
 var
   pc,pc1:pWideChar;
-  typ,i,lval:integer;
+  typ,i,lval,ldir,ladd:integer;
   c:WideChar;
 begin
   result:=false;
   if src^<>'{' then exit;
   pc:=src;
   lval:=0;
+  ldir:=ppLeft;
+  ladd:=0;
   for i:=0 to NumMacro-1 do
   begin
     if StrCmpW(pc,macros[i].txt,macros[i].len)=0 then
     begin
       typ:=macros[i].code;
+      case typ of
+        ctOpenBkColor,
+        ctOpenTextColor: begin
+          inc(pc,macros[i].len);
+          if (pc^='#') or ((pc^>='0') and (pc^<='9')) then
+          begin
+            pc1:=pc;
+            if pc^='#' then
+              repeat
+                inc(pc1);
+                c:=pc1^;
+              until ((c<'0') or (c>'9')) and
+                    ((c<'A') or (c>'F')) and
+                    ((c<'a') or (c>'f'))
+            else
+              repeat
+                inc(pc1);
+              until (pc1^<'0') or (pc1^>'9');
+            if pc1^='}' then
+            begin
+              result:=true;
+              ldir:=TextColor;
+              ladd:=BkColor;
+              if (pc^='#') then // RGB
+              begin
+                typ:=typ or ctRGB;
+                lval:=HexToInt(pc+1);
+              end
+              else
+              begin
+                lval:=StrToInt(pc) mod 18;
+              end;
+              src:=pc1+1;
+            end;
+          end;
+        end;
+
+        ctCloseTextColor: begin
+          ladd:=TextColor;
+          inc(src,macros[i].len);
+          result:=true;
+        end;
+
+        ctCloseBkColor: begin
+          ladd:=BkColor;
+          inc(src,macros[i].len);
+          result:=true;
+        end;
+      else
+        inc(src,macros[i].len);
+        result:=true;
+      end;
+
       if (typ=ctOpenBkColor) or (typ=ctOpenTextColor) then // processing color codes
       begin
         inc(pc,macros[i].len);
@@ -167,6 +222,7 @@ begin
         inc(src,macros[i].len);
         result:=true;
       end;
+
       break;
     end;
   end;
@@ -176,7 +232,8 @@ begin
     begin
       _type:=typ shl 16;
       val  :=lval;
-      dir  :=ppLeft;
+      dir  :=ldir;
+      add  :=ladd;
     end;
     inc(Chunk);
   end;
@@ -220,7 +277,7 @@ begin
   inc(Chunk);
 end;
 
-function Split(src:pWideChar):pChunkArray;
+function tTxtBlockData.Split(src:pWideChar):pChunkArray;
 var
   Chunk:pChunk;
   i:integer;
@@ -248,7 +305,7 @@ begin
         inc(src);
       if src^=#0 then exit;
     end;
-    // macro: [b][/b][i][/i][u][/u][cf][/cf][bg][/bg]
+    // [b][/b][i][/i][u][/u][cf][/cf][bg][/bg]
     if Macro(src,Chunk) then
     begin
     end

@@ -8,8 +8,6 @@ var
   AlignCenter,
   FrameHeight:dword;
 
-//  TotalTime:cardinal;
-
 type
   PWATFrame = ^TWATFrame;
   TWATFrame = object(TObj)

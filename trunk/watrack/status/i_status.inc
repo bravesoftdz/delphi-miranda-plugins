@@ -134,14 +134,13 @@ begin
 
               if KeepStatus=BST_UNCHECKED then
               begin
-                if OldXStatus[j]=255 then
-                  oldstatus:=0
-                else
+                // just restoring savedstatus if was. no text changing
+                if OldXStatus[j]<>255 then
                 begin
                   oldstatus:=OldXStatus[j];
                   OldXStatus[j]:=255;
+                  SetXStatus(proto,oldstatus,pWideChar(-1),pWideChar(-1));
                 end;
-                SetXStatus(proto,oldstatus,pWideChar(-1),pWideChar(-1));
               end;
             
             end
@@ -174,12 +173,13 @@ begin
                   xstat:=stvideo
                 else
                   xstat:=staudio;
-                if xstat=0 then
+
+                if xstat=0 then  // not choosed, keep old (current)
                   xstat:=oldstatus
                 else
                 begin
                   if OldXStatus[j]=255 then
-                    OldXStatus[j]:=xstat;
+                    OldXStatus[j]:=oldstatus;
                 end;
 
                 if ClearXStat<>BST_UNCHECKED then

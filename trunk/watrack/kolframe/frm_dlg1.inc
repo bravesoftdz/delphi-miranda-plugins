@@ -160,7 +160,7 @@ begin
         begin
           // Alpha channel
           tmp:=SendDlgItemMessage(Dialog,IDC_FRMALPHA,TBM_GETPOS,0,0);
-          if Cardinal(tmp)<>FrmAlpha then
+          if tmp<>Cardinal(FrmAlpha) then
           begin
             FrmAlpha:=tmp;
             if FrameId>=0 then
@@ -247,20 +247,6 @@ begin
             tmp1:=1;
           end;
 
-{
-          if (tmp<>HideNoPlayer) or (tmp1<>HideNoMusic) then
-          begin
-            HideNoMusic :=tmp1;
-            HideNoPlayer:=tmp;
-            tmp:=CallService(MS_WAT_GETMUSICINFO,0,0);
-            if (FrameId>=0) and
-               (((HideNoPlayer<>BST_UNCHECKED) and (integer(tmp)=WAT_PLS_NOTFOUND)) or
-               (( HideNoMusic <>BST_UNCHECKED) and (tmp<>WAT_PLS_NORMAL))) then
-              HideFrame
-            else
-              ShowFrame;
-          end;
-}
           // Padding
           tmp:=GetDlgItemInt(Dialog,IDC_PADDING_LEFT,tmpb,false);
           if integer(tmp)<>padding.left then
@@ -295,30 +281,10 @@ begin
           if tmp<>UpdInterval then
           begin
             UpdInterval:=tmp;
-{
-            if hFrmTimer<>0 then // FrameWnd MUST be present
-              KillTimer(FrameWnd,hFrmTimer);
-            if (vFrmTimer>0) and (FrameWnd<>0) then
-            begin
-              hFrmTimer:=SetTimer(FrameWnd,TMR_FRAME,vFrmTimer,nil);
-              SendMessage(FrameWnd,WM_WAREFRESH,frcTimer,0);
-            end
-            else
-              hFrmTimer:=0;
-}
           end;
 
         end;
-{
-        if FrameId>=0 then
-        begin
-          if (not IsFrameHidden) and redraw then
-          begin
-            InvalidateRect(FrameWnd,nil,true);
-            UpdateWindow(FrameWnd);
-          end;
-        end;
-}
+
         FrameCtrl.SaveSettings;
       end;
     end;

@@ -91,7 +91,7 @@ begin
 
       if D.rptvalue<>0 then
       begin
-        D.rpttimer:=SetTimer(Sender.GetWindowHandle,1,D.rptvalue,0);
+        D.rpttimer:=SetTimer(Sender.GetWindowHandle,1,D.rptvalue,nil);
       end;
     end;
 
@@ -119,10 +119,6 @@ begin
 
     end;
   end;
-end;
-
-function IcoButtonChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
-begin
 end;
 
 // variant - through remap array by number
