@@ -25,6 +25,7 @@ const
   optTimeout    :PAnsiChar = 'Timeout';
   optVersion    :PAnsiChar = 'version';
   optStatusTmpl :PAnsiChar = 'StatusTmpl';
+  optNumTries   :PAnsiChar = 'NumTries';
   // mRadio compatibility
   optStationURL :PAnsiChar = 'StationURL';
   optMyHandle   :PAnsiChar = 'MyHandle';
@@ -73,6 +74,7 @@ var
   RemoteSong:bool;
   PlayStatus:dword;
   Volume:dword;
+  NumTries:cardinal;
   doLoop:dword;
   PlayFirst:dword;
   doShuffle:dword;

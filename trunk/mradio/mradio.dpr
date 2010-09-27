@@ -21,7 +21,7 @@ const
   PluginInfo:TPLUGININFOEX=(
     cbSize     :sizeof(TPLUGININFOEX);
     shortName  :'mRadio Mod';
-    version    :$00000106;
+    version    :$00000107;
     description:'This plugin plays and records Internet radio streams.'+
                 ' Also local media files can be played.';
     author     :'Awkward';
@@ -180,6 +180,7 @@ begin
   asOffline:=DBReadByte(0,PluginName,optOffline);
   AuConnect:=DBReadByte(0,PluginName,optConnect);
   Volume   :=DBReadByte(0,PluginName,optVolume,50);
+  NumTries :=DBReadByte(0,PluginName,optNumTries);
 
   StatusTmpl:=DBReadUnicode(0,PluginName,optStatusTmpl,'%radio_title%');
 

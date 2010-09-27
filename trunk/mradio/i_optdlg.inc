@@ -333,12 +333,12 @@ begin
   case hMessage of
     WM_DESTROY: begin
 //!!      hRecButton:=0;
-      DBWriteByte(0,PluginName,optLoop   ,doLoop);
-      DBWriteByte(0,PluginName,optShuffle,doShuffle);
-      DBWriteByte(0,PluginName,optContRec,doContRec);
-      DBWriteByte(0,PluginName,optPlay1st,PlayFirst);
-      DBWriteByte(0,PluginName,optOffline,asOffline);
-      DBWriteByte(0,PluginName,optConnect,AuConnect);
+      DBWriteByte(0,PluginName,optLoop    ,doLoop);
+      DBWriteByte(0,PluginName,optShuffle ,doShuffle);
+      DBWriteByte(0,PluginName,optContRec ,doContRec);
+      DBWriteByte(0,PluginName,optPlay1st ,PlayFirst);
+      DBWriteByte(0,PluginName,optOffline ,asOffline);
+      DBWriteByte(0,PluginName,optConnect ,AuConnect);
 
       DBWriteUnicode(0,PluginName,optStatusTmpl,StatusTmpl);
     end;
@@ -599,6 +599,7 @@ begin
       SetDlgItemInt(Dialog,IDC_BUFFER ,sBuffer ,false);
       SetDlgItemInt(Dialog,IDC_PREBUF ,sPreBuf ,false);
       SetDlgItemInt(Dialog,IDC_TIMEOUT,sTimeout,false);
+      SetDlgItemInt(Dialog,IDC_TRIES  ,NumTries,false);
 
       hEAXCombo:=GetDlgItem(Dialog,IDC_EAXTYPE);
       for i:=0 to EAX_ENVIRONMENT_COUNT do
@@ -764,6 +765,9 @@ begin
           BASS_SetEAXParameters(-1,0,-1,-1)
         else
           BASS_SetEAXPreset(EAXItems[i].code);
+
+        NumTries:=GetDlgItemInt(Dialog,IDC_TRIES,ltmp,false);
+        DBWriteByte(0,PluginName,optNumTries,NumTries);
 
         i:=GetDlgItemInt(Dialog,IDC_PREBUF,ltmp,false);
         if i>100 then i:=100;
