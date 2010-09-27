@@ -180,7 +180,9 @@ begin
   asOffline:=DBReadByte(0,PluginName,optOffline);
   AuConnect:=DBReadByte(0,PluginName,optConnect);
   Volume   :=DBReadByte(0,PluginName,optVolume,50);
-  NumTries :=DBReadByte(0,PluginName,optNumTries);
+  NumTries :=DBReadByte(0,PluginName,optNumTries,1);
+  if NumTries<1 then NumTries:=1;
+
 
   StatusTmpl:=DBReadUnicode(0,PluginName,optStatusTmpl,'%radio_title%');
 
