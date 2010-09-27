@@ -557,6 +557,7 @@ var
   icy:PAnsiChar;
   Len,Progress:DWORD;
   flags:dword;
+  i:integer;
   EAXUsed:bool;
   ansiurl:array [0..511] of AnsiChar;
 begin
@@ -564,55 +565,50 @@ begin
   if plist=nil then
     ControlCenter(MRC_STATUS,RD_STATUS_CONNECT);
 
-  flags:=BASS_STREAM_STATUS;
   EAXUsed:=DBReadByte(0,PluginName,optEAXType,0)<>0;
-  if EAXUsed then
-    flags:=BASS_STREAM_STATUS or BASS_SAMPLE_3D or BASS_SAMPLE_MONO;
-{
-  if RemoteSong then
-  begin
-    SaveHeader:=true;
-    chan:=BASS_StreamCreateURL(FastWideToAnsiBuf(url,ansiurl)
-        ,0,flags,@StatusProc,nil)
-  end
-  else
-  begin
-    flags:=flags or BASS_UNICODE;
-    if (plist=nil) and (doLoop<>BST_UNCHECKED) then
-      flags:=flags or BASS_SAMPLE_LOOP;
-    chan:=BASS_StreamCreateFile(FALSE,url,0,0,flags);
-  end;
-}
-  flags:=flags or BASS_UNICODE;
-  if RemoteSong then
-  begin
-    SaveHeader:=true;
-    chan:=BASS_StreamCreateURL(url,0,flags,@StatusProc,nil)
-  end
-  else
-  begin
-    if (plist=nil) and (doLoop<>BST_UNCHECKED) then
-      flags:=flags or BASS_SAMPLE_LOOP;
-  chan:=BASS_StreamCreateFile(FALSE,url,0,0,flags);
-  end;
 
-  if (chan=0) and EAXUsed then
+{}
+  for i:=0 to NumTries-1 do
   begin
-    flags:=flags and not (BASS_SAMPLE_3D or BASS_SAMPLE_MONO);
-    if RemoteSong then
-      chan:=BASS_StreamCreateURL({ansi}url,0,flags,@StatusProc,nil)
+    if EAXUsed then
+      flags:=BASS_STREAM_STATUS or BASS_SAMPLE_3D or BASS_SAMPLE_MONO
     else
-      chan:=BASS_StreamCreateFile(FALSE,url,0,0,flags);
-  end;
+      flags:=BASS_STREAM_STATUS;
 
-  if (chan=0) and RemoteSong then
-  begin
-    if BASS_ErrorGetCode=2 then
+    flags:=flags or BASS_UNICODE;
+    if RemoteSong then
     begin
-      flags:=flags and not BASS_UNICODE;
-      chan:=BASS_StreamCreateURL(FastWideToAnsiBuf(url,ansiurl),0,flags,@StatusProc,nil)
+      SaveHeader:=true;
+      chan:=BASS_StreamCreateURL(url,0,flags,@StatusProc,nil)
+    end
+    else
+    begin
+      if (plist=nil) and (doLoop<>BST_UNCHECKED) then
+        flags:=flags or BASS_SAMPLE_LOOP;
+      chan:=BASS_StreamCreateFile(FALSE,url,0,0,flags);
     end;
+
+    if (chan=0) and EAXUsed then
+    begin
+      flags:=flags and not (BASS_SAMPLE_3D or BASS_SAMPLE_MONO);
+      if RemoteSong then
+        chan:=BASS_StreamCreateURL({ansi}url,0,flags,@StatusProc,nil)
+      else
+        chan:=BASS_StreamCreateFile(FALSE,url,0,0,flags);
+    end;
+
+    if (chan=0) and RemoteSong then
+    begin
+      if BASS_ErrorGetCode=2 then
+      begin
+        flags:=flags and not BASS_UNICODE;
+        chan:=BASS_StreamCreateURL(FastWideToAnsiBuf(url,ansiurl),0,flags,@StatusProc,nil)
+      end;
+    end;
+
+    if chan<>0 then break;
   end;
+{}
 
   if chan=0 then
   begin
