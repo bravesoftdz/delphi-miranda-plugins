@@ -767,6 +767,7 @@ begin
           BASS_SetEAXPreset(EAXItems[i].code);
 
         NumTries:=GetDlgItemInt(Dialog,IDC_TRIES,ltmp,false);
+        if NumTries<1 then NumTries:=1;
         DBWriteByte(0,PluginName,optNumTries,NumTries);
 
         i:=GetDlgItemInt(Dialog,IDC_PREBUF,ltmp,false);
