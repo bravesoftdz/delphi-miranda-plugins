@@ -54,7 +54,7 @@ function DetectHKManager:dword;
 const
   MAX_REDIRECT_RECURSE = 4;
 
-function SendRequest(url:PAnsiChar;rtype:int;args:pAnsiChar=nil):pAnsiChar;
+function SendRequest(url:PAnsiChar;rtype:int;args:pAnsiChar=nil;hNetLib:THANDLE=0):pAnsiChar;
 
 function GetFile(url:PAnsiChar;save_file:PAnsiChar;
                  hNetLib:THANDLE=0;recurse_count:integer=0):bool; overload;
@@ -833,12 +833,12 @@ begin
   DestroyMenu(mmenu);
 end;
 
-function SendRequest(url:PAnsiChar;rtype:int;args:pAnsiChar=nil):pAnsiChar;
+function SendRequest(url:PAnsiChar;rtype:int;args:pAnsiChar=nil;hNetLib:THANDLE=0):pAnsiChar;
 var
   nlu:TNETLIBUSER;
   req :TNETLIBHTTPREQUEST;
   resp:PNETLIBHTTPREQUEST;
-  hNetLib:THANDLE;
+  hTmpNetLib:THANDLE;
   nlh:array [0..1] of TNETLIBHTTPHEADER;
   buf:array [0..31] of AnsiChar;
 begin
@@ -861,13 +861,18 @@ begin
     req.dataLength  :=StrLen(args);
   end;
 
-  FillChar(nlu,SizeOf(nlu),0);
-  nlu.cbSize          :=SizeOf(nlu);
-  nlu.flags           :=NUF_HTTPCONNS or NUF_NOHTTPSOPTION or NUF_OUTGOING or NUF_NOOPTIONS;
-  nlu.szSettingsModule:='dummy';
-  hNetlib:=CallService(MS_NETLIB_REGISTERUSER,0,dword(@nlu));
+  if hNetLib=0 then
+  begin
+    FillChar(nlu,SizeOf(nlu),0);
+    nlu.cbSize          :=SizeOf(nlu);
+    nlu.flags           :=NUF_HTTPCONNS or NUF_NOHTTPSOPTION or NUF_OUTGOING or NUF_NOOPTIONS;
+    nlu.szSettingsModule:='dummy';
+    hTmpNetlib:=CallService(MS_NETLIB_REGISTERUSER,0,dword(@nlu));
+  end
+  else
+    hTmpNetLib:=hNetLib;
 
-  resp:=pointer(CallService(MS_NETLIB_HTTPTRANSACTION,hNetlib,dword(@req)));
+  resp:=pointer(CallService(MS_NETLIB_HTTPTRANSACTION,hTmpNetLib,dword(@req)));
 
   if resp<>nil then
   begin
@@ -881,8 +886,8 @@ begin
     CallService(MS_NETLIB_FREEHTTPREQUESTSTRUCT,0,dword(resp));
   end;
 
-  if nlu.cbSize<>0 then
-    CallService(MS_NETLIB_CLOSEHANDLE,hNetLib,0);
+  if (hNetLib=0) and (nlu.cbSize<>0) then
+    CallService(MS_NETLIB_CLOSEHANDLE,hTmpNetLib,0);
 end;
 
 (*
