@@ -54,6 +54,7 @@ const
 const
   frm_back:pAnsiChar = 'Frame background';
 var
+  hNetLib:THANDLE;
   colorhook:THANDLE;
   srv:THANDLE;
   hbr:HBRUSH;
@@ -212,7 +213,7 @@ begin
   pc^:='='; inc(pc);
   Encode(pc,pca);
 
-  pc:=SendRequest(query,REQUEST_POST,buf);
+  pc:=SendRequest(query,REQUEST_POST,buf,hNetLib);
   mFreeMem(buf);
   if pc<>nil then
   begin
@@ -461,6 +462,8 @@ var
   Frame:TCLISTFrame;
   tr:TRECT;
   cid:TColourID;
+  nlu:TNETLIBUSER;
+  szTemp:PAnsiChar;
 begin
   if PluginLink^.ServiceExists(MS_CLIST_FRAMES_ADDFRAME)=0 then
     exit;
@@ -507,6 +510,15 @@ begin
       ColorReload(0,0);
 
       srv:=PluginLink^.CreateServiceFunction(MS_TRANSLATE_GOOGLE,@SrvGetTranslatedText);
+
+      FillChar(nlu,SizeOf(nlu),0);
+      szTemp:=Translate('Google Translate server connection');
+      nlu.szDescriptiveName.a:=szTemp;
+      nlu.cbSize             :=SizeOf(nlu);
+      nlu.flags              :=NUF_HTTPCONNS or NUF_NOHTTPSOPTION or NUF_OUTGOING;
+      nlu.szSettingsModule   :='Google Translate Frame';
+      hNetlib:=CallService(MS_NETLIB_REGISTERUSER,0,dword(@nlu));
+
     end;
   end;
 end;
@@ -518,6 +530,8 @@ begin
     PluginLink^.DestroyServiceFunction(srv);
     CallService(MS_CLIST_FRAMES_REMOVEFRAME,FrameId,0);
     FrameId:=-1;
+
+    CallService(MS_NETLIB_CLOSEHANDLE,hNetLib,0);
   end;
   DestroyWindow(FrameWnd);
   FrameWnd:=0;
