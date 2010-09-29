@@ -174,7 +174,15 @@ const
 
 type
   TFSortFunc = function (para1:pointer; para2:pointer):longint;cdecl;
+{
+// Assumes first 32 bit value of the data is the numeric key 
+// and uses it to perform sort/search operations, this results
+// in much better performance as no compare function calls needed 
+// Incredibly useful for Hash Tables
+#define NumericKeySort (FSortFunc)(void*) -1
+#define HandleKeySort  (FSortFunc)(void*) -2
 
+}
   PSortedList = ^TSortedList;
   TSortedList = record
     items    : ^pointer;

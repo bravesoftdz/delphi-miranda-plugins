@@ -2,6 +2,9 @@
 type
   pAWKTrackbar = ^tAWKTrackbar;
   tAWKTrackbar = object(TObj)
+    total:integer;
+
+    
     procedure CtrlResize(Sender: PObj);
     procedure Erase(Sender: PControl; DC: HDC);
     procedure Paint(Sender: PControl; DC: HDC);
@@ -9,6 +12,36 @@ type
     procedure UnPressButton(Sender: PControl;var Mouse: TMouseEventData);
     procedure DragButton   (Sender: PControl;var Mouse: TMouseEventData);
   end;
+
+procedure TrackbarSetRange(Trackbar:PTrackbar;timer:integer;total:integer=-1);
+var
+  D:pAWKTrackbar;
+  lpercent:real;
+begin
+  with Trackbar^ do
+  begin
+    D:=pointer(CustomObj);
+    if total<0 then // changing timer only
+    begin
+      total:=D.total;
+      if RangeMax>0 then
+        lpercent:=position/RangeMax
+      else
+        lpercent:=0;
+    end
+    else            // for new track
+    begin
+      D.total:=total;
+      lpercent:=0;
+    end;
+
+    total:=(total*1000) div timer;
+    RangeMax:=total;
+    LineSize:=total div 100;
+    PageSize:=total div 10;
+    Position:=round(lpercent*total);
+  end;
+end;
 
 function CoordToPos(Trackbar:PTrackbar;x:integer):integer;
 var
@@ -47,6 +80,9 @@ var
   D: PIcoBtnData;
 begin
   D:=Pointer(Sender.CustomObj);
+  // (trackbar)(Frame)
+  CallService(MS_WAT_PRESSBUTTON,WAT_CTRL_SEEK,
+      Cardinal(D.action)*PWATFrame(Sender.Parent.Parent).UpdInterval div 1000);
   D.action:=-1;
 end;
 
@@ -137,7 +173,7 @@ begin
   begin
     OnClick:=nil;
     OnMouseDown:=D.PressButton;
-//    OnMouseUp  :=D.UnPressButton;
+    OnMouseUp  :=D.UnPressButton;
     OnMouseMove:=D.DragButton;
   end;
 end;

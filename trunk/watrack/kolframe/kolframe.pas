@@ -82,7 +82,6 @@ const
   needToChange:boolean=true;
 var
   bufw:array [0..511] of WideChar;
-  tmp:integer;
 //  FrameWnd:HWND;
   Cover:pAnsiChar;
 begin
@@ -107,7 +106,9 @@ begin
         end;
         // clear text, slider to 0, picture to default
       end;
-//      InvalidateRect(FrameWnd,0,false); //??
+
+      // really, need just position=0;
+      TrackbarSetRange(FrameCtrl.Trackbar,FrameCtrl.UpdInterval,0);
     end;
 
     WAT_EVENT_NEWTRACK: begin
@@ -121,14 +122,9 @@ begin
       end;
 
       // trackbar
-      tmp:=(PSongInfo(lParam)^.total*1000) div FrameCtrl.UpdInterval;
-      with FrameCtrl.Trackbar^ do
-      begin
-        RangeMax:=tmp;
-        LineSize:=tmp div 100;
-        PageSize:=tmp div 10;
-      end;
-//          FrameCtrl.UpdTimer:=SetTimer(0,0,FrameCtrl.UpdInterval,@);
+      TrackbarSetRange(FrameCtrl.Trackbar,FrameCtrl.UpdInterval,PSongInfo(lParam)^.total);
+
+      FrameCtrl.UpdTimer:=SetTimer(0,0,FrameCtrl.UpdInterval,@FrameTimerProc);
 
       // text
 
