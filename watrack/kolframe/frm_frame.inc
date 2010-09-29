@@ -24,6 +24,27 @@ const
   opt_PadRight  :PAnsiChar = 'frame/paddingright';
   opt_PadBottom :PAnsiChar = 'frame/paddingbottom';
 
+procedure FrameTimerProc(wnd:HWND;uMsg:cardinal;idEvent:cardinal;dwTime:dword); stdcall;
+var
+  psi:PSongInfo;
+begin
+  if FrameCtrl.Trackbar<>nil then
+  begin
+    if (FrameCtrl.ShowControls and scTrackBar)<>0 then
+    begin
+      if //(TrackPos>=0) and
+         (CallService(MS_WAT_GETMUSICINFO,WAT_INF_CHANGES,dword(@psi))<>
+         WAT_PLS_NOTFOUND) then
+      begin
+        FrameCtrl.Trackbar.Position:=(psi^.time*1000) div FrameCtrl.UpdInterval;
+      end;
+    end;
+
+    FrameCtrl.Trackbar.Update;
+    FrameCtrl.Form.Update;
+  end;
+end;
+
 procedure TWATFrame.SaveSettings;
 var
   D:pIcoGrpData;
@@ -49,13 +70,19 @@ begin
 //  InvalidateRect(FrameCtrl.Buttons.GetWindowHandle,nil,true);
   InvalidateRect(FrameCtrl.Form.GetWindowHandle,nil,true);
 //  FrameCtrl.Buttons.Update;
+
   if TextBlock<>nil then
   begin
     DT:=Pointer(TextBlock.CustomObj);
     DT.ChangeBkColor(BkColor);
   end;
+
   if Trackbar<>nil then
+  begin
     Trackbar.Visible:=(ShowControls and scTrackBar)<>0;
+    TrackbarSetRange(Trackbar,UpdInterval);
+  end;
+
   if Buttons<>nil then
   begin
     Buttons.Visible:=(ShowControls and scButtons )<>0;
@@ -82,17 +109,14 @@ begin
               ShowFrame;
           end;
 }
-{
-            if hFrmTimer<>0 then // FrameWnd MUST be present
-              KillTimer(FrameWnd,hFrmTimer);
-            if (vFrmTimer>0) and (FrameWnd<>0) then
-            begin
-              hFrmTimer:=SetTimer(FrameWnd,TMR_FRAME,vFrmTimer,nil);
-              SendMessage(FrameWnd,WM_WAREFRESH,frcTimer,0);
-            end
-            else
-              hFrmTimer:=0;
-}
+  if UpdTimer<>0 then // FrameWnd MUST be present
+    KillTimer(0,UpdTimer);
+  if UpdInterval>0 then
+  begin
+    UpdTimer:=SetTimer(0,0,UpdInterval,@FrameTimerProc);
+  end
+  else
+    UpdTimer:=0;
 
 end;
 
@@ -300,8 +324,8 @@ end;
 
 procedure TWATFrame.RefreshAllFrameIcons;
 begin
-  RefreshButtonIcons  (Buttons);
-  RefreshTrackbarIcons(Trackbar);
+  if Buttons <>nil then RefreshButtonIcons(Buttons);
+  if Trackbar<>nil then RefreshTrackbarIcons(Trackbar);
 end;
 
 function CreateFrameWindow(parent:HWND):THANDLE;

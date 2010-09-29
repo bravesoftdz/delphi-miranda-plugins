@@ -53,6 +53,7 @@ type
 	  timeStampToTimeZoneTimeStamp:function(hTZ:THANDLE; ts:time_t):time_t; cdecl;
 
     getTzi:function(hTZ:THANDLE):PTimeZoneInformation; cdecl;
+	  getTzName:function(hTZ:THANDLE):TChar;
   end;
 
 // every protocol should declare this variable to use the Time API

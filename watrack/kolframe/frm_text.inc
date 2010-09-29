@@ -73,6 +73,26 @@ begin
   inherited;
 end;
 
+function WndProcTextBlock( Sender: PControl; var Msg: TMsg; var Rslt:Integer ): boolean;
+begin
+  result:=false;
+  case msg.message of
+    WM_TIMER: begin
+    end;
+  end;
+end;
+
+procedure ClearTextBlock(TextBlock:PControl);
+var
+  D:pTxtBlockData;
+begin
+  D:=pointer(TextBlock.CustomObj);
+  DeleteChunks(D.TextChunk);
+  mFreeMem(D.CurrentText); //??
+  if D.UpdTimer<>0 then
+    KillTimer(0,D.UpdTimer);
+end;
+
 procedure tTxtBlockData.InitFrame;
 begin
   FillChar(TextLF,SizeOf(TLOGFONT),0);
@@ -139,8 +159,8 @@ begin
   DBWriteUnicode(0,PluginShort,opt_FrameText ,Template);
   RemakeText;
 {
-              if (UpdInterval>0) and (FrameWnd<>0) then
-                UpdTimer:=SetTimer(FrameWnd,TMR_TEXT,(MaxTxtScrollSpeed+1-UpdInterval)*100,nil)
+  if (UpdInterval>0) and (FrameWnd<>0) then
+    UpdTimer:=SetTimer(FrameWnd,TMR_TEXT,(MaxTxtScrollSpeed+1-UpdInterval)*100,nil)
 }
 end;
 
@@ -158,14 +178,16 @@ var
   dst:TRECT;
   fnt1:HFONT;
 begin
-  fnt1:=SelectObject(dc,TextFont);
-  SetTextColor(dc,TextColor);
-  CopyRect(dst,Sender.BoundsRect);
-  InflateRect(dst,-4,-2);
-
   if TextChunk<>nil then
+  begin
+    fnt1:=SelectObject(dc,TextFont);
+    SetTextColor(dc,TextColor);
+    CopyRect(dst,Sender.BoundsRect);
+    InflateRect(dst,-4,-2);
+
     DrawChunks(dc,@TextChunk[0],dst,true); // i.e. only paint or roll
-  SelectObject(dc,fnt1);
+    SelectObject(dc,fnt1);
+  end;
 end;
 
 procedure TTxtBlockData.MouseDown(Sender:PControl;var Mouse:TMouseEventData);
@@ -225,5 +247,7 @@ begin
     OnResize   :=D.CtrlResize;
     OnPaint    :=D.TextPaint;
     OnMouseDown:=D.MouseDown;
+
+    AttachProc(WndProcTextBlock);
   end;
 end;

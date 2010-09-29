@@ -25,6 +25,7 @@ const
 //  BASS_CONFIG_WMA_ASX        = $10102;
   BASS_CONFIG_WMA_BASSFILE   = $10103;
   BASS_CONFIG_WMA_NETSEEK    = $10104;
+  BASS_CONFIG_WMA_VIDEO      = $10105;
 
   // additional WMA sync types
   BASS_SYNC_WMA_CHANGE       = $10100;
@@ -37,6 +38,7 @@ const
   BASS_WMA_ENCODE_STANDARD   = $2000;  // standard WMA
   BASS_WMA_ENCODE_PRO        = $4000;  // WMA Pro
   BASS_WMA_ENCODE_24BIT      = $8000;  // 24-bit
+  BASS_WMA_ENCODE_PCM        = $10000; // uncompressed PCM
   BASS_WMA_ENCODE_SCRIPT     = $20000; // set script (mid-stream tags) in the WMA encoding
 
   // Additional flag for use with BASS_WMA_EncodeGetRates
@@ -47,10 +49,11 @@ const
   BASS_WMA_ENCODE_DATA       = 1;
   BASS_WMA_ENCODE_DONE       = 2;
 
-  // BASS_WMA_EncodeSetTag "type" values
+  // BASS_WMA_EncodeSetTag "form" values
   BASS_WMA_TAG_ANSI          = 0;
   BASS_WMA_TAG_UNICODE       = 1;
   BASS_WMA_TAG_UTF8          = 2;
+  BASS_WMA_TAG_BINARY        = $100; // FLAG: binary tag (HIWORD=length)
 
   // BASS_CHANNELINFO type
   BASS_CTYPE_STREAM_WMA      = $10300;
@@ -59,6 +62,7 @@ const
   // Additional BASS_ChannelGetTags type
   BASS_TAG_WMA               = 8;  // WMA header tags : series of null-terminated UTF-8 strings
   BASS_TAG_WMA_META          = 11; // WMA mid-stream tag : UTF-8 string
+  BASS_TAG_WMA_CODEC         = 12; // WMA codec
 
 
 type
@@ -91,6 +95,8 @@ var BASS_WMA_StreamCreateFile      :function(mem:BOOL; fl:pointer; offset,length
 var BASS_WMA_StreamCreateFileAuth  :function(mem:BOOL; fl:pointer; offset,length:QWORD; flags:DWORD; user,pass:PChar): HSTREAM; stdcall;
 var BASS_WMA_StreamCreateFileUser  :function(system,flags:DWORD; var procs:BASS_FILEPROCS; user:Pointer): HSTREAM; stdcall;
 
+var BASS_WMA_GetTags               :function(fname:PChar; flags:DWORD): PAnsiChar; stdcall;
+
 var BASS_WMA_EncodeGetRates        :function(freq,chans,flags:DWORD): PDWORD; stdcall;
 var BASS_WMA_EncodeOpen            :function(freq,chans,flags,bitrate:DWORD; proc:WMENCODEPROC; user:Pointer): HWMENCODE; stdcall;
 var BASS_WMA_EncodeOpenFile        :function(freq,chans,flags,bitrate:DWORD; fname:PChar): HWMENCODE; stdcall;
@@ -119,9 +125,11 @@ const
 
 procedure SetProcs(handle:THANDLE);
 begin
-  @BASS_WMA_StreamCreateFile    :=GetProcAddress(handle,'BASS_WMA_StreamCreateFile');
-  @BASS_WMA_StreamCreateFileAuth:=GetProcAddress(handle,'BASS_WMA_StreamCreateFileAuth');
-  @BASS_WMA_StreamCreateFileUser:=GetProcAddress(handle,'BASS_WMA_StreamCreateFileUser');
+  @BASS_WMA_StreamCreateFile      :=GetProcAddress(handle,'BASS_WMA_StreamCreateFile');
+  @BASS_WMA_StreamCreateFileAuth  :=GetProcAddress(handle,'BASS_WMA_StreamCreateFileAuth');
+  @BASS_WMA_StreamCreateFileUser  :=GetProcAddress(handle,'BASS_WMA_StreamCreateFileUser');
+
+  @BASS_WMA_GetTags               :=GetProcAddress(handle,'BASS_WMA_GetTags');
 
   @BASS_WMA_EncodeGetRates        :=GetProcAddress(handle,'BASS_WMA_EncodeGetRates');
   @BASS_WMA_EncodeOpen            :=GetProcAddress(handle,'BASS_WMA_EncodeGetOpen');
