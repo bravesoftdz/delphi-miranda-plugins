@@ -3,11 +3,12 @@ type
   pAWKTrackbar = ^tAWKTrackbar;
   tAWKTrackbar = object(TObj)
     total:integer;
+    UpdInterval:integer;
 
-    
     procedure CtrlResize(Sender: PObj);
     procedure Erase(Sender: PControl; DC: HDC);
     procedure Paint(Sender: PControl; DC: HDC);
+    procedure Scroll(Sender:PTrackbar; Code:Integer);
     procedure PressButton  (Sender: PControl;var Mouse: TMouseEventData);
     procedure UnPressButton(Sender: PControl;var Mouse: TMouseEventData);
     procedure DragButton   (Sender: PControl;var Mouse: TMouseEventData);
@@ -34,13 +35,22 @@ begin
       D.total:=total;
       lpercent:=0;
     end;
-
+    D.UpdInterval:=timer;
     total:=(total*1000) div timer;
     RangeMax:=total;
     LineSize:=total div 100;
     PageSize:=total div 10;
     Position:=round(lpercent*total);
   end;
+end;
+
+procedure SetTrackbarPosition(Trackbar:PTrackbar;pos:integer);
+var
+  D: PIcoBtnData;
+begin
+  D:=Pointer(Trackbar.Children[0].CustomObj); // slider
+  if D.active<>D.ico_pressed then
+    Trackbar.Position:=pos;
 end;
 
 function CoordToPos(Trackbar:PTrackbar;x:integer):integer;
@@ -80,9 +90,8 @@ var
   D: PIcoBtnData;
 begin
   D:=Pointer(Sender.CustomObj);
-  // (trackbar)(Frame)
   CallService(MS_WAT_PRESSBUTTON,WAT_CTRL_SEEK,
-      Cardinal(D.action)*PWATFrame(Sender.Parent.Parent).UpdInterval div 1000);
+    Cardinal(D.action)*pAWKTrackbar(Sender.Parent.CustomObj).UpdInterval div 1000);
   D.action:=-1;
 end;
 
@@ -100,6 +109,15 @@ begin
       D.action:=pos;
       PTrackbar(Sender.Parent).Position:=pos;
     end;
+  end;
+end;
+
+procedure tAWKTrackbar.Scroll(Sender:PTrackbar; Code:Integer);
+begin
+  if code=TB_ENDTRACK then
+  begin
+    CallService(MS_WAT_PRESSBUTTON,WAT_CTRL_SEEK,
+      Cardinal(Sender.Position)*pAWKTrackbar(Sender.CustomObj).UpdInterval div 1000);
   end;
 end;
 
@@ -167,6 +185,7 @@ begin
     OnResize    :=D.CtrlResize;
     OnEraseBkGnd:=D.Erase;
     OnPaint     :=D.Paint;
+    OnScroll    :=D.Scroll;
   end;
 
   with CreateIcoButton(result,WAT_CTRL_SEEK)^ do

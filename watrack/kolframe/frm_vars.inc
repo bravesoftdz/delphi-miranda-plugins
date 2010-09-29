@@ -5,7 +5,6 @@ var
 
   HiddenByMe:bool;
 
-  AlignCenter,
   FrameHeight:dword;
 
 type
