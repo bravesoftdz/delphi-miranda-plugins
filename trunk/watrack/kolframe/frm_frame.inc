@@ -36,7 +36,7 @@ begin
          (CallService(MS_WAT_GETMUSICINFO,WAT_INF_CHANGES,dword(@psi))<>
          WAT_PLS_NOTFOUND) then
       begin
-        FrameCtrl.Trackbar.Position:=(psi^.time*1000) div FrameCtrl.UpdInterval;
+        SetTrackBarPosition(FrameCtrl.Trackbar,(psi^.time*1000) div FrameCtrl.UpdInterval)
       end;
     end;
 

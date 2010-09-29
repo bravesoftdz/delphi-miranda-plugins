@@ -36,6 +36,7 @@ type
 //    RollTail   :integer;
     UpdInterval :cardinal;
     UpdTimer    :cardinal;
+    AlignCenter :cardinal;
 
     destructor Destroy; virtual;
     procedure InitFrame;
@@ -135,7 +136,7 @@ begin
   TextColor   :=DBReadDWord(0,PluginShort,opt_FrmTxtClr ,0);
   TextEffect  :=DBReadByte (0,PluginShort,opt_FrmEffect ,effCut);
 
-//??  AlignCenter :=DBReadByte (0,PluginShort,opt_AlgnCenter,BST_UNCHECKED);
+  AlignCenter :=DBReadByte (0,PluginShort,opt_AlgnCenter,BST_UNCHECKED);
 
   Template:=DBReadUnicode(0,PluginShort,opt_FrameText);
   
@@ -151,7 +152,7 @@ begin
   DBWriteByte   (0,PluginShort,opt_RollGap   ,RollGap);
 //  DBWriteByte   (0,PluginShort,opt_RollTail  ,RollTail);
   DBWriteByte   (0,PluginShort,opt_FrmEffect ,TextEffect);
-//!!  DBWriteByte   (0,PluginShort,opt_AlgnCenter,AlignCenter);
+  DBWriteByte   (0,PluginShort,opt_AlgnCenter,AlignCenter);
   DBWriteWord   (0,PluginShort,opt_TxtTimer  ,UpdInterval);
 
   DBWriteStruct (0,PluginShort,opt_FrmFont   ,@TextLF,SizeOf(TextLF));
