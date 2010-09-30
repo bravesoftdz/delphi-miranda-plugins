@@ -127,6 +127,7 @@ begin
       FrameCtrl.UpdTimer:=SetTimer(0,0,FrameCtrl.UpdInterval,@FrameTimerProc);
 
       // text
+      UpdateTextBlock(FrameCtrl.TextBlock,true);
 
       ShowFrame(FrameCtrl.FrameId);
     end;

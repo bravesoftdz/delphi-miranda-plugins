@@ -39,9 +39,27 @@ begin
         SetTrackBarPosition(FrameCtrl.Trackbar,(psi^.time*1000) div FrameCtrl.UpdInterval)
       end;
     end;
+  end;
 
-    FrameCtrl.Trackbar.Update;
-    FrameCtrl.Form.Update;
+  if (FrameCtrl.ShowControls and scText)<>0 then
+  begin
+    UpdateTextBlock(FrameCtrl.TextBlock,false); // fase - check for %percent%/%time%
+  end;
+
+  FrameCtrl.Form.Update;
+end;
+
+procedure TWATFrame.AdjustFrame;
+var
+  h:integer;
+begin
+  h:=Form.Height; // or need to get FRAME height
+  if (ShowControls and scTrackbar)<>0 then dec(h,18);
+  if (ShowControls and scButtons )<>0 then dec(h,16+2*BtnGap);
+  with TextBlock^ do
+  begin
+    Top   :=BtnGap;
+    Height:=h-Top;
   end;
 end;
 
@@ -67,12 +85,11 @@ begin
 
   RefreshPicture;
 
-//  InvalidateRect(FrameCtrl.Buttons.GetWindowHandle,nil,true);
   InvalidateRect(FrameCtrl.Form.GetWindowHandle,nil,true);
-//  FrameCtrl.Buttons.Update;
 
   if TextBlock<>nil then
   begin
+    TextBlock.Visible:=(ShowControls and scText)<>0;
     DT:=Pointer(TextBlock.CustomObj);
     DT.ChangeBkColor(BkColor);
   end;
@@ -85,30 +102,16 @@ begin
 
   if Buttons<>nil then
   begin
-    Buttons.Visible:=(ShowControls and scButtons )<>0;
+    Buttons.Visible:=(ShowControls and scButtons)<>0;
     D:=Pointer(Buttons.CustomObj);
     D.ShowVolume:=(ShowControls and scVolume)<>0; // like Buttons.Childrens[0].Visible
     D.ButtonGap :=(ShowControls and scGap   )<>0;
     SendMessage(Buttons.GetWindowHandle,WM_SIZE,0,0);
   end;
 
+  AdjustFrame;
   FrameCtrl.Form.Update;
-//  RedrawWindow(FrameCtrl.Form.GetWindowHandle,nil,0,
-//      RDW_INVALIDATE or RDW_ALLCHILDREN	or RDW_UPDATENOW);
-{
-          if (tmp<>HideNoPlayer) or (tmp1<>HideNoMusic) then
-          begin
-            HideNoMusic :=tmp1;
-            HideNoPlayer:=tmp;
-            tmp:=CallService(MS_WAT_GETMUSICINFO,0,0);
-            if (FrameId>=0) and
-               (((HideNoPlayer<>BST_UNCHECKED) and (integer(tmp)=WAT_PLS_NOTFOUND)) or
-               (( HideNoMusic <>BST_UNCHECKED) and (tmp<>WAT_PLS_NORMAL))) then
-              HideFrame
-            else
-              ShowFrame;
-          end;
-}
+
   if UpdTimer<>0 then // FrameWnd MUST be present
     KillTimer(0,UpdTimer);
   if UpdInterval>0 then
@@ -364,6 +367,8 @@ begin
         if BkBitmap=HBITMAP(-1) then
           BkBitmap:=0;
       end;
+
+      AdjustFrame;
     end;
 
     with FrameCtrl.Form^ do
