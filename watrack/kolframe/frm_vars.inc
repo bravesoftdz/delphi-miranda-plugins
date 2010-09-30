@@ -48,7 +48,7 @@ type
     procedure LoadSettings;
     procedure SetAlpha(value:integer);
     procedure RefreshPicture(cover:PAnsiChar=nil);
-
+    procedure AdjustFrame;
   end;
 
 var

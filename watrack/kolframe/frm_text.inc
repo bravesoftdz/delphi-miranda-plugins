@@ -59,6 +59,22 @@ type
 
 {$include frm_chunk.inc}
 
+procedure UpdateTextBlock(TextBlock:PControl;force:boolean);
+begin
+  with pTxtBlockData(TextBlock.CustomObj)^ do
+  begin
+    if not force then
+    begin
+      if (StrPosW(Template,'%percent%')=nil) and
+         (StrPosW(Template,'%time%'   )=nil) then // need to remake
+        exit;
+    end;
+    RemakeText;
+    TextBlock.Update;
+//    SendMessage(TextBlock.GetWindowHandle,WM_SIZE,0,0);
+  end;
+end;
+
 destructor tTxtBlockData.Destroy;
 begin
   if UpdTimer<>0 then
@@ -226,23 +242,21 @@ var
   D:pTxtBlockData;
 begin
   result:=NewPanel(AOwner,esNone);
+//  result:=NewLabel(AOwner,'');
   New(D, Create);
   with result^ do
   begin
     CustomObj  :=D;
     Transparent:=true;
 
-    Left :=AOwner.Left+awkTextPad;
-    Width:=AOwner.Width-awkTextPad*2;
+    SetSize(AOwner.Width-awkTextPad*2,40);
+    SetPosition(AOwner.Left+awkTextPad,awkTextPad);
+
     Anchor(true,true,true,true);
 
     D.LoadSettings;
     D.InitFrame;
     D.BkColor:=BkColor;
-{}
-//    StrDupW(D.CurrentText,'Sample {bg1}of{/bg} text'#13#10'second {b}line{/b} of text');
-//    D.TextChunk:=Split(D.CurrentText);
-{}
     D.TextChunk:=nil;
 
     OnResize   :=D.CtrlResize;

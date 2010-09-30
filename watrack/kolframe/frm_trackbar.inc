@@ -51,6 +51,8 @@ begin
   D:=Pointer(Trackbar.Children[0].CustomObj); // slider
   if D.active<>D.ico_pressed then
     Trackbar.Position:=pos;
+
+  Trackbar.Update;
 end;
 
 function CoordToPos(Trackbar:PTrackbar;x:integer):integer;
