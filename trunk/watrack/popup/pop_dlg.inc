@@ -33,6 +33,8 @@ begin
       CheckDlgButton(Dialog,IDC_ACTRIGHTPLAYER,ord(Hi(PopupAction)=2));
       CheckDlgButton(Dialog,IDC_ACTRIGHTNEXT  ,ord(Hi(PopupAction)=3));
 
+      CheckDlgButton(Dialog,IDC_USEBUTTONS,PopUpButtons);
+
       SetDlgItemInt (Dialog,IDC_DELAY,PopUpPause,false);
 
       if PopUpDelay<0 then
@@ -128,6 +130,8 @@ begin
           PopTitle:=GetDlgText(Dialog,IDC_POPUP_TITLE);
           PopText :=GetDlgText(Dialog,IDC_POPUP_TEXT);
           
+          PopUpButtons:=IsDlgButtonChecked(Dialog,IDC_USEBUTTONS);
+
           PopUpFile :=IsDlgButtonChecked(Dialog,IDC_SHOWFILE);
           PopRequest:=IsDlgButtonChecked(Dialog,IDC_REQUEST);
 //color

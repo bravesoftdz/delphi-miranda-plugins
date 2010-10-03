@@ -29,5 +29,6 @@ const
   IDC_POPUP_TITLE    = 1062;
   IDC_POPUP_TEXT     = 1063;
   IDC_MACRO_HELP     = 1064;
+  IDC_USEBUTTONS     = 1065;
 
   BTN_INFO = 9;

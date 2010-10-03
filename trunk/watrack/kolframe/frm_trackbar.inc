@@ -151,7 +151,8 @@ begin
   rc1.Top:=((rc1.Bottom-rc1.Top) div 2)-2;
   rc1.Bottom:=rc1.Top+4;
   DrawEdge(DC,rc1,EDGE_SUNKEN,BF_RECT or BF_ADJUST);
-  Sender.Children[0].Left:=rc.Left;
+  if Sender.ChildCount>0 then
+    Sender.Children[0].Left:=rc.Left;
 end;
 
 procedure RefreshTrackbarIcons(Owner:PControl);
@@ -171,13 +172,14 @@ function MakeNewTrackBar(AOwner:PControl):PTrackbar;
 var
   D:pAWKTrackbar;
 begin
-  result:=NewTrackbar(AOwner,[trbNoTicks,trbBoth,trbNoBorder],nil);
   New(D, Create);
+  result:=NewTrackbar(AOwner,[trbNoTicks,trbBoth,trbNoBorder],D.Scroll);
+
   with result^ do
   begin
     CustomObj:=D;
-    SetPosition(AOwner.Left+8,AOwner.Top+AOwner.Height-18);
     SetSize(AOwner.Width-16,18);
+    SetPosition(AOwner.Left+8,AOwner.Top+AOwner.Height-18);
     Anchor(true,false,true,true);
     ThumbLen:=16;
 
@@ -187,7 +189,7 @@ begin
     OnResize    :=D.CtrlResize;
     OnEraseBkGnd:=D.Erase;
     OnPaint     :=D.Paint;
-    OnScroll    :=D.Scroll;
+//    OnScroll    :=D.Scroll;
   end;
 
   with CreateIcoButton(result,WAT_CTRL_SEEK)^ do
@@ -197,4 +199,5 @@ begin
     OnMouseUp  :=D.UnPressButton;
     OnMouseMove:=D.DragButton;
   end;
+
 end;

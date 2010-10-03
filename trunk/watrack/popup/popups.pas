@@ -123,16 +123,21 @@ type
 var
   actions:^anacts;
 begin
-  mGetMem(actions,SizeOf(actions^));
-  result:=PPOPUPACTION(actions);
-  FillChar(actions^,SizeOf(actions^),0);
-  MakeAction(actions[0],WAT_CTRL_PREV);
-  MakeAction(actions[1],WAT_CTRL_PLAY);
-  MakeAction(actions[2],WAT_CTRL_PAUSE);
-  MakeAction(actions[3],WAT_CTRL_STOP);
-  MakeAction(actions[4],WAT_CTRL_NEXT);
-  MakeAction(actions[5],WAT_CTRL_VOLDN);
-  MakeAction(actions[6],WAT_CTRL_VOLUP);
+  if PopUpButtons<>BST_UNCHECKED then
+  begin
+    mGetMem(actions,SizeOf(actions^));
+    result:=PPOPUPACTION(actions);
+    FillChar(actions^,SizeOf(actions^),0);
+    MakeAction(actions[0],WAT_CTRL_PREV);
+    MakeAction(actions[1],WAT_CTRL_PLAY);
+    MakeAction(actions[2],WAT_CTRL_PAUSE);
+    MakeAction(actions[3],WAT_CTRL_STOP);
+    MakeAction(actions[4],WAT_CTRL_NEXT);
+    MakeAction(actions[5],WAT_CTRL_VOLDN);
+    MakeAction(actions[6],WAT_CTRL_VOLUP);
+  end
+  else
+    result:=nil;
 end;
 
 function ThShowPopup(si:pSongInfo):dword; //stdcall;
@@ -450,7 +455,8 @@ begin
       if RegisterButtonIcons then
       begin
         ActionList:=MakeActions;
-        CallService(MS_POPUP_REGISTERACTIONS,dword(ActionList),7);
+        if ActionList<>nil then
+          CallService(MS_POPUP_REGISTERACTIONS,dword(ActionList),7);
       end;
     end;
   end

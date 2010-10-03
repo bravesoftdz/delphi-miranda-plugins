@@ -54,8 +54,12 @@ var
   h:integer;
 begin
   h:=Form.Height; // or need to get FRAME height
-  if (ShowControls and scTrackbar)<>0 then dec(h,Trackbar.Height);
-  if (ShowControls and scButtons )<>0 then
+  if ((ShowControls and scTrackbar)<>0) and (Trackbar<>nil) then
+  begin
+    dec(h,Trackbar.Height);
+//    Trackbar.Top:=h;
+  end;
+  if ((ShowControls and scButtons )<>0) and (Buttons<>nil) then
   begin
     with Buttons^ do
     begin
@@ -63,11 +67,12 @@ begin
       dec(h,Height+2*BtnGap);
     end;
   end;
-  with TextBlock^ do
-  begin
-    Top   :=awkTextPad;
-    Height:=h-Top;
-  end;
+  if TextBlock<>nil then
+    with TextBlock^ do
+    begin
+      Top   :=awkTextPad;
+      Height:=h-Top;
+    end;
 end;
 
 procedure TWATFrame.SaveSettings;
@@ -189,6 +194,7 @@ begin
     BkDC:=0;
     DeleteObject(tmpBmp);
   end;
+  AdjustFrame;
 end;
 
 procedure BkTimerProc(wnd:HWND;uMsg:cardinal;idEvent:cardinal;dwTime:dword); stdcall;
@@ -354,6 +360,7 @@ begin
 
       if RegisterButtonIcons then
       begin
+
         Buttons :=MakeNewButtonGroup(Form,
             (ShowControls and scVolume)<>0,
             (ShowControls and scGap)<>0);
@@ -374,8 +381,6 @@ begin
         if BkBitmap=HBITMAP(-1) then
           BkBitmap:=0;
       end;
-
-      AdjustFrame;
     end;
 
     with FrameCtrl.Form^ do
@@ -387,10 +392,11 @@ begin
       OnResize   :=FrameCtrl.FrameResize;
       OnMouseDown:=FrameCtrl.MouseDown;
     end;
+    FrameCtrl.AdjustFrame;
   end;
 end;
 
 procedure DestroyFrameWindow;
 begin
-  FrameCtrl.Destroy;
+  FrameCtrl.Free;
 end;

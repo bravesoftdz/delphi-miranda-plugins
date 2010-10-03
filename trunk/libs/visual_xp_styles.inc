@@ -1,6 +1,6 @@
 // Name:   KOL Addon - Visual XP Styles
-// Rev.:   1.97
-// Date:   09 aug 2009
+// Rev.:   1.99
+// Date:   02 oct 2010
 // Author: MTsv DN
 // Thanks: mdw, Vladimir Kladov
 
@@ -11,6 +11,36 @@ const
   clDkGrey = TColor($808080);
 {$ENDIF}
 
+procedure ConvertBitmap2Grayscale(var Bmp: PBitmap);
+type
+ TRGBArray = array[0..32767] of TRGBTriple;
+ PRGBArray = ^TRGBArray;
+var
+ x, y, Gray: Integer;
+ Row: PRGBArray;
+ R, G, B : Byte;
+ TrColor : Integer;
+begin
+ Bmp.PixelFormat := pf24bit;
+ TrColor := Bmp.Pixels[Bmp.Width - 1, 0];
+ for y := 0 to Bmp.Height - 1 do
+  begin
+   Row := Bmp.ScanLine[y];
+   for x := 0 to Bmp.Width - 1 do
+    begin
+     R := LoByte(LoWord(TrColor));
+     G := HiByte(LoWord(TrColor));
+     B := LoByte(HiWord(TrColor));
+     if (Row[x].rgbtRed = R) and
+        (Row[x].rgbtGreen = G) and
+        (Row[x].rgbtBlue = B) then continue;
+     Gray             := (Row[x].rgbtRed + Row[x].rgbtGreen + Row[x].rgbtBlue) div 3;
+     Row[x].rgbtRed   := Gray;
+     Row[x].rgbtGreen := Gray;
+     Row[x].rgbtBlue  := Gray;
+    end;
+  end;
+end;
 //********************* Creating font on Sender font base ********************//
 function CreateNewFont(Sender : PControl): HFont;
 const
@@ -395,7 +425,7 @@ begin
  hThemes := OpenThemeData(Sender.fHandle, 'button');
  if hThemes <> 0 then
   begin
-   Sender.Color := Sender.fParent.Color;
+   Sender.Color := Sender.fParent.fColor;
    {$IFDEF USE_FLAGS}
    if  not (F3_Disabled in Sender.fStyle.f3_Style) then
    {$ELSE}
@@ -412,8 +442,8 @@ begin
    {$ELSE}
    if  not Sender.fEnabled then
    {$ENDIF}
-       GetThemeColor(hThemes, 1, 4, 3803, Color)
-    else GetThemeColor(hThemes, 4, 2, 3803, Color);
+       GetThemeColor(hThemes, {WP_CAPTION} 1, {CS_DISABLED} 3, 3803, Color)
+    else GetThemeColor(hThemes, {WP_CAPTION} 1, {CS_ACTIVE} 1, 3803, Color);
    // Close themes
    CloseThemeData(hThemes);
 
@@ -649,6 +679,12 @@ var
  Pen : HPEN;
  SenderWidth, SenderHeight : integer;
  Flags: DWORD;
+ _DC : HDC;
+ OldBmp: HBitmap;
+ ic : PIcon;
+ b : PBitmap;
+ i : integer;
+ il : PImageList;
 begin
  // Checking user owner-draw
  if Assigned(Sender.EV.fOnPaint) and (@Sender.EV.fOnPaint <> @WndButtonXPDraw) then
@@ -779,16 +815,64 @@ begin
    SelectObject(DC, fDC1);
    DeleteObject(Brush);
 
-   if  Bmp <> 0 then
-   begin
+   if Bmp <> 0 then
+    begin
+     if bboImageList in Sender.DF.fBitBtnOptions then
+      begin
+       bStyle := ILD_TRANSPARENT;
        {$IFDEF USE_FLAGS}
        if  not (F3_Disabled in Sender.fStyle.f3_Style) then
        {$ELSE}
        if  Sender.fEnabled then
        {$ENDIF}
-           bStyle := ILD_TRANSPARENT else bStyle := ILD_BLEND50;
-       ImageList_Draw(Bmp, Sender.BitBtnImgIdx, DC, RIcon.Left, RIcon.Top, bStyle);
-   end;
+	    i := Sender.BitBtnImgIdx
+        else
+         begin
+          ic := NewIcon;
+          ic.fSize := Sender.DF.fGlyphWidth;
+          ic.fHandle := ImageList_GetIcon(Bmp, Sender.BitBtnImgIdx, bStyle);
+          b := NewBitmap(ic.fSize, ic.fSize);
+          b.fHandle := ic.Convert2Bitmap(clBtnFace);
+          ConvertBitmap2Grayscale(b);
+          i := ImageList_Add(Bmp, b.fHandle, 0);
+          Free_And_Nil(b);
+          Free_And_Nil(ic);
+         end;
+       ImageList_Draw(Bmp, i, DC, RIcon.Left, RIcon.Top, bStyle);
+      end
+       else
+        begin
+         _DC := CreateCompatibleDC( 0 );
+         {$IFDEF USE_FLAGS}
+         if  not (F3_Disabled in Sender.fStyle.f3_Style) then
+         {$ELSE}
+         if  Sender.fEnabled then
+         {$ENDIF}
+		  OldBmp := SelectObject( _DC, Bmp)
+          else
+           begin
+            bStyle := ILD_TRANSPARENT;
+            il := NewImageList(Sender.fParent);
+            il.HandleNeeded;
+            i := ImageList_Add(il.fHandle, Bmp, 0);
+            ic := NewIcon;
+            ic.fSize := Sender.DF.fGlyphWidth;
+            ic.fHandle := ImageList_GetIcon(il.fHandle, i, bStyle);
+            b := NewBitmap(ic.fSize, ic.fSize);
+            b.fHandle := ic.Convert2Bitmap(clBtnFace);
+            ConvertBitmap2Grayscale(b);
+            OldBmp := SelectObject( _DC, b.fHandle);
+            Free_And_Nil(b);
+            Free_And_Nil(ic);
+            Free_And_Nil(il);
+           end;
+         StretchBlt( DC, RIcon.Left, RIcon.Top, Sender.DF.fGlyphWidth, Sender.DF.fGlyphHeight,
+                     _DC, 0, 0, Sender.DF.fGlyphWidth, Sender.DF.fGlyphHeight,
+                     SRCCOPY);
+         SelectObject( _DC, OldBmp );
+         DeleteDC( _DC );
+        end;
+    end;
    // Create font
    F := CreateNewFont(Sender);
    fDC1 := SelectObject(DC, F);
@@ -819,7 +903,7 @@ begin
    CloseThemeData(hThemes);
   end;      
 
- if GetFocus = Sender.fHandle then
+ if (GetFocus = Sender.fHandle) and (bboFocusRect in Sender.DF.fBitBtnOptions) then
   DrawFocusRect(DC, MakeRect(RClient.Left+4, RClient.Top+4, RClient.Right-4, RClient.Bottom-4));
 end;
 //************************* Control MouseEnter event *************************//

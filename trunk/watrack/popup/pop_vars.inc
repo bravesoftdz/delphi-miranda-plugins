@@ -12,6 +12,7 @@ var
   PopUpPause:cardinal;
   PopUpDelay:integer;
   PopUpAction:cardinal;
+  PopUpButtons:cardinal;
 
   DisablePlugin:integer;
   IsPopup2Present:boolean;
