@@ -1512,7 +1512,7 @@ type
     fList: PList;
     fCount: Integer;
     fCaseSensitiveSort: Boolean;
-    fAnsiSort: Boolean;
+    fAnsiSort: Boolean;   
     fTextBuf: PAnsiChar;
     fTextSiz: DWORD;
     fCompareStrListFun: TCompareStrListFun;
@@ -5434,7 +5434,6 @@ type
     // Order of following fields is important:
     //_______________________________________________________________________________________________
     //{$ENDIF GDI}
-    fControlClassName: PKOLChar;                                                                      //
     {$IFDEF GDI}
     //                                                                                             //
     {$ENDIF GDI}
@@ -5506,9 +5505,10 @@ type
     {} FFixHeight: Integer;
     {$ENDIF}
     {$ENDIF GDI}
-    //----- order of following 3 events important: //
+    //----- order of following 3 fields important: //
     fCaption: KOLString;
     fCustomData: Pointer;
+    fControlClassName: PKOLChar;                                                                      //
     {$IFDEF GDI}
     //---------------------------------------------//
     fCustomObj: PObj;
@@ -14484,9 +14484,9 @@ type
   PInitCommonControlsEx = ^TInitCommonControlsEx;
 
 var ComCtl32_Module: HModule;
-{$IFDEF ASM_VERSION}
-const comctl32_const: PChar = 'comctl32';
-      InitCommonControlsEx_const: PChar = 'InitCommonControlsEx';
+{$IFDEF ASM_UNICODE}
+const comctl32_const: PKOLChar = 'comctl32';
+      InitCommonControlsEx_const: PKOLChar = 'InitCommonControlsEx';
 procedure DoInitCommonControls( dwICC: DWORD );
 asm
     PUSH  EAX                             // dwICC
@@ -25789,6 +25789,7 @@ end;
 {$ENDIF ASM_VERSION}
 
 function TThread.Execute: integer;
+var H: THandle;
 begin
   {$IFDEF SAFE_CODE}
   Result := 0;
@@ -25798,7 +25799,12 @@ begin
   FResult := Result;
   FTerminated := TRUE; // fake thread object (to prevent terminating while freeing)
   if F_AutoFree then
-    Free;
+  begin
+     H := FHandle;
+     FHandle := 0;
+     Free;
+     TerminateThread( H, 0 );
+  end;
 end;
 
 function TThread.GetPriorityCls: Integer;
@@ -30229,6 +30235,7 @@ begin
 end;
 {$ENDIF ASM_VERSION}
 {$ENDIF GDI}
+
 {$IFDEF _X_}
 {$IFDEF GTK}
 function getLabelCaption( L: PControl ): KOLString;
@@ -30398,6 +30405,7 @@ end;
 
 {$ENDIF USE_CONSTRUCTORS}
 {$ENDIF WIN_GDI}
+
 {$IFDEF _X_}
 {$IFDEF GTK}
 const
@@ -30493,7 +30501,7 @@ begin
       W := Sz.cx;
       Windows.GetTextExtentPoint32( DC, '_', 1, Sz ); // A/W KOL_ANSI
       H := Sz.cy - 1;
-      Windows.GetTextExtentPoint32( DC, @ CapTxtOrig[ I + 1 ], 1, Sz ); 
+      Windows.GetTextExtentPoint32( DC, @ CapTxtOrig[ I + 1 ], 1, Sz );
       Windows.MoveToEx( DC, X + W, Y + H, nil );
 
       Pen := CreatePen( PS_SOLID, 0, Color2RGB( Color ) );
@@ -31537,7 +31545,28 @@ end;
 
 //===================== Radiobox ========================//
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}
+procedure ClickRadio( Sender:PObj );
+asm
+        PUSH     EBX
+        MOV      EBX, [EAX].TControl.fParent
+        TEST     EBX, EBX
+        JZ       @@exit
+        PUSH     [EAX].TControl.fMenu
+        MOV      EAX, EBX
+        MOV      EDX, offset[RADIO_LAST]
+        CALL     TControl.Get_Prop_Int
+        PUSH     EAX
+        MOV      EAX, EBX
+        MOV      EDX, offset[RADIO_1ST]
+        CALL     TControl.Get_Prop_Int
+        PUSH     EAX
+        PUSH     [EBX].TControl.fHandle
+        CALL     CheckRadioButton
+@@exit:
+        POP      EBX
+end;
+{$ELSE ASM_VERSION} //Pascal
 procedure ClickRadio( Sender:PObj );
 var Self_:PControl;
 begin
@@ -31629,8 +31658,10 @@ asm
         POP      EAX
 
 {$IFDEF GRAPHCTL_XPSTYLES}
+        PUSH     EAX
         MOV      EDX, offset[XP_Themes_For_Label]
         CALL     Attach_WM_THEMECHANGED
+        POP      EAX
 {$ENDIF}
 end;
 {$ELSE ASM_VERSION} //Pascal
@@ -31794,6 +31825,7 @@ begin
 end;
 {$ENDIF ASM_VERSION}
 {$ENDIF GDI}
+
 {$IFDEF _X_}
 {$IFDEF GTK}
 function NewPaintbox( AParent: PControl ): PControl;
@@ -32381,8 +32413,10 @@ asm
         POP      EAX
 
 {$IFDEF GRAPHCTL_XPSTYLES}
+        PUSH     EAX
         MOV      EDX, offset[XP_Themes_For_GroupBox]
         CALL     Attach_WM_THEMECHANGED
+        POP      EAX
 {$ENDIF}
 end;
 {$ELSE ASM_VERSION} //Pascal
@@ -32487,9 +32521,10 @@ asm
         PUSH     EAX
         CALL     TControl.SetEdgeStyle
         POP      EAX
-
+        PUSH     EAX
         MOV      EDX, offset[XP_Themes_For_Panel]
         CALL     Attach_WM_THEMECHANGED
+        POP      EAX
 {$ENDIF}
 end;
 {$ELSE ASM_VERSION} //Pascal
@@ -61543,7 +61578,6 @@ begin
         else if C.AnchorBottom then
           C.Top := C.Top + dH;
       end;
-
     end;
     Sender.fOldWidth := NewW;
     Sender.fOldHeight := NewH;
@@ -62043,7 +62077,7 @@ var Form: PControl;
 begin
     Form := Control.ParentForm;
     Form.FormGetStrParam;
-    Result := PKOLChar( Form.FormString );
+    Result := PKOLChar( KOLString( Form.FormString ) );
 end;
 
 function ParentForm_IntParamPas(Form: PControl): Integer;
@@ -62770,11 +62804,11 @@ begin
     begin
         map[0] := Form.FormGetColorParam;
         map[1] := Color2RGB( clBtnFace );
-        b := LoadMappedBitmapEx( Form, hInstance, PKOLChar(Form.FormString), map );
+        b := LoadMappedBitmapEx( Form, hInstance, PKOLChar( KOLString( Form.FormString )), map );
     end
       else
     begin
-        b := LoadBmp( hInstance, PKOLChar(Form.FormString), Form );
+        b := LoadBmp( hInstance, PKOLChar(KOLString(Form.FormString)), Form );
     end;
     C.TBAddBitmap( b );
 end;
@@ -63105,6 +63139,7 @@ begin Result := EV.fOnEraseBkgnd; end;
 procedure TControl.Set_OnEraseBkgnd(const Value: TOnPaint);
 begin
     ProvideUniqueEvents.fOnEraseBkgnd := Value;
+    AttachProc( WndProcEraseBkgnd );
 end;
 function TControl.Get_OnClick: TOnEvent;
 begin Result := EV.fOnClick; end;
@@ -63260,6 +63295,7 @@ begin
   begin
       fParent.AttachProc( ParentAnchorChildren );
       Parent.fOldWidth := Parent.ClientWidth;
+      Parent.fOldHeight := Parent.ClientHeight;
   end;
 end;
 

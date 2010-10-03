@@ -8,16 +8,17 @@ const
 const
   opt_ModStatus  :PAnsiChar = 'module/popups';
 
-  opt_PopUpFile  :PAnsiChar = 'popup/file';
-  opt_PopUpAction:PAnsiChar = 'popup/action';
-  opt_PopUpFore  :PAnsiChar = 'popup/fore';
-  opt_PopUpBack  :PAnsiChar = 'popup/back';
-  opt_PopUpPause :PAnsiChar = 'popup/time';
-  opt_PopUpDelay :PAnsiChar = 'popup/delay';
-  opt_PopUpColor :PAnsiChar = 'popup/color';
-  opt_ByRequest  :PAnsiChar = 'popup/byrequest';
-  opt_PopTitle   :PAnsiChar = 'popup/poptitle';
-  opt_PopText    :PAnsiChar = 'popup/poptext';
+  opt_PopUpFile   :PAnsiChar = 'popup/file';
+  opt_PopUpAction :PAnsiChar = 'popup/action';
+  opt_PopUpFore   :PAnsiChar = 'popup/fore';
+  opt_PopUpBack   :PAnsiChar = 'popup/back';
+  opt_PopUpPause  :PAnsiChar = 'popup/time';
+  opt_PopUpDelay  :PAnsiChar = 'popup/delay';
+  opt_PopUpColor  :PAnsiChar = 'popup/color';
+  opt_ByRequest   :PAnsiChar = 'popup/byrequest';
+  opt_PopTitle    :PAnsiChar = 'popup/poptitle';
+  opt_PopText     :PAnsiChar = 'popup/poptext';
+  opt_PopUpButtons:PAnsiChar = 'popup/usebuttons';
 
   opt_popuptitle:PAnsiChar = 'template/popuptitle';
   opt_popuptext :PAnsiChar = 'template/popuptext';
@@ -39,14 +40,15 @@ var
   setting:array [0..63] of AnsiChar;
   pset:PAnsiChar;
 begin
-  PopUpFile  :=DBReadByte   (0,PluginShort,opt_PopUpFile  ,BST_CHECKED);
-  PopUpPause :=DBReadByte   (0,PluginShort,opt_PopUpPause ,0);
-  PopUpDelay :=DBReadByte   (0,PluginShort,opt_PopUpDelay ,0);
-  PopUpAction:=DBReadWord   (0,PluginShort,opt_PopUpAction,0);
-  PopUpColor :=DBReadByte   (0,PluginShort,opt_PopUpColor ,0);
-  PopUpFore  :=DBReadDWord  (0,PluginShort,opt_PopUpFore  ,GetSysColor(COLOR_BTNTEXT));
-  PopUpBack  :=DBReadDWord  (0,PluginShort,opt_PopUpBack  ,GetSysColor(COLOR_BTNFACE));
-  PopRequest :=DBReadByte   (0,PluginShort,opt_ByRequest  ,BST_UNCHECKED);
+  PopUpButtons:=DBReadByte (0,PluginShort,opt_PopUpButtons,BST_CHECKED);
+  PopUpFile   :=DBReadByte (0,PluginShort,opt_PopUpFile   ,BST_CHECKED);
+  PopUpPause  :=DBReadByte (0,PluginShort,opt_PopUpPause  ,0);
+  PopUpDelay  :=DBReadByte (0,PluginShort,opt_PopUpDelay  ,0);
+  PopUpAction :=DBReadWord (0,PluginShort,opt_PopUpAction ,0);
+  PopUpColor  :=DBReadByte (0,PluginShort,opt_PopUpColor  ,0);
+  PopUpFore   :=DBReadDWord(0,PluginShort,opt_PopUpFore   ,GetSysColor(COLOR_BTNTEXT));
+  PopUpBack   :=DBReadDWord(0,PluginShort,opt_PopUpBack   ,GetSysColor(COLOR_BTNFACE));
+  PopRequest  :=DBReadByte (0,PluginShort,opt_ByRequest   ,BST_UNCHECKED);
   if isVarsInstalled then
   begin
     def1:=defAltPopupTitle;
@@ -74,14 +76,15 @@ end;
 
 procedure savepopup;
 begin
-  DBWriteByte   (0,PluginShort,opt_PopUpFile  ,PopUpFile);
-  DBWriteByte   (0,PluginShort,opt_PopUpPause ,PopUpPause);
-  DBWriteByte   (0,PluginShort,opt_PopUpDelay ,PopUpDelay);
-  DBWriteWord   (0,PluginShort,opt_PopUpAction,PopUpAction);
-  DBWriteByte   (0,PluginShort,opt_PopUpColor ,PopUpColor);
-  DBWriteDWord  (0,PluginShort,opt_PopUpFore  ,PopUpFore);
-  DBWriteDWord  (0,PluginShort,opt_PopUpBack  ,PopUpBack);
-  DBWriteByte   (0,PluginShort,opt_ByRequest  ,PopRequest);
+  DBWriteByte   (0,PluginShort,opt_PopUpButtons,PopUpButtons);
+  DBWriteByte   (0,PluginShort,opt_PopUpFile   ,PopUpFile);
+  DBWriteByte   (0,PluginShort,opt_PopUpPause  ,PopUpPause);
+  DBWriteByte   (0,PluginShort,opt_PopUpDelay  ,PopUpDelay);
+  DBWriteWord   (0,PluginShort,opt_PopUpAction ,PopUpAction);
+  DBWriteByte   (0,PluginShort,opt_PopUpColor  ,PopUpColor);
+  DBWriteDWord  (0,PluginShort,opt_PopUpFore   ,PopUpFore);
+  DBWriteDWord  (0,PluginShort,opt_PopUpBack   ,PopUpBack);
+  DBWriteByte   (0,PluginShort,opt_ByRequest   ,PopRequest);
   DBWriteUnicode(0,PluginShort,opt_PopTitle,PopTitle);
   DBWriteUnicode(0,PluginShort,opt_PopText ,PopText);
 end;

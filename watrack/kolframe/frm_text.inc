@@ -190,9 +190,6 @@ begin
     if (PControl(Sender)^.Width)>tmp then
       PControl(Sender)^.Width:=tmp;
 
-    PControl(Sender)^.Height:=PControl(Sender)^.Top+PControl(Sender)^.Height-awkTextPad;
-    PControl(Sender)^.Top   :=awkTextPad;
-
     NeedResize:=true;
   end;
 end;
@@ -208,6 +205,8 @@ begin
     SetTextColor(dc,TextColor);
     CopyRect(dst,Sender.BoundsRect);
     InflateRect(dst,-4,-2);
+//if dc=0 then
+//showpopupw('dc=0');
 
     DrawChunks(dc,@TextChunk[0],dst,true); // i.e. only paint or roll
     SelectObject(dc,fnt1);
@@ -259,7 +258,7 @@ begin
     SetSize(AOwner.Width-awkTextPad*2,40);
     SetPosition(AOwner.Left+awkTextPad,awkTextPad);
 
-    Anchor(true,false,true,true);
+    Anchor(true,true,true,true);
 
     D.LoadSettings;
     D.InitFrame;

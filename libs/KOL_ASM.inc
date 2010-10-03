@@ -3771,8 +3771,10 @@ asm
    POP  EBX
    
 {$IFDEF GRAPHCTL_XPSTYLES}
+        PUSH     EAX
         MOV      EDX, offset[XP_Themes_For_BitBtn]
         CALL     Attach_WM_THEMECHANGED
+        POP      EAX
 {$ENDIF}
 end;
 
@@ -3979,8 +3981,10 @@ asm
         POP      EBX
         
 {$IFDEF GRAPHCTL_XPSTYLES}
+        PUSH     EAX
         MOV      EDX, offset[XP_Themes_For_BitBtn]
         CALL     Attach_WM_THEMECHANGED
+        POP      EAX
  {$ENDIF}
 end;
 {$ENDIF BITBTN_ASM}
@@ -3995,30 +3999,11 @@ asm
         MOV      [EAX].TControl.aAutoSzX, 24
         
 {$IFDEF GRAPHCTL_XPSTYLES}
+        PUSH     EAX
         MOV      EDX, offset[XP_Themes_For_CheckBox]
         CALL     Attach_WM_THEMECHANGED
+        POP      EAX
 {$ENDIF}
-end;
-
-procedure ClickRadio( Sender:PObj );
-asm
-        PUSH     EBX
-        MOV      EBX, [EAX].TControl.fParent
-        TEST     EBX, EBX
-        JZ       @@exit
-        PUSH     [EAX].TControl.fMenu
-        MOV      EAX, EBX
-        MOV      EDX, offset[RADIO_LAST]
-        CALL     TControl.Get_Prop_Int
-        PUSH     EAX
-        MOV      EAX, EBX
-        MOV      EDX, offset[RADIO_1ST]
-        CALL     TControl.Get_Prop_Int
-        PUSH     EAX
-        PUSH     [EBX].TControl.fHandle
-        CALL     CheckRadioButton
-@@exit:
-        POP      EBX
 end;
 
 function NewRadiobox( AParent: PControl; const Caption: KOLString ): PControl;
@@ -4060,7 +4045,7 @@ asm
         PUSH     EAX
         MOV      EDX, offset[XP_Themes_For_RadioBox]
         CALL     Attach_WM_THEMECHANGED
-        POP      EAX 
+        POP      EAX
 {$ENDIF}
 end;
 
@@ -4568,8 +4553,10 @@ asm
         POP      EBX
         
 {$IFDEF GRAPHCTL_XPSTYLES}
+        PUSH     EAX
         MOV      EDX, offset[XP_Themes_For_Splitter]
         CALL     Attach_WM_THEMECHANGED
+        POP      EAX
 {$ENDIF}
 end;
 
@@ -5226,10 +5213,19 @@ asm     //cmd    //opd
         POPFD
         JZ       @@ret_false
 
-        MOV      ECX, [EBX].TControl.fOnSelChange.TMethod.Code
+        {$IFDEF  EVENTS_DYNAMIC}
+        MOV      EAX, [EBX].TControl.EV
+        MOV      ECX, [EAX].TEvents.fOnSelChange.TMethod.Code
+        {$ELSE}
+        MOV      ECX, [EBX].TControl.EV.fOnSelChange.TMethod.Code
+        {$ENDIF}
         JECXZ    @@ret_false
         MOV      EDX, EBX
+        {$IFDEF  EVENTS_DYNAMIC}
+        MOV      EAX, [EAX].TEvents.fOnSelChange.TMethod.Data
+        {$ELSE}
         MOV      EAX, [EBX].TControl.fOnSelChange.TMethod.Data
+        {$ENDIF}
         CALL     ECX
         JMP      @@ret_false
 @@chk_WM_SIZE:
@@ -5812,16 +5808,10 @@ asm
         {$ENDIF}
         PUSH     [EBX].fControlClassName
 @@notFreeCtlClsName:
-        LEA      ESI, [EBX].fCustomData
-        MOV      DL, 2
-@@chkFreeLoop:
-        LODSD
-        XCHG     ECX, EAX
-        JECXZ    @@notFree1
+        MOV      ECX, [EBX].fCustomData
+        JECXZ    @@notFreeCustomData
         PUSH     ECX
-@@notFree1:
-        DEC      DL
-        JNZ      @@chkFreeLoop
+@@notFreeCustomData:
 @@FreeFieldsLoop:
         POP      ECX
         JECXZ    @@endFreeFieldsLoop
@@ -6693,16 +6683,27 @@ asm
         MOV      AL, byte ptr [ESI].fStyle + 3
         TEST     EBX, EBX
         JZ       @@reset_WS_VISIBLE
+        {$IFDEF  USE_FLAGS}
+        OR       AL, 1 shl F3_Visible
+        {$ELSE}
         OR       AL, wsVisible
+        {$ENDIF}
         PUSH     SW_SHOW
         JMP      @@store_Visible
 @@reset_WS_VISIBLE:
+        {$IFDEF  USE_FLAGS}
+        AND      AL, not(1 shl F3_Visible)
+        {$ELSE}
         AND      AL, not wsVisible
+        {$ENDIF}
         PUSH     SW_HIDE
 
 @@store_Visible:
         MOV      byte ptr [ESI].fStyle + 3, AL
+        {$IFDEF  USE_FLAGS}
+        {$ELSE}
         MOV      [ESI].fVisible, BL
+        {$ENDIF}
         MOV      ECX, [ESI].fHandle
         JECXZ    @@after_showwindow
 
@@ -6727,7 +6728,11 @@ asm
         JECXZ    @@exit
         TEST     BL, BL
         JNZ      @@exit
+        {$IFDEF  USE_FLAGS}
+        AND      [ESI], not(1 shl G4_CreateHidden)
+        {$ELSE}
         MOV      [ESI].fCreateHidden, BL { +++ }
+        {$ENDIF}
 @@exit:
         POP      ESI
         POP      EBX
@@ -15332,6 +15337,6 @@ asm
     MOV  [EAX].TControl.DF.FormLastCreatedChild, ECX
 end;
 
-//{$ENDIF}
+{$ENDIF}
 
 //======================================== THE END OF FILE KOL_ASM.inc

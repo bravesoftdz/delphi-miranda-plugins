@@ -7,6 +7,7 @@ type
   tIcoGrpData = object(TObj)
     ShowVolume:bool;
     ButtonGap:bool;
+    NeedResize:boolean;
 
     procedure GroupResize(Sender: PObj);
     procedure MouseDown(Sender:PControl;var Mouse:TMouseEventData);
@@ -16,38 +17,44 @@ procedure tIcoGrpData.GroupResize(Sender: PObj);
 var
   i,lWidth,lOffs,gap:integer;
 begin
-  if ButtonGap then
-    gap:=BtnGap
-  else
-    gap:=0;
-
-  PControl(Sender)^.Children[0].Visible:=ShowVolume;
-  PControl(Sender)^.Children[1].Visible:=ShowVolume;
-
-  with PControl(Sender)^ do
+  if NeedResize then
   begin
-    lWidth:=(ChildCount-2)*(16+gap)-gap;
+    NeedResize:=false;
+
+    if ButtonGap then
+      gap:=BtnGap
+    else
+      gap:=0;
+
+    PControl(Sender)^.Children[0].Visible:=ShowVolume;
+    PControl(Sender)^.Children[1].Visible:=ShowVolume;
+
+    with PControl(Sender)^ do
+    begin
+      lWidth:=(ChildCount-2)*(16+gap)-gap;
+      if ShowVolume then
+        Inc(lWidth, VolBtnDist+2*(16+gap));
+      Width:=lWidth;
+      Left:=(Parent.Width-Width) div 2;
+    end;
+
+    lOffs:=0;
     if ShowVolume then
-      Inc(lWidth, VolBtnDist+2*(16+gap));
-    Width:=lWidth; // reason to call this code twice
-    Left:=(Parent.Width-Width) div 2;
-  end;
+    begin
+      PControl(Sender)^.Children[0].Left:=lOffs;
+      Inc(lOffs,16+gap);
+      PControl(Sender)^.Children[1].Left:=lOffs;
+      Inc(lOffs,16+gap+VolBtnDist);
+    end;
 
-  lOffs:=0;
-  if ShowVolume then
-  begin
-    PControl(Sender)^.Children[0].Left:=lOffs;
-    Inc(lOffs,16+gap);
-    PControl(Sender)^.Children[1].Left:=lOffs;
-    Inc(lOffs,16+gap+VolBtnDist);
-  end;
+    for i:=2 to PControl(Sender)^.ChildCount-1 do
+    begin
+      PControl(Sender)^.Children[i].Left:=lOffs;
+      Inc(lOffs,16+gap);
+    end;
 
-  for i:=2 to PControl(Sender)^.ChildCount-1 do
-  begin
-    PControl(Sender)^.Children[i].Left:=lOffs;
-    Inc(lOffs,16+gap);
+    NeedResize:=true;
   end;
-
 end;
 
 procedure TIcoGrpData.MouseDown(Sender:PControl;var Mouse:TMouseEventData);
@@ -93,6 +100,8 @@ begin
 
     OnResize   :=D.GroupResize;
     OnMouseDown:=D.MouseDown;
+
+    D.NeedResize:=true;
   end;
 
   CreateIcoButton(result,WAT_CTRL_VOLDN,300);
