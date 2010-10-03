@@ -697,7 +697,7 @@ type
   TDeviceMode = TDeviceModeA;
   TFNOldFontEnumProc = TFNOldFontEnumProcA;
   TFNFontEnumProc = TFNFontEnumProcA;
-  MakeIntResource = MakeIntResourceA;
+  MakeIntResource = PAnsiChar; // MakeIntResourceA;
   //PMenuItemInfo = PMenuItemInfoA;
   //TMenuItemInfo = TMenuItemInfoA;
   //MENUITEMINFO = MENUITEMINFOA;

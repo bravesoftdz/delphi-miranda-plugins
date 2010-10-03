@@ -1,10 +1,4 @@
 {Text}
-{
-  Color
-  TextColor
-
-}
-
 type
   pChunk = ^tChunk;
   tChunk = record
@@ -37,6 +31,7 @@ type
     UpdInterval :cardinal;
     UpdTimer    :cardinal;
     AlignCenter :cardinal;
+    NeedResize  :Boolean;
 
     destructor Destroy; virtual;
     procedure InitFrame;
@@ -176,18 +171,30 @@ begin
   DBWriteUnicode(0,PluginShort,opt_FrameText ,Template);
   RemakeText;
 {
-  if (UpdInterval>0) and (FrameWnd<>0) then
+  if UpdInterval>0 then
     UpdTimer:=SetTimer(FrameWnd,TMR_TEXT,(MaxTxtScrollSpeed+1-UpdInterval)*100,nil)
 }
 end;
 
+// avoiding anchors problems
 procedure tTxtBlockData.CtrlResize(Sender: PObj);
 var
   tmp:integer;
 begin
-  tmp:=PControl(Sender).Parent.Width-2*awkTextPad;
-  if (PControl(Sender)^.Width)>tmp then
-    PControl(Sender)^.Width:=tmp;
+  if NeedResize then
+  begin
+    NeedResize:=false;
+
+    tmp:=PControl(Sender).Parent.Width-2*awkTextPad;
+
+    if (PControl(Sender)^.Width)>tmp then
+      PControl(Sender)^.Width:=tmp;
+
+    PControl(Sender)^.Height:=PControl(Sender)^.Top+PControl(Sender)^.Height-awkTextPad;
+    PControl(Sender)^.Top   :=awkTextPad;
+
+    NeedResize:=true;
+  end;
 end;
 
 procedure tTxtBlockData.TextPaint(Sender: PControl; DC: HDC);
@@ -252,12 +259,13 @@ begin
     SetSize(AOwner.Width-awkTextPad*2,40);
     SetPosition(AOwner.Left+awkTextPad,awkTextPad);
 
-    Anchor(true,true,true,true);
+    Anchor(true,false,true,true);
 
     D.LoadSettings;
     D.InitFrame;
     D.BkColor:=BkColor;
     D.TextChunk:=nil;
+    D.NeedResize:=true;
 
     OnResize   :=D.CtrlResize;
     OnPaint    :=D.TextPaint;

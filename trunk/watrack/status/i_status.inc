@@ -83,8 +83,9 @@ begin
       if (UseListeningTo<>BST_UNCHECKED) and
          (ProtoServiceExists(proto,PS_SET_LISTENINGTO)<>0) then
       begin
-        if (wParam=WAT_EVENT_PLAYERSTATUS) and
-          ((lParam=WAT_PLS_NOMUSIC) or (lParam=WAT_PLS_NOTFOUND)) then
+        if lParam<>WAT_PLS_NORMAL then
+//        if (wParam=WAT_EVENT_PLAYERSTATUS) and
+//          ((lParam=WAT_PLS_NOMUSIC) or (lParam=WAT_PLS_NOTFOUND)) then
           CallProtoService(proto,PS_SET_LISTENINGTO,0,0)
         else if (wParam=WAT_EVENT_NEWTRACK) then
         begin

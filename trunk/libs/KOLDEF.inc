@@ -173,7 +173,7 @@ That is all to have full compatibility.
  {$DEFINE _D7}
  {$DEFINE _D7orHigher}
 {$ENDIF}
-{$ENDIF}
+{$ENDIF FPC}
 
 {$IFNDEF _NOT_KOLCtrlWrapper_}
  {$DEFINE _KOLCtrlWrapper_}
@@ -218,9 +218,9 @@ That is all to have full compatibility.
 // directive there. (Search the word: USE_CUSTOMEXTENSIONS).
 // Please note, that this option is not fully supported now.
 
-{$IFNDEF NOT_UNLOAD_RICHEDITLIB}
-  {$DEFINE UNLOAD_RICHEDITLIB}
-{$ENDIF}
+//{$IFNDEF NOT_UNLOAD_RICHEDITLIB}
+//  {$DEFINE UNLOAD_RICHEDITLIB}
+//{$ENDIF}
 // You can freely comment this directive. 1st, if the application does not
 // use richedit control. 2nd, even if it does, freeing the library handle
 // actually is not needed.
@@ -232,5 +232,21 @@ That is all to have full compatibility.
  {$DEFINE PARANOIA} //seems not needed under D6 !!! Inprise fixed this, finally... 
 {$ENDIF}
 
-// use _SetDIBPixelsTrueColorWithAlpha for 32bit
-{$DEFINE FIXDIB32}
+
+{$IFNDEF USE_OLD_FLAGS}
+         {$DEFINE USE_FLAGS}
+{$ELSE}  {$UNDEF  USE_FLAGS}
+{$ENDIF}
+{$IFnDEF EVENTS_STATIC}
+         {$DEFINE EVENTS_DYNAMIC}
+{$ENDIF}
+{$IFnDEF CMDACTIONS_RECORD}
+         {$DEFINE COMMANDACTIONS_OBJ}
+         {$DEFINE PACK_COMMANDACTIONS}
+         {$IFDEF  NOT_PACK_COMMANDACTIONS}
+                  {$UNDEF PACK_COMMANDACTIONS}
+         {$ENDIF}
+{$ENDIF}
+
+
+

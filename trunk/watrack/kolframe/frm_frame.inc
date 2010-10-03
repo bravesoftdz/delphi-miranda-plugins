@@ -54,11 +54,18 @@ var
   h:integer;
 begin
   h:=Form.Height; // or need to get FRAME height
-  if (ShowControls and scTrackbar)<>0 then dec(h,18);
-  if (ShowControls and scButtons )<>0 then dec(h,16+2*BtnGap);
+  if (ShowControls and scTrackbar)<>0 then dec(h,Trackbar.Height);
+  if (ShowControls and scButtons )<>0 then
+  begin
+    with Buttons^ do
+    begin
+      Top:=h-Height-BtnGap;
+      dec(h,Height+2*BtnGap);
+    end;
+  end;
   with TextBlock^ do
   begin
-    Top   :=BtnGap;
+    Top   :=awkTextPad;
     Height:=h-Top;
   end;
 end;
