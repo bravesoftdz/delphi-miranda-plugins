@@ -14,7 +14,7 @@
   Key Objects Library (C) 2000 by Kladov Vladimir.
 
 ****************************************************************
-* VERSION 3.00
+* VERSION 3.00.C
 ****************************************************************
 
   K.O.L. - is a set of objects to create small programs
@@ -684,6 +684,9 @@ type
       implement objects in a manner similar to Delphi TObject class. }
    {= Базовый класс для всех прочих объектов KOL. }
    protected
+     {$IFDEF DEBUG_OBJKIND}
+     fObjKind: PChar;
+     {$ENDIF}
      fRefCount: Integer;
      fOnDestroy: TOnEvent;
      {$IFDEF OLD_REFCOUNT}
@@ -707,7 +710,7 @@ type
         для строк, динамичиских массивов и т.п. Такая память должна быть освобождена
         в переопределенном деструкторе объекта. }
      {$IFnDEF NIL_EVENTS}
-     procedure Init; virtual;
+     //procedure Init; virtual;
      {* Can be overriden in descendant objects
         to add initialization code there. (Main reason of intending
         is what constructors can not be virtual in poor objects). }
@@ -2127,7 +2130,7 @@ type
     {$IFDEF _X_}
     {$IFDEF GTK}
     fPangoFontDesc: PPangoFontDescription;
-    function GetPangoFontDesc: PPangoFontDescription;
+    FUNCTION GetPangoFontDesc: PPangoFontDescription;
     {$ENDIF GTK}
     {$ENDIF _X_}
   public
@@ -2135,7 +2138,7 @@ type
     {* }
     {$IFDEF _X_}
     {$IFDEF GTK}
-    property FontHandle: PPangoFontDescription read GetPangoFontDesc;
+    PROPERTY FontHandle: PPangoFontDescription read GetPangoFontDesc;
     {$ENDIF GTK}
     {$ENDIF _X_}
     {$IFDEF GDI}
@@ -2301,7 +2304,7 @@ function Color2RGB( Color: TColor ): TColor;
 function RGB2BGR( Color: TColor ): TColor;
 {* Converts RGB color to BGR }
 {$IFDEF GTK}
-function Color2GDKColor( Color: TColor ): TGdkColor;
+FUNCTION Color2GDKColor( Color: TColor ): TGdkColor;
 {$ENDIF GTK}
 function ColorsMix( Color1, Color2: TColor ): TColor;
 {* Returns color, which RGB components are build as an (approximate)
@@ -2461,8 +2464,8 @@ type
     {$IFDEF _X_}
     {$IFDEF GTK}
     fSavedState: TGdkGCValues;
-    procedure SaveState;
-    procedure RestoreState;
+    PROCEDURE SaveState;
+    PROCEDURE RestoreState;
     {$ENDIF GTK}
     {$ENDIF _X_}
     {$IFDEF GDI}
@@ -3959,6 +3962,7 @@ type
     aItem2XY: Word;
   end;
 
+  {$IFDEF COMMANDACTIONS_OBJ}
   PCommandActionsObj = ^TCommandActionsObj;
   TCommandActionsObj = object(TObj)
     aClear: procedure( Sender: PControl );
@@ -3980,7 +3984,10 @@ type
     aDir, aSetLimit: Word; aSetImgList: Word;
     aSetBkColor: Word;
     aItem2XY: Word;
+    fIndexInActions: Integer;
+    destructor Destroy; virtual;
   end;
+  {$ENDIF}
 {$ENDIF WIN}
 
   TTextAlign = ( taLeft, taRight, taCenter );
@@ -4346,14 +4353,14 @@ type
 
 {$IFDEF _X_}
   //---- in GTK+, each type of widget requieres its own getcaption/setcaption call
-  TGetCaption = function( Ctl: PControl ): KOLString;
-  TSetCaption = procedure( Ctl: PControl; const Value: KOLString );
+  TGetCaption = FUNCTION( Ctl: PControl ): KOLString;
+  TSetCaption = PROCEDURE( Ctl: PControl; CONST Value: KOLString );
 
   {$IFDEF GTK}
   //---- in GTK+, to allow setting absolute position for children,
   // we should use one of special clients like gtk_fixed, gtk_layout
-  TGetClientArea = function( Ctl: PControl ): PGtkWidget;
-  TChildSetPos = procedure( Ctl, Chld: PControl; x, y: Integer );
+  TGetClientArea = FUNCTION( Ctl: PControl ): PGtkWidget;
+  TChildSetPos = PROCEDURE( Ctl, Chld: PControl; x, y: Integer );
   {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -4594,32 +4601,31 @@ type
     fLVStyle: TListViewStyle;
   {$IFDEF UNION_FIELDS}
     );
+  5:( // Rich Edit -- 11 dwords
   {$ENDIF}
-  {$IFNDEF NOT_USE_RICHEDIT}
-  {$IFDEF UNION_FIELDS}
-  5:( // Rich Edit -- 11 dwords 
-  {$ENDIF}
-    {$IFDEF STATIC_RICHEDIT_DATA}
-    fRECharFormatRec: TCharFormat;
-    fREParaFmtRec: TParaFormat2;
-    {$ELSE}
-    fRECharFormatRec: PCharFormat;
-    fREParaFmtRec: PParaFormat2;
-    {$ENDIF}
-    fCharFmtDeltaSz: Integer;
-    fParaFmtDeltaSz: Integer;
-    fREError: Integer;
-    fREStream: PStream;
-    fREStrLoadLen: DWORD;
-    fREUrl: PKOLChar;
-    fTmpFont: PGraphicTool; // for RichEdit
-    fREUpdCount: SmallInt;
-    fReOvrDisable: Boolean;
-    fREOvr: Boolean;
-    fREScrolling: Boolean;
-    fRECharArea: TRichFmtArea;
-    FSupressTab: Boolean;
-    fRETransparent: Boolean;
+      {$IFNDEF NOT_USE_RICHEDIT}
+        {$IFDEF STATIC_RICHEDIT_DATA}
+        fRECharFormatRec: TCharFormat;
+        fREParaFmtRec: TParaFormat2;
+        {$ELSE}
+        fRECharFormatRec: PCharFormat;
+        fREParaFmtRec: PParaFormat2;
+        {$ENDIF}
+        fCharFmtDeltaSz: Integer;
+        fParaFmtDeltaSz: Integer;
+        fREError: Integer;
+        fREStream: PStream;
+        fREStrLoadLen: DWORD;
+        fREUrl: PKOLChar;
+        fTmpFont: PGraphicTool; // for RichEdit
+        fREUpdCount: SmallInt;
+        fReOvrDisable: Boolean;
+        fREOvr: Boolean;
+        fREScrolling: Boolean;
+        fRECharArea: TRichFmtArea;
+        FSupressTab: Boolean;
+        fRETransparent: Boolean;
+      {$ENDIF NOT_USE_RICHEDIT}
   {$IFDEF UNION_FIELDS}
     );
   6:( // Label Effect + Graphic edit control
@@ -4698,7 +4704,6 @@ type
   {$IFDEF UNION_FIELDS}
       );
   {$ENDIF}
-  {$ENDIF NOT_USE_RICHEDIT}
   end;
 
 { ----------------------------------------------------------------------
@@ -4867,15 +4872,17 @@ type
   {$IFDEF GDI}
     function GetHelpPath: KOLString;
     procedure SetHelpPath(const Value: KOLString);
+  public
     procedure SetOnQueryEndSession(const Value: TOnEventAccept);
     procedure SetOnMinMaxRestore(const Index: Integer; const Value: TOnEvent);
     procedure SetOnMinimize( const Value: TOnEvent );
     procedure SetOnMaximize( const Value: TOnEvent );
     procedure SetOnRestore( const Value: TOnEvent );
+    procedure SetOnScroll(const Value: TOnScroll);
+  protected
     procedure SetConstraint(const Index: Integer; Value: SmallInt);
     function GetOnMinMaxRestore(const Index: Integer): TOnEvent;
     function GetConstraint(const Index: Integer): Integer;
-    procedure SetOnScroll(const Value: TOnScroll);
     function GetLVColalign(Idx: Integer): TTextAlign;
     procedure SetLVColalign(Idx: Integer; const Value: TTextAlign);
 
@@ -4949,8 +4956,8 @@ type
     {$IFDEF GTK}
   protected
     {} fInBkPaint: Boolean;
-    {} fSetTextAlign: procedure( Self_: PControl );
-    function ProvideCanvasHandle( Sender: PCanvas ): HDC;
+    {} fSetTextAlign: PROCEDURE( Self_: PControl );
+    FUNCTION ProvideCanvasHandle( Sender: PCanvas ): HDC;
     {$ENDIF GTK}
     {$ENDIF _X_}
     {$IFDEF GDI}
@@ -5068,13 +5075,6 @@ type
 
     function GetMaxTextSize: DWORD;
     procedure SetMaxTextSize(const Value: DWORD);
-    {$ENDIF NOT_USE_RICHEDIT}
-
-    procedure SetOnResize(const Value: TOnEvent);
-
-    procedure DoSelChange;
-
-    {$IFNDEF NOT_USE_RICHEDIT}
     function REGetUnderlineEx: TRichUnderline;
     procedure RESetUnderlineEx(const Value: TRichUnderline);
 
@@ -5112,6 +5112,8 @@ type
     function REGetLangOptions(const Index: Integer): Boolean;
     procedure RESetLangOptions(const Index: Integer; const Value: Boolean);
     {$ENDIF NOT_USE_RICHEDIT}
+    procedure SetOnResize(const Value: TOnEvent);
+    procedure DoSelChange;
     function LVGetItemImgIdx(Idx: Integer): Integer;
     procedure LVSetItemImgIdx(Idx: Integer; const Value: Integer);
   public procedure SetFlat(const Value: Boolean);
@@ -5145,9 +5147,7 @@ type
     function TV_GetItemChildCount(Item: THandle): Integer;
     function TVGetItemData(Item: THandle): Pointer;
     procedure TVSetItemData(Item: THandle; const Value: Pointer);
-
     function GetToBeVisible: Boolean;
-
     procedure SetAlphaBlend(const Value: Byte);
     procedure SetMaxProgress(const Index, Value: Integer);
     procedure SetDroppedWidth(const Value: Integer);
@@ -5540,8 +5540,8 @@ type
     {$ENDIF GDI}
     {$IFDEF _X_}
     {$IFDEF GTK}
-    procedure InitParented( AParent: PControl; widget: PGtkWidget;
-      {}need_eventbox: Boolean ); virtual;
+    PROCEDURE InitParented( AParent: PControl; widget: PGtkWidget;
+      {}need_eventbox: Boolean ); VIRTUAL;
     {* Initialization of visual object. }
     {$ENDIF GTK}
     {$ENDIF _X_}
@@ -5643,7 +5643,7 @@ type
     {$ENDIF GDI}
     {$IFDEF _X_}
     {$IFDEF GTK}
-    constructor CreateParented( AParent: PControl; widget: PGtkWidget;
+    CONSTRUCTOR CreateParented( AParent: PControl; widget: PGtkWidget;
       {}need_eventbox: Boolean );
     {* Creates new instance of TControl object, calling InitParented }
     {$ENDIF GTK}
@@ -8509,7 +8509,7 @@ type
     {* Detaches procedure attached earlier using AttachProc. }
 
     property OnDropFiles: TOnDropFiles
-             read {$IFDEF EVENTS_DYNAMIC} Get_OnDropFiles {$ELSE} FOnDropFiles {$ENDIF}
+             read {$IFDEF EVENTS_DYNAMIC} Get_OnDropFiles {$ELSE} EV.FOnDropFiles {$ENDIF}
              write SetOnDropFiles;
     {* Assign this event to your handler, if You want to accept drag and drop
        files from other applications such as explorer onto your control. When
@@ -9506,7 +9506,7 @@ procedure FormSetTBBtnImgWidth( Form: PControl );
 procedure FormTBAddBitmap( Form: PControl );
 procedure FormSetTBButtonSize( Form: PControl );
 {$IFDEF _D4orHigher}
-procedure FormSetTBSetTooltips( Form: PControl );
+procedure FormTBSetTooltips( Form: PControl );
 {$ENDIF}
 procedure FormSetTBButtonsMinWidth( Form: PControl );
 procedure FormSetTBButtonsMaxWidth( Form: PControl );
@@ -10229,15 +10229,17 @@ procedure SysFreeString( psz: PWideChar ); stdcall;
 { -- Contructors for visual controls -- }
 
 {$IFDEF GDI}
+{$IFDEF COMMANDACTIONS_OBJ}
 function NewCommandActionsObj: PCommandActionsObj;
 function NewCommandActionsObj_Packed( fromPack: PChar ): PCommandActionsObj;
+{$ENDIF}
 
 function _NewWindowed( AParent: PControl; ControlClassName: PKOLChar;
          Ctl3D: Boolean; ACommandActions: TCommandActionsParam): PControl;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-function _NewWindowed( AParent: PControl; ControlClassName: PAnsiChar;
+FUNCTION _NewWindowed( AParent: PControl; ControlClassName: PAnsiChar;
   widget: PGtkWidget; need_eventbox: Boolean ): PControl;
 {$ENDIF GTK}
 {$ENDIF _X_}
@@ -10277,7 +10279,7 @@ function _NewControl( AParent: PControl; ControlClassName: PKOLChar;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-function _NewControl( AParent: PControl; ControlClassName: PAnsiChar;
+FUNCTION _NewControl( AParent: PControl; ControlClassName: PAnsiChar;
          Style: DWORD; Ctl3D: Boolean; widget: PGtkWidget; need_eventbox: Boolean ): PControl;
 {$ENDIF GTK}
 {$ENDIF _X_}
@@ -15686,14 +15688,14 @@ end;
 function TObj.RefDec: Integer;
 begin
   Result := 0; // stop Delphi alerting the Warning
-  if @ Self = nil then Exit;
+  if  @ Self = nil then Exit;
   Dec( fRefCount, 2 );
   {$IFDEF OLD_REFCOUNT}
-  if (fRefCount < 0) and LongBool(fRefCount and 1) then
-    Destroy;
+  if  (fRefCount < 0) and LongBool(fRefCount and 1) then
+      Destroy;
   {$ELSE}
-  if fRefCount < 0 then
-    Destroy;
+  if  fRefCount < 0 then
+      Destroy;
   {$ENDIF}
 end;
 {$ENDIF ASM_VERSION}
@@ -15736,17 +15738,18 @@ begin
   Final;
 
   {$IFDEF DEBUG_ENDSESSION}
-  if EndSession_Initiated then
-    LogFileOutput( GetStartDir + 'es_debug.txt',
+  if  EndSession_Initiated then
+      LogFileOutput( GetStartDir + 'es_debug.txt',
                    'FINALLED: ' + Int2Hex( DWORD( @ Self ), 8 )
                    {$IFDEF USE_NAMES}
                    + ' (name:' + FName + ')'
                    {$ENDIF}
-                    );
+                   );
   {$ENDIF}
   {$IFDEF USE_NAMES}
   fName := '';
-  if fNamedObjList <> nil then Free_And_Nil(fNamedObjList);
+  if  fNamedObjList <> nil then
+      Free_And_Nil(fNamedObjList);
   {$ENDIF}
   //Dispose( @Self );
   {$IFDEF CRASH_DEBUG}
@@ -15755,25 +15758,6 @@ begin
   FreeMem( @ Self );
 end;
 {$ENDIF ASM_VERSION}
-
-{$IFnDEF NIL_EVENTS}
-{$IFDEF ASM_VERSION}
-procedure TObj.Init;
-asm
-    MOV  [EAX].TObj.fOnDestroy.TMethod.Code, offset[DummyObjProc]
-end;
-{$ELSE}
-procedure TObj.Init;
-begin
-    {$IFDEF MAKE_METHOD}
-    fOnDestroy := TOnEvent( MakeMethod( nil, @DummyObjProc ) );
-    {$ELSE}
-    TMethod( fOnDestroy ).Code := @ DummyObjProc;
-    //TMethod( fOnDestroy ).Data := @ Self;
-    {$ENDIF}
-end;
-{$ENDIF ASM_VERSION}
-{$ENDIF NIL_EVENTS}
 
 {$IFDEF ASM_VERSION}
   {$DEFINE ASM_TLIST}
@@ -15787,15 +15771,9 @@ procedure TObj.Final;
 asm     //cmd    //opd
         PUSH     EBX
         XCHG     EBX, EAX
-        {$IFDEF  NIL_EVENTS}
         XOR      ECX, ECX
-        {$ELSE}
-        MOV      ECX, offset[DummyObjProc]
-        {$ENDIF}
         XCHG     ECX, [EBX].fOnDestroy.TMethod.Code
-        {$IFDEF  NIL_EVENTS}
         JECXZ    @@freeloop
-        {$ENDIF}
         MOV      EDX, EBX
         MOV      EAX, [EDX].fOnDestroy.TMethod.Data
         CALL     ECX
@@ -15834,19 +15812,13 @@ var N: Integer;
     {$ELSE}
     Proc: TObjectMethod Absolute ProcMethod;
     {$ENDIF}
+var Destroy_evnt: TOnEvent;
 begin
-  {$IFDEF NIL_EVENTS}
   if Assigned( fOnDestroy ) then
-  {$ENDIF}
   begin
-    fOnDestroy( @Self );
-    {$IFDEF SAFE_CODE}
-        {$IFDEF NIL_EVENTS}
-        fOnDestroy := nil;
-        {$ELSE}
-        TMethod( fOnDestroy ).Code := @DummyObjProc;
-        {$ENDIF}
-    {$ENDIF}
+    Destroy_evnt := fOnDestroy;
+    fOnDestroy := nil;
+    Destroy_evnt( @Self );
   end;
   while (fAutoFree <> nil) and (fAutoFree.fCount > 0) do
   begin
@@ -16012,6 +15984,9 @@ end;
 function NewList: PList;
 begin
   New( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  fObjKind := 'TList';
+  {$ENDIF}
   //Result.fAddBy := 4;
 end;
 
@@ -16019,6 +15994,9 @@ end;
 function NewList: PList;
 begin
   New( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TList';
+  {$ENDIF}
   Result.fAddBy := 4;
   {$IFDEF TLIST_FAST}
   {$IFNDEF DFLT_TLIST_NOUSE_BLOCKS} // for debug only
@@ -16995,7 +16973,7 @@ begin
      {$ENDIF}
      Result := self_.WndProc( M );
      dec( self_.fNestedMsgHandling );
-     if  (self_.RefCount = 0) and (self_.fNestedMsgHandling <= 0)
+     if  (self_.fRefCount = 0) and (self_.fNestedMsgHandling <= 0)
      and {$IFDEF USE_FLAGS} (G2_BeginDestroying in self_.fFlagsG2)
          {$ELSE} self_.fBeginDestroying {$ENDIF}
      and (self_ <> Applet) then
@@ -17228,16 +17206,16 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-  procedure Run( var AppletWnd: PControl );
-  begin
+  PROCEDURE Run( var AppletWnd: PControl );
+  BEGIN
     AppletRunning := True;
     Applet := AppletWnd;
     AppletWnd.VisualizyWindow; // for GTK, show all windows having Visible = TRUE, recursively
     gtk_main( );
-    if AppletWnd <> nil then
-      //TerminateExecution( AppletWnd );
-      Free_And_Nil( AppletWnd );
-  end;
+    IF  AppletWnd <> nil THEN
+        //TerminateExecution( AppletWnd );
+        Free_And_Nil( AppletWnd );
+  END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -17294,6 +17272,9 @@ var fGlobalProcKeybd: function( Sender: PControl; var Msg: TMsg; var Rslt: Integ
 function _NewGraphicTool: PGraphicTool;
 begin
   New( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TGraphicTool';
+  {$ENDIF}
 end;
 {$IFDEF WIN_GDI}
 
@@ -17556,15 +17537,15 @@ begin
    end;
    {$ENDIF GDI}
    {$IFDEF GTK}
-   if Assigned( fPangoFontDesc ) then
-   begin
-     pango_font_description_free( fPangoFontDesc );
-     fPangoFontDesc := nil;
-   end;
+   IF  Assigned( fPangoFontDesc ) THEN
+   BEGIN
+       pango_font_description_free( fPangoFontDesc );
+       fPangoFontDesc := nil;
+   END;
    /////////////////////////////////
-   if Assigned( fOnChange ) then
+   IF  Assigned( fOnChange ) THEN
    /////////////////////////////////
-      fOnChange( @Self );
+       fOnChange( @Self );
    {$ENDIF GTK}
 end;
 {$ENDIF ASM_VERSION}
@@ -17715,8 +17696,8 @@ function TGraphicTool.GetFontName: KOLString;
 begin
   Result := fData.Font.Name;
   {$IFDEF GTK}
-  if Result = '' then
-    Result := 'Sans Serif';
+  IF  Result = '' THEN
+      Result := 'Sans Serif';
   {$ENDIF GTK}
 end;
 
@@ -18125,48 +18106,48 @@ end;
 
 {$IFDEF _X_}
 {$IFDEF GTK}
-function TGraphicTool.GetPangoFontDesc: PPangoFontDescription;
-var s: AnsiString;
+FUNCTION TGraphicTool.GetPangoFontDesc: PPangoFontDescription;
+VAR s: AnsiString;
     i: Integer;
-    function IfThen( cond: Boolean; const s: AnsiString ): AnsiString;
-    begin
+    FUNCTION IfThen( cond: Boolean; CONST s: AnsiString ): AnsiString;
+    BEGIN
       Result := '';
-      if cond then Result := s;
-    end;
+      IF cond THEN Result := s;
+    END;
 {const Weights: array[0..9] of String = ( 'Ultralight',
    'Ultralight', 'Ultralight',
    'Light', 'Normal', 'Normal', 'Normal',
    'Bold', 'Ultrabold', 'Heavy' );}
-begin
+BEGIN
   //////////////////////////////////////
-  if not Assigned( fPangoFontDesc ) then
+  IF  NOT Assigned( fPangoFontDesc ) THEN
   //////////////////////////////////////
-  begin
-    s := FontName; { + ' ' +
-      IfThen( FontWeight <> 400, Weights[ FontWeight div 100 ] + ' ' ) +
-      IfThen( fsItalic in FontStyle, 'Italic ' ) {+
-      Int2Str( FontHeight )};
-    fPangoFontDesc := pango_font_description_from_string( PAnsiChar( s ) );
-    i := FontHeight;
-    if i > 0 then
-      pango_font_description_set_absolute_size( fPangoFontDesc, i * PANGO_SCALE );
-    //i := pango_font_description_get_size( fPangoFontDesc );
-    i := PANGO_STYLE_NORMAL;
-    if fsItalic in FontStyle then i := PANGO_STYLE_ITALIC;
-    pango_font_description_set_style( fPangoFontDesc, i );
-    pango_font_description_set_weight( fPangoFontDesc, FontWeight );
-  end;
+  BEGIN
+      s := FontName; { + ' ' +
+        IfThen( FontWeight <> 400, Weights[ FontWeight div 100 ] + ' ' ) +
+        IfThen( fsItalic in FontStyle, 'Italic ' ) {+
+        Int2Str( FontHeight )};
+      fPangoFontDesc := pango_font_description_from_string( PAnsiChar( s ) );
+      i := FontHeight;
+      IF  i > 0 THEN
+          pango_font_description_set_absolute_size( fPangoFontDesc, i * PANGO_SCALE );
+      //i := pango_font_description_get_size( fPangoFontDesc );
+      i := PANGO_STYLE_NORMAL;
+      IF  fsItalic IN FontStyle THEN i := PANGO_STYLE_ITALIC;
+      pango_font_description_set_style( fPangoFontDesc, i );
+      pango_font_description_set_weight( fPangoFontDesc, FontWeight );
+  END;
   Result := fPangoFontDesc;
-end;
+END;
 
-function Color2GDKColor( Color: TColor ): TGdkColor;
-begin
+FUNCTION Color2GDKColor( Color: TColor ): TGdkColor;
+BEGIN
   Color := Color2RGB( Color );
   Result.pixel := 0;
   Result.red   := (Color and $FF) shl 8;
   Result.green := Color and $FF00;
   Result.blue  := (Color shr 8) and $FF00;
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 {$IFDEF WIN_GDI}
@@ -18308,20 +18289,20 @@ end;
 
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure TCanvas.SaveState;
-begin
+PROCEDURE TCanvas.SaveState;
+BEGIN
   gdk_gc_get_values( fHandle, @ fSavedState );
-end;
+END;
 
-procedure TCanvas.RestoreState;
-var mask: DWORD;
-begin
+PROCEDURE TCanvas.RestoreState;
+VAR mask: DWORD;
+BEGIN
   mask := $1FFFF;
   if fSavedState.font = nil then mask := mask and not GDK_GC_FONT;
   if fSavedState.stipple = nil then mask := mask and not GDK_GC_STIPPLE;
   gdk_gc_set_values( fHandle, @ fSavedState, mask );
   DeselectHandles;
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -18329,40 +18310,35 @@ end;
 {$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
 procedure TCanvas.DeselectHandles;
 begin
-   if (fHandle <> 0) and
-      LongBool(fState and (PenValid or BrushValid or FontValid)) then
+   if  (fHandle <> 0) and
+       LongBool(fState and (PenValid or BrushValid or FontValid)) then
    with Stock do
    begin
-     if StockPen = 0 then
-     begin
-       StockPen := GetStockObject(BLACK_PEN);
-       StockBrush := GetStockObject(HOLLOW_BRUSH);
-       StockFont := GetStockObject(SYSTEM_FONT);
-     end;
-     SelectObject( fHandle, StockPen );
-     SelectObject( fHandle, StockBrush );
-     SelectObject( fHandle, StockFont );
-     fState := fState and not( PenValid or BrushValid or FontValid );
+       if  StockPen = 0 then
+       begin
+           StockPen := GetStockObject(BLACK_PEN);
+           StockBrush := GetStockObject(HOLLOW_BRUSH);
+           StockFont := GetStockObject(SYSTEM_FONT);
+       end;
+       SelectObject( fHandle, StockPen );
+       SelectObject( fHandle, StockBrush );
+       SelectObject( fHandle, StockFont );
+       fState := fState and not( PenValid or BrushValid or FontValid );
    end;
 end;
 {$ENDIF ASM_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure TCanvas.DeselectHandles;
-begin
-  {$IFDEF GDI}
-  Free_And_Nil( fBrush );
-  Free_And_Nil( fPen );
-  Free_And_Nil( fFont );
-  {$ENDIF GDI}
-  if  ( fFont <> nil ) and ( fFont.fPangoFontDesc <> nil ) then
-  begin
-    pango_font_description_free( fFont.fPangoFontDesc );
-    fFont.fPangoFontDesc := nil;
-  end;
+PROCEDURE TCanvas.DeselectHandles;
+BEGIN
+  IF  ( fFont <> nil ) AND ( fFont.fPangoFontDesc <> nil ) THEN
+  BEGIN
+      pango_font_description_free( fFont.fPangoFontDesc );
+      fFont.fPangoFontDesc := nil;
+  END;
   fState := fState and not( PenValid or BrushValid or FontValid );
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -18403,13 +18379,13 @@ end;
 
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure TCanvas.ForeBack(fg_color, bk_color: TColor); // install colors just before drawing
-begin
+PROCEDURE TCanvas.ForeBack(fg_color, bk_color: TColor); // install colors just before drawing
+BEGIN
   fg_color := RGB2BGR( Color2RGB( fg_color ) );
   bk_color := RGB2BGR( Color2RGB( bk_color ) );
   gdk_rgb_gc_set_foreground( fHandle, fg_color );
   gdk_rgb_gc_set_background( fHandle, bk_color );
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -18495,11 +18471,11 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure TCanvas.Arc(X1, Y1, X2, Y2, X3, Y3, X4, Y4: Integer); stdcall;
-var C: TPoint;
+PROCEDURE TCanvas.Arc(X1, Y1, X2, Y2, X3, Y3, X4, Y4: Integer); STDCALL;
+VAR C: TPoint;
     angle1, angle2: Integer;
     A1, A2: Double;
-begin
+BEGIN
   ////RequiredState( {HandleValid or} PenValid or ChangingCanvas );
   C := MakePoint( (X1 + X2) div 2, (Y1 + Y2) div 2 );
   {$IFDEF NOT_USE_EXCEPTION}
@@ -18519,14 +18495,14 @@ begin
   {$ENDIF NOT_USE_EXCEPTION}
   angle1 := -Round(A1 * 180 * 64 / PI);
   angle2 := -Round(A2 * 180 * 64 / PI);
-  if Brush.BrushStyle <> bsClear then
-  begin
-    ForeBack( Brush.Color, Brush.Color );
-    gdk_draw_arc( fDrawable, fHandle, 1, X1, Y1, X2-X1, Y2-Y1, angle1, angle2 );
-  end;
+  IF  Brush.BrushStyle <> bsClear THEN
+  BEGIN
+      ForeBack( Brush.Color, Brush.Color );
+      gdk_draw_arc( fDrawable, fHandle, 1, X1, Y1, X2-X1, Y2-Y1, angle1, angle2 );
+  END;
   ForeBack( Pen.Color, Brush.Color );
   gdk_draw_arc( fDrawable, fHandle, 0, X1, Y1, X2-X1, Y2-Y1, angle1, angle2 );
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 {$IFDEF WIN_GDI}
@@ -18601,14 +18577,14 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure TCanvas.FillRect({$IFNDEF FPC}const{$ENDIF} Rect: TRect);
-begin
+PROCEDURE TCanvas.FillRect({$IFNDEF FPC}const{$ENDIF} Rect: TRect);
+BEGIN
   if (fBrush <> nil) and (fBrush.BrushStyle = bsClear) then Exit;
   ////RequiredState( {HandleValid or} BrushValid or ChangingCanvas );
   ForeBack( Brush.Color, Brush.Color );
   gdk_draw_rectangle( fDrawable, fHandle, 1, Rect.Left, Rect.Top,
     Rect.Right-Rect.Left, Rect.Bottom-Rect.Top );
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 {$IFDEF WIN_GDI}
@@ -18684,14 +18660,12 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure TCanvas.LineTo(X, Y: Integer);
-begin
-  //RequiredState( HandleValid or PenValid or BrushValid or ChangingCanvas );
-  ////RequiredState( PenValid or BrushValid or ChangingCanvas );
+PROCEDURE TCanvas.LineTo(X, Y: Integer);
+BEGIN
   ForeBack( Pen.Color, Brush.Color );
   gdk_draw_line( fDrawable, fHandle, fPenPos.X, fPenPos.Y, X, Y );
   fPenPos := MakePoint( X, Y );
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -18706,10 +18680,10 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure TCanvas.MoveTo(X, Y: Integer);
-begin
+PROCEDURE TCanvas.MoveTo(X, Y: Integer);
+BEGIN
   fPenPos := MakePoint( X, Y );
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -18819,29 +18793,28 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-function TCanvas.TextExtent(const Text: Ansistring): TSize;
-var layout: PPangoLayout;
+FUNCTION TCanvas.TextExtent(const Text: Ansistring): TSize;
+VAR layout: PPangoLayout;
     context: PPangoContext;
-begin
+BEGIN
   //RequiredState( HandleValid or FontValid );
-  if fOwnerControl <> nil then
-  begin
-    context := nil;
-    layout := gtk_widget_create_pango_layout(
-      PControl( fOwnerControl ).fEventboxHandle, nil );
-  end
-    else
-  begin //todo: seems not working in such way... What to do for memory bitmap?
+  IF  fOwnerControl <> nil THEN
+  BEGIN
+      context := nil;
+      layout := gtk_widget_create_pango_layout(
+          PControl( fOwnerControl ).fEventboxHandle, nil );
+  END ELSE
+  BEGIN //todo: seems not working in such way... What to do for memory bitmap?
     context := pango_context_new;
     //layout := gtk_widget_create_pango_layout( fHandle, PChar( Text ) );
     layout := pango_layout_new( context );
-  end;
+  END;
   pango_layout_set_font_description( layout, Font.FontHandle );
   pango_layout_set_text( layout, PAnsiChar( Text ), Length( Text ) );
   pango_layout_get_size( layout, @ Result.cx, @ Result.cy );
   g_object_unref( layout );
-  if context <> nil then g_object_unref( context );
-end;
+  IF context <> nil THEN g_object_unref( context );
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -18893,13 +18866,13 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure TCanvas.TextOut(X, Y: Integer; const Text: AnsiString); stdcall;
-var Options: Integer;
-begin
+PROCEDURE TCanvas.TextOut(X, Y: Integer; CONST Text: AnsiString); STDCALL;
+VAR Options: Integer;
+BEGIN
   Options := 0;
   if Brush.BrushStyle <> bsClear then Options := ETO_OPAQUE;
   ExtTextOut( X, Y, Options, MakeRect( 0,0,0,0 ), Text, [ ] );
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -18922,13 +18895,13 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure TCanvas.TextRect(const Rect: TRect; X, Y: Integer; const Text: Ansistring);
-var Options: Integer;
-begin
-  Options := ETO_CLIPPED;
-  if Brush.BrushStyle <> bsClear then Options := Options or ETO_OPAQUE;
-  ExtTextOut( X, Y, Options, Rect, Text, [] ); // KOL_ANSI
-end;
+PROCEDURE TCanvas.TextRect(CONST Rect: TRect; X, Y: Integer; CONST Text: Ansistring);
+VAR Options: Integer;
+BEGIN
+    Options := ETO_CLIPPED;
+    IF Brush.BrushStyle <> bsClear THEN Options := Options or ETO_OPAQUE;
+    ExtTextOut( X, Y, Options, Rect, Text, [] ); // KOL_ANSI
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -18942,57 +18915,55 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure TCanvas.ExtTextOut( X, Y: Integer; Options: DWORD; const Rect: TRect; const Text: AnsiString;
-          const Spacing: array of Integer );
-var context: PPangoContext;
+PROCEDURE TCanvas.ExtTextOut( X, Y: Integer; Options: DWORD; CONST Rect: TRect;
+          CONST Text: AnsiString; CONST Spacing: ARRAY of Integer );
+VAR context: PPangoContext;
     layout: PPangoLayout;
     w, h: Integer;
     pixmap: PGdkPixmap;
-begin
+BEGIN
   ////RequiredState( {HandleValid or} FontValid or BrushValid or ChangingCanvas );
   w := Rect.Right - Rect.Left;
   h := Rect.Bottom - Rect.Top;
-  if fOwnerControl <> nil then
-  begin
-    context := nil;
-    layout := gtk_widget_create_pango_layout(
-      PControl( fOwnerControl ).fEventboxHandle, nil );
-  end
-    else
-  begin //todo: seems not working in such way... What to do for memory bitmap?
-    context := pango_context_new;
-    //layout := gtk_widget_create_pango_layout( fHandle, PChar( Text ) );
-    layout := pango_layout_new( context );
-  end;
+  IF  fOwnerControl <> nil THEN
+  BEGIN
+      context := nil;
+      layout := gtk_widget_create_pango_layout(
+          PControl( fOwnerControl ).fEventboxHandle, nil );
+  END ELSE
+  BEGIN //todo: seems not working in such way... What to do for memory bitmap?
+      context := pango_context_new;
+      //layout := gtk_widget_create_pango_layout( fHandle, PChar( Text ) );
+      layout := pango_layout_new( context );
+  END;
   pango_layout_set_font_description( layout, Font.FontHandle );
   pango_layout_set_text( layout, PAnsiChar( Text ), Length( Text ) );
-  if Options and ETO_CLIPPED = 0 then
-  begin
+  IF  Options AND ETO_CLIPPED = 0 THEN
+  BEGIN
     pango_layout_get_size( layout, @ w, @ h );
     w := w div PANGO_SCALE;
     h := h div PANGO_SCALE;
-  end;
+  END;
   pixmap := gdk_pixmap_new( PControl( fOwnerControl ).fEventboxHandle.window,
     w, h, -1 ); //todo: use MainForm
-  if Options and ETO_OPAQUE <> 0 then
-  begin
-    ForeBack( Brush.Color, Brush.Color );
-    gdk_draw_rectangle( GDK_DRAWABLE( pixmap ), fHandle, 1, 0, 0, w, h );
-  end
-    else
-  begin
-    gdk_draw_drawable( GDK_DRAWABLE( pixmap ), fHandle, fDrawable,
-      Rect.Left, Rect.Top, 0, 0, w, h );
-  end;
+  IF  Options AND ETO_OPAQUE <> 0 THEN
+  BEGIN
+      ForeBack( Brush.Color, Brush.Color );
+      gdk_draw_rectangle( GDK_DRAWABLE( pixmap ), fHandle, 1, 0, 0, w, h );
+  END ELSE
+  BEGIN
+      gdk_draw_drawable( GDK_DRAWABLE( pixmap ), fHandle, fDrawable,
+        Rect.Left, Rect.Top, 0, 0, w, h );
+  END;
   ForeBack( Font.Color, Brush.Color );
   gdk_draw_layout( GDK_DRAWABLE( pixmap ), fHandle, X, Y, layout );
   g_object_unref( layout );
   gdk_draw_drawable( fDrawable, fHandle, GDK_DRAWABLE( pixmap ),
     0, 0, Rect.Left, Rect.Top, w, h );
   g_object_unref( pixmap );
-  if context <> nil then
-    g_object_unref( context );
-end;
+  IF  context <> nil THEN
+      g_object_unref( context );
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -19037,22 +19008,22 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-function TCanvas.GetBrush: PGraphicTool;
-begin
-  if ( fBrush = nil ) then
-  begin
-    fBrush := NewBrush;
-    if ( fOwnerControl <> nil ) then
-    begin
-      fBrush.fData.Color := PControl(fOwnerControl).fColor;
-      if ( PControl(fOwnerControl).fBrush <> nil ) then
-         fBrush.Assign( PControl(fOwnerControl).fBrush );
-      // both statements above needed
-    end;
-    AssignChangeEvents;
-  end;
+FUNCTION TCanvas.GetBrush: PGraphicTool;
+BEGIN
+  IF  ( fBrush = nil ) THEN
+  BEGIN
+      fBrush := NewBrush;
+      IF ( fOwnerControl <> nil ) THEN
+      BEGIN
+          fBrush.fData.Color := PControl(fOwnerControl).fColor;
+          IF  ( PControl(fOwnerControl).fBrush <> nil ) THEN
+              fBrush.Assign( PControl(fOwnerControl).fBrush );
+          // both statements above needed
+      END;
+      AssignChangeEvents;
+  END;
   Result := fBrush;
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -19104,14 +19075,14 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-function TCanvas.GetHandle: HDC;
-begin
+FUNCTION TCanvas.GetHandle: HDC;
+BEGIN
   ////////////////////////////////
-  if Assigned( fOnGetHandle ) then
+  IF  Assigned( fOnGetHandle ) THEN
   ////////////////////////////////
-    fHandle := fOnGetHandle( @Self );
+      fHandle := fOnGetHandle( @Self );
   Result := fHandle;
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -23868,12 +23839,18 @@ end;
 function NewDirList( const DirPath, Filter: KOLString; Attr: DWORD ): PDirList;
 begin
   New( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TDirList';
+  {$ENDIF}
   Result.ScanDirectory( DirPath, Filter, Attr );
 end;
 
 function NewDirListEx( const DirPath, Filters: KOLString; Attr: DWORD ): PDirList;
 begin
   New( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TDirListEx';
+  {$ENDIF}
   Result.ScanDirectoryEx( DirPath, Filters, Attr );
 end;
 
@@ -25633,6 +25610,9 @@ end;
 function NewThread: PThread;
 begin
   new( Result, ThreadCreate );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TThread';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -25642,6 +25622,9 @@ begin
   IsMultiThread := True;
   {$ENDIF}
   New( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TThread';
+  {$ENDIF}
   Result.FSuspended := True;
   {$IFDEF PSEUDO_THREADS}
   {$ELSE}
@@ -25659,6 +25642,9 @@ end;
 function NewThreadEx( const Proc: TOnThreadExecute ): PThread;
 begin
   new( Result, ThreadCreateEx( Proc ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TThreadEx';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -25738,6 +25724,9 @@ begin
   begin // creating main thread
     CreatingMainThread := TRUE;
     new( MainThread, Create );
+    {$IFDEF DEBUG_OBJKIND}
+    MainThread.fObjKind := 'MainThread';
+    {$ENDIF}
     CreatingMainThread := FALSE;
   end;
   if CreatingMainThread then
@@ -25836,9 +25825,7 @@ begin
       if  (ResumeThread(FHandle) > 1) then
           FSuspended := True
       else
-      {$IFDEF SAFE_CODE}
       if  Assigned(FOnResume) then
-      {$ENDIF}
           FOnResume(@Self);
   {$ENDIF}
 end;
@@ -25971,7 +25958,10 @@ begin
       T := MainThread.AllThreads.Items[ i ];
       if (T.DoNotWakeUntil > C) and (T <> MainThread) then continue;
       if (T = MainThread) and (MainThread.CurrentThread = T) then Exit;
-      if not T.Terminated and not ((T <> MainThread) and (T.Suspended)) then break;
+      if not T.Terminated and not ((T <> MainThread) and (T.Suspended)) then
+      begin
+         break;
+      end;
     end;
     MainThread.SwitchToThread( MainThread.AllThreads.Items[ i ] );
   end;
@@ -26526,6 +26516,9 @@ end;
 function _NewStream( const StreamMethods: TStreamMethods ): PStream;
 begin
   New( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TStream';
+  {$ENDIF}
   Move( StreamMethods, Result.fMethods, Sizeof( TStreamMethods ) );
   Result.fPMethods := @Result.fMethods;
   TMethod( Result.fOnChangePos ).Code := @DummyObjProc;
@@ -27581,6 +27574,9 @@ end;
 function OpenIniFile( const FileName: KOLString ): PIniFile;
 begin
   New( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TIniFile';
+  {$ENDIF}
   Result.fFileName := FileName;
 end;
 
@@ -27975,6 +27971,9 @@ var M: PMenu;
     {$ENDIF}
 begin
   New( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TMenu';
+  {$ENDIF}
   Result.FVisible := TRUE;
   Result.FPopupFlags := TPM_LEFTALIGN or TPM_LEFTBUTTON;
   Result.FMenuItems := NewList;
@@ -28026,24 +28025,24 @@ end;
 {$IFDEF _X_}
 {$IFDEF GTK}
 //--- some code from samples - may be useful to see "how to"
-Function AddSeparatorToMenu( Menu : PGtkMenu ) : PgtkMenuItem ;
-begin
+FUNCTION AddSeparatorToMenu( Menu : PGtkMenu ) : PgtkMenuItem ;
+BEGIN
   Result := PGtkMenuitem( gtk_menu_item_new ) ;
   gtk_menu_append( GTK_WIDGET( Menu ), PGtkWidget( Result ) ) ;
   gtk_widget_show( PGtkWidget ( Result ) ) ;
-end;
+END;
 
-Function AddItemToMenu( Menu : PGtkMenu;
+FUNCTION AddItemToMenu( Menu : PGtkMenu;
                         ShortCuts : PGtkAccelGroup;
                         const Caption : AnsiString;
                         const ShortCut : AnsiString;
                         CallBack : TGtkSignalFunc;
                         CallBackdata : Pointer ) : PGtkMenuItem;
-Var
+VAR
   Key, Modifiers : DWORD;
   //LocalAccelGroup : PGtkAccelGroup; -- not used since gtk_menu_ensure_uline_accel_group not defined anywhere...
   TheLabel : PGtkLabel;
-begin
+BEGIN
   Result := PGtkMenuItem ( gtk_menu_item_new_with_label( '' ) ) ;
   TheLabel := GTK_LABEL(GTK_BIN( Result )^.child ) ;
   Key:= gtk_label_parse_uline( TheLabel , Pchar ( Caption ) ) ;
@@ -28058,39 +28057,39 @@ begin
   //-----------------
   gtk_menu_append( GTK_WIDGET( Menu ), PGtkWidget( Result ) ) ;
   //-----------------
-  If ( ShortCut<>'' ) and ( ShortCuts<> Nil ) then
-  begin
-    gtk_accelerator_parse ( pchar( ShortCut ) , @key , @modifiers ) ;
-    gtk_widget_add_accelerator ( PGtkWidget ( Result ) , ' activateitem' ,
-      ShortCuts, Key, modifiers, GTK_ACCEL_VISIBLE );
-  end;
+  IF  ( ShortCut<>'' ) AND ( ShortCuts<> Nil ) THEN
+  BEGIN
+      gtk_accelerator_parse ( pchar( ShortCut ) , @key , @modifiers ) ;
+      gtk_widget_add_accelerator ( PGtkWidget ( Result ) , ' activateitem' ,
+        ShortCuts, Key, modifiers, GTK_ACCEL_VISIBLE );
+  END;
   //------------------
-  If Assigned( CallBack ) then
-  begin
+  IF  Assigned( CallBack ) THEN
+  BEGIN
     gtk_signal_connect( PGtkObject ( Result ) , 'activate' ,
                         CallBack , CallBackdata ) ;
     gtk_widget_show( PgtkWidget ( Result ) ) ;
-  end ;
-end;
+  END;
+END;
 
-Function AddMenuToMenuBar( MenuBar : PGtkMenuBar;
+FUNCTION AddMenuToMenuBar( MenuBar : PGtkMenuBar;
                            ShortCuts : PGtkAccelGroup;
                            Caption : AnsiString;
                            CallBack : TGtkSignalFunc;
                            CallBackdata : Pointer;
                            AlignRight : Boolean;
                            Var MenuItem : PgtkMenuItem ) : PGtkMenu;
-Var Key : DWORD;
+VAR Key : DWORD;
     TheLabel : PGtkLabel;
-begin
+BEGIN
   MenuItem := PGtkMenuItem( gtk_menu_item_new_with_label( '' ) ) ;
-  If AlignRight Then
+  IF AlignRight THEN
     gtk_menu_item_right_justify( MenuItem );
   TheLabel := GTK_LABEL( GTK_BIN( MenuItem )^ .child ) ;
   Key := gtk_label_parse_uline( TheLabel, Pchar ( Caption ) ) ;
-  If Key<>0 then
-    gtk_widget_add_accelerator( PGtkWidget( MenuItem ), 'activateitem',
-      Shortcuts, Key, GDK_MOD1_MASK, GTK_ACCEL_LOCKED );
+  IF  Key<>0 THEN
+      gtk_widget_add_accelerator( PGtkWidget( MenuItem ), 'activateitem',
+          Shortcuts, Key, GDK_MOD1_MASK, GTK_ACCEL_LOCKED );
   Result := PGtkMenu( gtk_menu_new );
   If Assigned( CallBack ) then
     gtk_signal_connect( PGtkObject ( Result ), 'activate',
@@ -28098,28 +28097,29 @@ begin
   gtk_widget_show( PgtkWidget ( MenuItem ) ) ;
   gtk_menu_item_set_submenu( MenuItem, PGtkWidget( Result ) ) ;
   gtk_menu_bar_append( GTK_WIDGET( MenuBar ), PgtkWidget( MenuItem ) ) ;
-end;
+END;
 
-function NewMenu( AParent : PControl; MaxCmdReserve : DWORD;
-  const Template : array of PKOLChar; aOnMenuItem: TOnMenuItem ): PMenu;
-  procedure CreateMenuItems( ParentMenu: PMenu; var i: Integer );
-  var Item, PrevItem: PMenu;
+FUNCTION NewMenu( AParent : PControl; MaxCmdReserve : DWORD;
+  CONST Template : ARRAY of PKOLChar; aOnMenuItem: TOnMenuItem ): PMenu;
+  PROCEDURE CreateMenuItems( ParentMenu: PMenu; var i: Integer );
+  VAR Item, PrevItem: PMenu;
       s: AnsiString;
       j: Integer;
-  begin
+  BEGIN
     PrevItem := nil;
-    while i <= High( Template )-1 do
-    begin
+    WHILE i <= High( Template )-1 DO
+    BEGIN
       inc( i );
       s := Template[ i ];
-      if s = '' then break; // end of template
+      IF  s = '' THEN BREAK; // end of template
 
-      if s = ')' then
-      begin
-        inc( i ); break; // end of submenu
-      end;
+      IF  s = ')' THEN
+          inc( i ); break; // end of submenu
 
       new( Item, Create );
+      {$IFDEF DEBUG_OBJKIND}
+      Item.fObjKind := 'MenuItem';
+      {$ENDIF}
       Item.FCaption := s;
       Item.FVisible := TRUE;
       Item.FParentMenu := ParentMenu;
@@ -28127,87 +28127,80 @@ function NewMenu( AParent : PControl; MaxCmdReserve : DWORD;
         ParentMenu.FItems := NewList;
       ParentMenu.FItems.Add( Item );
 
-      if (s <> '') and (s[ 1 ] in [ '+', '-' ]) then
-      begin
-        Item.fIsCheckItem := TRUE;
-        Item.fChecked := S[ 1 ] = '+';
-        s := CopyEnd( s, 2 );
-        if (s <> '') and (s[ 1 ] = '!') then
-        begin
-          if PrevItem <> nil then
-          begin
-            if PrevItem.fRadioGroup <> 0 then
-              Item.fRadioGroup := PrevItem.fRadioGroup;
-          end
-          else inc( Item.fRadioGroup );
+      IF  (s <> '') AND (s[ 1 ] in [ '+', '-' ]) THEN
+      BEGIN
+          Item.fIsCheckItem := TRUE;
+          Item.fChecked := S[ 1 ] = '+';
           s := CopyEnd( s, 2 );
-        end;
-      end;
+          IF  (s <> '') and (s[ 1 ] = '!') THEN
+          BEGIN
+              IF  PrevItem <> nil THEN
+              BEGIN
+                  if  PrevItem.fRadioGroup <> 0 THEN
+                      Item.fRadioGroup := PrevItem.fRadioGroup;
+              END
+              ELSE inc( Item.fRadioGroup );
+              s := CopyEnd( s, 2 );
+          END;
+      END;
 
-      if s = '-' then
-        Item.fIsSeparator := TRUE
-      else
-      begin
-        // extract mnemonic
-        for j := Length( s )-1 downto 1 do
-        begin
-          if (s[ j ] = '&') and (s[ j+1 ] <> '&') then // mnemonic
-          begin
-            Item.fMnemonics := Item.fMnemonics + s[ j+1 ];
-            Delete( s, j, 1 );//?  <U>m</U> ?
-          end;
-        end;
-      end;
+      IF  s = '-' THEN
+          Item.fIsSeparator := TRUE
+      ELSE
+      BEGIN
+          FOR j := Length( s )-1 DOWNTO 1 DO // extract mnemonic
+          BEGIN
+              IF  (s[ j ] = '&') and (s[ j+1 ] <> '&') then // mnemonic
+              BEGIN
+                  Item.fMnemonics := Item.fMnemonics + s[ j+1 ];
+                  Delete( s, j, 1 );//?  <U>m</U> ?
+              END;
+          END;
+      END;
 
       //---------------------------- now call gtk for create item's widget
-      if Item.FIsSeparator then
-        Item.fGtkMenuItem := gtk_menu_item_new
-      else
-        Item.fGtkMenuItem := gtk_menu_item_new_with_label( PAnsiChar( s ) );
-      if ParentMenu.fGtkMenuBar <> nil then
-        gtk_menu_bar_append(
-          ParentMenu.fGtkMenuBar,
-          Item.fGtkMenuItem )
-      else
-        gtk_menu_shell_append(
-          GTK_MENU_SHELL( ParentMenu.fGtkMenuShell ),
-          Item.fGtkMenuItem );
+      IF   Item.FIsSeparator THEN
+           Item.fGtkMenuItem := gtk_menu_item_new
+      ELSE Item.fGtkMenuItem := gtk_menu_item_new_with_label( PAnsiChar( s ) );
+      IF   ParentMenu.fGtkMenuBar <> nil THEN
+           gtk_menu_bar_append( ParentMenu.fGtkMenuBar, Item.fGtkMenuItem )
+      ELSE gtk_menu_shell_append(
+               GTK_MENU_SHELL( ParentMenu.fGtkMenuShell ), Item.fGtkMenuItem );
 
-      if s = '(' then
-      begin
-        inc( i );
-        if PrevItem <> nil then
-        begin
-          PrevItem.fGtkMenuShell := gtk_menu_new;
-          gtk_menu_item_set_submenu(
-            GTK_MENU_ITEM( PrevItem.fGtkMenuItem ),
-            PrevItem.fGtkMenuShell );
-          CreateMenuItems( PrevItem, i );
-        end;
-      end;
+      IF s = '(' THEN
+      BEGIN
+          inc( i );
+          IF  PrevItem <> nil THEN
+          BEGIN
+              PrevItem.fGtkMenuShell := gtk_menu_new;
+              gtk_menu_item_set_submenu(
+                GTK_MENU_ITEM( PrevItem.fGtkMenuItem ),
+                PrevItem.fGtkMenuShell );
+              CreateMenuItems( PrevItem, i );
+          END;
+      END;
 
       PrevItem := Item;
-    end;
-  end;
-var i: Integer;
-begin
+    END;
+  END;
+VAR i: Integer;
+BEGIN
   new( Result, Create );
   i := -1;
-  if AParent.fMenuObj = nil then
-  begin // создается главное меню с линейкой меню (наверху формы? любого контрола?)
-    AParent.fMenuObj := Result;
-    Result.fGtkMenuBar := gtk_menu_bar_new;
-    //AParent.fMenuBar  := Result.fGtkMenuBar;
-    gtk_container_add( GTK_CONTAINER( AParent.fClient ), Result.fGtkMenuBar );
-    gtk_widget_show( Result.fGtkMenuBar );
-  end
-    else
-  begin
-    PMenu( AParent.fMenuObj ).fNextMenu := Result;
-    Result.fGtkMenuShell := gtk_menu_new;
-  end;
+  IF  AParent.fMenuObj = nil THEN
+  BEGIN // создается главное меню с линейкой меню (наверху формы? любого контрола?)
+      AParent.fMenuObj := Result;
+      Result.fGtkMenuBar := gtk_menu_bar_new;
+      //AParent.fMenuBar  := Result.fGtkMenuBar;
+      gtk_container_add( GTK_CONTAINER( AParent.fClient ), Result.fGtkMenuBar );
+      gtk_widget_show( Result.fGtkMenuBar );
+  END else
+  BEGIN
+      PMenu( AParent.fMenuObj ).fNextMenu := Result;
+      Result.fGtkMenuShell := gtk_menu_new;
+  END;
   CreateMenuItems( Result, i );
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -28303,26 +28296,26 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-destructor TMenu.Destroy;
+DESTRUCTOR TMenu.Destroy;
 //var Next, Prnt: PMenu;
-begin
-  {$IFDEF DEBUG_MENU_DESTROY}
-  LogFileOutput( GetStartDir + 'TMenu.Destroy.txt',
-    Int2Hex( DWORD( @ Self ), 6 ) + ' ' + Int2Str( RefCount ) );
-  {$ENDIF}
-  //if Count > 0 then
-  if ( fMenuItems <> nil ) then
-  begin
-    FMenuItems.ReleaseObjects;
-    FMenuItems := NewList;
-  end;
- FCaption := '';
- fMnemonics := '';
- FMenuItems.Free;
- inherited;
- // all later created (popup) menus (of the same control)
- // are destroyed too
-end;
+BEGIN
+    {$IFDEF DEBUG_MENU_DESTROY}
+    LogFileOutput( GetStartDir + 'TMenu.Destroy.txt',
+      Int2Hex( DWORD( @ Self ), 6 ) + ' ' + Int2Str( RefCount ) );
+    {$ENDIF}
+    //if Count > 0 then
+    IF ( fMenuItems <> nil ) THEN
+    BEGIN
+        FMenuItems.ReleaseObjects;
+        FMenuItems := NewList;
+    END;
+    FCaption := '';
+    fMnemonics := '';
+    FMenuItems.Free;
+    INHERITED;
+    // all later created (popup) menus (of the same control)
+    // are destroyed too
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -28818,6 +28811,9 @@ begin
     end;
 
     new( Item, Create );
+    {$IFDEF DEBUG_OBJKIND}
+    Item.fObjKind := 'MenuItem';
+    {$ENDIF}
     Item.FVisible := TRUE;
     Item.FParentMenu := @ Self;
     Item.FMenuItems := NewList;
@@ -29192,6 +29188,9 @@ var M: PMenu;
     MII: TMenuItemInfo;
 begin
   new( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TMenuItem';
+  {$ENDIF}
   Result.FVisible := TRUE;
   Result.FParentMenu := @ Self;
   Result.FMenuItems := NewList;
@@ -29390,6 +29389,9 @@ end;
 function NewCanvas( DC: HDC ): PCanvas;
 begin
   New( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TCanvas';
+  {$ENDIF}
   {$IFDEF GDI}
   Result.ModeCopy := cmSrcCopy;
   if DC <> 0 then
@@ -29403,9 +29405,13 @@ end;
 { -- Contructors of controls -- }
 
 {$IFDEF GDI}
+{$IFDEF COMMANDACTIONS_OBJ}
 function NewCommandActionsObj: PCommandActionsObj;
 begin
     new( Result, Create );
+    {$IFDEF DEBUG_OBJKIND}
+    Result.fObjKind := 'TCommandActionsObj';
+    {$ENDIF}
 end;
 
 {$IFDEF ASM_VERSION}
@@ -29417,10 +29423,13 @@ asm
     CALL NewCommandActionsObj
     POP  ESI
     CMP  ESI, 120
+    MOV  [EAX].TCommandActionsObj.fIndexInActions, ESI
     JB   @@exit
-    INC  ESI
     PUSH EAX
     LEA  EDI, [EAX].TCommandActionsObj.aClick
+    XOR  EAX, EAX
+    LODSB
+    MOV  dword ptr [EDI + 76], EAX // Result.fIndexInActions := fromPack[0]
     XOR  ECX, ECX
     MOV  CL, 38
 @@loop:
@@ -29455,7 +29464,15 @@ var Dest: PWord;
     N, i: Integer;
 begin
     new( Result, Create );
-    if  Integer( fromPack ) < 120 then Exit;
+    {$IFDEF DEBUG_OBJKIND}
+    Result.fObjKind := 'TCommandActionsObj';
+    {$ENDIF}
+    if  Integer( fromPack ) < 120 then
+    begin
+        Result.fIndexInActions := Integer( fromPack );
+        Exit;
+    end;
+    Result.fIndexInActions := Byte( fromPack^ );
     inc( fromPack );
     Dest := Pointer( @Result.aClick );
     N := 38;
@@ -29492,6 +29509,7 @@ begin
     end;
 end;
 {$ENDIF ASM_VERSION}
+{$ENDIF COMMANDACTIONS_OBJ}
 
 {$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
 function _NewWindowed( AParent: PControl; ControlClassName: PKOLChar;
@@ -29501,6 +29519,9 @@ var IdxActions: Integer;
 {$ENDIF}
 begin
   New( Result, CreateParented( AParent ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl';
+  {$ENDIF}
   {$IFDEF COMMANDACTIONS_OBJ}
       if  Integer( ACommandActions ) < 120 then
           IdxActions := Integer( ACommandActions )
@@ -29519,6 +29540,9 @@ begin
               Result.fCommandActions.aClear  := ClearText;
           {$ELSE}
               new( Result.fCommandActions, Create );
+              {$IFDEF DEBUG_OBJKIND}
+              Result.fCommandActions.fObjKind := 'TCommandActionsObj';
+              {$ENDIF}
               AllActions_Objs[IdxActions] := Result.fCommandActions;
               if  ACommandActions <> nil then
                   Move( ACommandActions^, Result.fCommandActions.aClear,
@@ -29584,59 +29608,59 @@ end;
 
 {$IFDEF _X_}
 {$IFDEF GTK}
-var GTK_initialized: Boolean;
+VAR GTK_initialized: Boolean;
     argc: Integer = 0;
 
-procedure FixedChildSetPos( Ctl, Chld: PControl; x, y: Integer );
-begin
+PROCEDURE FixedChildSetPos( Ctl, Chld: PControl; x, y: Integer );
+BEGIN
   gtk_fixed_move( GTK_FIXED( Ctl.fClient ), Chld.fEventboxHandle, x, y );
-end;
+END;
 
-procedure LayoutChildSetPos( Ctl, Chld: PControl; x, y: Integer );
-begin
+PROCEDURE LayoutChildSetPos( Ctl, Chld: PControl; x, y: Integer );
+BEGIN
   gtk_layout_move( GTK_LAYOUT( Ctl.fClient ), Chld.fEventboxHandle, x, y );
-end;
+END;
 
-procedure FixedChildPut( Ctl, Chld: PControl; x, y: Integer );
-begin
+PROCEDURE FixedChildPut( Ctl, Chld: PControl; x, y: Integer );
+BEGIN
   gtk_fixed_put( GTK_FIXED( Ctl.fClient ), Chld.fEventboxHandle, x, y );
-end;
+END;
 
-procedure LayoutChildPut( Ctl, Chld: PControl; x, y: Integer );
-begin
+PROCEDURE LayoutChildPut( Ctl, Chld: PControl; x, y: Integer );
+BEGIN
   gtk_layout_put( GTK_LAYOUT( Ctl.fClient ), Chld.fEventboxHandle, x, y );
-end;
+END;
 
-function FixedClientArea( Ctl: PControl ): PGtkWidget;
-begin
-  if Ctl.fClient = nil then
-  begin
-    Ctl.fClient := gtk_fixed_new;
-    gtk_container_set_border_width(GTK_CONTAINER(Ctl.fHandle), 0);
-    gtk_container_add( GTK_CONTAINER( Ctl.fHandle ), Ctl.fClient );
-    gtk_container_set_border_width(GTK_CONTAINER(Ctl.fClient), 0);
-    gtk_widget_show( Ctl.fClient );
-    Ctl.fChildPut := FixedChildPut;
-    Ctl.fChildSetPos := FixedChildSetPos;
-  end;
+FUNCTION FixedClientArea( Ctl: PControl ): PGtkWidget;
+BEGIN
+  IF  Ctl.fClient = nil THEN
+  BEGIN
+      Ctl.fClient := gtk_fixed_new;
+      gtk_container_set_border_width(GTK_CONTAINER(Ctl.fHandle), 0);
+      gtk_container_add( GTK_CONTAINER( Ctl.fHandle ), Ctl.fClient );
+      gtk_container_set_border_width(GTK_CONTAINER(Ctl.fClient), 0);
+      gtk_widget_show( Ctl.fClient );
+      Ctl.fChildPut := FixedChildPut;
+      Ctl.fChildSetPos := FixedChildSetPos;
+  END;
   Result := Ctl.fClient;
-end;
+END;
 
-function ClientAreaLayout( Ctl: PControl ): PGtkWidget;
-begin
-  if Ctl.fClient = nil then
-  begin
-    Ctl.fClient := gtk_layout_new( {hadjustment} nil, {vadjustment} nil );
-    Ctl.fChildPut := LayoutChildPut;
-    Ctl.fChildSetPos := LayoutChildSetPos;
-  end;
+FUNCTION ClientAreaLayout( Ctl: PControl ): PGtkWidget;
+BEGIN
+  IF  Ctl.fClient = nil THEN
+  BEGIN
+      Ctl.fClient := gtk_layout_new( {hadjustment} nil, {vadjustment} nil );
+      Ctl.fChildPut := LayoutChildPut;
+      Ctl.fChildSetPos := LayoutChildSetPos;
+  END;
   Result := Ctl.fClient;
-end;
+END;
 
-function _NewWindowed( AParent: PControl; ControlClassName: PAnsiChar;
+FUNCTION _NewWindowed( AParent: PControl; ControlClassName: PAnsiChar;
   widget: PGtkWidget; need_eventbox: Boolean ): PControl;
 //var GVal: TGValue;
-begin
+BEGIN
   (*if not GTK_initialized then
   begin
     GTK_initialized := TRUE;
@@ -29645,8 +29669,8 @@ begin
   New( Result, CreateParented( AParent, widget, need_eventbox ) );
   //Result.fWindowed := TRUE; // is set in TControl.Init
   //???//Result.fControlClassName := ControlClassName;
-  if AParent <> nil then
-  begin
+  IF AParent <> nil THEN
+  BEGIN
      Result.fGotoControl := AParent.fGotoControl;
      Result.fMargin := AParent.fMargin;
      Result.fTextColor := AParent.fTextColor;
@@ -29654,33 +29678,33 @@ begin
      {$ELSE}
      {$IFDEF WIN_GDI} // for now Font is complicated a bit, implement it later
      Result.fFont := Result.fFont.Assign( AParent.fFont );
-     if Result.fFont <> nil then
+     IF  Result.fFont <> nil THEN
      begin
-       {$IFDEF USE_AUTOFREE4CONTROLS}
-       Result.Add2AutoFree( Result.fFont );
-       {$ENDIF USE_AUTOFREE4CONTROLS}
-       Result.fFont.fParentGDITool := AParent.fFont;
-       Result.fFont.fOnChange := Result.FontChanged;
-       Result.FontChanged( Result.fFont );
-     end;
+         {$IFDEF USE_AUTOFREE4CONTROLS}
+         Result.Add2AutoFree( Result.fFont );
+         {$ENDIF USE_AUTOFREE4CONTROLS}
+         Result.fFont.fParentGDITool := AParent.fFont;
+         Result.fFont.fOnChange := Result.FontChanged;
+         Result.FontChanged( Result.fFont );
+     END;
      {$ENDIF WIN_GDI}
      {$ENDIF SMALLEST_CODE}
      Result.fColor := AParent.fColor;
      {$IFDEF WIN_GDI}
      Result.fBrush := Result.fBrush.Assign( AParent.fBrush );
-     if Result.fBrush <> nil then
-     begin
-       {$IFDEF USE_AUTOFREE4CONTROLS}
-       Result.Add2AutoFree( Result.fBrush );
-       {$ENDIF USE_AUTOFREE4CONTROLS}
-       Result.fBrush.fParentGDITool := AParent.fBrush;
-       Result.fBrush.fOnChange := Result.BrushChanged;
-       Result.BrushChanged( Result.fBrush );
-     end;
+     IF  Result.fBrush <> nil THEN
+     BEGIN
+         {$IFDEF USE_AUTOFREE4CONTROLS}
+         Result.Add2AutoFree( Result.fBrush );
+         {$ENDIF USE_AUTOFREE4CONTROLS}
+         Result.fBrush.fParentGDITool := AParent.fBrush;
+         Result.fBrush.fOnChange := Result.BrushChanged;
+         Result.BrushChanged( Result.fBrush );
+     END;
      {$ENDIF WIN_GDI}
-  end;
+  END;
   Result.fGetClientArea := FixedClientArea;
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -29690,6 +29714,9 @@ end;
 function NewForm( AParent: PControl; const Caption: AnsiString ): PControl;
 begin
   new( Result, CreateForm( AParent, Caption ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Form';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -29700,6 +29727,9 @@ begin
   Result := _NewWindowed( AParent, 'Form', True,
          {$IFDEF PACK_COMMANDACTIONS} PChar( OTHER_ACTIONS )
          {$ELSE} nil {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Form';
+  {$ENDIF}
   Result.fClsStyle := Result.fClsStyle or CS_DBLCLKS;
   Result.AttachProc( WndProcForm );
   Result.AttachProc( WndProcDoEraseBkgnd );
@@ -29739,45 +29769,45 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-function getFormCaption(F: PControl): KOLString;
-begin
+FUNCTION getFormCaption(F: PControl): KOLString;
+BEGIN
   F.fCaption := gtk_window_get_title( GTK_WINDOW( F.fHandle ) );
   Result := F.fCaption;
-end;
+END;
 
-procedure setFormCaption(F: PControl; const Value: KOLString);
-begin
+PROCEDURE setFormCaption(F: PControl; const Value: KOLString);
+BEGIN
   F.fCaption := Value;
   gtk_window_set_title( GTK_WINDOW( F.fCaptionHandle ), PAnsiChar( String( Value ) ) );
-end;
+END;
 
-procedure DestroyForm( Widget: PGtkWidget; Sender: PControl ); cdecl;
-var Quit: Boolean;
-begin
+PROCEDURE DestroyForm( Widget: PGtkWidget; Sender: PControl ); CDECL;
+VAR Quit: Boolean;
+BEGIN
   Quit := Sender.IsMainWindow;
   Sender.Free;
-  if Quit then
-    gtk_main_quit();
-end;
+  IF  Quit THEN
+      gtk_main_quit();
+END;
 
-function NewForm( AParent: PControl; const Caption: KOLString ): PControl;
-var widget: PGtkWidget;
-begin
-  if not GTK_initialized then
-  begin
+FUNCTION NewForm( AParent: PControl; const Caption: KOLString ): PControl;
+VAR widget: PGtkWidget;
+BEGIN
+  IF not GTK_initialized THEN
+  BEGIN
     GTK_initialized := TRUE;
     gtk_init( @ argc, {@ argv} nil );
-  end;
-    widget := gtk_window_new( GTK_WINDOW_TOPLEVEL );
-    Result := _NewWindowed( AParent, 'Form', widget, FALSE );
+  END;
+  widget := gtk_window_new( GTK_WINDOW_TOPLEVEL );
+  Result := _NewWindowed( AParent, 'Form', widget, FALSE );
   Result.fGetCaption := getFormCaption;
   Result.fSetCaption := setFormCaption;
   Result.Caption := Caption;
   {$IFDEF USE_FLAGS} include( Result.fFlagsG3, G3_IsForm );
   {$ELSE} Result.fIsForm := TRUE; {$ENDIF}
   gtk_signal_connect( Pointer( Result.fHandle ), 'destroy',
-    @ DestroyForm, Result );
-end;
+      @ DestroyForm, Result );
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -29880,6 +29910,9 @@ end;
 function NewApplet( const Caption: AnsiString ): PControl;
 begin
   new( Result, CreateApplet( Caption ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Applet';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -30022,6 +30055,9 @@ begin
   Result := _NewWindowed( nil, 'App', True,
          {$IFDEF PACK_COMMANDACTIONS} PChar( OTHER_ACTIONS )
          {$ELSE} nil {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Applet';
+  {$ENDIF}
   {$IFDEF USE_FLAGS} include( Result.fFlagsG3, G3_IsApplet );
   {$ELSE}            Result.FIsApplet := TRUE; {$ENDIF}
   Result.fStyle.Value := WS_VISIBLE or WS_SYSMENU or WS_POPUP or WS_MINIMIZEBOX or WS_CAPTION;
@@ -30192,6 +30228,9 @@ function _NewControl( AParent: PControl; ControlClassName: PKOLChar;
 var Form: PControl;
 begin
   Result := _NewWindowed( AParent, ControlClassName, Ctl3D, Actions );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl';
+  {$ENDIF}
   {$IFDEF USE_FLAGS} include( Result.fFlagsG3, G3_IsControl );
   {$ELSE} Result.fIsControl := True; {$ENDIF}
   Result.fStyle.Value := Style or WS_CLIPSIBLINGS or WS_CLIPCHILDREN;
@@ -30238,41 +30277,41 @@ end;
 
 {$IFDEF _X_}
 {$IFDEF GTK}
-function getLabelCaption( L: PControl ): KOLString;
-begin
+FUNCTION getLabelCaption( L: PControl ): KOLString;
+BEGIN
   L.fCaption := gtk_label_get_text( Pointer( L.fCaptionHandle ) );
   Result := L.fCaption;
-end;
+END;
 
-procedure setLabelCaption( L: PControl; const Value: KOLString );
-begin
+PROCEDURE setLabelCaption( L: PControl; const Value: KOLString );
+BEGIN
   L.fCaption := Value;
   gtk_label_set_text( Pointer( L.fCaptionHandle ), PAnsiChar( String( Value ) ) );
-end;
+END;
 
-function _NewControl( AParent: PControl; ControlClassName: PAnsiChar;
+FUNCTION _NewControl( AParent: PControl; ControlClassName: PAnsiChar;
   Style: DWORD; Ctl3D: Boolean; widget: PGtkWidget; need_eventbox: Boolean ): PControl;
-var Rect: TRect;
-begin
+VAR Rect: TRect;
+BEGIN
   Result := _NewWindowed( AParent, ControlClassName, widget, need_eventbox );
   Result.fIsControl := True;
   Result.fVerticalAlign := vaTop;
   Result.fVisible := (Style and WS_VISIBLE) <> 0;
   Result.fTabstop := (Style and WS_TABSTOP) <> 0;
-  if (AParent <> nil) then
-  begin
-    with Rect do
-    begin
+  IF (AParent <> nil) THEN
+  BEGIN
+    WITH Rect DO
+    BEGIN
      Left := AParent.fMargin + AParent.fClientLeft;
      Top  := AParent.fMargin + AParent.fClientTop;
-    end;
+    END;
     Inc( AParent.ParentForm.fTabOrder );
     Result.fTabOrder := AParent.ParentForm.fTabOrder;
     {$IFDEF GDI}
     Result.fCursor := AParent.fCursor;
     {$ENDIF GDI}
     //gtk_container_add( GTK_CONTAINER( AParent.fHandle ), Result.fHandle );
-  end;
+  END;
   {with Rect do
   begin
    Right := Left + 64;
@@ -30282,23 +30321,23 @@ begin
   Result.BoundsRect := Rect;}
   Result.fLookTabKeys := [ tkTab, tkLeftRight, tkUpDown, tkPageUpPageDn ];
   {$IFDEF GDI}
-  if Result.fCtl3D then
-  begin
+  IF Result.fCtl3D THEN
+  BEGIN
     Result.fStyle := Result.fStyle and not WS_BORDER;
     Result.fExStyle := Result.fExStyle or WS_EX_CLIENTEDGE;
-  end;
-  if (Style and WS_TABSTOP) <> 0 then
-  begin
+  END;
+  IF (Style and WS_TABSTOP) <> 0 THEN
+  BEGIN
     Form := Result.ParentForm;
-    if Form <> nil then
-    if Form.FCurrentControl = nil then
+    IF Form <> nil THEN
+    IF Form.FCurrentControl = nil THEN
        Form.FCurrentControl := Result;
-  end;
+  END;
   Result.fMenu := CtlIdCount;
   Inc( CtlIdCount );
   Result.AttachProc( WndProcCtrl );
   {$ENDIF GDI}
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -30359,6 +30398,9 @@ end;
 function NewButton( AParent: PControl; const Caption: KOLString ): PControl;
 begin
   new( Result, CreateButton( AParent, Caption ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Button';
+  {$ENDIF}
 end;
 {$ELSE USE_CONSTRUCTORS}
 
@@ -30374,6 +30416,9 @@ begin
             BS_PUSHLIKE or WS_TABSTOP, False,
             {$IFDEF PACK_COMMANDACTIONS} ButtonActions_Packed
             {$ELSE}                      @ButtonActions {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Button';
+  {$ENDIF}
   Result.aAutoSzX := 14;
   Result.aAutoSzY := 6;
   {$IFDEF BUTTON_DBLCLICK}
@@ -30408,18 +30453,18 @@ end;
 
 {$IFDEF _X_}
 {$IFDEF GTK}
-const
-  HorAlignments: array[ TTextAlign ] of Single = ( {taLeft} 0, {taRight} 1, {taCenter} 0.5 );
-  VerAlignments: array[ TVerticalAlign ] of Single = ( {vaCenter} 0.5, {vaTop} 0, {vaBottom} 1 );
+CONST
+  HorAlignments: ARRAY[ TTextAlign ] of Single = ( {taLeft} 0, {taRight} 1, {taCenter} 0.5 );
+  VerAlignments: ARRAY[ TVerticalAlign ] of Single = ( {vaCenter} 0.5, {vaTop} 0, {vaBottom} 1 );
 
-procedure ButtonSetTextAlign( Self_: PControl );
-begin
+PROCEDURE ButtonSetTextAlign( Self_: PControl );
+BEGIN
   gtk_button_set_alignment( GTK_BUTTON( Self_.fHandle ), HorAlignments[ Self_.fTextAlign ],
     VerAlignments[ Self_.fVerticalAlign ] );
-end;
+END;
 
-function NewButton( AParent: PControl; const Caption: KOLString ): PControl;
-begin
+FUNCTION NewButton( AParent: PControl; const Caption: KOLString ): PControl;
+BEGIN
   Result := _NewControl( AParent, 'BUTTON',
             WS_VISIBLE or WS_CHILD or BS_NOTIFY or
             BS_PUSHLIKE or WS_TABSTOP, False,
@@ -30440,7 +30485,7 @@ begin
   Result.fCaption := Caption;
   Result.fIsButton := TRUE;
   Result.fSetTextAlign := ButtonSetTextAlign;
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -31395,6 +31440,9 @@ function NewBitBtn( AParent: PControl; const Caption: AnsiString;
          GlyphCount: Integer ): PControl;
 begin
   new( Result, CreateBitBtn( AParent, Caption, Options, Layout, GlyphBitmap, GlyphCount ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:BitBtn';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -31412,6 +31460,9 @@ begin
   Result := _NewControl( AParent, 'BUTTON', f, False,
          {$IFDEF PACK_COMMANDACTIONS} ButtonActions_Packed
          {$ELSE}                      @ButtonActions {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:BitBtn';
+  {$ENDIF}
   {$IFDEF USE_FLAGS}
           Result.fFlagsG5 := Result.fFlagsG5 +
                           [G5_IsButton, G5_IsBitBtn, G5_IgnoreDefault];
@@ -31514,6 +31565,9 @@ end;
 function NewCheckbox( AParent: PControl; const Caption: AnsiString ): PControl;
 begin
   new( Result, CreateCheckbox( AParent, Caption ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:CheckBox';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -31583,6 +31637,9 @@ end;
 function NewRadiobox( AParent: PControl; const Caption: AnsiString ): PControl;
 begin
   new( Result, CreateRadiobox( AParent, Caption ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Radiobox';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -31619,6 +31676,9 @@ end;
 function NewLabel( AParent: PControl; const Caption: AnsiString ): PControl;
 begin
   new( Result, CreateLabel( AParent, Caption ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Label';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -31671,6 +31731,9 @@ begin
                          SS_LEFTNOWORDWRAP or SS_NOPREFIX or SS_NOTIFY,
                          False, {$IFDEF PACK_COMMANDACTIONS} LabelActions_Packed
                                 {$ELSE} @LabelActions {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Label';
+  {$ENDIF}
   Result.aAutoSzX := 1;
   Result.aAutoSzY := 1;
   {$IFDEF USE_FLAGS}
@@ -31690,14 +31753,14 @@ end;
 
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure LabelSetTextAlign( Self_: PControl );
-begin
+PROCEDURE LabelSetTextAlign( Self_: PControl );
+BEGIN
   gtk_misc_set_alignment( GTK_MISC( Self_.fCaptionHandle ), HorAlignments[ Self_.fTextAlign ],
     VerAlignments[ Self_.fVerticalAlign ] );
-end;
+END;
 
-function NewLabel( AParent: PControl; const Caption: KOLString ): PControl;
-begin
+FUNCTION NewLabel( AParent: PControl; const Caption: KOLString ): PControl;
+BEGIN
   Result := _NewControl( AParent, 'STATIC', WS_VISIBLE or WS_CHILD or
                          SS_LEFTNOWORDWRAP or SS_NOPREFIX or SS_NOTIFY,
                          False, gtk_label_new( PAnsiChar( String( Caption ) ) ),
@@ -31709,7 +31772,7 @@ begin
   Result.fSetTextAlign := LabelSetTextAlign;
   Result.fTextAlign := taCenter;
   Result.TextAlign := taLeft;
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 {$ENDIF USE_CONSTRUCTORS}
@@ -31721,6 +31784,9 @@ end;
 function NewWordWrapLabel( AParent: PControl; const Caption: AnsiString ): PControl;
 begin
   new( Result, CreateWordWrapLabel( AParent, Caption ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:WordWrapLabel';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -31746,6 +31812,9 @@ end;
 function NewLabelEffect( AParent: PControl; const Caption: AnsiString; ShadowDeep: Integer ): PControl;
 begin
   new( Result, CreateLabelEffect( AParent, Caption, ShadowDeep ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:LabelEffect';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -31779,6 +31848,9 @@ end;
 function NewPaintbox( AParent: PControl ): PControl;
 begin
   new( Result, CreatePaintBox( AParent ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Paintbox';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -31806,6 +31878,9 @@ begin
                          SS_LEFTNOWORDWRAP or SS_NOPREFIX }or SS_NOTIFY,
                          False, {$IFDEF PACK_COMMANDACTIONS} LabelActions_Packed
                                 {$ELSE} @LabelActions {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:PaintBox';
+  {$ENDIF}
   {$IFDEF USE_FLAGS}
           include( Result.fFlagsG1, G1_SizeRedraw );
           if   G2_Transparent in Result.fFlagsG2 then
@@ -31817,6 +31892,9 @@ begin
   Result.fControlClassName := 'obj_PAINT';
 {$ELSE}
   Result := NewLabel( AParent, '' );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Paintbox';
+  {$ENDIF}
   with Result.fBoundsRect do
   begin
     Bottom := Top + 64; //Right := Left + 64 {done in NewLabel};
@@ -31828,11 +31906,11 @@ end;
 
 {$IFDEF _X_}
 {$IFDEF GTK}
-function NewPaintbox( AParent: PControl ): PControl;
-begin
+FUNCTION NewPaintbox( AParent: PControl ): PControl;
+BEGIN
   Result := NewLabel( AParent, '' );
   Result.Height := 64;
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -31999,18 +32077,19 @@ function NewScrollBar( AParent: PControl; BarSide: TScrollerBar ): PControl;
 const SBS_Directions: array[ TScrollerBar ] of DWORD = ( SBS_HORZ or SBS_BOTTOMALIGN,
      SBS_VERT or SBS_RIGHTALIGN );
 begin
- Result := _NewCommonControl( AParent, 'SCROLLBAR',
+   Result := _NewCommonControl( AParent, 'SCROLLBAR',
    WS_VISIBLE or WS_CHILD or SBS_Directions[ BarSide ],
    False, {$IFDEF PACK_COMMANDACTIONS} PChar( OTHER_ACTIONS )
           {$ELSE} nil {$ENDIF} );
-{!ecm}
- Result.GetWindowHandle;
-{/!ecm}
- Result.DetachProc(WndProcCtrl);
- Result.fLookTabKeys := [tkTab];
+   {$IFDEF DEBUG_OBJKIND}
+   Result.fObjKind := 'TControl:ScrollBar';
+   {$ENDIF}
+   {!ecm} Result.GetWindowHandle; {/!ecm}
+   Result.DetachProc(WndProcCtrl);
+   Result.fLookTabKeys := [tkTab];
 
-//#ecm  Result.AttachProc(WndProcScrollBar);
- AParent.AttachProc(WndProcScrollBarParent);
+   //#ecm  Result.AttachProc(WndProcScrollBar);
+   AParent.AttachProc(WndProcScrollBarParent);
 end;
 
 //===================== Scrollbox ========================//
@@ -32085,6 +32164,9 @@ begin
          SBFlag, EdgeStyle = esLowered,
          {$IFDEF PACK_COMMANDACTIONS} PChar( OTHER_ACTIONS )
          {$ELSE} nil {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:ScrollBox';
+  {$ENDIF}
   Result.AttachProc( WndProcForm ); //!!!
   Result.AttachProc( WndProcScrollBox );
   Result.AttachProc( WndProcDoEraseBkgnd );
@@ -32364,6 +32446,9 @@ end;
 function NewGroupbox( AParent: PControl; const Caption: AnsiString ): PControl;
 begin
   new( Result, CreateGroupbox( AParent, Caption ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Groupbox';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -32430,6 +32515,9 @@ begin
                    or BS_GROUPBOX,
                    FALSE, {$IFDEF PACK_COMMANDACTIONS} ButtonActions_Packed
                           {$ELSE} @ButtonActions {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Groupbox';
+  {$ENDIF}
   Result.fExStyle := Result.fExStyle or WS_EX_CONTROLPARENT;
   Result.Caption := Caption;
   with Result.fBoundsRect do
@@ -32462,6 +32550,9 @@ end;
 function NewPanel( AParent: PControl; EdgeStyle: TEdgeStyle ): PControl;
 begin
   new( Result, CreatePanel( AParent, EdgeStyle ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Panel';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -32534,6 +32625,9 @@ begin
                          SS_LEFTNOWORDWRAP or SS_NOPREFIX, False,
                          {$IFDEF PACK_COMMANDACTIONS} LabelActions_Packed
                          {$ELSE}                      @LabelActions {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Panel';
+  {$ENDIF}
   Result.aAutoSzX := 1;
   Result.aAutoSzY := 1;
   with Result.fBoundsRect do
@@ -32739,6 +32833,9 @@ function NewSplitterEx( AParent: PControl; MinSizePrev, MinSizeNext: Integer;
          EdgeStyle: TEdgeStyle ): PControl;
 begin
   new( Result, CreateSplitter( AParent, MinSizePrev, MinSizeNext, EdgeStyle ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:SplitterEx';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -32982,6 +33079,9 @@ begin
          WS_VISIBLE or WS_TABSTOP or MDIS_ALLCHILDSTYLES, TRUE,
          {$IFDEF PACK_COMMANDACTIONS} PChar(OTHER_ACTIONS)
          {$ELSE} nil {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:MDIClient';
+  {$ENDIF}
   Result.PropInt[ MDI_CHLDRN ] := Integer( NewList );
   Result.fExStyle := WS_EX_CLIENTEDGE;
 
@@ -33120,6 +33220,9 @@ end;
 function NewGradientPanel( AParent: PControl; Color1, Color2: TColor ): PControl;
 begin
   new( Result, CreateGradientPanel( AParent, Color1, Color2 ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:GradientPanel';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -33146,6 +33249,9 @@ function NewGradientPanelEx( AParent: PControl; Color1, Color2: TColor;
 begin
   new( Result, CreateGradientPanelEx( AParent, Color1, Color2,
                              Style, Layout ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:GradientPanelEx';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -33182,6 +33288,9 @@ const Editflags: array [ TEditOption ] of Integer = (
 function NewEditbox( AParent: PControl; Options: TEditOptions ) : PControl;
 begin
   new( Result, CreateEditbox( AParent, Options ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Editbox';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -33228,6 +33337,9 @@ begin
                          or WS_BORDER or Flags, True,
                          {$IFDEF PACK_COMMANDACTIONS} EditActions_Packed
                          {$ELSE}                      @EditActions {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Editbox';
+  {$ENDIF}
   Result.aAutoSzY := 6;
   with Result.fBoundsRect do
   begin
@@ -33270,6 +33382,9 @@ const ListFlags: array[TListOption] of Integer = (
 function NewListbox( AParent: PControl; Options: TListOptions ): PControl;
 begin
   new( Result, CreateListbox( AParent, Options ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Listbox';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -33311,6 +33426,9 @@ begin
                          or LBS_NOTIFY or Flags, True,
                          {$IFDEF PACK_COMMANDACTIONS} ListActions_Packed
                          {$ELSE}                      @ListActions {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Listbox';
+  {$ENDIF}
   with Result.fBoundsRect do
   begin
     Right := Right + 100;
@@ -33641,6 +33759,9 @@ const ComboFlags: array[ TComboOption ] of Integer = (
 function NewCombobox( AParent: PControl; Options: TComboOptions ): PControl;
 begin
   new( Result, CreateCombobox( AParent, Options ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Combobox';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -33660,6 +33781,9 @@ begin
                          ,True,
                          {$IFDEF PACK_COMMANDACTIONS} ComboActions_Packed
                          {$ELSE}                      @ComboActions {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Combobox';
+  {$ENDIF}
   {$IFDEF PACK_COMMANDACTIONS}
   Result.fCommandActions.aClear := @ClearCombobox;
   {$ENDIF}
@@ -33786,6 +33910,9 @@ function _NewCommonControl( AParent: PControl; ClassName: PKOLChar; Style: DWORD
 begin
   {*************} DoInitCommonControls( ICC_WIN95_CLASSES );
   Result := _NewControl( AParent, ClassName, Style, Ctl3D, Actions );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:CommonControl';
+  {$ENDIF}
   InitCommonControlCommonNotify( Result );
 end;
 
@@ -33795,6 +33922,9 @@ end;
 function NewProgressbar( AParent: PControl ): PControl;
 begin
   new( Result, CreateProgressbar( AParent ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Progressbar';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -33805,6 +33935,9 @@ begin
             WS_CHILD or WS_VISIBLE, True,
             {$IFDEF PACK_COMMANDACTIONS} PChar( PROGRESS_ACTIONS )
             {$ELSE} nil {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:ProgressBar';
+  {$ENDIF}
   with Result.fBoundsRect do
   begin
     Right := Left + 300;
@@ -33823,6 +33956,9 @@ end;
 function NewProgressbarEx( AParent: PControl; Options: TProgressbarOptions ): PControl;
 begin
   new( Result, CreateProgressbarEx( AParent, Options ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:ProgressBarEx';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -33953,6 +34089,9 @@ function NewListView( AParent: PControl; Style: TListViewStyle; Options: TListVi
 begin
   new( Result, CreateListView( AParent, Style, Options, ImageListSmall,
                ImageListNormal, ImageListState ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:ListView';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -33964,6 +34103,9 @@ begin
                                LVS_SHAREIMAGELISTS or WS_CHILD or WS_VISIBLE or WS_TABSTOP or WS_CLIPCHILDREN,
                                True, {$IFDEF PACK_COMMANDACTIONS} ListViewActions_Packed
                                      {$ELSE} @ListViewActions {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:ListView';
+  {$ENDIF}
   {$IFDEF PACK_COMMANDACTIONS}
   Result.fCommandActions.aClear := @ClearListView;
   {$ENDIF}
@@ -34404,6 +34546,9 @@ function NewTreeView( AParent: PControl; Options: TTreeViewOptions;
                       ImgListNormal, ImgListState: PImageList ): PControl;
 begin
   new( Result, CreateTreeView( AParent, Options, ImgListNormal, ImgListState ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:TreeView';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -34416,6 +34561,9 @@ begin
   Result := _NewCommonControl( AParent, WC_TREEVIEW, Flags or WS_VISIBLE or
             WS_CHILD or WS_TABSTOP, True, {$IFDEF PACK_COMMANDACTIONS} TreeViewActions_Packed
                                           {$ELSE} @TreeViewActions {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:TreeView';
+  {$ENDIF}
   {$IFDEF PACK_COMMANDACTIONS}
   Result.fCommandActions.aClear := @ClearTreeView;
   {$ENDIF}
@@ -34586,6 +34734,9 @@ function NewTabControl( AParent: PControl; Tabs: array of String; Options: TTabC
          ImgList: PImageList; ImgList1stIdx: Integer ): PControl;
 begin
   new( Result, CreateTabControl( AParent, Tabs, Options, ImgList, ImgList1stIdx ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:TabControl';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -34677,6 +34828,9 @@ begin
             Flags or (WS_CHILD or WS_CLIPSIBLINGS or WS_CLIPCHILDREN or WS_VISIBLE),
             True, {$IFDEF PACK_COMMANDACTIONS} TabControlActions_Packed
                   {$ELSE} @TabControlActions {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:TabControl';
+  {$ENDIF}
   if not( tcoBorder in Options ) then
   begin
     Result.fExStyle := Result.fExStyle and not WS_EX_CLIENTEDGE;
@@ -34712,6 +34866,9 @@ begin
             Flags or (WS_CHILD or WS_CLIPSIBLINGS or WS_CLIPCHILDREN or WS_VISIBLE),
             True, {$IFDEF PACK_COMMANDACTIONS} TabControlActions_Packed
                   {$ELSE} @TabControlActions {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:TabControl(TabEmpty)';
+  {$ENDIF}
   if not( tcoBorder in Options ) then
     Result.fExStyle := Result.fExStyle and not WS_EX_CLIENTEDGE;
   Result.AttachProc( WndProcTabControl );
@@ -34970,6 +35127,9 @@ function NewToolbar( AParent: PControl; Align: TControlAlign; Options: TToolbarO
                      BtnImgIdxArray: array of Integer ) : PControl;
 begin
   new( Result, CreateToolbar( AParent, Align, Options, Bitmap, Buttons, BtnImgIdxArray ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Toolbar';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -35150,6 +35310,9 @@ begin
         tbo3DBorder in Options,
         {$IFDEF PACK_COMMANDACTIONS} PChar( TOOLBAR_ACTIONS )
         {$ELSE} nil {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:Toolbar';
+  {$ENDIF}
   Result.fCommandActions.aClear := ClearToolbar; ///+++ anyway +++///
   Result.fCommandActions.aGetCount := TB_BUTTONCOUNT;
   {$IFDEF USE_FLAGS} include( Result.fFlagsG5, G5_IsButton );
@@ -35250,6 +35413,9 @@ begin
          (WS_CHILD or WS_VISIBLE or WS_TABSTOP or Flags {or DTS_APPCANPARSE}),
          TRUE, {$IFDEF PACK_COMMANDACTIONS} PChar( OTHER_ACTIONS )
                {$ELSE} nil {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:DateTimePicker';
+  {$ENDIF}
   Result.SetSize( 110, 24 );
   Result.AttachProc( WndProcDateTimePickerNotify );
 end;
@@ -35678,6 +35844,9 @@ const RichEditflags: array [ TEditOption ] of Integer = (
 function NewRichEdit1( AParent: PControl; Options: TEditOptions ): PControl;
 begin
   new( Result, CreateRichEdit1( AParent, Options ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:RichEdit';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -35835,6 +36004,9 @@ begin
                          or WS_TABSTOP or WS_BORDER or ES_MULTILINE or Flags,
                          True, {$IFDEF PACK_COMMANDACTIONS} RichEditActions_Packed
                                {$ELSE} @RichEditActions {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:RichEdit';
+  {$ENDIF}
   {$IFDEF STATIC_RICHEDIT_DATA}{$ELSE}
   Result.DF.fRECharFormatRec := AllocMem( Sizeof( TCharFormat ) + Sizeof( TParaFormat2 ) );
   Result.DF.fREParaFmtRec := Pointer( Integer( @ Result.DF.fRECharFormatRec )
@@ -35947,6 +36119,9 @@ end;
 function NewRichEdit( AParent: PControl; Options: TEditOptions ): PControl;
 begin
   new( Result, CreateRichEdit( AParent, Options ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:RichEdit';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
@@ -36093,26 +36268,26 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure TControl.InitParented( AParent: PControl; widget: PGtkWidget;
+PROCEDURE TControl.InitParented( AParent: PControl; widget: PGtkWidget;
   need_eventbox: Boolean );
-begin
+BEGIN
   Init;
   fHandle := widget;
   fCaptionHandle := fHandle;
   fEventboxHandle := fHandle;
-  if need_eventbox then
-  begin
-    fEventboxHandle := gtk_event_box_new();
-    gtk_widget_set_events( fEventboxHandle, GDK_ALL_EVENTS_MASK );
-    //gtk_container_add( GTK_CONTAINER( AParent.fHandle ), fEventboxHandle );
-    gtk_widget_show( fEventboxHandle );
-    gtk_container_add( GTK_CONTAINER( fEventboxHandle ), fHandle );
-  end;
+  IF  need_eventbox THEN
+  BEGIN
+      fEventboxHandle := gtk_event_box_new();
+      gtk_widget_set_events( fEventboxHandle, GDK_ALL_EVENTS_MASK );
+      //gtk_container_add( GTK_CONTAINER( AParent.fHandle ), fEventboxHandle );
+      gtk_widget_show( fEventboxHandle );
+      gtk_container_add( GTK_CONTAINER( fEventboxHandle ), fHandle );
+  END;
   g_object_set_data( G_OBJECT( fEventboxHandle ), ID_SELF, @ Self );
   if AParent <> nil then
      fColor := AParent.fColor;
   Parent := AParent;
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 {$IFDEF WIN_GDI}
@@ -36153,7 +36328,7 @@ begin
    if F.DF.FCurrentControl = @Self then
       F.DF.FCurrentControl := nil;
 
-   if FHandle <> 0 then
+   if fHandle <> 0 then
       ShowWindow( fHandle, SW_HIDE );
 
    Final;
@@ -36222,10 +36397,12 @@ begin
                LogFileOutput( GetStartDir + 'es_debug.txt',
                               'DESTROYING HWND:' + Int2Str( I ) );
              {$ENDIF}
-             {$IFDEF USE_PROP}
-             SetProp( I, ID_SELF, 0 );
-             {$ELSE}
-             SetWindowLong( I, GWL_USERDATA, 0 );
+             {$IFnDEF SMALLER_CODE}
+                 {$IFDEF USE_PROP}
+                 SetProp( I, ID_SELF, 0 );
+                 {$ELSE}
+                 SetWindowLong( I, GWL_USERDATA, 0 );
+                 {$ENDIF}
              {$ENDIF}
                DestroyWindow( I );
            end;
@@ -36254,8 +36431,8 @@ begin
           {$IFDEF USE_AUTOFREE4CHILDREN}
           fParent.RemoveFromAutoFree( @ Self );
           {$ENDIF}
-          if fParent.DF.fCurrentControl = @Self then
-            fParent.DF.fCurrentControl := nil;
+          if  fParent.DF.fCurrentControl = @Self then
+              fParent.DF.fCurrentControl := nil;
        end;
 
        fChildren.Free;
@@ -36919,26 +37096,26 @@ end;
 
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure TControl.VisualizyWindow;
-var i: Integer;
+PROCEDURE TControl.VisualizyWindow;
+VAR i: Integer;
     C: PControl;
-begin
-  if fHandle = nil then Exit;
-  if  {$IFDEF USE_FLAGS} not(G3_IsApplet in fFlagsG3)
+BEGIN
+  IF  fHandle = nil THEN Exit;
+  IF  {$IFDEF USE_FLAGS} not(G3_IsApplet in fFlagsG3)
       {$ELSE} not fIsApplet {$ENDIF}
-  and {$IFDEF USE_FLAGS} (F3_Visible in fStyle.f3_Style)
+  AND {$IFDEF USE_FLAGS} (F3_Visible in fStyle.f3_Style)
       {$ELSE} FVisible {$ENDIF} then
-  begin
-      for i := 0 to ChildCount-1 do
-      begin
+  BEGIN
+      FOR i := 0 to ChildCount-1 do
+      BEGIN
           C := Children[ i ];
           if  {$IFDEF USE_FLAGS} F3_Visible in fStyle.f3_Style
               {$ELSE} C.fVisible {$ENDIF} then
               C.VisualizyWindow;
-      end;
+      END;
       gtk_widget_show( fHandle );
-  end;
-end;
+  END;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -37592,11 +37769,12 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-function mouse_events_handler( Obj: PGtkWidget; var Event: TGdkEventAny ): Boolean; cdecl;
-var Sender: PControl;
+FUNCTION mouse_events_handler( Obj: PGtkWidget; VAR Event: TGdkEventAny ): Boolean;
+         CDECL;
+VAR Sender: PControl;
     M: TMouseEventData;
-    procedure PrepareMouseEvent( const Evt: TGdkEventMotion );
-    begin
+    PROCEDURE PrepareMouseEvent( const Evt: TGdkEventMotion );
+    BEGIN
       M.Button := mbNone;
       if Evt.state and GDK_BUTTON1_MASK <> 0 then M.Button := mbLeft
       else
@@ -37613,10 +37791,10 @@ var Sender: PControl;
       if Evt.state and GDK_LOCK_MASK    <> 0 then M.Shift := M.Shift or MK_LOCK;
       M.X := Round( Evt.x );
       M.Y := Round( Evt.y );
-    end;
-var scrl: PGdkEventScroll;
+    END;
+VAR scrl: PGdkEventScroll;
     z: SmallInt;
-begin
+BEGIN
   Result := FALSE;
   //Sender := Pointer( Event.window );
   Sender := g_object_get_data( G_OBJECT( Obj ), ID_SELF );
@@ -37632,72 +37810,71 @@ begin
   PrepareMouseEvent( PGdkEventMotion( @ Event )^ );
   CASE Event._type OF
   GDK_MOTION_NOTIFY	:
-    begin
-      if Assigned( Sender.fOnMouseMove ) then
-      begin
-        Sender.fOnMouseMove( Sender, M );
-        Result := TRUE;
-      end;
-    end;
+    BEGIN
+      IF  Assigned( Sender.fOnMouseMove ) THEN
+      BEGIN
+          Sender.fOnMouseMove( Sender, M );
+          Result := TRUE;
+      END;
+    END;
   GDK_BUTTON_PRESS	:
-    begin
-      if Assigned( Sender.fOnMouseDown ) then
-      begin
-        Sender.fOnMouseDown( Sender, M );
-        Result := TRUE;
-      end;
-    end;
+    BEGIN
+      IF  Assigned( Sender.fOnMouseDown ) THEN
+      BEGIN
+          Sender.fOnMouseDown( Sender, M );
+          Result := TRUE;
+      END;
+    END;
   GDK_2BUTTON_PRESS,
   GDK_3BUTTON_PRESS	:
-    begin
-      if Assigned( Sender.fOnMouseDblClk ) then
-      begin
+    BEGIN
+      IF  Assigned( Sender.fOnMouseDblClk ) THEN
+      BEGIN
         {$IFDEF USE_FLAGS}
-        if   Event._type = GDK_3BUTTON_PRESS then
+        IF   Event._type = GDK_3BUTTON_PRESS THEN
              include( Sender.fFlagsG5, G5_3ButtonPress )
-        else exclude( Sender.fFlagsG5, G5_3ButtonPress );
+        ELSE exclude( Sender.fFlagsG5, G5_3ButtonPress );
         {$ELSE}
-        Sender.f3ButtonPress :=
-            Event._type = GDK_3BUTTON_PRESS;
+        Sender.f3ButtonPress := Event._type = GDK_3BUTTON_PRESS;
         {$ENDIF}
         Sender.fOnMouseDblClk( Sender, M );
         Result := TRUE;
-      end;
-    end;
+      END;
+    END;
   GDK_BUTTON_RELEASE	:
-    begin
-      if Assigned( Sender.fOnMouseUp ) then
-      begin
+    BEGIN
+      IF  Assigned( Sender.fOnMouseUp ) THEN
+      BEGIN
         Sender.fOnMouseUp( Sender, M );
         Result := TRUE;
-      end;
+      END;
       if Assigned( Sender.fOnClick ) then
         Sender.fOnClick( Sender );
-    end;
+    END;
   GDK_SCROLL    	:
-    begin
-      if Assigned( Sender.fOnMouseWheel ) then
-      begin
-        scrl := @ Event;
-        if scrl.direction = GDK_SCROLL_UP then
-          z := 120
-        else if scrl.direction = GDK_SCROLL_DOWN then
-          z := -120 //todo: direction and value?
-        else
-          z := 0;
-        M.Shift := M.Shift or DWord(z shl 16);
-        Sender.fOnMouseWheel( Sender, M );
-        Result := TRUE;
-      end;
-    end;
+    BEGIN
+        IF Assigned( Sender.fOnMouseWheel ) THEN
+        BEGIN
+          scrl := @ Event;
+          IF scrl.direction = GDK_SCROLL_UP THEN
+            z := 120
+          ELSE IF scrl.direction = GDK_SCROLL_DOWN THEN
+            z := -120 //todo: direction and value?
+          ELSE
+            z := 0;
+          M.Shift := M.Shift or DWord(z shl 16);
+          Sender.fOnMouseWheel( Sender, M );
+          Result := TRUE;
+        END;
+    END;
   END;
-end;
+END;
 
-procedure SetMouseEvent( Self_: PControl; event_name: PAnsiChar );
-begin
+PROCEDURE SetMouseEvent( Self_: PControl; event_name: PAnsiChar );
+BEGIN
   gtk_signal_connect( GTK_OBJECT( Self_.fEventboxHandle ), event_name,
     @mouse_events_handler, Self_ );
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -38135,13 +38312,13 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-function TControl.GetCaption: KOLString;
-begin
+FUNCTION TControl.GetCaption: KOLString;
+BEGIN
    if  {$IFDEF USE_FLAGS} not (G1_IgnoreWndCaption in fFlagsG1)
        {$ELSE} fIgnoreWndCaption {$ENDIF} then
        FCaption := fGetCaption(@Self);
    Result := FCaption;
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -38162,13 +38339,13 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure TControl.SetCaption( const Value: KOLString );
-begin
+PROCEDURE TControl.SetCaption( CONST Value: KOLString );
+BEGIN
   fCaption := Value;
-  if  Assigned( fSetCaption ) then
+  if  Assigned( fSetCaption ) THEN
       fSetCaption( @Self, Value );
   DoAutoSize;
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 {$IFDEF WIN_GDI}
@@ -38301,36 +38478,36 @@ begin
 end;
 {$ENDIF ASM_VERSION}
 {$ENDIF GDI}
+
 {$IFDEF _X_}
 {$IFDEF GTK}
-function TControl.GetBoundsRect: TRect;
-var R: TRect;
+FUNCTION TControl.GetBoundsRect: TRect;
+VAR R: TRect;
     window: PGtkWindow;
     requisition: TGtkRequisition;
-begin
+BEGIN
    //if fHandle <> nil then
-   begin
-     if fIsControl then
-     begin
-       R.Left := fBoundsRect.Left;
-       R.Top := fBoundsRect.Top;
-       gtk_widget_get_size_request( fEventboxHandle, @ R.Right, @ R.Bottom );
-       gtk_widget_size_request( fHandle, @ requisition );
-       if R.Right < 0 then R.Right := requisition.width;
-       if R.Bottom < 0 then R.Bottom := requisition.height;
-     end
-       else
-     begin
-       window := GTK_WINDOW( fHandle );
-       gtk_window_get_position(window, @ R.Left, @ R.Top);
-       gtk_window_get_size(window, @ R.Right, @ R.Bottom);
-     end;
+   BEGIN
+     IF  fIsControl THEN
+     BEGIN
+         R.Left := fBoundsRect.Left;
+         R.Top := fBoundsRect.Top;
+         gtk_widget_get_size_request( fEventboxHandle, @ R.Right, @ R.Bottom );
+         gtk_widget_size_request( fHandle, @ requisition );
+         IF R.Right  < 0 THEN R.Right := requisition.width;
+         IF R.Bottom < 0 THEN R.Bottom := requisition.height;
+     END ELSE
+     BEGIN
+         window := GTK_WINDOW( fHandle );
+         gtk_window_get_position(window, @ R.Left, @ R.Top);
+         gtk_window_get_size(window, @ R.Right, @ R.Bottom);
+     END;
      inc( R.Right, R.Left );
      inc( R.Bottom, R.Top );
      fBoundsRect := R;
-   end;
+   END;
    Result := fBoundsRect;
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -38368,12 +38545,13 @@ begin
 end;
 {$ENDIF ASM_VERSION}
 {$ENDIF GDI}
+
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure TControl.SetBoundsRect( const Value: TRect );
-var Rect: TRect;
+PROCEDURE TControl.SetBoundsRect( const Value: TRect );
+VAR Rect: TRect;
     window: PGtkWindow;
-begin
+BEGIN
    Rect := GetBoundsRect;
    if RectsEqual( Value, Rect ) then Exit;
    {$IFDEF USE_FLAGS}
@@ -38386,24 +38564,23 @@ begin
    fBoundsRect := Value;
    Rect := Value;
 
-   if fIsControl then
-   begin
-     //gtk_widget_set_uposition( fHandle, Rect.Left, Rect.Top );
-     if fParent <> nil then
-       fParent.fChildSetPos( fParent, @ Self, Rect.Left, Rect.Top );
-     if (Rect.Right > Rect.Left) and (Rect.Bottom > Rect.Top) then
-       gtk_widget_set_size_request( fEventboxHandle,
-         Rect.Right - Rect.Left, Rect.Bottom - Rect.Top );
-   end
-     else
-   begin
-     window := GTK_WINDOW( fHandle );
-     gtk_window_move( window, Rect.Left, Rect.Top );
-     gtk_window_resize( window, Rect.Right - Rect.Left, Rect.Bottom - Rect.Top );
-   end;
+   IF  fIsControl then
+   BEGIN
+       //gtk_widget_set_uposition( fHandle, Rect.Left, Rect.Top );
+       IF  fParent <> nil then
+           fParent.fChildSetPos( fParent, @ Self, Rect.Left, Rect.Top );
+       IF  (Rect.Right > Rect.Left) and (Rect.Bottom > Rect.Top) then
+           gtk_widget_set_size_request( fEventboxHandle,
+               Rect.Right - Rect.Left, Rect.Bottom - Rect.Top );
+   END ELSE
+   BEGIN
+       window := GTK_WINDOW( fHandle );
+       gtk_window_move( window, Rect.Left, Rect.Top );
+       gtk_window_resize( window, Rect.Right - Rect.Left, Rect.Bottom - Rect.Top );
+   END;
    //if fSizeRedraw then
    //  Invalidate;
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -38477,15 +38654,15 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-function TControl.ClientRect: TRect; //todo: implement exact, now for PaintBox only
-begin
+FUNCTION TControl.ClientRect: TRect; //todo: implement exact, now for PaintBox only
+BEGIN
    Result := fBoundsRect;
    OffsetRect( Result, -Result.Left, -Result.Top );
    Inc( Result.Top, fClientTop );
    Dec( Result.Bottom, fClientBottom );
    Inc( Result.Left, fClientLeft );
    Dec( Result.Right, fClientRight );
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -38504,10 +38681,10 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure TControl.Invalidate;
-begin
+PROCEDURE TControl.Invalidate;
+BEGIN
   gtk_widget_queue_draw_area( fHandle, 0, 0, Width, Height );
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -38914,29 +39091,29 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure TControl.SetParent( Value: PControl );
-begin
-   if Value = fParent then Exit;
-   if fParent <> nil then
+PROCEDURE TControl.SetParent( Value: PControl );
+BEGIN
+   IF Value    = fParent THEN Exit;
+   IF fParent <> nil THEN
    begin
-     fParent.fChildren.Remove( @Self );
+       fParent.fChildren.Remove( @Self );
 
-     {$IFDEF NOT_USE_AUTOFREE4CONTROLS}
-     {$ELSE}
-     fParent.RemoveFromAutoFree( @Self );
-     {$ENDIF}
-   end;
+       {$IFDEF NOT_USE_AUTOFREE4CONTROLS}
+       {$ELSE}
+       fParent.RemoveFromAutoFree( @Self );
+       {$ENDIF}
+   END;
    fParent := Value;
-   if fParent <> nil then
-   begin
+   IF  fParent <> nil THEN
+   BEGIN
      fParent.fChildren.Add( @Self );
      {$IFDEF USE_AUTOFREE4CHILDREN}
      fParent.Add2AutoFree( @ Self );
      {$ENDIF}
-   end;
+   END;
    fParent.fGetClientArea( fParent );
    fParent.fChildPut( fParent, @ Self, fBoundsRect.Left, fBoundsRect.Top );
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -38978,12 +39155,12 @@ end;                       // can not be virtual (as an _object_ - not a class -
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-constructor TControl.CreateParented(AParent: PControl; widget: PGtkWidget;
+CONSTRUCTOR TControl.CreateParented(AParent: PControl; widget: PGtkWidget;
   need_eventbox: Boolean);
-begin
+BEGIN
   InitParented( AParent, widget, need_eventbox );
                            // because InitParented is virtual, but CreateParented
-end;                       // can not be virtual (as an _object_ - not a class - constructor)
+END;                       // can not be virtual (as an _object_ - not a class - constructor)
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -39237,20 +39414,20 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure TControl.SetCtlColor( Value: TColor );
-var gcolor: TGdkColor;
+PROCEDURE TControl.SetCtlColor( Value: TColor );
+VAR gcolor: TGdkColor;
     i: Integer;
-begin
+BEGIN
   if fColor = Value then Exit;
   fColor := Value;
 
   //oldfontdesc := PGtkWidget( _Self.fHandle ).style.font_desc;
   gcolor := Color2GdkColor( Value );
-  for i := 0 to 4 do
-  begin
+  FOR i := 0 to 4 do
+  BEGIN
     gtk_widget_modify_bg( fEventboxHandle, {GTK_STATE_NORMAL} i, @ gcolor );
     gtk_widget_modify_base( fEventboxHandle, {GTK_STATE_NORMAL} i, @ gcolor );
-  end;
+  END;
   //if Assigned( _Self.fFont ) then
   {begin
     _Self.fHandle.style.font_desc :=
@@ -39260,7 +39437,7 @@ begin
   end;}
 
   //Invalidate;
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -40256,33 +40433,33 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-function expose_widget( Widget: PGtkWidget; Event: PGdkEventExpose;
+FUNCTION expose_widget( Widget: PGtkWidget; Event: PGdkEventExpose;
   Sender: PControl ): Boolean; cdecl;
-begin
-  if not Assigned( Sender.fOnPaint ) then Result := FALSE
-  else
-  begin
+BEGIN
+  IF not Assigned( Sender.fOnPaint ) THEN Result := FALSE
+  ELSE
+  BEGIN
     Sender.Canvas.SaveState;
     Sender.fOnPaint( Sender, Sender.Canvas.Handle );
     Sender.Canvas.RestoreState;
     Result := TRUE;
-  end;
-end;
+  END;
+END;
 
-procedure TControl.SetOnPaint( const Value: TOnPaint );
-begin
+PROCEDURE TControl.SetOnPaint( const Value: TOnPaint );
+BEGIN
   {$IFDEF EVENTS_DYNAMIC} ProvideUniqueEvents {$ELSE} EV {$ENDIF}
   .fOnPaint := Value;
   {$IFNDEF SMALLER_CODE} // it is actually not necessary to disconnect, event
                           // still will be fired but fOnPaint is not assigned
                           // so FALSE will be returned to GTK.
-  if  not Assigned( Value ) then
+  IF  NOT Assigned( Value ) THEN
       gtk_signal_disconnect( fHandle, fExposeEvent )
-  else
+  ELSE
   {$ENDIF}
       fExposeEvent := gtk_signal_connect( GTK_OBJECT( fHandle ), 'expose_event',
                    @ expose_widget, @ Self );
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 {$IFDEF WIN_GDI}
@@ -40956,29 +41133,29 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure DoApplyFont2Wnd( _Self: PControl );
-var oldfontdesc: PPangoFontDescription;
+PROCEDURE DoApplyFont2Wnd( _Self: PControl );
+VAR oldfontdesc: PPangoFontDescription;
     rcstyle: PGtkRcStyle;
     gcolor: TGdkColor;
     i: Integer;
-begin
-  if ( _Self.fFont <> nil ) then
-  begin
-    gcolor := Color2GdkColor( _Self.fFont.Color );
+BEGIN
+  IF ( _Self.fFont <> nil ) THEN
+  BEGIN
+      gcolor := Color2GdkColor( _Self.fFont.Color );
 
-    rcstyle := gtk_widget_get_modifier_style( _Self.fHandle );
-    oldfontdesc := rcstyle.font_desc;
-    rcstyle.font_desc :=
-      pango_font_description_copy( _Self.fFont.GetPangoFontDesc );
-    gtk_widget_modify_style( _Self.fHandle, rcstyle );
+      rcstyle := gtk_widget_get_modifier_style( _Self.fHandle );
+      oldfontdesc := rcstyle.font_desc;
+      rcstyle.font_desc :=
+        pango_font_description_copy( _Self.fFont.GetPangoFontDesc );
+      gtk_widget_modify_style( _Self.fHandle, rcstyle );
 
-    if oldfontdesc <> nil then
-      pango_font_description_free( oldfontdesc );
+      IF oldfontdesc <> nil THEN
+        pango_font_description_free( oldfontdesc );
 
-    for i := 0 to 4 do
-      gtk_widget_modify_fg( _Self.fCaptionHandle, {GTK_STATE_NORMAL} i, @ gcolor );
-  end;
-end;
+      FOR i := 0 TO 4 DO
+        gtk_widget_modify_fg( _Self.fCaptionHandle, {GTK_STATE_NORMAL} i, @ gcolor );
+  END;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -42939,10 +43116,10 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-function TControl.GetTextAlign: TTextAlign;
-begin
+FUNCTION TControl.GetTextAlign: TTextAlign;
+BEGIN
   Result := fTextAlign;
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -42969,13 +43146,13 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure TControl.SetTextAlign(const Value: TTextAlign);
-begin
-  if  fTextAlign = Value then Exit;
+PROCEDURE TControl.SetTextAlign(const Value: TTextAlign);
+BEGIN
+  IF  fTextAlign = Value THEN Exit;
   fTextAlign := Value;
-  if  Assigned( fSetTextAlign ) then
+  IF  Assigned( fSetTextAlign ) THEN
       fSetTextAlign( @ Self );
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -42998,10 +43175,10 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-function TControl.GetVerticalAlign: TVerticalAlign;
-begin
+FUNCTION TControl.GetVerticalAlign: TVerticalAlign;
+BEGIN
   Result := fVerticalAlign;
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -43027,13 +43204,13 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure TControl.SetVerticalAlign(const Value: TVerticalAlign);
-begin
+PROCEDURE TControl.SetVerticalAlign(const Value: TVerticalAlign);
+BEGIN
   if fVerticalAlign = Value then Exit;
   fVerticalAlign := Value;
   if Assigned( fSetTextAlign ) then
     fSetTextAlign( @ Self );
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -43079,22 +43256,21 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-function TControl.ProvideCanvasHandle( Sender: PCanvas ): HDC;
-type PPGdkGC = ^PGdkGC;
-var Array_gc: PPGdkGC;
-begin
-  if fInBkPaint then Array_gc := @ fEventboxHandle.style.bg_gc[ 0 ]
-  else
-    Array_gc := @ fEventboxHandle.style.fg_gc[ 0 ];
+FUNCTION TControl.ProvideCanvasHandle( Sender: PCanvas ): HDC;
+TYPE PPGdkGC = ^PGdkGC;
+VAR Array_gc: PPGdkGC;
+BEGIN
+  IF   fInBkPaint THEN Array_gc := @ fEventboxHandle.style.bg_gc[ 0 ]
+  ELSE Array_gc := @ fEventboxHandle.style.fg_gc[ 0 ];
   CASE fEventboxHandle.state OF
   GTK_STATE_NORMAL,
   GTK_STATE_ACTIVE,
   GTK_STATE_PRELIGHT,
   GTK_STATE_SELECTED,
   GTK_STATE_INSENSITIVE: Result := PPGdkGC( Integer( Array_gc ) + fEventboxHandle.state * sizeof( Pointer ) )^;
-  else                   Result := Array_gc^;
+  ELSE                   Result := Array_gc^;
   END;
-end;
+END;
 
 function TControl.GetCanvas: PCanvas;
 begin
@@ -43333,6 +43509,9 @@ begin
   if FTrayItems = nil then
      FTrayItems := NewList;
   New( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TTrayIcon';
+  {$ENDIF}
   FTrayItems.Add( Result );
   if Wnd <> nil then
     Wnd.AttachProc( WndProcTray );
@@ -43843,6 +44022,9 @@ end;
 function NewStrList: PStrList;
 begin
   New( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TStrList';
+  {$ENDIF}
 end;
 
 {$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
@@ -45017,6 +45199,9 @@ end;
 function NewStrListEx: PStrListEx;
 begin
   new( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TStrListEx';
+  {$ENDIF}
 end;
 
 destructor TStrListEx.Destroy;
@@ -45235,6 +45420,9 @@ end;
 function NewWStrList: PWStrList;
 begin
   new( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TWStrList';
+  {$ENDIF}
 end;
 
 { TWStrList }
@@ -45663,6 +45851,9 @@ end;
 function NewWStrListEx: PWStrListEx;
 begin
   new( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TWStrListEx';
+  {$ENDIF}
 end;
 
 { TWStrListEx }
@@ -45779,11 +45970,17 @@ end;
 function NewKOLStrList: PKOLStrList;
 begin
   new( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TKOLStrList';
+  {$ENDIF}
 end;
 
 function NewKOLStrListEx: PKOLStrListEx;
 begin
   new( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TKOLStrListEx';
+  {$ENDIF}
 end;
 
 //////////////////////////////////////////////////////////////////////////
@@ -46031,6 +46228,9 @@ begin
             Style, FALSE,
             {$IFDEF PACK_COMMANDACTIONS} PChar( OTHER_ACTIONS )
             {$ELSE} nil {$ENDIF} );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:StatusBar';
+  {$ENDIF}
   with Result.fBoundsRect do
   begin
     Left := 0;
@@ -46361,12 +46561,18 @@ end;
 function NewImageList( AOwner: PControl ): PImageList;
 begin
   new( Result, CreateImageList( AOwner ) );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TImageList';
+  {$ENDIF}
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 function NewImageList( AOwner: PControl ): PImageList;
 begin
   {*************} DoInitCommonControls( ICC_WIN95_CLASSES );
   New( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TImageList';
+  {$ENDIF}
   Result.FAllocBy := 1;
   Result.FMasked := True;
   Result.fBkColor := clNone;
@@ -47522,6 +47728,9 @@ function NewOpenSaveDialog( const Title, StrtDir: KOLString;
          Options: TOpenSaveOptions ): POpenSaveDialog;
 begin
   New( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TOpenSaveDialog';
+  {$ENDIF}
   Result.FOptions := Options;
   if Options = [] then
     Result.FOptions := DefOpenSaveDlgOptions;
@@ -47850,6 +48059,9 @@ function NewOpenDirDialog( const Title: KOLString; Options: TOpenDirOptions ):
          POpenDirDialog;
 begin
   New( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TOpenDirDialog';
+  {$ENDIF}
   Result.FOptions := [ odOnlySystemDirs ];
   if Options <> [] then
     Result.FOptions := Options;
@@ -49736,12 +49948,12 @@ end;
 
 {$IFDEF _X_}
 {$IFDEF GTK}
-function control_clicked( Obj: PGtkWidget; Sender: PControl ): Boolean; cdecl;
-begin
-  if  Assigned( Sender.fOnClick ) then
+FUNCTION control_clicked( Obj: PGtkWidget; Sender: PControl ): Boolean; cdecl;
+BEGIN
+  IF  Assigned( Sender.fOnClick ) THEN
       Sender.fOnClick( Sender );
   Result := FALSE;
-end;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -49750,18 +49962,16 @@ begin
   {$IFDEF EVENTS_DYNAMIC} ProvideUniqueEvents {$ELSE} EV {$ENDIF}
   .fOnClick := Value;
   {$IFDEF GTK}
-  if fEventboxHandle = fHandle then
-  begin
+  IF fEventboxHandle = fHandle THEN
+  BEGIN
     {$IFNDEF SMALLER_CODE}
-    if not Assigned( Value ) then
+    IF NOT Assigned( Value ) THEN
       gtk_signal_disconnect( GTK_OBJECT( fEventboxHandle ), fClickedEvent )
-    else
+    ELSE
     {$ENDIF SMALLEST_CODE}
     fClickedEvent := gtk_signal_connect( GTK_OBJECT( fEventboxHandle ),  'clicked',
       @ control_clicked, @ Self )
-  end
-  else
-    SetMouseEvent( @ Self, 'button_release_event' );
+  END ELSE SetMouseEvent( @ Self, 'button_release_event' );
   {$ENDIF GTK}
 end;
 //////////////////////////////////////////////////////////////////
@@ -49776,6 +49986,9 @@ var {$IFDEF WIN} TimerOwnerWnd: PControl; {$ENDIF} // in Linux, timer not need i
 function NewTimer( Interval: Integer ): PTimer;
 begin
   New( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TTimer';
+  {$ENDIF}
   if Interval <= 0 then Interval := 1000;
   Result.fInterval := Interval;
   Inc( TimerCount );
@@ -49862,37 +50075,36 @@ end;
 
 {$IFDEF _X_}
 {$IFDEF GTK}
-function TimerGTKTick( Sender: Pointer ): LONGBOOL; cdecl;
-begin
-  if not PTimer( Sender ).fEnabled then Result := FALSE
-  else
-  begin
-    if Assigned( PTimer( Sender ).fOnTimer ) then
-      Ptimer( Sender ).fOnTimer( Sender );
+FUNCTION TimerGTKTick( Sender: Pointer ): LONGBOOL; cdecl;
+BEGIN
+  IF NOT PTimer( Sender ).fEnabled THEN Result := FALSE
+  ELSE
+  BEGIN
+    IF  Assigned( PTimer( Sender ).fOnTimer ) THEN
+        Ptimer( Sender ).fOnTimer( Sender );
     Result := PTimer( Sender ).fEnabled;
-  end;
-  if Result then
-    PTimer( Sender ).RefDec;
-end;
+  END;
+  IF  Result THEN
+      PTimer( Sender ).RefDec;
+END;
 
-procedure TTimer.SetEnabled(const Value: Boolean);
-begin
-  if FEnabled = Value then Exit;
+PROCEDURE TTimer.SetEnabled(const Value: Boolean);
+BEGIN
+  IF FEnabled = Value THEN Exit;
   fEnabled := Value;
-  if Value then
-  begin
-    RefInc;
-    fHandle := gtk_timeout_add( fInterval, TimerGTKTick, @ Self );
-  end
-     else
-  begin
-    if AppletTerminated then
-    begin
-      gtk_timeout_remove( fHandle );
-      RefDec;
-    end;
-  end;
-end;
+  IF  Value THEN
+  BEGIN
+      RefInc;
+      fHandle := gtk_timeout_add( fInterval, TimerGTKTick, @ Self );
+  END ELSE
+  BEGIN
+    IF  AppletTerminated THEN
+    BEGIN
+        gtk_timeout_remove( fHandle );
+        RefDec;
+    END;
+  END;
+END;
 {$ELSE not GTK}
 var fActiveTimerList: PTimer;
     fClockPerSecond: Integer;
@@ -50087,6 +50299,9 @@ end;
 function NewMMTimer( Interval: Integer ): PMMTimer;
 begin
   New( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TMMTimer';
+  {$ENDIF}
   Result.fInterval := Interval;
   Result.FPeriodic := TRUE;
 end;
@@ -50177,6 +50392,9 @@ function NewBitmap( W, H: Integer ): PBitmap;
 var DC: HDC;
 begin
   New( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TBitmap';
+  {$ENDIF}
   Result.fHandleType := bmDDB;
   Result.fDetachCanvas := DummyDetachCanvas;
   Result.fWidth := W;
@@ -50208,6 +50426,9 @@ const BitsPerPixel: array[ TPixelFormat ] of Byte = ( 0, 1, 4, 8, 16, 16, 24, 32
 var BitsPixel: Integer;
 begin
   New( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TBitmap:DIBBitmap';
+  {$ENDIF}
   Result.fDetachCanvas := DummyDetachCanvas;
   Result.fWidth := W;
   Result.fHeight := H;
@@ -53018,6 +53239,9 @@ end;
 function NewIcon: PIcon;
 begin
   New( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TIcon';
+  {$ENDIF}
   {$IFDEF ICON_DIFF_WH}
   Result.FWidth := 32;
   Result.FHeight := 32;
@@ -56518,6 +56742,9 @@ function TControl.TC_Insert(Idx: Integer; const TabText: KOLString;
 var TI: TTCItem;
 begin
   Result := NewPanel( @Self, esNone );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:TabPage';
+  {$ENDIF}
   {$IFDEF OLD_ALIGN}
   Result.FAlign := caClient;          //+ Galkov
   {$IFDEF USE_FLAGS} Result.fFlagsG4 := Result.fFlagsG4 +
@@ -57136,67 +57363,67 @@ end;
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
-procedure AutoSzProc( Self_: PObj );
-var SZ: TSize;
+PROCEDURE AutoSzProc( Self_: PObj );
+VAR SZ: TSize;
     //Txt: KOLString;
     Chg: Boolean;
     req_captn, req_evbox: TGtkRequisition;
-begin
+BEGIN
   //Txt := PControl( Self_ ).fCaption;
   SZ.cx := 0;
   SZ.cy := 0;
   //if Txt <> '' then
-  begin
+  BEGIN
     gtk_widget_size_request( PControl( Self_ ).fCaptionHandle, @ req_captn );
-    if (PControl( Self_ ).fDeltaX = 0) and
-       (PControl( Self_ ).fDeltaY = 0) then
-    begin
-      gtk_widget_size_request( PControl( Self_ ).fEventboxHandle, @ req_evbox );
-      PControl( Self_ ).fDeltaX := Max( 0, req_evbox.width - req_captn.width );
-      PControl( Self_ ).fDeltaY := Max( 0, req_evbox.height - req_captn.height );
-    end;
+    IF  (PControl( Self_ ).fDeltaX = 0) AND
+        (PControl( Self_ ).fDeltaY = 0) THEN
+    BEGIN
+        gtk_widget_size_request( PControl( Self_ ).fEventboxHandle, @ req_evbox );
+        PControl( Self_ ).fDeltaX := Max( 0, req_evbox.width - req_captn.width );
+        PControl( Self_ ).fDeltaY := Max( 0, req_evbox.height - req_captn.height );
+    END;
     Sz.cx := req_captn.width + PControl( Self_ ).fDeltaX;
     Sz.cy := req_captn.height + PControl( Self_ ).fDeltaY;
     //gtk_widget_get_size_request( PControl( Self_ ).fHandle, @ Sz.cx, @ Sz.cy );
-  end;
+  END;
   Chg := FALSE;
-  if PControl( Self_ ).FAlign in [ caNone, caLeft, caRight ] then
+  IF  PControl( Self_ ).FAlign in [ caNone, caLeft, caRight ] THEN
+  BEGIN
+      //DeltaX := PControl( Self_ ).fCommandActions.aAutoSzX;
+      if PControl( Self_ ).Width <> SZ.cx {+ DeltaX} then
+      BEGIN
+        PControl( Self_ ).Width := SZ.cx {+ DeltaX};
+        Chg := TRUE;
+      END;
+      IF PControl( Self_ ).fMinWidth > PControl( Self_ ).Width THEN
+      BEGIN
+        PControl( Self_ ).Width := PControl( Self_ ).fMinWidth;
+        Chg := TRUE;
+      END;
+  END;
+  IF  PControl( Self_ ).FAlign in [ caNone, caTop, caBottom ] THEN
   begin
-    //DeltaX := PControl( Self_ ).fCommandActions.aAutoSzX;
-    if PControl( Self_ ).Width <> SZ.cx {+ DeltaX} then
-    begin
-      PControl( Self_ ).Width := SZ.cx {+ DeltaX};
-      Chg := TRUE;
-    end;
-    if PControl( Self_ ).fMinWidth > PControl( Self_ ).Width then
-    begin
-      PControl( Self_ ).Width := PControl( Self_ ).fMinWidth;
-      Chg := TRUE;
-    end;
-  end;
-  if PControl( Self_ ).FAlign in [ caNone, caTop, caBottom ] then
-  begin
-    //DeltaY := PControl( Self_ ).fCommandActions.aAutoSzY;
-    if PControl( Self_ ).Height <> SZ.cy {+ DeltaY} then
-    begin
-      PControl( Self_ ).Height := SZ.cy {+ DeltaY};
-      Chg := TRUE;
-    end;
-    if PControl( Self_ ).FMinHeight > PControl( Self_ ).Height then
-    begin
-      PControl( Self_ ).Height := PControl( Self_ ).FMinHeight;
-      Chg := TRUE;
-    end;
-  end;
-  if Chg then
-  begin
-    {$IFDEF OLD_ALIGN}
-    if PControl( Self_ ).fParent <> nil then
-      Global_Align( PControl( Self_ ).fParent );
-    {$ENDIF}
-    Global_Align( Self_ );
-  end;
-end;
+      //DeltaY := PControl( Self_ ).fCommandActions.aAutoSzY;
+      IF PControl( Self_ ).Height <> SZ.cy {+ DeltaY} THEN
+      BEGIN
+        PControl( Self_ ).Height := SZ.cy {+ DeltaY};
+        Chg := TRUE;
+      END;
+      IF PControl( Self_ ).FMinHeight > PControl( Self_ ).Height THEN
+      BEGIN
+        PControl( Self_ ).Height := PControl( Self_ ).FMinHeight;
+        Chg := TRUE;
+      END;
+  END;
+  IF  Chg THEN
+  BEGIN
+      {$IFDEF OLD_ALIGN}
+      if PControl( Self_ ).fParent <> nil then
+        Global_Align( PControl( Self_ ).fParent );
+      {$ENDIF}
+      Global_Align( Self_ );
+  END;
+END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
@@ -58056,6 +58283,9 @@ function NewColorDialog( FullOpen: TColorCustomOption ): PColorDialog;
 var I: Integer;
 begin
   New( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TColorDialog';
+  {$ENDIF}
   Result.ColorCustomOption := FullOpen;
   for I := 1 to 16 do
     Result.CustomColors[ I ] := clWhite;
@@ -60509,6 +60739,9 @@ function _NewGraphCtl( AParent: PControl; ATabStop: Boolean;
 var IdxActions: Integer;
 begin
   new( Result, Create );
+  {$IFDEF DEBUG_OBJKIND}
+  Result.fObjKind := 'TControl:GraphicControl';
+  {$ENDIF}
   {$IFDEF COMMANDACTIONS_OBJ}
       IdxActions := Integer( ACommandActions );
       if  IdxActions >= 120 then
@@ -60521,6 +60754,9 @@ begin
         else
       begin
           new( Result.fCommandActions, Create );
+          {$IFDEF DEBUG_OBJKIND}
+          Result.fCommandActions.fObjKind := 'TCommandActionsObj';
+          {$ENDIF}
           AllActions_Objs[IdxActions] := Result.fCommandActions;
           {$IFDEF SAFE_CODE}
           if  ACommandActions <> nil then
@@ -62822,7 +63058,7 @@ begin
 end;
 
 {$IFDEF _D4orHigher}
-procedure FormSetTBSetTooltips( Form: PControl );
+procedure FormTBSetTooltips( Form: PControl );
 var A1: array of KOLString;
     A2: array of PKOLChar;
     N, i: Integer;
@@ -63005,9 +63241,28 @@ begin
     Form.DF.FormCurrentParent := C;
 end;
 
+{$IFDEF ASM_VERSION}
+procedure FormSetEvent( Form: PControl );
+asm
+    PUSH  EDI
+    MOV   EDI, EAX
+    PUSH  ESI
+    CALL  TControl.ParentForm
+    MOV   ESI, EAX
+    PUSH  [ESI].TControl.DF.FormObj
+    CALL  ParentForm_IntParamAsm
+    MOV   ESI, [EAX].TControl.DF.FormAlphabet
+    PUSH  dword ptr [ESI+EDX*4]
+    CALL  ParentForm_IntParamAsm
+    XCHG  EAX, EDI
+    CALL  dword ptr [ESI+EDX*4]
+    POP   ESI
+    POP   EDI
+end;
+{$ELSE}
 procedure FormSetEvent( Form: PControl );
 type
-    TSetEventProc = procedure( TargetCtl: PControl; event: TOnEvent );
+    TSetEventProc = procedure( TargetCtl: PControl; const event: TOnEvent );
 var C: PControl;
     idx_handler, idx_setter: Integer;
     handler, setter: Pointer;
@@ -63025,10 +63280,37 @@ begin
     TMethod( event ).Data := Form.DF.FormObj;
     set_proc( PControl( C ), event );
 end;
+{$ENDIF}
 
+{$IFDEF ASM_VERSION}
+procedure FormSetIndexedEvent( Form: PControl );
+asm
+    PUSH  EDI
+    MOV   EDI, EAX
+    PUSH  ESI
+    CALL  TControl.ParentForm
+    MOV   ESI, EAX
+    PUSH  [ESI].TControl.DF.FormObj
+    CALL  ParentForm_IntParamAsm
+    MOV   ESI, [EAX].TControl.DF.FormAlphabet
+    PUSH  dword ptr [ESI+EDX*4]
+
+    CALL  ParentForm_IntParamAsm // idx
+    PUSH  EDX
+
+    CALL  ParentForm_IntParamAsm
+    XCHG  EAX, EDI
+    MOV   ECX, dword ptr [ESI+EDX*4]
+
+    POP   EDX
+    CALL  ECX 
+    POP   ESI
+    POP   EDI
+end;
+{$ELSE}
 procedure FormSetIndexedEvent( Form: PControl );
 type
-    TSetIndexedEventProc = procedure( TargetCtl: PControl; Index: Integer; event: TOnEvent );
+    TSetIndexedEventProc = procedure( TargetCtl: PControl; Index: Integer; const event: TOnEvent );
 var C: PControl;
     idx_handler, idx_setter, idx: Integer;
     handler, setter: Pointer;
@@ -63047,6 +63329,7 @@ begin
     TMethod( event ).Data := Form.DF.FormObj;
     set_proc( PControl( C ), idx, event );
 end;
+{$ENDIF}
 
 procedure DummyOverrideScrollbars(Sender: PControl);
 begin
@@ -63079,8 +63362,6 @@ end;
 {$IFDEF GRAPHCTL_XPSTYLES}
   {$DEFINE INIT_FINIT}
 {$ENDIF}
-
-{$IFDEF INIT_FINIT}//-----------------------------------------------------------
 
 {$IFDEF EVENTS_DYNAMIC}
 function TControl.ProvideUniqueEvents: PEvents;
@@ -63276,10 +63557,12 @@ function TControl.Get_OnDropFiles: TOnDropFiles;
 begin Result := EV.fOnDropFiles; end;
 {$ENDIF EVENTS_DYNAMIC}
 
+{$IFnDEF NOT_USE_RICHEDIT}
 procedure TControl.FreeCharFormatRec;
 begin
     FreeMem( DF.fRECharFormatRec );
 end;
+{$ENDIF}
 
 function TControl.GetAnchor(const Index: Integer): Boolean;
 begin
@@ -63343,6 +63626,27 @@ begin
     TMethod( EV.MethodEvents[idx] ).Code := DummyProcTable[ InitEventsTable[ idx ] ];
     TMethod( EV.MethodEvents[idx] ).Data := nil;
 end;
+
+{ TCommandActionsObj }
+
+{$IFDEF COMMANDACTIONS_OBJ}
+{$IFDEF ASM_VERSION}
+destructor TCommandActionsObj.Destroy;
+asm
+    MOV  EDX, [EAX].fIndexInActions
+    MOV  dword ptr [EDX*4+AllActions_Objs], 0
+    CALL TObj.Destroy
+end;
+{$ELSE}
+destructor TCommandActionsObj.Destroy;
+begin
+    AllActions_Objs[fIndexInActions] := nil;
+    inherited;
+end;
+{$ENDIF}
+{$ENDIF}
+
+{$IFDEF INIT_FINIT}//-----------------------------------------------------------
 
 initialization
 {$IFDEF GRAPHCTL_XPSTYLES}

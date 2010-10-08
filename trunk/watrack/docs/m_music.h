@@ -36,6 +36,7 @@ typedef struct tSongInfoA {
     CHAR *cover;
     int volume;
     CHAR *url;
+    HWND winampwnd
 } SONGINFOA, *LPSONGINFOA;
 
 typedef struct tSongInfo {
@@ -72,6 +73,7 @@ typedef struct tSongInfo {
     WCHAR *cover;
     int volume;
     WCHAR *url;
+    HWND winampwnd
 } SONGINFO, *LPSONGINFO;
 
 #if defined(_UNICODE)
@@ -100,6 +102,9 @@ typedef struct tSongInfo {
 #define WAT_INF_ANSI    1
 #define WAT_INF_UTF8    2
 #define WAT_INF_CHANGES 0x100
+
+#define MS_WAT_INSERT "WATrack/Insert"
+#define MS_WAT_EXPORT "WATrack/Export"
 
 /*
   wParam : WAT_INF_* constant
@@ -133,6 +138,8 @@ typedef struct tSongInfo {
 */
 #define MS_WAT_RETURNGLOBAL "WATrack/GetMainStructure"
 
+//!! DON'T CHANGE THESE VALUES!
+#define WAT_CTRL_FIRST  1
 #define WAT_CTRL_PREV   1
 #define WAT_CTRL_PLAY   2
 #define WAT_CTRL_PAUSE  3
@@ -141,6 +148,8 @@ typedef struct tSongInfo {
 #define WAT_CTRL_VOLDN  6
 #define WAT_CTRL_VOLUP  7
 #define WAT_CTRL_SEEK   8 // lParam is new position (sec)
+#define WAT_CTRL_LAST   8
+
 /*
   wParam: button code (WAT_CTRL_* const)
   lParam: 0, or value (see WAT_CTRL_* const comments)
@@ -241,7 +250,7 @@ typedef struct tSongInfo {
 #define WAT_OPT_PLAYERINFO  0x00000004 // song info from player
 #define WAT_OPT_WINAMPAPI   0x00000008 // Winamp API support
 #define WAT_OPT_CHECKTIME   0x00000010 // check file time for changes
-#definr WAT_OPT_VIDEO       0x00000020 // only for format registering used
+#define WAT_OPT_VIDEO       0x00000020 // only for format registering used
 #define WAT_OPT_LAST        0x00000040 // (internal)
 #define WAT_OPT_FIRST       0x00000080 // (internal)
 #define WAT_OPT_TEMPLATE    0x00000100 // (internal)
@@ -327,12 +336,39 @@ typedef struct tPlayerCell {
 
 // --------- Last FM  ---------
 
+/*
+  Toggle LastFM scrobbling status
+  wParam,lParam=0
+  Returns: previous state
+*/
 #define MS_WAT_LASTFM "WATrack/LastFM"
+
+/*
+  Get Info based on currently played song
+  wParam: pLastFMInfo
+  lParam: int language (first 2 bytes - 2-letters language code)
+*/
+typedef struct tLastFMInfo {
+  pLastFMInfo = ^tLastFMInfo;
+  tLastFMInfo = record
+    int   request;  // 0 - artist, 1 - album, 2 - track
+    WCHAR *artist;  // artist
+    WCHAR *album;   // album or similar artists for Artist info request
+    WCHAR *title;   // track title 
+    WCHAR *tags;    // tags
+    WCHAR *info;    // artist bio or wiki article
+    CHAR  *image;   // photo/cover link
+    WCHAR *similar;
+    WCHAR *release;
+    int   trknum;
+} LASTFMINFO, *LPLASTFMINFO;
+
+#define MS_WAT_LASTFMINFO "WATrack/LastFMInfo"
 
 // --------- Templates ----------
 
 /*
-  wParam: not used
+  wParam: 0 (standard Info) or *SongInfo
   lParam: Unicode template
   returns: New Unicode (replaced) string
 */

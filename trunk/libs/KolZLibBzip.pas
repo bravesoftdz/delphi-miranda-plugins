@@ -1,4 +1,4 @@
-{$DEFINE USE_EXCEPTIONS}
+//{$DEFINE USE_EXCEPTIONS}
 {*****************************************************************************
 *  unit based on                                                             *
 *  ZLibEx.pas (zlib 1.2.1)                                                   *
@@ -34,56 +34,56 @@ unit KolZLibBzip;
 interface
 
 uses
-  KOL{$IFDEF USE_EXCEPTIONS},ERR{$ENDIF};
+  KOL{$IFDEF USE_EXCEPTIONS}, ERR{$ENDIF};
 
 const
-  ZLIB_VERSION = '1.2.1';
-  BZIP_VERSION = '1.0.2';
+  ZLIB_VERSION      = '1.2.1';
+  BZIP_VERSION      = '1.0.2';
 
 type
   TAlloc = function(opaque: Pointer; Items, Size: Integer): Pointer; cdecl;
   TFree = procedure(opaque, Block: Pointer); cdecl;
 
   TZCompressionLevel = (zcNone, zcFastest, zcDefault, zcMax);
-  TZCompressionStrategy= (zcsDefault, zcsFiltered, zcsHuffmanOnly);
+  TZCompressionStrategy = (zcsDefault, zcsFiltered, zcsHuffmanOnly);
   {** TZStreamRec ***********************************************************}
 
   TZStreamRec = packed record
-    next_in: PChar; // next input byte
-    avail_in: Longint; // number of bytes available at next_in
-    total_in: Longint; // total nb of input bytes read so far
+    next_in: PChar;       // next input byte
+    avail_in: Longint;    // number of bytes available at next_in
+    total_in: Longint;    // total nb of input bytes read so far
 
-    next_out: PChar; // next output byte should be put here
-    avail_out: Longint; // remaining free space at next_out
-    total_out: Longint; // total nb of bytes output so far
+    next_out: PChar;      // next output byte should be put here
+    avail_out: Longint;   // remaining free space at next_out
+    total_out: Longint;   // total nb of bytes output so far
 
-    msg: PChar; // last error message, NULL if no error
-    state: Pointer; // not visible by applications
+    msg: PChar;           // last error message, NULL if no error
+    state: Pointer;       // not visible by applications
 
-    zalloc: TAlloc; // used to allocate the internal state
-    zfree: TFree; // used to free the internal state
-    opaque: Pointer; // private data object passed to zalloc and zfree
+    zalloc: TAlloc;       // used to allocate the internal state
+    zfree: TFree;         // used to free the internal state
+    opaque: Pointer;      // private data object passed to zalloc and zfree
 
-    data_type: Integer; // best guess about the data type: ascii or binary
-    adler: Longint; // adler32 value of the uncompressed data
-    reserved: Longint; // reserved for future use
+    data_type: Integer;   // best guess about the data type: ascii or binary
+    adler: Longint;       // adler32 value of the uncompressed data
+    reserved: Longint;    // reserved for future use
   end;
 
-{** zlib public routines ****************************************************}
+  {** zlib public routines ****************************************************}
 
-{*****************************************************************************
-*  ZCompressBuf                                                              *
-*                                                                            *
-*  pre-conditions                                                            *
-*    inBuffer  = pointer to uncompressed data                                *
-*    inSize    = size of inBuffer (bytes)                                    *
-*    outBuffer = pointer (unallocated)                                       *
-*    level     = compression level                                           *
-*                                                                            *
-*  post-conditions                                                           *
-*    outBuffer = pointer to compressed data (allocated)                      *
-*    outSize   = size of outBuffer (bytes)                                   *
-*****************************************************************************}
+  {*****************************************************************************
+  *  ZCompressBuf                                                              *
+  *                                                                            *
+  *  pre-conditions                                                            *
+  *    inBuffer  = pointer to uncompressed data                                *
+  *    inSize    = size of inBuffer (bytes)                                    *
+  *    outBuffer = pointer (unallocated)                                       *
+  *    level     = compression level                                           *
+  *                                                                            *
+  *  post-conditions                                                           *
+  *    outBuffer = pointer to compressed data (allocated)                      *
+  *    outSize   = size of outBuffer (bytes)                                   *
+  *****************************************************************************}
 
 function ZCompressBuf(const inBuffer: Pointer; inSize: Integer;
   out outBuffer: Pointer; out outSize: Integer;
@@ -108,9 +108,9 @@ function ZDecompressBuf(const inBuffer: Pointer; inSize: Integer;
 
 {** string routines *********************************************************}
 
-function ZCompressStr(const s: String; level: TZCompressionLevel = zcDefault): String;
+function ZCompressStr(const s: string; level: TZCompressionLevel = zcDefault): string;
 
-function ZDecompressStr(const s: String): String;
+function ZDecompressStr(const s: string): string;
 
 {** stream routines *********************************************************}
 
@@ -122,7 +122,7 @@ function ZDecompressStream(inStream, outStream: PStream): Integer;
 {** utility routines ********************************************************}
 
 function adler32(adler: LongInt; const buf: PChar; len: Integer): LongInt;
-function CRC32(CRC: Cardinal; const Data: PChar; cbData: Cardinal ): Cardinal;
+function CRC32(CRC: Cardinal; const Data: PChar; cbData: Cardinal): Cardinal;
 function compressBound(sourceLen: LongInt): LongInt;
 
 {****************************************************************************}
@@ -134,19 +134,18 @@ procedure ZSendToBrowser(var s: string);
 
 type
   TgzipHeader = packed record
-    FileName  : String;
-    Comment   : String;
-    FileTime  : TDateTime;
-    Extra     : String;
+    FileName: string;
+    Comment: string;
+    FileTime: TDateTime;
+    Extra: string;
   end;
 
-function gZipCompressStream(inStream, outStream: PStream; var gzHdr: TgzipHeader;
-  level: TZCompressionLevel = zcDefault; strategy: TZCompressionStrategy = zcsDefault): Integer; overload;
-function gZipCompressStream(inStream, outStream: PStream;
-  level: TZCompressionLevel = zcDefault; strategy: TZCompressionStrategy = zcsDefault): Integer; overload;
+function gZipCompressStream(inStream, outStream: PStream; var gzHdr: TgzipHeader; level: TZCompressionLevel = zcDefault; strategy: TZCompressionStrategy = zcsDefault): Integer; overload;
+function gZipCompressStream(inStream, outStream: PStream; level: TZCompressionLevel = zcDefault; strategy: TZCompressionStrategy = zcsDefault): Integer; overload;
 function gZipDecompressStreamHeader(inStream: PStream; var gzHdr: TgzipHeader): Integer;
 function gZipDecompressStreamBody(inStream, outStream: PStream): Integer;
 function gZipDecompressStream(inStream, outStream: PStream; var gzHdr: TgzipHeader): Integer;
+function gZipDecompressString(const S: String): String;
 
 {*******************************************************}
 {                                                       }
@@ -156,28 +155,28 @@ function gZipDecompressStream(inStream, outStream: PStream; var gzHdr: TgzipHead
 type
   // Internal structure.
   TBZStreamRec = packed record
-    next_in: PChar; // next input byte
-    avail_in: Integer; // number of bytes available at next_in
+    next_in: PChar;       // next input byte
+    avail_in: Integer;    // number of bytes available at next_in
     total_in_lo32: Integer; // total nb of input bytes read so far
     total_in_hi32: Integer;
 
-    next_out: PChar; // next output byte should be put here
-    avail_out: Integer; // remaining free space at next_out
+    next_out: PChar;      // next output byte should be put here
+    avail_out: Integer;   // remaining free space at next_out
     total_out_lo32: Integer; // total nb of bytes output so far
     total_out_hi32: Integer;
 
     state: Pointer;
 
-    bzalloc: TAlloc; // used to allocate the internal state
-    bzfree: TFree; // used to free the internal state
+    bzalloc: TAlloc;      // used to allocate the internal state
+    bzfree: TFree;        // used to free the internal state
     opaque: Pointer;
   end;
   TBlockSize100k = 1..9;
-{ CompressBuf compresses data, buffer to buffer, in one call.
-   In: InBuf = ptr to compressed data
-       InBytes = number of bytes in InBuf
-  Out: OutBuf = ptr to newly allocated buffer containing decompressed data
-       OutBytes = number of bytes in OutBuf   }
+  { CompressBuf compresses data, buffer to buffer, in one call.
+     In: InBuf = ptr to compressed data
+         InBytes = number of bytes in InBuf
+    Out: OutBuf = ptr to newly allocated buffer containing decompressed data
+         OutBytes = number of bytes in OutBuf   }
 function BZCompressBuf(const InBuf: Pointer; InBytes: Integer;
   out OutBuf: Pointer; out OutBytes: Integer): Integer;
 
@@ -190,38 +189,65 @@ function BZCompressBuf(const InBuf: Pointer; InBytes: Integer;
 function BZDecompressBuf(const InBuf: Pointer; InBytes: Integer;
   OutEstimate: Integer; out OutBuf: Pointer; out OutBytes: Integer): Integer;
 
-function BZCompressStream(inStream,outStream: PStream; BlockSize100k: TBlockSize100k = 5): Integer;
-function BZDecompressStream(inStream,outStream: PStream): Integer;
+function BZCompressStream(inStream, outStream: PStream; BlockSize100k: TBlockSize100k = 5): Integer;
+function BZDecompressStream(inStream, outStream: PStream): Integer;
 
-implementation
+
+{** deflate routines ********************************************************}
+
+function deflateInit_(var strm: TZStreamRec; level: Integer; version: PChar;
+  recsize: Integer): Integer; external;
+
+function DeflateInit2_(var strm: TZStreamRec; level: integer; method: integer; windowBits: integer;
+  memLevel: integer; strategy: integer; version: PChar; recsize: integer): integer; external;
+
+function deflate(var strm: TZStreamRec; flush: Integer): Integer;
+  external;
+
+function deflateEnd(var strm: TZStreamRec): Integer; external;
+
+{** inflate routines ********************************************************}
+
+function inflateInit_(var strm: TZStreamRec; version: PChar;
+  recsize: Integer): Integer; external;
+
+function inflateInit2_(var strm: TZStreamRec; windowBits: integer;
+  version: PChar; recsize: integer): integer; external;
+
+function inflate(var strm: TZStreamRec; flush: Integer): Integer;
+  external;
+
+function inflateEnd(var strm: TZStreamRec): Integer; external;
+
+function inflateReset(var strm: TZStreamRec): Integer; external;
 
 const
- gzBufferSize = 16384;
- gz_magic : array [0..1] of Byte = ($1f, $8b);
-{ gzip flag byte }
+  gzBufferSize      = 16384;
+  gz_magic          : array[0..1] of Byte = ($1F, $8B);
+  { gzip flag byte }
 
-GZF_ASCII_FLAG  = $01; { bit 0 set: file probably ascii text }
-GZF_HEAD_CRC    = $02; { bit 1 set: header CRC present }
-GZF_EXTRA_FIELD = $04; { bit 2 set: extra field present }
-GZF_ORIG_NAME   = $08; { bit 3 set: original file name present }
-GZF_COMMENT     = $10; { bit 4 set: file comment present }
-GZF_RESERVED    = $E0; { bits 5..7: reserved }
-Z_EOF           = -1;
+  GZF_ASCII_FLAG    = $01; { bit 0 set: file probably ascii text }
+  GZF_HEAD_CRC      = $02; { bit 1 set: header CRC present }
+  GZF_EXTRA_FIELD   = $04; { bit 2 set: extra field present }
+  GZF_ORIG_NAME     = $08; { bit 3 set: original file name present }
+  GZF_COMMENT       = $10; { bit 4 set: file comment present }
+  GZF_RESERVED      = $E0; { bits 5..7: reserved }
+  Z_EOF             = -1;
 
 const
   { ** Maximum value for windowBits in deflateInit2 and inflateInit2 }
-  MAX_WBITS = 15;
+  MAX_WBITS         = 15;
   { ** Maximum value for memLevel in deflateInit2 }
 const
-  MAX_MEM_LEVEL = 9;
-  DEF_MEM_LEVEL = 8;
+  MAX_MEM_LEVEL     = 9;
+  DEF_MEM_LEVEL     = 8;
 
-{** link zlib 1.2.1 *********************************************************}
-{** bcc32 flags: -c -6 -O2 -Ve -X- -pr -a8 -b -d -k- -vi -tWM -r -RT-        }
+  {** link zlib 1.2.1 *********************************************************}
+  {** bcc32 flags: -c -6 -O2 -Ve -X- -pr -a8 -b -d -k- -vi -tWM -r -RT-        }
 
 {$L zlib\adler32.obj}
 {$L zlib\compress.obj}
-{.$L zlib\crc32.obj}
+  {.$L zlib\crc32.obj}
 {$L zlib\deflate.obj}
 {$L zlib\infback.obj}
 {$L zlib\inffast.obj}
@@ -230,99 +256,98 @@ const
 {$L zlib\trees.obj}
 {$L zlib\uncompr.obj}
 
-{*****************************************************************************
-*  note: do not reorder the above -- doing so will result in external        *
-*  functions being undefined                                                 *
-*****************************************************************************}
+  {*****************************************************************************
+  *  note: do not reorder the above -- doing so will result in external        *
+  *  functions being undefined                                                 *
+  *****************************************************************************}
 
 const
   {** flush constants *******************************************************}
 
-  Z_NO_FLUSH = 0;
-  Z_PARTIAL_FLUSH = 1;
-  Z_SYNC_FLUSH = 2;
-  Z_FULL_FLUSH = 3;
-  Z_FINISH = 4;
+  Z_NO_FLUSH        = 0;
+  Z_PARTIAL_FLUSH   = 1;
+  Z_SYNC_FLUSH      = 2;
+  Z_FULL_FLUSH      = 3;
+  Z_FINISH          = 4;
 
   {** return codes **********************************************************}
 
-  Z_OK = 0;
-  Z_STREAM_END = 1;
-  Z_NEED_DICT = 2;
-  Z_ERRNO = (-1);
-  Z_STREAM_ERROR = (-2);
-  Z_DATA_ERROR = (-3);
-  Z_MEM_ERROR = (-4);
-  Z_BUF_ERROR = (-5);
-  Z_VERSION_ERROR = (-6);
-  Z_WRITE_ERROR   = (-10);
-  Z_CRC_ERROR     = (-11);
-  Z_SIZE_ERROR    = (-12);
+  Z_OK              = 0;
+  Z_STREAM_END      = 1;
+  Z_NEED_DICT       = 2;
+  Z_ERRNO           = (-1);
+  Z_STREAM_ERROR    = (-2);
+  Z_DATA_ERROR      = (-3);
+  Z_MEM_ERROR       = (-4);
+  Z_BUF_ERROR       = (-5);
+  Z_VERSION_ERROR   = (-6);
+  Z_WRITE_ERROR     = (-10);
+  Z_CRC_ERROR       = (-11);
+  Z_SIZE_ERROR      = (-12);
 
   {** compression levels ****************************************************}
 
-  Z_NO_COMPRESSION = 0;
-  Z_BEST_SPEED = 1;
+  Z_NO_COMPRESSION  = 0;
+  Z_BEST_SPEED      = 1;
   Z_BEST_COMPRESSION = 9;
   Z_DEFAULT_COMPRESSION = (-1);
 
   {** compression strategies ************************************************}
 
-  Z_FILTERED = 1;
-  Z_HUFFMAN_ONLY = 2;
+  Z_FILTERED        = 1;
+  Z_HUFFMAN_ONLY    = 2;
   Z_DEFAULT_STRATEGY = 0;
 
   {** data types ************************************************************}
 
-  Z_BINARY = 0;
-  Z_ASCII = 1;
-  Z_UNKNOWN = 2;
+  Z_BINARY          = 0;
+  Z_ASCII           = 1;
+  Z_UNKNOWN         = 2;
 
   {** compression methods ***************************************************}
 
-  Z_DEFLATED = 8;
+  Z_DEFLATED        = 8;
 
-  Z_NULL  = NIL;  { for initializing zalloc, zfree, opaque }
+  Z_NULL            = nil; { for initializing zalloc, zfree, opaque }
 
   {** return code messages **************************************************}
 
-  _z_errmsg: array[0..14] of PChar = (
-    'need dictionary', // Z_NEED_DICT      (2)
-    'stream end', // Z_STREAM_END     (1)
-    '', // Z_OK             (0)
-    'file error', // Z_ERRNO          (-1)
-    'stream error', // Z_STREAM_ERROR   (-2)
-    'data error', // Z_DATA_ERROR     (-3)
+  _z_errmsg         : array[0..14] of PChar = (
+    'need dictionary',    // Z_NEED_DICT      (2)
+    'stream end',         // Z_STREAM_END     (1)
+    '',                   // Z_OK             (0)
+    'file error',         // Z_ERRNO          (-1)
+    'stream error',       // Z_STREAM_ERROR   (-2)
+    'data error',         // Z_DATA_ERROR     (-3)
     'insufficient memory', // Z_MEM_ERROR      (-4)
-    'buffer error', // Z_BUF_ERROR      (-5)
+    'buffer error',       // Z_BUF_ERROR      (-5)
     'incompatible version', // Z_VERSION_ERROR  (-6)
-    '','','',
-    'stream write error',   // Z_WRITE_ERROR   = (-10);
-    'crc error',            // Z_CRC_ERROR     = (-11);
-    'size mismarch'         // Z_SIZE_ERROR    = (-12);
+    '', '', '',
+    'stream write error', // Z_WRITE_ERROR   = (-10);
+    'crc error',          // Z_CRC_ERROR     = (-11);
+    'size mismarch'       // Z_SIZE_ERROR    = (-12);
     );
 
-  ZLevels: array[TZCompressionLevel] of Shortint = (
+  ZLevels           : array[TZCompressionLevel] of Shortint = (
     Z_NO_COMPRESSION,
     Z_BEST_SPEED,
     Z_DEFAULT_COMPRESSION,
     Z_BEST_COMPRESSION
     );
-  ZStrategy: array [TZCompressionStrategy] of Shortint = (
+  ZStrategy         : array[TZCompressionStrategy] of Shortint = (
     Z_DEFAULT_STRATEGY,
     Z_FILTERED,
     Z_HUFFMAN_ONLY
-  );
+    );
 
-
-{************** BZip constants **********************************************}
-{$L bz2\blocks~1.obj} //blocksort
+  {************** BZip constants **********************************************}
+{$L bz2\blocks~1.obj}     //blocksort
 {$L bz2\huffman.obj}
 {$L bz2\compress.obj}
-{$L bz2\decomp~1.obj} //decompress
+{$L bz2\decomp~1.obj}     //decompress
 {$L bz2\bzlib.obj}
-{ $L bz2\crctable.obj}
-{ $L bz2\randtable.obj}
+  { $L bz2\crctable.obj}
+  { $L bz2\randtable.obj}
 
 procedure _BZ2_hbMakeCodeLengths; external;
 procedure _BZ2_blockSort; external;
@@ -332,26 +357,26 @@ procedure _BZ2_compressBlock; external;
 procedure _BZ2_decompress; external;
 
 const
-  bzBufferSize = 32768;
+  bzBufferSize      = 32768;
 
-  BZ_RUN = 0;
-  BZ_FLUSH = 1;
-  BZ_FINISH = 2;
-  BZ_OK = 0;
-  BZ_RUN_OK = 1;
-  BZ_FLUSH_OK = 2;
-  BZ_FINISH_OK = 3;
-  BZ_STREAM_END = 4;
+  BZ_RUN            = 0;
+  BZ_FLUSH          = 1;
+  BZ_FINISH         = 2;
+  BZ_OK             = 0;
+  BZ_RUN_OK         = 1;
+  BZ_FLUSH_OK       = 2;
+  BZ_FINISH_OK      = 3;
+  BZ_STREAM_END     = 4;
   BZ_SEQUENCE_ERROR = (-1);
-  BZ_PARAM_ERROR = (-2);
-  BZ_MEM_ERROR = (-3);
-  BZ_DATA_ERROR = (-4);
+  BZ_PARAM_ERROR    = (-2);
+  BZ_MEM_ERROR      = (-3);
+  BZ_DATA_ERROR     = (-4);
   BZ_DATA_ERROR_MAGIC = (-5);
-  BZ_IO_ERROR = (-6);
+  BZ_IO_ERROR       = (-6);
   BZ_UNEXPECTED_EOF = (-7);
-  BZ_OUTBUFF_FULL = (-8);
+  BZ_OUTBUFF_FULL   = (-8);
 
-  BZ_Error_Msg : array[1..8] of PChar = (
+  BZ_Error_Msg      : array[1..8] of PChar = (
     'BZ_SEQUENCE_ERROR',
     'BZ_PARAM_ERROR',
     'BZ_MEM_ERROR',
@@ -360,11 +385,11 @@ const
     'BZ_IO_ERROR',
     'BZ_UNEXPECTED_EOF',
     'BZ_OUTBUFF_FULL'
-);
+    );
 
   BZ_BLOCK_SIZE_100K = 9;
 
-  _BZ2_rNums: array[0..511] of Longint = (
+  _BZ2_rNums        : array[0..511] of Longint = (
     619, 720, 127, 481, 931, 816, 813, 233, 566, 247,
     985, 724, 205, 454, 863, 491, 741, 242, 949, 214,
     733, 859, 335, 708, 621, 574, 73, 654, 730, 472,
@@ -419,7 +444,7 @@ const
     936, 638
     );
 
-  _BZ2_crc32Table: array[0..255] of Longint = (
+  _BZ2_crc32Table   : array[0..255] of Longint = (
     $00000000, $04C11DB7, $09823B6E, $0D4326D9,
     $130476DC, $17C56B6B, $1A864DB2, $1E475005,
     $2608EDB8, $22C9F00F, $2F8AD6D6, $2B4BCB61,
@@ -486,25 +511,6 @@ const
     -$434B9993, -$478A8426, -$4AC9A2FD, -$4E08BF4C
     );
 
-procedure _bz_internal_error(errcode: Integer); cdecl;
-begin
-{$IFDEF USE_EXCEPTIONS}
-  //raise EBZip2Error.CreateFmt('Compression Error %d', [errcode]);
-  raise Exception.CreateFMT( e_Convert, 'Compression Error %d', [errcode] );
-// I don't know, what make in {$ELSE} :(
-{$ENDIF}
-end;
-
-function _malloc(size: Integer): Pointer; cdecl;
-begin
-  GetMem(Result, Size);
-end;
-
-procedure _free(block: Pointer); cdecl;
-begin
-  FreeMem(block);
-end;
-
 // deflate compresses data
 
 function BZ2_bzCompressInit(var strm: TBZStreamRec; blockSize100k: Integer;
@@ -529,6 +535,34 @@ function BZ2_bzDecompressEnd(var strm: TBZStreamRec): Integer; stdcall; external
 function BZ2_bzBuffToBuffDecompress(dest: Pointer; var destLen: Integer; source: Pointer;
   sourceLen, small, verbosity: Integer): Integer; stdcall; external;
 
+{** utility routines  *******************************************************}
+
+function adler32; external;
+function compressBound; external;
+
+//
+function InflateInit(var stream: TZStreamRec): Integer;
+
+implementation
+
+procedure _bz_internal_error(errcode: Integer); cdecl;
+begin
+{$IFDEF USE_EXCEPTIONS}
+  //raise EBZip2Error.CreateFmt('Compression Error %d', [errcode]);
+  raise Exception.CreateFMT(e_Convert, 'Compression Error %d', [errcode]);
+  // I don't know, what make in {$ELSE} :(
+{$ENDIF}
+end;
+
+function _malloc(size: Integer): Pointer; cdecl;
+begin
+  GetMem(Result, Size);
+end;
+
+procedure _free(block: Pointer); cdecl;
+begin
+  FreeMem(block);
+end;
 
 function bzip2AllocMem(AppData: Pointer; Items, Size: Integer): Pointer; cdecl;
 begin
@@ -541,6 +575,7 @@ begin
 end;
 
 {*********************** Peter Morris not aligned move **********************}
+
 procedure MoveI32(const Source; var Dest; Count: Integer); register;
 asm
         cmp   ECX,0
@@ -562,41 +597,10 @@ asm
 end;
 {****************************************************************************}
 
-{** deflate routines ********************************************************}
-
-function deflateInit_(var strm: TZStreamRec; level: Integer; version: PChar;
-  recsize: Integer): Integer; external;
-
-function DeflateInit2_(var strm: TZStreamRec; level: integer; method: integer; windowBits: integer;
-  memLevel: integer; strategy: integer; version: PChar; recsize: integer): integer; external;
-
-function deflate(var strm: TZStreamRec; flush: Integer): Integer;
-  external;
-
-function deflateEnd(var strm: TZStreamRec): Integer; external;
-
-{** inflate routines ********************************************************}
-
-function inflateInit_(var strm: TZStreamRec; version: PChar;
-  recsize: Integer): Integer; external;
-
-function inflateInit2_(var strm: TZStreamRec; windowBits: integer;
-  version: PChar; recsize: integer): integer; external;
-
-function inflate(var strm: TZStreamRec; flush: Integer): Integer;
-  external;
-
-function inflateEnd(var strm: TZStreamRec): Integer; external;
-
-function inflateReset(var strm: TZStreamRec): Integer; external;
-
 {** utility routines  *******************************************************}
 
-function adler32; external;
 //function crc32; external;
-
-function CRC32(CRC: Cardinal; const Data: PChar; cbData: Cardinal ): Cardinal;
-assembler;
+function CRC32(CRC: Cardinal; const Data: PChar; cbData: Cardinal): Cardinal; assembler;
 asm
       or     edx, edx
       je     @@exi
@@ -685,8 +689,6 @@ DD 0b40bbe37h, 0c30c8ea1h, 05a05df1bh, 02d02ef8dh
 
 end;
 
-function compressBound; external;
-
 {** zlib function implementations *******************************************}
 
 function zcalloc(opaque: Pointer; items, size: Integer): Pointer;
@@ -718,11 +720,10 @@ begin
   result := DeflateInit_(stream, level, ZLIB_VERSION, SizeOf(TZStreamRec));
 end;
 
-function DeflateInit2(var stream: TZStreamRec; level, method, windowBits,
-  memLevel, strategy: Integer): Integer;
+function DeflateInit2(var stream: TZStreamRec; level, method, windowBits, memLevel, strategy: Integer): Integer;
 begin
-  result := DeflateInit2_(stream,level,method,windowBits,memLevel,
-    strategy,ZLIB_VERSION,SizeOf(TZStreamRec));
+  result := DeflateInit2_(stream, level, method, windowBits, memLevel,
+    strategy, ZLIB_VERSION, SizeOf(TZStreamRec));
 end;
 
 function InflateInit(var stream: TZStreamRec): Integer;
@@ -737,13 +738,13 @@ end;
 
 {****************************************************************************}
 {$IFDEF USE_EXCEPTIONS}
+
 function ZCompressCheck(code: Integer): Integer;
 begin
   result := code;
 
-  if code < 0 then
-  begin
-    raise Exception.CreateFMT( e_Convert, 'Compression Error %d - %s', [code,_z_errmsg[2 - code]] );
+  if code < 0 then begin
+    raise Exception.CreateFMT(e_Convert, 'Compression Error %d - %s', [code, _z_errmsg[2 - code]]);
   end;
 end;
 
@@ -751,9 +752,8 @@ function ZDecompressCheck(code: Integer): Integer;
 begin
   Result := code;
 
-  if code < 0 then
-  begin
-    raise Exception.CreateFMT( e_Convert, 'Decompression Error %d - %s', [code,_z_errmsg[2 - code]] );
+  if code < 0 then begin
+    raise Exception.CreateFMT(e_Convert, 'Decompression Error %d - %s', [code, _z_errmsg[2 - code]]);
   end;
 end;
 {$ENDIF}
@@ -766,141 +766,137 @@ end;
 {****************************************************************************}
 {****************************************************************************}
 
-function ZCompressBuf(const inBuffer: Pointer; inSize: Integer;
-  out outBuffer: Pointer; out outSize: Integer;
-  level: TZCompressionLevel): Integer;
+function ZCompressBuf(const inBuffer: Pointer; inSize: Integer; out outBuffer: Pointer; out outSize: Integer; level: TZCompressionLevel): Integer;
 const
-  delta = 256;
+  delta             = 256;
 var
-  zstream: TZStreamRec;
+  zstream           : TZStreamRec;
 begin
   FillChar(zstream, SizeOf(TZStreamRec), 0);
-  Result:=Z_OK;
+  Result := Z_OK;
   outSize := ((inSize + (inSize div 10) + 12) + 255) and not 255;
-  outBuffer:=nil;
+  outBuffer := nil;
   GetMem(outBuffer, outSize);
   try
     zstream.next_in := inBuffer;
     zstream.avail_in := inSize;
     zstream.next_out := outBuffer;
     zstream.avail_out := outSize;
-    {$IFDEF USE_EXCEPTIONS}
+{$IFDEF USE_EXCEPTIONS}
     ZCompressCheck(DeflateInit(zstream, ZLevels[level]));
-    {$ELSE}
-    Result:=DeflateInit(zstream, ZLevels[level]);
-    if Result<0 then Exit;
-    {$ENDIF}
+{$ELSE}
+    Result := DeflateInit(zstream, ZLevels[level]);
+    if Result < 0 then Exit;
+{$ENDIF}
     try
-      {$IFDEF USE_EXCEPTIONS}
-      Result:=ZCompressCheck(deflate(zstream, Z_FINISH));
-      {$ELSE}
-      Result:=deflate(zstream, Z_FINISH);
-      if Result<0 then Exit;
-      {$ENDIF}
-      while Result<>Z_STREAM_END do begin
+{$IFDEF USE_EXCEPTIONS}
+      Result := ZCompressCheck(deflate(zstream, Z_FINISH));
+{$ELSE}
+      Result := deflate(zstream, Z_FINISH);
+      if Result < 0 then Exit;
+{$ENDIF}
+      while Result <> Z_STREAM_END do begin
         Inc(outSize, delta);
         ReallocMem(outBuffer, outSize);
 
         zstream.next_out := PChar(Integer(outBuffer) + zstream.total_out);
         zstream.avail_out := delta;
-        {$IFDEF USE_EXCEPTIONS}
-        Result:=ZCompressCheck(deflate(zstream, Z_FINISH));
-        {$ELSE}
-        Result:=deflate(zstream, Z_FINISH);
-        if Result<0 then Exit;
-        {$ENDIF}
-      end;    // while
+{$IFDEF USE_EXCEPTIONS}
+        Result := ZCompressCheck(deflate(zstream, Z_FINISH));
+{$ELSE}
+        Result := deflate(zstream, Z_FINISH);
+        if Result < 0 then Exit;
+{$ENDIF}
+      end;                // while
     finally
-      {$IFDEF USE_EXCEPTIONS}
+{$IFDEF USE_EXCEPTIONS}
       ZCompressCheck(deflateEnd(zstream));
-      {$ELSE}
+{$ELSE}
       deflateEnd(zstream);
-      {$ENDIF}
+{$ENDIF}
     end;
 
     ReallocMem(outBuffer, zstream.total_out);
     outSize := zstream.total_out;
-  {$IFDEF USE_EXCEPTIONS}
+{$IFDEF USE_EXCEPTIONS}
   except
     FreeMem(outBuffer);
     raise;
-  {$ELSE}
+{$ELSE}
   finally
-    if Result<0 then FreeMem(outBuffer);
-  {$ENDIF}
+    if Result < 0 then FreeMem(outBuffer);
+{$ENDIF}
   end;
 end;
 
-function ZCompressBuf2(const inBuffer: Pointer; inSize: Integer;
-  out outBuffer: Pointer; out outSize: Integer): Integer;
+function ZCompressBuf2(const inBuffer: Pointer; inSize: Integer; out outBuffer: Pointer; out outSize: Integer): Integer;
 const
-  delta = 256;
+  delta             = 256;
 var
-  zstream: TZStreamRec;
+  zstream           : TZStreamRec;
 begin
   FillChar(zstream, SizeOf(TZStreamRec), 0);
 
   outSize := ((inSize + (inSize div 10) + 12) + 255) and not 255;
   GetMem(outBuffer, outSize);
-  Result:=Z_OK;
+  Result := Z_OK;
   try
     zstream.next_in := inBuffer;
     zstream.avail_in := inSize;
     zstream.next_out := outBuffer;
     zstream.avail_out := outSize;
-    {$IFDEF USE_EXCEPTIONS}
+{$IFDEF USE_EXCEPTIONS}
     ZCompressCheck(DeflateInit2(zstream, 1, 8, -15, 9, 0));
-    {$ELSE}
-    Result:=DeflateInit2(zstream, 1, 8, -15, 9, 0);
-    if Result<0 then Exit;
-    {$ENDIF}
+{$ELSE}
+    Result := DeflateInit2(zstream, 1, 8, -15, 9, 0);
+    if Result < 0 then Exit;
+{$ENDIF}
 
     try
-      {$IFDEF USE_EXCEPTIONS}
-      Result:=ZCompressCheck(deflate(zstream, Z_FINISH));
-      {$ELSE}
-      Result:=deflate(zstream, Z_FINISH);
-      if Result<0 then Exit;
-      {$ENDIF}
-      while Result<>Z_STREAM_END do begin
+{$IFDEF USE_EXCEPTIONS}
+      Result := ZCompressCheck(deflate(zstream, Z_FINISH));
+{$ELSE}
+      Result := deflate(zstream, Z_FINISH);
+      if Result < 0 then Exit;
+{$ENDIF}
+      while Result <> Z_STREAM_END do begin
         Inc(outSize, delta);
         ReallocMem(outBuffer, outSize);
 
         zstream.next_out := PChar(Integer(outBuffer) + zstream.total_out);
         zstream.avail_out := delta;
-        {$IFDEF USE_EXCEPTIONS}
-        Result:=ZCompressCheck(deflate(zstream, Z_FINISH));
-        {$ELSE}
-        Result:=deflate(zstream, Z_FINISH);
-        if Result<0 then Exit;
-        {$ENDIF}
-      end;    // while
+{$IFDEF USE_EXCEPTIONS}
+        Result := ZCompressCheck(deflate(zstream, Z_FINISH));
+{$ELSE}
+        Result := deflate(zstream, Z_FINISH);
+        if Result < 0 then Exit;
+{$ENDIF}
+      end;                // while
     finally
-      {$IFDEF USE_EXCEPTIONS}
+{$IFDEF USE_EXCEPTIONS}
       ZCompressCheck(deflateEnd(zstream));
-      {$ELSE}
+{$ELSE}
       deflateEnd(zstream);
-      {$ENDIF}
+{$ENDIF}
     end;
 
     ReallocMem(outBuffer, zstream.total_out);
     outSize := zstream.total_out;
-  {$IFDEF USE_EXCEPTIONS}
+{$IFDEF USE_EXCEPTIONS}
   except
     FreeMem(outBuffer);
     raise;
-  {$ELSE}
+{$ELSE}
   finally
-    if Result<0 then FreeMem(outBuffer);
-  {$ENDIF}
+    if Result < 0 then FreeMem(outBuffer);
+{$ENDIF}
   end;
 end;
 
-function ZDecompressBuf(const inBuffer: Pointer; inSize: Integer;
-  out outBuffer: Pointer; out outSize: Integer; outEstimate: Integer): Integer;
+function ZDecompressBuf(const inBuffer: Pointer; inSize: Integer; out outBuffer: Pointer; out outSize: Integer; outEstimate: Integer): Integer;
 var
-  zstream: TZStreamRec;
-  delta: Integer;
+  zstream           : TZStreamRec;
+  delta             : Integer;
 begin
   FillChar(zstream, SizeOf(TZStreamRec), 0);
 
@@ -908,7 +904,7 @@ begin
 
   if outEstimate = 0 then outSize := delta
   else outSize := outEstimate;
-  Result:=Z_OK;
+  Result := Z_OK;
   GetMem(outBuffer, outSize);
   try
     zstream.next_in := inBuffer;
@@ -916,52 +912,52 @@ begin
     zstream.next_out := outBuffer;
     zstream.avail_out := outSize;
 
-    {$IFDEF USE_EXCEPTIONS}
+{$IFDEF USE_EXCEPTIONS}
     ZDecompressCheck(InflateInit(zstream));
-    {$ELSE}
-    Result:=InflateInit(zstream);
-    if Result<0 then Exit;
-    {$ENDIF}
+{$ELSE}
+    Result := InflateInit(zstream);
+    if Result < 0 then Exit;
+{$ENDIF}
 
     try
-      {$IFDEF USE_EXCEPTIONS}
-      Result:=ZDecompressCheck(inflate(zstream, Z_NO_FLUSH));
-      {$ELSE}
-      Result:=inflate(zstream, Z_NO_FLUSH);
-      if Result<0 then Exit;
-      {$ENDIF}
+{$IFDEF USE_EXCEPTIONS}
+      Result := ZDecompressCheck(inflate(zstream, Z_NO_FLUSH));
+{$ELSE}
+      Result := inflate(zstream, Z_NO_FLUSH);
+      if Result < 0 then Exit;
+{$ENDIF}
       while (Result <> Z_STREAM_END) do begin
         Inc(outSize, delta);
         ReallocMem(outBuffer, outSize);
 
         zstream.next_out := PChar(Integer(outBuffer) + zstream.total_out);
         zstream.avail_out := delta;
-        {$IFDEF USE_EXCEPTIONS}
-        Result:=ZDecompressCheck(inflate(zstream, Z_NO_FLUSH));
-        {$ELSE}
-        Result:=inflate(zstream, Z_NO_FLUSH);
-        if Result<0 then Exit;
-        {$ENDIF}
+{$IFDEF USE_EXCEPTIONS}
+        Result := ZDecompressCheck(inflate(zstream, Z_NO_FLUSH));
+{$ELSE}
+        Result := inflate(zstream, Z_NO_FLUSH);
+        if Result < 0 then Exit;
+{$ENDIF}
       end;
     finally
-      {$IFDEF USE_EXCEPTIONS}
+{$IFDEF USE_EXCEPTIONS}
       ZDecompressCheck(inflateEnd(zstream));
-      {$ELSE}
+{$ELSE}
       inflateEnd(zstream);
-      {$ENDIF}
+{$ENDIF}
     end;
 
     ReallocMem(outBuffer, zstream.total_out);
     outSize := zstream.total_out;
 
-  {$IFDEF USE_EXCEPTIONS}
+{$IFDEF USE_EXCEPTIONS}
   except
     FreeMem(outBuffer);
     raise;
-  {$ELSE}
+{$ELSE}
   finally
-    if Result<0 then FreeMem(outBuffer);
-  {$ENDIF}
+    if Result < 0 then FreeMem(outBuffer);
+{$ENDIF}
   end;
 end;
 
@@ -969,8 +965,8 @@ end;
 
 function ZCompressStr(const s: string; level: TZCompressionLevel): string;
 var
-  buffer: Pointer;
-  size: Integer;
+  buffer            : Pointer;
+  size              : Integer;
 begin
   ZCompressBuf(PChar(s), Length(s), buffer, size, level);
   SetLength(result, size);
@@ -980,8 +976,8 @@ end;
 
 procedure ZFastCompressString(var s: string; level: TZCompressionLevel);
 var
-  outBuf: Pointer;
-  outBytes: Integer;
+  outBuf            : Pointer;
+  outBytes          : Integer;
 begin
   ZCompressBuf(pointer(s), length(s), outBuf, outBytes, level);
   SetLength(s, outBytes);
@@ -991,8 +987,8 @@ end;
 
 procedure ZFastDecompressString(var s: string);
 var
-  outBuf: Pointer;
-  outBytes: Integer;
+  outBuf            : Pointer;
+  outBytes          : Integer;
 begin
   ZDecompressBuf(pointer(s), Length(s), outBuf, outBytes);
   SetLength(s, outBytes);
@@ -1002,8 +998,8 @@ end;
 
 procedure ZSendToBrowser(var s: string);
 var
-  outBuf: Pointer;
-  outBytes: Integer;
+  outBuf            : Pointer;
+  outBytes          : Integer;
 begin
   ZCompressBuf2(pointer(s), length(s), outBuf, outBytes);
   SetLength(s, outBytes);
@@ -1013,8 +1009,8 @@ end;
 
 function ZDecompressStr(const s: string): string;
 var
-  buffer: Pointer;
-  size: Integer;
+  buffer            : Pointer;
+  size              : Integer;
 begin
   ZDecompressBuf(PChar(s), Length(s), buffer, size);
   SetLength(result, size);
@@ -1024,151 +1020,149 @@ end;
 
 {** stream routines *********************************************************}
 
-function ZCompressStream(inStream, outStream: PStream;
-  level: TZCompressionLevel): Integer;
+function ZCompressStream(inStream, outStream: PStream; level: TZCompressionLevel): Integer;
 const
-  bufferSize = 32768;
+  bufferSize        = 32768;
 var
-  zstream: TZStreamRec;
-  inBuffer: array[0..bufferSize - 1] of Char;
-  outBuffer: array[0..bufferSize - 1] of Char;
-  inSize: Integer;
-  outSize: Integer;
+  zstream           : TZStreamRec;
+  inBuffer          : array[0..bufferSize - 1] of Char;
+  outBuffer         : array[0..bufferSize - 1] of Char;
+  inSize            : Integer;
+  outSize           : Integer;
 begin
   FillChar(zstream, SizeOf(TZStreamRec), 0);
-  Result:=Z_OK;
-  {$IFDEF USE_EXCEPTIONS}
+{$IFDEF USE_EXCEPTIONS}
+  Result := Z_OK;
   ZCompressCheck(DeflateInit(zstream, ZLevels[level]));
-  {$ELSE}
-  Result:=DeflateInit(zstream, ZLevels[level]);
-  if Result<0 then Exit;
-  {$ENDIF}
+{$ELSE}
+  Result := DeflateInit(zstream, ZLevels[level]);
+  if Result < 0 then Exit;
+{$ENDIF}
   try
-   inSize := inStream.Read(inBuffer, bufferSize);
+    inSize := inStream.Read(inBuffer, bufferSize);
 
-   while inSize > 0 do begin
-     zstream.next_in := inBuffer;
-     zstream.avail_in := inSize;
+    while inSize > 0 do begin
+      zstream.next_in := inBuffer;
+      zstream.avail_in := inSize;
 
-     repeat
-       zstream.next_out := outBuffer;
-       zstream.avail_out := bufferSize;
+      repeat
+        zstream.next_out := outBuffer;
+        zstream.avail_out := bufferSize;
 
-       {$IFDEF USE_EXCEPTIONS}
-       ZCompressCheck(deflate(zstream, Z_NO_FLUSH));
-       {$ELSE}
-       Result:=deflate(zstream, Z_NO_FLUSH);
-       if Result<0 then Exit;
-       {$ENDIF}
+{$IFDEF USE_EXCEPTIONS}
+        ZCompressCheck(deflate(zstream, Z_NO_FLUSH));
+{$ELSE}
+        Result := deflate(zstream, Z_NO_FLUSH);
+        if Result < 0 then Exit;
+{$ENDIF}
 
-       // outSize := zstream.next_out - outBuffer;
-       outSize := bufferSize - zstream.avail_out;
+        // outSize := zstream.next_out - outBuffer;
+        outSize := bufferSize - zstream.avail_out;
 
-       outStream.Write(outBuffer, outSize);
-     until (zstream.avail_in = 0) and (zstream.avail_out > 0);
+        outStream.Write(outBuffer, outSize);
+      until (zstream.avail_in = 0) and (zstream.avail_out > 0);
 
-     inSize := inStream.Read(inBuffer, bufferSize);
-   end;
+      inSize := inStream.Read(inBuffer, bufferSize);
+    end;
 
-   repeat
-     zstream.next_out := outBuffer;
-     zstream.avail_out := bufferSize;
+    repeat
+      zstream.next_out := outBuffer;
+      zstream.avail_out := bufferSize;
 
-     {$IFDEF USE_EXCEPTIONS}
-     Result := ZCompressCheck(deflate(zstream, Z_FINISH));
-     {$ELSE}
-     Result := deflate(zstream, Z_FINISH);
-     if Result<0 then Break;
-     {$ENDIF}
+{$IFDEF USE_EXCEPTIONS}
+      Result := ZCompressCheck(deflate(zstream, Z_FINISH));
+{$ELSE}
+      Result := deflate(zstream, Z_FINISH);
+      if Result < 0 then Break;
+{$ENDIF}
 
-     // outSize := zstream.next_out - outBuffer;
-     outSize := bufferSize - zstream.avail_out;
+      // outSize := zstream.next_out - outBuffer;
+      outSize := bufferSize - zstream.avail_out;
 
-     outStream.Write(outBuffer, outSize);
-   until (Result = Z_STREAM_END) and (zstream.avail_out > 0);
+      outStream.Write(outBuffer, outSize);
+    until (Result = Z_STREAM_END) and (zstream.avail_out > 0);
   finally
-   {$IFDEF USE_EXCEPTIONS}
-   ZCompressCheck(deflateEnd(zstream));
-   {$ELSE}
-   deflateEnd(zstream);
-   {$ENDIF}
+{$IFDEF USE_EXCEPTIONS}
+    ZCompressCheck(deflateEnd(zstream));
+{$ELSE}
+    deflateEnd(zstream);
+{$ENDIF}
   end;
 end;
 
 function ZDecompressStream(inStream, outStream: PStream): Integer;
 const
-  bufferSize = 32768;
+  bufferSize        = 32768;
 var
-  zstream: TZStreamRec;
-  inBuffer: array[0..bufferSize - 1] of Char;
-  outBuffer: array[0..bufferSize - 1] of Char;
-  inSize: Integer;
-  outSize: Integer;
+  zstream           : TZStreamRec;
+  inBuffer          : array[0..bufferSize - 1] of Char;
+  outBuffer         : array[0..bufferSize - 1] of Char;
+  inSize            : Integer;
+  outSize           : Integer;
 begin
   FillChar(zstream, SizeOf(TZStreamRec), 0);
 
-  {$IFDEF USE_EXCEPTIONS}
-  Result:=ZCompressCheck(InflateInit(zstream));
-  {$ELSE}
-  Result:=InflateInit(zstream);
-  if Result<0 then Exit;
-  {$ENDIF}
+{$IFDEF USE_EXCEPTIONS}
+  Result := ZCompressCheck(InflateInit(zstream));
+{$ELSE}
+  Result := InflateInit(zstream);
+  if Result < 0 then Exit;
+{$ENDIF}
   try
-   inSize := inStream.Read(inBuffer, bufferSize);
+    inSize := inStream.Read(inBuffer, bufferSize);
 
-   while inSize > 0 do
-   begin
-     zstream.next_in := inBuffer;
-     zstream.avail_in := inSize;
+    while inSize > 0 do begin
+      zstream.next_in := inBuffer;
+      zstream.avail_in := inSize;
 
-     repeat
-       zstream.next_out := outBuffer;
-       zstream.avail_out := bufferSize;
+      repeat
+        zstream.next_out := outBuffer;
+        zstream.avail_out := bufferSize;
 
-       {$IFDEF USE_EXCEPTIONS}
-       ZCompressCheck(inflate(zstream, Z_NO_FLUSH));
-       {$ELSE}
-       Result:=inflate(zstream, Z_NO_FLUSH);
-       if Result<0 then Exit;
-       {$ENDIF}
+{$IFDEF USE_EXCEPTIONS}
+        ZCompressCheck(inflate(zstream, Z_NO_FLUSH));
+{$ELSE}
+        Result := inflate(zstream, Z_NO_FLUSH);
+        if Result < 0 then Exit;
+{$ENDIF}
 
-       // outSize := zstream.next_out - outBuffer;
-       outSize := bufferSize - zstream.avail_out;
+        // outSize := zstream.next_out - outBuffer;
+        outSize := bufferSize - zstream.avail_out;
 
-       outStream.Write(outBuffer, outSize);
-     until (zstream.avail_in = 0) and (zstream.avail_out > 0);
+        outStream.Write(outBuffer, outSize);
+      until (zstream.avail_in = 0) and (zstream.avail_out > 0);
 
-     inSize := inStream.Read(inBuffer, bufferSize);
-   end;
+      inSize := inStream.Read(inBuffer, bufferSize);
+    end;
 
-   repeat
-     zstream.next_out := outBuffer;
-     zstream.avail_out := bufferSize;
+    repeat
+      zstream.next_out := outBuffer;
+      zstream.avail_out := bufferSize;
 
-     {$IFDEF USE_EXCEPTIONS}
-     Result := ZCompressCheck(inflate(zstream, Z_FINISH));
-     {$ELSE}
-     Result := inflate(zstream, Z_FINISH);
-     if Result<0 then Break;
-     {$ENDIF}
+{$IFDEF USE_EXCEPTIONS}
+      Result := ZCompressCheck(inflate(zstream, Z_FINISH));
+{$ELSE}
+      Result := inflate(zstream, Z_FINISH);
+      if Result < 0 then Break;
+{$ENDIF}
 
-     // outSize := zstream.next_out - outBuffer;
-     outSize := bufferSize - zstream.avail_out;
+      // outSize := zstream.next_out - outBuffer;
+      outSize := bufferSize - zstream.avail_out;
 
-     outStream.Write(outBuffer, outSize);
-   until (Result = Z_STREAM_END) and (zstream.avail_out > 0);
+      outStream.Write(outBuffer, outSize);
+    until (Result = Z_STREAM_END) and (zstream.avail_out > 0);
   finally
-   {$IFDEF USE_EXCEPTIONS}
-   ZCompressCheck(inflateEnd(zstream));
-   {$ELSE}
-   inflateEnd(zstream);
-   {$ENDIF}
+{$IFDEF USE_EXCEPTIONS}
+    ZCompressCheck(inflateEnd(zstream));
+{$ELSE}
+    inflateEnd(zstream);
+{$ENDIF}
   end;
 end;
 
 {** gzip Stream routines ******************************************************}
 const
-  UnixDateDelta = 25569;
+  UnixDateDelta     = 25569;
 
 function DateTimeToUnix(ConvDate: TDateTime): Longint;
 begin
@@ -1182,521 +1176,575 @@ begin
   Result := (Usec / 86400) + UnixDateDelta;
 end;
 
-function gZipCompressStream(inStream, outStream: PStream; var gzHdr: TgzipHeader;
-  level: TZCompressionLevel = zcDefault; strategy: TZCompressionStrategy = zcsDefault): Integer;
+function gZipCompressStream(inStream, outStream: PStream; var gzHdr: TgzipHeader; level: TZCompressionLevel = zcDefault; strategy: TZCompressionStrategy = zcsDefault): Integer;
 var
   rSize,
-  wSize,
-  zResult  : LongInt;
-  done     : Boolean;
+    wSize,
+    zResult         : LongInt;
+  done              : Boolean;
   iBuffer,
-  oBuffer  : PChar; //Array [0..gzBufferSize-1] of Char;
-  fCrc     : Cardinal;
-  zStream  : TZStreamRec;
-  stamp    : Integer;
+    oBuffer         : PChar; //Array [0..gzBufferSize-1] of Char;
+  fCrc              : Cardinal;
+  zStream           : TZStreamRec;
+  stamp             : Integer;
 
 begin
- iBuffer:=nil; oBuffer:=nil;
- Result:=Z_MEM_ERROR;
- try
-  GetMem(iBuffer,gzBufferSize);
-  GetMem(oBuffer,gzBufferSize);
+  iBuffer := nil;
+  oBuffer := nil;
+  Result := Z_MEM_ERROR;
+  try
+    GetMem(iBuffer, gzBufferSize);
+    GetMem(oBuffer, gzBufferSize);
 
-  fCrc:=0;
-  FillChar(zStream,SizeOf(zStream),0);
+    fCrc := 0;
+    FillChar(zStream, SizeOf(zStream), 0);
 
-  {$IFDEF USE_EXCEPTIONS}
-  ZCompressCheck(DeflateInit2(zStream,ZLevels[level],Z_DEFLATED, -MAX_WBITS,
-             DEF_MEM_LEVEL, ZStrategy[strategy]));
-  {$ELSE}
-  Result:=DeflateInit2(zStream,ZLevels[level],Z_DEFLATED, -MAX_WBITS,
-             DEF_MEM_LEVEL, ZStrategy[strategy]);
-  if Result<0 then Exit;
-  {$ENDIF}
-  { windowBits is passed < 0 to suppress zlib header }
-  oBuffer[0]:=Char(gz_magic[0]); oBuffer[1]:=Char(gz_magic[1]); // gz Magic
-  oBuffer[2]:=#08;  // gz Compression method
-  oBuffer[3]:=#0;
-  // set mtime
-  {
-  Inc(gzHdr.TimeStamp,gzTimeStampCorrection);
-  oBuffer[4]:=Lo(gzHdr.TimeStamp and $FFFF); oBuffer[5]:=Hi(gzHdr.TimeStamp and $FFFF);
-  oBuffer[6]:=Lo(gzHdr.TimeStamp shr 16); oBuffer[7]:=Hi(gzHdr.TimeStamp shr 16);
-  Dec(gzHdr.TimeStamp,gzTimeStampCorrection);
-  }
-  stamp:=DateTimeToUnix(gzHdr.FileTime);
-  oBuffer[4]:=Char(Lo(stamp and $FFFF)); oBuffer[5]:=Char(Hi(stamp and $FFFF));
-  oBuffer[6]:=Char(Lo(stamp shr 16)); oBuffer[7]:=Char(Hi(stamp shr 16));
+{$IFDEF USE_EXCEPTIONS}
+    ZCompressCheck(DeflateInit2(zStream, ZLevels[level], Z_DEFLATED, -MAX_WBITS,
+      DEF_MEM_LEVEL, ZStrategy[strategy]));
+{$ELSE}
+    Result := DeflateInit2(zStream, ZLevels[level], Z_DEFLATED, -MAX_WBITS,
+      DEF_MEM_LEVEL, ZStrategy[strategy]);
+    if Result < 0 then Exit;
+{$ENDIF}
+    { windowBits is passed < 0 to suppress zlib header }
+    oBuffer[0] := Char(gz_magic[0]);
+    oBuffer[1] := Char(gz_magic[1]); // gz Magic
+    oBuffer[2] := #08;    // gz Compression method
+    oBuffer[3] := #0;
+    // set mtime
+    {
+    Inc(gzHdr.TimeStamp,gzTimeStampCorrection);
+    oBuffer[4]:=Lo(gzHdr.TimeStamp and $FFFF); oBuffer[5]:=Hi(gzHdr.TimeStamp and $FFFF);
+    oBuffer[6]:=Lo(gzHdr.TimeStamp shr 16); oBuffer[7]:=Hi(gzHdr.TimeStamp shr 16);
+    Dec(gzHdr.TimeStamp,gzTimeStampCorrection);
+    }
+    stamp := DateTimeToUnix(gzHdr.FileTime);
+    oBuffer[4] := Char(Lo(stamp and $FFFF));
+    oBuffer[5] := Char(Hi(stamp and $FFFF));
+    oBuffer[6] := Char(Lo(stamp shr 16));
+    oBuffer[7] := Char(Hi(stamp shr 16));
 
-  // xfl, os code sets to 0
-  oBuffer[8]:=#0; oBuffer[9]:=#0;
+    // xfl, os code sets to 0
+    oBuffer[8] := #0;
+    oBuffer[9] := #0;
 
-  if gzHdr.FileName<>'' then begin
-    oBuffer[3]:= Char(Byte(oBuffer[3]) or GZF_ORIG_NAME);
-  end;
-  if gzHdr.Comment<>'' then begin
-    oBuffer[3]:= Char(Byte(oBuffer[3]) or GZF_COMMENT);
-  end;
-  if gzHdr.Extra<>'' then begin
-    oBuffer[3]:= Char(Byte(oBuffer[3]) or GZF_EXTRA_FIELD);
-  end;
-  wSize:=outStream.Write(oBuffer^,10);
-  {$IFDEF USE_EXCEPTIONS}
-  if wSize<>10 then ZCompressCheck(Z_WRITE_ERROR);
-  {$ELSE}
-  if wSize<>10 then begin Result:=Z_WRITE_ERROR; Exit; end;
-  {$ENDIF}
+    if gzHdr.FileName <> '' then begin
+      oBuffer[3] := Char(Byte(oBuffer[3]) or GZF_ORIG_NAME);
+    end;
+    if gzHdr.Comment <> '' then begin
+      oBuffer[3] := Char(Byte(oBuffer[3]) or GZF_COMMENT);
+    end;
+    if gzHdr.Extra <> '' then begin
+      oBuffer[3] := Char(Byte(oBuffer[3]) or GZF_EXTRA_FIELD);
+    end;
+    wSize := outStream.Write(oBuffer^, 10);
+{$IFDEF USE_EXCEPTIONS}
+    if wSize <> 10 then ZCompressCheck(Z_WRITE_ERROR);
+{$ELSE}
+    if wSize <> 10 then begin
+      Result := Z_WRITE_ERROR;
+      Exit;
+    end;
+{$ENDIF}
 
-  // extra
-  if (byte(oBuffer[3]) and GZF_EXTRA_FIELD)<>0 then begin
-    rSize:=Length(gzHdr.Extra);
-    Move(gzHdr.Extra[1],iBuffer^,rSize);
-    iBuffer[rSize]:=#0; Inc(rSize);
-    wSize:=outStream.Write(iBuffer^,rSize);
-    {$IFDEF USE_EXCEPTIONS}
-    if wSize<>rSize then ZCompressCheck(Z_WRITE_ERROR);
-    {$ELSE}
-    if wSize<>rSize then begin Result:=Z_WRITE_ERROR; Exit; end;
-    {$ENDIF}
-  end;
-  // filename
-  if (byte(oBuffer[3]) and GZF_ORIG_NAME)<>0 then begin
-    rSize:=Length(gzHdr.FileName);
-    Move(gzHdr.FileName[1],iBuffer^,rSize);
-    iBuffer[rSize]:=#0; Inc(rSize);
-    wSize:=outStream.Write(iBuffer^,rSize);
-    {$IFDEF USE_EXCEPTIONS}
-    if wSize<>rSize then ZCompressCheck(Z_WRITE_ERROR);
-    {$ELSE}
-    if wSize<>rSize then begin Result:=Z_WRITE_ERROR; Exit; end;
-    {$ENDIF}
-  end;
-  // comment
-  if (byte(oBuffer[3]) and GZF_COMMENT)<>0 then begin
-    rSize:=Length(gzHdr.Comment);
-    Move(gzHdr.Comment[1],iBuffer^,rSize);
-    iBuffer[rSize]:=#0; Inc(rSize);
-    wSize:=outStream.Write(iBuffer^,rSize);
-    {$IFDEF USE_EXCEPTIONS}
-    if wSize<>rSize then ZCompressCheck(Z_WRITE_ERROR);
-    {$ELSE}
-    if wSize<>rSize then begin Result:=Z_WRITE_ERROR; Exit; end;
-    {$ENDIF}
-  end;
-  // hcrc
-
-  rSize:=inStream.Read(iBuffer^,gzBufferSize);
-  zStream.next_out:=PChar(oBuffer);
-  zStream.avail_out:=gzBufferSize;
-  repeat
-    //DoProgressEvent;
-    zStream.next_in := PChar(iBuffer);
-    zStream.avail_in := rSize;
-    while (zStream.avail_in <> 0) do begin
-      if (zStream.avail_out = 0) then begin
-        zStream.next_out := PChar(oBuffer);
-        wSize:=outStream.Write(oBuffer^,gzBufferSize);
-        if (wSize <> gzBufferSize) then begin
-          {$IFDEF USE_EXCEPTIONS}
-          ZCompressCheck(Z_WRITE_ERROR);
-          {$ELSE}
-          Result:=Z_WRITE_ERROR;
-          Exit;
-          {$ENDIF}
-        end;
-        zStream.avail_out:=gzBufferSize;
+    // extra
+    if (byte(oBuffer[3]) and GZF_EXTRA_FIELD) <> 0 then begin
+      rSize := Length(gzHdr.Extra);
+      Move(gzHdr.Extra[1], iBuffer^, rSize);
+      iBuffer[rSize] := #0;
+      Inc(rSize);
+      wSize := outStream.Write(iBuffer^, rSize);
+{$IFDEF USE_EXCEPTIONS}
+      if wSize <> rSize then ZCompressCheck(Z_WRITE_ERROR);
+{$ELSE}
+      if wSize <> rSize then begin
+        Result := Z_WRITE_ERROR;
+        Exit;
       end;
-      {$IFDEF USE_EXCEPTIONS}
-      ZCompressCheck(deflate(zStream,Z_NO_FLUSH));
-      {$ELSE}
-      Result:=deflate(zStream,Z_NO_FLUSH);
-      if Result<0 then Exit;
-      {$ENDIF}
-    end; // while
-    fCrc:=Crc32(fCrc,PChar(iBuffer),rSize);
-    rSize:=inStream.Read(iBuffer^,gzBufferSize);
-  until rSize=0;
-  { flush buffers }
-  zStream.avail_in := 0; { should be zero already anyway }
-  done:=False;
+{$ENDIF}
+    end;
+    // filename
+    if (byte(oBuffer[3]) and GZF_ORIG_NAME) <> 0 then begin
+      rSize := Length(gzHdr.FileName);
+      Move(gzHdr.FileName[1], iBuffer^, rSize);
+      iBuffer[rSize] := #0;
+      Inc(rSize);
+      wSize := outStream.Write(iBuffer^, rSize);
+{$IFDEF USE_EXCEPTIONS}
+      if wSize <> rSize then ZCompressCheck(Z_WRITE_ERROR);
+{$ELSE}
+      if wSize <> rSize then begin
+        Result := Z_WRITE_ERROR;
+        Exit;
+      end;
+{$ENDIF}
+    end;
+    // comment
+    if (byte(oBuffer[3]) and GZF_COMMENT) <> 0 then begin
+      rSize := Length(gzHdr.Comment);
+      Move(gzHdr.Comment[1], iBuffer^, rSize);
+      iBuffer[rSize] := #0;
+      Inc(rSize);
+      wSize := outStream.Write(iBuffer^, rSize);
+{$IFDEF USE_EXCEPTIONS}
+      if wSize <> rSize then ZCompressCheck(Z_WRITE_ERROR);
+{$ELSE}
+      if wSize <> rSize then begin
+        Result := Z_WRITE_ERROR;
+        Exit;
+      end;
+{$ENDIF}
+    end;
+    // hcrc
 
-  repeat
-    rSize:=gzBufferSize-zStream.avail_out;
-    if (rSize <> 0) then begin
-      wSize:=outStream.Write(oBuffer^,rSize);
-      {$IFDEF USE_EXCEPTIONS}
-      if (wSize<>rSize) then ZCompressCheck(Z_WRITE_ERROR);
-      {$ELSE}
-      if (wSize<>rSize) then begin Result:=Z_WRITE_ERROR; Exit; end;
-      {$ENDIF}
-      zStream.next_out:=PChar(oBuffer);
-      zStream.avail_out:=gzBufferSize;
+    rSize := inStream.Read(iBuffer^, gzBufferSize);
+    zStream.next_out := PChar(oBuffer);
+    zStream.avail_out := gzBufferSize;
+    repeat
+      //DoProgressEvent;
+      zStream.next_in := PChar(iBuffer);
+      zStream.avail_in := rSize;
+      while (zStream.avail_in <> 0) do begin
+        if (zStream.avail_out = 0) then begin
+          zStream.next_out := PChar(oBuffer);
+          wSize := outStream.Write(oBuffer^, gzBufferSize);
+          if (wSize <> gzBufferSize) then begin
+{$IFDEF USE_EXCEPTIONS}
+            ZCompressCheck(Z_WRITE_ERROR);
+{$ELSE}
+            Result := Z_WRITE_ERROR;
+            Exit;
+{$ENDIF}
+          end;
+          zStream.avail_out := gzBufferSize;
+        end;
+{$IFDEF USE_EXCEPTIONS}
+        ZCompressCheck(deflate(zStream, Z_NO_FLUSH));
+{$ELSE}
+        Result := deflate(zStream, Z_NO_FLUSH);
+        if Result < 0 then Exit;
+{$ENDIF}
+      end;                // while
+      fCrc := Crc32(fCrc, PChar(iBuffer), rSize);
+      rSize := inStream.Read(iBuffer^, gzBufferSize);
+    until rSize = 0;
+    { flush buffers }
+    zStream.avail_in := 0; { should be zero already anyway }
+    done := False;
+
+    repeat
+      rSize := gzBufferSize - zStream.avail_out;
+      if (rSize <> 0) then begin
+        wSize := outStream.Write(oBuffer^, rSize);
+{$IFDEF USE_EXCEPTIONS}
+        if (wSize <> rSize) then ZCompressCheck(Z_WRITE_ERROR);
+{$ELSE}
+        if (wSize <> rSize) then begin
+          Result := Z_WRITE_ERROR;
+          Exit;
+        end;
+{$ENDIF}
+        zStream.next_out := PChar(oBuffer);
+        zStream.avail_out := gzBufferSize;
+      end;
+      if done then Break;
+      zResult := deflate(zStream, Z_FINISH);
+      if (rSize = 0) and (zResult = Z_BUF_ERROR) then
+{$IFDEF USE_EXCEPTIONS}
+      else ZCompressCheck(zResult);
+{$ELSE}
+      else begin
+        Result := zResult;
+        if Result < 0 then Exit;
+      end;
+{$ENDIF}
+      { deflate has finished flushing only when it hasn't used up
+        all the available space in the output buffer: }
+      done := (zStream.avail_out <> 0) or (zResult = Z_STREAM_END);
+    until False;
+    wSize := outStream.Write(fCrc, 4);
+{$IFDEF USE_EXCEPTIONS}
+    if wSize <> 4 then ZCompressCheck(Z_WRITE_ERROR);
+{$ELSE}
+    if wSize <> 4 then begin
+      Result := Z_WRITE_ERROR;
+      Exit;
     end;
-    if done then Break;
-    zResult:=deflate(zStream,Z_FINISH);
-    if (rSize = 0) and (zResult = Z_BUF_ERROR) then
-    {$IFDEF USE_EXCEPTIONS}
-    else ZCompressCheck(zResult);
-    {$ELSE}
-    else begin
-      Result:=zResult;
-      if Result<0 then Exit;
+{$ENDIF}
+    rSize := inStream.Size;
+    wSize := outStream.Write(rSize, 4);
+{$IFDEF USE_EXCEPTIONS}
+    if wSize <> 4 then ZCompressCheck(Z_WRITE_ERROR);
+{$ELSE}
+    if wSize <> 4 then begin
+      Result := Z_WRITE_ERROR;
+      Exit;
     end;
-    {$ENDIF}
-    { deflate has finished flushing only when it hasn't used up
-      all the available space in the output buffer: }
-    done:= (zStream.avail_out<>0) or (zResult = Z_STREAM_END);
-  until False;
-  wSize:=outStream.Write(fCrc,4);
-  {$IFDEF USE_EXCEPTIONS}
-  if wSize<>4 then ZCompressCheck(Z_WRITE_ERROR);
-  {$ELSE}
-  if wSize<>4 then begin
-    Result:=Z_WRITE_ERROR; Exit;
+{$ENDIF}
+    Result := Z_OK;
+  finally
+    deflateEnd(zStream);
+    if Assigned(iBuffer) then FreeMem(iBuffer);
+    if Assigned(oBuffer) then FreeMem(oBuffer);
   end;
-  {$ENDIF}
-  rSize:=inStream.Size;
-  wSize:=outStream.Write(rSize,4);
-  {$IFDEF USE_EXCEPTIONS}
-  if wSize<>4 then ZCompressCheck(Z_WRITE_ERROR);
-  {$ELSE}
-  if wSize<>4 then begin
-    Result:=Z_WRITE_ERROR; Exit;
-  end;
-  {$ENDIF}
-  Result:=Z_OK;
- finally
-  deflateEnd(zStream);
-  if Assigned(iBuffer) then FreeMem (iBuffer);
-  if Assigned(oBuffer) then FreeMem (oBuffer);
- end;
 end;
 
-function gZipCompressStream(inStream, outStream: PStream;
-  level: TZCompressionLevel = zcDefault; strategy: TZCompressionStrategy = zcsDefault): Integer; overload;
+function gZipCompressStream(inStream, outStream: PStream; level: TZCompressionLevel = zcDefault; strategy: TZCompressionStrategy = zcsDefault): Integer; overload;
 var
-  gzHdr : TgzipHeader;
+  gzHdr             : TgzipHeader;
 begin
-  FillChar(gzHdr,SizeOf(gzHdr),0);
-  gzHdr.FileTime:=Date;
-  Result:=gZipCompressStream(inStream, outStream, gzHdr, level,strategy);
+  FillChar(gzHdr, SizeOf(gzHdr), 0);
+  gzHdr.FileTime := Date;
+  Result := gZipCompressStream(inStream, outStream, gzHdr, level, strategy);
 end;
 
 function gZipDecompressStreamHeader(inStream: PStream; var gzHdr: TgzipHeader): Integer;
 var
-  i,c,flg  : LongInt;
-  fEOF     : Boolean;
-  function gz_getbyte : Integer;
+  i, c, flg         : LongInt;
+  fEOF              : Boolean;
+
+  function gz_getbyte: Integer;
   var
-    b,c : Integer;
+    b, c            : Integer;
   begin
-    b:=0;
-    c:=inStream.Read(b,1);
-    if c=0 then begin
-      fEOF:=True;
-      Result:=Z_EOF;
+    b := 0;
+    c := inStream.Read(b, 1);
+    if c = 0 then begin
+      fEOF := True;
+      Result := Z_EOF;
     end
-    else Result:=b;
+    else Result := b;
   end;
-  function gz_getlong : Integer;
+
+  function gz_getlong: Integer;
   var
-    b,c : Integer;
+    b, c            : Integer;
   begin
-    b:=0;
-    c:=inStream.Read(b,4);
-    if c<4 then begin
-      fEOF:=True;
-      Result:=Z_EOF;
+    b := 0;
+    c := inStream.Read(b, 4);
+    if c < 4 then begin
+      fEOF := True;
+      Result := Z_EOF;
     end
-    else Result:=b;
+    else Result := b;
   end;
 begin
-//  fTransparent := False;
-  Result:=Z_OK;
-  fEOF:=False;
-  gzHdr.FileName:=''; gzHdr.Comment:=''; gzHdr.Extra:='';
+  //  fTransparent := False;
+  Result := Z_OK;
+  fEOF := False;
+  gzHdr.FileName := '';
+  gzHdr.Comment := '';
+  gzHdr.Extra := '';
   try
-    for i:=0 to 1 do begin
-      flg:=gz_getbyte;
-      if (flg<>gz_magic[i]) then begin
-        fEOF:=True;
+    for i := 0 to 1 do begin
+      flg := gz_getbyte;
+      if (flg <> gz_magic[i]) then begin
+        fEOF := True;
         exit;
       end;
     end;
-    c:=gz_getbyte; // method
-    flg:=gz_getbyte; // flags
-    if (c<>Z_DEFLATED) or ((flg and GZF_RESERVED)<>0) then begin
-      fEOF:=True;
+    c := gz_getbyte;      // method
+    flg := gz_getbyte;    // flags
+    if (c <> Z_DEFLATED) or ((flg and GZF_RESERVED) <> 0) then begin
+      fEOF := True;
       exit;
     end;
 
-    gzHdr.FileTime:=UnixToDateTime(gz_getLong);
-    gz_getbyte; gz_getbyte; { skip xflags and OS code }
+    gzHdr.FileTime := UnixToDateTime(gz_getLong);
+    gz_getbyte;
+    gz_getbyte;           { skip xflags and OS code }
 
-    if (flg and GZF_EXTRA_FIELD)<>0 then begin // skip extra fields
+    if (flg and GZF_EXTRA_FIELD) <> 0 then begin // skip extra fields
       i := gz_getbyte + (gz_getbyte shl 8); // length of extra
-      SetLength(gzHdr.Extra,i);
-      c:=inStream.Read(gzHdr.Extra,i);
-      if c<>i then begin
-        fEOF:=True;
+      SetLength(gzHdr.Extra, i);
+      c := inStream.Read(gzHdr.Extra, i);
+      if c <> i then begin
+        fEOF := True;
         Exit;
       end;
     end;
-    if (flg and GZF_ORIG_NAME)<>0 then begin // extract File Name
+    if (flg and GZF_ORIG_NAME) <> 0 then begin // extract File Name
       repeat
-        c:=gz_getbyte;
-        if (c<>0) and (c<>Z_EOF) then gzHdr.FileName:=gzHdr.FileName+char(c);
-      until (c=0) or (c=Z_EOF);
+        c := gz_getbyte;
+        if (c <> 0) and (c <> Z_EOF) then gzHdr.FileName := gzHdr.FileName + char(c);
+      until (c = 0) or (c = Z_EOF);
     end;
-    if (flg and GZF_COMMENT)<>0 then begin // extract Comment
+    if (flg and GZF_COMMENT) <> 0 then begin // extract Comment
       repeat
-        c:=gz_getbyte;
-        if (c<>0) and (c<>Z_EOF) then gzHdr.Comment:=gzHdr.Comment+char(c);
-      until (c=0) or (c=Z_EOF);
+        c := gz_getbyte;
+        if (c <> 0) and (c <> Z_EOF) then gzHdr.Comment := gzHdr.Comment + char(c);
+      until (c = 0) or (c = Z_EOF);
     end;
-    if (flg and GZF_HEAD_CRC)<>0 then begin // skip head crc
-      gz_getbyte; gz_getbyte;
+    if (flg and GZF_HEAD_CRC) <> 0 then begin // skip head crc
+      gz_getbyte;
+      gz_getbyte;
     end;
   finally
-    if fEOF then Result:=Z_DATA_ERROR
-    else Result:=Z_OK;
+    if fEOF then Result := Z_DATA_ERROR
+    else Result := Z_OK;
   end;
 end;
 
 function gZipDecompressStreamBody(inStream, outStream: PStream): Integer;
 var
   iBuffer,
-  oBuffer  : PChar; //Array [0..gzBufferSize-1] of Char;
-  fCrc     : Cardinal;
-  zStream  : TZStreamRec;
+    oBuffer         : PChar; //Array [0..gzBufferSize-1] of Char;
+  fCrc              : Cardinal;
+  zStream           : TZStreamRec;
   rSize,
-  wSize    : LongInt;
-  startCRC : PChar;
+    wSize           : LongInt;
+  startCRC          : PChar;
   fileCRC,
-  fileSize : Cardinal;
-  fEOF     : Boolean;
- function gz_getbyte : Integer;
- begin
-//  if (eof) then result:=-1;
-  if (zStream.avail_in = 0) then begin
-    zStream.avail_in:=inStream.Read(iBuffer^,gzBufferSize);
+    fileSize        : Cardinal;
+  fEOF              : Boolean;
+
+  function gz_getbyte: Integer;
+  begin
+    //  if (eof) then result:=-1;
     if (zStream.avail_in = 0) then begin
-      Result:=Z_EOF; fEOF:=True;
-      exit;
-    end
-    else zStream.next_in:=PChar(iBuffer);
+      zStream.avail_in := inStream.Read(iBuffer^, gzBufferSize);
+      if (zStream.avail_in = 0) then begin
+        Result := Z_EOF;
+        fEOF := True;
+        exit;
+      end
+      else zStream.next_in := PChar(iBuffer);
+    end;
+    Dec(zStream.avail_in);
+    Result := Byte(zStream.next_in[0]);
+    Inc(zStream.next_in);
   end;
-  Dec(zStream.avail_in);
-  Result:=Byte(zStream.next_in[0]);
-  Inc(zStream.next_in);
- end;
- function gz_getLong : Cardinal;
- var
-   c : Integer;
- begin
-  c:=gz_getbyte;
-  c:=c+gz_getbyte shl 8;
-  c:=c+gz_getbyte shl 16;
-  c:=c+gz_getbyte shl 24;
-  Result:=Cardinal(c);
- end;
+
+  function gz_getLong: Cardinal;
+  var
+    c               : Integer;
+  begin
+    c := gz_getbyte;
+    c := c + gz_getbyte shl 8;
+    c := c + gz_getbyte shl 16;
+    c := c + gz_getbyte shl 24;
+    Result := Cardinal(c);
+  end;
 begin
- iBuffer:=nil; oBuffer:=nil;
- Result:=Z_MEM_ERROR;
- try
-  GetMem(iBuffer,gzBufferSize);
-  GetMem(oBuffer,gzBufferSize);
-  fEOF:=False;
-  {Check the gzip header of a gz_stream opened for reading.
-   Set the stream mode to transparent if the gzip magic header is not present.}
+  iBuffer := nil;
+  oBuffer := nil;
+  Result := Z_MEM_ERROR;
+  try
+    GetMem(iBuffer, gzBufferSize);
+    GetMem(oBuffer, gzBufferSize);
+    fEOF := False;
+    {Check the gzip header of a gz_stream opened for reading.
+     Set the stream mode to transparent if the gzip magic header is not present.}
 
-  FillChar(zStream,SizeOf(zStream),0);
-  zStream.next_in:=pChar(iBuffer);
-  fCRC:=0;
-  { windowBits is passed < 0 to tell that there is no zlib header }
-  {$IFDEF USE_EXCEPTIONS}
-  ZDecompressCheck(InflateInit2(zStream, -MAX_WBITS));
-  {$ELSE}
-  Result:=InflateInit2(zStream, -MAX_WBITS);
-  if Result<0 then Exit;
-  {$ENDIF}
-  while not fEOF do begin
-    // gzread()
-//    DoProgressEvent;
-    startCRC:=PChar(oBuffer);
-    zStream.next_out:=PChar(oBuffer);
-    zStream.avail_out:=gzBufferSize;
-    rSize:=0; Result:=Z_OK;
-    while zStream.avail_out<>0 do begin
-      // not transparent
-      if (zStream.avail_in = 0) and (Not fEOF) then begin
-        zStream.avail_in:=inStream.Read(iBuffer^,gzBufferSize);
-        if (zStream.avail_in = 0) then fEOF:=True;
-        zStream.next_in:=PChar(iBuffer);
+    FillChar(zStream, SizeOf(zStream), 0);
+    zStream.next_in := pChar(iBuffer);
+    fCRC := 0;
+    { windowBits is passed < 0 to tell that there is no zlib header }
+{$IFDEF USE_EXCEPTIONS}
+    ZDecompressCheck(InflateInit2(zStream, -MAX_WBITS));
+{$ELSE}
+    Result := InflateInit2(zStream, -MAX_WBITS);
+    if Result < 0 then Exit;
+{$ENDIF}
+    while not fEOF do begin
+      // gzread()
+  //    DoProgressEvent;
+      startCRC := PChar(oBuffer);
+      zStream.next_out := PChar(oBuffer);
+      zStream.avail_out := gzBufferSize;
+//      rSize := 0;
+      Result := Z_OK;
+      while zStream.avail_out <> 0 do begin
+        // not transparent
+        if (zStream.avail_in = 0) and (not fEOF) then begin
+          zStream.avail_in := inStream.Read(iBuffer^, gzBufferSize);
+          if (zStream.avail_in = 0) then fEOF := True;
+          zStream.next_in := PChar(iBuffer);
+        end;
+        Result := inflate(zStream, Z_NO_FLUSH);
+        if (Result = Z_STREAM_END) then begin
+          { Check CRC and original size }
+          fCrc := crc32(fCrc, PChar(StartCRC), (zStream.next_out - startCRC));
+          startCRC := zStream.next_out;
+
+          fileCRC := gz_getLong;
+          fileSize := gz_getLong;
+          if (fCrc <> fileCRC) then
+{$IFDEF USE_EXCEPTIONS}
+            ZDecompressCheck(Z_CRC_ERROR)
+{$ELSE}
+            Result := Z_CRC_ERROR
+{$ENDIF}
+          else
+            if (Cardinal(zStream.total_out) <> fileSize) then
+{$IFDEF USE_EXCEPTIONS}
+              ZDecompressCheck(Z_SIZE_ERROR)
+{$ELSE}
+              Result := Z_SIZE_ERROR
+{$ENDIF}
+            else begin
+              if zStream.avail_in > 0 then inStream.Seek(-zStream.avail_in, spCurrent);
+              fEOF := True;
+            end;
+        end;
+        if (Result <> Z_OK) or (fEOF) then break;
+      end;                // while zStream.avail_out<>0
+      // end of gzread()
+
+{$IFDEF USE_EXCEPTIONS}
+      ZDecompressCheck(Result);
+{$ELSE}
+      if Result < 0 then Exit;
+{$ENDIF}
+      fCrc := crc32(fCrc, PChar(oBuffer), (zStream.next_out - startCRC));
+      rSize := gzBufferSize - zStream.avail_out;
+
+{$IFDEF USE_EXCEPTIONS}
+      if rSize < 0 then ZDecompressCheck(rSize);
+{$ELSE}
+      if rSize <= 0 then break;
+{$ENDIF}
+      wSize := outStream.Write(oBuffer^, rSize);
+{$IFDEF USE_EXCEPTIONS}
+      if (rSize <> wSize) then ZDecompressCheck(Z_WRITE_ERROR);
+{$ELSE}
+      if (rSize <> wSize) then begin
+        Result := Z_WRITE_ERROR;
+        Exit;
       end;
-      Result:=inflate(zStream, Z_NO_FLUSH);
-      if (Result = Z_STREAM_END) then begin
-        { Check CRC and original size }
-        fCrc:=crc32(fCrc,PChar(StartCRC),(zStream.next_out-startCRC));
-        startCRC:=zStream.next_out;
-
-        fileCRC:=gz_getLong;
-        fileSize:=gz_getLong;
-        if (fCrc<>fileCRC) then
-          {$IFDEF USE_EXCEPTIONS}
-           ZDecompressCheck(Z_CRC_ERROR)
-          {$ELSE}
-           Result:=Z_CRC_ERROR
-          {$ENDIF}
-        else
-         if (Cardinal(zStream.total_out)<>fileSize) then
-           {$IFDEF USE_EXCEPTIONS}
-            ZDecompressCheck(Z_SIZE_ERROR)
-           {$ELSE}
-             Result:=Z_SIZE_ERROR
-           {$ENDIF}
-         else begin
-           if zStream.avail_in>0 then inStream.Seek(-zStream.avail_in,spCurrent);
-           fEOF:=True;
-         end;
-      end;
-      if (Result<>Z_OK) or (fEOF) then break;
-    end; // while zStream.avail_out<>0
-    // end of gzread()
-
-    {$IFDEF USE_EXCEPTIONS}
-    ZDecompressCheck(Result);
-    {$ELSE}
-    if Result<0 then Exit;
-    {$ENDIF}
-    fCrc:=crc32(fCrc,PChar(oBuffer),(zStream.next_out-startCRC));
-    rSize:=gzBufferSize-zStream.avail_out;
-
-    {$IFDEF USE_EXCEPTIONS}
-    if rSize<0 then ZDecompressCheck(rSize);
-    {$ELSE}
-    if rSize<=0 then break;
-    {$ENDIF}
-    wSize:=outStream.Write(oBuffer^,rSize);
-    {$IFDEF USE_EXCEPTIONS}
-    if (rSize<>wSize) then ZDecompressCheck(Z_WRITE_ERROR);
-    {$ELSE}
-    if (rSize<>wSize) then begin Result:=Z_WRITE_ERROR; Exit; end;
-    {$ENDIF}
+{$ENDIF}
+    end;
+    if Result = Z_STREAM_END then Result := Z_OK;
+  finally
+    inflateEnd(zStream);
+    if Assigned(iBuffer) then FreeMem(iBuffer);
+    if Assigned(oBuffer) then FreeMem(oBuffer);
   end;
-  if Result=Z_STREAM_END then Result:=Z_OK;
- finally
-  inflateEnd(zStream);
-  if Assigned(iBuffer) then FreeMem (iBuffer);
-  if Assigned(oBuffer) then FreeMem (oBuffer);
- end;
 end;
 
 function gZipDecompressStream(inStream, outStream: PStream; var gzHdr: TgzipHeader): Integer;
-var
-  i : Integer;
 begin
-  i:=gZipDecompressStreamHeader(inStream,gzHdr);
-  Result:=i;
-  if Result>=0 then
-    Result:=gZipDecompressStreamBody(inStream, outStream);
+  Result := gZipDecompressStreamHeader(inStream, gzHdr);
+  if (Result >= 0) then
+    Result := gZipDecompressStreamBody(inStream, outStream);
+end;
+
+function gZipDecompressString(const S: String): String;
+var
+  Rslt:      Integer;
+  gzHdr:     TgzipHeader;
+  inStream:  PStream;
+  outStream: PStream;
+begin
+  Result := '';
+  inStream := NewExMemoryStream(@S[1], Length(S));
+  Rslt := gZipDecompressStreamHeader(inStream, gzHdr);
+  if (Rslt >= 0) then begin
+    outStream := NewMemoryStream;
+    Rslt := gZipDecompressStreamBody(inStream, outStream);
+    if (Rslt >= 0) then begin
+      outStream.Position := 0;
+      Result := outStream.ReadStrLen(outStream.Size);
+    end;
+    outStream.Free;
+  end;
+  inStream.Free;
 end;
 
 {****************************************************************************}
 {** BZip implementation *****************************************************}
 {****************************************************************************}
 {$IFDEF USE_EXCEPTIONS}
+
 function CCheck(code: Integer): Integer;
 begin
   Result := code;
   if code < 0 then
-    raise Exception.CreateFMT( e_Convert, 'Compression Error %d - %s', [code,BZ_Error_Msg[-code]] );
+    raise Exception.CreateFMT(e_Convert, 'Compression Error %d - %s', [code, BZ_Error_Msg[-code]]);
 end;
 
 function DCheck(code: Integer): Integer;
 begin
   Result := code;
   if code < 0 then
-    raise Exception.CreateFMT( e_Convert, 'Decompression Error %d - %s', [code,BZ_Error_Msg[-code]] );
+    raise Exception.CreateFMT(e_Convert, 'Decompression Error %d - %s', [code, BZ_Error_Msg[-code]]);
 end;
 {$ENDIF}
 
-function BZCompressBuf(const InBuf: Pointer; InBytes: Integer;
-  out OutBuf: Pointer; out OutBytes: Integer): Integer;
+function BZCompressBuf(const InBuf: Pointer; InBytes: Integer; out OutBuf: Pointer; out OutBytes: Integer): Integer;
 var
-  strm: TBZStreamRec;
-  P: Pointer;
+  strm              : TBZStreamRec;
+  P                 : Pointer;
 begin
   FillChar(strm, sizeof(strm), 0);
   strm.bzalloc := bzip2AllocMem;
   strm.bzfree := bzip2FreeMem;
   OutBytes := ((InBytes + (InBytes div 10) + 12) + 255) and not 255;
   GetMem(OutBuf, OutBytes);
-  Result:=BZ_OK;
+  Result := BZ_OK;
   try
     strm.next_in := InBuf;
     strm.avail_in := InBytes;
     strm.next_out := OutBuf;
     strm.avail_out := OutBytes;
-    {$IFDEF USE_EXCEPTIONS}
+{$IFDEF USE_EXCEPTIONS}
     CCheck(BZ2_bzCompressInit(strm, 9, 0, 0));
-    {$ELSE}
-    Result:=BZ2_bzCompressInit(strm, 9, 0, 0);
-    if Result<0 then Exit;
-    {$ENDIF}
+{$ELSE}
+    Result := BZ2_bzCompressInit(strm, 9, 0, 0);
+    if Result < 0 then Exit;
+{$ENDIF}
     try
-      {$IFDEF USE_EXCEPTIONS}
-      Result:=CCheck(BZ2_bzCompress(strm, BZ_FINISH));
-      {$ELSE}
-      Result:=BZ2_bzCompress(strm, BZ_FINISH);
-      if Result<0 then Exit;
-      {$ENDIF}
+{$IFDEF USE_EXCEPTIONS}
+      Result := CCheck(BZ2_bzCompress(strm, BZ_FINISH));
+{$ELSE}
+      Result := BZ2_bzCompress(strm, BZ_FINISH);
+      if Result < 0 then Exit;
+{$ENDIF}
       while Result <> BZ_STREAM_END do begin
         P := OutBuf;
         Inc(OutBytes, 256);
         ReallocMem(OutBuf, OutBytes);
         strm.next_out := PChar(Integer(OutBuf) + (Integer(strm.next_out) - Integer(P)));
         strm.avail_out := 256;
-        {$IFDEF USE_EXCEPTIONS}
-        Result:=CCheck(BZ2_bzCompress(strm, BZ_FINISH));
-        {$ELSE}
-        Result:=BZ2_bzCompress(strm, BZ_FINISH);
-        if Result<0 then Exit;
-        {$ENDIF}
+{$IFDEF USE_EXCEPTIONS}
+        Result := CCheck(BZ2_bzCompress(strm, BZ_FINISH));
+{$ELSE}
+        Result := BZ2_bzCompress(strm, BZ_FINISH);
+        if Result < 0 then Exit;
+{$ENDIF}
       end;
     finally
-      {$IFDEF USE_EXCEPTIONS}
+{$IFDEF USE_EXCEPTIONS}
       CCheck(BZ2_bzCompressEnd(strm));
-      {$ELSE}
+{$ELSE}
       BZ2_bzCompressEnd(strm);
-      {$ENDIF}
+{$ENDIF}
     end;
     ReallocMem(OutBuf, strm.total_out_lo32);
     OutBytes := strm.total_out_lo32;
-  {$IFDEF USE_EXCEPTIONS}
+{$IFDEF USE_EXCEPTIONS}
   except
     FreeMem(outBuf);
     raise;
-  {$ELSE}
+{$ELSE}
   finally
-    if Result<0 then FreeMem(outBuf);
-  {$ENDIF}
+    if Result < 0 then FreeMem(outBuf);
+{$ENDIF}
   end;
 end;
 
-
-function BZDecompressBuf(const InBuf: Pointer; InBytes: Integer;
-  OutEstimate: Integer; out OutBuf: Pointer; out OutBytes: Integer): Integer;
+function BZDecompressBuf(const InBuf: Pointer; InBytes: Integer; OutEstimate: Integer; out OutBuf: Pointer; out OutBytes: Integer): Integer;
 var
-  strm: TBZStreamRec;
-  P: Pointer;
-  BufInc: Integer;
+  strm              : TBZStreamRec;
+  P                 : Pointer;
+  BufInc            : Integer;
 begin
   FillChar(strm, sizeof(strm), 0);
   strm.bzalloc := bzip2AllocMem;
   strm.bzfree := bzip2FreeMem;
   BufInc := (InBytes + 255) and not 255;
-  Result:=BZ_OK;
+  Result := BZ_OK;
   if OutEstimate = 0 then
     OutBytes := BufInc
   else
@@ -1707,38 +1755,38 @@ begin
     strm.avail_in := InBytes;
     strm.next_out := OutBuf;
     strm.avail_out := OutBytes;
-    {$IFDEF USE_EXCEPTIONS}
+{$IFDEF USE_EXCEPTIONS}
     DCheck(BZ2_bzDecompressInit(strm, 0, 0));
-    {$ELSE}
-    Result:=BZ2_bzDecompressInit(strm, 0, 0);
-    if Result<0 then Exit;
-    {$ENDIF}
+{$ELSE}
+    Result := BZ2_bzDecompressInit(strm, 0, 0);
+    if Result < 0 then Exit;
+{$ENDIF}
     try
-      {$IFDEF USE_EXCEPTIONS}
-      Result:=DCheck(BZ2_bzDecompress(strm));
-      {$ELSE}
-      Result:=BZ2_bzDecompress(strm);
-      if Result<0 then Exit;
-      {$ENDIF}
+{$IFDEF USE_EXCEPTIONS}
+      Result := DCheck(BZ2_bzDecompress(strm));
+{$ELSE}
+      Result := BZ2_bzDecompress(strm);
+      if Result < 0 then Exit;
+{$ENDIF}
       while Result <> BZ_STREAM_END do begin
         P := OutBuf;
         Inc(OutBytes, BufInc);
         ReallocMem(OutBuf, OutBytes);
         strm.next_out := PChar(Integer(OutBuf) + (Integer(strm.next_out) - Integer(P)));
         strm.avail_out := BufInc;
-        {$IFDEF USE_EXCEPTIONS}
-        Result:=DCheck(BZ2_bzDecompress(strm));
-        {$ELSE}
-        Result:=BZ2_bzDecompress(strm);
-        if Result<0 then Exit;
-        {$ENDIF}
+{$IFDEF USE_EXCEPTIONS}
+        Result := DCheck(BZ2_bzDecompress(strm));
+{$ELSE}
+        Result := BZ2_bzDecompress(strm);
+        if Result < 0 then Exit;
+{$ENDIF}
       end;
     finally
-      {$IFDEF USE_EXCEPTIONS}
+{$IFDEF USE_EXCEPTIONS}
       DCheck(BZ2_bzDecompressEnd(strm));
-      {$ELSE}
+{$ELSE}
       BZ2_bzDecompressEnd(strm);
-      {$ENDIF}
+{$ENDIF}
     end;
     ReallocMem(OutBuf, strm.total_out_lo32);
     OutBytes := strm.total_out_lo32;
@@ -1748,142 +1796,145 @@ begin
   end;
 end;
 
-function BZCompressStream(inStream,outStream: PStream; BlockSize100k: TBlockSize100k = 5): Integer;
+function BZCompressStream(inStream, outStream: PStream; BlockSize100k: TBlockSize100k = 5): Integer;
 var
-  FBZRec: TBZStreamRec;
+  FBZRec            : TBZStreamRec;
   iBuffer,
-  oBuffer: PChar;
+    oBuffer         : PChar;
   wSize,
-  rSize  : Integer;
+    rSize           : Integer;
 begin
-  Result:=BZ_MEM_ERROR;
-  iBuffer:=nil; oBuffer:=nil;
-  FillChar(FBZRec,SizeOf(FBZRec),0);
-//  FBZRec.bzalloc := bzip2AllocMem;
-//  FBZRec.bzfree := bzip2FreeMem;
+  Result := BZ_MEM_ERROR;
+  iBuffer := nil;
+  oBuffer := nil;
+  FillChar(FBZRec, SizeOf(FBZRec), 0);
+  //  FBZRec.bzalloc := bzip2AllocMem;
+  //  FBZRec.bzfree := bzip2FreeMem;
   try
-    GetMem(iBuffer,bzBufferSize);
-    GetMem(oBuffer,bzBufferSize);
-    {$IFDEF USE_EXCEPTIONS}
+    GetMem(iBuffer, bzBufferSize);
+    GetMem(oBuffer, bzBufferSize);
+{$IFDEF USE_EXCEPTIONS}
     CCheck(BZ2_bzCompressInit(FBZRec, BlockSize100k, 0, 0));
-    {$ELSE}
-    Result:=BZ2_bzCompressInit(FBZRec, BlockSize100k, 0, 0);
-    if Result<0 then Exit;
-    {$ENDIF}
-    FBZRec.next_out:=PChar(oBuffer);
-    FBZRec.avail_out:=bzBufferSize;
-    rSize:=inStream.Read(iBuffer^,bzBufferSize);
+{$ELSE}
+    Result := BZ2_bzCompressInit(FBZRec, BlockSize100k, 0, 0);
+    if Result < 0 then Exit;
+{$ENDIF}
+    FBZRec.next_out := PChar(oBuffer);
+    FBZRec.avail_out := bzBufferSize;
+    rSize := inStream.Read(iBuffer^, bzBufferSize);
     repeat
       //DoProgressEvent;
       FBZRec.next_in := PChar(iBuffer);
       FBZRec.avail_in := rSize;
       while (FBZRec.avail_in > 0) do begin
         if (FBZRec.avail_out = 0) then begin
-          wSize:=outStream.Write(oBuffer^,bzBufferSize);
+          wSize := outStream.Write(oBuffer^, bzBufferSize);
           if (wSize <> bzBufferSize) then begin
-            {$IFDEF USE_EXCEPTIONS}
+{$IFDEF USE_EXCEPTIONS}
             CCheck(BZ_IO_ERROR);
-           {$ELSE}
-            Result:=BZ_IO_ERROR;
+{$ELSE}
+            Result := BZ_IO_ERROR;
             Exit;
-           {$ENDIF}
+{$ENDIF}
           end;
-          FBZRec.next_out :=PChar(oBuffer);
-          FBZRec.avail_out:=bzBufferSize;
+          FBZRec.next_out := PChar(oBuffer);
+          FBZRec.avail_out := bzBufferSize;
         end;
-        {$IFDEF USE_EXCEPTIONS}
+{$IFDEF USE_EXCEPTIONS}
         CCheck(BZ2_bzCompress(FBZRec, BZ_RUN));
-        {$ELSE}
-        Result:=BZ2_bzCompress(FBZRec, BZ_RUN);
-        if Result<0 then Exit;
-        {$ENDIF}
-      end; // while
-      rSize:=inStream.Read(iBuffer^,bzBufferSize);
-    until rSize=0;
+{$ELSE}
+        Result := BZ2_bzCompress(FBZRec, BZ_RUN);
+        if Result < 0 then Exit;
+{$ENDIF}
+      end;                // while
+      rSize := inStream.Read(iBuffer^, bzBufferSize);
+    until rSize = 0;
     { flush buffers }
     FBZRec.avail_in := 0; { should be zero already anyway }
     repeat
-      {$IFDEF USE_EXCEPTIONS}
-      Result:=CCheck(BZ2_bzCompress(FBZRec, BZ_FINISH));
-      {$ELSE}
-      Result:=BZ2_bzCompress(FBZRec, BZ_FINISH);
-      if Result<0 then Break;
-      {$ENDIF}
-      rSize:=bzBufferSize-FBZRec.avail_out;
-      wSize:=outStream.Write(oBuffer^,rSize);
-      {$IFDEF USE_EXCEPTIONS}
-      if (wSize<>rSize) then CCheck(BZ_IO_ERROR);
-      {$ELSE}
-      if (wSize<>rSize) then begin Result:=BZ_IO_ERROR; break; end;
-      {$ENDIF}
+{$IFDEF USE_EXCEPTIONS}
+      Result := CCheck(BZ2_bzCompress(FBZRec, BZ_FINISH));
+{$ELSE}
+      Result := BZ2_bzCompress(FBZRec, BZ_FINISH);
+      if Result < 0 then Break;
+{$ENDIF}
+      rSize := bzBufferSize - FBZRec.avail_out;
+      wSize := outStream.Write(oBuffer^, rSize);
+{$IFDEF USE_EXCEPTIONS}
+      if (wSize <> rSize) then CCheck(BZ_IO_ERROR);
+{$ELSE}
+      if (wSize <> rSize) then begin
+        Result := BZ_IO_ERROR;
+        break;
+      end;
+{$ENDIF}
       FBZRec.next_out := PChar(oBuffer);
       FBZRec.avail_out := bzBufferSize;
-    until Result=BZ_STREAM_END;
+    until Result = BZ_STREAM_END;
   finally
-    if Result=BZ_STREAM_END then Result:=BZ_OK;
+    if Result = BZ_STREAM_END then Result := BZ_OK;
     BZ2_bzCompressEnd(FBZRec);
-    if Assigned(iBuffer) then FreeMem (iBuffer);
-    if Assigned(oBuffer) then FreeMem (oBuffer);
+    if Assigned(iBuffer) then FreeMem(iBuffer);
+    if Assigned(oBuffer) then FreeMem(oBuffer);
   end;
 
 end;
 
-function BZDecompressStream(inStream,outStream: PStream): Integer;
+function BZDecompressStream(inStream, outStream: PStream): Integer;
 var
-  FBZRec: TBZStreamRec;
+  FBZRec            : TBZStreamRec;
   iBuffer,
-  oBuffer: PChar;
+    oBuffer         : PChar;
   wSize,
-  rSize  : Integer;
+    rSize           : Integer;
 begin
-  Result:=BZ_MEM_ERROR;
-  iBuffer:=nil; oBuffer:=nil;
-  FillChar(FBZRec,SizeOf(FBZRec),0);
+  Result := BZ_MEM_ERROR;
+  iBuffer := nil;
+  oBuffer := nil;
+  FillChar(FBZRec, SizeOf(FBZRec), 0);
   try
-    GetMem(iBuffer,bzBufferSize);
-    GetMem(oBuffer,bzBufferSize);
-    {$IFDEF USE_EXCEPTIONS}
+    GetMem(iBuffer, bzBufferSize);
+    GetMem(oBuffer, bzBufferSize);
+{$IFDEF USE_EXCEPTIONS}
     DCheck(BZ2_bzDecompressInit(FBZRec, 0, 0));
-    {$ELSE}
-    Result:=BZ2_bzDecompressInit(FBZRec, 0, 0);
-    if Result<0 then Exit;
-    {$ENDIF}
+{$ELSE}
+    Result := BZ2_bzDecompressInit(FBZRec, 0, 0);
+    if Result < 0 then Exit;
+{$ENDIF}
     rSize := inStream.Read(iBuffer^, bzBufferSize);
     FBZRec.next_in := PChar(iBuffer);
-    FBZRec.avail_in:=rSize;
+    FBZRec.avail_in := rSize;
     repeat
       FBZRec.next_out := PChar(oBuffer);
       FBZRec.avail_out := bzBufferSize;
-      Result:=0;
-      while (FBZRec.avail_out > 0) and (Result<>BZ_STREAM_END) do begin
-        {$IFDEF USE_EXCEPTIONS}
-        Result:=CCheck(BZ2_bzDecompress(FBZRec));
-        {$ELSE}
-        Result:=BZ2_bzDecompress(FBZRec);
-        if Result<0 then Break;
-        {$ENDIF}
+      Result := 0;
+      while (FBZRec.avail_out > 0) and (Result <> BZ_STREAM_END) do begin
+{$IFDEF USE_EXCEPTIONS}
+        Result := CCheck(BZ2_bzDecompress(FBZRec));
+{$ELSE}
+        Result := BZ2_bzDecompress(FBZRec);
+        if Result < 0 then Break;
+{$ENDIF}
         if FBZRec.avail_in = 0 then begin
           rSize := inStream.Read(iBuffer^, bzBufferSize);
           FBZRec.next_in := PChar(iBuffer);
-          FBZRec.avail_in:=rSize;
+          FBZRec.avail_in := rSize;
         end;
       end;
-      FBZRec.avail_out:=bzBufferSize-FBZRec.avail_out;
-      wSize:=outStream.Write(oBuffer^,FBZRec.avail_out);
-      {$IFDEF USE_EXCEPTIONS}
-      if FBZRec.avail_out<>wSize then CCheck(BZ_IO_ERROR);
-      {$ELSE}
-      if FBZRec.avail_out<>wSize then Result:=BZ_IO_ERROR;
-      {$ENDIF}
-    until (rSize=0) or (Result<0);
+      FBZRec.avail_out := bzBufferSize - FBZRec.avail_out;
+      wSize := outStream.Write(oBuffer^, FBZRec.avail_out);
+{$IFDEF USE_EXCEPTIONS}
+      if FBZRec.avail_out <> wSize then CCheck(BZ_IO_ERROR);
+{$ELSE}
+      if FBZRec.avail_out <> wSize then Result := BZ_IO_ERROR;
+{$ENDIF}
+    until (rSize = 0) or (Result < 0);
   finally
-    if Result=BZ_STREAM_END then Result:=BZ_OK;
+    if Result = BZ_STREAM_END then Result := BZ_OK;
     BZ2_bzDecompressEnd(FBZRec);
-    if Assigned(iBuffer) then FreeMem (iBuffer);
-    if Assigned(oBuffer) then FreeMem (oBuffer);
+    if Assigned(iBuffer) then FreeMem(iBuffer);
+    if Assigned(oBuffer) then FreeMem(oBuffer);
   end;
 end;
 
-
 end.
-

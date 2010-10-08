@@ -67,20 +67,25 @@ define("WAT_RES_NEWFILE" ,3);
 
 // hook service options
 
-define("WAT_OPT_DISABLED"  ,0x0001); // registered but disabled
-define("WAT_OPT_ONLYONE"   ,0x0002); // can't be overwriten
-define("WAT_OPT_PLAYERINFO",0x0004); // song info from player
-define("WAT_OPT_WINAMPAPI" ,0x0008); // Winamp API support
-define("WAT_OPT_CHECKTIME" ,0x0010); // check file time for changes
-define("WAT_OPT_VIDEO"     ,0x0020); // only for format registering used
-define("WAT_OPT_LAST"      ,0x0040); // (internal)
-define("WAT_OPT_FIRST"     ,0x0080); // (internal)
-define("WAT_OPT_TEMPLATE"  ,0x0100); // (internal)
-define("WAT_OPT_IMPLANTANT",0x0200); // use process implantation
-define("WAT_OPT_HASURL"    ,0x0400); // (player registration) URL field present
-define("WAT_OPT_CHANGES"   ,0x0800); // obtain only chaged values
-                                     // (volume, status, window text, elapsed time)
+define("WAT_OPT_DISABLED"   ,0x00000001); // registered but disabled
+define("WAT_OPT_ONLYONE"    ,0x00000002); // can't be overwriten
+define("WAT_OPT_PLAYERINFO" ,0x00000004); // song info from player
+define("WAT_OPT_WINAMPAPI"  ,0x00000008); // Winamp API support
+define("WAT_OPT_CHECKTIME"  ,0x00000010); // check file time for changes
+define("WAT_OPT_VIDEO"      ,0x00000020); // only for format registering used
+define("WAT_OPT_LAST"       ,0x00000040); // (internal)
+define("WAT_OPT_FIRST"      ,0x00000080); // (internal)
+define("WAT_OPT_TEMPLATE"   ,0x00000100); // (internal)
+define("WAT_OPT_IMPLANTANT" ,0x00000200); // use process implantation
+define("WAT_OPT_HASURL"     ,0x00000400); // (player registration) URL field present
+define("WAT_OPT_CHANGES"    ,0x00000800); // obtain only chaged values
+                                          // (volume, status, window text, elapsed time)
 
+define("WAT_OPT_APPCOMMAND" ,0x00001000); // Special (multimedia) key support
+define("WAT_OPT_CHECKALL"   ,0x00002000); // Check all players
+define("WAT_OPT_KEEPOLD"    ,0x00004000); // Keep Old opened file
+define("WAT_OPT_MULTITHREAD",0x00008000); // Use multithread scan
+define("WAT_OPT_SINGLEINST" ,0x00010000); // Single player instance
 // services
 
 define("MS_WAT_GETMUSICINFO" ,"WATrack/GetMusicInfo");

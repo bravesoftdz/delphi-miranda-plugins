@@ -139,7 +139,10 @@ const
 }
   MS_WAT_RETURNGLOBAL:PAnsiChar = 'WATrack/GetMainStructure';
 
+//!! DON'T CHANGE THESE VALUES!
 const
+  WAT_CTRL_FIRST = 1;
+
   WAT_CTRL_PREV  = 1;
   WAT_CTRL_PLAY  = 2;
   WAT_CTRL_PAUSE = 3;
@@ -148,6 +151,8 @@ const
   WAT_CTRL_VOLDN = 6;
   WAT_CTRL_VOLUP = 7;
   WAT_CTRL_SEEK  = 8; // lParam is new position (sec)
+
+  WAT_CTRL_LAST  = 8;
 
 {
   wParam: button code (WAT_CTRL_* const)
@@ -335,8 +340,35 @@ const
 
 // --------- Last FM  ---------
 
+{
+  Toggle LastFM scrobbling status
+  wParam,lParam=0
+  Returns: previous state
+}
 const
   MS_WAT_LASTFM:pAnsiChar = 'WATrack/LastFM';
+
+{
+  Get Info based on currently played song
+  wParam: pLastFMInfo
+  lParam: int language (first 2 bytes - 2-letters language code)
+}
+type
+  pLastFMInfo = ^tLastFMInfo;
+  tLastFMInfo = record
+    request:integer;   // 0 - artist, 1 - album, 2 - track
+    artist :pWideChar; // artist
+    album  :pWideChar; // album or similar artists for Artist info request
+    title  :pWideChar; // track title 
+    tags   :pWideChar; // tags
+    info   :pWideChar; // artist bio or wiki article
+    image  :pAnsiChar; // photo/cover link
+    similar:pWideChar;
+    release:pWideChar;
+    trknum :integer;
+  end;
+const
+  MS_WAT_LASTFMINFO:pAnsiChar = 'WATrack/LastFMInfo';
 
 // --------- Templates ----------
 
