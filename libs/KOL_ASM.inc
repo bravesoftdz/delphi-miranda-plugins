@@ -7091,16 +7091,16 @@ asm
         POP       EDX  // EDX = @Result
         LEA       ESI, [ESI].fClientTop
         LODSB
-        MOVSX     EAX, AX
+        MOVSX     EAX, AL
         ADD       [EDX].TRect.Top, EAX
         LODSB
-        MOVSX     EAX, AX
+        MOVSX     EAX, AL
         SUB       [EDX].TRect.Bottom, EAX
         LODSB
-        MOVSX     EAX, AX
+        MOVSX     EAX, AL
         ADD       [EDX].TRect.Left, EAX
         LODSB
-        MOVSX     EAX, AX
+        MOVSX     EAX, AL
         SUB       [EDX].TRect.Right, EAX
         POP       ESI
 end;
@@ -7133,7 +7133,6 @@ asm
 end;
 {$ENDIF USE_GRAPHCTLS}
 
-//{$IFDEF ASM_UNICODE}
 function TControl.GetIcon: HIcon;
 asm
         PUSH      EBX
@@ -9682,8 +9681,10 @@ asm
     {$ENDIF}
     MOV   EDX, offset[WndProcTransparent]
     CALL  TControl.AttachProc
+    {$IFnDEF SMALLEST_CODE}
     LEA   EAX, [TransparentAttachProcExtension]
     MOV   [Global_AttachProcExtension], EAX
+    {$ENDIF}
 @@exit:
 end;
 

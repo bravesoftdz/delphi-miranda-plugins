@@ -1,5 +1,5 @@
 // Name:   KOL Addon - Visual XP Styles
-// Rev.:   1.99
+// Rev.:   1.99 + KOL 3.00.A
 // Date:   02 oct 2010
 // Author: MTsv DN
 // Thanks: mdw, Vladimir Kladov
@@ -661,6 +661,7 @@ begin
  // Draw focusrect
  if GetFocus = Sender.fHandle then DrawFocusRect(DC, RText);
 end;
+
 //******************** Drawing Button and BitButton control ******************//
 procedure WndButtonXPDraw( Dummy : Pointer; Sender: PControl; DC: HDC );
 var
@@ -687,13 +688,15 @@ var
  il : PImageList;
 begin
  // Checking user owner-draw
- if Assigned(Sender.EV.fOnPaint) and (@Sender.EV.fOnPaint <> @WndButtonXPDraw) then
-  begin
-   Sender.EV.fOnPaint(Sender, DC);
-   exit;
-  end;
- if Assigned(Sender.EV.fOnBitBtnDraw) then
-  begin
+ if  Assigned(Sender.EV.fOnPaint)
+ and (TMethod(Sender.EV.fOnPaint).Code <> @WndButtonXPDraw) then
+ begin
+     Sender.EV.fOnPaint(Sender, DC);
+     exit;
+ end;
+ if  Assigned(Sender.EV.fOnBitBtnDraw)
+ and (TMethod(Sender.EV.fOnBitBtnDraw).Code <> @DummyProc123_0) then
+ begin
    fState := 0{PBS_NORMAL};
    {$IFDEF USE_FLAGS}
    if  F3_Disabled in Sender.fStyle.f3_Style then
@@ -713,7 +716,7 @@ begin
        fState := 1{PBS_PRESSED};
    Sender.EV.fOnBitBtnDraw(Sender, fState);
    exit;
-  end;
+ end;
 
  // Getting rects
  RClient := Sender.ClientRect;
