@@ -4,7 +4,7 @@ function Service_GetCaps(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
   case wParam of
     PFLAGNUM_1:
-      result:=PF1_EXTSEARCH or PF1_MODEMSGRECV or PF1_ADDSEARCHRES;
+      result:=PF1_EXTSEARCH or PF1_MODEMSGRECV or PF1_ADDSEARCHRES or PF1_BASICSEARCH;
     PFLAGNUM_2:
       result:=PF2_ONLINE or PF2_INVISIBLE or PF2_SHORTAWAY;
     PFLAGNUM_3:

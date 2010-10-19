@@ -498,7 +498,7 @@ begin
  else
      RCheck.Top := RCheck.Top + (RCheck.Bottom - RCheck.Top - H) div 2;
  RCheck.Bottom := RCheck.Top + H;
- RText := MakeRect(RCheck.Right + Sender.Border, RCheck.Top,
+ RText := MakeRect(RCheck.Right + Sender.fMargin, RCheck.Top,
                    RClient.Right, RCheck.Bottom);
  // Getting state
  fState := 1; {CBS_UNCHECKEDNORMAL}
@@ -561,7 +561,11 @@ begin
  DeleteObject(F);
 
  // Draw focusrect
- if GetFocus = Sender.fHandle then DrawFocusRect(DC, RText);
+ if  GetFocus = Sender.fHandle then
+ begin
+     dec( RText.Left );
+     DrawFocusRect(DC, RText);
+ end;
 end;
 //************************* Drawing RadioBox control *************************//
 procedure WndRadioBoxXPDraw( Dummy : Pointer; Sender: PControl; DC: HDC );
@@ -659,7 +663,11 @@ begin
  DeleteObject(F);
  
  // Draw focusrect
- if GetFocus = Sender.fHandle then DrawFocusRect(DC, RText);
+ if  GetFocus = Sender.fHandle then
+ begin
+     dec( RText.Left );
+     DrawFocusRect(DC, RText);
+ end;
 end;
 
 //******************** Drawing Button and BitButton control ******************//

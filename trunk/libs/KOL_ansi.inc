@@ -1871,6 +1871,7 @@ function VkKeyScanEx(ch: KOLChar; dwhkl: HKL): SHORT; stdcall;
 function WinHelp(hWndMain: HWND; lpszHelp: PKOLChar; uCommand: UINT; dwData: DWORD): BOOL; stdcall;
 function wsprintf(Output: PKOLChar; Format: PKOLChar): Integer; stdcall;
 function wvsprintf(Output: PKOLChar; Format: PKOLChar; arglist: {$IFDEF UNICODE} PAnsiChar {$ELSE} va_list {$ENDIF}): Integer; stdcall;
+function CreateMutex(lpMutexAttributes: PSecurityAttributes; bInitialOwner: BOOL; lpName: PAnsiChar): THandle;
 
 const
   IDC_ARROW = MakeIntResource(32512);
@@ -2303,4 +2304,13 @@ function VkKeyScanEx; external user32 name 'VkKeyScanExA';
 function WinHelp; external user32 name 'WinHelpA';
 function wsprintf; external user32 name 'wsprintfA';
 function wvsprintf; external user32 name 'wvsprintfA';
+// NT 4.0 bug workaround - NT 4.0 doesn't test bInitialOwner for zero/nonzero, it tests for 1
+function _CreateMutex(lpMutexAttributes: PSecurityAttributes;
+  bInitialOwner: Integer; lpName: PAnsiChar): THandle; stdcall;
+  external kernel32 name 'CreateMutexA';
+function CreateMutex(lpMutexAttributes: PSecurityAttributes; bInitialOwner: BOOL; lpName: PAnsiChar): THandle;
+begin
+  Result := _CreateMutex(lpMutexAttributes, Integer(Boolean(bInitialOwner)), lpName);
+end;
+
 {$ENDIF implementation_part} ///////////////////////////////////////////////////

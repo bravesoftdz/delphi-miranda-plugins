@@ -44,16 +44,21 @@ const
              the .ext
     return : 0 on success, non zero on failure
   }
-  MS_DB_GETPROFILENAME:PAnsiChar = 'DB/GetProfileName';
+  MS_DB_GETPROFILENAME :PAnsiChar = 'DB/GetProfileName';
+  MS_DB_GETPROFILENAMEW:PAnsiChar = 'DB/GetProfileNameW';
 
   {
     wParam : size of buffer pointed to by lParam
     lParam : pointer to a buffer to be filled
-    affect : Fill a buffer with the current profile path being used, this does not include the trailing backslash.
+    affect : Get the path of the base folder where Miranda will store all individual profiles
+             The returned path does NOT include a trailing backslash.
+             Essentially this is what has been set in mirandaboot.ini as ProfileDir.
+             For more options to retrieve profile paths check MS_UTILS_REPLACEVARS
     return : 0 on success, non zero on failure
     version: 0.3a only
   }
-  MS_DB_GETPROFILEPATH:PAnsiChar = 'DB/GetProfilePath';
+  MS_DB_GETPROFILEPATH :PAnsiChar = 'DB/GetProfilePath';
+  MS_DB_GETPROFILEPATHW:PAnsiChar = 'DB/GetProfilePathW';
 
 type
   PDBCONTACTGETSETTING = ^TDBCONTACTGETSETTING;

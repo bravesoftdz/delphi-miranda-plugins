@@ -21,11 +21,10 @@
 
   Key Objects Library (C) 2000 by Kladov Vladimir.
 
-  mailto: bonanzas@xcl.cjb.net
-  Home: http://kol.nm.ru
-        http://xcl.cjb.net
-        http://xcl.nm.ru
+  mailto: vk@kolmck.net
+  Home: http://kolmck.net
 
+  This version is compatible with KOL 3.00+
  =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-}
 {
   This code is grabbed mainly from standard SysUtils.pas unit,
@@ -152,7 +151,7 @@ type
 
 { Generic filename type }
 
-  TFileName = type KOLstring;
+  TFileName = type string;
 
 { Exceptions }
   Exception = class;
@@ -177,30 +176,30 @@ type
   protected
     FCode: TError;
     FErrorCode: DWORD;
-    FMessage: KOLstring;
+    FMessage: KOLString;
     FExceptionRecord: PExceptionRecord;
     FData: Pointer;
     FOnDestroy: TDestroyException;
     procedure SetData(const Value: Pointer);
   public
-    constructor Create(ACode: TError; const Msg: KOLstring);
+    constructor Create(ACode: TError; const Msg: string);
     {* Use this constructor to raise exception, which does not require of
        argument formatting. }
-    constructor CreateFmt(ACode: TError; const Msg: KOLstring; const Args: array of const);
+    constructor CreateFmt(ACode: TError; const Msg: string; const Args: array of const);
     {* Use this constructor to raise an exception with formatted Message string.
        Take into attention, that Format procedure defined in KOL, uses API wvsprintf
        function, which can understand a restricted set of format specifications. }
-    constructor CreateCustom(AError: DWORD; const Msg: KOLString);
+    constructor CreateCustom(AError: DWORD; const Msg: String);
     {* Use this constructor to create e_Custom exception and to assign AError to
        its ErrorCode property. }
-    constructor CreateCustomFmt(AError: DWORD; const Msg: KOLString; const Args: array of const);
+    constructor CreateCustomFmt(AError: DWORD; const Msg: String; const Args: array of const);
     {* Use this constructor to create e_Custom exception with formatted message
        string and to assign AError to its ErrorCode property. }
     constructor CreateResFmt(ACode: TError; Ident: Integer; const Args: array of const);
-    {* }
+    {* }    
     destructor Destroy; override;
     {* destructor }
-    property Message: KOLstring read FMessage; // write FMessage;
+    property Message: KOLString read FMessage; // write FMessage;
     {* Text string, containing descriptive message about the exception. }
     property Code: TError read FCode;
     {* Main exception code. This property can be used to determine, which exception
@@ -253,7 +252,7 @@ procedure AddExitProc(Proc: TProcedure);
 
 { System error messages }
 
-function SysErrorMessage(ErrorCode: Integer): KOLstring;
+function SysErrorMessage(ErrorCode: Integer): string;
 
 { Exception handling routines }
 
@@ -327,6 +326,16 @@ function SafeLoadLibrary(const Filename: KOLString;
 
 implementation
 
+{procedure ConvertError(const Ident: string);
+begin
+  raise Exception.Create(e_Convert, Ident);
+end;
+
+procedure ConvertErrorFmt(ResString: PResStringRec; const Args: array of const);
+begin
+  raise Exception.CreateFmt(e_Convert, LoadResString(ResString), Args);
+end;}
+
 { Memory management routines }
 
 function AllocMem(Size: Cardinal): Pointer;
@@ -375,7 +384,7 @@ end;
 
 { System error messages }
 
-function SysErrorMessage(ErrorCode: Integer): KOLstring;
+function SysErrorMessage(ErrorCode: Integer): string;
 var
   Len: Integer;
   Buffer: array[0..255] of KOLChar;
@@ -385,8 +394,7 @@ begin
     SizeOf(Buffer), nil);
   while (Len > 0) and ((Buffer[Len - 1] <= ' ') or
                        (Buffer[Len - 1] = '.')) do Dec(Len);
-  SetLength(Result, Len);
-  move( Buffer, Result[1], Len * Sizeof( KOLChar ) );
+  SetString(Result, Buffer, Len);
 end;
 
 { Exception handling routines }
@@ -508,12 +516,12 @@ end;
 function ExceptionErrorMessage(ExceptObject: TObject; ExceptAddr: Pointer;
   Buffer: PKOLChar; Size: Integer): Integer;
 var
-  MsgPtr: PChar;
+  MsgPtr: PKOLChar;
   //MsgEnd: PChar;
   //MsgLen: Integer;
   ModuleName: array[0..MAX_PATH] of KOLChar;
   //Temp: array[0..MAX_PATH] of Char;
-  Fmt: array[0..255] of Char;
+  Fmt: array[0..255] of KOLChar;
   Info: TMemoryBasicInformation;
   ConvertedAddress: Pointer;
 begin
@@ -534,14 +542,14 @@ begin
   //MsgEnd := '';
   if ExceptObject is Exception then
   begin
-    MsgPtr := @(Exception(ExceptObject).Message[1]);
+    MsgPtr := PKOLChar(Exception(ExceptObject).Message);
     //MsgLen := StrLen(MsgPtr);
     //if (MsgLen <> 0) and (MsgPtr[MsgLen - 1] <> '.') then MsgEnd := '.';
     {-} // Isn't it too beautiful - devote ~40 bytes of code just to decide,
         // add or not a point at the end of the message.
   end;
   {$IFNDEF USE_RESOURCESTRING}
-  StrCopy( Fmt, SException );
+  {$IFDEF UNICODE_CTRLS} WStrCopy {$ELSE} StrCopy {$ENDIF}( Fmt, SException );
   {$ELSE}
   LoadString(FindResourceHInstance(HInstance),
     PResStringRec(@SException).Identifier, Fmt, SizeOf(Fmt));
@@ -611,21 +619,21 @@ begin
   FData := Value;
 end;
 
-constructor Exception.Create(ACode: TError; const Msg: KOLstring);
+constructor Exception.Create(ACode: TError; const Msg: string);
 begin
   FCode := ACode;
   FMessage := Msg;
   //FAllowFree := TRUE;
 end;
 
-constructor Exception.CreateCustom(AError: DWORD; const Msg: KOLString);
+constructor Exception.CreateCustom(AError: DWORD; const Msg: String);
 begin
   FCode := e_Custom;
   FMessage := Msg;
   FErrorCode := AError;
 end;
 
-constructor Exception.CreateCustomFmt(AError: DWORD; const Msg: KOLString;
+constructor Exception.CreateCustomFmt(AError: DWORD; const Msg: String;
   const Args: array of const);
 begin
   FCode := e_Custom;
@@ -633,7 +641,7 @@ begin
   FMessage := Format(Msg, Args);
 end;
 
-constructor Exception.CreateFmt(ACode: TError; const Msg: KOLstring;
+constructor Exception.CreateFmt(ACode: TError; const Msg: string;
   const Args: array of const);
 begin
   FCode := ACode;

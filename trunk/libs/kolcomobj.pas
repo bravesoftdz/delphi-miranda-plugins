@@ -1964,7 +1964,7 @@ end;
 
 { Call GetIDsOfNames method on the given IDispatch interface }
 
-procedure GetIDsOfNames(const Dispatch: IDispatch; Names: PAnsiChar;
+procedure GetIDsOfNames(const Dispatch: IDispatch; Names: PChar;
   NameCount: Integer; DispIDs: PDispIDList);
 
   procedure RaiseNameException;
@@ -1977,7 +1977,7 @@ type
   TNamesArray = array[0..0] of PWideChar;
 var
   N, SrcLen, DestLen: Integer;
-  Src: PAnsiChar;
+  Src: PChar;
   Dest: PWideChar;
   NameRefs: PNamesArray;
   StackTop: Pointer;

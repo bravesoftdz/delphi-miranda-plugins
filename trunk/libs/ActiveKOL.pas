@@ -1,3 +1,5 @@
+{This version is compatible with KOL 3.00+ -- VK}
+
 unit ActiveKOL;
 
 interface
@@ -223,7 +225,9 @@ type
     //{$IFDEF DELPHI_CODECOMPLETION_BUG}
     fNotAvailable: Boolean;
     //{$ENDIF}
+    {$IFNDEF USE_NAMES}
     fName: String;
+    {$ENDIF}
     FControlData: PControlData;
     FOleObject: IOleObject;
     FMiscStatus: Longint;
@@ -515,7 +519,7 @@ constructor TEnumPropDesc.Create(DispID, ValueCount: Integer;
 var
   I: Integer;
   VarDesc: PVarDesc;
-  Name: WideString;
+  XName: WideString;
 begin
   FDispID := DispID;
   FValueCount := ValueCount;
@@ -524,12 +528,12 @@ begin
   begin
     OleCheck(TypeInfo.GetVarDesc(I, VarDesc));
     try
-      OleCheck(TypeInfo.GetDocumentation(VarDesc^.memid, @Name,
+      OleCheck(TypeInfo.GetDocumentation(VarDesc^.memid, @XName,
         nil, nil, nil));
       with FValues^[I] do
       begin
         Value := TVarData(VarDesc^.lpVarValue^).VInteger;
-        Ident := Name;
+        Ident := XName;
         while (Length(Ident) > 1) and (Ident[1] = '_') do
           Delete(Ident, 1, 1);
       end;
@@ -1868,13 +1872,21 @@ begin
             Word(Args^[1].VPointer^) := Key;
         end;
       DISPID_KEYPRESS:
+       if Params.cArgs > 0 then
+       begin
+         Ch := KOLChar(Integer(Variant(Args^[0])));
+         KeyPress(Ch);
+         if ((Args^[0].vType and varByRef) <> 0) then
+           KOLChar(Args^[0].VPointer^) := Ch;
+       end;
+      {DISPID_KEYPRESS:
         if Params.cArgs > 0 then
         begin
-          Ch := Char(Integer(Variant(Args^[0])));
+          Ch := KOLChar(Integer(Variant(Args^[0])));
           KeyPress(Ch);
           if ((Args^[0].vType and varByRef) <> 0) then
-            Char(Args^[0].VPointer^) := Ch;
-        end;
+            KOLChar(Args^[0].VPointer^) := Ch;
+        end;}
       DISPID_MOUSEDOWN, DISPID_MOUSEMOVE, DISPID_MOUSEUP:
         if Params.cArgs >= 4 then
         begin

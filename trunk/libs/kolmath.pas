@@ -324,7 +324,7 @@ function count_1_bits_in_dword( x: Integer ): Integer;
 implementation
 
 {$IFNDEF _D2orD3}
-//!!uses SysConst;
+uses SysConst;
 {$ENDIF}
 
 function EAbs( D: Double ): Double;
