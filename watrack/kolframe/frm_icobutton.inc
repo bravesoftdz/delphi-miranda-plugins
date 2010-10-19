@@ -87,7 +87,7 @@ begin
       else
         Sender.SetPosition(Sender.Position.X-2,Sender.Position.Y-2);
       Sender.Update;
-      Sender.Parent.Update;
+//      Sender.Parent.Update;
 
       if D.rptvalue<>0 then
       begin
@@ -115,14 +115,12 @@ begin
       else
         Sender.SetPosition(sender.Position.X+2,sender.Position.Y+2);
       Sender.Update;
-      Sender.Parent.Update;
+//      Sender.Parent.Update;
 
     end;
   end;
 end;
 
-// variant - through remap array by number
-// one way more - to fill ico handles at start (hicon - can b cnhanged, so - hIcoLib)
 function CreateIcoButton(AOwner: PControl; action:integer; repeattime:integer=0):PControl;
 var
   ico:HICON;

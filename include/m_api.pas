@@ -337,6 +337,7 @@ var
   {$include m_clistint.inc}
   {$include m_metacontacts.inc}
   {$include m_timezones.inc}
+  {$include m_crypto.inc}
 
 procedure InitMMI;
 

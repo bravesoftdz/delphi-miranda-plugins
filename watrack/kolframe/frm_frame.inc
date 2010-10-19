@@ -24,6 +24,13 @@ const
   opt_PadRight  :PAnsiChar = 'frame/paddingright';
   opt_PadBottom :PAnsiChar = 'frame/paddingbottom';
 
+procedure TWATFrame.ResetFrame;
+begin
+// Slider to zero (max to sero)
+// Clear text
+// frame back to default
+end;
+
 procedure FrameTimerProc(wnd:HWND;uMsg:cardinal;idEvent:cardinal;dwTime:dword); stdcall;
 var
   psi:PSongInfo;

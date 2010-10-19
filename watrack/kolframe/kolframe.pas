@@ -104,6 +104,7 @@ begin
 
           SetFrameTitle(PluginShort,0,0); // frame update code there
         end;
+        FrameCtrl.ResetFrame;
         // clear text, slider to 0, picture to default
       end;
 

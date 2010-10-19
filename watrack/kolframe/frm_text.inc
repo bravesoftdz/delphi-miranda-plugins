@@ -61,12 +61,11 @@ begin
     if not force then
     begin
       if (StrPosW(Template,'%percent%')=nil) and
-         (StrPosW(Template,'%time%'   )=nil) then // need to remake
+         (StrPosW(Template,'%time%'   )=nil) then // need to |remake
         exit;
     end;
     RemakeText;
-    TextBlock.Update;
-//    SendMessage(TextBlock.GetWindowHandle,WM_SIZE,0,0);
+    TextBlock.Invalidate;
   end;
 end;
 
@@ -125,7 +124,7 @@ begin
     lfStrikeOut  :=0;
     lfFaceName[0]:=#0;
   end;
-  TextFont:=CreateFontIndirect(TextLF);
+//  TextFont:=CreateFontIndirect(TextLF);
 end;
 
 const
@@ -154,6 +153,7 @@ begin
   UpdInterval:=DBReadWord(0,PluginShort,opt_TxtTimer,10);
   if DBReadStruct(0,PluginShort,opt_FrmFont,@TextLF,SizeOf(TextLF))=0 then
     InitFrame;
+  TextFont:=CreateFontIndirect(TextLF);
 end;
 
 procedure tTxtBlockData.SaveSettings;
@@ -167,6 +167,9 @@ begin
   DBWriteWord   (0,PluginShort,opt_TxtTimer  ,UpdInterval);
 
   DBWriteStruct (0,PluginShort,opt_FrmFont   ,@TextLF,SizeOf(TextLF));
+  if TextFont<>0 then
+    DeleteObject(TextFont);
+  TextFont:=CreateFontIndirect(TextLF);
 
   DBWriteUnicode(0,PluginShort,opt_FrameText ,Template);
   RemakeText;
@@ -205,9 +208,7 @@ begin
     SetTextColor(dc,TextColor);
     CopyRect(dst,Sender.BoundsRect);
     InflateRect(dst,-4,-2);
-//if dc=0 then
-//showpopupw('dc=0');
-
+    // small problem: font changes can delete starting font
     DrawChunks(dc,@TextChunk[0],dst,true); // i.e. only paint or roll
     SelectObject(dc,fnt1);
   end;
@@ -249,6 +250,7 @@ var
 begin
   result:=NewPanel(AOwner,esNone);
 //  result:=NewLabel(AOwner,'');
+//  result:=NewLabelEffect(AOwner,'',0);
   New(D, Create);
   with result^ do
   begin
@@ -261,7 +263,7 @@ begin
     Anchor(true,true,true,true);
 
     D.LoadSettings;
-    D.InitFrame;
+//    D.InitFrame;
     D.BkColor:=BkColor;
     D.TextChunk:=nil;
     D.NeedResize:=true;

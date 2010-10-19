@@ -248,5 +248,4 @@ That is all to have full compatibility.
          {$ENDIF}
 {$ENDIF}
 
-
-
+{$DEFINE DIBPixels32bitWithAlpha}

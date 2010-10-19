@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // KOL_ASM.inc ()to be inlude in KOL.pas)
-// v 3.00
+// v 3.00.o
 
 function MsgBox( const S: KOLString; Flags: DWORD ): DWORD;
 asm
@@ -2154,7 +2154,7 @@ asm
         CALL     Windows.RoundRect
 end;
 
-procedure TCanvas.TextArea(const Text: AnsiString; var Sz: TSize;
+procedure TCanvas.TextArea(const Text: KOLString; var Sz: TSize;
   var P0: TPoint);
 asm
         PUSH     EBX
@@ -2175,63 +2175,6 @@ asm
         CALL     [GlobalCanvas_OnTextArea]
 
 @@exit:
-        POP      EBX
-end;
-
-function TCanvas.TextExtent(const Text: AnsiString): TSize;
-asm
-        PUSH     EBX
-        PUSH     ESI
-        MOV      EBX, EAX
-
-        PUSH     ECX               // prepare @Result
-
-        MOV      EAX, EDX
-        CALL     System.@LStrLen
-        PUSH     EAX               // prepare Length(Text)
-
-        CALL     EDX2PChar
-        PUSH     EDX               // prepare PChar(Text)
-
-        PUSH     HandleValid or FontValid
-        PUSH     EBX
-        CALL     RequiredState
-
-        XCHG     ESI, EAX
-        TEST     ESI, ESI          // ESI = fHandle before
-        JNZ      @@1
-
-        PUSH     ESI
-        CALL     CreateCompatibleDC
-
-        MOV      EDX, EBX
-        XCHG     EAX, EDX // EAX := @Self; EDX := DC
-        CALL     SetHandle
-
-//****************************************************** // Added By M.Gerasimov
-        CMP      [EBX].TCanvas.fIsPaintDC, 1
-        JZ       @@2
-        XOR      ESI,ESI
-@@2:
-//******************************************************
-
-@@1:
-        PUSH     HandleValid or FontValid
-        PUSH     EBX
-        CALL     RequiredState
-        PUSH     EAX               // prepare DC
-
-        CALL     Windows.GetTextExtentPoint32A  // KOL_ANSI
-
-        TEST     ESI, ESI
-        JNZ      @@exit
-
-        XOR      EDX, EDX
-        XCHG     EAX, EBX
-        CALL     SetHandle
-
-@@exit:
-        POP      ESI
         POP      EBX
 end;
 
@@ -2448,125 +2391,6 @@ asm     //cmd    //opd
         POP      EBX
 end;
 
-function Int2Hex( Value : DWord; Digits : Integer ) : AnsiString;
-asm     // EAX = Value
-        // EDX = Digits
-        // ECX = @Result
-
-        PUSH      0
-        ADD       ESP, -0Ch
-
-        PUSH      EDI
-        PUSH      ECX
-
-        LEA       EDI, [ESP+8+0Fh]  // EBX := @Buf[ 15 ]
-        {$IFDEF SMALLEST_CODE}
-        {$ELSE}
-        AND       EDX, $F
-        {$ENDIF}
-
-@@loop: DEC       EDI
-        DEC       EDX
-
-        PUSH      EAX
-        {$IFDEF PARANOIA} DB $24, $0F {$ELSE} AND AL, 0Fh {$ENDIF}
-
-        {$IFDEF oldcode}
-
-                {$IFDEF PARANOIA} DB $3C, 9 {$ELSE} CMP AL, 9 {$ENDIF}
-                JA        @@10
-                {$IFDEF PARANOIA} DB $04, 30h-41h+0Ah {$ELSE} ADD AL,30h-41h+0Ah {$ENDIF}
-        @@10:
-                {$IFDEF PARANOIA} DB $04, 41h-0Ah {$ELSE} ADD AL,41h-0Ah {$ENDIF}
-
-        {$ELSE newcode}
-
-                AAM
-                DB $D5, $11 //AAD
-                ADD      AL, $30
-
-        {$ENDIF newcode}
-
-
-        //MOV       byte ptr [EDI], AL
-        STOSB
-        DEC       EDI
-        POP       EAX
-        SHR       EAX, 4
-
-        JNZ       @@loop
-
-        TEST      EDX, EDX
-        JG        @@loop
-
-        POP       EAX      // EAX = @Result
-        MOV       EDX, EDI // EDX = @resulting string
-        {$IFDEF _D2009orHigher}
-        //PUSH     ECX       // TODO: remove ecx protection
-        XOR      ECX, ECX
-        {$ENDIF}
-        CALL      System.@LStrFromPChar
-        {$IFDEF _D2009orHigher}
-        //POP       ECX      // ECX popup twice to eax?
-        {$ENDIF}
-        POP       EDI
-        ADD       ESP, 10h
-
-{== by KSer - to test it only.
-function Int2Hex( Value : DWord; Digits : Integer ) : shortString;
-asm
-        MOV       [ECX], DL
-        XADD      EDX, ECX
-@@loop1:
-        PUSH      EAX
-        db   $24, $0F    // and  al,$0F
-        AAM
-        DB $D5, $11      // AAD
-        db   $04, $30    // add  al,$30
-        MOV       [EDX], AL
-        POP       EAX
-        SHR       EAX, 4
-        DEC       EDX
-        LOOP      @@loop1
-}
-end;
-
-function Hex2Int( const Value : AnsiString) : Integer;
-asm
-        CALL     EAX2PChar
-        PUSH     ESI
-        XCHG     ESI, EAX
-        XOR      EDX, EDX
-        TEST     ESI, ESI
-        JE       @@exit
-        LODSB
-        {$IFDEF PARANOIA} DB $3C, '$' {$ELSE} CMP AL, '$' {$ENDIF}
-        JNE      @@1
-@@0:    LODSB
-@@1:    TEST     AL, AL
-        JE       @@exit
-        {$IFDEF PARANOIA} DB $2C, '0' {$ELSE} SUB AL, '0' {$ENDIF}
-        {$IFDEF PARANOIA} DB $3C, 9 {$ELSE} CMP AL, '9' - '0' {$ENDIF}
-        JBE      @@3
-
-        {$IFDEF PARANOIA} DB $2C, $11 {$ELSE} SUB AL, 'A' - '0' {$ENDIF}
-        {$IFDEF PARANOIA} DB $3C, 5 {$ELSE} CMP AL, 'F' - 'A' {$ENDIF}
-        JBE      @@2
-
-        {$IFDEF PARANOIA} DB $2C, 32 {$ELSE} SUB AL, 32 {$ENDIF}
-        {$IFDEF PARANOIA} DB $3C, 5 {$ELSE} CMP AL, 'F' - 'A' {$ENDIF}
-        JA       @@exit
-@@2:
-        {$IFDEF PARANOIA} DB $04, 0Ah {$ELSE} ADD AL, 0Ah {$ENDIF}
-@@3:
-        SHL      EDX, 4
-        ADD      DL, AL
-        JMP      @@0
-
-@@exit: XCHG     EAX, EDX
-        POP      ESI
-end;
-
 function cHex2Int( const Value : AnsiString) : Integer;
 asm
      TEST  EAX, EAX
@@ -2581,157 +2405,6 @@ asm
 @@2Hex2Int:
      JMP   Hex2Int
 @@exit:
-end;
-
-function Int2Str( Value : Integer ) : AnsiString;
-asm
-        XOR       ECX, ECX
-        PUSH      ECX
-        ADD       ESP, -0Ch
-
-        PUSH      EBX
-        LEA       EBX, [ESP + 15 + 4]
-        PUSH      EDX
-        CMP       EAX, ECX
-        PUSHFD
-        JGE       @@1
-        NEG       EAX
-@@1:
-        MOV       CL, 10
-
-@@2:
-        DEC       EBX
-        XOR       EDX, EDX
-        DIV       ECX
-        ADD       DL, 30h
-        MOV       [EBX], DL
-        TEST      EAX, EAX
-        JNZ       @@2
-
-        POPFD
-        JGE       @@3
-
-        DEC       EBX
-        MOV       byte ptr [EBX], '-'
-@@3:
-        POP       EAX
-        MOV       EDX, EBX
-        {$IFDEF _D2009orHigher}
-        XOR      ECX, ECX // TODO: safe to destory twice?
-        {$ENDIF}
-        CALL      System.@LStrFromPChar
-
-        POP       EBX
-        ADD       ESP, 10h
-end;
-
-function Int2Ths( I : Integer ) : AnsiString;
-asm
-        PUSH     EBP
-        MOV      EBP, ESP
-        PUSH     EAX
-        PUSH     EDX
-        CALL     Int2Str
-        POP      EDX
-        POP      EAX
-        TEST     EAX, EAX
-        JGE      @@0
-        NEG      EAX
-@@0:
-        CMP      EAX, 1000
-        JL       @@Exit
-        PUSH     EDX
-        MOV      EAX, [EDX]
-        PUSH     EAX
-        CALL     System.@LStrLen         // EAX = Length(Result)
-        POP      EDX
-        PUSH     EDX                     // EDX = @Result[ 1 ]
-        XOR      ECX, ECX
-
-@@1:
-        ROL      ECX, 8
-        DEC      EAX
-        MOV      CL, [EDX+EAX]
-        JZ       @@fin
-        CMP      ECX, 300000h
-        JL       @@1
-
-        PUSH     ECX
-        XOR      ECX, ECX
-        MOV      CL, [ThsSeparator]
-        JMP      @@1
-
-@@fin:  CMP      CL, '-'
-        JNE      @@fin1
-        CMP      CH, [ThsSeparator]
-        JNE      @@fin1
-        MOV      CH, 0                   // this corrects -,ddd,...
-@@fin1: CMP      ECX, 01000000h
-        JGE      @@fin2
-        INC      EAX
-        ROL      ECX, 8
-        JMP      @@fin1
-@@fin2: PUSH     ECX
-
-        LEA      EDX, [ESP+EAX]
-        MOV      EAX, [EBP-4]
-        {$IFDEF _D2009orHigher}
-        XOR      ECX, ECX // TODO: safe to change ecx?
-        {$ENDIF}
-        CALL     System.@LStrFromPChar
-@@Exit:
-        MOV      ESP, EBP
-        POP      EBP
-end;
-
-function Int2Digs( Value, Digits : Integer ) : AnsiString;
-asm
-        PUSH     EBP
-        MOV      EBP, ESP
-        PUSH     EDX             // [EBP-4] = Digits
-        PUSH     ECX
-        MOV      EDX, ECX
-        CALL     Int2Str
-        POP      ECX
-        PUSH     ECX             // [EBP-8] = @Result
-        MOV      EAX, [ECX]
-        PUSH     EAX
-        CALL     System.@LStrLen
-        POP      EDX             // EDX = @Result[1]
-        MOV      ECX, EAX        // ECX = Length( Result )
-        ADD      EAX, EAX
-        SUB      ESP, EAX
-        MOV      EAX, ESP
-        PUSHAD
-        CALL     StrCopy
-        POPAD
-        MOV      EDX, EAX
-        ADD      ESP, -100
-        CMP      byte ptr [EDX], '-'
-        PUSHFD
-        JNE      @@1
-        INC      EDX
-@@1:
-        MOV      EAX, [EBP-4]    // EAX = Digits
-        CMP      ECX, EAX
-        JGE      @@2
-        DEC      EDX
-        MOV      byte ptr [EDX], '0'
-        INC      ECX
-        JMP      @@1
-@@2:
-        POPFD
-        JNE      @@3
-        DEC      EDX
-        MOV      byte ptr [EDX], '-'
-@@3:
-        MOV      EAX, [EBP-8]
-        {$IFDEF _D2009orHigher}
-        XOR      ECX, ECX // TODO: eax or ecx affect result?
-        {$ENDIF}
-        CALL     System.@LStrFromPChar
-        MOV      ESP, EBP
-        POP      EBP
 end;
 
 function Num2Bytes( Value : Double ) : AnsiString;
@@ -2956,8 +2629,8 @@ asm     //cmd    //opd
         CALL     System.@GetMem
         POP      EDX
         PUSH     EAX
-        MOV      CL, 0
-        CALL     System.@FillChar
+        //MOV      CL, 0
+        CALL     ZeroMemory
         POP      EAX
 @@exit:
 end;
@@ -3288,11 +2961,15 @@ end;
 
 procedure TDirList.Clear;
 asm
-        XOR      ECX, ECX
-        XCHG     ECX, [EAX].fList
-        JECXZ    @@exit
-        XCHG     EAX, ECX
-        CALL     TList.Release
+        LEA      EDX, [EAX].FListPositions
+        CALL     @@clear
+        ADD      EDX, 4 // fStoreFiles -- order of fields is important!!!
+@@clear:
+        PUSHAD
+        XOR      EAX, EAX
+        XCHG     EAX, dword ptr [EDX]
+        CALL     TObj.RefDec
+        POPAD
 @@exit:
 end;
 
@@ -3314,95 +2991,11 @@ end;
 
 function TDirList.GetCount: Integer;
 asm
-        MOV      EAX, [EAX].fList
-        TEST     EAX, EAX
-        {$IFDEF USE_CMOV}
-        CMOVNZ   EAX, [EAX].TList.fCount
-        {$ELSE}
-        JZ       @@exit
-        MOV      EAX, [EAX].TList.fCount
-@@exit: {$ENDIF}
-end;
-
-{$IFDEF SwapDirItems_ASM}
-procedure SwapDirItems( const Data : PSortDirData; const e1, e2 : DWORD );
-asm
-        MOV      EAX, [EAX].TSortDirData.Dir
-        MOV      EAX, [EAX].TDirList.fList
-        MOV      EAX, [EAX].TList.fItems
-        LEA      EDX, [EAX+EDX*4]
-        LEA      ECX, [EAX+ECX*4]
-        MOV      EAX, [EDX]
-        XCHG     EAX, [ECX]
-        MOV      [EDX], EAX
-end;
-{$ENDIF SwapDirItems_ASM}
-
-procedure TDirList.Sort(Rules: array of TSortDirRules);
-const   high_DefSortDirRules = High( DefSortDirRules );
-asm
-        PUSH     EBX
-        PUSH     ESI
-        XOR      EBX,EBX
-        CMP      [EAX].fList, EBX
-        JE       @@exit
-
-        PUSH     EAX           // prepare Dir = @Self
-        XOR      EAX, EAX
-        PUSH     EAX
-        PUSH     EAX
-        PUSH     EAX
-        MOV      ESI, ESP
-        INC      ECX           // ECX = High(Rules)
-        JZ       @@2
-@@1:    MOV      AH, [EDX]     // AH = Rules[ I ]
-        INC      EDX
-        CALL     @@add_rule
-        LOOP     @@1
-@@2:    LEA      EDX, [DefSortDirRules]
-        MOV      CL, high_DefSortDirRules + 1
-@@21:   MOV      AH, [EDX]
-        INC      EDX
-        CALL     @@add_rule
-        LOOP     @@21
-
-        PUSH     BX           // prepare FoldersFirst(BL), CaseSensitive(BH)
-        MOV      EBX, [ESP].TSortDirData.Dir
-        MOV      EAX, ESP
-        PUSH     offset[SwapDirItems]
-        MOV      ECX, offset[CompareDirItems]
-        MOV      EDX, [EBX].fList
-        MOV      EDX, [EDX].TList.fCount
-        CALL     SortData
-
-        ADD      ESP, 18
-        JMP      @@exit
-
-@@add_rule:
-        PUSH     ESI
-        PUSH     ECX
-        MOV      CL, 11
-@@a1:   LODSB
-        TEST     AL, AL
-        JZ       @@a2
-        CMP      AL, AH
-        JE       @@a3
-        LOOP     @@a1
-@@a2:   DEC      ESI
-        MOV      [ESI], AH
-        CMP      AH, sdrFoldersFirst
-        JNE      @@a4
-        INC      BL
-@@a4:   CMP      AH, sdrCaseSensitive
-        JNE      @@a3
-        INC      BH
-@@a3:   POP      ECX
-        POP      ESI
-        RET
-
-@@exit:
-        POP      ESI
-        POP      EBX
+        MOV      ECX, [EAX].FListPositions
+        JECXZ    @@retECX
+        MOV      ECX, [ECX].TList.fCount
+@@retECX:
+        XCHG     EAX, ECX
 end;
 
 destructor TThread.Destroy;
@@ -3505,189 +3098,6 @@ asm
         PUSH     EAX
         MOV      [ESP+1], DX
         POP      EAX
-end;
-
-function _NewTControl( AParent: PControl ): PControl;
-begin
-  New( Result, CreateParented( AParent ) );
-end;
-
-function _NewWindowed( AParent: PControl; ControlClassName: PKOLChar;
-         Ctl3D: Boolean; ACommandActions: TCommandActionsParam ): PControl;
-asm
-        PUSH     EBX
-        PUSH     ESI
-        PUSH     EDI
-        MOV      EDI, [ACommandActions]
-        MOV      [ACommandActions], ECX // Ctl3D -> ACommandActions
-
-        PUSH     EDX // ControlClassName
-
-        MOV      ESI, EAX // ESI = AParent
-        CALL     _NewTControl
-        XCHG     EBX, EAX // EBX = Result
-        POP      [EBX].TControl.fControlClassName
-        //INC      [EBX].TControl.fWindowed // set in TControl.Init
-
-        {$IFDEF  COMMANDACTIONS_OBJ}
-        MOV      EAX, EDI
-        CMP      EAX, 120
-        JB       @@IdxActions_Loaded
-        MOVZX    EAX, byte ptr[EDI]
-@@IdxActions_Loaded:
-        PUSH     EAX
-        MOV      ECX, dword ptr [AllActions_Objs + EAX*4]
-        JECXZ    @@create_new_action
-        XCHG     EAX, ECX
-        PUSH     EAX
-            CALL     TObj.RefInc
-        POP      EAX
-        JMP      @@action_assign
-
-@@create_new_action:
-        {$IFDEF  PACK_COMMANDACTIONS}
-                MOV      EAX, EDI
-                CALL     NewCommandActionsObj_Packed
-        {$ELSE   not PACK_COMMANDACTIONS}
-                CALL     NewCommandActionsObj
-
-                TEST     EDI, EDI
-                JZ       @@no_actions
-
-                PUSH     EAX
-                LEA      EDX, [EAX].TCommandActionsObj.aClear
-                XCHG     EAX, EDI
-                XOR      ECX, ECX
-                MOV      CL, Byte(Sizeof(TCommandActions))
-                CALL     Move
-                POP      EAX
-                JMP      @@action_assign
-        @@no_actions:
-                MOV      [EAX].TCommandActionsObj.aClear, offset[ClearText]
-        {$ENDIF  not PACK_COMMANDACTIONS}
-
-@@action_assign:
-        POP      EDX
-        MOV      dword ptr [AllActions_Objs + EDX*4], EAX
-
-        MOV      [EBX].TControl.fCommandActions, EAX
-        XCHG     EDX, EAX
-        MOV      EAX, EBX
-        CALL     TControl.Add2AutoFree
-
-        {$ELSE}
-        TEST     EDI, EDI
-        JZ       @@no_actions2
-        LEA      EDX, [EBX].TControl.fCommandActions
-        XCHG     EAX, EDI
-        XOR      ECX, ECX
-        MOV      CL, Byte(Sizeof(TCommandActions))
-        CALL     Move
-        JMP      @@actions_created
-@@no_actions2:
-        MOV      [EBX].TControl.fCommandActions.TCommandActions.aClear, offset[ClearText]
-        {$ENDIF}
-@@actions_created:
-
-        TEST     ESI, ESI
-        JZ       @@no_parent
-
-        (*
-        PUSH     ESI
-        LEA      ESI, [ESI].TControl.PP.fWndProcResizeFlicks
-        LEA      EDI, [EBX].TControl.PP.fWndProcResizeFlicks
-        MOVSD    // fWndProcResizeFlicks
-        MOVSD    // fGotoControl
-        POP      ESI
-        *)
-        LEA      ESI, [ESI].TControl.fTextColor
-        LEA      EDI, [EBX].TControl.fTextColor
-        MOVSD    // fTextColor
-        MOVSD    // fColor
-
-        {$IFDEF SMALLEST_CODE}
-            {$IFDEF SMALLEST_CODE_PARENTFONT}
-                LODSD
-                XCHG     EDX, EAX
-                XOR      EAX, EAX
-                CALL     TGraphicTool.Assign
-                STOSD    // fFont
-            {$ELSE}
-                LODSD
-                XOR     EAX, EAX
-                STOSD   // fFont = nil
-            {$ENDIF}
-        {$ELSE}
-            LODSD
-            XCHG     EDX, EAX
-            XOR      EAX, EAX
-            PUSH     EDX
-            CALL     TGraphicTool.Assign
-            STOSD    // fFont
-            POP      EDX
-            XCHG     ECX, EAX
-            JECXZ    @@no_font
-            MOV      [ECX].TGraphicTool.fParentGDITool, EDX
-            MOV      [ECX].TGraphicTool.fOnChange.TMethod.Code, offset[TControl.FontChanged]
-            MOV      [ECX].TGraphicTool.fOnChange.TMethod.Data, EBX
-            MOV      EAX, EBX
-            MOV      EDX, ECX
-            CALL     TControl.FontChanged
-            {$IFDEF USE_AUTOFREE4CONTROLS}
-                MOV      EAX, EBX
-                MOV      EDX, [EBX].TControl.fFont
-                CALL     TControl.Add2AutoFree
-            {$ENDIF}
-@@no_font:
-        {$ENDIF}
-
-        {$IFDEF SMALLEST_CODE}
-            LODSD
-            XOR      EAX, EAX
-            STOSD
-        {$ELSE}
-            LODSD
-            XCHG     EDX, EAX
-            XOR      EAX, EAX
-            PUSH     EDX
-            CALL     TGraphicTool.Assign
-            STOSD    // fBrush
-            POP      EDX
-            XCHG     ECX, EAX
-            JECXZ    @@no_brush
-            MOV      [ECX].TGraphicTool.fParentGDITool, EDX
-            MOV      [ECX].TGraphicTool.fOnChange.TMethod.Code, offset[TControl.BrushChanged]
-            MOV      [ECX].TGraphicTool.fOnChange.TMethod.Data, EBX
-            MOV      EAX, EBX
-            MOV      EDX, ECX
-            CALL     TControl.BrushChanged
-            {$IFDEF USE_AUTOFREE4CONTROLS}
-                MOV      EAX, EBX
-                MOV      EDX, [EBX].TControl.fBrush
-                CALL     TControl.Add2AutoFree
-            {$ENDIF}
-@@no_brush:
-        {$ENDIF}
-
-        MOVSB    // fMargin
-        LODSD           // skip fClientXXXXX
-        ADD      EDI, 4
-
-        LODSB    // fCtl3D_child
-        TEST     AL, 2
-        JZ       @@passed3D
-        MOV      EDX, [ACommandActions] // DL <- Ctl3D !!!
-        AND      AL, not 1
-        AND      DL, 1
-        OR       EAX, EDX
-@@passed3D:
-        STOSB    // fCtl3D_child
-
-@@no_parent:
-        XCHG     EAX, EBX
-        POP      EDI
-        POP      ESI
-        POP      EBX
 end;
 
 function NewForm( AParent: PControl; const Caption: KOLString ): PControl;
@@ -4726,6 +4136,13 @@ end;
 const ComboboxClass: array[0..8] of KOLChar = ('C','O','M','B','O','B','O','X',#0 );
 function NewCombobox( AParent: PControl; Options: TComboOptions ): PControl;
 asm
+  {$IFDEF GRAPHCTL_XPSTYLES}
+  {$IFDEF UNICODE_CTRLS}
+  PUSHAD
+  CALL  InitCommonControls;
+  POPAD
+  {$ENDIF}
+  {$ENDIF}
         PUSH     EDX
         PUSH     EAX
         PUSH     EDX
@@ -7189,7 +6606,6 @@ asm
 @@exit:
         POP       EBX
 end;
-//{$ENDIF ASM_UNICODE}
 
 function TControl.CallDefWndProc(var Msg: TMsg): Integer;
 asm
@@ -8470,7 +7886,7 @@ asm
         ADD       EDX, ECX
 
         {$IFDEF   USE_FLAGS}
-        TEST      [EBX].fFlagsG2, (1 shl G2_ChangedSize)
+        TEST      [EBX].fFlagsG2, (1 shl G2_ChangedH)
         JZ        @@1
         {$ELSE}
         TEST      [EBX].fChangedPosSz, 20h
@@ -8488,7 +7904,7 @@ asm
         MOV       EAX, EBX
         CALL      TControl.SetClientHeight
         {$IFDEF   USE_FLAGS}
-        OR        [EBX].fFlagsG2, (1 shl G2_ChangedSize)
+        OR        [EBX].fFlagsG2, (1 shl G2_ChangedH)
         {$ELSE}
         OR        [EBX].fChangedPosSz, 20h
         {$ENDIF}
@@ -8510,7 +7926,7 @@ asm
         ADD       EDX, ECX
 
         {$IFDEF   USE_FLAGS}
-        TEST      [EBX].fFlagsG2, (1 shl G2_ChangedSize)
+        TEST      [EBX].fFlagsG2, (1 shl G2_ChangedW)
         {$ELSE}
         TEST      [EBX].fChangedPosSz, 10h
         {$ENDIF}
@@ -8527,7 +7943,7 @@ asm
         MOV       EAX, EBX
         CALL      TControl.SetClientWidth
         {$IFDEF   USE_FLAGS}
-        OR        [EBX].fFlagsG2, (1 shl G2_ChangedSize)
+        OR        [EBX].fFlagsG2, (1 shl G2_ChangedW)
         {$ELSE}
         OR        [EBX].fChangedPosSz, 10h
         {$ENDIF}
@@ -10077,6 +9493,30 @@ procedure TStrList.Sort(CaseSensitive: Boolean);
 asm
         MOV      [EAX].fCaseSensitiveSort, DL
         MOV      [EAX].fAnsiSort, 0
+  {$IFDEF SPEED_FASTER}
+          {$DEFINE SORT_STRLIST_ARRAY}
+  {$ENDIF}
+  {$IFDEF TLIST_FAST}
+          {$UNDEF SORT_STRLIST_ARRAY}
+  {$ENDIF}
+        {$IFDEF  SORT_STRLIST_ARRAY}
+        MOV      ECX, offset[StrComp]
+        CMP      DL, 0
+        JNZ      @@01
+        {$IFDEF  SMALLER_CODE}
+        MOV      ECX, offset[StrComp_NoCase]
+        {$ELSE}
+        MOV      ECX, [StrComp_NoCase]
+        {$ENDIF}
+@@01:
+        MOV      EAX, [EAX].fList
+        MOV      EDX, [EAX].TList.fCount
+        CMP      EDX, 1
+        JLE      @@02
+        MOV      EAX, [EAX].TList.fItems
+        CALL     SortArray
+@@02:
+        {$ELSE}
         PUSH     Offset[TStrList.Swap]
         MOV      ECX, Offset[CompareStrListItems_Case]
         CMP      DL, 0
@@ -10084,19 +9524,7 @@ asm
         MOV      ECX, Offset[CompareStrListItems_NoCase]
 @1:     MOV      EDX, [EAX].fCount
         CALL     SortData
-end;
-
-procedure TStrList.AnsiSort(CaseSensitive: Boolean);
-asm
-        MOV      [EAX].fCaseSensitiveSort, DL
-        MOV      [EAX].fAnsiSort, 1
-        PUSH     Offset[TStrList.Swap]
-        MOV      ECX, Offset[CompareAnsiStrListItems]
-        CMP      DL, 0
-        JZ       @1
-        MOV      ECX, Offset[CompareAnsiStrListItems_Case]
-@1:     MOV      EDX, [EAX].fCount
-        CALL     SortData
+        {$ENDIF}
 end;
 
 procedure TStrList.MergeFromFile(const FileName: KOLString);
@@ -10327,6 +9755,326 @@ asm
         RET
 
 end;
+
+procedure SortArray( const Data: Pointer; const uNElem: Dword;
+                    const CompareFun: TCompareArrayEvent );
+asm
+        PUSH     EBP
+        MOV      EBP, ESP
+        CMP      EDX, 2
+        JL       @@exit
+
+        SUB      EAX, 4
+        PUSH     EAX      // [EBP-4] = Data
+        PUSH     ECX      // [EBP-8] = CompareFun
+        PUSH     EBX      // EBX = pivotP
+        XOR      EBX, EBX
+        INC      EBX      // EBX = 1 to pass to qSortHelp as PivotP
+        MOV      EAX, EDX // EAX = nElem
+        CALL     @@qSortHelp
+        POP      EBX
+        POP      ECX
+        POP      ECX
+@@exit:
+        POP      EBP
+        RET      
+
+@@qSortHelp:
+        PUSH     EBX      // EBX (in) = PivotP
+        PUSH     ESI      // ESI      = leftP
+        PUSH     EDI      // EDI      = rightP
+
+@@TailRecursion:
+        CMP      EAX, 2
+        JG       @@2
+        JNE      @@exit_qSortHelp
+        LEA      ECX, [EBX+1]
+        MOV      EDX, EBX
+        //CALL     @@Compare
+        PUSH     EAX
+        PUSH     EDX
+        PUSH     ECX
+        MOV      EAX, [EBP-4]
+        MOV      EAX, [EAX + EDX*4]
+        MOV      EDX, [EBP-4]
+        MOV      EDX, [EDX + ECX*4]
+        CALL     dword ptr [EBP-8]
+        POP      ECX
+        POP      EDX
+        TEST     EAX, EAX
+        POP      EAX
+
+        JLE      @@exit_qSortHelp
+@@swp_exit:
+        //CALL     @@Swap
+        PUSH     EAX
+        PUSH     ESI
+        MOV      ESI, [EBP-4]
+        MOV      EAX, [ESI+EDX*4]
+        XCHG     EAX, [ESI+ECX*4]
+        MOV      [ESI+EDX*4], EAX
+        POP      ESI
+        POP      EAX
+
+@@exit_qSortHelp:
+        POP      EDI
+        POP      ESI
+        POP      EBX
+        RET
+
+        // ESI = leftP
+        // EDI = rightP
+@@2:    LEA      EDI, [EAX+EBX-1]
+        MOV      ESI, EAX
+        SHR      ESI, 1
+        ADD      ESI, EBX
+        MOV      ECX, ESI
+        MOV      EDX, EDI
+        CALL     @@CompareLeSwap
+        MOV      EDX, EBX
+        //CALL     @@Compare
+        PUSH     EAX
+        PUSH     EDX
+        PUSH     ECX
+        MOV      EAX, [EBP-4]
+        MOV      EAX, [EAX + EDX*4]
+        MOV      EDX, [EBP-4]
+        MOV      EDX, [EDX + ECX*4]
+        CALL     dword ptr [EBP-8]
+        POP      ECX
+        POP      EDX
+        TEST     EAX, EAX
+        POP      EAX
+
+        JG       @@4
+        //CALL     @@Swap
+        PUSH     EAX
+        PUSH     ESI
+        MOV      ESI, [EBP-4]
+        MOV      EAX, [ESI+EDX*4]
+        XCHG     EAX, [ESI+ECX*4]
+        MOV      [ESI+EDX*4], EAX
+        POP      ESI
+        POP      EAX
+
+        JMP      @@5
+@@4:    MOV      ECX, EBX
+        MOV      EDX, EDI
+        CALL     @@CompareLeSwap
+@@5:
+        CMP      EAX, 3
+        JNE      @@6
+        MOV      EDX, EBX
+        MOV      ECX, ESI
+        JMP      @@swp_exit
+@@6:    // classic Horae algorithm
+
+        PUSH     EAX     // EAX = pivotEnd
+        LEA      EAX, [EBX+1]
+        MOV      ESI, EAX
+@@repeat:
+        MOV      EDX, ESI
+        MOV      ECX, EBX
+        //CALL     @@Compare
+        PUSH     EAX
+        PUSH     EDX
+        PUSH     ECX
+        MOV      EAX, [EBP-4]
+        MOV      EAX, [EAX + EDX*4]
+        MOV      EDX, [EBP-4]
+        MOV      EDX, [EDX + ECX*4]
+        CALL     dword ptr [EBP-8]
+        POP      ECX
+        POP      EDX
+        TEST     EAX, EAX
+        POP      EAX
+
+        JG       @@while2
+@@while1:
+        JNE      @@7
+        MOV      EDX, ESI
+        MOV      ECX, EAX
+        //CALL     @@Swap
+        PUSH     EAX
+        PUSH     ESI
+        MOV      ESI, [EBP-4]
+        MOV      EAX, [ESI+EDX*4]
+        XCHG     EAX, [ESI+ECX*4]
+        MOV      [ESI+EDX*4], EAX
+        POP      ESI
+        POP      EAX
+
+        INC      EAX
+@@7:
+        CMP      ESI, EDI
+        JGE      @@qBreak
+        INC      ESI
+        JMP      @@repeat
+@@while2:
+        CMP      ESI, EDI
+        JGE      @@until
+        MOV      EDX, EBX
+        MOV      ECX, EDI
+        //CALL     @@Compare
+        PUSH     EAX
+        PUSH     EDX
+        PUSH     ECX
+        MOV      EAX, [EBP-4]
+        MOV      EAX, [EAX + EDX*4]
+        MOV      EDX, [EBP-4]
+        MOV      EDX, [EDX + ECX*4]
+        CALL     dword ptr [EBP-8]
+        POP      ECX
+        POP      EDX
+        TEST     EAX, EAX
+        POP      EAX
+
+        JGE      @@8
+        DEC      EDI
+        JMP      @@while2
+@@8:
+        MOV      EDX, ESI
+        MOV      ECX, EDI
+        //PUSHFD
+        //CALL     @@Swap
+        PUSH     EAX
+        PUSH     ESI
+        MOV      ESI, [EBP-4]
+        MOV      EAX, [ESI+EDX*4]
+        XCHG     EAX, [ESI+ECX*4]
+        MOV      [ESI+EDX*4], EAX
+        POP      ESI
+        POP      EAX
+
+        //POPFD
+        JE       @@until
+        INC      ESI
+        DEC      EDI
+@@until:
+        CMP      ESI, EDI
+        JL       @@repeat
+@@qBreak:
+        MOV      EDX, ESI
+        MOV      ECX, EBX
+        //CALL     @@Compare
+        PUSH     EAX
+        PUSH     EDX
+        PUSH     ECX
+        MOV      EAX, [EBP-4]
+        MOV      EAX, [EAX + EDX*4]
+        MOV      EDX, [EBP-4]
+        MOV      EDX, [EDX + ECX*4]
+        CALL     dword ptr [EBP-8]
+        POP      ECX
+        POP      EDX
+        TEST     EAX, EAX
+        POP      EAX
+
+        JG       @@9
+        INC      ESI
+@@9:
+        PUSH     EBX      // EBX = PivotTemp
+        PUSH     ESI      // ESI = leftTemp
+        DEC      ESI
+@@while3:
+        CMP      EBX, EAX
+        JGE      @@while3_break
+        CMP      ESI, EAX
+        JL       @@while3_break
+        MOV      EDX, EBX
+        MOV      ECX, ESI
+        //CALL     @@Swap
+        PUSH     EAX
+        PUSH     ESI
+        MOV      ESI, [EBP-4]
+        MOV      EAX, [ESI+EDX*4]
+        XCHG     EAX, [ESI+ECX*4]
+        MOV      [ESI+EDX*4], EAX
+        POP      ESI
+        POP      EAX
+
+        INC      EBX
+        DEC      ESI
+        JMP      @@while3
+@@while3_break:
+        POP      ESI
+        POP      EBX
+
+        MOV      EDX, EAX
+        POP      EAX     // EAX = nElem
+        PUSH     EDI     // EDI = lNum
+        MOV      EDI, ESI
+        SUB      EDI, EDX
+        ADD      EAX, EBX
+        SUB      EAX, ESI
+
+        PUSH     EBX
+        PUSH     EAX
+        CMP      EAX, EDI
+        JGE      @@10
+
+        MOV      EBX, ESI
+        CALL     @@qSortHelp
+        POP      EAX
+        MOV      EAX, EDI
+        POP      EBX
+        JMP      @@11
+
+@@10:   MOV      EAX, EDI
+        CALL     @@qSortHelp
+        POP      EAX
+        POP      EBX
+        MOV      EBX, ESI
+@@11:
+        POP      EDI
+        JMP      @@TailRecursion
+
+{@@Compare:
+        PUSH     EAX
+        PUSH     EDX
+        PUSH     ECX
+        MOV      EAX, [EBP-4]
+        MOV      EAX, [EAX + EDX*4]
+        MOV      EDX, [EBP-4]
+        MOV      EDX, [EDX + ECX*4]
+        CALL     dword ptr [EBP-8]
+        POP      ECX
+        POP      EDX
+        TEST     EAX, EAX
+        POP      EAX
+        RET}
+
+@@CompareLeSwap:
+        //CALL     @@Compare
+        PUSH     EAX
+        PUSH     EDX
+        PUSH     ECX
+        MOV      EAX, [EBP-4]
+        MOV      EAX, [EAX + EDX*4]
+        MOV      EDX, [EBP-4]
+        MOV      EDX, [EDX + ECX*4]
+        CALL     dword ptr [EBP-8]
+        POP      ECX
+        POP      EDX
+        TEST     EAX, EAX
+        POP      EAX
+
+        JG       @@ret
+
+@@Swap: PUSH     EAX
+        PUSH     ESI
+        MOV      ESI, [EBP-4]
+        MOV      EAX, [ESI+EDX*4]
+        XCHG     EAX, [ESI+ECX*4]
+        MOV      [ESI+EDX*4], EAX
+        POP      ESI
+        //TEST     EAX, EAX
+        POP      EAX
+@@ret:
+        RET
+
+end;
+
 
 function CompareIntegers( const Sender : Pointer; const e1, e2 : DWORD ) : Integer;
 asm
@@ -13416,6 +13164,27 @@ asm
         POP      EBX
 end;
 
+function _GetDIBPixelsTrueColorAlpha( Bmp: PBitmap; X, Y: Integer ): TColor;
+asm
+        PUSH     EBX
+        XCHG     EBX, EAX
+        PUSH     EDX
+        MOV      EAX, [EBX].TBitmap.fScanLineDelta
+        IMUL     ECX
+        XCHG     ECX, EAX
+        POP      EDX
+        MOV      EAX, [EBX].TBitmap.fBytesPerPixel
+        MUL      EDX
+        ADD      EAX, [EBX].TBitmap.fScanLine0
+        MOV      EAX, [EAX+ECX]
+        MOV      EDX, EAX
+        AND      EDX, $FF00FF
+        AND      EAX, $FF00FF00
+        ROL      EDX, 16
+        OR       EAX, EDX
+        POP      EBX
+end;
+
 function TBitmap.GetDIBPixels(X, Y: Integer): TColor;
 asm
         CMP      word ptr [EAX].fGetDIBPixels+2, 0
@@ -13471,7 +13240,11 @@ asm
 @@if32bit:
         LOOP     @@iffin
         INC      EDX
+        {$IFDEF DIBPixels32bitWithAlpha}
+        MOV      EAX, offset[_GetDIBPixelsTrueColorAlpha]
+        {$ELSE}
         MOV      EAX, offset[_GetDIBPixelsTrueColor]
+        {$ENDIF}
 @@iffin:
         MOV      byte ptr [EBX].fPixelMask, DH
         MOV      byte ptr [EBX].fPixelsPerByteMask, DL
@@ -13628,6 +13401,28 @@ asm
         OR       [EDX], EAX
 end;
 
+procedure _SetDIBPixelsTrueColorAlpha( Bmp: PBitmap; X, Y: Integer; Value: TColor );
+asm
+        PUSH     [EAX].TBitmap.fScanLineDelta
+        PUSH     [EAX].TBitmap.fScanLine0
+        MOV      EAX, [EAX].TBitmap.fBytesPerPixel
+        MUL      EDX
+        POP      EDX
+        ADD      EDX, EAX
+        POP      EAX
+        PUSH     EDX
+        IMUL     ECX
+        POP      EDX
+        ADD      EDX, EAX
+        MOV      EAX, Value
+        MOV      ECX, EAX
+        AND      ECX, $FF00FF
+        AND      EAX, $FF00FF00
+        ROL      ECX, 16
+        OR       EAX, ECX
+        MOV      [EDX], EAX
+end;
+
 procedure TBitmap.SetDIBPixels(X, Y: Integer; const Value: TColor);
 asm
         CMP      word ptr [EAX].fSetDIBPixels+2, 0
@@ -13675,7 +13470,11 @@ asm
 @@if32bit:
         LOOP     @@ifend
         INC      EDX
+        {$IFDEF DIBPixels32bitWithAlpha}
         MOV      EAX, offset[_SetDIBPixelsTrueColor]
+        {$ELSE}
+        MOV      EAX, offset[_SetDIBPixelsTrueColor]
+        {$ENDIF}
 @@ifend:
         MOV      byte ptr [EBX].fPixelMask, DH
         MOV      byte ptr [EBX].fPixelsPerByteMask, DL
@@ -14084,6 +13883,9 @@ asm     //cmd    //opd
         {$ENDIF}
         {$IFDEF  USE_FLAGS}
         TEST     [EAX].TControl.fFlagsG3, 1 shl G3_IsForm
+        SETNZ    DH
+        OR       DL, DH
+        TEST     [EAX].TControl.fFlagsG4, (1 shl G4_CreateHidden)
         SETNZ    DH
         OR       DL, DH
         {$ELSE}
