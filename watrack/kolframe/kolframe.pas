@@ -104,9 +104,9 @@ begin
 
           SetFrameTitle(PluginShort,0,0); // frame update code there
         end;
-        FrameCtrl.ResetFrame;
-        // clear text, slider to 0, picture to default
       end;
+      FrameCtrl.ResetFrame;
+      // clear text, slider to 0, picture to default
 
       // really, need just position=0;
       TrackbarSetRange(FrameCtrl.Trackbar,FrameCtrl.UpdInterval,0);

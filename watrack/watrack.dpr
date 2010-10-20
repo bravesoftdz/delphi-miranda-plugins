@@ -250,7 +250,7 @@ begin
     begin
       mFreeMem(LastPlayer);
       StrDupW(LastPlayer,SongInfo.player);
-      PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_NEWPLAYER,dword(LastPlayer));
+      PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_NEWPLAYER,dword(@SongInfo));
     end;
 
     if SongInfo.mfile=nil then //!!

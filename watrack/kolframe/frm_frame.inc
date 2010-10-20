@@ -27,8 +27,11 @@ const
 procedure TWATFrame.ResetFrame;
 begin
 // Slider to zero (max to sero)
+  ResetTrackbar(Trackbar);
 // Clear text
+  ClearText(TextBlock);
 // frame back to default
+  RefreshPicture(nil);
 end;
 
 procedure FrameTimerProc(wnd:HWND;uMsg:cardinal;idEvent:cardinal;dwTime:dword); stdcall;

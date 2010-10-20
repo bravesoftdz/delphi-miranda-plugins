@@ -54,6 +54,11 @@ type
 
 {$include frm_chunk.inc}
 
+procedure ClearText(TextBlock:PControl);
+begin
+  DeleteChunks(pTxtBlockData(TextBlock.CustomObj)^.TextChunk);
+end;
+
 procedure UpdateTextBlock(TextBlock:PControl;force:boolean);
 begin
   with pTxtBlockData(TextBlock.CustomObj)^ do

@@ -14,6 +14,16 @@ type
     procedure DragButton   (Sender: PControl;var Mouse: TMouseEventData);
   end;
 
+procedure ResetTrackbar(Trackbar:PControl);
+begin
+  with pTrackbar(Trackbar)^ do
+  begin
+    RangeMin:=0;
+    RangeMax:=0;
+    Position:=0;
+  end;
+end;
+
 procedure TrackbarSetRange(Trackbar:PTrackbar;timer:integer;total:integer=-1);
 var
   D:pAWKTrackbar;
