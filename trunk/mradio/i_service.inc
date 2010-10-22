@@ -181,6 +181,7 @@ begin
   CreateProtoService(PS_ADDTOLIST        ,@Service_AddToList);
   CreateProtoService(PS_CREATEADVSEARCHUI,@Service_ExtSearchUI);
   CreateProtoService(PS_SEARCHBYADVANCED ,@Service_SearchByAdvanced);
+  CreateProtoService(PS_BASICSEARCH      ,@Service_SearchBasic);
   CreateProtoService(PS_GETNAME          ,@Service_GetName);
   CreateProtoService(PS_LOADICON         ,@Service_LoadIcon);
   CreateProtoService(PS_GETSTATUS        ,@Service_GetStatus);
@@ -199,5 +200,32 @@ begin
 
   PS_GETMYAWAYMSG = '/GetMyAwayMsg';
 
+*)
+(*  {
+    wParam : 0
+    lParam : Pointer to a null terminated string containing an ID to search for
+    Affect : Send a basic search request, see notes
+    Returns: A handle to the search request or NULL(0) on failure
+    Notes  : All protocols identify users uniquely by a single field
+             this service will search by that field.
+             -
+             All search replies (even protocol-spec extended searches)
+             are replied by a series of ack's,-
+             -
+             Result acks are a series of:
+             type=ACKTYPE_SEARCH, result=ACKRESULT_DATA, lParam=Pointer to a TPROTOSEARCHRESULT structure
+             -
+             ending ack:
+             type=ACKTYPE_SEARCH, result=ACKRESULT_SUCCESS, lParam=0
+             -
+             The pointers in the structure are not guaranteed to be
+             valid after the ack is complete.
+             -
+             The structure to reply with search results can be extended
+             per protocol basis (see below)
+
+  }
+  PS_BASICSEARCH  = '/BasicSearch';
+  PS_BASICSEARCHW = '/BasicSearchW';
 *)
 end;

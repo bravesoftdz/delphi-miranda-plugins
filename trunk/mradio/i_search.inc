@@ -78,43 +78,12 @@ begin
   end;
 end;
 
-function ExtSearch(wnd:HWND):dword;// stdcall;
+procedure ProcessSearch(var filter:TMySearchFilter;ini:PAnsiChar);
 var
-  filter:TMySearchFilter;
-  ltmp:longbool;
   pc,buf:PAnsiChar;
   csr:CUSTOMSEARCHRESULTS;
   columns:array [0..3] of TCHAR;
-  ini1,ini:array [0..MAX_PATH-1] of AnsiChar;
 begin
-  FillChar(filter,SizeOf(filter),0);
-  with filter do
-  begin
-    ini1[0]:=#0;
-    GetDlgItemText(wnd,IDC_CUSTOMINI,@ini1,SizeOf(ini1));
-    if ini1[0]=#0 then
-      StrCopy(ini,storage)
-    else
-      ConvertFileName(ini1,ini);
-//      CallService(MS_UTILS_PATHTOABSOLUTE,dword(@ini1),dword(@ini));
-    lBitrate:=GetDlgItemInt(wnd,IDC_BITRATE,ltmp,false);
-    if      IsDlgButtonChecked(wnd,IDC_LT)=BST_CHECKED then lBitrateMode:=-1
-    else if IsDlgButtonChecked(wnd,IDC_EQ)=BST_CHECKED then lBitrateMode:=0
-    else{if IsDlgButtonChecked(lParam,IDC_GT)=BST_CHECKED}  lBitrateMode:=1;
-
-    lStation:=GetDlgText(wnd,IDC_STATION,true);
-    if lStation<>nil then
-      CharLowerA(lStation);
-
-    lStationURL:=GetDlgText(wnd,IDC_STATIONURL,true);
-    if lStationURL<>nil then
-      CharLowerA(lStationURL);
-
-    lGenre:=GetDlgText(wnd,IDC_GENRE,true);
-    if lGenre<>nil then
-      CharLowerA(lGenre);
-
-  end;
   mGetMem(buf,32768);
   buf^:=#0;
   GetPrivateProfileSectionNamesA(buf,32768,ini);
@@ -142,7 +111,75 @@ begin
   mFreeMem(filter.lStation);
   mFreeMem(filter.lStationURL);
   mFreeMem(filter.lGenre);
+end;
+
+function BasicSearch(Name:PAnsiChar):dword;// stdcall;
+var
+  filter:TMySearchFilter;
+  ini:array [0..MAX_PATH-1] of AnsiChar;
+begin
+  FillChar(filter,SizeOf(filter),0);
+  StrCopy(ini,storage);
+
+  filter.lStation:=Name;
+  if filter.lStation<>nil then
+    CharLowerA(filter.lStation);
+
+  ProcessSearch(filter,ini);
   result:=0;
+end;
+
+function ExtSearch(wnd:HWND):dword;// stdcall;
+var
+  filter:TMySearchFilter;
+  ltmp:longbool;
+  ini1,ini:array [0..MAX_PATH-1] of AnsiChar;
+begin
+  FillChar(filter,SizeOf(filter),0);
+  ini1[0]:=#0;
+  GetDlgItemText(wnd,IDC_CUSTOMINI,@ini1,SizeOf(ini1));
+  if ini1[0]=#0 then
+    StrCopy(ini,storage)
+  else
+    ConvertFileName(ini1,ini);
+
+  with filter do
+  begin
+//      CallService(MS_UTILS_PATHTOABSOLUTE,dword(@ini1),dword(@ini));
+    lBitrate:=GetDlgItemInt(wnd,IDC_BITRATE,ltmp,false);
+    if      IsDlgButtonChecked(wnd,IDC_LT)=BST_CHECKED then lBitrateMode:=-1
+    else if IsDlgButtonChecked(wnd,IDC_EQ)=BST_CHECKED then lBitrateMode:=0
+    else{if IsDlgButtonChecked(lParam,IDC_GT)=BST_CHECKED}  lBitrateMode:=1;
+
+    lStation:=GetDlgText(wnd,IDC_STATION,true);
+    if lStation<>nil then
+      CharLowerA(lStation);
+
+    lStationURL:=GetDlgText(wnd,IDC_STATIONURL,true);
+    if lStationURL<>nil then
+      CharLowerA(lStationURL);
+
+    lGenre:=GetDlgText(wnd,IDC_GENRE,true);
+    if lGenre<>nil then
+      CharLowerA(lGenre);
+  end;
+
+  ProcessSearch(filter,ini);
+  result:=0;
+end;
+
+function Service_SearchBasic(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+var
+  res:dword;
+begin
+  if lParam=0 then
+    result:=0
+  else
+  begin
+    result:=AckHandle;
+    CloseHandle(BeginThread(nil,0,@BasicSearch,
+      StrDup(PAnsiChar(lParam),PAnsiChar(lParam)),0,res));
+  end;
 end;
 
 function Service_SearchByAdvanced(wParam:WPARAM;lParam:LPARAM):int;cdecl;
