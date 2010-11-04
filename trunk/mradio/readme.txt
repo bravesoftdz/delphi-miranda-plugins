@@ -45,6 +45,7 @@ DBSet=Genre
 Changelog:
 ----------
 0.0.1,7 ()
+  Added another WMA stream processing
   Added option for several tries to connect radiostation
 0.0.1.6 (20 sep 2010)
   Changed streams/files tag process
