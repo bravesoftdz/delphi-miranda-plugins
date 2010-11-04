@@ -14,6 +14,7 @@ var
   syncMETA,
   syncOGG,
   syncWMA,
+  syncWMA1,
   syncEND:HSYNC;
   SaveHeader:bool;
 
@@ -423,6 +424,29 @@ begin
     title :=nil;
 
     case TagType of
+      BASS_TAG_WMA_META: begin
+//        pc:=StrPos(meta,'Caption=NAMLOOK,');
+// full variant: xxx,yyy - zzz
+        pc:=StrPos(meta,'aption='); // skip 1st letter to any cases
+//        pc:=StrPos(meta,'data=title=');
+        if pc=(meta+1) then
+        begin
+          inc(pc,8);
+{
+          ppc:=StrScan(pc,',');
+          if (ppc-pc-1)>0 then
+          begin
+            StrCopy(buf,pc,ppc-pc-1);
+            lcp:=GetTextFormat(@buf,ppc-pc-1);
+          end;
+}
+          StrCopy(buf,meta+8);
+          lcp:=GetTextFormat(@buf,StrLen(buf));
+        end;
+        StatusProc(nil,0,0); // split records here
+        result:=true;
+      end;
+
       BASS_TAG_META: begin
         // SHOUTCAST StreamTitle='xxx';StreamUrl='xxx';
         // "Station=xyz" meta tag="Trackinfo"
@@ -540,7 +564,8 @@ var
 begin
   if      handle=syncOGG  then tagtype:=BASS_TAG_OGG
   else if handle=syncWMA  then tagtype:=BASS_TAG_WMA
-  else{if handle=syncMETA then}tagtype:=BASS_TAG_META;
+  else if handle=syncWMA1 then tagtype:=BASS_TAG_WMA_META
+  else {if handle=syncMETA then} tagtype:=BASS_TAG_META;
   DoMeta(PAnsiChar(data),tagtype);
 end;
 
@@ -696,9 +721,10 @@ begin
      // get the stream title and set sync for subsequent titles
       DoMeta(nil,BASS_TAG_META);
 
-      syncMETA:=BASS_ChannelSetSync(chan,BASS_SYNC_META      ,0,@MetaSync,nil);
-      syncOGG :=BASS_ChannelSetSync(chan,BASS_SYNC_OGG_CHANGE,0,@MetaSync,nil);
-      syncWMA :=BASS_ChannelSetSync(chan,BASS_SYNC_WMA_CHANGE,0,@MetaSync,nil);
+      syncMETA:=BASS_ChannelSetSync(chan,{BASS_SYNC_MIXTIME+}BASS_SYNC_META      ,0,@MetaSync,nil);
+      syncOGG :=BASS_ChannelSetSync(chan,{BASS_SYNC_MIXTIME+}BASS_SYNC_OGG_CHANGE,0,@MetaSync,nil);
+      syncWMA :=BASS_ChannelSetSync(chan,{BASS_SYNC_MIXTIME+}BASS_SYNC_WMA_CHANGE,0,@MetaSync,nil);
+      syncWMA1:=BASS_ChannelSetSync(chan,{BASS_SYNC_MIXTIME+}BASS_SYNC_WMA_META  ,0,@MetaSync,nil);
     end
     else
     begin
