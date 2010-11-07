@@ -400,6 +400,24 @@ end;
   end;
 end;
 
+function MakeMessage(buf,artist,title:pAnsiChar):pAnsiChar;
+begin
+  if artist<>nil then
+  begin
+    result:=StrCopyE(buf,artist);
+    if title<>nil then
+      result:=StrCopyE(result,' - ');
+  end
+  else
+  begin
+    result:=@buf;
+  end;
+  if title<>nil then
+  begin
+    StrCopy(result,title);
+  end;
+end;
+
 function DoMeta(meta:PAnsiChar;TagType:integer):Boolean;
 var
   p:Integer;
@@ -425,6 +443,36 @@ begin
 
     case TagType of
       BASS_TAG_WMA_META: begin
+        pc:=StrPos(meta,'data=');
+        if pc=meta then
+        begin
+          pc:=StrPos(meta,'artist=');
+          if pc<>nil then
+          begin
+            mGetMem(artist,256);
+            Decode(artist,pc+7);
+            DBWriteUTF8(0,PluginName,optArtist,artist);
+          end;
+          pc:=StrPos(meta,'title=');
+          if pc<>nil then
+          begin
+            mGetMem(title,256);
+            Decode(title,pc+6);
+            DBWriteUTF8(0,PluginName,optTitle,title);
+          end;
+          pc:=StrPos(meta,'album=');
+          if pc<>nil then
+          begin
+          end;
+          pc:=StrPos(meta,'duration=');
+          if pc<>nil then
+          begin
+          end;
+          MakeMessage(buf,artist,title);
+          mFreeMem(artist);
+          mFreeMem(title);
+        end;
+
 //        pc:=StrPos(meta,'Caption=NAMLOOK,');
 // full variant: xxx,yyy - zzz
         pc:=StrPos(meta,'aption='); // skip 1st letter to any cases
@@ -489,6 +537,8 @@ begin
           while meta^<>#0 do inc(meta); inc(meta);
         end;
 
+        MakeMessage(buf,artist,title);
+{
         if artist<>nil then
         begin
           ppc:=StrCopyE(buf,artist);
@@ -505,6 +555,7 @@ begin
         end;
         if (artist<>nil) or (title<>nil) then
           result:=true;
+}
       end;
     end;
 
