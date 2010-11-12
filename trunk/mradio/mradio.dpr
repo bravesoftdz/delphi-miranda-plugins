@@ -49,8 +49,6 @@ procedure SetStatus(hContact:THANDLE;Status:integer); forward;
 
 function  ControlCenter(code:WPARAM;arg:LPARAM):integer; cdecl; forward;
 procedure ConstructMsg(astr:PWideChar;status:integer=-1;astr1:PWideChar=nil); forward;
-procedure SetSndVol(arg:integer=-1); forward;
-//function  Mute(arg:integer=-1):boolean; forward;
 
 {$include i_search.inc}
 {$include i_bass.inc}
@@ -58,6 +56,7 @@ procedure SetSndVol(arg:integer=-1); forward;
 {$include i_variables.inc}
 {$include i_service.inc}
 {$include i_myservice.inc}
+{$include i_frame.inc}
 {$include i_visual.inc}
 {$include i_optdlg.inc}
 
@@ -179,7 +178,7 @@ begin
   isEQ_OFF :=DBReadByte(0,PluginName,optEQ_OFF);
   asOffline:=DBReadByte(0,PluginName,optOffline);
   AuConnect:=DBReadByte(0,PluginName,optConnect);
-  Volume   :=DBReadByte(0,PluginName,optVolume,50);
+  gVolume  :=DBReadByte(0,PluginName,optVolume,50);
   NumTries :=DBReadByte(0,PluginName,optNumTries,1);
   if NumTries<1 then NumTries:=1;
 
@@ -197,11 +196,13 @@ begin
   onsetting:=Pluginlink^.HookEvent(ME_DB_CONTACT_SETTINGCHANGED,@OnSettingsChanged);
   ondelete :=PluginLink^.HookEvent(ME_DB_CONTACT_DELETED       ,@OnContactDeleted);
   randomize;
+  CreateFrame(0);
   result:=0;
 end;
 
 function PreShutdown(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
+  DestroyFrame();
   MyFreeBASS;
   DBWriteDWord(0,PluginName,optLastStn,ActiveContact);
 
@@ -211,6 +212,7 @@ begin
     DestroyServiceFunction(hsRecord);
     DestroyServiceFunction(hsSettings);
     DestroyServiceFunction(hsSetVol);
+    DestroyServiceFunction(hsGetVol);
     DestroyServiceFunction(hsCommand);
     DestroyServiceFunction(hsEqOnOff);
 
@@ -278,6 +280,7 @@ begin
       hsRecord  :=CreateServiceFunction(MS_RADIO_RECORD  ,@Service_RadioRecord);
       hsSettings:=CreateServiceFunction(MS_RADIO_SETTINGS,@Service_RadioSettings);
       hsSetVol  :=CreateServiceFunction(MS_RADIO_SETVOL  ,@Service_RadioSetVolume);
+      hsGetVol  :=CreateServiceFunction(MS_RADIO_GETVOL  ,@Service_RadioGetVolume);
       hsCommand :=CreateServiceFunction(MS_RADIO_COMMAND ,@ControlCenter);
       hsEqOnOff :=CreateServiceFunction(MS_RADIO_EQONOFF ,@Service_EqOnOff);
 

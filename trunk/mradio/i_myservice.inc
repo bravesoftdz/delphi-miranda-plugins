@@ -126,20 +126,24 @@ begin
   result:=ORD(doRecord);
 end;
 
+function Service_RadioGetVolume(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+begin
+  result:=gVolume;
+end;
+
 function Service_RadioSetVolume(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
-  Volume:=wParam;
-  SetSndVol();
-{  if chan<>0 then
-    if not Mute then
-      BASS_ChannelSetAttributes(chan,-1,wParam,-101);
-}
-  result:=DBWriteByte(0,PluginName,optVolume,wParam);
-  if lParam=0 then
-  begin
+  result:=Service_RadioGetVolume(0,0);
+  SetSndVol(wParam);
+
+  DBWriteByte(0,PluginName,optVolume,wParam);
+  if lParam<>2 then // not from Frame
+    if hVolFrmCtrl<>0 then
+      SendMessage(hVolFrmCtrl,TBM_SETPOS,1,wParam);
+
+  if lParam<>1 then // not from Settings
     if hVolCtrl<>0 then
       SendMessage(hVolCtrl,TBM_SETPOS,1,wParam);
-  end;
 end;
 
 function Service_EqOnOff(wParam:WPARAM;lParam:LPARAM):int;cdecl;

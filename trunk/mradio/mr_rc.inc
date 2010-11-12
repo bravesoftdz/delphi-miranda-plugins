@@ -2,6 +2,7 @@ const
   IDD_SEARCH       = 101;
   IDD_SETTING      = 102;
   IDD_SETTING_TECH = 103;
+  IDD_FRAME        = 104;
 
   IDC_GENRE   = 1025;
   IDC_BITRATE = 1026;
@@ -69,6 +70,9 @@ const
 
   IDC_EQ_ADD     = 1076;
   IDC_EQ_DEL     = 1077;
+
+  IDC_RADIO_MUTE = 1025;
+  IDC_RADIO_VOL  = 1026;
 
   BTN_RECUP = 202;
   BTN_RECDN = 203;

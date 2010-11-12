@@ -51,6 +51,7 @@ var
   hsRecord,
   hsSettings,
   hsSetVol,
+  hsGetVol,
   hsCommand,
   hsExport,
   hsImport,
@@ -73,7 +74,7 @@ var
 var
   RemoteSong:bool;
   PlayStatus:dword;
-  Volume:dword;
+  gVolume:integer;
   NumTries:cardinal;
   doLoop:dword;
   PlayFirst:dword;
@@ -91,7 +92,8 @@ var
   sTimeout,
   sPreBuf:dword;
 const
-  hVolCtrl:HWND=0;
+  hVolCtrl   :HWND=0;
+  hVolFrmCtrl:HWND=0;
 const
   Inited:boolean=false;
 const

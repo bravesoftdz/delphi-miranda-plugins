@@ -837,7 +837,7 @@ var
   pc:PAnsiChar;
 begin
   result:=0;
-
+{
   with PDBCONTACTWRITESETTING(lParam)^ do
     if (StrCmp(szModule,'Skin')=0) and (StrCmp(szSetting,'UseSound')=0) then
     begin
@@ -845,7 +845,7 @@ begin
 //       Mute(Value.bVal);
       exit;
     end;
-
+}
   if StrCmp(PAnsiChar(PluginLink^.CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0)),
              PluginName)<>0 then exit;
 
