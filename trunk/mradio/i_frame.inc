@@ -56,6 +56,8 @@ begin
       hVolFrmCtrl:=GetDlgItem(Dialog,IDC_RADIO_VOL);
       SendMessage(hVolFrmCtrl,TBM_SETRANGE,0,MAKELONG(0,100));
       SendMessage(hVolFrmCtrl,TBM_SETPOS,1,gVolume);
+      SendDlgItemMessage(Dialog,IDC_RADIO_MUTE,BM_SETIMAGE,IMAGE_ICON,
+        PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnOn)));
     end;
 
     WM_SIZE: begin
@@ -83,12 +85,12 @@ begin
             IDC_RADIO_MUTE: begin
               if IsDlgButtonChecked(Dialog,IDC_RADIO_MUTE)=BST_UNCHECKED then
               begin
-                tmp:=dword(IcoBtnOff);
+                tmp:=dword(IcoBtnOn);
                 gVolume:=ABS(gVolume);
               end
               else
               begin
-                tmp:=dword(IcoBtnOn);
+                tmp:=dword(IcoBtnOff);
                 gVolume:=-ABS(gVolume);
                 if gVolume=0 then
                  gVolume:=-1;
