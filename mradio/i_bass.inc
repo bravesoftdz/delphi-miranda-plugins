@@ -18,16 +18,15 @@ var
   syncEND:HSYNC;
   SaveHeader:bool;
 
-procedure SetSndVol(arg:integer=-1);
+procedure SetSndVol(arg:integer);
 begin
   if chan<>0 then
   begin
-{
     if arg<0 then
-      arg:=DBReadByte(0,'Skin','UseSound')
+      arg:=gVolume
     else
-}
-      arg:=Volume;
+      gVolume:=arg;
+    if arg<0 then arg:=0;
     BASS_ChannelSetAttribute(chan,BASS_ATTRIB_VOL,arg/100);
   end;
 end;
@@ -452,14 +451,18 @@ begin
             mGetMem(artist,256);
             Decode(artist,pc+7);
             DBWriteUTF8(0,PluginName,optArtist,artist);
-          end;
+          end
+          else
+            artist:=nil;
           pc:=StrPos(meta,'title=');
           if pc<>nil then
           begin
             mGetMem(title,256);
             Decode(title,pc+6);
             DBWriteUTF8(0,PluginName,optTitle,title);
-          end;
+          end
+          else
+            title:=nil;
           pc:=StrPos(meta,'album=');
           if pc<>nil then
           begin
@@ -469,30 +472,13 @@ begin
           begin
           end;
           MakeMessage(buf,artist,title);
-          mFreeMem(artist);
-          mFreeMem(title);
-        end;
+          // to avoid mem leak and wrong tag process
+          mFreeMem(artist); artist:=meta;
+          mFreeMem(title ); title :=meta;
 
-//        pc:=StrPos(meta,'Caption=NAMLOOK,');
-// full variant: xxx,yyy - zzz
-        pc:=StrPos(meta,'aption='); // skip 1st letter to any cases
-//        pc:=StrPos(meta,'data=title=');
-        if pc=(meta+1) then
-        begin
-          inc(pc,8);
-{
-          ppc:=StrScan(pc,',');
-          if (ppc-pc-1)>0 then
-          begin
-            StrCopy(buf,pc,ppc-pc-1);
-            lcp:=GetTextFormat(@buf,ppc-pc-1);
-          end;
-}
-          StrCopy(buf,meta+8);
-          lcp:=GetTextFormat(@buf,StrLen(buf));
+          result:=true;
         end;
         StatusProc(nil,0,0); // split records here
-        result:=true;
       end;
 
       BASS_TAG_META: begin
@@ -538,24 +524,6 @@ begin
         end;
 
         MakeMessage(buf,artist,title);
-{
-        if artist<>nil then
-        begin
-          ppc:=StrCopyE(buf,artist);
-          if title<>nil then
-            ppc:=StrCopyE(ppc,' - ');
-        end
-        else
-        begin
-          ppc:=@buf;
-        end;
-        if title<>nil then
-        begin
-          StrCopy(ppc,title);
-        end;
-        if (artist<>nil) or (title<>nil) then
-          result:=true;
-}
       end;
     end;
 
@@ -789,7 +757,7 @@ begin
     syncEND :=BASS_ChannelSetSync(chan,BASS_SYNC_END,0,@EndSync,nil);
     ControlCenter(MRC_STATUS,RD_STATUS_PLAYING);
 
-    SetSndVol;
+    SetSndVol(-1);
     // play it!
 //    if not Mute then
 //      BASS_ChannelSetAttributes(chan,-1,Volume,-101);

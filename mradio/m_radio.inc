@@ -45,8 +45,17 @@ const
   Set current radio volume
   wParam: volume (0-100)
   lParam: must be 0
+  Return: previous value
 }
   MS_RADIO_SETVOL:PAnsiChar = 'mRadio/SetVol';
+
+{
+  Get current radio volume
+  wParam: 0
+  lParam: 0
+  Return: volime value (negative if muted)
+}
+  MS_RADIO_GETVOL:PAnsiChar = 'mRadio/SetVol';
 
 {
   Send command to mRadio
