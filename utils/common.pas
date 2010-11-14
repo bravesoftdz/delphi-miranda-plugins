@@ -55,6 +55,8 @@ const
   SIGN_REVERSEBOM = $FFFE;
   SIGN_UTF8       = $BFBBEF;
 
+function Encode(dst,src:pAnsiChar):PAnsiChar;
+function Decode(dst,src:pAnsiChar):PAnsiChar;
 function GetTextFormat(Buffer:pByte;sz:cardinal):integer;
 
 function IIF(cond:bool;ret1,ret2:integer  ):integer;   overload;
@@ -163,8 +165,8 @@ function IntToStr(dst:pWideChar;Value:integer;Digits:integer=0):pWideChar; overl
 function IntToStr(dst:PAnsiChar;Value:integer;Digits:integer=0):PAnsiChar; overload;
 function StrToInt(src:pWideChar):integer; overload;
 function StrToInt(src:PAnsiChar):integer; overload;
-function HexToInt(src:pWideChar):integer; overload;
-function HexToInt(src:PAnsiChar):integer; overload;
+function HexToInt(src:pWideChar;len:cardinal=$FFFF):integer; overload;
+function HexToInt(src:PAnsiChar;len:cardinal=$FFFF):integer; overload;
 
 // filename work
 function ChangeExt (src,ext:PAnsiChar):PAnsiChar;
@@ -188,6 +190,44 @@ function isPathAbsolute(path:pWideChar):boolean; overload;
 function isPathAbsolute(path:PAnsiChar):boolean; overload;
 
 implementation
+
+function Encode(dst,src:pAnsiChar):PAnsiChar;
+begin
+  while src^<>#0 do
+  begin
+    if not (src^ in [' ','%','+','&','?',#128..#255]) then
+      dst^:=src^
+    else
+    begin
+      dst^:='%'; inc(dst);
+      dst^:=HexDigitChr[ord(src^) shr 4]; inc(dst);
+      dst^:=HexDigitChr[ord(src^) and $0F];
+    end;
+    inc(src);
+    inc(dst);
+  end;
+  dst^:=#0;
+  result:=dst;
+end;
+
+function Decode(dst,src:pAnsiChar):PAnsiChar;
+begin
+  while (src^<>#0) and (src^<>'&') do
+  begin
+    if (src^='%') and ((src+1)^ in sHexNum) and ((src+2)^ in sHexNum) then
+    begin
+      inc(src);
+      dst^:=chr(HexToInt(src,2));
+      inc(src);
+    end
+    else
+      dst^:=src^;
+    inc(dst);
+    inc(src);
+  end;
+  dst^:=#0;
+  result:=dst;
+end;
 
 const
   IS_TEXT_UNICODE_ASCII16            = $1;
@@ -1895,10 +1935,10 @@ begin
   result:=dst;
 end;
 
-function HexToInt(src:pWideChar):integer;
+function HexToInt(src:pWideChar;len:cardinal=$FFFF):integer;
 begin
   result:=0;
-  while src^<>#0 do
+  while (src^<>#0) and (len>0) do
   begin
     if (src^>='0') and (src^<='9') then
       result:=result*16+ord(src^)-ord('0')
@@ -1909,13 +1949,14 @@ begin
     else
       break;
     inc(src);
+    dec(len);
   end;
 end;
 
-function HexToInt(src:PAnsiChar):integer;
+function HexToInt(src:PAnsiChar;len:cardinal=$FFFF):integer;
 begin
   result:=0;
-  while src^<>#0 do
+  while (src^<>#0) and (len>0) do
   begin
     if (src^>='0') and (src^<='9') then
       result:=result*16+ord(src^)-ord('0')
@@ -1926,6 +1967,7 @@ begin
     else
       break;
     inc(src);
+    dec(len);
   end;
 end;
 
