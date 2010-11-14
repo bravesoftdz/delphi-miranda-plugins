@@ -45,6 +45,7 @@ type
 
 function isPlaylist(fname:pWideChar):integer;
 function CreatePlaylist(fname:pWideChar):tPlaylist;
+function CreatePlaylistBuf(buf:pointer;format:integer):tPlaylist;
 
 implementation
 
@@ -62,6 +63,7 @@ type
   private
   public
     constructor Create(fName:pWideChar);
+    constructor CreateBuf(buf:pointer);
   end;
 
   tPLSPlaylist = class(tPlayList)
@@ -89,6 +91,15 @@ begin
   end;
 end;
 
+function CreatePlaylistBuf(buf:pointer;format:integer):tPlaylist;
+begin
+  case format of
+    1: result:=tM3UPlaylist.CreateBuf(Buf);
+//    2: result:=tPLSPlaylist.Create(fName);
+  else result:=nil;
+  end;
+end;
+
 //-----  -----
 
 function SkipLine(var p:PWideChar):bool;
@@ -107,21 +118,55 @@ begin
   result:=true;
 end;
 
+constructor tM3UPlaylist.CreateBuf(buf:pointer);
+var
+  p:PAnsiChar;
+  pp,pd:pWideChar;
+  plBufW:pWideChar;
+  lname,ldescr:pWideChar;
+  finish:boolean;
+  pltNew:boolean;
+begin
+  inherited;
+
+  p:=Buf;
+  if (pdword(p)^ and $00FFFFFF)=$00BFBBEF then
+  begin
+    inc(p,3);
+    UTF8ToWide(p,plBufW)
+  end
+  else
+    AnsiToWide(p,plBufW);
+
+  pp:=plBufW;
+  pltNew:=StrCmpW(pp,'#EXTM3U',7)=0;
+  if pltNew then SkipLine(pp);
+
+  ldescr:=nil;
+  repeat
+    if pltNew then
+    begin
+      pd:=StrScanW(pp,',');
+      if pd<>nil then
+      begin
+        ldescr:=pd+1;
+        if not SkipLine(pp) then break;
+      end;
+    end;
+    lname:=pp;
+    finish:=SkipLine(pp);
+    AddLine(lname,ldescr);
+  until not finish;
+
+  mFreeMem(plBufW);
+end;
+
 constructor tM3UPlaylist.Create(fName:pWideChar);
 var
   f:THANDLE;
   i:integer;
-  p:PAnsiChar;
-  pp,pd:pWideChar;
   plBuf:pAnsiChar;
-  plBufW:pWideChar;
-  pltNew:boolean;
-  lname,ldescr:pWideChar;
-  finish:boolean;
 begin
-  inherited;
-
-  // Load into mem
   f:=Reset(fName);
 
   if dword(f)<>INVALID_HANDLE_VALUE then
@@ -135,39 +180,8 @@ begin
       BlockRead(f,PlBuf^,i);
       CloseHandle(f);
       PlBuf[i]:=#0;
-
-      p:=PlBuf;
-      if (pdword(p)^ and $00FFFFFF)=$00BFBBEF then
-      begin
-        inc(p,3);
-        UTF8ToWide(p,plBufW)
-      end
-      else
-        AnsiToWide(p,plBufW);
-
+      CreateBuf(PlBuf);
       mFreeMem(plBuf);
-
-      pp:=plBufW;
-      pltNew:=StrCmpW(pp,'#EXTM3U',7)=0;
-      if pltNew then SkipLine(pp);
-
-      ldescr:=nil;
-      repeat
-        if pltNew then
-        begin
-          pd:=StrScanW(pp,',');
-          if pd<>nil then
-          begin
-            ldescr:=pd+1;
-            if not SkipLine(pp) then break;
-          end;
-        end;
-        lname:=pp;
-        finish:=SkipLine(pp);
-        AddLine(lname,ldescr);
-      until not finish;
-
-      mFreeMem(plBufW);
     end;
   end;
 
