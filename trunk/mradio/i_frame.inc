@@ -11,6 +11,7 @@ var
   colorhook:THANDLE;
   hbr:HBRUSH;
   frm_bkg:TCOLORREF;
+  OldSliderWndProc:pointer;
 
 function QSDlgResizer(Dialog:HWND;lParam:LPARAM;urc:PUTILRESIZECONTROL):int; cdecl;
 begin
@@ -20,6 +21,14 @@ begin
   else
     result:=0;
   end;
+end;
+
+function SliderWndProc(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+begin
+  if hMessage=WM_ERASEBKGND then
+    result:=1
+  else
+    result:=CallWindowProc(OldSliderWndProc, Dialog, hMessage, wParam, lParam);
 end;
 
 function RadioFrameProc(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
@@ -58,6 +67,8 @@ begin
       SendMessage(hVolFrmCtrl,TBM_SETPOS,1,gVolume);
       SendDlgItemMessage(Dialog,IDC_RADIO_MUTE,BM_SETIMAGE,IMAGE_ICON,
         PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnOn)));
+
+      OldSliderWndProc:=pointer(SetWindowLong(hVolFrmCtrl,GWL_WNDPROC,dword(@SliderWndProc)));
     end;
 
     WM_SIZE: begin
@@ -75,6 +86,18 @@ begin
       GetClientRect(Dialog,rc);
       FillRect(wParam,rc,hbr);
       result:=1;
+    end;
+
+    WM_CTLCOLORSTATIC: begin
+      if lParam=hVolFrmCtrl then
+      begin
+        SetBkColor(wParam, frm_bkg);
+        result:=hbr;
+      end;
+    end;
+
+    WM_CONTEXTMENU: begin
+      CallService('mRadio/Settings',0,0);
     end;
 
     WM_COMMAND: begin
@@ -117,16 +140,21 @@ end;
 function ColorReload(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
   cid:TColourID;
+  wnd:HWND;
 begin
   result:=0;
   cid.cbSize:=SizeOf(cid);
   StrCopy(cid.group,'mRadio');
   StrCopy(cid.name ,frm_back);
   frm_bkg:=CallService(MS_COLOUR_GETA,dword(@cid),0);
-  DeleteObject(hbr);
+  if hbr<>0 then DeleteObject(hbr);
   hbr:=CreateSolidBrush(frm_bkg);
 
-  RedrawWindow(FrameWnd,nil,0,RDW_ERASE);
+  wnd:=GetFocus();
+	InvalidateRect(hVolFrmCtrl,nil,true);
+	SetFocus(hVolFrmCtrl);
+  RedrawWindow(FrameWnd,nil,0,RDW_INVALIDATE or RDW_ALLCHILDREN or RDW_ERASE);
+  SetFocus(wnd);
 end;
 
 procedure CreateFrame(parent:HWND);
@@ -190,6 +218,7 @@ begin
       cid.order    :=0;
       CallService(MS_COLOUR_REGISTERA,dword(@cid),0);
 
+      hbr:=0;
       colorhook:=PluginLink^.HookEvent(ME_COLOUR_RELOAD,@ColorReload);
       ColorReload(0,0);
     end;
