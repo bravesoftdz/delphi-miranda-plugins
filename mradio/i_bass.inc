@@ -409,7 +409,7 @@ begin
   end
   else
   begin
-    result:=@buf;
+    result:=buf;
   end;
   if title<>nil then
   begin
@@ -420,13 +420,14 @@ end;
 function DoMeta(meta:PAnsiChar;TagType:integer):Boolean;
 var
   p:Integer;
-  pcw:pWideChar;
+  pcw1,pcw:pWideChar;
   buf:array [0..511] of AnsiChar;
   artist,title:PAnsiChar;
   ppc,pc:pAnsiChar;
   OldDescr:pWideChar;
   lcp:integer;
   c:WideChar;
+  needtofree:Boolean;
 begin
   result:=false;
 
@@ -434,6 +435,7 @@ begin
     meta:=BASS_ChannelGetTags(chan,TagType);
   if meta<>nil then
   begin
+    needtofree:=false;
     lcp:=CP_UTF8;
     OldDescr:=CurDescrW;
     buf[0]:=#0;
@@ -450,19 +452,19 @@ begin
           begin
             mGetMem(artist,256);
             Decode(artist,pc+7);
-            DBWriteUTF8(0,PluginName,optArtist,artist);
           end
           else
             artist:=nil;
+          DBWriteUTF8(0,PluginName,optArtist,artist);
           pc:=StrPos(meta,'title=');
           if pc<>nil then
           begin
             mGetMem(title,256);
             Decode(title,pc+6);
-            DBWriteUTF8(0,PluginName,optTitle,title);
           end
           else
             title:=nil;
+          DBWriteUTF8(0,PluginName,optTitle,title);
           pc:=StrPos(meta,'album=');
           if pc<>nil then
           begin
@@ -473,9 +475,7 @@ begin
           end;
           MakeMessage(buf,artist,title);
           // to avoid mem leak and wrong tag process
-          mFreeMem(artist); artist:=meta;
-          mFreeMem(title ); title :=meta;
-
+          needtofree:=true;
           result:=true;
         end;
         StatusProc(nil,0,0); // split records here
@@ -539,35 +539,51 @@ begin
         CP_UTF8: UTF8ToWide(buf,CurDescrW);
         CP_ACP : AnsiToWide(buf,CurDescrW,MirandaCP);
       end;
-      if artist=nil then
+
+      if CurDescrW<>nil then
       begin
-        pcw:=StrPosW(CurDescrW,' - ');
-        if pcw=nil then
-          pcw:=StrScanW(CurDescrW,'-');
-        if pcw<>nil then
+        if (artist=nil) or (title=nil) then
         begin
-          c:=pcw^;
-          pcw^:=#0;
-          DBWriteUnicode(0,PluginName,optArtist,CurDescrW);
-          pcw^:=c;
-        end
-        else
-          DBWriteUnicode(0,PluginName,optArtist,CurDescrW);
+          pcw:=StrPosW(CurDescrW,' - ');
+          if pcw=nil then
+            pcw:=StrScanW(CurDescrW,'-');
+          if pcw<>nil then
+          begin
+            if pcw^=' ' then
+              pcw1:=pcw+3
+            else
+              pcw1:=pcw+1;
+          end;
+
+          if artist=nil then
+          begin
+            if pcw<>nil then
+            begin
+              c:=pcw^;
+              pcw^:=#0;
+              DBWriteUnicode(0,PluginName,optArtist,CurDescrW);
+              pcw^:=c;
+              DBWriteUnicode(0,PluginName,optTitle,pcw1);
+            end
+            else
+              DBWriteUnicode(0,PluginName,optArtist,CurDescrW);
+          end;
+
+          if title=nil then
+          begin
+            if pcw<>nil then
+              DBWriteUnicode(0,PluginName,optTitle,pcw1)
+            else
+              DBWriteUnicode(0,PluginName,optTitle,CurDescrW);
+          end;
+        end;
+
       end;
-      if title=nil then
-      begin
-        pcw:=StrPosW(CurDescrW,' - ');
-        if pcw=nil then
-          pcw:=StrScanW(CurDescrW,'-');
-        if pcw<>nil then
-        begin
-          if pcw^=' ' then inc(pcw,3)
-          else inc(pcw);
-          DBWriteUnicode(0,PluginName,optTitle,pcw);
-        end
-        else
-          DBWriteUnicode(0,PluginName,optTitle,CurDescrW);
-      end;
+    end;
+    if needtofree then
+    begin
+      mFreeMem(artist);
+      mFreeMem(title );
     end;
 
     // make status info
