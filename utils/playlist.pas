@@ -336,6 +336,8 @@ begin
     num:=Track
   else if num>=integer(PlSize) then
     num:=PlSize-1;
+  if fShuffle then
+    num:=PlOrder[num];
 
   result:=plStrings[num*2];
 end;
@@ -410,7 +412,6 @@ begin
         DoShuffle;
         CurOrder:=0;
       end;
-      CurElement:=PlOrder[CurOrder];
     end;
     result:=GetSong;
   end
@@ -436,7 +437,6 @@ begin
         CurOrder:=PlSize;
       end;
       dec(CurOrder);
-      CurElement:=PlOrder[CurOrder];
     end;
     result:=GetSong;
   end
