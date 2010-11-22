@@ -335,7 +335,7 @@ var
  hThemes : THandle;
  RClient, RText, RClipMain, RClipLeft, RClipRight : TRect;
  LPos, fState : DWORD;
- S : KOLString;
+ S : KOLWideString;
  F : HFONT;
  fDC : HDC;
  TxtColor, Color : COLORREF;
@@ -360,7 +360,7 @@ begin
   taCenter:  LPos := LPos or DT_CENTER;
   taRight:   LPos := LPos or DT_RIGHT;
  end;
- S := Sender.fCaption;
+ S := KOLWideString( Sender.fCaption );
 
  // Getting rects
  TextWidth := Sender.Canvas.WTextWidth(S);
@@ -453,7 +453,7 @@ begin
    // Draw text
    SetBkMode(DC, TRANSPARENT);
    TxtColor := SetTextColor(DC, Color2RGB(Color));
-   DrawText(DC, PKOLChar(S), Length(S), RText, LPos or DT_SINGLELINE);
+   DrawTextW(DC, PWideChar(S), Length(S), RText, LPos or DT_SINGLELINE);
    // Backup color
    SetTextColor(DC, Color2RGB(TxtColor));
    SetBkMode(DC, OPAQUE);
@@ -790,7 +790,7 @@ begin
  end;
 
  // Getting caption
- S := Sender.fCaption;
+ S := KOLWideString( Sender.fCaption );
  // Getting state
  fState := 1{PBS_NORMAL};
  {$IFDEF USE_FLAGS}

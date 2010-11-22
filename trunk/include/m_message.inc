@@ -33,7 +33,9 @@ const
    NB: Current versions of the convers plugin use the name
    "SRMsg/LaunchMessageWindow" instead. For compatibility you should call
    both names and the correct one will work. }
-   MS_MSG_SENDMESSAGE:PAnsiChar = 'SRMsg/SendCommand';
+   MS_MSG_SENDMESSAGE :PAnsiChar = 'SRMsg/SendCommand';
+   MS_MSG_SENDMESSAGEW:PAnsiChar = 'SRMsg/SendCommandW';
+
    ME_MSG_WINDOWEVENT:PAnsiChar = 'MessageAPI/WindowEvent';
 
    MS_MSG_CONVERS:PAnsiChar = 'SRMsg/LaunchMessageWindow';
