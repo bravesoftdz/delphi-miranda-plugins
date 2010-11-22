@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // KOL_ASM.inc ()to be inlude in KOL.pas)
-// v 3.00.o
+// v 3.00.z6
 
 function MsgBox( const S: KOLString; Flags: DWORD ): DWORD;
 asm
@@ -616,6 +616,20 @@ asm
   {$IFDEF TLIST_FAST}
   CMP    [EAX].fUseBlocks, 0
   JZ     @@old
+  CMP    [EAX].fNotOptimized, 0
+  JNZ    @@slow
+
+  MOV    ECX, [EAX].fBlockList
+  JECXZ  @@old
+  MOV    ECX, [ECX].fItems
+  MOV    EAX, EDX
+  SHR    EAX, 8
+  MOV    ECX, dword ptr [ECX+EAX*8]
+  MOVZX  EAX, DL
+  MOV    EAX, dword ptr [ECX+EAX*4]
+  RET
+
+@@slow:
   MOV    ECX, [EAX].fBlockList
   JECXZ  @@old
   PUSH   EBX
@@ -661,16 +675,6 @@ asm
   RET
 @@ret_nil:
   XOR    EAX, EAX
-end;
-
-function TList.Last: Pointer;
-asm     //cmd    //opd
-        MOV      ECX, [EAX].fCount
-        JECXZ    @@0
-        MOV      EAX, [EAX].fItems
-        DEC      ECX
-        MOV      ECX, [EAX + ECX*4]
-@@0:    XCHG     EAX, ECX
 end;
 
 procedure Run( var AppletWnd: PControl );
@@ -2391,7 +2395,7 @@ asm     //cmd    //opd
         POP      EBX
 end;
 
-function cHex2Int( const Value : AnsiString) : Integer;
+function cHex2Int( const Value : KOLString) : Integer;
 asm
      TEST  EAX, EAX
      JZ    @@exit
@@ -2405,149 +2409,6 @@ asm
 @@2Hex2Int:
      JMP   Hex2Int
 @@exit:
-end;
-
-function Num2Bytes( Value : Double ) : AnsiString;
-asm
-        PUSH     EBX
-        PUSH     ESI
-        PUSH     EDI
-        MOV      EBX, ESP
-        MOV      ESI, EAX
-
-        MOV      ECX, 4
-        MOV      EDX, 'TGMk'
-@@1:
-        FLD      [Value]
-@@10:
-        FICOM    dword ptr [@@1024]
-        FSTSW    AX
-        SAHF
-        JB       @@2
-
-        FIDIV    dword ptr [@@1024]
-        FST      [Value]
-        WAIT
-
-        TEST     DL, 20h
-        JE       @@ror
-        AND      DL, not 20h
-        JMP      @@nxt
-@@1024: DD       1024
-@@100:  DD       100
-
-@@ror:
-        ROR      EDX, 8
-@@nxt:
-        LOOP     @@10
-@@2:
-        TEST     DL, 20h
-        JZ       @@3
-        MOV      DL, 0
-@@3:    MOV      DH, 0
-        PUSH     DX
-        MOV      EDI, ESP
-
-        FLD      ST(0)
-        CALL     System.@TRUNC
-        {$IFDEF _D2orD3}
-        PUSH     0
-        {$ELSE}
-        PUSH     EDX
-        {$ENDIF}
-        PUSH     EAX
-        FILD     qword ptr [ESP]
-        POP      EDX
-        POP      EDX
-
-        MOV      EDX, ESI
-        CALL     Int2Str
-
-        FSUBP    ST(1), ST
-        FIMUL    dword ptr [@@100]
-        CALL     System.@TRUNC
-
-        TEST     EAX, EAX
-        JZ       @@4
-
-        XOR      ECX, ECX
-        MOV      CL, 0Ah
-        CDQ
-        IDIV     ECX
-        TEST     EDX, EDX
-        JZ       @@5
-
-        MOV      AH, DL
-        SHL      EAX, 16
-        ADD      EAX, '00. '
-        PUSH     EAX
-        MOV      EDI, ESP
-        INC      EDI
-        JMP      @@4
-
-@@5:    SHL      EAX, 8
-        ADD      AX, '0.'
-        PUSH     AX
-        MOV      EDI, ESP
-
-@@4:
-        MOV      EAX, [ESI]
-        CALL     System.@LStrLen
-        ADD      ESP, -100
-
-        SUB      EDI, EAX
-        PUSH     ESI
-        PUSH     EDI
-        MOV      ESI, [ESI]
-        MOV      ECX, EAX
-        REP      MOVSB
-
-        POP      EDX
-        POP      EAX
-        {$IFDEF _D2009orHigher}
-        XOR      ECX, ECX // TODO: IDIV
-        {$ENDIF}
-        CALL     System.@LStrFromPChar
-
-        MOV      ESP, EBX
-        POP      EDI
-        POP      ESI
-        POP      EBX
-end;
-
-function S2Int( S: PAnsiChar ): Integer;
-asm
-        XCHG     EDX, EAX
-        XOR      EAX, EAX
-        TEST     EDX, EDX
-        JZ       @@exit
-
-        XOR      ECX, ECX
-        MOV      CL, [EDX]
-        INC      EDX
-        CMP      CL, '-'
-        PUSHFD
-        JE       @@0
-@@1:    CMP      CL, '+'
-        JNE      @@2
-@@0:    MOV      CL, [EDX]
-        INC      EDX
-@@2:    SUB      CL, '0'
-        CMP      CL, '9'-'0'
-        JA       @@fin
-        LEA      EAX, [EAX+EAX*4] //
-        LEA      EAX, [ECX+EAX*2] //
-        JMP      @@0
-@@fin:  POPFD
-        JNE      @@exit
-        NEG      EAX
-@@exit:
-end;
-
-function Str2Int(const Value : AnsiString) : Integer;
-asm
-        CALL     EAX2PChar
-        CALL     S2Int
 end;
 
 function Trim( const S : KOLString): KOLString;
@@ -2692,7 +2553,7 @@ asm
         SETZ     AL
 end;
 
-function StrIn(const S: AnsiString; const A: array of String): Boolean;
+function StrIn(const S: AnsiString; const A: array of AnsiString): Boolean;
 asm
 @@1:
         TEST     ECX, ECX
@@ -4193,11 +4054,14 @@ function WndProcParentResize( Self_: PControl; var Msg: TMsg; var Rslt: Integer 
 asm
         CMP      word ptr [EDX].TMsg.message, CM_SIZE
         JNZ      @@exit
+        PUSH     EAX
         PUSH     0
         PUSH     0
         PUSH     WM_SIZE
         PUSH     EAX
         CALL     TControl.Perform
+        POP      EAX
+        CALL     TControl.Invalidate
 @@exit: XOR      EAX, EAX
 end;
 
@@ -4296,7 +4160,7 @@ asm
         CMP      EDX, NM_RCLICK
         JNE      @@chk_killfocus
         {$IFDEF  USE_FLAGS}
-        MOV      CL, G6_RightClick
+        MOV      CL, 1 shl G6_RightClick
         {$ELSE}
         INC      ECX
         {$ENDIF}
@@ -4309,8 +4173,8 @@ asm
         {$ENDIF}
 
         {$IFDEF  EVENTS_DYNAMIC}
-        MOV      EAX, [EAX].TControl.EV
-        MOV      ECX, [EAX].TEvents.fOnClick.TMethod.Code
+        MOV      ECX, [EAX].TControl.EV
+        MOV      ECX, [ECX].TEvents.fOnClick.TMethod.Code
         {$ELSE}
         MOV      ECX, [EAX].TControl.EV.fOnClick.TMethod.Code
         {$ENDIF}
@@ -4318,7 +4182,8 @@ asm
         JECXZ    @@fin_false
         {$ENDIF}
         {$IFDEF  EVENTS_DYNAMIC}
-        MOV      EDX, [EAX].TEvents.fOnClick.TMethod.Data
+        MOV      EDX, [EAX].TControl.EV
+        MOV      EDX, [EDX].TEvents.fOnClick.TMethod.Data
         {$ELSE}
         MOV      EDX, [EAX].TControl.EV.fOnClick.TMethod.Data
         {$ENDIF}
@@ -4641,7 +4506,7 @@ asm     //cmd    //opd
         {$IFDEF  EVENTS_DYNAMIC}
         MOV      EAX, [EAX].TEvents.fOnSelChange.TMethod.Data
         {$ELSE}
-        MOV      EAX, [EBX].TControl.fOnSelChange.TMethod.Data
+        MOV      EAX, [EBX].TControl.EV.fOnSelChange.TMethod.Data
         {$ENDIF}
         CALL     ECX
         JMP      @@ret_false
@@ -5442,30 +5307,40 @@ asm
 @@MWheel:ADD       ESI, 32
 end;
 
-{$IFNDEF USE_GRAPHCTLS}
-{$IFNDEF NEW_MODAL}
+{$IFnDEF USE_GRAPHCTLS}
+{$IFnDEF NEW_MODAL}
+{$IFnDEF USE_MDI}
 function TControl.WndProc( var Msg: TMsg ): Integer;
 asm     //cmd    //opd
         PUSH     EBX
         PUSH     ESI
         PUSH     EDI
+        PUSH     EBP
+        //MOV      ESI, EAX
         XCHG     ESI, EAX
         MOV      EDI, EDX
+        //CALL     TControl.RefInc
+        MOV      EBP, [ESI].TControl.PP.fPass2DefProc
+
         XOR      EAX, EAX
-        CMP      EAX, [EDX].TMsg.hWnd
+        CMP      EAX, [EDI].TMsg.hWnd
         JE       @@1
         CMP      EAX, [ESI].TControl.fHandle
         JNE      @@1
         {$IFDEF USE_GRAPHCTLS}
+        {$IFDEF USE_FLAGS}
+        TEST     [ESI].TControl.fFlagsG6, 1 shl G6_GraphicCtl
+        {$ELSE}
         CMP      [ESI].TControl.fWindowed, AL
+        {$ENDIF}
         JNE      @@1
         {$ENDIF}
-        MOV      EAX, [EDX].TMsg.hWnd
+        MOV      EAX, [EDI].TMsg.hWnd
         MOV      [ESI].TControl.fHandle, EAX
 @@1:
         XOR      eax, eax
 
-        CMP      [AppletRunning], 0
+        CMP      [AppletRunning], AL
         JZ       @@dyn2
         MOV      ECX, [Applet]
         JECXZ    @@dyn2
@@ -5481,20 +5356,9 @@ asm     //cmd    //opd
         MOV      EAX, ESI
         CALL     @@callonmes
 
-@@flicksproc:
-        (*
-        MOV      EAX, ESI
-        MOV      EDX, EDI
-        PUSH     0
-        MOV      ECX, ESP
-        CALL     dword ptr [ESI].TControl.PP.fWndProcResizeFlicks
-        TEST     AL, AL
-        POP      EAX
-        JNZ      @@pass2defproc
-        *)
-
+//**********************************************************
         MOVZX    EAX, word ptr [EDI].TMsg.message
-        CMP      EAX, WM_CLOSE
+        CMP      AX, WM_CLOSE
         JNZ      @@chk_WM_DESTROY
 
         CMP      ESI, [Applet]
@@ -5506,6 +5370,7 @@ asm     //cmd    //opd
 @@postquit:
         PUSH     0
         CALL     PostQuitMessage
+        MOV      byte ptr [AppletTerminated], 1
         JMP      @@calldef
 //********************************************************** Added By M.Gerasimov
 @@chk_WM_DESTROY:
@@ -5527,6 +5392,11 @@ asm     //cmd    //opd
         PUSH     offset[ID_SELF]
         PUSH     [ESI].fHandle
         CALL     RemoveProp
+        {$ELSE}
+        PUSH     0
+        PUSH     GWL_USERDATA
+        PUSH     [ESI].fHandle
+        CALL     SetWindowLong
         {$ENDIF}
 //**********************************************************
 
@@ -5561,6 +5431,8 @@ asm     //cmd    //opd
         JZ       @@ret
         POP      EDX // pop retaddr
         JMP      @@pass2defproc
+
+//**************************************************************
 @@chk_WM_SIZE:
         CMP      AX, WM_SIZE
         JNE      @@chk_WM_SYSCOMMAND //@@chk_WM_SHOWWINDOW
@@ -5581,9 +5453,11 @@ asm     //cmd    //opd
         CALL     dword ptr [Global_Align]
 @@doGlobalAlignSelf:
     {$ENDIF}
-        XCHG     EAX, ESI
+        MOV      EAX, ESI
         CALL     dword ptr [Global_Align]
         JMP      @@popeax_exit  // fPass2DefProc not needed, CallDefWndProc already called
+
+//**************************************************************
 @@chk_WM_SYSCOMMAND:
         CMP      AX, WM_SYSCOMMAND
         JNE      @@chk_WM_SETFOCUS
@@ -5610,6 +5484,7 @@ asm     //cmd    //opd
 @@ret_0:
         JMP      @@0pass2defproc
 
+//***************************************************************
 @@chk_WM_SETFOCUS:
         CMP      AX, WM_SETFOCUS
         JNE      @@chk_WM_CTLCOLOR //@@chk_WM_SETCURSOR
@@ -5628,6 +5503,7 @@ asm     //cmd    //opd
         DEC      [ESI].TControl.fClickDisabled
         JMP      @@exit
 
+//**************************************************************
 @@chk_WM_CTLCOLOR:
         MOV      EDX, EAX
         SUB      DX, WM_CTLCOLORMSGBOX
@@ -5642,8 +5518,8 @@ asm     //cmd    //opd
         CALL     SendMessage
         JMP      @@pass2defproc
 
+//**************************************************************
 @@chk_WM_COMMAND:
-        //CMP      word ptr [EDI].TMsg.message, WM_COMMAND
         CMP      AX, WM_COMMAND
         JNE      @@chk_WM_KEY
 
@@ -5666,6 +5542,7 @@ asm     //cmd    //opd
         CALL     SendMessage
         JMP      @@pass2defproc
 
+//**************************************************************
 @@chk_WM_KEY:
         MOV      EDX, EAX
         SUB      DX, WM_KEYFIRST
@@ -5760,7 +5637,7 @@ asm     //cmd    //opd
         JMP      @@pass2defproc
 
 @@calldef:
-        XCHG     EAX, ESI
+        MOV      EAX, ESI
         MOV      EDX, EDI
         CALL     TControl.CallDefWndProc
         JMP      @@exit
@@ -5778,18 +5655,24 @@ asm     //cmd    //opd
         {$ENDIF  USE_fNCDestroyed}
 
         MOV      ECX, ESP
-        XCHG     EAX, ESI
+        MOV      EAX, ESI
         MOV      EDX, EDI
-        CALL     dword ptr[EAX].PP.fPass2DefProc
+        CALL     EBP
 @@popeax_exit:
         POP      EAX
 
 @@exit:
+        {XCHG     ESI, EAX
+        CALL     TControl.RefDec
+        XCHG     EAX, ESI}
+
+        POP      EBP
         POP      EDI
         POP      ESI
         POP      EBX
 @@ret:
 end;
+{$ENDIF no_USE_MDI}
 {$ENDIF no NEW_MODAL}
 {$ENDIF no USE_GRAPHCTLS}
 
@@ -6086,6 +5969,7 @@ asm     //      //
 end;
 
 procedure TControl.Set_Visible( Value: Boolean );
+const wsVisible = $10;
 asm
     {$IFDEF OLD_ALIGN}
         PUSH     EBX
@@ -7106,23 +6990,6 @@ asm
         POP       EAX
         MOV       EAX, [EAX].fHandle
 @@exit:
-end;
-
-procedure TControl.CreateChildWindows;
-asm
-        PUSH      ESI
-        MOV       ESI, [EAX].TControl.fChildren
-        MOV       ECX, [ESI].TList.fCount
-        MOV       ESI, [ESI].TList.fItems
-        JECXZ     @@exit
-
-@@loop: PUSH      ECX
-        LODSD
-        CALL      CallTControlCreateWindow
-        POP       ECX
-        LOOP      @@loop
-
-@@exit: POP       ESI
 end;
 
 function TControl.ProcessMessage: Boolean;
@@ -8640,13 +8507,13 @@ asm
         JMP      @@0
 
 @@else: MOV      [EAX].FCurIndex, EDX
-        CALL     Invalidate
+        CALL     TControl.Invalidate
         JMP      @@exit
 
 @@chk_aExSetSelRange:
         {$IFDEF  COMMANDACTIONS_OBJ}
-        MOV      EAX, [EAX].fCommandActions
-        MOVZX    ECX, [EAX].TCommandActionsObj.aExSetSelRange
+        MOV      ECX, [EAX].fCommandActions
+        MOVZX    ECX, [ECX].TCommandActionsObj.aExSetSelRange
         {$ELSE}
         MOVZX    ECX, [EAX].fCommandActions.aExSetSelRange
         {$ENDIF}
@@ -9044,7 +8911,12 @@ function TControl.GetCanvas: PCanvas;
 asm
         PUSH     EBX
         PUSH     ESI
+        {$IFDEF  SAFE_CODE}
+        MOV      EBX, EAX
+        CALL     CreateWindow
+        {$ELSE}
         XCHG     EBX, EAX
+        {$ENDIF}
 
         MOV      ESI, [EBX].fCanvas
         TEST     ESI, ESI
@@ -13849,240 +13721,6 @@ asm     //cmd    //opd
         POP      EBX
 end;
 
-{$IFnDEF OLD_ALIGN}
-procedure AlignChildrenProc(Sender: PObj);
-const AlignModes = (1 shl byte(caBottom))+(1 shl byte(caTop))+
-                 (((1 shl byte(caRight)) +(1 shl byte(caLeft)))shl 8)+
-                 (((1 shl byte(caClient))+(1 shl byte(caNone)))shl 16);
-asm     //cmd    //opd
-        TEST     EAX,EAX
-        JZ       @@21
-        CMP      [EAX].TControl.fParent,0
-        SETZ     DL
-        {$IFDEF  USE_FLAGS}
-        TEST     [EAX].TControl.fFlagsG3, (1 shl G3_IsForm)
-        SETNZ    DH
-        OR       DL, DH
-        {$ELSE}
-        OR       DL,[EAX].TControl.fIsForm
-        {$ENDIF}
-        BTR      dword ptr[EAX].TControl.fAligning,oaFromSelf
-        JA       @@20
-        OR       byte ptr[EAX].TControl.fAligning,(1 shl oaWaitAlign)
-        MOV      EAX,[EAX].TControl.fParent
-@@20:   CALL     @@ToBeAlign
-        JNZ      @@DoAlign
-@@21:   RETN
-
-@@ToBeAlign:
-        {$IFDEF  USE_FLAGS}
-        TEST     [EAX].TControl.fStyle.f3_Style, 1 shl F3_Visible
-        SETNZ    DL
-        {$ELSE}
-        MOV      DL,[EAX].TControl.fVisible
-        {$ENDIF}
-        {$IFDEF  USE_FLAGS}
-        TEST     [EAX].TControl.fFlagsG3, 1 shl G3_IsForm
-        SETNZ    DH
-        OR       DL, DH
-        TEST     [EAX].TControl.fFlagsG4, (1 shl G4_CreateHidden)
-        SETNZ    DH
-        OR       DL, DH
-        {$ELSE}
-        OR       DL,[EAX].TControl.fCreateHidden
-        {$ENDIF}
-        JE       @@10
-        {$IFDEF  USE_FLAGS}
-        TEST     [EAX].TControl.fFlagsG3, 1 shl G3_IsForm
-        SETNZ    DH
-        AND      DL, DH
-        {$ELSE}
-        AND      DL,[EAX].TControl.fIsForm
-        {$ENDIF}
-        JNE      @@12
-        CMP      dword ptr[EAX].TControl.fParent,0
-        JE       @@11
-        PUSH     EAX
-        MOV      EAX,[EAX].TControl.fParent
-        CALL     @@ToBeAlign
-        POP      EAX
-@@10:   XOR      DL,1
-//!!! Important: oaWaitAlign=0
-        OR       [EAX].TControl.fAligning,DL
-@@11:   XOR      DL,1
-@@12:   RETN
-
-@@DoAlign:
-        //CALL     AlignChildrenProc_
-        //RET
-        PUSH     EBP
-        PUSH     EBX
-        PUSH     ESI
-        PUSH     EDI
-        PUSH     AlignModes //00210A14h
-        SUB      ESP,030h
-        MOV      EBX,EAX
-        AND      byte ptr[EBX].TControl.fAligning,not(1 shl oaWaitAlign)
-        OR       byte ptr[EBX].TControl.fAligning,(1 shl oaAligning)
-        LEA      EDX,[ESP+20h] //@CR
-        CALL     TControl.ClientRect
-@@Main:
-        MOV      EAX,[EBX].TControl.fChildren
-        MOV      EDI,[EAX].TList.fCount
-        MOV      EBP,[EAX].TList.fItems
-        JMP      @@entry
-@@loop:
-        MOV      ESI,[EBP]
-        {$IFDEF  USE_FLAGS}
-        MOV      AL,[ESI].TControl.fStyle.f3_Style
-        SHR      AL, F3_Visible
-        OR       AL,[ESI].TControl.fFlagsG4
-        AND      AL, 1 shl G4_CreateHidden // G4_CreateHidden = 0 !!!
-        {$ELSE}
-        MOV      AL,[ESI].TControl.fVisible
-        OR       AL,[ESI].TControl.fCreateHidden
-        {$ENDIF}
-        JZ       @@continue
-        MOVZX    EAX,[ESI].TControl.fAlign
-        BT       [ESP+30h],EAX //Allowed
-        JNC      @@continue
-        {$IFDEF  USE_FLAGS}
-        TEST     [ESI].TControl.fFlagsG4, 1 shl G4_NotUseAlign
-        {$ELSE}
-        CMP      byte ptr[ESI].TControl.fNotUseAlign,0
-        {$ENDIF}
-        JNE      @@align
-        MOV      EDX,ESP       //@R
-        MOV      EAX,ESI       //C
-        CALL     TControl.GetBoundsRect
-        MOV      EAX,[ESP+0Ch] //R.Bottom
-        MOV      [ESP+1Ch],EAX //H
-        MOV      EAX,[ESP+08h] //R.Right
-        MOV      [ESP+18h],EAX //W
-        MOV      EAX,[ESP+04h] //R.Top
-        MOV      [ESP+14h],EAX //R1.Top
-        SUB      [ESP+1Ch],EAX //H
-        MOV      EAX,[ESP]     //R.Left
-        MOV      [ESP+10h],EAX //R1.Left
-        SUB      [ESP+18h],EAX //W
-        MOVSX    EDX,[EBX].TControl.fMargin
-        MOVZX    ECX,byte ptr[ESI].TControl.fAlign
-//!!! Order of caXXX-constants is important
-        LOOP     @@caTop
-        MOV      EAX,[ESP+20h] //CR.Left
-        SUB      EAX,[ESP]     //R.Left
-        ADD      EAX,EDX       //+Margin
-        MOV      ECX,[ESP+18h] //W
-        ADD      ECX,EDX       //+Margin
-        ADD      [ESP+20h],ECX //CR.Left
-        JMP      @@00
-@@caTop:
-        LOOP     @@caRight
-        MOV      EAX,[ESP+24h] //CR.Top
-        SUB      EAX,[ESP+04h] //R.Top
-        ADD      EAX,EDX       //+Margin
-        MOV      ECX,[ESP+1Ch] //H
-        ADD      ECX,EDX       //+Margin
-        ADD      [ESP+24h],ECX //CR.Top
-        JMP      @@01
-@@caRight:
-        LOOP     @@caBottom
-        MOV      EAX,[ESP+28h] //CR.Right
-        SUB      EAX,[ESP+08h] //R.Right
-        SUB      EAX,EDX       //-Margin
-        MOV      ECX,[ESP+18h] //W
-        ADD      ECX,EDX       //+Margin
-        SUB      [ESP+28h],ECX //CR.Right
-@@00:   ADD      [ESP],EAX     //R.Left
-        ADD      [ESP+08h],EAX //R.Right
-        MOV      EAX,[ESP+2Ch] //CR.Bottom
-        SUB      EAX,EDX       //+Margin
-        MOV      [ESP+0Ch],EAX //R.Bottom
-        ADD      EDX,[esp+24h] //Margin+CR.Top
-        MOV      [ESP+04h],edx //R.Top
-        JMP      @@caNone
-@@caBottom:
-        LOOP     @@caClient
-        MOV      EAX,[ESP+2Ch] //CR.Bottom
-        SUB      EAX,[ESP+0Ch] //R.Bottom
-        SUB      EAX,EDX       //-Margin
-        MOV      ECX,[ESP+1Ch] //H
-        ADD      ECX,EDX       //+Margin
-        SUB      [ESP+2Ch],ECX //CR.Bottom
-@@01:   ADD      [ESP+04h],EAX //R.Top
-        ADD      [ESP+0Ch],EAX //R.Bottom
-        MOV      EAX,[ESP+28h] //CR.Right
-        SUB      EAX,EDX       //-Margin
-        MOV      [esp+08h],EAX //R.Right
-        ADD      EDX,[ESP+20h] //Margin+CR.Left
-        MOV      [ESP],EDX     //R.Left
-        JMP      @@caNone
-@@caClient:
-        LOOP     @@caNone
-        MOV      EAX,[ESP+2Ch] //CR.Bottom
-        SUB      EAX,EDX       //-Margin
-        MOV      [ESP+0Ch],EAX //R.Bottom
-        MOV      EAX,[ESP+28h] //CR.Right
-        SUB      EAX,EDX       //-Margin
-        MOV      [ESP+08h],EAX //R.Right
-        MOV      EAX,[ESP+24h] //CR.Top
-        ADD      EAX,EDX       //+Margin
-        MOV      [ESP+04h],EAX //R.Top
-        ADD      EDX,[ESP+20h] //Margin+CR.Left
-        MOV      [ESP],EDX     //R.Left
-@@caNone:
-        MOV      EAX,[ESP]     //R.Left
-        CMP      EAX,[ESP+08h] //R.Right
-        JLE      @@02  //CMOVG ???
-        MOV      [ESP+08h],EAX //R.Right
-@@02:   MOV      EAX,[ESP+04h] //R.Top
-        CMP      EAX,[ESP+0Ch] //R.Bottom
-        JLE      @@03  //CMOVG ???
-        MOV      [ESP+0Ch],EAX //R.Bottom
-@@03:   MOV      EDX,[ESP]     //R.Left
-        SUB      EDX,[ESP+10h] //R1.Left
-        MOV      EAX,[ESP+04h] //R.Top
-        SUB      EAX,[ESP+14h] //R1.Top
-        OR       EDX,EAX       //ChgPos
-        MOV      ECX,[ESP+08h] //R.Right
-        SUB      ECX,[ESP]     //R.Left
-        SUB      ECX,[ESP+18h] //W
-        MOV      EAX,[ESP+0Ch] //R.Bottom
-        SUB      EAX,[ESP+04h] //R.Top
-        SUB      EAX,[ESP+1Ch] //H
-        OR       EAX,ECX
-        JZ       @@04
-        AND      byte ptr[ESI].TControl.fAligning,not(1 shl oaWaitAlign)
-        OR       byte ptr[ESI].TControl.fAligning,(1 shl oaFromSelf)
-@@04:   OR       EAX,EDX
-        JZ       @@align
-        MOV      EDX,ESP       //@R
-        MOV      EAX,ESI       //C
-        CALL     TControl.SetBoundsRect
-@@align:
-        TEST     byte ptr[ESI].TControl.fAligning,(1 shl oaWaitAlign)
-        JZ       @@continue
-        MOV      EAX,ESI       //C
-        CALL     @@DoAlign
-@@continue:
-        TEST     byte ptr[EBX].TControl.fAligning,(1 shl oaAligning)
-        JZ       @@exit
-        ADD      EBP,4
-@@entry:
-        DEC      EDI
-        JGE      @@loop
-        SHR      dword ptr[ESP+30h],8 //Allowed
-        JNZ      @@Main
-        AND      byte ptr[EBX].TControl.fAligning,not(1 shl oaAligning)
-@@exit:
-        ADD      ESP,34h
-        POP      EDI
-        POP      ESI
-        POP      EBX
-        POP      EBP
-end;
-{$ENDIF OLD_ALIGN}
-
 function WndProcUpdate( Sender: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 asm     //cmd    //opd
         PUSH     EBX
@@ -14181,7 +13819,7 @@ asm
         JECXZ   @@retDL
 
         {$IFDEF OLD_ALIGN}
-        CMP     [EAX].TControl.fVisibleWoParent
+        CMP     [EAX].TControl.fVisibleWoParent, 0
         JZ      @@1
         MOV     DL, DH
         JMP     @@retDL
@@ -15140,6 +14778,49 @@ asm
     MOV  [EAX].TControl.DF.FormLastCreatedChild, ECX
 end;
 
-{$ENDIF}
+procedure FormSetEvent( Form: PControl );
+asm
+    PUSH  EDI
+    MOV   EDI, EAX
+    PUSH  ESI
+    CALL  TControl.ParentForm
+    MOV   ESI, EAX
+    PUSH  [ESI].TControl.DF.FormObj
+    CALL  ParentForm_IntParamAsm
+    MOV   ESI, [EAX].TControl.DF.FormAlphabet
+    PUSH  dword ptr [ESI+EDX*4]
+    CALL  ParentForm_IntParamAsm
+    XCHG  EAX, EDI
+    CALL  dword ptr [ESI+EDX*4]
+    POP   ESI
+    POP   EDI
+end;
+
+procedure FormSetIndexedEvent( Form: PControl );
+asm
+    PUSH  EDI
+    MOV   EDI, EAX
+    PUSH  ESI
+    CALL  TControl.ParentForm
+    MOV   ESI, EAX
+    PUSH  [ESI].TControl.DF.FormObj
+    CALL  ParentForm_IntParamAsm
+    MOV   ESI, [EAX].TControl.DF.FormAlphabet
+    PUSH  dword ptr [ESI+EDX*4]
+
+    CALL  ParentForm_IntParamAsm // idx
+    PUSH  EDX
+
+    CALL  ParentForm_IntParamAsm
+    XCHG  EAX, EDI
+    MOV   ECX, dword ptr [ESI+EDX*4]
+
+    POP   EDX
+    CALL  ECX
+    POP   ESI
+    POP   EDI
+end;
+
+//{$ENDIF}
 
 //======================================== THE END OF FILE KOL_ASM.inc

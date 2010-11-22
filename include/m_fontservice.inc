@@ -27,6 +27,8 @@ const
                                // such as flags)
   FIDF_ALLOWEFFECTS     = 256; // allow setting of font effects
                                // (i.e. underline and strikeout)
+  FIDF_DISABLESTYLES    = 512; // don't allow to select font attributes (bold/underline/italics)
+                               // FIDF_ALLOWEFFECTS has priority and will override this flag!
 
 const
 // font class
