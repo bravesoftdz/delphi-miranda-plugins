@@ -55,11 +55,8 @@ begin
 end;
 
 procedure SetTrackbarPosition(Trackbar:PTrackbar;pos:integer);
-var
-  D: PIcoBtnData;
 begin
-  D:=Pointer(Trackbar.Children[0].CustomObj); // slider
-  if D.active<>D.ico_pressed then
+  if pIcoButton(Trackbar.Children[0]).State<>AST_PRESSED then
     Trackbar.Position:=pos;
 
   Trackbar.Update;
@@ -90,38 +87,31 @@ begin
 end;
 
 procedure tAWKTrackbar.PressButton(Sender: PControl;var Mouse: TMouseEventData);
-var
-  D: PIcoBtnData;
 begin
-  D:=Pointer(Sender.CustomObj);
-  D.action:=PTrackbar(Sender.Parent).Position;
+  pIcoButton(Sender)^.Action:=PTrackbar(Sender.Parent).Position;
 end;
 
 procedure tAWKTrackbar.UnPressButton(Sender: PControl;var Mouse: TMouseEventData);
-var
-  D: PIcoBtnData;
 begin
-  D:=Pointer(Sender.CustomObj);
   CallService(MS_WAT_PRESSBUTTON,WAT_CTRL_SEEK,
-    Cardinal(D.action)*pAWKTrackbar(Sender.Parent.CustomObj).UpdInterval div 1000);
-  D.action:=-1;
+    pIcoButton(Sender)^.Action*pAWKTrackbar(Sender.Parent.CustomObj).UpdInterval div 1000);
+  pIcoButton(Sender)^.Action:=-1;
 end;
 
 procedure tAWKTrackbar.DragButton(Sender: PControl;var Mouse: TMouseEventData);
 var
-  D: PIcoBtnData;
   pos:integer;
 begin
-  D:=Pointer(Sender.CustomObj);
-  if D.active=D.ico_pressed then
-  begin
-    pos:=CoordToPos(PTrackbar(Sender.Parent),Sender.Left+Mouse.X);
-    if D.action<>pos then
+  with pIcoButton(Sender)^ do
+    if State=AST_PRESSED then
     begin
-      D.action:=pos;
-      PTrackbar(Sender.Parent).Position:=pos;
+      pos:=CoordToPos(PTrackbar(Sender.Parent),Sender.Left+Mouse.X);
+      if Action<>pos then
+      begin
+        Action:=pos;
+        PTrackbar(Sender.Parent).Position:=pos;
+      end;
     end;
-  end;
 end;
 
 procedure tAWKTrackbar.Scroll(Sender:PTrackbar; Code:Integer);
@@ -129,7 +119,7 @@ begin
   if code=TB_ENDTRACK then
   begin
     CallService(MS_WAT_PRESSBUTTON,WAT_CTRL_SEEK,
-      Cardinal(Sender.Position)*pAWKTrackbar(Sender.CustomObj).UpdInterval div 1000);
+      Sender.Position*pAWKTrackbar(Sender.CustomObj).UpdInterval div 1000);
   end;
 end;
 
@@ -166,16 +156,8 @@ begin
 end;
 
 procedure RefreshTrackbarIcons(Owner:PControl);
-var
-  D:pIcoBtnData;
 begin
-  D:=Pointer(Owner.Children[0].CustomObj);
-  D.ico_normal.Handle:=GetIcon(D.action,AST_NORMAL); // WAT_CTRL_SEEK
-  if D.ico_hovered<>nil then
-    D.ico_hovered.Handle:=GetIcon(D.action,AST_HOVERED);
-  if D.ico_pressed<>nil then
-    D.ico_pressed.Handle:=GetIcon(D.action,AST_PRESSED);
-  // refresh
+  pIcoButton(Owner.Children[0]).RefreshIcon;
 end;
 
 function MakeNewTrackBar(AOwner:PControl):PTrackbar;
@@ -202,7 +184,7 @@ begin
 //    OnScroll    :=D.Scroll;
   end;
 
-  with CreateIcoButton(result,WAT_CTRL_SEEK)^ do
+  with CreateIcoButton(result,GetIcon,DoAction,WAT_CTRL_SEEK)^ do
   begin
     OnClick:=nil;
     OnMouseDown:=D.PressButton;

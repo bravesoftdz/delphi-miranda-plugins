@@ -6,7 +6,7 @@ interface
 implementation
 
 uses kol, io,windows,commdlg,messages,common,commctrl, KOLCCtrls,
-     wat_api,wrapper,global,m_api,hlpdlg,macros,dbsettings,waticons,mirutils;
+     wat_api,wrapper,global,m_api,hlpdlg,macros,dbsettings,waticons,mirutils,icobuttons;
 
 {$R frm.res}
 
@@ -66,7 +66,6 @@ begin
 end;
 
 {$include frm_rc.inc}
-{$include frm_icobutton.inc}
 {$include frm_icogroup.inc}
 {$include frm_trackbar.inc}
 {$include frm_text.inc}
