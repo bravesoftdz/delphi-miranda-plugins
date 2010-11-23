@@ -10,56 +10,111 @@ const
   AST_PRESSED = 2;
 
 type
-  tGetIconProc = function(action:integer;stat:integer):cardinal;
+  tGetIconProc = function(action:integer;stat:integer=AST_NORMAL):cardinal;
   tActionProc  = function(action:integer):integer;
 
 type
-  pIcoBtnData = ^tIcoBtnData;
-  tIcoBtnData = object(TObj)
+  pIcoButton = ^tIcoButton;
+  tIcoButton = object(TControl)
   private
-    rptvalue:cardinal;
-    rpttimer:cardinal;
-
-    pGetIcon : tGetIconProc;
-    pDoAction: tActionProc;
-    
+    procedure SetGetIconProc (val:tGetIconProc);
+    procedure SetDoActionProc(val:tActionProc);
+    procedure SetCheckFlag(val:boolean);
+    function  GetCheckFlag:boolean;
+    procedure SetAction(val:integer);
+    function  GetAction:integer;
+    function  GetState:integer;
+    procedure myMouseEnter(Sender: PObj);
+    procedure myMouseLeave(Sender: PObj);
+    procedure myCtrlBtnClick(Sender: PObj);
   public
-    ico_normal :PIcon;
-    ico_hovered:PIcon;
-    ico_pressed:PIcon;
-    active     :PIcon; // one of ico_*
-
-    action:integer;
-
     destructor Destroy; virtual;
-    procedure MouseEnter(Sender: PObj);
-    procedure MouseLeave(Sender: PObj);
-    procedure CtrlBtnClick(Sender: PObj);
 
-    property GetIcon : tGetIconProc read pGetIcon  write pGetIcon;
-    property DoAction: tActionProc  read pDoAction write pDoAction;
+    procedure RefreshIcon;
+    property GetIconProc : tGetIconProc write SetGetIconProc;
+    property DoActionProc: tActionProc  write SetDoActionProc;
+
+    property AsCheckbox: boolean read GetCheckFlag write SetCheckFlag;
+    property Action    : integer read GetAction    write SetAction;
+    property State     : integer read GetState;
   end;
 
-function CreateIcoButton(AOwner: PControl; GetIconProc:tGetIconProc;
-         ActionProc:tActionProc; action:integer; repeattime:integer=0):PControl;
+function CreateIcoButton(AOwner: PControl; pGetIconProc:tGetIconProc;
+         pActionProc:tActionProc; action:integer=0; repeattime:integer=0):pIcoButton;
 
 implementation
 
 uses windows, messages;
 
-procedure tIcoBtnData.CtrlBtnClick(Sender: PObj);
+type
+  pIcoBtnData = ^tIcoBtnData;
+  tIcoBtnData = record
+    rptvalue:cardinal;
+    rpttimer:cardinal;
+    checking: boolean;
+
+    ico_normal :PIcon;
+    ico_hovered:PIcon;
+    ico_pressed:PIcon;
+    active     :PIcon; // one of ico_*
+
+    Action:integer;
+
+    GetIcon : tGetIconProc;
+    DoAction: tActionProc;
+  end;
+
+procedure tIcoButton.SetGetIconProc(val:tGetIconProc);
+begin
+  pIcoBtnData(CustomData).GetIcon:=val;
+end;
+
+procedure tIcoButton.SetDoActionProc(val:tActionProc);
+begin
+  pIcoBtnData(CustomData).DoAction:=val;
+end;
+
+procedure tIcoButton.SetCheckFlag(val:boolean);
+begin
+  pIcoBtnData(CustomData).checking:=val;
+end;
+
+function tIcoButton.GetCheckFlag:boolean;
+begin
+  result:=pIcoBtnData(CustomData).checking;
+end;
+
+procedure tIcoButton.SetAction(val:integer);
+begin
+  pIcoBtnData(CustomData).Action:=val;
+end;
+
+function tIcoButton.GetAction:integer;
+begin
+  result:=pIcoBtnData(CustomData).Action;
+end;
+
+function tIcoButton.GetState:integer;
+begin
+  with pIcoBtnData(CustomData)^ do
+  if      active=ico_pressed then result:=AST_PRESSED
+  else if active=ico_hovered then result:=AST_HOVERED
+  else {if active=ico_normal then}result:=AST_NORMAL;
+end;
+
+procedure tIcoButton.myCtrlBtnClick(Sender: PObj);
 var
   D: PIcoBtnData;
 begin
-  D:=Pointer(PControl(Sender).CustomObj);
+  D:=PControl(Sender).CustomData;
   D.DoAction(D.action);
 end;
 
-procedure tIcoBtnData.MouseEnter(Sender: PObj);
+procedure tIcoButton.myMouseEnter(Sender: PObj);
 var
   D: PIcoBtnData;
 begin
-  D:=Pointer(PControl(Sender).CustomObj);
+  D:=PControl(Sender).CustomData;
   if D.ico_hovered<>nil then
   begin
     D.active:=D.ico_hovered;
@@ -68,34 +123,49 @@ begin
   end;
 end;
 
-procedure tIcoBtnData.MouseLeave(Sender: PObj);
+procedure tIcoButton.myMouseLeave(Sender: PObj);
 var
   D: PIcoBtnData;
 begin
-  D:=Pointer(PControl(Sender).CustomObj);
+  D:=PControl(Sender).CustomData;
   if D.active=D.ico_hovered then //!!!! for case when mouse button pressed and mouse moved
     D.active:=D.ico_normal;
   PControl(Sender).Update;
 //  PControl(Sender).Parent.Update; //??
 end;
 
-destructor tIcoBtnData.Destroy;
+destructor tIcoButton.Destroy;
+var
+  D: PIcoBtnData;
 begin
-  ico_normal.Free;
-  if ico_hovered<>nil then ico_hovered.Free;
-  if ico_pressed<>nil then ico_pressed.Free;
+  D:=CustomData;
+  D.ico_normal.Free;
+  if D.ico_hovered<>nil then D.ico_hovered.Free;
+  if D.ico_pressed<>nil then D.ico_pressed.Free;
 
   inherited;
 end;
 
-function WndProcIcoButton( Sender: PControl; var Msg: TMsg; var Rslt:Integer ): boolean;
+procedure tIcoButton.RefreshIcon;
+var
+  D: PIcoBtnData;
+begin
+  D:=CustomData;
+  D.ico_normal .Handle:=D.GetIcon(D.action,AST_NORMAL);
+  if D.ico_hovered<>nil then
+    D.ico_hovered.Handle:=D.GetIcon(D.action,AST_HOVERED);
+  if D.ico_pressed<>nil then
+    D.ico_pressed.Handle:=D.GetIcon(D.action,AST_PRESSED);
+end;
+
+function WndProcIcoButton(Sender:PControl; var Msg:TMsg; var Rslt:Integer):boolean;
 var
   k:HDC;
   PaintStruct: TPaintStruct;
   D: PIcoBtnData;
   tp:TPOINT;
 begin
-  D:=Pointer(Sender.CustomObj);
+  D:=Sender.CustomData;
   Result:=false;
   case msg.message of
 
@@ -108,75 +178,87 @@ begin
     end;
 
     WM_TIMER: begin
-      D.CtrlBtnClick(Sender);
+      Sender.OnClick(Sender);
     end;
 
     WM_LBUTTONDBLCLK,
     WM_LBUTTONDOWN : begin  // Change from normal to pressed
-
-      if D.ico_pressed<>nil then
-        D.active:=D.ico_pressed
+      if D.checking then
+      begin
+        if D.active=D.ico_pressed then
+          D.active:=D.ico_normal
+        else
+          D.active:=D.ico_pressed;
+      end
       else
-        Sender.SetPosition(Sender.Position.X-2,Sender.Position.Y-2);
+      begin
+        if D.ico_pressed<>nil then
+          D.active:=D.ico_pressed
+        else
+          Sender.SetPosition(Sender.Position.X-2,Sender.Position.Y-2);
+
+        if D.rptvalue<>0 then
+        begin
+          D.rpttimer:=SetTimer(Sender.GetWindowHandle,1,D.rptvalue,nil);
+        end;
+      end;
       Sender.Update;
 //      Sender.Parent.Update;
-
-      if D.rptvalue<>0 then
-      begin
-        D.rpttimer:=SetTimer(Sender.GetWindowHandle,1,D.rptvalue,nil);
-      end;
     end;
 
     WM_LBUTTONUP: begin // Change from pressed to normal
-
-      if D.rpttimer<>0 then
+      if not D.checking then
       begin
-        KillTimer(0,D.rpttimer);
-        D.rpttimer:=0;
-      end;
+        if D.rpttimer<>0 then
+        begin
+          KillTimer(0,D.rpttimer);
+          D.rpttimer:=0;
+        end;
 
-      if D.ico_pressed<>nil then
-      begin
-        tp.X:=Loword(msg.LParam);
-        tp.Y:=msg.LParam shr 16;
-        // mouse still above button?
-        if (D.ico_hovered<>nil) and PtInRect(Sender.BoundsRect,tp) then
-          D.active:=D.ico_hovered
+        if D.ico_pressed<>nil then
+        begin
+          tp.X:=Loword(msg.LParam);
+          tp.Y:=msg.LParam shr 16;
+          // mouse still above button?
+          if (D.ico_hovered<>nil) and PtInRect(Sender.BoundsRect,tp) then
+            D.active:=D.ico_hovered
+          else
+            D.active:=D.ico_normal;
+        end
         else
-          D.active:=D.ico_normal;
-      end
-      else
-        Sender.SetPosition(sender.Position.X+2,sender.Position.Y+2);
-      Sender.Update;
-//      Sender.Parent.Update;
-
+          Sender.SetPosition(sender.Position.X+2,sender.Position.Y+2);
+        Sender.Update;
+  //      Sender.Parent.Update;
+      end;
     end;
   end;
 end;
 
-function CreateIcoButton(AOwner: PControl; GetIconProc:tGetIconProc;
-         ActionProc:tActionProc; action:integer; repeattime:integer=0):PControl;
+function CreateIcoButton(AOwner: PControl; pGetIconProc:tGetIconProc;
+         pActionProc:tActionProc; action:integer=0; repeattime:integer=0):pIcoButton;
 var
   ico:HICON;
   D: PIcoBtnData;
 begin
-  Result:=NewBitBtn(AOwner,'',[bboNoBorder,bboNoCaption],glyphOver,0,0);
+  Result:=pIcoButton(NewBitBtn(AOwner,'',[bboNoBorder,bboNoCaption],glyphOver,0,0));
   Result.LikeSpeedButton.Flat:=true;
   Result.Transparent:=true;
 
-  New(D, Create);
-  Result.CustomObj:=D;
+  GetMem(D,SizeOf(TIcoBtnData));
+  Result.CustomData:=D;
 
-  Result.OnMouseEnter:=D.MouseEnter;
-  Result.OnMouseLeave:=D.MouseLeave;
-  Result.OnClick     :=D.CtrlBtnClick;
+  Result.OnMouseEnter:=Result.myMouseEnter;
+  Result.OnMouseLeave:=Result.myMouseLeave;
+  Result.OnClick     :=Result.myCtrlBtnClick;
 
-  D.action  :=action;
+  Result.AsCheckbox:=false;
+  Result.action:=action;
+
   D.rptvalue:=repeattime;
   D.rpttimer:=0;
 
-  D.GetIcon :=GetIconProc;
-  D.DoAction:=ActionProc;
+  Result.GetIconProc :=pGetIconProc;
+  Result.DoActionProc:=pActionProc;
 
   D.ico_normal:=NewIcon;
   D.ico_normal.ShareIcon:=true;
