@@ -68,17 +68,11 @@ end;
 
 procedure RefreshButtonIcons(Owner:PControl);
 var
-  D:pIcoBtnData;
   i:integer;
 begin
   for i:=0 to Owner.ChildCount-1 do
   begin
-    D:=pointer(Owner.Children[i].CustomObj);
-    D.ico_normal.Handle:=GetIcon(D.action,AST_NORMAL);
-    if D.ico_hovered<>nil then
-      D.ico_hovered.Handle:=GetIcon(D.action,AST_HOVERED);
-    if D.ico_pressed<>nil then
-      D.ico_pressed.Handle:=GetIcon(D.action,AST_PRESSED);
+    pIcoButton(Owner.Children[i]).RefreshIcon;
   end;
   // refresh
 end;
@@ -104,13 +98,13 @@ begin
     D.NeedResize:=true;
   end;
 
-  CreateIcoButton(result,WAT_CTRL_VOLDN,300);
-  CreateIcoButton(result,WAT_CTRL_VOLUP,300);
-  CreateIcoButton(result,WAT_CTRL_PREV,2000);
-  CreateIcoButton(result,WAT_CTRL_PLAY);
-  CreateIcoButton(result,WAT_CTRL_PAUSE);
-  CreateIcoButton(result,WAT_CTRL_STOP);
-  CreateIcoButton(result,WAT_CTRL_NEXT,2000);
+  CreateIcoButton(result,GetIcon,DoAction,WAT_CTRL_VOLDN,300);
+  CreateIcoButton(result,GetIcon,DoAction,WAT_CTRL_VOLUP,300);
+  CreateIcoButton(result,GetIcon,DoAction,WAT_CTRL_PREV,2000);
+  CreateIcoButton(result,GetIcon,DoAction,WAT_CTRL_PLAY);
+  CreateIcoButton(result,GetIcon,DoAction,WAT_CTRL_PAUSE);
+  CreateIcoButton(result,GetIcon,DoAction,WAT_CTRL_STOP);
+  CreateIcoButton(result,GetIcon,DoAction,WAT_CTRL_NEXT,2000);
 
   D.ShowVolume:=aVolume;
   D.ButtonGap :=aGap;
