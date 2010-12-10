@@ -107,7 +107,8 @@ var
   D: PIcoBtnData;
 begin
   D:=PControl(Sender).CustomData;
-  D.DoAction(D.action);
+  if @D.DoAction<>nil then
+    D.DoAction(D.action);
 end;
 
 procedure tIcoButton.myMouseEnter(Sender: PObj);
@@ -151,7 +152,7 @@ var
   D: PIcoBtnData;
 begin
   D:=CustomData;
-  D.ico_normal .Handle:=D.GetIcon(D.action,AST_NORMAL);
+  D.ico_normal.Handle:=D.GetIcon(D.action,AST_NORMAL);
   if D.ico_hovered<>nil then
     D.ico_hovered.Handle:=D.GetIcon(D.action,AST_HOVERED);
   if D.ico_pressed<>nil then
