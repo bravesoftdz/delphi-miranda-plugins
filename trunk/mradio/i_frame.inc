@@ -38,39 +38,21 @@ begin
       CallService('mRadio/Settings',0,0);
     end;
 
-    WM_COMMAND: begin
-      case msg.wParam shr 16 of
-
-        BN_CLICKED: begin
-          case loword(msg.wParam) of
-            IDC_RADIO_MUTE: begin
-{
-              if gVolume<0 then
-              begin
-                tmp:=dword(IcoBtnOn);
-              end
-              else
-              begin
-                tmp:=dword(IcoBtnOff);
-              end;
-}
-              if gVolume=0 then
-                gVolume:=-1
-              else
-                gVolume:=-gVolume;
-              CallService(MS_RADIO_SETVOL,gVolume,0);
-              EnableWindow(hVolFrmCtrl,gVolume>=0);
-            end;
-          end;
-        end;
-      end;
-    end;
-
     WM_HSCROLL: begin
        Service_RadioSetVolume(SendMessage(msg.lParam,TBM_GETPOS,0,0),2)
     end;
 
   end;
+end;
+
+function DoAction(action:integer):integer;
+begin
+  if gVolume=0 then
+    gVolume:=-1
+  else
+    gVolume:=-gVolume;
+  Result:=CallService(MS_RADIO_SETVOL,gVolume,0);
+  EnableWindow(hVolFrmCtrl,gVolume>=0);
 end;
 
 function ColorReload(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -130,7 +112,7 @@ begin
     with FrameCtrl^ do
     begin
       // Button
-      with CreateIcoButton(FrameCtrl,GetIcon,nil,IDC_RADIO_MUTE)^ do
+      with CreateIcoButton(FrameCtrl,GetIcon,DoAction,IDC_RADIO_MUTE)^ do
       begin
         SetSize(16,16);
         SetPosition(FrameCtrl.Width-18,0);
