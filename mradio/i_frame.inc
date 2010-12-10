@@ -8,92 +8,30 @@ const
   pattern:pWideChar=nil;
   current: THANDLE = 0;
 var
+  FrameCtrl:PControl;
   colorhook:THANDLE;
   hbr:HBRUSH;
   frm_bkg:TCOLORREF;
-  OldSliderWndProc:pointer;
 
-function QSDlgResizer(Dialog:HWND;lParam:LPARAM;urc:PUTILRESIZECONTROL):int; cdecl;
+function RadioFrameProc( Sender: PControl; var Msg: TMsg; var Rslt:Integer ): boolean;
 begin
-  case urc^.wId of
-    IDC_RADIO_MUTE: result:=RD_ANCHORX_RIGHT or RD_ANCHORY_CENTRE;
-    IDC_RADIO_VOL : result:=RD_ANCHORX_WIDTH or RD_ANCHORY_CENTRE;
-  else
-    result:=0;
-  end;
-end;
+  result:=false;
+  rslt:=0;
 
-function SliderWndProc(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
-begin
-  if hMessage=WM_ERASEBKGND then
-    result:=1
-  else
-    result:=CallWindowProc(OldSliderWndProc, Dialog, hMessage, wParam, lParam);
-end;
+  case Msg.message of
 
-function RadioFrameProc(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
-var
-  urd:TUTILRESIZEDIALOG;
-  rc:TRECT;
-  ti:TTOOLINFOW;
-  hwndTooltip:HWND;
-  tmp:cardinal;
-begin
-  result:=0;
-  case hMessage of
     WM_DESTROY: begin
       hVolFrmCtrl:=0;
       DeleteObject(hbr);
     end;
 
     WM_INITDIALOG: begin
-
-      hwndTooltip:=CreateWindowW(TOOLTIPS_CLASS,nil,TTS_ALWAYSTIP,
-          integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
-          integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
-          Dialog,0,hInstance,nil);
-
-      FillChar(ti,SizeOf(ti),0);
-      ti.cbSize  :=sizeof(TOOLINFO);
-      ti.uFlags  :=TTF_IDISHWND or TTF_SUBCLASS;
-      ti.hwnd    :=dialog;
-      ti.hinst   :=hInstance;
-      ti.uId     :=GetDlgItem(Dialog,IDC_RADIO_MUTE);
-      ti.lpszText:=pWideChar(TranslateW('Mute'));
-      SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
-
-      hVolFrmCtrl:=GetDlgItem(Dialog,IDC_RADIO_VOL);
-      SendMessage(hVolFrmCtrl,TBM_SETRANGE,0,MAKELONG(0,100));
-      SendMessage(hVolFrmCtrl,TBM_SETPOS,1,gVolume);
-      SendDlgItemMessage(Dialog,IDC_RADIO_MUTE,BM_SETIMAGE,IMAGE_ICON,
-        PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnOn)));
-
-      OldSliderWndProc:=pointer(SetWindowLong(hVolFrmCtrl,GWL_WNDPROC,dword(@SliderWndProc)));
-    end;
-
-    WM_SIZE: begin
-      FillChar(urd,SizeOf(TUTILRESIZEDIALOG),0);
-      urd.cbSize    :=SizeOf(urd);
-      urd.hwndDlg   :=Dialog;
-      urd.hInstance :=hInstance;
-      urd.lpTemplate:=MAKEINTRESOURCEA(IDD_FRAME);
-      urd.lParam    :=0;
-      urd.pfnResizer:=@QSDlgResizer;
-      CallService(MS_UTILS_RESIZEDIALOG,0,dword(@urd));
-    end;
-
-    WM_ERASEBKGND: begin
-      GetClientRect(Dialog,rc);
-      FillRect(wParam,rc,hbr);
-      result:=1;
     end;
 
     WM_CTLCOLORSTATIC: begin
-      if lParam=hVolFrmCtrl then
-      begin
-        SetBkColor(wParam, frm_bkg);
-        result:=hbr;
-      end;
+//      SetBkColor(msg.wParam, frm_bkg);
+      Rslt:=hbr;
+      result:=True;
     end;
 
     WM_CONTEXTMENU: begin
@@ -101,27 +39,27 @@ begin
     end;
 
     WM_COMMAND: begin
-      case wParam shr 16 of
+      case msg.wParam shr 16 of
 
         BN_CLICKED: begin
-          case loword(wParam) of
+          case loword(msg.wParam) of
             IDC_RADIO_MUTE: begin
-              if IsDlgButtonChecked(Dialog,IDC_RADIO_MUTE)=BST_UNCHECKED then
+{
+              if gVolume<0 then
               begin
                 tmp:=dword(IcoBtnOn);
-                gVolume:=ABS(gVolume);
               end
               else
               begin
                 tmp:=dword(IcoBtnOff);
-                gVolume:=-ABS(gVolume);
-                if gVolume=0 then
-                 gVolume:=-1;
               end;
+}
+              if gVolume=0 then
+                gVolume:=-1
+              else
+                gVolume:=-gVolume;
               CallService(MS_RADIO_SETVOL,gVolume,0);
               EnableWindow(hVolFrmCtrl,gVolume>=0);
-              SendDlgItemMessage(Dialog,IDC_RADIO_MUTE,BM_SETIMAGE,IMAGE_ICON,
-                PluginLink^.CallService(MS_SKIN2_GETICON,0,tmp));
             end;
           end;
         end;
@@ -129,18 +67,17 @@ begin
     end;
 
     WM_HSCROLL: begin
-       Service_RadioSetVolume(SendMessage(lParam,TBM_GETPOS,0,0),2)
+       Service_RadioSetVolume(SendMessage(msg.lParam,TBM_GETPOS,0,0),2)
     end;
 
-  else
-    result:=DefWindowProc(Dialog,hMessage,wParam,lParam);
   end;
 end;
 
 function ColorReload(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
   cid:TColourID;
-  wnd:HWND;
+//  wnd:HWND;
+//  i:integer;
 begin
   result:=0;
   cid.cbSize:=SizeOf(cid);
@@ -150,18 +87,97 @@ begin
   if hbr<>0 then DeleteObject(hbr);
   hbr:=CreateSolidBrush(frm_bkg);
 
-  wnd:=GetFocus();
-	InvalidateRect(hVolFrmCtrl,nil,true);
-	SetFocus(hVolFrmCtrl);
-  RedrawWindow(FrameWnd,nil,0,RDW_INVALIDATE or RDW_ALLCHILDREN or RDW_ERASE);
-  SetFocus(wnd);
+  FrameCtrl.Children[1].Width := FrameCtrl.Children[1].Width-1;
+  FrameCtrl.Children[1].Width := FrameCtrl.Children[1].Width+1;
+
+  FrameCtrl.InvalidateEx;
+  FrameCtrl.Update;
+end;
+
+function GetIcon(action:integer;stat:integer=AST_NORMAL):cardinal;
+begin
+  case stat of
+    AST_NORMAL : result:=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnOn));
+    AST_PRESSED: result:=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnOff));
+  else
+    result:=0;
+  end;
+end;
+
+procedure MyErase(DummySelf, Sender:PControl; DC:HDC);
+begin
+end;
+
+procedure MyEraseFrame(DummySelf, Sender:PControl; DC:HDC);
+var
+  rc:TRECT;
+begin
+  GetClientRect(Sender.Handle, rc);
+  Sender.Canvas.Brush.Color := frm_bkg;
+  Sender.Canvas.FillRect(rc);
+end;
+
+function CreateFrameWindow(parent:HWND):THANDLE;
+var
+  TB:PTrackbar;
+begin
+  result:=0;
+
+  FrameCtrl:=NewAlienPanel(parent,esNone);
+  if FrameCtrl<>nil then
+  begin
+    result:=FrameCtrl.GetWindowHandle;
+    with FrameCtrl^ do
+    begin
+      // Button
+      with CreateIcoButton(FrameCtrl,GetIcon,nil,IDC_RADIO_MUTE)^ do
+      begin
+        SetSize(16,16);
+        SetPosition(FrameCtrl.Width-18,0);
+        Anchor(false,true,true,false);
+
+        AsCheckbox:=true;
+      end;
+
+      // Trackbar
+      TB:=NewTrackbar(FrameCtrl,[trbNoTicks,trbBoth,trbNoBorder],nil);
+      with TB^ do
+      begin
+        hVolFrmCtrl:=Handle;
+        SetSize(FrameCtrl.Width-24,18);
+        SetPosition(2,0);
+        Anchor(true,true,true,false);
+
+        RangeMin:=0;
+        RangeMax:=100;
+
+        OnEraseBkGnd:=TOnPaint(MakeMethod(nil, @MyErase));
+      end;
+
+      AttachProc(@RadioFrameProc);
+    end;
+
+    with FrameCtrl^ do
+    begin
+      MinWidth :=80;
+      MinHeight:=30;
+      Anchor(true,true,true,true);
+//      OnMessage:=TOnMessage(MakeMethod(nil, @MyEraseFrame));
+      OnEraseBkGnd:=TOnPaint(MakeMethod(nil, @MyEraseFrame));
+{
+      OnPaint    :=FrameCtrl.Paint;
+      OnResize   :=FrameCtrl.FrameResize;
+      OnMouseDown:=FrameCtrl.MouseDown;
+}
+    end;
+  end;
 end;
 
 procedure CreateFrame(parent:HWND);
 var
   Frame:TCLISTFrame;
-  wnd:HWND;
-  tmp:cardinal;
+//  wnd:HWND;
+//  tmp:cardinal;
   tr:TRECT;
   cid:TColourID;
 begin
@@ -170,8 +186,7 @@ begin
   if parent=0 then
     parent:=CallService(MS_CLUI_GETHWND,0,0);
 
-  if FrameWnd=0 then
-    FrameWnd:=CreateDialog(hInstance,MAKEINTRESOURCE(IDD_FRAME),parent,@RadioFrameProc);
+  FrameWnd:=CreateFrameWindow(parent);
 
   if FrameWnd<>0 then
   begin
@@ -203,10 +218,6 @@ begin
     begin
       CallService(MS_CLIST_FRAMES_UPDATEFRAME,FrameId, FU_FMPOS);
 
-      wnd:=CallService(MS_CLUI_GETHWND{MS_CLUI_GETHWNDTREE},0,0);
-      tmp:=SendMessage(wnd,CLM_GETEXSTYLE,0,0);
-      SendMessage(wnd,CLM_SETEXSTYLE,tmp or CLS_EX_SHOWSELALWAYS,0);
-
       cid.cbSize:=SizeOf(cid);
       cid.flags :=0;
       StrCopy(cid.group,'mRadio');
@@ -232,6 +243,7 @@ begin
     CallService(MS_CLIST_FRAMES_REMOVEFRAME,FrameId,0);
     FrameId:=-1;
   end;
-  DestroyWindow(FrameWnd);
+  FrameCtrl.Free;
+  //  DestroyWindow(FrameWnd);
   FrameWnd:=0;
 end;

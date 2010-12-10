@@ -14,7 +14,7 @@
   Key Objects Library (C) 2000 by Kladov Vladimir.
 
 ****************************************************************
-* VERSION 3.00.Z6
+* VERSION 3.01
 ****************************************************************
 
   K.O.L. - is a set of objects to create small programs
@@ -3008,6 +3008,7 @@ function ImageList_Merge(ImageList1: HImageList; Index1: Integer;
   HImageList; stdcall;
 
 function LoadBmp( Instance: Integer; Rsrc: PKOLChar; MasterObj: PObj ): HBitmap;
+function LoadBmp32( Instance: Integer; Rsrc: PKOLChar; MasterObj: PObj ): HBitmap;
 
 type
   tagBitmap = Windows.TBitmap;
@@ -3326,7 +3327,7 @@ function CalcScanLineSize( Header: PBitmapInfoHeader ): Integer;
 {* May be will be useful. }
 
 var
-  DefaultPixelFormat: TPixelFormat = pf16bit;
+  DefaultPixelFormat: TPixelFormat = pf32bit; //pf16bit;
 
 function LoadMappedBitmap( hInst: THandle; BmpResID: Integer; const Map: array of TColor )
          : HBitmap;
@@ -12354,7 +12355,7 @@ type
              of object;
   TSortDirRules = ( sdrNone, sdrFoldersFirst, sdrCaseSensitive, sdrByName, sdrByExt,
                     sdrBySize, sdrBySizeDescending, sdrByDateCreate, sdrByDateChanged,
-                    sdrByDateAccessed );
+                    sdrByDateAccessed, sdrInvertOrder );
   {* List of rules (options) to sort directories. Rules are passed to Sort
      method in an array, and first placed rules are applied first. }
 
@@ -12417,6 +12418,10 @@ type
    {* This event is called on reading each item while scanning directory.
       To use it, first create PDirList object with empty path to scan, then
       assign OnItem event and call ScanDirectory with correct path. }
+   procedure DeleteItem( Idx: Integer );
+   {* Allows to delete an item from the directory list (not from the disk!) }
+   procedure AddItem( FindData: PFindFileData );
+   {* Allows to add arbitrary item to the list. }
   end;
 
 function NewDirList( const DirPath, Filter: KOLString; Attr: DWORD ): PDirList;
@@ -24770,8 +24775,8 @@ var FOS : {$IFDEF UNICODE_CTRLS}TSHFileOpStructW{$ELSE}TSHFileOpStruct{$ENDIF};
     ToList0: KOLString;
 begin
   L := Length( FromList );
-  Buf := AllocMem( L+2 );
-  Move( FromList[ 1 ], Buf^, L );
+  Buf := AllocMem( (L+2) * Sizeof( KOLChar ) );
+  Move( FromList[ 1 ], Buf^, L * Sizeof( KOLChar ) );
   for L := L downto 0 do
     if Buf[ L ] = FileOpSeparator then Buf[ L ] := #0;
   //FillChar( FOS, Sizeof( FOS ), #0 );
@@ -24781,7 +24786,7 @@ begin
   FOS.wFunc := FileOp;
   FOS.lpszProgressTitle := Title;
   FOS.pFrom := Buf;
-  ToList0 := ToList0 + #0;
+  ToList0 := ToList + #0;
   FOS.pTo := PKOLChar( ToList0 );
   FOS.fFlags := Flags;
   FOS.fAnyOperationsAborted := True;
@@ -25434,8 +25439,8 @@ type
   PSortDirData = ^TSortDirData;
   TSortDirData = packed Record
     CountRules: Integer;
-    FoldersFirst, CaseSensitive : Boolean;
-    Rules : array[ 0..9 ] of TSortDirRules;
+    FoldersFirst, CaseSensitive, InvertSortOrder : Boolean;
+    Rules : array[ 0..10 ] of TSortDirRules;
     Dir : PDirList;
   end;
 
@@ -25562,6 +25567,8 @@ begin
     end; {case}
     if Result <> 0 then break;
   end;
+  if  Data.InvertSortOrder then
+      Result := -Result;
 end;
 
 {$IFDEF ASM_VERSION}
@@ -25687,12 +25694,14 @@ var SortDirData : TSortDirData;
 
     procedure AddRule( Rule : TSortDirRules );
     begin
-      if  Rule in [sdrFoldersFirst, sdrCaseSensitive] then
+      if  Rule in [sdrFoldersFirst, sdrCaseSensitive, sdrInvertOrder] then
       begin
           if  Rule = sdrFoldersFirst then
               SortDirData.FoldersFirst := TRUE;
           if  Rule = sdrCaseSensitive then
               SortDirData.CaseSensitive := TRUE;
+          if  Rule = sdrInvertOrder then
+              SortDirData.InvertSortOrder := TRUE;
           Exit;
       end;
       {$IFDEF SAFE_CODE}
@@ -25740,9 +25749,52 @@ begin
   end;
 end;
 
-{$IFDEF WIN_GDI} //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+procedure TDirList.DeleteItem(Idx: Integer);
+begin
+    FListPositions.Delete( Idx );
+end;
+
+procedure TDirList.AddItem(FindData: PFindFileData);
+begin
+    if  fStoreFiles = nil then
+    begin
+        {$IFDEF DIRLIST_FASTER}
+        fStoreFiles := NewMemBlkStream_WriteOnly( 32 * Sizeof( FindData ) );
+        {$ELSE}
+        fStoreFiles := NewMemoryStream( );
+        fStoreFiles.Capacity := 64 * Sizeof( FindData );
+        {$ENDIF}
+        FListPositions := NewList;
+    end;
+    {$IFDEF DIRLIST_FASTER}{$ELSE}
+    FListPositions.Add( Pointer( fStoreFiles.Position ) );
+    {$ENDIF}
+    {$IFDEF UNICODE_CTRLS}
+            {$IFDEF SPEED_FASTER}
+                    {$IFDEF DIRLIST_OPTIMIZE_ASCII}
+                    FindData.dwReserved0 := 0;
+                    P := @ FindData.cFileName[0];
+                    while P^ <> #0 do
+                    begin
+                        if  PWord( P )^ > 255 then
+                        begin
+                            inc( FindData.dwReserved0 );
+                            break;
+                        end;
+                        inc( P );
+                    end;
+                    {$ENDIF}
+            {$ENDIF}
+    {$ENDIF}
+    fStoreFiles.Write( FindData^, Sizeof( FindData^ ) );
+    {$IFDEF DIRLIST_FASTER}
+    FListPositions.Add( fStoreFiles.fData.fJustWrittenBlkAddress );
+    {$ENDIF}
+end;
+
+{$IFDEF WIN_GDI} //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 ////////////////////////////////////////////////////////////////////////
-//                        R  E  G  I  S  T  R  Y
+//                        R  E  G  I  S  T  R  Y                      //
 ////////////////////////////////////////////////////////////////////////
 
 { -- registry -- }
@@ -33334,6 +33386,9 @@ function WndProcImageShow( Sender: PControl; var Msg: TMsg;
 var PaintStruct: TPaintStruct;
     IL: PImageList;
     OldPaintDC: HDC;
+    {$IFDEF TEST_IL}
+    B: PBitmap;
+    {$ENDIF TEST_IL}
 begin
   Result := FALSE;
   if (Msg.message = WM_PAINT) or (Msg.message = WM_PRINT) then
@@ -33345,6 +33400,14 @@ begin
     IL := Sender.ImageListNormal;
     if IL <> nil then
     begin
+      IL.DrawingStyle := [ dsTransparent ];
+      {$IFDEF TEST_IL}
+      B := NewBitmap( 0, 0 );
+      B.Handle := IL.GetBitmap;
+      B.SaveToFile( GetStartDir + 'test_IL_show.bmp' );
+      B.ReleaseHandle;
+      B.Free;
+      {$ENDIF TEST_IL}
       IL.Draw( Sender.fCurIndex, Sender.fPaintDC, Sender.fClientLeft, Sender.fClientTop );
       Result := TRUE;
     end;
@@ -34742,6 +34805,7 @@ end;
 function WndProcUnicodeChars( Sender: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 var WStr, WW: KOLWideString;
     RepeatCount: Integer;
+    C: KOLChar;
 begin
     Result := FALSE;
     if  (Msg.message = WM_CHAR)
@@ -34754,6 +34818,16 @@ begin
         {$ENDIF} then
     begin
         Result := TRUE;
+
+        {$IFDEF NIL_EVENTS}
+        if assigned( Sender.EV.fOnChar ) then
+        {$ENDIF}
+        begin
+           C := KOLChar( Msg.wParam );
+           Sender.EV.fOnChar( Sender, C, GetShiftState );
+           Msg.wParam := Integer( C );
+        end;
+
         WStr := WideChar(Msg.wParam);
         if  WStr <> '' then
         begin
@@ -39187,19 +39261,19 @@ begin
                                  {$IFDEF USE_FLAGS} exclude( fFlagsG4, G4_Pushed );
                                  {$ELSE} fKeyPreviewing:=false; {$ENDIF}
                                  {$ENDIF}
-                                 if fGlobalProcKeybd( @Self, Msg, Result ) then
+                                 if  fGlobalProcKeybd( @Self, Msg, Result ) then
                                  begin
-                                   {$IFDEF INPACKAGE}
-                                   LogOK;
-                                   {$ENDIF INPACKAGE}
-                                   Exit; //??????????????????
+                                     {$IFDEF INPACKAGE}
+                                     LogOK;
+                                     {$ENDIF INPACKAGE}
+                                     Exit; //??????????????????
                                  end;
-                                 if PP.fWndProcKeybd( @Self, Msg, Result ) then
+                                 if  PP.fWndProcKeybd( @Self, Msg, Result ) then
                                  begin
-                                   {$IFDEF INPACKAGE}
-                                   LogOK;
-                                   {$ENDIF INPACKAGE}
-                                   Exit; //???????????????????
+                                     {$IFDEF INPACKAGE}
+                                     LogOK;
+                                     {$ENDIF INPACKAGE}
+                                     Exit; //???????????????????
                                  end;
                                  if ((GetKeystate( VK_CONTROL ) or GetKeyState( VK_MENU )) >= 0) then
                                  begin
@@ -39208,26 +39282,26 @@ begin
                                    //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                                    then
                                    begin
-                                     C := ParentForm;
-                                     if  (C <> nil)
-                                     {$IFDEF NIL_EVENTS}
-                                     and Assigned(C.PP.fGotoControl)
-                                     {$ENDIF}
-                                     and C.PP.fGotoControl( @Self, Msg.wParam,
-                                         (Msg.message <> WM_KEYDOWN) and
-                                         (Msg.message <> WM_SYSKEYDOWN) ) then
-                                     begin
-                                          Msg.wParam := 0;
-                                          Result := 0;
-                                     end
-                                     else Default;
+                                       C := ParentForm;
+                                       if  (C <> nil)
+                                       {$IFDEF NIL_EVENTS}
+                                       and Assigned(C.PP.fGotoControl)
+                                       {$ENDIF}
+                                       and C.PP.fGotoControl( @Self, Msg.wParam,
+                                           (Msg.message <> WM_KEYDOWN) and
+                                           (Msg.message <> WM_SYSKEYDOWN) ) then
+                                       begin
+                                            Msg.wParam := 0;
+                                            Result := 0;
+                                       end
+                                       else Default;
                                    end
                                    //+++++++++++++++++++++++++++++++++++++++++++++//
-                                     else                                         //
+                                   else                                           //
                                    if Msg.wParam = 9 then // prevent system beep  //
                                    begin                                          //
-                                      Msg.wParam := 0;                            //
-                                      Result := 0;                                //
+                                          Msg.wParam := 0;                        //
+                                          Result := 0;                            //
                                    end                                            //
                                    //+++++++++++++++++++++++++++++++++++++++++++++//
                                    else Default;
@@ -41194,8 +41268,8 @@ begin
   end;
 end;
 {$ENDIF ASM_VERSION}
-
 {$ENDIF WIN_GDI}
+
 {$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
 function GetPrevCtrlBoundsRect( P: PControl; var R: TRect ): Boolean;
 var Idx: Integer;
@@ -41368,17 +41442,18 @@ begin
        begin
   {$IFDEF KEY_PREVIEW}
   //--------------------------------Truf-------------------------------------
-         if ParentForm <> Self_ then
+         F := ParentForm;
+         if F <> Self_ then
             begin
-              if  {$IFDEF USE_FLAGS} G6_KeyPreview in ParentForm.fFlagsG6
-                  {$ELSE} ParentForm.fKeyPreview {$ENDIF} then
+              if  {$IFDEF USE_FLAGS} G6_KeyPreview in F.fFlagsG6
+                  {$ELSE} F.fKeyPreview {$ENDIF} then
               begin
-                  {$IFDEF USE_FLAGS} 
-                          include( ParentForm.fFlagsG4, G4_Pushed );
-                  {$ELSE} ParentForm.fKeyPreviewing := TRUE; {$ENDIF}
-                  inc( ParentForm.DF.fKeyPreviewCount );
-                  ParentForm.Perform(WM_KEYDOWN,msg.wParam,msg.lParam);
-                  dec( ParentForm.DF.fKeyPreviewCount );
+                  {$IFDEF USE_FLAGS}
+                          include( F.fFlagsG4, G4_Pushed );
+                  {$ELSE} F.fKeyPreviewing := TRUE; {$ENDIF}
+                  inc( F.DF.fKeyPreviewCount );
+                  F.Perform(WM_KEYDOWN,msg.wParam,msg.lParam);
+                  dec( F.DF.fKeyPreviewCount );
               end;
             end;
   //--------------------------------Truf-------------------------------------
@@ -41386,28 +41461,32 @@ begin
   {$IFDEF ESC_CLOSE_DIALOGS}
   //---------------------------------Babenko Alexey--------------------------
          begin
-           if  (Self_.ParentForm.fExStyle and WS_EX_DLGMODALFRAME) <> 0 then
+           F := ParentForm;
+           if  (F.fExStyle and WS_EX_DLGMODALFRAME) <> 0 then
            if  Msg.wParam = 27 then
-               Self_.ParentForm.Perform(WM_CLOSE, 0, 0);
+               F.Perform(WM_CLOSE, 0, 0);
          end;
   //---------------------------------Babenko Alexey--------------------------
   {$ENDIF ESC_CLOSE_DIALOGS}
        end;
   {$IFDEF KEY_PREVIEW}
-  WM_SYSKEYDOWN,
-  WM_KEYUP, WM_SYSKEYUP,
-  WM_CHAR, WM_SYSCHAR:
-         if ParentForm <> Self_ then
-            begin
-              if  {$IFDEF USE_FLAGS} G6_KeyPreview in ParentForm.fFlagsG6
-                  {$ELSE} ParentForm.fKeyPreview {$ENDIF} then
+  WM_KEYUP..WM_SYSDEADCHAR:
+       begin
+           F := ParentForm;
+           if F <> Self_ then
+           begin
+              if  {$IFDEF USE_FLAGS} G6_KeyPreview in F.fFlagsG6
+                  {$ELSE} F.fKeyPreview {$ENDIF} then
               begin
                   {$IFDEF USE_FLAGS}
-                          include( ParentForm.fFlagsG4, G4_Pushed );
-                  {$ELSE} ParentForm.fKeyPreviewing := TRUE; {$ENDIF}
-                  ParentForm.Perform(Msg.message,msg.wParam,msg.lParam);
+                          include( F.fFlagsG4, G4_Pushed );
+                  {$ELSE} F.fKeyPreviewing := TRUE; {$ENDIF}
+                  inc( F.DF.fKeyPreviewCount );
+                  F.Perform(Msg.message,msg.wParam,msg.lParam);
+                  dec( F.DF.fKeyPreviewCount );
               end;
-            end;
+           end;
+       end;
   {$ENDIF KEY_PREVIEW}
   {$ENDIF KEY_PREVIEW_OR_ESC_CLOSE_DIALOGS}
   end;
@@ -48535,9 +48614,35 @@ begin
 end;
 
 function LoadBmp( Instance: Integer; Rsrc: PKOLChar; MasterObj: PObj ): HBitmap;
+{$IFDEF LOAD_RLE_BMP_RSRCES}
+var B: PBitmap;
+    R: PStream;
+{$ENDIF}
 begin
+  {$IFDEF LOAD_RLE_BMP_RSRCES}
+  R := NewMemoryStream;
+  Resource2Stream( R, hInstance, Rsrc, RT_BITMAP );
+  B := NewBitmap( 0, 0 );
+  R.Position := 0;
+  B.LoadFromStreamEx( R );
+  R.Free;
+  //B.SaveToFile( GetStartDir + 'test_loadbmp.bmp' );
+  Result := B.ReleaseHandle;
+  B.Free;
+  {$ELSE}
   Result := LoadBitmap( Instance, Rsrc );
+  {$ENDIF}
   MasterObj.Add2AutoFreeEx( TObjectMethod( MakeMethod( Pointer( Result ), @ FreeBmp ) ) );
+end;
+
+function LoadBmp32( Instance: Integer; Rsrc: PKOLChar; MasterObj: PObj ): HBitmap;
+var B: PBitmap;
+begin
+    B := NewBitmap( 0, 0 );
+    B.Handle := LoadBmp( Instance, Rsrc, MasterObj );
+    B.PixelFormat := pf32bit;
+    Result := B.ReleaseHandle;
+    B.Free;
 end;
 
 { TImageList }
@@ -48563,10 +48668,33 @@ begin
 end;
 
 function TImageList.AddMasked(Bmp: HBitmap; Color: TColor): Integer;
+{$IFDEF TEST_IL}
+var B: PBitmap;
+{$ENDIF}
 begin
   Result := -1;
   if not HandleNeeded then Exit;
+  {$IFDEF TEST_IL}
+  B := NewBitmap( 0, 0 );
+  B.Handle := Bmp;
+  B.PixelFormat := pf32bit;
+  B.SaveToFile( GetStartDir + 'test_Add_masked1.bmp' );
+  Bmp := B.ReleaseHandle;
+  B.Free;
+  {$ENDIF}
   Result := ImageList_AddMasked( FHandle, Bmp, Color2RGB( Color ) );
+  {$IFDEF TEST_IL}
+  B := NewBitmap( 0, 0 );
+  B.Handle := GetBitmap;
+  B.SaveToFile( GetStartDir + 'test_Add_masked2.bmp' );
+  B.ReleaseHandle;
+  B.Free;
+  B := NewBitmap( 0, 0 );
+  B.Handle := GetMask;
+  B.SaveToFile( GetStartDir + 'test_Add_masked3.bmp' );
+  B.ReleaseHandle;
+  B.Free;
+  {$ENDIF}
 end;
 
 procedure TImageList.Clear;
@@ -53500,7 +53628,7 @@ var Pos : DWORD;
         begin
           //Exit;
           {$IFDEF FILL_BROKEN_BITMAP}
-          ZeroMemory( Pointer( Integer( fDIBBits ) + i )^, Size - i );
+          ZeroMemory( Pointer( Integer( fDIBBits ) + i ), Size - i );
           {$ENDIF FILL_BROKEN_BITMAP}
         end;
       end
@@ -53932,7 +54060,10 @@ var BFH : TBitmapFileHeader;
            end else
            while n > 0 do
            begin
-               Strm.WriteVal( 1, 1 );
+               if  n = 1 then
+                   Strm.WriteVal( 01, 1 )
+               else
+                   Strm.WriteVal( 02, 1 );
                Strm.WriteVal( P[i] shl 4 or P[i+1], 1 );
                inc( i, 2 );
                dec( n, 2 );
@@ -54152,7 +54283,8 @@ begin
   Clear;
   if Value = 0 then Exit;
   if (WinVer >= wvNT) and
-     (GetObject( Value, Sizeof( Dib ), @ Dib ) = Sizeof( Dib )) then
+     (GetObject( Value, Sizeof( Dib ), @ Dib ) = Sizeof( Dib ))
+     and (Dib.dsBmih.biBitCount > 8) then
   begin
     fHandle := Value;
     fHandleType := bmDIB;
@@ -63070,10 +63202,7 @@ begin
   Result := FALSE;
 
   if (Msg.message = WM_PAINT) {or (Msg.message = WM_PRINT)} then
-  begin
-    //if not Result then
-    begin
-      WasOnPaint := Self_.EV.fOnPaint;
+  begin WasOnPaint := Self_.EV.fOnPaint;
       Self_.{$IFDEF EVENTS_DYNAMIC} ProvideUniqueEvents {$ELSE} EV {$ENDIF}
       .fOnPaint2 := Self_.EV.fOnPaint;
       //Self_.fPaintMsg := Msg;
@@ -63105,10 +63234,8 @@ begin
       if not Result then
         {Result :=} WndProcPaint( Self_, Msg, Rslt );
       Self_.EV.fOnPaint := WasOnPaint;
-    end;
-    Result := TRUE;
-  end
-    else
+      Result := TRUE;
+  end else
   if (Msg.message >= WM_MOUSEFIRST) and (Msg.message <= WM_MOUSELAST) then
   begin
     Pt.X := SmallInt( LoWord( Msg.lParam ) );
@@ -63283,46 +63410,35 @@ begin
     C.EV.fLeave := C.LeaveGraphButton;
     C.RefDec;
   end;
-end;
-
+end;////////////////////////////////////////////////////////////////////////////
 function WndProc_FormHavingGraphCtl( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 var Msg2: TMsg;
-begin
-  Result := FALSE;
+begin Result := FALSE;
   if Msg.message = WM_ACTIVATE then
-  begin
-    if Self_.DF.fCurrentControl <> nil then
+      begin if  Self_.DF.fCurrentControl <> nil then
       Self_.DF.fCurrentControl.Invalidate;
-  end
-    else
+      end else
   if (Msg.message >= WM_KEYFIRST) and (Msg.message <= WM_KEYLAST) then
-  begin
-    if  (Self_.DF.fCurrentControl <> nil)
-    and {$IFDEF USE_FLAGS} (G6_GraphicCtl in Self_.DF.fCurrentControl.fFlagsG6)
+  begin if  (Self_.DF.fCurrentControl <> nil)
+        and {$IFDEF USE_FLAGS} (G6_GraphicCtl in Self_.DF.fCurrentControl.fFlagsG6)
         {$ELSE} not Self_.DF.fCurrentControl.fWindowed {$ENDIF} then
-    begin
-      if (Msg.message = WM_KEYDOWN) and ((Msg.wParam = 32) or (Msg.wParam = 13)) then
-      begin
-        if not PeekMessage( Msg2, Msg.hwnd, WM_CHAR, WM_CHAR, pm_noRemove ) or
-           (Msg2.wParam <> Msg.wParam) then
-           Msg.message := WM_CHAR;
-      end
-        else
-      if (Msg.message = WM_SYSKEYDOWN) and ((Msg.wParam = 32) or (Msg.wParam = 13)) then
-      begin
-        if not PeekMessage( Msg2, Msg.hwnd, WM_SYSCHAR, WM_SYSCHAR, pm_noRemove ) or
-           (Msg2.wParam <> Msg.wParam) then
-           Msg.message := WM_SYSCHAR;
-      end;
-      if Assigned( Self_.DF.fCurrentControl.fKeyboardProcess ) and
-         Self_.DF.fCurrentControl.fKeyboardProcess( Msg, Rslt ) then
-      else
-         Rslt := Self_.DF.fCurrentControl.WndProc( Msg );
-      Result := TRUE;
-    end;
+        begin if (Msg.message = WM_KEYDOWN) and ((Msg.wParam = 32) or (Msg.wParam = 13)) then
+              begin if  not PeekMessage( Msg2, Msg.hwnd, WM_CHAR, WM_CHAR, pm_noRemove )
+                        or (Msg2.wParam <> Msg.wParam) then
+                        Msg.message := WM_CHAR;
+              end else
+              if  (Msg.message = WM_SYSKEYDOWN) and ((Msg.wParam = 32) or (Msg.wParam = 13)) then
+              begin if not PeekMessage( Msg2, Msg.hwnd, WM_SYSCHAR, WM_SYSCHAR, pm_noRemove ) or
+                       (Msg2.wParam <> Msg.wParam) then
+                       Msg.message := WM_SYSCHAR;
+              end;
+              if   Assigned( Self_.DF.fCurrentControl.fKeyboardProcess ) and
+                   Self_.DF.fCurrentControl.fKeyboardProcess( Msg, Rslt ) then
+              else Rslt := Self_.DF.fCurrentControl.WndProc( Msg );
+              Result := TRUE;
+        end;
   end;
-end;
-
+end;////////////////////////////////////////////////////////////////////////////
 {$IFDEF GRAPHCTL_HOTTRACK}
 procedure TControl.MouseLeaveFromParentOfGraphCtl(Sender: PObj);
 var C: PControl;
@@ -63357,300 +63473,247 @@ end;
 function _NewGraphCtl( AParent: PControl; ATabStop: Boolean;
          ACommandActions: TCommandActionsParam ): PControl;
 var IdxActions: Integer;
-begin
-  new( Result, Create );
-  {$IFDEF DEBUG_OBJKIND}
-  Result.fObjKind := 'TControl:GraphicControl';
-  {$ENDIF}
-  {$IFDEF COMMANDACTIONS_OBJ}
-      IdxActions := Integer( ACommandActions );
-      if  IdxActions >= 120 then
-          IdxActions := PByte( ACommandActions )^;
-      if  AllActions_Objs[IdxActions] <> nil then
-      begin
-          Result.fCommandActions := AllActions_Objs[IdxActions];
-          Result.fCommandActions.RefInc;
-      end
-        else
-      begin
-          new( Result.fCommandActions, Create );
-          {$IFDEF DEBUG_OBJKIND}
-          Result.fCommandActions.fObjKind := 'TCommandActionsObj';
-          {$ENDIF}
-          AllActions_Objs[IdxActions] := Result.fCommandActions;
-          {$IFDEF SAFE_CODE}
+begin new( Result, Create );
+      {$IFDEF DEBUG_OBJKIND} Result.fObjKind := 'TControl:GraphicControl';
+      {$ENDIF}
+      {$IFDEF COMMANDACTIONS_OBJ}
+          IdxActions := Integer( ACommandActions );
+          if  IdxActions >= 120 then
+              IdxActions := PByte( ACommandActions )^;
+          if  AllActions_Objs[IdxActions] <> nil then
+              begin Result.fCommandActions := AllActions_Objs[IdxActions];
+              Result.fCommandActions.RefInc;
+              end else
+              begin new( Result.fCommandActions, Create );
+              {$IFDEF DEBUG_OBJKIND}
+              Result.fCommandActions.fObjKind := 'TCommandActionsObj';
+              {$ENDIF}
+              AllActions_Objs[IdxActions] := Result.fCommandActions;
+              {$IFDEF SAFE_CODE}
+              if  ACommandActions <> nil then
+              {$ENDIF}
+                  Move( ACommandActions^, Result.fCommandActions.aClear, Sizeof( TCommandActions ) );
+          end;
+          Result.Add2AutoFree( Result.fCommandActions );
+          {$ELSE} {$IFDEF SAFE_CODE}
           if  ACommandActions <> nil then
           {$ENDIF}
-              Move( ACommandActions^, Result.fCommandActions.aClear, Sizeof( TCommandActions ) );
-      end;
-      Result.Add2AutoFree( Result.fCommandActions );
-  {$ELSE}
-      {$IFDEF SAFE_CODE}
-      if  ACommandActions <> nil then
+              Result.fCommandActions := ACommandActions^;
       {$ENDIF}
-          Result.fCommandActions := ACommandActions^;
-  {$ENDIF}
-  Result.PP.fDoInvalidate := InvalidateNonWindowed;
-  {$IFDEF USE_FLAGS} include( Result.fFlagsG6, G6_GraphicCtl );
-  {$ELSE} Result.fWindowed := FALSE; {$ENDIF}
-  {$IFDEF USE_FLAGS}
-          include( Result.fFlagsG3, G3_IsControl );
-          include( Result.fFlagsG4, G4_CreateVisible );
-          if  ATabStop then
-              include( Result.fStyle.f2_Style, F2_TabStop );
-  {$ELSE} Result.fCreateVisible := TRUE;
-          Result.fVisible := TRUE;
-          Result.fIsControl := TRUE;
-          Result.fTabstop := ATabStop;
-  {$ENDIF}
-  Result.fMenu := CtlIdCount;
-  Inc( CtlIdCount );
-  Result.DF.fBitBtnOptions := [ bboFixed ]; // to return Checked = fChecked w/o window handle
-  {$IFDEF USE_FLAGS}
-          Result.fFlagsG1 := Result.fFlagsG1 + [ G1_IgnoreWndCaption, G1_SizeRedraw ];
-  {$ELSE} Result.fIgnoreWndCaption := TRUE;
-          Result.fSizeRedraw := TRUE;
-  {$ENDIF}
-  Result.PP.fNotifyChild := @ NotifyGraphCtlAboutNewParent;
-  if  ATabStop then
-      Result.fLookTabKeys := [ tkTab, tkLeftRight, tkUpDown, tkPageUpPageDn ];
-  if  AParent <> nil then
-  begin
-      Result.Parent := AParent;
-      Result.Border := AParent.Border;
-      AParent.AttachProc( WndProc_ParentOfGraphicCtl );
-      if ATabStop then
-      begin
-        Inc( AParent.ParentForm.fTabOrder );
-        Result.fTabOrder := AParent.ParentForm.fTabOrder;
+      Result.PP.fDoInvalidate := InvalidateNonWindowed;
+      {$IFDEF USE_FLAGS} include( Result.fFlagsG6, G6_GraphicCtl );
+      {$ELSE} Result.fWindowed := FALSE; {$ENDIF}
+      {$IFDEF USE_FLAGS}
+              include( Result.fFlagsG3, G3_IsControl );
+              include( Result.fFlagsG4, G4_CreateVisible );
+              if  ATabStop then
+                  include( Result.fStyle.f2_Style, F2_TabStop );
+      {$ELSE} Result.fCreateVisible := TRUE;
+              Result.fVisible := TRUE;
+              Result.fIsControl := TRUE;
+              Result.fTabstop := ATabStop;
+      {$ENDIF}
+      Result.fMenu := CtlIdCount;
+      Inc( CtlIdCount );
+      Result.DF.fBitBtnOptions := [ bboFixed ]; // to return Checked = fChecked w/o window handle
+      {$IFDEF USE_FLAGS}
+              Result.fFlagsG1 := Result.fFlagsG1 + [ G1_IgnoreWndCaption, G1_SizeRedraw ];
+      {$ELSE} Result.fIgnoreWndCaption := TRUE;
+              Result.fSizeRedraw := TRUE;
+      {$ENDIF}
+      Result.PP.fNotifyChild := @ NotifyGraphCtlAboutNewParent;
+      if  ATabStop then
+          Result.fLookTabKeys := [ tkTab, tkLeftRight, tkUpDown, tkPageUpPageDn ];
+      if  AParent <> nil then
+          begin Result.Parent := AParent;
+          Result.Border := AParent.Border;
+          AParent.AttachProc( WndProc_ParentOfGraphicCtl );
+          if ATabStop then
+          begin Inc( AParent.ParentForm.fTabOrder );
+                Result.fTabOrder := AParent.ParentForm.fTabOrder;
+          end;
+          if  {$IFDEF USE_FLAGS} G3_IsControl in AParent.fFlagsG3
+              {$ELSE} AParent.fIsControl {$ENDIF} then
+              AParent.ParentForm.AttachProc( WndProc_FormHavingGraphCtl );
+          if  {$IFDEF USE_FLAGS} G5_IsGroupbox in APArent.fFlagsG5
+              {$ELSE} AParent.fIsGroupBox {$ENDIF} then
+          begin AParent.Style := AParent.Style and
+                    not BS_GROUPBOX; // otherwise the groupbox is flickering A LOT!
+                AParent.Parent.AttachProc( WndProc_ParentOfGraphicCtl );
+          end;
+
+           Result.fFont := Result.fFont.Assign( AParent.fFont );
+           if Result.fFont <> nil then
+                begin  Result.fFont.fParentGDITool := AParent.fFont;
+             Result.fFont.fOnChange := Result.FontChanged;
+             Result.FontChanged( Result.fFont );
+           end;
       end;
-      if  {$IFDEF USE_FLAGS} G3_IsControl in AParent.fFlagsG3
-          {$ELSE} AParent.fIsControl {$ENDIF} then
-          AParent.ParentForm.AttachProc( WndProc_FormHavingGraphCtl );
-      if  {$IFDEF USE_FLAGS} G5_IsGroupbox in APArent.fFlagsG5
-          {$ELSE} AParent.fIsGroupBox {$ENDIF} then
-      begin
-          AParent.Style := AParent.Style and
-              not BS_GROUPBOX; // otherwise the groupbox is flickering A LOT!
-          AParent.Parent.AttachProc( WndProc_ParentOfGraphicCtl );
-      end;
+      Result.fBoundsRect.Right := Result.fBoundsRect.Left + 64;
+      Result.fBoundsRect.Bottom := Result.fBoundsRect.Top + 22;
+      Result.EV.fOnPaint := nil;
 
-       Result.fFont := Result.fFont.Assign( AParent.fFont );
-       if Result.fFont <> nil then
-       begin
-         Result.fFont.fParentGDITool := AParent.fFont;
-         Result.fFont.fOnChange := Result.FontChanged;
-         Result.FontChanged( Result.fFont );
-       end;
-  end;
-  Result.fBoundsRect.Right := Result.fBoundsRect.Left + 64;
-  Result.fBoundsRect.Bottom := Result.fBoundsRect.Top + 22;
-  Result.EV.fOnPaint := nil;
-
-  {$IFDEF GRAPHCTL_XPSTYLES}
-  if WinVer < wvXP then
-    DoNotDrawGraphCtlsUsingXPStyles := TRUE;
-  {$ENDIF}
-end;
-
+      {$IFDEF GRAPHCTL_XPSTYLES}
+      if WinVer < wvXP then
+        DoNotDrawGraphCtlsUsingXPStyles := TRUE;
+      {$ENDIF}
+end;////////////////////////////////////////////////////////////////////////////
 function NewGraphLabel( AParent: PControl; const ACaption: AnsiString ): PControl;
-begin
-  {$IFDEF INPACKAGE}
-  Result := NewLabel( AParent, ACaption );
-  {$ELSE}
-  Result := _NewGraphCtl( AParent, FALSE,
-         {$IFDEF PACK_COMMANDACTIONS} LabelActions_Packed
-         {$ELSE} @LabelActions {$ENDIF} );
-  Result.aAutoSzX := 1;
-  Result.aAutoSzY := 1;
-  Result.EV.fPaintProc := Result.GraphicLabelPaint;
-  Result.Caption := ACaption;
-  {$ENDIF}
-end;
-
+begin {$IFDEF INPACKAGE} Result := NewLabel( AParent, ACaption );
+      {$ELSE} Result := _NewGraphCtl( AParent, FALSE,
+              {$IFDEF PACK_COMMANDACTIONS} LabelActions_Packed
+              {$ELSE} @LabelActions {$ENDIF} );
+              Result.aAutoSzX := 1;
+              Result.aAutoSzY := 1;
+              Result.EV.fPaintProc := Result.GraphicLabelPaint;
+              Result.Caption := ACaption;
+      {$ENDIF}
+end;////////////////////////////////////////////////////////////////////////////
 function NewWordWrapGraphLabel( AParent: PControl; const ACaption: KOLString ): PControl;
-begin
-  {$IFDEF INPACKAGE}
-      Result := NewWordWrapLabel( AParent, ACaption );
-  {$ELSE}
-      Result := NewGraphLabel( AParent, ACaption );
-      {$IFDEF USE_FLAGS} include( Result.fFlagsG1, G1_WordWrap );
-      {$ELSE} Result.fWordWrap := TRUE; {$ENDIF}
-  {$ENDIF}
-end;
-
+begin {$IFDEF INPACKAGE} Result := NewWordWrapLabel( AParent, ACaption );
+      {$ELSE} Result := NewGraphLabel( AParent, ACaption );
+              {$IFDEF USE_FLAGS} include( Result.fFlagsG1, G1_WordWrap );
+              {$ELSE} Result.fWordWrap := TRUE; {$ENDIF}
+      {$ENDIF}
+end;////////////////////////////////////////////////////////////////////////////
 function NewGraphPaintBox( AParent: PControl ): PControl;
-begin
-  {$IFDEF INPACKAGE}
-  Result := NewPaintbox( AParent );
-  {$ELSE}
-  Result := NewGraphLabel( AParent, '' );
-  {$ENDIF}
-end;
-
+begin {$IFDEF INPACKAGE} Result := NewPaintbox( AParent );
+      {$ELSE}            Result := NewGraphLabel( AParent, '' ); {$ENDIF}
+end;////////////////////////////////////////////////////////////////////////////
 procedure ClickGraphCheck(Sender: PObj);
 var Ctl: PControl;
-begin
-  Ctl := Pointer( Sender );
-  if  not Ctl.Enabled then Exit;
-  Ctl.Focused := TRUE;
-  if  Assigned( Ctl.OnEnter ) then
-      Ctl.OnEnter( Ctl );
-  {$IFDEF USE_FLAGS}
-          if   G4_Checked in Ctl.fFlagsG4 then
-               exclude( Ctl.fFlagsG4, G4_Checked )
-          else include( Ctl.fFlagsG4, G4_Checked );
-  {$ELSE} Ctl.fChecked := not Ctl.fChecked; {$ENDIF}
-  Ctl.Invalidate;
-  if  Assigned( Ctl.OnClick ) then
-      Ctl.OnClick( Ctl );
-end;
-
+begin Ctl := Pointer( Sender );
+      if  not Ctl.Enabled then Exit;
+      Ctl.Focused := TRUE;
+      if  Assigned( Ctl.OnEnter ) then
+          Ctl.OnEnter( Ctl );
+      {$IFDEF USE_FLAGS}
+              if   G4_Checked in Ctl.fFlagsG4 then
+                   exclude( Ctl.fFlagsG4, G4_Checked )
+              else include( Ctl.fFlagsG4, G4_Checked );
+      {$ELSE} Ctl.fChecked := not Ctl.fChecked; {$ENDIF}
+      Ctl.Invalidate;
+      if  Assigned( Ctl.OnClick ) then
+          Ctl.OnClick( Ctl );
+end;////////////////////////////////////////////////////////////////////////////
 function NewGraphCheckBox( AParent: PControl; const ACaption: KOLString ): PControl;
-begin
-  {$IFDEF INPACKAGE}
-  Result := NewCheckbox( AParent, ACaption );
-  {$ELSE}
-  Result := NewGraphButton( AParent, ACaption );
-  Result.TextAlign := taLeft;
-  Result.aAutoSzX := GetSystemMetrics( SM_CXMENUCHECK ) + 4;
-  Result.EV.fPaintProc := Result.GraphicCheckBoxPaint;
-  Result.EV.fGraphCtlMouseEvent := Result.GraphicCheckBoxMouse;
-  Result.PP.fControlClick := @ ClickGraphCheck;
-  {$ENDIF}
-end;
-
+begin {$IFDEF INPACKAGE} Result := NewCheckbox( AParent, ACaption );
+      {$ELSE} Result := NewGraphButton( AParent, ACaption );
+      Result.TextAlign := taLeft;
+      Result.aAutoSzX := GetSystemMetrics( SM_CXMENUCHECK ) + 4;
+      Result.EV.fPaintProc := Result.GraphicCheckBoxPaint;
+      Result.EV.fGraphCtlMouseEvent := Result.GraphicCheckBoxMouse;
+      Result.PP.fControlClick := @ ClickGraphCheck;
+      {$ENDIF}
+end;////////////////////////////////////////////////////////////////////////////
 procedure ClickGraphRadio(Sender: PObj);
 var Ctl, C: PControl;
     i: Integer;
-begin
-  Ctl := Pointer( Sender );
-  if not Ctl.Enabled then Exit;
-  Ctl.Focused := TRUE;
-  Ctl.Checked := TRUE;
-  if Ctl.Parent <> nil then
-  for i := 0 to Ctl.Parent.ChildCount-1 do
-  begin
-    C := Ctl.Parent.Children[ i ];
-    if (C <> Ctl) and (@ C.PP.fControlClick = @ ClickGraphRadio) then
-      C.Checked := FALSE;
-  end;
-end;
-
+begin Ctl := Pointer( Sender );
+      if not Ctl.Enabled then Exit;
+      Ctl.Focused := TRUE;
+      Ctl.Checked := TRUE;
+      if Ctl.Parent <> nil then
+      for i := 0 to Ctl.Parent.ChildCount-1 do
+          begin C := Ctl.Parent.Children[ i ];
+        if (C <> Ctl) and (@ C.PP.fControlClick = @ ClickGraphRadio) then
+          C.Checked := FALSE;
+      end;
+end;////////////////////////////////////////////////////////////////////////////
 function NewGraphRadioBox( AParent: PControl; const ACaption: KOLString ): PControl;
-begin
-  {$IFDEF INPACKAGE}
-  Result := NewRadiobox( AParent, ACaption );
-  if (@ ClickGraphRadio) <> nil then;
-  {$ELSE}
-  Result := NewGraphButton( AParent, ACaption );
-  Result.TextAlign := taLeft;
-  Result.aAutoSzX := GetSystemMetrics( SM_CXMENUCHECK ) + 4;
-  Result.EV.fPaintProc := Result.GraphicRadioBoxPaint;
-  Result.PP.fControlClick := @ ClickGraphRadio;
-  if AParent <> nil then
-  begin
-    //AParent.fRadioLast := Result.fMenu;
-    AParent.PropInt[ RADIO_LAST ] := Result.fMenu;
-    //if  AParent.fRadio1st = 0 then
-    if  AParent.PropInt[ RADIO_1ST ] = 0 then
-    begin
-        //AParent.fRadio1st := Result.fMenu;
-        AParent.PropInt[ RADIO_1ST ] := Result.fMenu;
-        Result.SetRadioChecked;
-    end;
-  end;
-  {$ENDIF}
-end;
-
+begin {$IFDEF INPACKAGE}  Result := NewRadiobox( AParent, ACaption );
+      if (@ ClickGraphRadio) <> nil then;
+          {$ELSE} Result := NewGraphButton( AParent, ACaption );
+      Result.TextAlign := taLeft;
+      Result.aAutoSzX := GetSystemMetrics( SM_CXMENUCHECK ) + 4;
+      Result.EV.fPaintProc := Result.GraphicRadioBoxPaint;
+      Result.PP.fControlClick := @ ClickGraphRadio;
+      if AParent <> nil then
+                  begin AParent.PropInt[ RADIO_LAST ] := Result.fMenu;
+        if  AParent.PropInt[ RADIO_1ST ] = 0 then
+                        begin AParent.PropInt[ RADIO_1ST ] := Result.fMenu;
+            Result.SetRadioChecked;
+        end;
+      end;
+      {$ENDIF}
+end;////////////////////////////////////////////////////////////////////////////
 procedure GraphButtonSetFocus(Ctl: PControl);
 var PF, CC: PControl;
     W: HWnd;
-begin
-  if  {$IFDEF USE_FLAGS} not(F2_Tabstop in Ctl.fStyle.f2_Style)
+begin if  {$IFDEF USE_FLAGS} not(F2_Tabstop in Ctl.fStyle.f2_Style)
       {$ELSE} not Ctl.fTabStop {$ENDIF} then Exit;
-  PF := Ctl.ParentForm;
-  if  (PF.DF.fCurrentControl <> nil) and (PF.DF.fCurrentControl <> Ctl) and
-      (PF.DF.fCurrentControl <> Ctl.fParent) then
-  begin
-      CC := PF.DF.fCurrentControl;
-      CC.RefInc;
-      Ctl.fParent.Focused := TRUE;
-      if  Assigned( CC.EV.fLeave ) then
-          CC.EV.fLeave( PF.DF.fCurrentControl )
-      else
-          Windows.SetFocus( 0 );
-      CC.RefDec;
-  end else
-  begin
-      W := GetFocus;
-      if  (W <> Ctl.Parent.fHandle) and (W <> 0) then
-      begin
-          Windows.SetFocus( 0 );
+      PF := Ctl.ParentForm;
+      if  (PF.DF.fCurrentControl <> nil) and (PF.DF.fCurrentControl <> Ctl) and
+          (PF.DF.fCurrentControl <> Ctl.fParent) then
+          begin CC := PF.DF.fCurrentControl;
+          CC.RefInc;
           Ctl.fParent.Focused := TRUE;
+          if  Assigned( CC.EV.fLeave ) then
+              CC.EV.fLeave( PF.DF.fCurrentControl )
+          else
+              Windows.SetFocus( 0 );
+          CC.RefDec;
+      end else
+          begin W := GetFocus;
+          if  (W <> Ctl.Parent.fHandle) and (W <> 0) then
+                begin Windows.SetFocus( 0 );
+              Ctl.fParent.Focused := TRUE;
+          end;
       end;
-  end;
-  if  Ctl.fParent.fHandle <> 0 then
-  begin
-      {$IFDEF USE_FLAGS} include( Ctl.fFlagsG6, G6_Focused );
-      {$ELSE} Ctl.fFocused := TRUE; {$ENDIF}
-      Ctl.fParent.Postmsg( CM_FOCUSGRAPHCTL, Integer( Ctl ), 0 );
-      Ctl.RefInc;
-  end;
-  if  Assigned( Ctl.EV.fOnEnter ) then
-      Ctl.EV.fOnEnter( Ctl );
-end;
-
+      if  Ctl.fParent.fHandle <> 0 then
+          begin {$IFDEF USE_FLAGS} include( Ctl.fFlagsG6, G6_Focused );
+          {$ELSE} Ctl.fFocused := TRUE; {$ENDIF}
+          Ctl.fParent.Postmsg( CM_FOCUSGRAPHCTL, Integer( Ctl ), 0 );
+          Ctl.RefInc;
+      end;
+      if  Assigned( Ctl.EV.fOnEnter ) then
+          Ctl.EV.fOnEnter( Ctl );
+end;////////////////////////////////////////////////////////////////////////////
 function NewGraphButton( AParent: PControl; const ACaption: KOLString ): PControl;
-begin
-  {$IFDEF INPACKAGE}
-  Result := NewButton( AParent, ACaption );
-  {$ELSE}
-  Result := _NewGraphCtl( AParent, TRUE,
-         {$IFDEF PACK_COMMANDACTIONS} ButtonActions_Packed
-         {$ELSE} @ButtonActions {$ENDIF} );
-  Result.EV.fPaintProc := Result.GraphicButtonPaint;
-  Result.Caption := ACaption;
-  Result.TextAlign := taCenter;
-  Result.VerticalAlign := vaCenter;
-  Result.EV.fGraphCtlMouseEvent := Result.GraphicButtonMouse;
-  Result.fSetFocus := @GraphButtonSetFocus;
-  Result.fKeyboardProcess := Result.GraphButtonKeyboardProcess;
-  {$ENDIF}
-end;
-
+begin {$IFDEF INPACKAGE}
+      Result := NewButton( AParent, ACaption );
+      {$ELSE}
+      Result := _NewGraphCtl( AParent, TRUE,
+             {$IFDEF PACK_COMMANDACTIONS} ButtonActions_Packed
+             {$ELSE} @ButtonActions {$ENDIF} );
+      Result.EV.fPaintProc := Result.GraphicButtonPaint;
+      Result.Caption := ACaption;
+      Result.TextAlign := taCenter;
+      Result.VerticalAlign := vaCenter;
+      Result.EV.fGraphCtlMouseEvent := Result.GraphicButtonMouse;
+      Result.fSetFocus := @GraphButtonSetFocus;
+      Result.fKeyboardProcess := Result.GraphButtonKeyboardProcess;
+      {$ENDIF}
+end;////////////////////////////////////////////////////////////////////////////
 function EditGraphEdit(Ctl: PControl): PControl;
 var E: PControl;
-begin
-  E := NewEditBox( Ctl.fParent, Ctl.DF.fEditOptions );
-  E.SetBoundsRect( Ctl.BoundsRect );
-  E.SetAlign( Ctl.Align );
-  E.fTabOrder := Ctl.fTabOrder;
-  E.Text := Ctl.Text;
-  E.OnChange := Ctl.ChangeGraphEdit;
-  E.Color := Ctl.Color;
-  E.fCursor := Ctl.fCursor;
-  E.CreateWindow;
-  E.OnLeave := Ctl.LeaveGraphEdit;
-  E.EV.fLeave := Ctl.LeaveGraphEdit;
-  E.Focused := TRUE;
-  E.OnChar := Ctl.OnChar;
-  E.OnKeyDown := Ctl.OnKeyDown;
-  E.OnKeyUp := Ctl.OnKeyUp;
-  E.OnDestroy := Ctl.DestroyGraphEdit;
-  //E.Font.Assign( Font );
-  Result := E;
-  Ctl.Visible := FALSE;
-  Ctl.DF.fEditCtl := E;
-  {$IFDEF NIL_EVENTS}
-  if  Assigned( Ctl.EV.fOnEnter ) then
-  {$ENDIF}
-      Ctl.EV.fOnEnter( Ctl );
-end;
-
+begin E := NewEditBox( Ctl.fParent, Ctl.DF.fEditOptions );
+      E.SetBoundsRect( Ctl.BoundsRect );
+      E.SetAlign( Ctl.Align );
+      E.fTabOrder := Ctl.fTabOrder;
+      E.Text := Ctl.Text;
+      E.OnChange := Ctl.ChangeGraphEdit;
+      E.Color := Ctl.Color;
+      E.fCursor := Ctl.fCursor;
+      E.CreateWindow;
+      E.OnLeave := Ctl.LeaveGraphEdit;
+      E.EV.fLeave := Ctl.LeaveGraphEdit;
+      E.Focused := TRUE;
+      E.OnChar := Ctl.OnChar;
+      E.OnKeyDown := Ctl.OnKeyDown;
+      E.OnKeyUp := Ctl.OnKeyUp;
+      E.OnDestroy := Ctl.DestroyGraphEdit;
+      //E.Font.Assign( Font );
+      Result := E;
+      Ctl.Visible := FALSE;
+      Ctl.DF.fEditCtl := E;
+      {$IFDEF NIL_EVENTS}
+      if  Assigned( Ctl.EV.fOnEnter ) then
+      {$ENDIF}
+          Ctl.EV.fOnEnter( Ctl );
+end;////////////////////////////////////////////////////////////////////////////
 function NewGraphEditbox( AParent: PControl; Options: TEditOptions ): PControl;
-begin
-  {$IFDEF INPACKAGE}
+begin {$IFDEF INPACKAGE}
   Result := NewEditbox( AParent, Options );
   {$ELSE}
   Result := _NewGraphCtl( AParent, TRUE,
@@ -63666,33 +63729,24 @@ begin
   Result.fLookTabKeys := [ tkTab, tkUpDown, tkPageUpPageDn ];
   Result.EV.fLeave := Result.LeaveGraphEdit;
   {$ENDIF}
-end;
-
+end;////////////////////////////////////////////////////////////////////////////
 { TGraphicControl }
 
 function TControl.DoGraphCtlPrepaint: TRect;
 begin
   Result := ClientRect;
   if not Assigned( EV.fOnPrepaint ) and not Transparent then
-  begin
-    if  fBrush <> nil then
+      begin if   fBrush <> nil then
         Canvas.Brush.Assign( fBrush )
-    else
-        Canvas.Brush.Color := Color;
+            else Canvas.Brush.Color := Color;
     Canvas.FillRect( Result );
   end;
-end;
-
+end;////////////////////////////////////////////////////////////////////////////
 procedure TControl.GraphicLabelPaint(DC: HDC);
 var R: TRect;
-begin
-  R := DoGraphCtlPrepaint;
-  if Text <> '' then
-    DrawFormattedText( @ Self, DC, R, 0 );
-  //SaveImg( Canvas, R, 'bm09.bmp' );
-  //sv1 := FALSE;
-end;
-
+begin R := DoGraphCtlPrepaint;
+      if  Text <> '' then DrawFormattedText( @ Self, DC, R, 0 );
+end;////////////////////////////////////////////////////////////////////////////
 procedure TControl.GraphicCheckBoxPaint(DC: HDC);
 var R, R1: TRect;
     Flag: DWORD;

@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // KOL_ASM.inc ()to be inlude in KOL.pas)
-// v 3.00.z6
+// v 3.00.z9
 
 function MsgBox( const S: KOLString; Flags: DWORD ): DWORD;
 asm
@@ -7482,33 +7482,33 @@ asm     //cmd    //opd
         {$ENDIF}
 
         {$IFDEF KEY_PREVIEW}
-        MOV      EAX, EBX
-        CALL     TControl.ParentForm
-        CMP      EAX, EBX
-        JE       @@kp_end
+                MOV      EAX, EBX
+                CALL     TControl.ParentForm
+                CMP      EAX, EBX
+                JE       @@kp_end
 
-        {$IFDEF  USE_FLAGS}
-        TEST     [EAX].TControl.fFlagsG6, 1 shl G6_KeyPreview
-        {$ELSE}
-        CMP      [EAX].TControl.fKeyPreview, 0
-        {$ENDIF}
-        JZ       @@kp_end
+                {$IFDEF  USE_FLAGS}
+                TEST     [EAX].TControl.fFlagsG6, 1 shl G6_KeyPreview
+                {$ELSE}
+                CMP      [EAX].TControl.fKeyPreview, 0
+                {$ENDIF}
+                JZ       @@kp_end
 
-        {$IFDEF  USE_FLAGS}
-        OR       [EAX].TControl.fFlagsG4, 1 shl G4_Pushed
-        {$ELSE}
-        MOV      [EAX].TControl.fKeyPreviewing, 1
-        {$ENDIF}
-        INC      [EAX].TControl.DF.fKeyPreviewCount
-        PUSH     EAX
+                {$IFDEF  USE_FLAGS}
+                OR       [EAX].TControl.fFlagsG4, 1 shl G4_Pushed
+                {$ELSE}
+                MOV      [EAX].TControl.fKeyPreviewing, 1
+                {$ENDIF}
+                INC      [EAX].TControl.DF.fKeyPreviewCount
+                PUSH     EAX
 
-        PUSH     [EDI].TMsg.lParam
-        PUSH     [EDI].TMsg.wParam
-        PUSH     WM_KEYDOWN
-        PUSH     EAX
-        CALL     TControl.Perform
-        POP      EAX
-        DEC      [EAX].TControl.DF.fKeyPreviewCount
+                PUSH     [EDI].TMsg.lParam
+                PUSH     [EDI].TMsg.wParam
+                PUSH     WM_KEYDOWN
+                PUSH     EAX
+                CALL     TControl.Perform
+                POP      EAX
+                DEC      [EAX].TControl.DF.fKeyPreviewCount
 @@kp_end:
         {$ENDIF}
 
@@ -7530,34 +7530,42 @@ asm     //cmd    //opd
 @@ret0:
         XOR      EAX, EAX
         {$IFDEF KEY_PREVIEW}
-        JMP      @@ret_EAX
+                JMP      @@ret_EAX
 @@chk_other_KEYMSGS:
-        MOVZX    EAX, word ptr [EDI].TMsg.message
-        SUB      AX, WM_KEYDOWN
-        JB       @@ret0
-        CMP      AX, 6
-        JA       @@ret0
-        // all WM_KEYUP=$101, WM_CHAR=$102, WM_DEADCHAR=$103, WM_SYSKEYDOWN=$104,
-        //  WM_SYSKEYUP=$105, WM_SYSCHAR=$106, WM_SYSDEADCHAR=$107
-        MOV      EAX, EBX
-        CALL     TControl.ParentForm
-        CMP      EAX, EBX
-        JE       @@ret0
-        {$IFDEF  USE_FLAGS}
-        OR       [EAX].TControl.fFlagsG4, 1 shl G4_Pushed
-        {$ELSE}
-        MOV      [EAX].TControl.fKeyPreviewing, 1
-        {$ENDIF}
-        INC      [EAX].TControl.DF.fKeyPreviewCount
-        PUSH     EAX
-        PUSH     [EDI].TMsg.lParam
-        PUSH     [EDI].TMsg.wParam
-        PUSH     [EDI].TMsg.message
-        PUSH     EAX
-        CALL     TControl.Perform
-        POP      EAX
-        DEC      [EAX].TControl.DF.fKeyPreviewCount
-        XOR      EAX, EAX
+                MOVZX    EAX, word ptr [EDI].TMsg.message
+                SUB      AX, WM_KEYDOWN
+                JB       @@ret0
+                CMP      AX, 6
+                JA       @@ret0
+                // all WM_KEYUP=$101, WM_CHAR=$102, WM_DEADCHAR=$103, WM_SYSKEYDOWN=$104,
+                //  WM_SYSKEYUP=$105, WM_SYSCHAR=$106, WM_SYSDEADCHAR=$107
+                MOV      EAX, EBX
+                CALL     TControl.ParentForm
+                CMP      EAX, EBX
+                JE       @@ret0
+
+                {$IFDEF  USE_FLAGS}
+                TEST     [EAX].TControl.fFlagsG6, 1 shl G6_KeyPreview
+                {$ELSE}
+                CMP      [EAX].fKeyPreview, 0
+                {$ENDIF}
+                JZ       @@ret0
+
+                {$IFDEF  USE_FLAGS}
+                OR       [EAX].TControl.fFlagsG4, 1 shl G4_Pushed
+                {$ELSE}
+                MOV      [EAX].TControl.fKeyPreviewing, 1
+                {$ENDIF}
+                INC      [EAX].TControl.DF.fKeyPreviewCount
+                PUSH     EAX
+                PUSH     [EDI].TMsg.lParam
+                PUSH     [EDI].TMsg.wParam
+                PUSH     [EDI].TMsg.message
+                PUSH     EAX
+                CALL     TControl.Perform
+                POP      EAX
+                DEC      [EAX].TControl.DF.fKeyPreviewCount
+                XOR      EAX, EAX
         {$ENDIF KEY_PREVIEW}
         {$ENDIF KEY_PREVIEW_OR_ESC_CLOSE_DIALOGS}
 
@@ -14821,6 +14829,6 @@ asm
     POP   EDI
 end;
 
-//{$ENDIF}
+{$ENDIF}
 
 //======================================== THE END OF FILE KOL_ASM.inc
