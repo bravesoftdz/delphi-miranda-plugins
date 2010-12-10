@@ -3,10 +3,10 @@
 library MRadio;
 
 uses
-  Windows,messages,commctrl
+  kol,Windows,messages,commctrl
   ,common,io,wrapper,syswin
   ,Dynamic_Bass,dynbasswma
-  ,m_api,dbsettings,mirutils,playlist;
+  ,m_api,dbsettings,mirutils,playlist,icobuttons,KOLCCtrls;
 
 {$include mr_rc.inc}
 {$resource mr.res}
