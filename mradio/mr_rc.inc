@@ -66,10 +66,11 @@ const
   IDC_STATUS     = 1073;
   IDC_HLP_VARS   = 1074;
 
-  IDC_EXPORT     = 1075;
+  IDC_IMPORT     = 1075;
+  IDC_EXPORT     = 1076;
 
-  IDC_EQ_ADD     = 1076;
-  IDC_EQ_DEL     = 1077;
+  IDC_EQ_ADD     = 1077;
+  IDC_EQ_DEL     = 1078;
 
   IDC_RADIO_MUTE = 1025;
   IDC_RADIO_VOL  = 1026;
