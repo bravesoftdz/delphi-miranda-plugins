@@ -390,6 +390,10 @@ begin
         BN_CLICKED: begin
           case loword(wParam) of
 
+            IDC_IMPORT: begin
+              ImportAll(0,0);
+            end;
+
             IDC_EXPORT: begin
               ExportAll(0,0);
             end;
