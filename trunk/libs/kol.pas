@@ -14,7 +14,7 @@
   Key Objects Library (C) 2000 by Kladov Vladimir.
 
 ****************************************************************
-* VERSION 3.01
+* VERSION 3.03
 ****************************************************************
 
   K.O.L. - is a set of objects to create small programs
@@ -2167,7 +2167,7 @@ type
     fParentGDITool: PGraphicTool;
     {$ENDIF GDI}
     fColorRGB: TColor;
-    fOnChange: TOnGraphicChange;
+    fOnGTChange: TOnGraphicChange;
     fData: TGDIToolData;
     fNewProc: TNewGraphicTool;
     {$IFDEF GDI}
@@ -2241,7 +2241,7 @@ type
     {* Returns True, if handle is allocated (i.e., if real GDI
        objet is created. }
     {$ENDIF GDI}
-    property OnChange: TOnGraphicChange read fOnChange write fOnChange;
+    property OnChange: TOnGraphicChange read fOnGTChange write fOnGTChange;
     {* Called, when object is changed. }
     {$IFDEF GDI}
     function ReleaseHandle: Integer;
@@ -5218,7 +5218,9 @@ type
     function REGetLangOptions(const Index: Integer): Boolean;
     procedure RESetLangOptions(const Index: Integer; const Value: Boolean);
     {$ENDIF NOT_USE_RICHEDIT}
+  public
     procedure SetOnResize(const Value: TOnEvent);
+  protected
     procedure DoSelChange;
     function LVGetItemImgIdx(Idx: Integer): Integer;
     procedure LVSetItemImgIdx(Idx: Integer; const Value: Integer);
@@ -5282,10 +5284,12 @@ type
     function GetLVCurItem: Integer;
     procedure SetLVCurItem(const Value: Integer);
     function GetLVFocusItem: Integer;
+  public
     procedure SetOnDropFiles(const Value: TOnDropFiles);
     procedure SetOnHide(const Value: TOnEvent);
     procedure SetOnShow(const Value: TOnEvent);
     procedure SetClientMargin(const Index: Integer; Value: ShortInt);
+  protected
     {$IFDEF F_P}
     function GetClientMargin(const Index: Integer): Integer;
     {$ENDIF F_P}
@@ -5296,6 +5300,7 @@ type
     {} fExposeEvent: Integer;
     {$ENDIF GTK}
     {$ENDIF _X_}
+  public
     procedure SetOnPaint(const Value: TOnPaint);
     {$IFDEF GDI}
     procedure SetOnEraseBkgnd(const Value: TOnPaint);
@@ -6268,7 +6273,16 @@ type
        |<#richedit>
        Replaces selection (in edit, RichEdit). Unlike assigning new value
        to Selection property, it is possible to specify, if operation can
-       be undone. }
+       be undone.
+       |<br>
+       Use this method or assigning value to a Selection property to format
+       text initially in the rich edit. E.g.:
+       !    RichEdit1.RE_FmtBold := TRUE;
+       !    RichEdit1.Selection := 'bolded text'#13#10;
+       !    RichEdit1.RE_FmtBold := FALSE;
+       !    RichEdit1.RE_FmtItalic := TRUE;
+       !    RichEdit1.Selection := 'italized text';
+       !... }
 
     procedure DeleteLines( FromLine, ToLine: Integer );
     {* |<#edit>
@@ -6916,7 +6930,7 @@ type
     {* Name of window class - unique for every window class
        in every run session of a program. }
 
-  protected
+  public
     procedure SetOnClose( const AOnClose: TOnEventAccept );
     procedure SetFormOnClick( const AOnClick: TOnEvent );
   public
@@ -9523,6 +9537,7 @@ procedure FormSetWidth( Form: PControl );
 procedure FormSetPosition( Form: PControl );
 procedure FormSetClientSize( Form: PControl );
 procedure FormSetAlign( Form: PControl );
+procedure FormSetTag( Form: PControl );
 {$IFDEF USE_NAMES}
 procedure FormSetName( Form: PControl );
 {$ENDIF USE_NAMES}
@@ -17419,6 +17434,7 @@ var n: Integer;
     M: TMsg;
     {$ENDIF}
 begin
+  if  AppletWnd = nil then Exit;
   AppletRunning := True;
   Applet := AppletWnd;
   AppletWnd.CreateWindow; //virtual!!!
@@ -17776,8 +17792,8 @@ begin
      fHandle := 0;
    end;
    ////////////////////////////////
-   if  Assigned( fOnChange ) then
-       fOnChange( @Self );
+   if  Assigned( TMethod( fOnGTChange ).Data ) then
+       fOnGTChange( @Self );
    ////////////////////////////////
    if H <> 0 then
    begin
@@ -19409,11 +19425,11 @@ END;
 procedure TCanvas.AssignChangeEvents;
 begin
   if ( fBrush <> nil ) then
-     fBrush.fOnChange := ObjectChanged;
+     fBrush.fOnGTChange := ObjectChanged;
   if ( fPen <> nil ) then
-     fPen.fOnChange := ObjectChanged;
+     fPen.fOnGTChange := ObjectChanged;
   if ( fFont <> nil ) then
-     fFont.fOnChange := ObjectChanged;
+     fFont.fOnGTChange := ObjectChanged;
 end;
 {$ENDIF ASM_VERSION}
 {$IFDEF WIN_GDI}
@@ -30835,13 +30851,6 @@ asm
         MOV      CL, Sz_TCommandActions
         REP      MOVSB
         POP      ESI
-        {
-        LEA      EDX, [EBX].TControl.fCommandActions
-        XCHG     EAX, EDI
-        XOR      ECX, ECX
-        MOV      CL, Sz_TCommandActions
-        CALL     Move
-        }
         JMP      @@actions_created
 @@no_actions2:
         MOV      [EBX].TControl.fCommandActions.TCommandActions.aClear, offset[ClearText]
@@ -30850,6 +30859,9 @@ asm
 
         TEST     ESI, ESI
         JZ       @@no_parent
+
+        MOV      EAX, [ESI].TControl.PP.fGotoControl
+        MOV      [EBX].TControl.PP.fGotoControl, EAX
 
         LEA      ESI, [ESI].TControl.fTextColor
         LEA      EDI, [EBX].TControl.fTextColor
@@ -30879,8 +30891,8 @@ asm
             XCHG     ECX, EAX
             JECXZ    @@no_font
             MOV      [ECX].TGraphicTool.fParentGDITool, EDX
-            MOV      [ECX].TGraphicTool.fOnChange.TMethod.Code, offset[TControl.FontChanged]
-            MOV      [ECX].TGraphicTool.fOnChange.TMethod.Data, EBX
+            MOV      [ECX].TGraphicTool.fOnGTChange.TMethod.Code, offset[TControl.FontChanged]
+            MOV      [ECX].TGraphicTool.fOnGTChange.TMethod.Data, EBX
             MOV      EAX, EBX
             MOV      EDX, ECX
             CALL     TControl.FontChanged
@@ -30907,8 +30919,8 @@ asm
             XCHG     ECX, EAX
             JECXZ    @@no_brush
             MOV      [ECX].TGraphicTool.fParentGDITool, EDX
-            MOV      [ECX].TGraphicTool.fOnChange.TMethod.Code, offset[TControl.BrushChanged]
-            MOV      [ECX].TGraphicTool.fOnChange.TMethod.Data, EBX
+            MOV      [ECX].TGraphicTool.fOnGTChange.TMethod.Code, offset[TControl.BrushChanged]
+            MOV      [ECX].TGraphicTool.fOnGTChange.TMethod.Data, EBX
             MOV      EAX, EBX
             MOV      EDX, ECX
             CALL     TControl.BrushChanged
@@ -31015,7 +31027,7 @@ begin
        Result.Add2AutoFree( Result.fFont );
        {$ENDIF USE_AUTOFREE4CONTROLS}
        Result.fFont.fParentGDITool := AParent.fFont;
-       Result.fFont.fOnChange := Result.FontChanged;
+       Result.fFont.fOnGTChange := Result.FontChanged;
        Result.FontChanged( Result.fFont );
      end;
      {$ENDIF WIN_GDI}
@@ -31029,7 +31041,7 @@ begin
        Result.Add2AutoFree( Result.fBrush );
        {$ENDIF USE_AUTOFREE4CONTROLS}
        Result.fBrush.fParentGDITool := AParent.fBrush;
-       Result.fBrush.fOnChange := Result.BrushChanged;
+       Result.fBrush.fOnGTChange := Result.BrushChanged;
        Result.BrushChanged( Result.fBrush );
      end;
      {$ENDIF WIN_GDI}
@@ -35663,7 +35675,6 @@ end;
 {$ENDIF USE_CONSTRUCTORS}
 
 //=====================  Tree view  ========================//
-
 {$IFDEF ASM_UNICODE}
 function WndProcTreeView( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 asm     //cmd    //opd
@@ -57129,7 +57140,11 @@ var
   //CFW: PCharFormat2W;
   FS: TFontStyle;
 begin
-  CF := @DF.fRECharFormatRec;
+  {$IFDEF STATIC_RICHEDIT_DATA}
+  CF := @ DF.fRECharFormatRec;
+  {$ELSE}
+  CF := DF.fRECharFormatRec;
+  {$ENDIF}
   ZeroMemory( CF, Sizeof( CF^ ) );
   {$IFDEF UNICODE_CTRLS}
   CF.cbSize := Sizeof( CF^ );
@@ -57164,7 +57179,7 @@ begin
   {$IFDEF UNICODE_CTRLS}
   {$ELSE}
   if  (PWord( @CF.szFaceName[0] )^ shr 8) <> 0 then
-      Result.FontName := AnsiString(@CF.szFaceName[0]) // real T,0 works fine.
+      Result.FontName := PAnsiChar(@CF.szFaceName[0]) // real T,0 works fine.
   else
   {$ENDIF}
       Result.FontName := KOLString(PWideChar(@CF.szFaceName[0]));
@@ -57178,7 +57193,11 @@ procedure TControl.RESetFontEx(const Index: Integer);
 var CF: PCharFormat;
     FS: TFontStyle;
 begin
-  CF := @DF.fRECharFormatRec;
+  {$IFDEF STATIC_RICHEDIT_DATA}
+  CF := @ DF.fRECharFormatRec;
+  {$ELSE}
+  CF := DF.fRECharFormatRec;
+  {$ENDIF}
   ZeroMemory( CF, {82} sizeof( CF^ ) );
   {$IFDEF UNICODE_CTRLS}
   CF.cbSize := Sizeof( CF^ );
@@ -57232,9 +57251,17 @@ var
   CF: PCharFormat;
 begin
   ReGetFont;
-  CF := @DF.fRECharFormatRec;
+  {$IFDEF STATIC_RICHEDIT_DATA}
+  CF := @ DF.fRECharFormatRec;
+  {$ELSE}
+  CF := DF.fRECharFormatRec;
+  {$ENDIF}
+  {
   CF.dwEffects := $FFFFFFFF and Index;
   if not Value then CF.dwEffects := 0;
+  }
+  CF.dwEffects := CF.dwEffects or DWORD( Index );
+  if not Value then CF.dwEffects := CF.dwEffects and not Index;
   CF.dwMask := Index;
   Perform( EM_SETCHARFORMAT, RichAreas[ DF.fRECharArea ], Integer( CF ) );
 end;
@@ -57256,7 +57283,11 @@ var CF: PDWORD;
     Mask: DWORD;
 begin
   REGetFont;
-  CF := Pointer( Integer( @DF.fRECharFormatRec ) + (HiWord(Index) and $7E) );
+  {$IFDEF STATIC_RICHEDIT_DATA}
+  CF := Pointer( Integer( @ DF.fRECharFormatRec ) + (HiWord(Index) and $7E) );
+  {$ELSE}
+  CF := Pointer( Integer( DF.fRECharFormatRec ) + (HiWord(Index) and $7E) );
+  {$ENDIF}
   Mask := 0;
   if LongBool( HiWord(Index) and $1 ) then
     Mask := $FFFFFF00;
@@ -57887,7 +57918,8 @@ begin
     if _Self_.SelLength = 0 then
       _Self_.SelLength := 1;
     _Self_.Perform( EM_SETCHARFORMAT, SCF_SELECTION { RichAreas[ _Self_.fRECharArea ] },
-                    Integer( @_Self_.DF.fRECharFormatRec ) );
+                    Integer( {$IFDEF STATIC_RICHEDIT_DATA} @_Self_.DF.fRECharFormatRec
+                             {$ELSE} _Self_.DF.fRECharFormatRec {$ENDIF} ) );
   end;
   end;
 end;
@@ -61695,7 +61727,9 @@ begin
       else
     begin
       Applet.EV.fOnMessage := Applet.EV.fOldOnMessage;
-      Applet.EV.fOldOnMessage := nil;
+      Applet.EV.fOldOnMessage :=
+          {$IFDEF SAFEST_CODE} TOnMessage( MakeMethod( nil, @ DummyProc123_0 ) )
+          {$ELSE}              nil {$ENDIF};
     end;
     C := nil;
     if  Value then C := @ Self;
@@ -64751,6 +64785,8 @@ begin C := Form;
       C.SetName( Form, Form.FormString );
 end;
 {$ENDIF USE_NAMES}//////////////////////////////////////////////////////////////
+procedure FormSetTag( Form: PControl );
+begin Form.Tag := ParentForm_IntParamPas(Form); end;
 {$IFDEF UNICODE_CTRLS}
 procedure FormSetUnicode( Form: PControl );
 begin Form.SetUnicode( TRUE ); end;
@@ -65155,21 +65191,23 @@ procedure FormSetTBBtnImgWidth( Form: PControl );
 begin Form.TBBtnImgWidth := ParentForm_IntParamPas( Form );
 end;////////////////////////////////////////////////////////////////////////////
 procedure FormTBAddBitmap( Form: PControl );
-var   m: Boolean;
-      map: array[ 0..1 ] of TColor;
+var   map: array[ 0..1 ] of TColor;
       b: Integer;
       C: PControl;
 begin C := Form;
       Form := Form.ParentForm;
-      Form.FormGetStrParam;
-      m := Form.FormGetIntParam <> 0;
-      if  m then
+      b := Form.FormGetIntParam;
+      if  b >= 0 then
       begin
-          map[0] := Form.FormGetColorParam;
-          map[1] := Color2RGB( clBtnFace );
-          b := LoadMappedBitmapEx( Form, hInstance, PKOLChar( KOLString( Form.FormString )), map );
-      end else
-          b := LoadBmp( hInstance, PKOLChar(KOLString(Form.FormString)), Form );
+          Form.FormGetStrParam;
+          if  b <> 0 then
+          begin
+              map[0] := Form.FormGetColorParam;
+              map[1] := Color2RGB( clBtnFace );
+              b := LoadMappedBitmapEx( Form, hInstance, PKOLChar( KOLString( Form.FormString )), map );
+          end else
+              b := LoadBmp( hInstance, PKOLChar(KOLString(Form.FormString)), Form );
+      end;
       C.TBAddBitmap( b );
 end;////////////////////////////////////////////////////////////////////////////
 procedure FormSetTBButtonSize( Form: PControl );
@@ -65514,7 +65552,7 @@ begin Result := EV.fOnDropFiles; end;
 {$ENDIF EVENTS_DYNAMIC}//-------------------------------------------------------
 {$IFnDEF NOT_USE_RICHEDIT}
 procedure TControl.FreeCharFormatRec;
-begin FreeMem( DF.fRECharFormatRec ); end;
+begin {$IFnDEF STATIC_RICHEDIT_DATA} FreeMem( DF.fRECharFormatRec ); {$ENDIF} end;
 {$ENDIF}
 function TControl.GetAnchor(const Index: Integer): Boolean;
 begin Result := fAnchors and Index <> 0; end;

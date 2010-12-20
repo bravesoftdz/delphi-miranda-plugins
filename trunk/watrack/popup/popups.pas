@@ -110,7 +110,7 @@ function MakeAction(var anAct:TPOPUPACTION;action:integer):PPOPUPACTION;
 begin
   result:=@anAct;
   anAct.cbSize :=SizeOf(TPOPUPACTION);
-  anAct.lchIcon:=GetIcon(action,AST_NORMAL);
+  anAct.lchIcon:=GetIcon(action);
   anAct.flags  :=PAF_ENABLED;
   anAct.wParam :=1;
   anAct.lParam :=action;
