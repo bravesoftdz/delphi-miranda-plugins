@@ -1,6 +1,8 @@
 {}
 const
-  OldXStatus:array [0..31] of byte=
+  OldStatusText:array [0..15] of pWideChar =
+    (nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil);
+  OldXStatus:array [0..31] of byte =
     (255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
      255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255);
 var

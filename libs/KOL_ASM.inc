@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // KOL_ASM.inc ()to be inlude in KOL.pas)
-// v 3.00.z9
+// v 3.03a
 
 function MsgBox( const S: KOLString; Flags: DWORD ): DWORD;
 asm
@@ -679,6 +679,8 @@ end;
 
 procedure Run( var AppletWnd: PControl );
 asm
+        CMP       EAX, 0
+        JZ        @@exit
         PUSH      EBX
         XCHG      EBX, EAX
         INC       [AppletRunning]
@@ -893,11 +895,11 @@ asm
 @@exit:
 
 @@CallOnChange:
-        MOV      ECX, [EAX].fOnChange.TMethod.Code
+        MOV      ECX, [EAX].fOnGTChange.TMethod.Code
         JECXZ    @@no_onChange
         PUSH     EAX
         XCHG     EDX, EAX
-        MOV      EAX, [EDX].fOnChange.TMethod.Data
+        MOV      EAX, [EDX].fOnGTChange.TMethod.Data
         CALL     ECX
         POP      EAX
 @@no_onChange:
@@ -2240,8 +2242,8 @@ asm
 
         MOV      [EDX].fBrush, EAX
 
-        MOV      [EAX].TGraphicTool.fOnChange.TMethod.Code, Offset[TCanvas.ObjectChanged]
-        MOV      [EAX].TGraphicTool.fOnChange.TMethod.Data, EDX
+        MOV      [EAX].TGraphicTool.fOnGTChange.TMethod.Code, Offset[TCanvas.ObjectChanged]
+        MOV      [EAX].TGraphicTool.fOnGTChange.TMethod.Data, EDX
         MOV      ECX, [EDX].fOwnerControl
         JECXZ    @@1
 
@@ -2271,8 +2273,8 @@ asm
         PUSH     EAX
 
         MOV      [EDX].TCanvas.fFont, EAX
-        MOV      [EAX].TGraphicTool.fOnChange.TMethod.Code, Offset[TCanvas.ObjectChanged]
-        MOV      [EAX].TGraphicTool.fOnChange.TMethod.Data, EDX
+        MOV      [EAX].TGraphicTool.fOnGTChange.TMethod.Code, Offset[TCanvas.ObjectChanged]
+        MOV      [EAX].TGraphicTool.fOnGTChange.TMethod.Data, EDX
 
         MOV      ECX, [EDX].fOwnerControl
         JECXZ    @@1
@@ -2335,8 +2337,8 @@ asm
 @@1:    LODSD
         TEST     EAX, EAX
         JZ       @@nxt
-        MOV      [EAX].TGraphicTool.fOnChange.TMethod.Data, EDX
-        MOV      [EAX].TGraphicTool.fOnChange.TMethod.Code, offset[ ObjectChanged ]
+        MOV      [EAX].TGraphicTool.fOnGTChange.TMethod.Data, EDX
+        MOV      [EAX].TGraphicTool.fOnGTChange.TMethod.Code, offset[ ObjectChanged ]
 @@nxt:  DEC      CL
         JNZ      @@1
         POP      ESI
@@ -7652,8 +7654,8 @@ asm
         MOV      [EDX].FFont, EAX
         MOV      ECX, [EDX].fTextColor
         MOV      [EAX].TGraphicTool.fData.Color, ECX
-        MOV      [EAX].TGraphicTool.fOnChange.TMethod.Code, offset[FontChanged]
-        MOV      [EAX].TGraphicTool.fOnChange.TMethod.Data, EDX
+        MOV      [EAX].TGraphicTool.fOnGTChange.TMethod.Code, offset[FontChanged]
+        MOV      [EAX].TGraphicTool.fOnGTChange.TMethod.Data, EDX
         RET
 @@exit: XCHG     EAX, ECX
 end;
@@ -7669,8 +7671,8 @@ asm
         MOV      [EDX].FBrush, EAX
         MOV      ECX, [EDX].fColor
         MOV      [EAX].TGraphicTool.fData.Color, ECX
-        MOV      [EAX].TGraphicTool.fOnChange.TMethod.Code, offset[BrushChanged]
-        MOV      [EAX].TGraphicTool.fOnChange.TMethod.Data, EDX
+        MOV      [EAX].TGraphicTool.fOnGTChange.TMethod.Code, offset[BrushChanged]
+        MOV      [EAX].TGraphicTool.fOnGTChange.TMethod.Data, EDX
         {$IFDEF USE_AUTOFREE4CONTROLS}
         PUSH     EAX
         XCHG     EAX, EDX
