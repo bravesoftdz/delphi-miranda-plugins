@@ -1,7 +1,7 @@
 unit WATIcons;
 interface
 
-uses wat_api;
+uses wat_api,icobuttons;
 
 // main Enable/Disable icons
 const // name in icolib
@@ -12,14 +12,15 @@ function RegisterIcons:boolean;
 
 // frame button icons
 function RegisterButtonIcons:boolean;
-function GetIcon(action:integer;stat:integer):cardinal;
+function GetIcon(action:integer;stat:integer=AST_NORMAL):cardinal;
+function DoAction(action:integer):integer;
 function GetIconDescr(action:integer):pAnsiChar;
-
+{
 const
   AST_NORMAL  = 0;
   AST_HOVERED = 1;
   AST_PRESSED = 2;
-
+}
 implementation
 
 uses m_api,windows,mirutils;
@@ -31,6 +32,11 @@ const
 
 const
   IconsLoaded:bool = false;
+
+function DoAction(action:integer):integer;
+begin
+  result:=CallService(MS_WAT_PRESSBUTTON,action,0);
+end;
 
 function RegisterIcons:boolean;
 var
