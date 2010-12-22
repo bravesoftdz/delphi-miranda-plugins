@@ -605,11 +605,19 @@ begin
 end;
 
 procedure EndSync(handle:HSYNC;channel,data,user:DWORD); stdcall;
+var
+  lContact:cardinal;
 begin
-  if plist<>nil then
-    ControlCenter(MRC_NEXT,0)
-  else if doLoop=BST_UNCHECKED then
+  if RemoteSong then
+  begin
+    lContact:=ActiveContact;
+//    StopStation;
     ControlCenter(MRC_STOP,0);
+    ControlCenter(MRC_PLAY,lContact)
+//    ControlCenter(MRC_PLAY,0)
+  end
+  else if plist<>nil           then ControlCenter(MRC_NEXT,0)
+  else if doLoop=BST_UNCHECKED then ControlCenter(MRC_STOP,0);
 end;
 
 function OpenURL(url:PWideChar):dword;// stdcall;
@@ -770,7 +778,8 @@ begin
 
     end;
 
-    syncEND :=BASS_ChannelSetSync(chan,BASS_SYNC_END,0,@EndSync,nil);
+    syncEND:=BASS_ChannelSetSync(chan,BASS_SYNC_END,0,@EndSync,nil);
+
     ControlCenter(MRC_STATUS,RD_STATUS_PLAYING);
 
     SetSndVol(-1);
