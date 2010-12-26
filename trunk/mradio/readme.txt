@@ -45,6 +45,8 @@ DBSet=Genre
 Changelog:
 ----------
 0.0.1,7 ()
+  Added internet radio reconnect on track end
+  Added button to import all radiostations from file
   Added frame right-click action "Open mradio settings"
   Improved frame coloration
   Added Frame (1st try)

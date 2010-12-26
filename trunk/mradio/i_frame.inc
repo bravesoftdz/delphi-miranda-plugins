@@ -214,6 +214,7 @@ begin
       hbr:=0;
       colorhook:=PluginLink^.HookEvent(ME_COLOUR_RELOAD,@ColorReload);
       ColorReload(0,0);
+      CallService(MS_RADIO_SETVOL,gVolume,0);
     end;
   end;
 end;
