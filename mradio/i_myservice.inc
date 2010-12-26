@@ -136,7 +136,7 @@ begin
   result:=Service_RadioGetVolume(0,0);
   SetSndVol(wParam);
 
-  DBWriteByte(0,PluginName,optVolume,wParam);
+  DBWriteByte(0,PluginName,optVolume,ABS(wParam));
   if lParam<>2 then // not from Frame
     if hVolFrmCtrl<>0 then
       SendMessage(hVolFrmCtrl,TBM_SETPOS,1,wParam);

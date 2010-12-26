@@ -598,7 +598,8 @@ begin
       SetButtonIcons(Dialog);
       hVolCtrl:=GetDlgItem(Dialog,IDC_VOLUME);
       SendMessage(hVolCtrl,TBM_SETRANGE,0,(100 shl 16)+0);
-      SendMessage(hVolCtrl,TBM_SETPOS,1,DBReadByte(0,PluginName,optVolume,50));
+      SendMessage(hVolCtrl,TBM_SETPOS,1,ABS(gVolume));
+//      SendMessage(hVolCtrl,TBM_SETPOS,1,DBReadByte(0,PluginName,optVolume,50));
 
       SetDlgItemInt(Dialog,IDC_BUFFER ,sBuffer ,false);
       SetDlgItemInt(Dialog,IDC_PREBUF ,sPreBuf ,false);
