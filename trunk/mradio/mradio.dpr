@@ -182,7 +182,6 @@ begin
   NumTries :=DBReadByte(0,PluginName,optNumTries,1);
   if NumTries<1 then NumTries:=1;
 
-
   StatusTmpl:=DBReadUnicode(0,PluginName,optStatusTmpl,'%radio_title%');
 
   if Auconnect<>BST_UNCHECKED then
