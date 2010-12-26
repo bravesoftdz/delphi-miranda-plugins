@@ -25,7 +25,10 @@ begin
       DeleteObject(hbr);
     end;
 
-    WM_INITDIALOG: begin
+    WM_SHOWWINDOW: begin
+      Rslt:=1;
+      with Sender^ do
+        hVolFrmCtrl:=Children[1].Handle;
     end;
 
     WM_CTLCOLORSTATIC: begin
@@ -39,7 +42,8 @@ begin
     end;
 
     WM_HSCROLL: begin
-       Service_RadioSetVolume(SendMessage(msg.lParam,TBM_GETPOS,0,0),2)
+       if loword(msg.wParam)=SB_ENDSCROLL then
+         Service_RadioSetVolume({Hiword(msg.wParam)}SendMessage(msg.lParam,TBM_GETPOS,0,0),2)
     end;
 
   end;
@@ -125,7 +129,6 @@ begin
       TB:=NewTrackbar(FrameCtrl,[trbNoTicks,trbBoth,trbNoBorder],nil);
       with TB^ do
       begin
-        hVolFrmCtrl:=Handle;
         SetSize(FrameCtrl.Width-24,18);
         SetPosition(2,0);
         Anchor(true,true,true,false);
