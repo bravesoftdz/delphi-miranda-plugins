@@ -7,8 +7,9 @@
 
 == Описание настроек ==
 == Ссылки ==
- * [MirandaOrgFileListingURL|260  оригинал от Bethoven]
- * [MirandaOrgFileListingURL|3285  мод от Awkward]
+
+ * [http://addons.miranda-im.org/details.php?action=viewfile&id=260 оригинал от Bethoven]
+ * [http://addons.miranda-im.org/details.php?action=viewfile&id=3285 мод от Awkward]
  * [MirandaRuThread|817]
  * [http://awkward.miranda.im/ страница плагинов]
  * [http://awkward.miranda.im/quicksearch.zip прямая ссылка]
