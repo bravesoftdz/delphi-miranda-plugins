@@ -123,7 +123,7 @@ procedure PreMultiplyChanells(hbmp:HBITMAP);
 type
   tPixel=array [0..3] of Byte;
 var
-  bmp:TBITMAP;
+  bmp:windows.TBITMAP;
   flag:bool;
   pBitmapBits:PByte;
   Len:dword;
@@ -132,7 +132,7 @@ var
   alpha:dword;
 //f:THANDLE;
 begin
-  GetObject(hbmp,SizeOf(TBITMAP),@bmp);
+  GetObject(hbmp,SizeOf(bmp),@bmp);
   bh:=bmp.bmHeight;
   bw:=bmp.bmWidth;
   z:=bw*4;
@@ -183,9 +183,9 @@ function FixBitmap(dc:HDC;var hBmp:HBITMAP):HBITMAP;
 var
   dc24,dc32:HDC;
   hBitmap32,obmp24,obmp32:HBITMAP;
-  bmpInfo:TBITMAP;
+  bmpInfo:windows.TBITMAP;
 begin
-  GetObject(hBmp,SizeOf(TBITMAP),@bmpInfo);
+  GetObject(hBmp,SizeOf(bmpInfo),@bmpInfo);
   if bmpInfo.bmBitsPixel<>32 then
   begin
     dc32:=CreateCompatibleDC(dc);
@@ -206,7 +206,7 @@ end;
 
 procedure TWATFrame.PreparePicture(dc:HDC;rc:TRECT);
 var
-  bmpinfo:TBITMAP;
+  bmpinfo:windows.TBITMAP;
   src,dst:TRECT;
   x,y,w,h,dh:integer;
   br:HBRUSH;

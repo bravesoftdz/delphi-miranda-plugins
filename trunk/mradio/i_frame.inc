@@ -2,6 +2,7 @@
 const
   frm_back:pAnsiChar = 'Frame background';
 const
+  btnMute:pIcoButton = nil;
   FrameWnd:HWND = 0;
   FrameId:integer = -1;
   OldEditProc:pointer=nil;
@@ -51,12 +52,7 @@ end;
 
 function DoAction(action:integer):integer;
 begin
-  if gVolume=0 then
-    gVolume:=-1
-  else
-    gVolume:=-gVolume;
-  Result:=CallService(MS_RADIO_SETVOL,gVolume,0);
-  EnableWindow(hVolFrmCtrl,gVolume>=0);
+  result:=CallService(MS_RADIO_MUTE,0,0);
 end;
 
 function ColorReload(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -116,7 +112,8 @@ begin
     with FrameCtrl^ do
     begin
       // Button
-      with CreateIcoButton(FrameCtrl,GetIcon,DoAction,IDC_RADIO_MUTE)^ do
+      btnMute:=CreateIcoButton(FrameCtrl,GetIcon,DoAction,IDC_RADIO_MUTE);
+      with btnMute^ do
       begin
         SetSize(16,16);
         SetPosition(FrameCtrl.Width-18,0);

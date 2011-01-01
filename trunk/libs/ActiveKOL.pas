@@ -180,7 +180,7 @@ type
     function SetStatusText(pszStatusText: POleStr): HResult; stdcall;
     function EnableModeless(fEnable: BOOL): HResult; stdcall;
     function IOleInPlaceFrame.TranslateAccelerator = OleInPlaceFrame_TranslateAccelerator;
-    function OleInPlaceFrame_TranslateAccelerator(var msg: TMsg;
+    function OleInPlaceFrame_TranslateAccelerator(var msg: Windows.TMsg;
       wID: Word): HResult; stdcall;
     { IDispatch }
     function GetTypeInfoCount(out Count: Integer): HResult; stdcall;
@@ -2383,7 +2383,7 @@ begin
   Result := S_OK;
 end;
 
-function TOleCtlIntf.OleInPlaceFrame_TranslateAccelerator(var msg: TMsg;
+function TOleCtlIntf.OleInPlaceFrame_TranslateAccelerator(var msg: Windows.TMsg;
   wID: Word): HResult;
 begin
   Result := S_FALSE;

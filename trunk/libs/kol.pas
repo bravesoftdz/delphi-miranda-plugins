@@ -14,7 +14,7 @@
   Key Objects Library (C) 2000 by Kladov Vladimir.
 
 ****************************************************************
-* VERSION 3.03
+* VERSION 3.04
 ****************************************************************
 
   K.O.L. - is a set of objects to create small programs
@@ -2549,7 +2549,7 @@ type
     fFont : PGraphicTool; // order is important for ASM version
   {$IFDEF GDI}
     fCopyMode : TCopyMode;
-    fOnChange: TOnEvent;
+    fOnChangeCanvas: TOnEvent;
     {$ENDIF GDI}
     fOnGetHandle: TOnGetHandle;
     {$IFDEF _X_}
@@ -2721,7 +2721,7 @@ type
     {* Current copy mode. Is used in CopyRect method. }
     procedure CopyRect( const DstRect : TRect; SrcCanvas : PCanvas; const SrcRect : TRect );
     {* Copyes a rectangle from source to destination, using StretchBlt. }
-    property OnChange: TOnEvent read fOnChange write fOnChange;
+    property OnChange: TOnEvent read fOnChangeCanvas write fOnChangeCanvas;
     {* }
     function Assign( SrcCanvas : PCanvas ) : Boolean;
     {* }
@@ -2785,6 +2785,8 @@ type
                 TImageList - images container
 ----------------------------------------------------------------------- }
   TImageList = object( TObj )
+  private
+    fOverlayIdx: Integer;
   {* ImageList incapsulation. }
   protected
     FHandle: THandle;
@@ -2897,6 +2899,8 @@ type
        other images from the image list). These overalay images can be used in
        listview and treeview as overlaying images (up to four masks at the same
        time). }
+    property OverlayIdx: Integer read fOverlayIdx write fOverlayIdx;
+    {* Set this value to 1..15 to draw images overlayed (using Draw or DrawEx). }
     {$IFDEF USE_CONSTRUCTORS}
     constructor CreateImageList( POwner: Pointer );
     {$ENDIF USE_CONSTRUCTORS}
@@ -3740,7 +3744,7 @@ const
     idx_fOnDeadChar         = 15;
     idx_fOnKeyUp            = 16;
     idx_fOnKeyDown          = 17;
-    idx_fOnChange           = 18;
+    idx_fOnChangeCtl           = 18;
     idx_fOnEnter            = 19;
     idx_fOnLeave            = 20;
     idx_fLeave              = 21;
@@ -4517,7 +4521,7 @@ type
     fOnKeyUp: TOnKey;
     fOnKeyDown: TOnKey;
 
-    fOnChange: TOnEvent;
+    fOnChangeCtl: TOnEvent;
     fOnEnter: TOnEvent;
     fOnLeave: TOnEvent;
     fLeave: TOnEvent;
@@ -7097,9 +7101,9 @@ type
              read {$IFDEF EVENTS_DYNAMIC} Get_TOnEvent {$ELSE} EV.fOnLeave {$ENDIF}
              write {$IFDEF EVENTS_DYNAMIC} Set_TOnEvent {$ELSE} EV.fOnLeave{$ENDIF};
     {* Called when control looses focus. }
-    property OnChange: TOnEvent index idx_fOnChange
-             read {$IFDEF EVENTS_DYNAMIC} Get_TOnEvent {$ELSE} EV.fOnChange {$ENDIF}
-             write {$IFDEF EVENTS_DYNAMIC} Set_TOnEvent {$ELSE} EV.fOnChange {$ENDIF};
+    property OnChange: TOnEvent index idx_fOnChangeCtl
+             read {$IFDEF EVENTS_DYNAMIC} Get_TOnEvent {$ELSE} EV.fOnChangeCtl {$ENDIF}
+             write {$IFDEF EVENTS_DYNAMIC} Set_TOnEvent {$ELSE} EV.fOnChangeCtl {$ENDIF};
     {* |<#edit>
        |<#memo>
        |<#listbox>
@@ -8392,6 +8396,10 @@ type
        This also can be index of separator button. -1 is returned if
        there are no buttons found at the position. }
 
+    function TBBtnEvent( Idx: Integer ): TOnToolbarButtonClick;
+    {* Returns toolbar event handler assigned to a toolbar button
+       (by its index). }
+
     function TBMoveBtn( FromIdx, ToIdx: Integer ): Boolean;
     {* |<#toolbar>
        By TR"]F. Moves button from one position to another. }
@@ -8410,6 +8418,9 @@ type
        to executable. This method of tooltips maintainance for toolbar buttons
        is useful both for static and dynamic toolbars (meaning "dynamic" -
        toolbars with buttons, deleted and inserted at run-time). }
+
+    function TBBtnTooltip( BtnID: Integer ): KOLString;
+    {* |<#toolbar>  Returns tooltip assigned to a toolbar button. }
 
     property TBAutoSizeButtons: Boolean read GetTBAutoSizeButtons write SetTBAutoSizeButtons;
 
@@ -8543,6 +8554,8 @@ type
     function CenterOnParent: PControl;
     {* Centers control on parent, or if applied to a form, centers
        form on screen. }
+    function CenterOnForm( Form1: PControl ): PControl;
+    {* Centers form on another form. If Form1 not present, centers on screen. }
 
     function Shift( dX, dY : Integer ): PControl;
     {* Moves control respectively to current position (Left := Left + dX,
@@ -11741,7 +11754,7 @@ type
      etc.). }
 
   PDayTable = ^TDayTable;
-  TDayTable = array[1..12] of Word;
+  TDayTable = array[1..12] of Byte;
 
   TDateFormat = ( dfShortDate, dfLongDate );
   {* Date formats available to use in formatting date/time to string. }
@@ -12857,7 +12870,7 @@ type
     function GetTopParent: PMenu;
     function GetState( const Index: Integer ): Boolean;
     procedure SetState( const Index: Integer; Value: Boolean );
-    procedure SetVisible( Value: Boolean );
+    procedure SetMenuVisible( Value: Boolean );
     procedure SetData( Value: Pointer );
     procedure SetMenuItemCaption( const Value: KOLString );
     function FillMenuItems(AHandle: HMenu; StartIdx: Integer;
@@ -12987,7 +13000,7 @@ type
        Visible property, then setting it again. }
     property Highlight: Boolean index MFS_HILITE read GetState write SetState;
     {* Highlight state of the item. }
-    property Visible: Boolean read FVisible write SetVisible;
+    property Visible: Boolean read FVisible write SetMenuVisible;
     {* Visibility of menu item. }
     property Data: Pointer read FData write SetData;
     {* Data pointer, associated with the menu item. }
@@ -15750,7 +15763,7 @@ const InitEventsTable: array[ 0..idx_LastEvent ] of Byte = (
       idummy4_TRUE,                             //idx_fOnDeadChar                        = 15;
       idummy4_TRUE,      //idx_fOnKeyUp                                                  = 16;
       idummy4_TRUE,      //idx_fOnKeyDown                                                = 17;
-      idummy123,         //idx_fOnChange                                                 = 18;
+      idummy123,         //idx_fOnChangeCtl                                                 = 18;
       idummy123,         //idx_fOnEnter                                                  = 19;
       idummy123,         //idx_fOnLeave                                                  = 20;
       idummy123,         //idx_fLeave                                                    = 21;
@@ -17814,9 +17827,9 @@ begin
        fPangoFontDesc := nil;
    END;
    /////////////////////////////////
-   IF  Assigned( fOnChange ) THEN
+   IF  Assigned( fOnGTChange ) THEN
    /////////////////////////////////
-       fOnChange( @Self );
+       fOnGTChange( @Self );
    {$ENDIF GTK}
 end;
 {$ENDIF ASM_VERSION}
@@ -18720,9 +18733,9 @@ end;
 procedure TCanvas.Changing;
 begin
   //////////////////////////////
-  if  Assigned( fOnChange ) then
+  if  Assigned( fOnChangeCanvas ) then
   //////////////////////////////
-      fOnChange( @Self );
+      fOnChangeCanvas( @Self );
 end;
 {$ENDIF ASM_VERSION}
 
@@ -25065,15 +25078,18 @@ const Dot: AnsiString = '.';
 var I: Integer;
     F: PKOLChar;
     HasOnlyNegFilters: Boolean;
+    dots: Boolean;
 begin
   Result := (((FileAttr and FindAttr) = FindAttr) or
             LongBool(FindAttr and FILE_ATTRIBUTE_NORMAL));
   if not Result then Exit;
 
-  if (KOLString(FileName) <> {$IFDEF UNICODE_CTRLS} KOLWideString( '.' )
-                  {$ELSE} {$IFDEF F_P}Dot{$ELSE}'.'{$ENDIF}
-                  {$ENDIF UNICODE_CTRLS} ) and
-     (FileName <> '..') then
+  dots := (FileName^ = {$IFDEF F_P}Dot{$ELSE}'.'{$ENDIF})
+          and ( (FileName[1] = {$IFDEF F_P}Dot{$ELSE}'.'{$ENDIF})
+                and (FileName[2] = #0)
+                or (FileName[1] = #0) );
+
+  if not dots then
   if LongBool( FindAttr and FILE_ATTRIBUTE_NORMAL ) and
      (FindAttr <> FILE_ATTRIBUTE_NORMAL) then
      if LongBool( FindAttr and FILE_ATTRIBUTE_DIRECTORY ) and
@@ -25082,22 +25098,12 @@ begin
   HasOnlyNegFilters := TRUE;
   for I := 0 to fFilters.Count - 1 do
   begin
-    F := PKOLChar(fFilters.fList.Items[ I ]);
-    if F = '' then continue;
-
-    if (KOLString(F) = {$IFDEF UNICODE_CTRLS} KOLWideString( '.' ) {$ELSE}
-            {$IFDEF F_P}Dot{$ELSE}'.'{$ENDIF}
-            {$ENDIF UNICODE_CTRLS} ) or (F = '..') then
-    begin
-      if FileName = F then
+    F := fFilters.ItemPtrs[ I ];
+    if  F = '' then continue;
+    if  FileName = F then
         Exit;
-    end
-      else
-    if (KOLString(Filename) = {$IFDEF UNICODE_CTRLS} KOLWideString( '.' ) {$ELSE}
-                   {$IFDEF F_P}Dot{$ELSE}'.'{$ENDIF}
-                   {$ENDIF UNICODE_CTRLS} ) or (FileName = '..') then
-      continue;
-
+    if  dots then
+        continue;
     if F[ 0 ] = '^' then
     begin
       if StrSatisfy( FileName, PKOLChar(@F[ 1 ]) ) then
@@ -25111,16 +25117,13 @@ begin
       HasOnlyNegFilters := FALSE;
       if StrSatisfy( FileName, F ) then
       begin
-        Result := True;
+        //Result := True;
         Exit;
       end;
     end;
   end;
 
-  Result := HasOnlyNegFilters and
-            (KOLString(FileName) <> {$IFDEF UNICODE_CTRLS} KOLWideString( '.' ) {$ELSE}
-                         {$IFDEF F_P}Dot{$ELSE}'.'{$ENDIF}
-                         {$ENDIF UNICODE_CTRLS} ) and (FileName <> '..');
+  Result := HasOnlyNegFilters and not dots;
 end;
 {$ENDIF ASM_VERSION}
 
@@ -25277,7 +25280,6 @@ end;
 procedure TDirList.ScanDirectory(const DirPath, Filter: KOLString;
   Attr: DWord);
 var FindData : TFindFileData;
-    //E : PFindFileData;
     Action: TDirItemAction;
     {$IFDEF FORCE_ALTERNATEFILENAME}
     IsUnicode: KOLString;
@@ -25468,7 +25470,7 @@ var I : Integer;
     W1, W2: KOLWideString;
     {$ENDIF}
     IsDir1, IsDir2 : Boolean;
-    Date1, Date2 : PFileTime;
+    sz1, sz2: I64;
 begin
   Item1 := Data.Dir.Get( e1 ); // fList.Items[ e1 ];
   Item2 := Data.Dir.Get( e2 ); // fList.Items[ e2 ];
@@ -25547,6 +25549,11 @@ begin
       end;
     sdrBySize, sdrBySizeDescending:
       begin
+        {$IFDEF _D4orHigher}
+        sz1 := MakeInt64( Item1.nFileSizeLow, Item1.nFileSizeHigh );
+        sz2 := MakeInt64( Item2.nFileSizeLow, Item2.nFileSizeHigh );
+        Result := Cmp64(sz1, sz2);
+        {$ELSE}
         if Item1.nFileSizeHigh < Item2.nFileSizeHigh then
            Result := -1
         else
@@ -25558,27 +25565,16 @@ begin
         else
         if Item1.nFileSizeLow > Item2.nFileSizeLow then
            Result := 1;
+        {$ENDIF}
         if Data.Rules[ I ] = sdrBySizeDescending then
            Result := -Result;
       end;
     sdrByDateCreate:
-      begin
-        Date1 := @Item1.ftCreationTime;
-        Date2 := @Item2.ftCreationTime;
-        Result := CompareFileTime( Date1^, Date2^ );
-      end;
+        Result := CompareFileTime( Item1.ftCreationTime, Item2.ftCreationTime );
     sdrByDateChanged:
-      begin
-        Date1 := @Item1.ftLastWriteTime;
-        Date2 := @Item2.ftLastWriteTime;
-        Result := CompareFileTime( Date1^, Date2^ );
-      end;
+        Result := CompareFileTime( Item1.ftLastWriteTime, Item2.ftLastWriteTime );
     sdrByDateAccessed:
-      begin
-        Date1 := @Item1.ftLastAccessTime;
-        Date2 := @Item2.ftLastAccessTime;
-        Result := CompareFileTime( Date1^, Date2^ );
-      end;
+        Result := CompareFileTime( Item1.ftLastAccessTime, Item2.ftLastAccessTime );
     sdrNone: break;
     end; {case}
     if Result <> 0 then break;
@@ -26231,8 +26227,11 @@ begin
     {(wMonth >= 1) and !otherwise can not convert time only!}
     (wMonth <= 12) and
     {(wDay >= 1) and !otherwise can not convert time only!}
-    (wDay <= DayTable^[wMonth]) and                                      //
-    (wHour < 24) and (wMinute < 60) and (wSecond < 60) and (wMilliSeconds < 1000) then   //
+    (wDay <= DayTable^[wMonth])
+    {$IFDEF SAFEST_CODE}
+    and (wHour < 24) and (wMinute < 60)
+    and (wSecond < 60) and (wMilliSeconds < 1000)
+    {$ENDIF} then   //
   begin
     _Day := wDay;
     for I := 1 to wMonth - 1 do
@@ -26242,7 +26241,8 @@ begin
     if I<0 then i := 0;                     //
     //--------------------------------------++
     DateTime := I * 365 + I div 4 - I div 100 + I div 400 + _Day
-             + (wHour * 3600000 + wMinute * 60000 + wSecond * 1000 + wMilliSeconds) / MSecsPerDay;
+             + (((wHour * 60 + wMinute) * 60 + wSecond) * 1000 + wMilliSeconds)
+             / MSecsPerDay;
     Result := True;
   end;
 end;
@@ -29889,7 +29889,7 @@ begin
   end;
 end;
 
-procedure TMenu.SetVisible( Value: Boolean );
+procedure TMenu.SetMenuVisible( Value: Boolean );
 var I, J: Integer;
     M: PMenu;
     Before: Integer;
@@ -31131,7 +31131,7 @@ BEGIN
          Result.Add2AutoFree( Result.fFont );
          {$ENDIF USE_AUTOFREE4CONTROLS}
          Result.fFont.fParentGDITool := AParent.fFont;
-         Result.fFont.fOnChange := Result.FontChanged;
+         Result.fFont.fOnGTChange := Result.FontChanged;
          Result.FontChanged( Result.fFont );
      END;
      {$ENDIF WIN_GDI}
@@ -31145,7 +31145,7 @@ BEGIN
          Result.Add2AutoFree( Result.fBrush );
          {$ENDIF USE_AUTOFREE4CONTROLS}
          Result.fBrush.fParentGDITool := AParent.fBrush;
-         Result.fBrush.fOnChange := Result.BrushChanged;
+         Result.fBrush.fOnGTChange := Result.BrushChanged;
          Result.BrushChanged( Result.fBrush );
      END;
      {$ENDIF WIN_GDI}
@@ -32560,11 +32560,11 @@ asm
         {$ELSE}
         XOR      [EBX].TControl.fChecked, 1
         {$ENDIF}
-        MOV      ECX, [EBX].TControl.fOnChange.TMethod.Code
+        MOV      ECX, [EBX].TControl.fOnChangeCtl.TMethod.Code
         {$IFDEF  NIL_EVENTS}
         JECXZ    @@not_fixed
         {$ENDIF}
-        MOV      EAX, [EBX].TControl.fOnChange.TMethod.Data
+        MOV      EAX, [EBX].TControl.fOnChangeCtl.TMethod.Data
         MOV      EDX, EBX
         JMP      ECX
 @@pushed:
@@ -32841,9 +32841,9 @@ begin
                 else include( Self_.fFlagsG4, G4_Checked );
         {$ELSE} Self_.fChecked := not Self_.fChecked; {$ENDIF}
         {$IFDEF NIL_EVENTS}
-        if  Assigned( Self_.EV.fOnChange ) then
+        if  Assigned( Self_.EV.fOnChangeCtl ) then
         {$ENDIF}
-            Self_.EV.fOnChange( Self_ );
+            Self_.EV.fOnChangeCtl( Self_ );
     end;
     if Self_.DF.fRepeatInterval > 0 then
     begin
@@ -32873,9 +32873,9 @@ begin
                 else include( Self_.fFlagsG4, G4_Checked );
         {$ELSE} Self_.fChecked := not Self_.fChecked; {$ENDIF}
         {$IFDEF NIL_EVENTS}
-        if  Assigned( Self_.EV.fOnChange ) then
+        if  Assigned( Self_.EV.fOnChangeCtl ) then
         {$ENDIF}
-            Self_.EV.fOnChange( Self_ );
+            Self_.EV.fOnChangeCtl( Self_ );
     end;
     Self_.DoClick;
     SetTimer( Self_.fHandle, 1, Self_.DF.fRepeatInterval, nil );
@@ -33451,6 +33451,7 @@ begin
     Right := Left + W;
     Bottom := Top + H;
   end;
+  Result.CurIndex := ImgIdx;
 end;
 
 //===================== Scrollbar ========================//
@@ -36927,9 +36928,9 @@ begin
                      Self_.EV.fOnCloseUp( Self_ );
     DTN_DATETIMECHANGE:
       {$IFDEF NIL_EVENTS}
-      if  Assigned( Self_.EV.fOnChange ) then
+      if  Assigned( Self_.EV.fOnChangeCtl ) then
       {$ENDIF}
-          Self_.EV.fOnChange( Self_ );
+          Self_.EV.fOnChangeCtl( Self_ );
     DTN_USERSTRING:
       {$IFDEF NIL_EVENTS}
       if  Assigned( Self_.EV.fOnDTPUserString ) then
@@ -37869,7 +37870,7 @@ begin
   {$ENDIF}
    {$IFDEF USE_MHTOOLTIP}
    {$DEFINE destroy}
-   fHint.Free;
+   /////fHint.Free;
    {$UNDEF destroy}
    {$ENDIF USE_MHTOOLTIP}
    {$IFDEF DEBUG}
@@ -41171,7 +41172,7 @@ begin
            {$IFDEF NIL_EVENTS} Assigned( PP.fExMsgProc ) and {$ENDIF}
            PP.fExMsgProc( @Self, Msg )) then
         begin
-          TranslateMessage( Msg );
+          TranslateMessage( Windows.TMsg( Msg ) );
           DispatchMessage( Msg );
           {$IFDEF PSEUDO_THREADS}
           if Assigned( MainThread ) then
@@ -41418,7 +41419,7 @@ begin
          end else
          if Integer(Cmd) = fCommandActions.aChange then
          begin
-            if Assigned( EV.fOnChange ) then EV.fOnChange( Self_ );
+            if Assigned( EV.fOnChangeCtl ) then EV.fOnChangeCtl( Self_ );
          end else
          if Integer(Cmd) = fCommandActions.aSelChange then
          begin
@@ -42882,6 +42883,30 @@ begin
   Top := (PCR.Bottom - PCR.Top - Height) div 2;
 end;
 {$ENDIF ASM_VERSION}
+
+function TControl.CenterOnForm( Form1: PControl ): PControl;
+var PCR, DR: TRect;
+begin
+  Result := @Self;
+  if  (Form1 = nil) then
+      PCR := MakeRect( 0, 0, GetSystemMetrics( SM_CXSCREEN ), GetSystemMetrics( SM_CYSCREEN ) )
+  else
+      PCR := Form1.BoundsRect;
+  GetWindowHandle;
+  Left := PCR.Left + (PCR.Right - PCR.Left - Width) div 2;
+  Top := PCR.Top + (PCR.Bottom - PCR.Top - Height) div 2;
+  PCR := BoundsRect;
+  DR := GetDesktopRect;
+  if  PCR.Right > DR.Right then
+      OffsetRect( PCR, DR.Right - PCR.Right, 0 );
+  if  PCR.Bottom > DR.Bottom then
+      OffsetRect( PCR, 0, DR.Bottom - PCR.Bottom );
+  if  PCR.Left < DR.Left then
+      OffsetRect( PCR, DR.Left - PCR.Left, 0 );
+  if  PCR.Top < DR.Top then
+      OffsetRect( PCR, 0, DR.Top - PCR.Top );
+  BoundsRect := PCR;
+end;
 
 {$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
 function TControl.GetHasBorder: Boolean;
@@ -48792,6 +48817,7 @@ begin
      Result := Result or ILD_MASK
   {else
      Result := Result or ILD_NORMAL}; // ILD_NORMAL = 0
+  Result := Result or WORD(FOverlayIdx shl 8);
 end;
 
 {$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
@@ -51040,6 +51066,19 @@ begin
   end;
 end;
 
+function TControl.TBBtnEvent( Idx: Integer ): TOnToolbarButtonClick;
+var EventRec: PTBButtonEvent;
+begin
+  Result := nil;
+  if  DF.fTBevents = nil then Exit;
+  if  Idx < DF.fTBevents.Count then
+  begin
+      EventRec := DF.fTBevents.{$IFDEF TLIST_FAST} Items {$ELSE} fItems {$ENDIF}
+                  [ Idx ];
+      Result := EventRec.Event;
+  end;
+end;
+
 procedure TControl.TBResetImgIdx( BtnID, BtnCount: Integer );
 begin
   while BtnCount > 0 do
@@ -51199,6 +51238,16 @@ begin
   end;
 end;
 {$ENDIF ASM_VERSION}
+
+function TControl.TBBtnTooltip( BtnID: Integer ): KOLString;
+var J: Integer;
+begin
+    Result := '';
+    if  DF.fTBttCmd = nil then Exit;
+    J := DF.fTBttCmd.IndexOf( Pointer( BtnID ) );
+    if  J < 0 then Exit;
+    Result := DF.fTBttTxt.Items[ J ];
+end;
 
 procedure ToolbarSetTooltips( Toolbar: PControl; BtnID1st: Integer;
   const Tooltips: array of PKOLChar );
@@ -58669,9 +58718,9 @@ begin
       EV.fOnSelChange( @Self )
   else
   {$IFDEF NIL_EVENTS}
-  if  Assigned( EV.fOnChange ) then
+  if  Assigned( EV.fOnChangeCtl ) then
   {$ENDIF}
-      EV.fOnChange( @Self );
+      EV.fOnChangeCtl( @Self );
 end;
 
 {$IFNDEF NOT_USE_RICHEDIT}
@@ -61611,7 +61660,38 @@ end;
 function TControl.DefaultBtnProc(var Msg: TMsg;
   var Rslt: Integer): Boolean;
 var Btn: PControl;
-    F, dfltBtn, cnclBtn: PControl;
+    F: PControl;
+    //dfltBtn, cnclBtn: PControl;
+
+    procedure FindBtn( key: Word; s: PKOLChar; for_dflt: Boolean );
+    var Ctl: PControl;
+    begin
+      Ctl := Pointer( F.PropInt[ s ] );
+      if  (Msg.wParam = key) and
+          (Ctl <> nil) and
+          Ctl.ToBeVisible and
+          Ctl.Enabled and
+          ( not for_dflt or
+            for_dflt and
+          ( (F.DF.fCurrentControl=nil) or
+            ({$IFDEF USE_FLAGS} not(G6_CancelBtn in F.DF.fCurrentControl.fFlagsG6)
+            {$ELSE} not F.DF.fCurrentControl.fCancelBtn {$ENDIF} and
+            {$IFDEF USE_FLAGS} not(G5_IgnoreDefault in F.DF.fCurrentControl.fFlagsG5)
+            {$ELSE} not F.DF.fCurrentControl.fIgnoreDefault {$ENDIF})
+            or (F.DF.fCurrentControl = Ctl)
+          ) ) then
+          Btn := Ctl
+      else
+      if  for_dflt
+      AND (Msg.wParam = VK_RETURN) and
+          (F.DF.fAllBtnReturnClick or DF.fAllBtnReturnClick)
+      and (F.ActiveControl <> nil) and
+          (F.ActiveControl.ToBeVisible) and
+          {$IFDEF USE_FLAGS} (G5_IsButton in F.ActiveControl.fFlagsG5)
+          {$ELSE} (F.ActiveControl.IsButton) {$ENDIF}
+      and (F.ActiveControl.Count = 0) then
+          Btn := F.ActiveControl;
+    end;
 begin
   {$IFDEF NIL_EVENTS}
   if  Assigned( EV.fOldOnMessage ) then
@@ -61631,6 +61711,9 @@ begin
   if  ((Msg.message = WM_KEYDOWN) or (Msg.message = WM_KEYUP)) and
       ((Msg.wParam = VK_RETURN) or (Msg.wParam = VK_ESCAPE)) then
   begin
+      FindBtn( VK_RETURN, @DFLT_BTN, TRUE );
+      FindBtn( VK_ESCAPE, @CNCL_BTN, FALSE );
+      (*
       dfltBtn := Pointer( F.PropInt[ @DFLT_BTN ] ); // .DF.fDefaultBtnCtl;
       cnclBtn := Pointer( F.PropInt[ @CNCL_BTN ] ); //.DF.fCancelBtnCtl;
       if  (Msg.wParam = VK_RETURN) and
@@ -61660,6 +61743,7 @@ begin
           {$ELSE} (F.ActiveControl.IsButton) {$ENDIF}
       and (F.ActiveControl.Count = 0) then
           Btn := F.ActiveControl;
+      *)
       if Btn <> nil then
       begin
         if Msg.message = WM_KEYDOWN then
@@ -62246,14 +62330,14 @@ begin                                                                           
      fFont := fFont.Assign( AParent.fFont );                                    //
      if fFont <> nil then                                                       //
      begin                                                                      //
-       fFont.fOnChange := FontChanged;                                          //
+       fFont.fOnGTChange := FontChanged;                                          //
        FontChanged( fFont );                                                    //
      end;                                                                       //
      fColor := AParent.fColor;                                                  //
      fBrush := fBrush.Assign( AParent.fBrush );                                 //
      if fBrush <> nil then                                                      //
      begin                                                                      //
-       fBrush.fOnChange := BrushChanged;                                        //
+       fBrush.fOnGTChange := BrushChanged;                                        //
        BrushChanged( fBrush );                                                  //
      end;                                                                       //
   end;                                                                          //
@@ -63579,7 +63663,7 @@ begin new( Result, Create );
            Result.fFont := Result.fFont.Assign( AParent.fFont );
            if Result.fFont <> nil then
                 begin  Result.fFont.fParentGDITool := AParent.fFont;
-             Result.fFont.fOnChange := Result.FontChanged;
+             Result.fFont.fOnGTChange := Result.FontChanged;
              Result.FontChanged( Result.fFont );
            end;
       end;

@@ -58,6 +58,10 @@ const
   MS_RADIO_GETVOL:PAnsiChar = 'mRadio/SetVol';
 
 {
+  wParam,lParam = 0
+}
+  MS_RADIO_MUTE:PAnsiChar = 'mRadio/Mute';
+{
   Send command to mRadio
   wParam: command (see MRC_* constant)
   lParam: value (usually 0)

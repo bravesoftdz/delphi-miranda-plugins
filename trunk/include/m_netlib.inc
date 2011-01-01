@@ -137,6 +137,8 @@ const
 
   FD_SETSIZE = 65;
 
+  NETLIBHTTPREQUEST_V1_SIZE = 44;
+
 type
     { forward typed pointers to records }
   PNETLIBOPENCONNECTION = ^TNETLIBOPENCONNECTION;
@@ -256,19 +258,21 @@ type
 
   { PNETLIBHTTPREQUEST = ^TNETLIBHTTPREQUEST, defined above because this is
   forward referenced from there }
+
   TNETLIBHTTPREQUEST = record
     cbSize       :int;
-    requestType  :int;               // REQUEST_* constant
+    requestType  :int;                // REQUEST_* constant
     flags        :DWORD;
     szUrl        :PAnsiChar;
     { doesn't contain Content-Length, it'll be added automatically }
     headers      :^ANETLIBHTTPHEADER; // pointer to an array of em?
-    headersCount :int;               // yes they do
-    pData        :PAnsiChar;             // data to be sent on POST request
-    dataLength   :int;               // must be 0 for REQUEST_GET/REQUEST_CONNECT
+    headersCount :int;                // yes they do
+    pData        :PAnsiChar;          // data to be sent on POST request
+    dataLength   :int;                // must be 0 for REQUEST_GET/REQUEST_CONNECT
     resultCode   :int;
     szResultDescr:PAnsiChar;
     nlc          :THANDLE;
+    timeout      :int;                // Mirver 9.0+
   end;
 
   PNETLIBBUFFER = ^TNETLIBBUFFER;
@@ -774,6 +778,7 @@ type
   NNR_UNICODE = 1;
 // Inits a required security provider. Right now only NTLM is supported
 // Returns HANDLE = NULL on error or non-null value on success
+// Known providers: Basic, NTLM, Negotiate, Kerberos, GSSAPI - (Kerberos SASL)
   MS_NETLIB_INITSECURITYPROVIDER:PAnsiChar = 'Netlib/InitSecurityProvider';
 
 type

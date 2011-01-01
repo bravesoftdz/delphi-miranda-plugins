@@ -2,7 +2,7 @@ unit IcoButtons;
 
 interface
 
-uses KOL;
+uses windows, KOL;
 
 const
   AST_NORMAL  = 0;
@@ -24,6 +24,9 @@ type
     procedure SetAction(val:integer);
     function  GetAction:integer;
     function  GetState:integer;
+    procedure myPaint(Sender: PControl; DC: HDC);
+    procedure myMouseDown (Sender:PControl; var Mouse:TMouseEventData);
+    procedure myMouseUp   (Sender:PControl; var Mouse:TMouseEventData);
     procedure myMouseEnter(Sender: PObj);
     procedure myMouseLeave(Sender: PObj);
     procedure myCtrlBtnClick(Sender: PObj);
@@ -44,7 +47,7 @@ function CreateIcoButton(AOwner: PControl; pGetIconProc:tGetIconProc;
 
 implementation
 
-uses windows, messages;
+uses messages;
 
 type
   pIcoBtnData = ^tIcoBtnData;
@@ -135,6 +138,69 @@ begin
 //  PControl(Sender).Parent.Update; //??
 end;
 
+procedure TimerProc(wnd:HWND;uMsg:cardinal;idEvent:cardinal;dwTime:dword); stdcall;
+begin
+  PControl(IdEvent).OnClick(PControl(IdEvent));
+end;
+
+procedure tIcoButton.myMouseDown(Sender:PControl; var Mouse:TMouseEventData);
+var
+  D: PIcoBtnData;
+begin
+  D:=Sender.CustomData;
+  if D.checking then
+  begin
+    if D.active=D.ico_pressed then
+      D.active:=D.ico_normal
+    else
+      D.active:=D.ico_pressed;
+  end
+  else
+  begin
+    if D.ico_pressed<>nil then
+      D.active:=D.ico_pressed
+    else
+      Sender.SetPosition(Sender.Position.X-2,Sender.Position.Y-2);
+
+    if D.rptvalue<>0 then
+    begin
+      D.rpttimer:=SetTimer(Sender.Handle,dword(Sender),D.rptvalue,@TimerProc);
+//      D.rpttimer:=SetTimer(Sender.GetWindowHandle,1,D.rptvalue,nil);
+    end;
+  end;
+  Sender.Update;
+end;
+
+procedure tIcoButton.myMouseUp(Sender:PControl; var Mouse:TMouseEventData);
+var
+  D: PIcoBtnData;
+  tp:TPOINT;
+begin
+  D:=Sender.CustomData;
+  if not D.checking then
+  begin
+    if D.rpttimer<>0 then
+    begin
+      KillTimer(0,D.rpttimer);
+      D.rpttimer:=0;
+    end;
+
+    if D.ico_pressed<>nil then
+    begin
+      tp.X:=Mouse.X;
+      tp.Y:=Mouse.Y;
+      // mouse still above button?
+      if (D.ico_hovered<>nil) and PtInRect(Sender.BoundsRect,tp) then
+        D.active:=D.ico_hovered
+      else
+        D.active:=D.ico_normal;
+    end
+    else
+      Sender.SetPosition(Sender.Position.X+2,Sender.Position.Y+2);
+    Sender.Update;
+  end;
+end;
+
 destructor tIcoButton.Destroy;
 var
   D: PIcoBtnData;
@@ -159,6 +225,14 @@ begin
     D.ico_pressed.Handle:=D.GetIcon(D.action,AST_PRESSED);
 end;
 
+procedure tIcoButton.myPaint(Sender: PControl; DC: HDC);
+var
+  D: PIcoBtnData;
+begin
+  D:=Sender.CustomData;
+  D.active.Draw(DC,0,0);
+end;
+
 function WndProcIcoButton(Sender:PControl; var Msg:TMsg; var Rslt:Integer):boolean;
 var
   k:HDC;
@@ -169,7 +243,7 @@ begin
   D:=Sender.CustomData;
   Result:=false;
   case msg.message of
-
+{
     WM_PAINT: begin
       k:=Msg.wParam;
       if k=0 then k:= BeginPaint(Sender.Handle, PaintStruct);
@@ -177,11 +251,11 @@ begin
       if Msg.wParam=0 then EndPaint(Sender.Handle, PaintStruct);
       Result:=True;
     end;
-
+}
     WM_TIMER: begin
       Sender.OnClick(Sender);
     end;
-
+{
     WM_LBUTTONDBLCLK,
     WM_LBUTTONDOWN : begin  // Change from normal to pressed
       if D.checking then
@@ -206,7 +280,8 @@ begin
       Sender.Update;
 //      Sender.Parent.Update;
     end;
-
+}
+{
     WM_LBUTTONUP: begin // Change from pressed to normal
       if not D.checking then
       begin
@@ -232,6 +307,7 @@ begin
   //      Sender.Parent.Update;
       end;
     end;
+}
   end;
 end;
 
@@ -248,9 +324,12 @@ begin
   GetMem(D,SizeOf(TIcoBtnData));
   Result.CustomData:=D;
 
+  Result.OnMouseDown :=Result.myMouseDown;
+  Result.OnMouseUp   :=Result.myMouseUp;
   Result.OnMouseEnter:=Result.myMouseEnter;
   Result.OnMouseLeave:=Result.myMouseLeave;
   Result.OnClick     :=Result.myCtrlBtnClick;
+  Result.OnPaint     :=Result.myPaint;
 
   Result.AsCheckbox:=false;
   Result.action:=action;
@@ -287,7 +366,7 @@ begin
 
   Result.SetSize(16,16);
   Result.SetPosition(0,0);
-  Result.AttachProc(WndProcIcoButton);
+//  Result.AttachProc(WndProcIcoButton);
 end;
 
 end.
