@@ -52,6 +52,7 @@ var
   hsSettings,
   hsSetVol,
   hsGetVol,
+  hsMute,
   hsCommand,
   hsExport,
   hsImport,

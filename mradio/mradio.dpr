@@ -57,6 +57,7 @@ procedure ConstructMsg(astr:PWideChar;status:integer=-1;astr1:PWideChar=nil); fo
 {$include i_service.inc}
 {$include i_myservice.inc}
 {$include i_frame.inc}
+{$include i_tray.inc}
 {$include i_visual.inc}
 {$include i_optdlg.inc}
 
@@ -201,6 +202,7 @@ end;
 
 function PreShutdown(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
+  DestroyHiddenWindow;
   DestroyFrame();
   MyFreeBASS;
   DBWriteDWord(0,PluginName,optLastStn,ActiveContact);
@@ -212,6 +214,7 @@ begin
     DestroyServiceFunction(hsSettings);
     DestroyServiceFunction(hsSetVol);
     DestroyServiceFunction(hsGetVol);
+    DestroyServiceFunction(hsMute);
     DestroyServiceFunction(hsCommand);
     DestroyServiceFunction(hsEqOnOff);
 
@@ -280,6 +283,7 @@ begin
       hsSettings:=CreateServiceFunction(MS_RADIO_SETTINGS,@Service_RadioSettings);
       hsSetVol  :=CreateServiceFunction(MS_RADIO_SETVOL  ,@Service_RadioSetVolume);
       hsGetVol  :=CreateServiceFunction(MS_RADIO_GETVOL  ,@Service_RadioGetVolume);
+      hsMute    :=CreateServiceFunction(MS_RADIO_MUTE    ,@Service_RadioMute);
       hsCommand :=CreateServiceFunction(MS_RADIO_COMMAND ,@ControlCenter);
       hsEqOnOff :=CreateServiceFunction(MS_RADIO_EQONOFF ,@Service_EqOnOff);
 
@@ -294,6 +298,7 @@ begin
       contexthook  :=HookEvent(ME_CLIST_PREBUILDCONTACTMENU,@OnContactMenu);
     end;
 
+    CreateMIMTrayMenu;
     PluginStatus:=ID_STATUS_OFFLINE;
   end;
   mFreeMem(custom);

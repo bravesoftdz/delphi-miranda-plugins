@@ -1,7 +1,26 @@
 {*******************************************************************************
-  delpjicommctrl.inc
+  delpicommctrl.inc
   -- included in KOL.pas --
 *******************************************************************************}
+
+{$I MsgDecode.pas}
+type
+    TMsg = packed record
+    CASE Integer OF
+    0:  (
+        hwnd: HWND;
+        message: UINT;
+        wParam: WPARAM;
+        lParam: LPARAM;
+        time: DWORD;
+        pt: TPoint;
+        );
+    //1:  ( Bmsg: Windows.TMsg; );
+    2:  ( Cmsg: TMsgDecoded; );
+    end;
+
+    tagMSG = TMsg;
+
 
 ////////////////////////////////////////////////////////////////////////////
 // this part of unit contains definitions moved here from CommCtrl.pas

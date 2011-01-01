@@ -126,6 +126,17 @@ begin
   result:=ORD(doRecord);
 end;
 
+function Service_RadioMute(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+begin
+  if gVolume=0 then
+    gVolume:=-1
+  else
+    gVolume:=-gVolume;
+  Result:=CallService(MS_RADIO_SETVOL,gVolume,0);
+  if hVolFrmCtrl<>0 then
+    EnableWindow(hVolFrmCtrl,gVolume>=0);
+end;
+
 function Service_RadioGetVolume(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
   result:=gVolume;
@@ -139,11 +150,12 @@ begin
   DBWriteByte(0,PluginName,optVolume,ABS(wParam));
   if lParam<>2 then // not from Frame
     if hVolFrmCtrl<>0 then
-      SendMessage(hVolFrmCtrl,TBM_SETPOS,1,wParam);
+      SendMessage(hVolFrmCtrl,TBM_SETPOS,1,ABS(wParam));
 
   if lParam<>1 then // not from Settings
     if hVolCtrl<>0 then
-      SendMessage(hVolCtrl,TBM_SETPOS,1,wParam);
+      SendMessage(hVolCtrl,TBM_SETPOS,1,ABS(wParam));
+
 end;
 
 function Service_EqOnOff(wParam:WPARAM;lParam:LPARAM):int;cdecl;

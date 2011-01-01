@@ -82,14 +82,15 @@ begin
   mi.cbSize    :=sizeof(mi);
 //  mi.popupPosition:=MenuUserInfoPos;
   mi.pszService:=MS_RADIO_RECORD;
-  mi.szName.a:='Start/Stop Record';
+  mi.szName.a  :='Start/Stop Record';
   hCMenuItemRec:=pluginLink^.CallService(MS_CLIST_ADDCONTACTMENUITEM,0,dword(@mi));
 
 //!!  mi.flags        :=CMIF_NOTOFFLINE or CMIF_NOTOFFLIST;
   mi.hIcon      :=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnOn));
   mi.pszService :=MS_RADIO_PLAYSTOP;
-  mi.szName.a:='Start/Stop broadcasting';
+  mi.szName.a   :='Start/Stop broadcasting';
   hCMenuItemPlay:=PluginLink^.CallService(MS_CLIST_ADDCONTACTMENUITEM,0,dword(@mi));
+
 end;
 
 {

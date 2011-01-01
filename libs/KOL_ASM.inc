@@ -1733,10 +1733,10 @@ end;
 procedure TCanvas.Changing;
 asm
         PUSHAD
-        MOV      ECX, [EAX].fOnChange.TMethod.Code
+        MOV      ECX, [EAX].fOnChangeCanvas.TMethod.Code
         JECXZ    @@exit
         XCHG     EDX, EAX
-        MOV      EAX, [EDX].fOnChange.TMethod.Data
+        MOV      EAX, [EDX].fOnChangeCanvas.TMethod.Data
         CALL     ECX
 @@exit:
         POPAD
@@ -7395,7 +7395,7 @@ asm     //cmd    //opd
         CMP      CX, [EBX].TControl.fCommandActions.aLeave
         {$ENDIF}
         JE       @@goEvent
-        //LEA      EAX, [EBX].TControl.EV.fOnChange
+        //LEA      EAX, [EBX].TControl.EV.fOnChangeCtl
         SUB      EAX, 16
         {$IFDEF  COMMANDACTIONS_OBJ}
         CMP      CX, [ESI].TCommandActionsObj.aChange
@@ -11374,8 +11374,8 @@ asm
         CALL     CreateCompatibleDC
         CALL     NewCanvas
         MOV      [EBX].fCanvas, EAX
-        MOV      [EAX].TCanvas.fOnChange.TMethod.Code, offset[CanvasChanged]
-        MOV      [EAX].TCanvas.fOnChange.TMethod.Data, EBX
+        MOV      [EAX].TCanvas.fOnChangeCanvas.TMethod.Code, offset[CanvasChanged]
+        MOV      [EAX].TCanvas.fOnChangeCanvas.TMethod.Data, EBX
         CALL     TCanvas.GetBrush
         XOR      EDX, EDX
         MOV      ECX, [EBX].fBkColor
