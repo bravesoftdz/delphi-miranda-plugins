@@ -10,6 +10,7 @@ var
   sl:PWStrListEx;
   p:pWideChar;
   i:integer;
+  flag:integer;
 begin
   result:=CreatePopupMenu;
   if result<>0 then
@@ -33,7 +34,11 @@ begin
     sl.Sort(false);
     for i:=0 to sl.Count-1 do
     begin
-      AppendMenuW(result,MF_STRING,sl.Objects[i],pWideChar(sl.Items[i]));
+      if (i=0) or ((i mod 20)<>0) then
+        flag:=MF_STRING
+      else
+        flag:=MF_STRING or MF_MENUBARBREAK;
+      AppendMenuW(result,flag,sl.Objects[i],pWideChar(sl.Items[i]));
     end;
     sl.Clear;
     sl.Free;
@@ -92,6 +97,7 @@ begin
         CallService(MS_RADIO_COMMAND,MRC_STOP,0);
       end;
     else // choose station
+//      CallService(MS_RADIO_COMMAND,MRC_PLAY,id);
       Service_RadioPlayStop(id,0);
     end;
     DestroyMenu(menu);
