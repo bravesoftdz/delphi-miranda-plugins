@@ -150,6 +150,7 @@ begin
       mi.cbSize    :=sizeof(mi);
       mi.pszService:='mRadio/MakeTrayMenu';
       mi.szName.a  :='mRadio';
+      mi.hIcon     :=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnSettings));
       PluginLink^.CallService(MS_CLIST_ADDTRAYMENUITEM,0,dword(@mi));
     end;
 end;

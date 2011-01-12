@@ -14,7 +14,7 @@
   Key Objects Library (C) 2000 by Kladov Vladimir.
 
 ****************************************************************
-* VERSION 3.04+
+* VERSION 3.05+
 ****************************************************************
 
   K.O.L. - is a set of objects to create small programs
@@ -7324,7 +7324,9 @@ type
     procedure Delete( Idx: Integer );
     {* |<#listbox>
        |<#combo>
-       Only for listbox and combobox. }
+       |<#listview>
+       |<#treeview>
+       Only listed controls. }
     procedure Clear;
     {* Clears object content. Has different sense for different controls.
        E.g., for label, editbox, button and other simple controls it
@@ -11485,7 +11487,7 @@ function AnsiCompareStr(const S1, S2: KOLString): Integer;
 function _AnsiCompareStr(S1, S2: PKOLChar): Integer;
 {* The same, but for PChar ANSI strings }
 function AnsiCompareStrNoCase(const S1, S2: KOLString): Integer;
-{* AnsiCompareStr compares S1 to S2, with case-sensitivity. The compare
+{* AnsiCompareStrNoCase compares S1 to S2, without case-sensitivity. The compare
   operation is controlled by the current Windows locale. The return value
   is the same as for CompareStr. }
 function _AnsiCompareStrNoCase(S1, S2: PKOLChar): Integer;
@@ -13565,7 +13567,7 @@ const
   #$B0#0 +   // EM_GETSEL
   #$BB#0 +   // EM_LINEINDEX
   #202 +
-  #$BA#0 +   // EM_SETSEL
+  #$B1#0 +   // EM_SETSEL
   #202 +
   #$C2#0 +   // EM_REPLACESEL
   #201 +     // ES_LEFT
@@ -13792,7 +13794,9 @@ const
   #201 +
   #4#$10 +   // LVM_GETITEMCOUNT
   #47#$10 +  // LVM_SETITEMCOUNT
-  #211 +
+  //#211 +
+  #206 + #8#$10 // LVM_DELETEITEM
+  + #204 +
   #50#$10 +  // LVM_GETSELECTEDCOUNT
   #44#$10 +  // LVM_GETITEMSTATE
   #201 +
@@ -13818,12 +13822,12 @@ const
     aGetItemData: 0;
     aSetItemData: 0;
     aAddItem: 0;
-    aDeleteItem: 0;
+    aDeleteItem: LVM_DELETEITEM;
     aInsertItem: 0;
     aFindItem: 0;
     aFindPartial: 0;
-    bItem2Pos: 0;
-    bPos2Item: 0;
+      bItem2Pos: 0;
+      bPos2Item: 0;
     aGetSelCount: { $8000 or} LVM_GETSELECTEDCOUNT;
     aGetSelected: LVM_GETITEMSTATE;
     aGetSelRange: 0;
@@ -13858,7 +13862,9 @@ const
   {$IFDEF UNICODE_CTRLS} #$34#$FE {$ELSE} #$65#$FE {$ENDIF} + // TVN_ENDLABELEDIT(W)
   {$IFDEF UNICODE_CTRLS} #$3E#$FE {$ELSE} #$6E#$FE {$ENDIF} + // TVN_SELCHANGED(W)
   #5#$11 + // TVM_GETCOUNT
-  #229 +
+  #207 +
+  #1#$11 + // TVM_DELETEITEM
+  #221 +
   #9#$11 + // TVM_SETIMAGELIST
   #29#$11 + // TVM_SETBKCOLOR
   #4#$11;   // TVM_GETITEMRECT
@@ -13879,7 +13885,7 @@ const
     aGetItemData: 0;
     aSetItemData: 0;
     aAddItem: 0;
-    aDeleteItem: 0;
+    aDeleteItem: TVM_DELETEITEM;
     aInsertItem: 0;
     aFindItem: 0;
     aFindPartial: 0;
@@ -22130,8 +22136,8 @@ end;
 function CompareAnsiRecNoCase( R: PSortAnsiRec; const e1, e2: Integer ): Integer;
 begin
     Result := _AnsiCompareStrNoCaseA_Slow(
-        R.A[AnsiChar(e1)],
-        R.A[AnsiChar(e2)]
+        R.A[AnsiChar(e1)] + 1,
+        R.A[AnsiChar(e2)] + 1
     );
 end;
 
@@ -22203,14 +22209,16 @@ end;
 function _AnsiCompareStrNoCaseA_Fast(S1, S2: PAnsiChar): Integer;
 var c: AnsiChar;
     R: TSortAnsiRec;
-    Buf: array[ 0..511 ] of AnsiChar;
+    Buf: array[ 0..767 ] of AnsiChar;
     P: PAnsiChar;
 begin
     P := @Buf[0];
     for c := Low(c) to High(c) do
     begin
-        P^ := c;
         R.A[c] := P;
+        P^ := c;
+        inc( P );
+        P^ := AnsiLowerCase( c )[1];
         inc( P );
         P^ := #0;
         inc( P );
@@ -22220,7 +22228,7 @@ begin
     for c := Succ(Low(c)) to High(c) do
     begin
         //R.X[c] := Byte(c);
-        if _AnsiCompareStrNoCaseA_Slow( R.A[Pred(c)], R.A[c] ) = 0 then
+        if _AnsiCompareStrNoCaseA_Slow( R.A[Pred(c)] + 1, R.A[c] + 1 ) = 0 then
         begin
             if  _AnsiCompareStrA( R.A[Pred(c)], R.A[c] ) < 0 then
             begin
@@ -22230,7 +22238,7 @@ begin
         //   R.X[c] := R.X[Pred(c)];
     end;
     for c := Low(c) to High(c) do
-        SortAnsiOrderNoCase[AnsiChar(R.A[c][0])] := Ord(c); // R.X[c];
+        SortAnsiOrderNoCase[AnsiChar(R.A[c][0])] := Ord( R.A[c][1] ); // Ord(c); // R.X[c];
     _AnsiCompareStrNoCaseA := _AnsiCompareStrNoCaseA_Fast2;
     Result := _AnsiCompareStrNoCaseA_Fast2( S1, S2 );
 end;
@@ -23459,17 +23467,23 @@ var FD: TFindFileData;
     //F: DWORD;
     LFT: TFileTime;
     Hi, Lo: Word;
+    e: DWORD;
 {$ELSE}
 var Code: Integer;
 {$ENDIF}
 begin
   {$IFDEF FILE_EXISTS_EX}
   Result := FALSE;
-  if not Find_First( Filename, FD ) then Exit;
-  if FD.dwFileAttributes and FILE_ATTRIBUTE_DIRECTORY <> 0 then Exit;
-  FileTimeToLocalFileTime( FD.ftLastWriteTime, LFT );
-  if FileTimeToDosDateTime( LFT, Hi, Lo ) then Result := TRUE;
-  Find_Close( FD );
+  e := SetErrorMode( SEM_NOOPENFILEERRORBOX or SEM_FAILCRITICALERRORS );
+  TRY
+      if not Find_First( Filename, FD ) then Exit;
+      if FD.dwFileAttributes and FILE_ATTRIBUTE_DIRECTORY <> 0 then Exit;
+      FileTimeToLocalFileTime( FD.ftLastWriteTime, LFT );
+      if FileTimeToDosDateTime( LFT, Hi, Lo ) then Result := TRUE;
+      Find_Close( FD );
+  FINALLY
+      SetErrorMode( e );
+  END;
   {$ELSE}
   Code := GetFileAttributes(PKOLChar(FileName));
   Result := (Code <> -1) and (FILE_ATTRIBUTE_DIRECTORY and Code = 0);
@@ -25515,6 +25529,8 @@ begin
                   inc( S1 );
                   inc( S2 );
               end;
+              if  Result = 0 then
+                  Result := _AnsiCompareStr( Item1.cFileName, Item2.cFileName );
           end
             else
           {$ENDIF}
@@ -25528,6 +25544,8 @@ begin
           end;
           {$ELSE not UNICODE_CTRLS}
           Result := _AnsiCompareStrNoCaseA( S1, S2 );
+          if  Result = 0 then
+              Result := _AnsiCompareStr( S1, S2 );
           {$ENDIF}
         end
         else
@@ -37347,13 +37365,13 @@ begin
     Buffer[ 0 ] := #0;
     Self_.Perform( EM_GETTEXTRANGE, 0, Integer( @Range ) );
     {$IFDEF UNICODE_CTRLS}
-    s := Buf_W[0]; //todo: check it!
+    s := Buf_W; //todo: check it!
     {$ELSE}
         {$IFDEF _D3orHigher}
         if  (Buffer[ 1 ] = #0) and (Range.chrg.cpMax - Range.chrg.cpMin > 1) then
             begin
             {$WARNINGS OFF}
-            s := Buf_W[ 0 ];
+            s := Buf_W;
             {$WARNINGS ON}
             end
         else
@@ -38325,7 +38343,7 @@ asm
         CMOVZ    EAX, ECX
         {$ELSE}
         JNZ      @@2
-        XCHG     EAX, ECX
+        MOV      EAX, ECX
 @@2:    {$ENDIF}
 
         PUSH     EAX         // Params.Width := Width | CW_UseDefault
@@ -57418,7 +57436,8 @@ begin
   if LongBool( DF.fRECharFormatRec.dwMask and (CFM_COLOR or CFM_BACKCOLOR) ) then
     DF.fRECharFormatRec.dwEffects := DF.fRECharFormatRec.dwEffects and
                                not (CFE_AUTOCOLOR or CFE_AUTOBACKCOLOR);
-  Perform( EM_SETCHARFORMAT, RichAreas[ DF.fRECharArea ], Integer( @DF.fRECharFormatRec ) );
+  Perform( EM_SETCHARFORMAT, RichAreas[ DF.fRECharArea ],
+      Integer( {$IFDEF STATIC_RICHEDIT_DATA} @ {$ENDIF} DF.fRECharFormatRec ) );
 end;
 
 procedure TControl.RESetFontAttr1(const Index, Value: Integer);
@@ -65793,4 +65812,8 @@ finalization //.................................................................
 {$ENDIF INIT_FINIT}//-----------------------------------------------------------
 
 end.
+
+
+
+
 

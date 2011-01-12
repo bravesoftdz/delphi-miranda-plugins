@@ -88,7 +88,7 @@ end;
 procedure TWATFrame.SaveSettings;
 var
   D:pIcoGrpData;
-  DT:pTxtBlockData;
+  DT:pTextData;
 begin
   DBWriteByte  (0,PluginShort,opt_HideFrameM,ord(HideNoMusic));
   DBWriteByte  (0,PluginShort,opt_HideFrameP,ord(HideNoPlayer));
@@ -112,8 +112,8 @@ begin
   if TextBlock<>nil then
   begin
     TextBlock.Visible:=(ShowControls and scText)<>0;
-    DT:=Pointer(TextBlock.CustomObj);
-    DT.ChangeBkColor(BkColor);
+    DT:=Pointer(TextBlock.CustomData);
+//!!    DT.ChangeBkColor(BkColor);
   end;
 
   if Trackbar<>nil then
