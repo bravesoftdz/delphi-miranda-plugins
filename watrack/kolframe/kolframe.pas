@@ -6,7 +6,8 @@ interface
 implementation
 
 uses io,windows,kol,commdlg,messages,common,commctrl, KOLCCtrls,
-     wat_api,wrapper,global,m_api,hlpdlg,macros,dbsettings,waticons,mirutils,icobuttons;
+     wat_api,wrapper,global,m_api,hlpdlg,macros,dbsettings,waticons,mirutils,
+     icobuttons,textblock;
 
 {$R frm.res}
 

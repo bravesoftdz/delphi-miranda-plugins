@@ -1,5 +1,13 @@
 {Text Chunk processing: frame text output}
 
+const
+  colors:array [0..15] of dword = (
+    $00FFFFFF,$00000000,$007F0000,$00009300,
+    $000000FF,$0000007F,$009C009C,$00007FFC,
+    $0000FFFF,$0000FC00,$00939300,$00FFFF00,
+    $00FC0000,$00FF00FF,$007F7F7F,$00D2D2D2
+   );
+
 const // chunk type
   CT_TEXT    = $01;
   CT_TAB     = $09;
@@ -20,22 +28,10 @@ const // macro codes
   ctRGB            = $1000; // special code for RGB color values
 
   ctFontChanging   =
-       ctOpenBold or ctCloseBold or
-       ctOpenItalic or ctCloseItalic or
+       ctOpenBold      or ctCloseBold or
+       ctOpenItalic    or ctCloseItalic or
        ctOpenUnderline or ctCloseUnderline;
-{
-type
-  pChunk = ^tChunk;
-  tChunk = record
-    _type:integer;   // type
-    val  :integer;   // sign value or text length
-    txt  :pWideChar; // text value pointer
-    add  :integer;   // offset for text effect
-    dir  :integer;   // ping-pong directon
-  end;
-  pChunkArray = ^tChunkArray;
-  tChunkArray = array [0..1000] of tChunk;
-}
+
 procedure ProcessMacro(dc:hdc;Chunk:pChunk);
 var
   lf:TLOGFONT;
@@ -45,14 +41,16 @@ begin
     exit;
   if Chunk._Type=CT_NEWLINE then
     exit;
+
   case Chunk^._type shr 16 of
+
     ctCloseTextColor: begin
       SetTextColor(dc,Chunk^.add);
     end;
 
     ctCloseBkColor: begin
       SetBkColor(dc,Chunk^.add);
-      SetBkMode(dc,TRANSPARENT);
+      SetBkMode (dc,TRANSPARENT);
     end;
 
     ctOpenTextColor: begin
@@ -101,7 +99,7 @@ begin
   end;
 end;
 
-function tTxtBlockData.Macro(var src:pWideChar;var Chunk:pChunk):boolean;
+function Macro(var src:pWideChar;var Chunk:pChunk;TextColor,BkColor:TCOLORREF):boolean;
 const
   NumMacro = 10;
   macros:array [0..NumMacro-1] of record txt:pWideChar; len:integer; code:integer; end = (
@@ -126,6 +124,7 @@ begin
   lval:=0;
   ldir:=ppLeft;
   ladd:=0;
+  typ :=0;
   for i:=0 to NumMacro-1 do
   begin
     if StrCmpW(pc,macros[i].txt,macros[i].len)=0 then
@@ -277,56 +276,6 @@ begin
   inc(Chunk);
 end;
 
-function tTxtBlockData.Split(src:pWideChar):pChunkArray;
-var
-  Chunk:pChunk;
-  i:integer;
-begin
-  result:=nil;
-  if src=nil then exit;
-
-  i:=(StrLenW(src)+1)*SizeOf(tChunk); // last = 0 (powered finalization
-  mGetMem(result,i);
-  FillChar(result^,i,0);
-  Chunk:=@result[0];
-
-  while src^<>#0 do
-  begin
-    // signes
-    while not (((src^>='A') and (src^<='Z')) or
-               ((src^>='a') and (src^<='z')) or
-               ((src^>='0') and (src^<='9'))) do
-    begin
-      if (ORD(src^)>127) or (src^='{') then
-        break;
-      if src^<>#10 then
-        src:=CreateSignChunk(Chunk,src)
-      else
-        inc(src);
-      if src^=#0 then exit;
-    end;
-    // [b][/b][i][/i][u][/u][cf][/cf][bg][/bg]
-    if Macro(src,Chunk) then
-    begin
-    end
-    // "{" sign
-    else if src^='{' then // if not macro
-    begin
-      src:=CreateSignChunk(Chunk,src);
-    end
-    // Unicode/text
-    else
-    begin
-      src:=CreateTextChunk(Chunk,src);
-    end;
-  end;
-end;
-
-procedure DeleteChunks(var Chunk:pChunkArray);
-begin
-  mFreeMem(Chunk);
-end;
-
 procedure MeasureChunk(dc:HDC;Chunk:pChunk;var sz:TSIZE;block:Boolean);
 var
   p:pWideChar;
@@ -425,14 +374,16 @@ begin
   end;
 end;
 
-procedure tTxtBlockData.DrawLines(dc:HDC;Chunk:pChunk;rc:TRECT;justpaint:boolean);
+procedure tTextBlock.DrawLines(dc:HDC;Chunk:pChunk;rc:TRECT;justpaint:boolean);
 var
   sz:TSIZE;
   rc1:TRECT;
   w:integer;
   rgn:HRGN;
   ch:pChunk;
+  D:pTextData;
 begin
+  D:=pTextData(CustomData);
 //  InflateRect(rc,-10,-3);
   rgn:=CreateRectRgnIndirect(rc);
   CopyRect(rc1,rc);
@@ -448,7 +399,7 @@ begin
       begin
         //!!
         rc1.top:=rc.top;
-        if AlignCenter<>BST_UNCHECKED then
+        if (D.TextEffect and effCenter)<>0 then
           inc(rc1.left,(w-sz.cx) div 2);
 
         DrawLine(dc,Chunk,rc1)
@@ -456,11 +407,11 @@ begin
       else
       begin
         rc1.top:=rc.top;
-        if TextEffect=effRoll then
+        if Lo(D.TextEffect)=effRoll then
         begin
 // direction!!
 // sz - linesize ; w - frame width, chunk^add = chunk size
-          inc(sz.cx,RollGap);
+          inc(sz.cx,D.RollGap);
           rc1.left:=rc.left-Chunk^.add;
           if (sz.cx-Chunk^.add)<w then
           begin
@@ -470,7 +421,7 @@ begin
           end;
           if not justpaint then
           begin
-            inc(Chunk^.add,RollStep);
+            inc(Chunk^.add,D.RollStep);
             if Chunk^.add>=sz.cx then
               Chunk^.add:=0;
           end;
@@ -497,16 +448,16 @@ begin
           begin
             if Chunk^.dir=ppLeft then
             begin
-              inc(Chunk^.add,RollStep);
-              if (sz.cx-Chunk^.add)<(w-RollGap) then
+              inc(Chunk^.add,D.RollStep);
+              if (sz.cx-Chunk^.add)<(w-D.RollGap) then
               begin
                 Chunk^.dir:=ppRight;
               end;
             end
             else
             begin
-              dec(Chunk^.add,RollStep);
-              if Chunk^.add<=-RollGap then
+              dec(Chunk^.add,D.RollStep);
+              if Chunk^.add<=-D.RollGap then
               begin
                 Chunk^.dir:=ppLeft;
               end;
@@ -530,15 +481,17 @@ begin
   DeleteObject(rgn);
 end;
 
-procedure tTxtBlockData.DrawChunks(dc:HDC;Chunk:pChunk;rc:TRECT;justpaint:boolean);
+procedure tTextBlock.DrawChunks(dc:HDC;Chunk:pChunk;rc:TRECT;justpaint:boolean);
 var
   sz:TSIZE;
   rc1:TRECT;
   h:integer;
   w:integer;
+  D:pTextData;
 begin
-  SetBkMode(dc,TRANSPARENT);
-  if (TextEffect=effRoll) or (TextEffect=effPong) then
+  D:=pTextData(CustomData);
+  SetBkMode(dc,Windows.TRANSPARENT);
+  if (Lo(D.TextEffect)=effRoll) or (Lo(D.TextEffect)=effPong) then
   begin
     DrawLines(dc,Chunk,rc,justpaint);
     exit;
@@ -547,7 +500,7 @@ begin
   w:=rc.right-rc.left;
   h:=0;
 //!!
-  if AlignCenter<>BST_UNCHECKED then
+  if (D.TextEffect and effCenter)<>0 then
   begin
     MeasureLine(dc,Chunk,sz,w);
     inc(rc1.left,(w-sz.cx) div 2);
@@ -560,7 +513,7 @@ begin
       rc1.right:=rc1.left+sz.cx;
       if rc1.right>rc.right then //!!!
       begin
-        case TextEffect of
+        case Lo(D.TextEffect) of
           effCut: begin
 
             if rc1.left<rc.right then
@@ -589,7 +542,7 @@ begin
             inc(rc1.top,h);
             rc1.left:=rc.left;
         //!!
-            if AlignCenter<>BST_UNCHECKED then
+            if (D.TextEffect and effCenter)<>0 then
             begin
               MeasureLine(dc,Chunk,sz,w);
               inc(rc1.left,(w-sz.cx) div 2);
@@ -615,7 +568,7 @@ begin
         inc(rc1.top,h);
         rc1.left:=rc.left;
     //!!
-        if AlignCenter<>BST_UNCHECKED then
+        if (D.TextEffect and effCenter)<>0 then
         begin
           inc(Chunk);
           MeasureLine(dc,Chunk,sz,w);
@@ -630,4 +583,55 @@ begin
     end;
     inc(Chunk);
   end;
+end;
+
+function tTextBlock.Split(src:pWideChar):pChunkArray;
+var
+  Chunk:pChunk;
+  i:integer;
+begin
+  result:=nil;
+  if (src=nil) or (src^=#0) then exit;
+
+  i:=(StrLenW(src)+1)*SizeOf(tChunk); // last = 0 (powered finalization)
+  GetMem(result,i);
+  FillChar(result^,i,0);
+  Chunk:=@result[0];
+
+  while src^<>#0 do
+  begin
+    // signes
+    while not (((src^>='A') and (src^<='Z')) or
+               ((src^>='a') and (src^<='z')) or
+               ((src^>='0') and (src^<='9'))) do
+    begin
+      if (ORD(src^)>127) or (src^='{') then
+        break;
+      if src^<>#10 then
+        src:=CreateSignChunk(Chunk,src)
+      else
+        inc(src);
+      if src^=#0 then exit;
+    end;
+    // [b][/b][i][/i][u][/u][cf][/cf][bg][/bg]
+    if Macro(src,Chunk,pTextData(CustomData).TextColor,pTextData(CustomData).BkColor) then
+    begin
+    end
+    // "{" sign
+    else if src^='{' then // if not macro
+    begin
+      src:=CreateSignChunk(Chunk,src);
+    end
+    // Unicode/text
+    else
+    begin
+      src:=CreateTextChunk(Chunk,src);
+    end;
+  end;
+end;
+
+procedure DeleteChunks(var Chunk:pChunkArray);
+begin
+  FreeMem(Chunk);
+  Chunk:=nil;
 end;

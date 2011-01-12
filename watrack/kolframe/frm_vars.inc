@@ -33,7 +33,7 @@ type
     Form     :PControl;
     Trackbar :PTrackbar;
     Buttons  :PControl;
-    TextBlock:PControl;
+    TextBlock:PTextBlock;
 
     destructor Destroy; virtual;
     procedure Paint(Sender: PControl; DC: HDC);

@@ -146,6 +146,7 @@ begin
 
   RegisterIcons;
   CreateMenu;
+  CreateMIMTrayMenu;
 
   tbUsed:=false;
   onloadhook:=PluginLink^.HookEvent(ME_TTB_MODULELOADED,@OnTTBLoaded);
@@ -298,7 +299,6 @@ begin
       contexthook  :=HookEvent(ME_CLIST_PREBUILDCONTACTMENU,@OnContactMenu);
     end;
 
-    CreateMIMTrayMenu;
     PluginStatus:=ID_STATUS_OFFLINE;
   end;
   mFreeMem(custom);
