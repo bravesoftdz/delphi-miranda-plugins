@@ -14,6 +14,15 @@ uses io,windows,kol,commdlg,messages,common,commctrl, KOLCCtrls,
 {$include frm_data.inc}
 {$include frm_vars.inc}
 
+procedure MouseDown(DummySelf, Sender:PControl;var Mouse:TMouseEventData);
+var
+  wnd:HWND;
+begin
+  wnd:=GetParent(Sender.GetWindowHandle);
+  SendMessage(wnd,WM_SYSCOMMAND,
+     SC_MOVE or HTCAPTION,MAKELPARAM(Mouse.x,Mouse.y));
+end;
+
 // ---------------- frame functions ----------------
 
 procedure SetFrameTitle(title:pointer;icon:HICON;addflag:integer=FO_UNICODETEXT);
@@ -230,8 +239,9 @@ begin
     DBWriteWord(0,PluginShort,opt_FrmHeight,h);
 
     CallService(MS_CLIST_FRAMES_REMOVEFRAME,FrameCtrl.FrameId,0);
-    DestroyFrameWindow;
-    FrameCtrl.FrameId:=-1;
+
+    FrameCtrl.Free;
+    FrameCtrl:=nil;
   end;
 end;
 

@@ -1,5 +1,24 @@
 {Text}
 
+var
+  Template:pWideChar;
+const
+  TextLF:TLOGFONT = (
+    lfHeight        :-10;
+    lfWidth         :0;
+    lfEscapement    :0;
+    lfOrientation   :0;
+    lfWeight        :FW_DONTCARE;
+    lfItalic        :0;
+    lfUnderline     :0;
+    lfStrikeOut     :0;
+    lfCharSet       :DEFAULT_CHARSET;
+    lfOutPrecision  :OUT_DEFAULT_PRECIS;
+    lfClipPrecision :CLIP_DEFAULT_PRECIS;
+    lfQuality       :DEFAULT_QUALITY;
+    lfPitchAndFamily:DEFAULT_PITCH or FF_DONTCARE;
+    lfFaceName      :#0);
+
 const
   opt_FrmTxtClr :PAnsiChar = 'frame/frametextcolor';
   opt_FrmFont   :PAnsiChar = 'frame/framefont';
@@ -11,7 +30,7 @@ const
   opt_TxtTimer  :PAnsiChar = 'frame/texttimer';
   opt_FrameText :PAnsiChar = 'frame/frametext';
 
-procedure LoadSettings;
+procedure LoadTextSettings;
 begin
 //  RollTail    :=DBReadByte (0,PluginShort,opt_RollTail  ,20);
   FrameCtrl.TextBlock.RollStep  :=DBReadByte (0,PluginShort,opt_RollStep ,2);
@@ -22,39 +41,12 @@ begin
 
   Template:=DBReadUnicode(0,PluginShort,opt_FrameText);
   
-  if DBReadStruct(0,PluginShort,opt_FrmFont,@TextLF,SizeOf(TextLF))=0 then
-    InitFrame;
-  FrameCtrl.TextBlock.Font:=CreateFontIndirect(TextLF);
+  DBReadStruct(0,PluginShort,opt_FrmFont,@TextLF,SizeOf(TextLF));
+//  FrameCtrl.TextBlock.Font:=CreateFontIndirect(TextLF);
+  FrameCtrl.TextBlock.FontData:=TextLF;
 end;
 
-procedure SaveSettings;
-begin
-//  DBWriteByte   (0,PluginShort,opt_RollTail  ,RollTail);
-  DBWriteDWord(0,PluginShort,opt_FrmTxtClr,FrameCtrl.TextBlock.TextColor); // reaction on chunk?
-  DBWriteByte (0,PluginShort,opt_RollStep ,FrameCtrl.TextBlock.RollStep);
-  DBWriteByte (0,PluginShort,opt_RollGap  ,FrameCtrl.TextBlock.RollGap);
-  DBWriteWord (0,PluginShort,opt_FrmEffect,FrameCtrl.TextBlock.Effects);
-  DBWriteWord (0,PluginShort,opt_TxtTimer ,FrameCtrl.TextBlock.UpdateTime);
-
-  DBWriteStruct(0,PluginShort,opt_FrmFont,@TextLF,SizeOf(TextLF));
-  if FrameCtrl.TextBlock.Font<>0 then
-    DeleteObject(FrameCtrl.TextBlock.Font);
-  FrameCtrl.TextBlock.Font:=CreateFontIndirect(TextLF);
-
-  DBWriteUnicode(0,PluginShort,opt_FrameText,Template);
-  NewTemplate(TextBlock,Template);
-end;
-
-procedure MouseDown(Sender:PControl;var Mouse:TMouseEventData);
-var
-  wnd:HWND;
-begin
-  wnd:=GetParent(GetParent(Sender.GetWindowHandle));
-  SendMessage(wnd,WM_SYSCOMMAND,
-     SC_MOVE or HTCAPTION,MAKELPARAM(Mouse.x,Mouse.y));
-end;
-
-procedure UpdateTextBlock(TextBlock:PControl;force:boolean);
+procedure UpdateTextBlock(TextBlock:PTextBlock;force:boolean);
 var
   tmp:pWideChar;
 begin
@@ -65,20 +57,31 @@ begin
       exit;
   end;
   tmp:=pWideChar(CallService(MS_WAT_REPLACETEXT,0,dword(Template)));
-  TextBlock.Text:=tmp;
+  TextBlock.BlockText:=tmp;
   mFreeMem(tmp);
-  TextBlock.Invalidate;
+TextBlock.Invalidate;
 end;
 
-procedure NewTemplate(TextBlock:pControl; src:pWideChar);
+procedure SaveTextSettings(withtemplate:boolean);
 begin
-  mFreeMem(Template);
-  StrDupW(Template,src);
+//  DBWriteByte   (0,PluginShort,opt_RollTail  ,RollTail);
+  DBWriteDWord(0,PluginShort,opt_FrmTxtClr,FrameCtrl.TextBlock.TextColor); // reaction on chunk?
+  DBWriteByte (0,PluginShort,opt_RollStep ,FrameCtrl.TextBlock.RollStep);
+  DBWriteByte (0,PluginShort,opt_RollGap  ,FrameCtrl.TextBlock.RollGap);
+  DBWriteWord (0,PluginShort,opt_FrmEffect,FrameCtrl.TextBlock.Effects);
+  DBWriteWord (0,PluginShort,opt_TxtTimer ,FrameCtrl.TextBlock.UpdateTime);
 
-  UpdateTextBlock(TextBlock,true);
+  DBWriteStruct(0,PluginShort,opt_FrmFont,@TextLF,SizeOf(TLOGFONT));
+
+  if withtemplate then
+  begin
+    DBWriteUnicode(0,PluginShort,opt_FrameText,Template);
+    UpdateTextBlock(FrameCtrl.TextBlock,true);
+  end;
 end;
 
 function MakeTextBlock(AOwner:PControl;BkColor:TCOLORREF):pTextBlock;
 begin
   result:=MakeNewTextBlock(AOwner,BkColor);
+  result.OnMouseDown:=TOnMouse(MakeMethod(nil, @MouseDown));
 end;

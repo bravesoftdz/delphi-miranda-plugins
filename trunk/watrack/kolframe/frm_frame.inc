@@ -88,7 +88,6 @@ end;
 procedure TWATFrame.SaveSettings;
 var
   D:pIcoGrpData;
-  DT:pTextData;
 begin
   DBWriteByte  (0,PluginShort,opt_HideFrameM,ord(HideNoMusic));
   DBWriteByte  (0,PluginShort,opt_HideFrameP,ord(HideNoPlayer));
@@ -112,8 +111,7 @@ begin
   if TextBlock<>nil then
   begin
     TextBlock.Visible:=(ShowControls and scText)<>0;
-    DT:=Pointer(TextBlock.CustomData);
-//!!    DT.ChangeBkColor(BkColor);
+    TextBlock.BkColor:=BkColor;
   end;
 
   if Trackbar<>nil then
@@ -314,15 +312,6 @@ begin
   end;
 end;
 
-procedure TWATFrame.MouseDown(Sender:PControl;var Mouse:TMouseEventData);
-var
-  wnd:HWND;
-begin
-  wnd:=GetParent(Sender.GetWindowHandle);
-  SendMessage(wnd,WM_SYSCOMMAND,
-     SC_MOVE or HTCAPTION,MAKELPARAM(Mouse.x,Mouse.y));
-end;
-
 destructor TWATFrame.Destroy;
 var
   tmpBmp:HBITMAP;
@@ -383,7 +372,8 @@ begin
         Trackbar:=nil;
       end;
 
-      TextBlock:=MakeNewTextBlock(Form,BkColor);
+      TextBlock:=MakeTextBlock(Form,BkColor);
+      LoadTextSettings;
 
       if UseBkPicture then
       begin
@@ -400,13 +390,8 @@ begin
 
       OnPaint    :=FrameCtrl.Paint;
       OnResize   :=FrameCtrl.FrameResize;
-      OnMouseDown:=FrameCtrl.MouseDown;
+      OnMouseDown:=TOnMouse(MakeMethod(nil, @MouseDown));
     end;
     FrameCtrl.AdjustFrame;
   end;
-end;
-
-procedure DestroyFrameWindow;
-begin
-  FrameCtrl.Free;
 end;
