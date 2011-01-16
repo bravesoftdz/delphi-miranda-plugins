@@ -4,16 +4,22 @@ const
 
 function FrameTextDlg(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
 const
-  DlgInited:boolean=false;
+  DlgInited      :boolean=false;
+  TemplateChanged:Boolean=false;
 var
   tmp,tmp1:integer;
   tmpb:longbool;
   pcf:TCHOOSEFONT;
   lf:LOGFONT;
-  redraw:boolean;
 begin
   result:=0;
   case hMessage of
+    WM_DESTROY: begin
+      // new - if Apply, old - if cancel
+      if FrameCtrl<>nil then // for case when FrameCtrl was destryed already
+      FrameCtrl.TextBlock.FontData:=TextLF;
+    end;
+
     WM_INITDIALOG: begin
       DlgInited:=false;
       TranslateDialogDefault(Dialog);
@@ -42,18 +48,23 @@ begin
       SendDlgItemMessage(Dialog,IDC_MACRO_HELP,BM_SETIMAGE,IMAGE_ICON,
           CallService(MS_SKIN_LOADICON,SKINICON_OTHER_HELP,0));
 
+      TemplateChanged:=false;
       DlgInited:=true;
     end;
 
     WM_COMMAND: begin
-      if (wParam shr 16)=BN_CLICKED then
-      begin
-        case LoWord(wParam) of
-          IDC_MACRO_HELP: CallService(MS_WAT_MACROHELP,Dialog,0);
-          IDC_FRMFONT: begin
-            with pTextData(FrameCtrl.TextBlock.CustomData)^ do
-            begin
-              move(TextLF,lf,SizeOf(LOGFONT));
+      case (wParam shr 16) of
+        EN_CHANGE: begin
+          if Loword(wParam)=IDC_FRAME_TEXT then
+            TemplateChanged:=True;
+        end;
+
+        BN_CLICKED: begin
+          case LoWord(wParam) of
+            IDC_MACRO_HELP: CallService(MS_WAT_MACROHELP,Dialog,0);
+            IDC_FRMFONT: begin
+              lf:=FrameCtrl.TextBlock.FontData;
+//            lf:=TextLF;
               FillChar(pcf,sizeOf(pcf),0);
               with pcf do
               begin
@@ -61,14 +72,14 @@ begin
                 lpLogFont:=@lf;
                 Flags:=CF_EFFECTS+CF_FORCEFONTEXIST+CF_LIMITSIZE+CF_NOVERTFONTS+
                        CF_SCREENFONTS+CF_INITTOLOGFONTSTRUCT;
-                rgbColors:=TextColor;
+                rgbColors:=FrameCtrl.TextBlock.TextColor;
                 nSizeMin:=6;
                 nSizeMax:=32;
               end;
               if ChooseFont(pcf) then
               begin
-                move(lf,TextLF,SizeOf(LOGFONT));
-                TextColor:=pcf.rgbColors;
+                FrameCtrl.TextBlock.FontData:=lf; // paint directly
+                FrameCtrl.TextBlock.TextColor:=pcf.rgbColors;
                 SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
               end
               else
@@ -77,12 +88,11 @@ begin
           end;
         end;
       end;
+
       if DlgInited then
         case wParam shr 16 of
           BN_CLICKED,
           EN_CHANGE: begin
-//          if ((wParam shr 16)=EN_CHANGE) and (loword(wParam)=IDC_FRMTEXT) then
-//          Changed:=Changed or DLGED_CHGD or DLGED_PACK;
             SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
           end;
         end;
@@ -91,7 +101,7 @@ begin
     WM_NOTIFY: begin
       if PNMHdr(lParam)^.code=PSN_APPLY then
       begin
-        redraw:=false;
+//        redraw:=false;
 
         with FrameCtrl.TextBlock^ do
         begin
@@ -99,11 +109,11 @@ begin
           if tmp>MaxTxtScrollSpeed then
             tmp:=MaxTxtScrollSpeed;
 
-          if dword(tmp)<>UpdateTime then
+          if tmp<>UpdateTime then
           begin
             UpdateTime:=tmp;
 {
-            if UpdTimer<>0 then                    	
+            if UpdTimer<>0 then
               KillTimer(FrameWnd,UpdTimer);
             if (UpdInterval>0) and (FrameWnd<>0) then
               UpdTimer:=SetTimer(FrameWnd,TMR_TEXT,(MaxTxtScrollSpeed+1-UpdInterval)*100,nil)
@@ -117,39 +127,38 @@ begin
           else if IsDlgButtonChecked(Dialog,IDC_EFF_WRAP)<>BST_UNCHECKED then tmp:=effWrap
           else if IsDlgButtonChecked(Dialog,IDC_EFF_ROLL)<>BST_UNCHECKED then tmp:=effRoll
           else if IsDlgButtonChecked(Dialog,IDC_EFF_PONG)<>BST_UNCHECKED then tmp:=effPong;
-
-          tmp1:=IsDlgButtonChecked(Dialog,IDC_ALCENTER);
-          if (tmp1<>BST_UNCHECKED) <> ((Effects and effCenter)<>0) then
-          begin
-//!!
-            redraw:=true;
-          end;
+          if IsDlgButtonChecked(Dialog,IDC_ALCENTER)<>BST_UNCHECKED then
+            tmp:=tmp or effCenter;
+          Effects:=tmp;
 
           tmp1:=GetDlgItemInt(Dialog,IDC_ROLLSTEP,tmpb,false);
           if tmp1<>RollStep then
           begin
             RollStep:=tmp1;
-            redraw:=true;
           end;
           tmp1:=GetDlgItemInt(Dialog,IDC_ROLLGAP ,tmpb,false);
           if tmp1<>RollGap then
           begin
             RollGap:=tmp1;
-            redraw:=true;
           end;
   {
           tmp1:=GetDlgItemInt(Dialog,IDC_ROLLTAIL,tmpb,false);
           if tmp1<>RollTail then
           begin
             RollTail:=tmp1;
-            redraw:=true;
           end;
   }
 
-          mFreeMem(Template);
-          Template:=GetDlgText(Dialog,IDC_FRAME_TEXT);
+          if TemplateChanged then
+          begin
+            mFreeMem(Template);
+            Template:=GetDlgText(Dialog,IDC_FRAME_TEXT);
+          end;
 
-          SaveSettings;
+          TextLF:=FrameCtrl.TextBlock.FontData; // OK - saving for future?
+
+          SaveTextSettings(TemplateChanged);
+          TemplateChanged:=false;
         end;
       end;
     end;

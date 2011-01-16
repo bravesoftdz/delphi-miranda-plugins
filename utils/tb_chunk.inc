@@ -182,7 +182,7 @@ begin
         inc(src,macros[i].len);
         result:=true;
       end;
-
+(*
       if (typ=ctOpenBkColor) or (typ=ctOpenTextColor) then // processing color codes
       begin
         inc(pc,macros[i].len);
@@ -221,7 +221,7 @@ begin
         inc(src,macros[i].len);
         result:=true;
       end;
-
+*)
       break;
     end;
   end;
@@ -490,98 +490,100 @@ var
   D:pTextData;
 begin
   D:=pTextData(CustomData);
+
   SetBkMode(dc,Windows.TRANSPARENT);
-  if (Lo(D.TextEffect)=effRoll) or (Lo(D.TextEffect)=effPong) then
-  begin
-    DrawLines(dc,Chunk,rc,justpaint);
-    exit;
-  end;
-  CopyRect(rc1,rc);
-  w:=rc.right-rc.left;
-  h:=0;
-//!!
-  if (D.TextEffect and effCenter)<>0 then
-  begin
-    MeasureLine(dc,Chunk,sz,w);
-    inc(rc1.left,(w-sz.cx) div 2);
-  end;
-  while Chunk^._type<>0 do
-  begin
-    MeasureChunk(dc,Chunk,sz,false);
-    if sz.cx>0 then
+  case Lo(D.TextEffect) of
+    effRoll,effPong: begin
+      DrawLines(dc,Chunk,rc,justpaint);
+    end;
+  else
+    CopyRect(rc1,rc);
+    w:=rc.right-rc.left;
+    h:=0;
+  //!!
+    if (D.TextEffect and effCenter)<>0 then
     begin
-      rc1.right:=rc1.left+sz.cx;
-      if rc1.right>rc.right then //!!!
+      MeasureLine(dc,Chunk,sz,w);
+      inc(rc1.left,(w-sz.cx) div 2);
+    end;
+    while Chunk^._type<>0 do
+    begin
+      MeasureChunk(dc,Chunk,sz,false);
+      if sz.cx>0 then
       begin
-        case Lo(D.TextEffect) of
-          effCut: begin
+        rc1.right:=rc1.left+sz.cx;
+        if rc1.right>rc.right then //!!!
+        begin
+          case Lo(D.TextEffect) of
+            effCut: begin
 
-            if rc1.left<rc.right then
-            begin
-              rc1.right:=rc.right;
-              DrawChunk(dc,Chunk,rc1);
-            end;
-
-            inc(Chunk);
-            inc(rc1.left,sz.cx);
-            continue;
-          end;
-
-          effWrap: begin
-            if sz.cx>=w then
-            begin
-              while (Chunk<>nil) and (Chunk^._type<>CT_NEWLINE) do
+              if rc1.left<rc.right then
               begin
-                if (Chunk^._type shr 16)<>0 then
-                  ProcessMacro(dc,Chunk); //!! textcolor, bkcolor
-                inc(Chunk);
+                rc1.right:=rc.right;
+                DrawChunk(dc,Chunk,rc1);
               end;
-              if Chunk=nil then
-                exit;
-            end;
-            inc(rc1.top,h);
-            rc1.left:=rc.left;
-        //!!
-            if (D.TextEffect and effCenter)<>0 then
-            begin
-              MeasureLine(dc,Chunk,sz,w);
-              inc(rc1.left,(w-sz.cx) div 2);
+
+              inc(Chunk);
+              inc(rc1.left,sz.cx);
               continue;
             end;
+
+            effWrap: begin
+              if sz.cx>=w then
+              begin
+                while (Chunk<>nil) and (Chunk^._type<>CT_NEWLINE) do
+                begin
+                  if (Chunk^._type shr 16)<>0 then
+                    ProcessMacro(dc,Chunk); //!! textcolor, bkcolor
+                  inc(Chunk);
+                end;
+                if Chunk=nil then
+                  exit;
+              end;
+              inc(rc1.top,h);
+              rc1.left:=rc.left;
+          //!!
+              if (D.TextEffect and effCenter)<>0 then
+              begin
+                MeasureLine(dc,Chunk,sz,w);
+                inc(rc1.left,(w-sz.cx) div 2);
+                continue;
+              end;
+            end;
           end;
         end;
-      end;
-      rc1.bottom:=rc1.top+sz.cy;
-      if rc1.bottom>rc.bottom then
-      begin
-        break;
-      end;
-      DrawChunk(dc,Chunk,rc1);
-      inc(rc1.left,sz.cx);
-      if h<sz.cy then
-        h:=sz.cy;
-    end
-    else
-    begin
-      if Chunk^._type=CT_NEWLINE then
-      begin
-        inc(rc1.top,h);
-        rc1.left:=rc.left;
-    //!!
-        if (D.TextEffect and effCenter)<>0 then
+        rc1.bottom:=rc1.top+sz.cy;
+        if rc1.bottom>rc.bottom then
         begin
-          inc(Chunk);
-          MeasureLine(dc,Chunk,sz,w);
-//          if sz.cx<w then
-          inc(rc1.left,(w-sz.cx) div 2);
-          continue;
+          break;
         end;
+        DrawChunk(dc,Chunk,rc1);
+        inc(rc1.left,sz.cx);
+        if h<sz.cy then
+          h:=sz.cy;
       end
       else
-        ProcessMacro(dc,Chunk); //!! textcolor, bkcolor
-//        DrawChunk(dc,Chunk,rc1);
+      begin
+        if Chunk^._type=CT_NEWLINE then
+        begin
+          inc(rc1.top,h);
+          rc1.left:=rc.left;
+      //!!
+          if (D.TextEffect and effCenter)<>0 then
+          begin
+            inc(Chunk);
+            MeasureLine(dc,Chunk,sz,w);
+  //          if sz.cx<w then
+            inc(rc1.left,(w-sz.cx) div 2);
+            continue;
+          end;
+        end
+        else
+          ProcessMacro(dc,Chunk); //!! textcolor, bkcolor
+  //        DrawChunk(dc,Chunk,rc1);
+      end;
+      inc(Chunk);
     end;
-    inc(Chunk);
   end;
 end;
 

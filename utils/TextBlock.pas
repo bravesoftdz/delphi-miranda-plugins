@@ -40,6 +40,7 @@ type
 
     TextColor  :TCOLORREF;
     BkColor    :TCOLORREF;
+    TextLF     :TLOGFONT;
 
     // options
     TextEffect :dword;
@@ -70,7 +71,6 @@ type
     procedure myMouseDown(Sender:PControl;var Mouse:TMouseEventData);
 
     procedure ClearText;
-    procedure InitFrame;
     function  Split(src:pWideChar):pChunkArray;
 
     procedure DrawChunks(dc:HDC;Chunk:pChunk;rc:TRECT;justpaint:boolean);
@@ -81,6 +81,9 @@ type
 
     function  GetText:pWideChar;
     procedure SetText(value:pWideChar);
+
+    function  GetFontData:TLOGFONT;
+    procedure SetFontData(const value:TLOGFONT);
 
   public
     destructor Destroy; virtual;
@@ -94,7 +97,8 @@ type
     property BkColor   :integer index idx_bkcolor  read GetEffect write SetEffect;
     property Font      :integer index idx_font     read GetEffect write SetEffect;
 
-    property Text:pWideChar read GetText write SetText;
+    property FontData :TLOGFONT  read GetFontData write SetFontData;
+    property BlockText:pWideChar read GetText     write SetText;
   end;
 
 function MakeNewTextBlock(AOwner:PControl;BkColor:TCOLORREF):pTextBlock;
@@ -105,6 +109,16 @@ uses messages,common;
 
 {$include tb_chunk.inc}
 
+function tTextBlock.GetFontData:TLOGFONT;
+begin
+  result:=pTextData(CustomData).TextLF;
+end;
+
+procedure tTextBlock.SetFontData(const value:TLOGFONT);
+begin
+  move(value,pTextData(CustomData).TextLF,SizeOf(TLOGFONT));
+end;
+
 function tTextBlock.GetEffect(idx:integer):integer;
 begin
   with pTextData(CustomData)^ do
@@ -114,19 +128,22 @@ begin
       idx_rollgap : result:=RollGap;
       idx_txtcolor: result:=TextColor;
       idx_bkcolor : result:=BkColor;
-      idx_font    : result:=TextFont;
+      idx_font    : result:=0;
       idx_timer   : result:=UpdInterval;
     else // it can't be really
       result:=0;
     end;
 end;
 
-procedure TimerProc(wnd:HWND;uMsg:cardinal;idEvent:cardinal;dwTime:dword); stdcall;
+procedure TimerProc(wnd:HWND;uMsg:cardinal;TB:pTextBlock;dwTime:dword); stdcall;
 begin
-  pTextBlock(idEvent).DrawText(GetDC(pTextBlock(idEvent).Handle),true);
+  TB.DrawText(GetDC(wnd),false);
 end;
 
 procedure tTextBlock.SetEffect(idx:integer;value:integer);
+var
+  DC:HDC;
+  OldFont:HFONT;
 begin
   with pTextData(CustomData)^ do
     case idx of
@@ -135,7 +152,12 @@ begin
       idx_rollgap : RollGap    :=value;
       idx_txtcolor: TextColor  :=value;
       idx_bkcolor : BkColor    :=value;
-      idx_font    : TextFont   :=value;
+      idx_font    : begin
+        DC:=GetDC(0);
+        OldFont:=SelectObject(DC,value);
+        GetObject(GetCurrentObject(dc,OBJ_FONT),SizeOf(TLOGFONT),@TextLF);
+        SelectObject(DC,OldFont);
+      end;
       idx_timer   : begin
         // stoptimer
         if UpdTimer<>0 then
@@ -147,7 +169,7 @@ begin
         UpdInterval:=value;
         // starttimer
         if UpdInterval>0 then
-          UpdTimer:=SetTimer(0,integer(@Self),(MaxTxtScrollSpeed+1-UpdInterval)*100,nil)
+          UpdTimer:=SetTimer(Self.GetWindowHandle,integer(@Self),(MaxTxtScrollSpeed+1-UpdInterval)*100,@TimerProc);
       end;
     end;
 end;
@@ -161,7 +183,7 @@ begin
   begin
     DeleteChunks(D.TextChunk);
     FreeMem(D.Text);
-    Text:=nil;
+    D.Text:=nil;
   end;
 end;
 
@@ -172,14 +194,17 @@ end;
 
 procedure tTextBlock.SetText(value:pWideChar);
 begin
-  with pTextData(CustomData)^ do
+  if StrCmpW(pTextData(CustomData).Text,value)<>0 then
   begin
     ClearText;
     if (value<>nil) and (value^<>#0) then
     begin
-      GetMem(Text,(StrLenW(value)+1)*SizeOf(WideChar));
-      WStrCopy(Text,value);
-      TextChunk:=Split(Text);
+      with pTextData(CustomData)^ do
+      begin
+        GetMem(Text,(StrLenW(value)+1)*SizeOf(WideChar));
+        WStrCopy(Text,value);
+        TextChunk:=Split(Text);
+      end;
     end;
   end;
 end;
@@ -196,31 +221,6 @@ begin
   end;
   ClearText;
   inherited;
-end;
-
-procedure tTextBlock.InitFrame;
-begin
-{
-  FillChar(pTextData(CustomData).TextLF,SizeOf(TLOGFONT),0);
-  with pTextData(CustomData).TextLF do
-  begin
-    lfCharSet       :=DEFAULT_CHARSET;
-    lfOutPrecision  :=OUT_DEFAULT_PRECIS;
-    lfClipPrecision :=CLIP_DEFAULT_PRECIS;
-    lfQuality       :=DEFAULT_QUALITY;
-    lfPitchAndFamily:=DEFAULT_PITCH or FF_DONTCARE;
-//    dc:=GetDC(FrameWnd);
-//    lfHeight     :=-(8*GetDeviceCaps(dc,LOGPIXELSY) div 72);
-//    ReleaseDC(FrameWnd,dc);
-    lfHeight     :=-10;
-    lfWeight     :=FW_DONTCARE;
-    lfItalic     :=0;
-    lfUnderline  :=0;
-    lfStrikeOut  :=0;
-    lfFaceName[0]:=#0;
-  end;
-//  TextFont:=CreateFontIndirect(TextLF);
-}
 end;
 
 // avoiding anchors problems
@@ -246,20 +246,30 @@ end;
 procedure tTextBlock.DrawText(DC:HDC; justpaint:boolean);
 var
   dst:TRECT;
-  fnt1:HFONT;
   D:pTextData;
+  MemDC:HDC;
 begin
   D:=CustomData;
   with D^ do
     if TextChunk<>nil then
     begin
-      fnt1:=SelectObject(dc,TextFont);
-      SetTextColor(dc,TextColor);
       CopyRect(dst,Self.BoundsRect);
-      InflateRect(dst,-4,-2); //??
-      // small problem: font changes can delete starting font
-      DrawChunks(dc,@TextChunk[0],dst,justpaint); // i.e. only paint or roll
-      SelectObject(dc,fnt1);
+
+      MemDC:=CreateCompatibleDC(dc);
+      SetTextColor(MemDC,TextColor);
+      SelectObject(MemDC,CreateCompatibleBitmap(DC,dst.right,dst.bottom));
+      DeleteObject(SelectObject(MemDC,CreateFontIndirect(D.TextLF)));
+
+      BitBlt(MemDC,dst.left,dst.top,dst.right-dst.left,dst.bottom-dst.top,
+             dc,dst.left,dst.top,SRCCOPY);
+
+      InflateRect(dst,-4,-2); // text padding from text block
+      DrawChunks(MemDC,@TextChunk[0],dst,justpaint); // i.e. only paint or roll
+      InflateRect(dst,4,2); // text padding from text block
+
+      BitBlt(dc,dst.left,dst.top,dst.right-dst.left,dst.bottom-dst.top,
+             MemDC,dst.left,dst.top,SRCCOPY);
+      DeleteDC(MemDC);
     end;
 end;
 

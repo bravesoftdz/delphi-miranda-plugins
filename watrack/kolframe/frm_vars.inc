@@ -38,7 +38,6 @@ type
     destructor Destroy; virtual;
     procedure Paint(Sender: PControl; DC: HDC);
     procedure FrameResize(Sender: PObj);
-    procedure MouseDown(Sender:PControl;var Mouse:TMouseEventData);
     procedure RefreshAllFrameIcons;
     procedure ResetFrame;
 

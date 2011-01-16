@@ -10,7 +10,6 @@ type
     NeedResize:boolean;
 
     procedure GroupResize(Sender: PObj);
-    procedure MouseDown(Sender:PControl;var Mouse:TMouseEventData);
   end;
 
 procedure tIcoGrpData.GroupResize(Sender: PObj);
@@ -57,15 +56,6 @@ begin
   end;
 end;
 
-procedure TIcoGrpData.MouseDown(Sender:PControl;var Mouse:TMouseEventData);
-var
-  wnd:HWND;
-begin
-  wnd:=GetParent(GetParent(Sender.GetWindowHandle));
-  SendMessage(wnd,WM_SYSCOMMAND,
-     SC_MOVE or HTCAPTION,MAKELPARAM(Mouse.x,Mouse.y));
-end;
-
 procedure RefreshButtonIcons(Owner:PControl);
 var
   i:integer;
@@ -93,7 +83,7 @@ begin
     Anchor(true,false,true,true); // good for button reposition
 
     OnResize   :=D.GroupResize;
-    OnMouseDown:=D.MouseDown;
+    OnMouseDown:=TOnMouse(MakeMethod(nil, @MouseDown));
 
     D.NeedResize:=true;
   end;
