@@ -7,6 +7,9 @@ Service:
 
 History:
 
+1.4.1.19 ()
+  FastMM4 memory manager used (not native Delphi or miranda)
+  Fixed some Memory leaks 
 1.4.1.18 (2 jul 2010)
   Doubleclick/Enter on contact set as Clist doubleclick action
   Group list sorted now

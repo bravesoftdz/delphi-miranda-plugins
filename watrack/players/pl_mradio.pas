@@ -255,6 +255,7 @@ begin
       if (flags and WAT_OPT_CHANGES)<>0 then
       begin
         volume:=GetVolume;
+        mFreeMem(wndtext);
         wndtext:=GetWndText;
         if IsMod<>0 then
           time:=CallService(MS_RADIO_COMMAND,MRC_SEEK,-1);

@@ -5,7 +5,7 @@ interface
 
 uses windows,wat_api;
 
-procedure DefFillFormatList(hwndList:hwnd);
+procedure DefFillFormatList (hwndList:hwnd);
 procedure DefCheckFormatList(hwndList:hwnd);
 
 function CheckFormat(ext:PWideChar;var dst:tSongInfo):integer;
@@ -232,9 +232,14 @@ begin
       begin
         if i>0 then
         begin
+          tmp:=fmtLink^[i];
+          move(fmtLink^[0],fmtLink^[1],SizeOf(tMusicFormat)*i);
+          fmtLink^[0]:=tmp;
+{
           move(fmtLink^[i],tmp,SizeOf(tMusicFormat));
           move(fmtLink^[0],fmtLink^[1],SizeOf(tMusicFormat)*i);
           move(tmp,fmtLink^[0],SizeOf(tMusicFormat));
+}
         end;
         fmtLink^[0].proc(dst);
         result:=WAT_RES_OK;
@@ -255,7 +260,9 @@ var
 begin
   result:=WAT_RES_NOTFOUND;
   if LoWord(wParam)<>WAT_ACT_REGISTER then
-    p:=FindFormat(PAnsiChar(lParam));
+    p:=FindFormat(PAnsiChar(lParam))
+  else
+    p:=0;
   case LoWord(wParam) of
     WAT_ACT_REGISTER: begin
       if @pMusicFormat(lParam)^.proc=nil then

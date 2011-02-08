@@ -88,3 +88,9 @@ begin
   DBWriteUnicode(0,PluginShort,opt_PopTitle,PopTitle);
   DBWriteUnicode(0,PluginShort,opt_PopText ,PopText);
 end;
+
+procedure freepopup;
+begin
+  mFreeMem(PopTitle);
+  mFreeMem(PopText);
+end;

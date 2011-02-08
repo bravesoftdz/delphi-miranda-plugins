@@ -54,3 +54,9 @@ begin
 //  DBWriteDWord (0,PluginShort,opt_LastSort   ,LastSort);
 end;
 
+procedure FreeStat;
+begin
+  mFreeMem(ReportName);
+  mFreeMem(StatName);
+  mFreeMem(TmplName);
+end;

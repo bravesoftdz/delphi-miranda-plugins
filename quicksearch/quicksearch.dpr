@@ -4,6 +4,7 @@ library quicksearch;
 {$R tmpl.res}
 
 uses
+  FastMM4,
   Windows,
   Messages,
   m_api,

@@ -210,8 +210,8 @@ begin
   with aCells^ do
     while count>0 do
     begin
-      mFreeMem(cells[count]);
       dec(count);
+      mFreeMem(cells[count]);
     end;
   mFreeMem(aCells);
 end;
@@ -623,6 +623,7 @@ begin
   PluginLink^.DestroyServiceFunction(hPackLog);
   PluginLink^.DestroyServiceFunction(hMakeReport);
   PluginLink^.DestroyServiceFunction(hAddToLog);
+  FreeStat;
 end;
 
 function AddOptionsPage(var tmpl:pAnsiChar;var proc:pointer;var name:PAnsiChar):integer;

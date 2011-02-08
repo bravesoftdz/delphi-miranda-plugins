@@ -26,11 +26,14 @@ end;
 // ---------------- frame functions ----------------
 
 procedure SetFrameTitle(title:pointer;icon:HICON;addflag:integer=FO_UNICODETEXT);
+var
+  D:PWATFrameData;
 begin
+  D:=FrameCtrl.CustomData;
   CallService(MS_CLIST_FRAMES_SETFRAMEOPTIONS,
-      (FrameCtrl.FrameId shl 16)+FO_TBNAME+addflag,dword(title));
-  CallService(MS_CLIST_FRAMES_SETFRAMEOPTIONS,(FrameCtrl.FrameId shl 16)+FO_ICON,icon);
-  CallService(MS_CLIST_FRAMES_UPDATEFRAME,FrameCtrl.FrameId,FU_TBREDRAW);
+      (D.FrameId shl 16)+FO_TBNAME+addflag,dword(title));
+  CallService(MS_CLIST_FRAMES_SETFRAMEOPTIONS,(D.FrameId shl 16)+FO_ICON,icon);
+  CallService(MS_CLIST_FRAMES_UPDATEFRAME,D.FrameId,FU_TBREDRAW);
 end;
 
 // -----------------------
@@ -93,23 +96,25 @@ var
   bufw:array [0..511] of WideChar;
 //  FrameWnd:HWND;
   Cover:pAnsiChar;
+  D:PWATFrameData;
 begin
   result:=0;
 //  FrameWnd:=FrameCtrl.Form.GetWindowHandle;
+  D:=FrameCtrl.CustomData;
 
   case wParam of
     WAT_EVENT_PLAYERSTATUS: begin
       case lParam of
         WAT_PLS_NORMAL  : exit;
         WAT_PLS_NOMUSIC : begin
-          if FrameCtrl.HideNoMusic then
-            HideFrame(FrameCtrl.FrameId)
+          if D.HideNoMusic then
+            HideFrame(D.FrameId)
           else
-            ShowFrame(FrameCtrl.FrameId); // if was hidden with "no player"
+            ShowFrame(D.FrameId); // if was hidden with "no player"
         end;
         WAT_PLS_NOTFOUND: begin
-          if FrameCtrl.HideNoPlayer then
-            HideFrame(FrameCtrl.FrameId);
+          if D.HideNoPlayer then
+            HideFrame(D.FrameId);
 
           SetFrameTitle(PluginShort,0,0); // frame update code there
         end;
@@ -118,7 +123,7 @@ begin
       // clear text, slider to 0, picture to default
 
       // really, need just position=0;
-      TrackbarSetRange(FrameCtrl.Trackbar,FrameCtrl.UpdInterval,0);
+      TrackbarSetRange(D.Trackbar,D.UpdInterval,0);
     end;
 
     WAT_EVENT_NEWTRACK: begin
@@ -132,14 +137,14 @@ begin
       end;
 
       // trackbar
-      TrackbarSetRange(FrameCtrl.Trackbar,FrameCtrl.UpdInterval,PSongInfo(lParam)^.total);
+      TrackbarSetRange(D.Trackbar,D.UpdInterval,PSongInfo(lParam)^.total);
 
-      FrameCtrl.UpdTimer:=SetTimer(0,0,FrameCtrl.UpdInterval,@FrameTimerProc);
+      D.UpdTimer:=SetTimer(0,0,D.UpdInterval,@FrameTimerProc);
 
       // text
-      UpdateTextBlock(FrameCtrl.TextBlock,true);
+      UpdateTextBlock(D,true);
 
-      ShowFrame(FrameCtrl.FrameId);
+      ShowFrame(D.FrameId);
     end;
 
     WAT_EVENT_NEWPLAYER: begin
@@ -150,17 +155,17 @@ begin
     WAT_EVENT_PLUGINSTATUS: begin
       case lParam of
         dsEnabled: begin
-          ShowFrame(FrameCtrl.FrameId);
+          ShowFrame(D.FrameId);
           // plus - start frame and text timers
 //          FrameCtrl.UpdTimer:=SetTimer(0,0,FrameCtrl.UpdInterval,@);
         end;
 
         dsPermanent: begin
-          HideFrame(FrameCtrl.FrameId);
+          HideFrame(D.FrameId);
 
           // plus - stop frame and text timers
-          if FrameCtrl.UpdTimer<>0 then
-            KillTimer(0,FrameCtrl.UpdTimer);
+          if D.UpdTimer<>0 then
+            KillTimer(0,D.UpdTimer);
         end;
       end;
     end;
@@ -170,14 +175,11 @@ end;
 function IconChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
   result:=0;
-  with FrameCtrl^ do
+  if PWATFrameData(FrameCtrl.CustomData).FrameId<>0 then
   begin
-    if FrameId<>0 then
-    begin
-      RefreshAllFrameIcons;
-      ShowWindow(Form.GetWindowHandle,SW_HIDE);
-      ShowWindow(Form.GetWindowHandle,SW_SHOW);
-    end;
+    FrameCtrl.RefreshAllFrameIcons;
+    ShowWindow(FrameCtrl.{Form.}GetWindowHandle,SW_HIDE);
+    ShowWindow(FrameCtrl.{Form.}GetWindowHandle,SW_SHOW);
   end;
 end;
 
@@ -216,8 +218,8 @@ begin
     end;
     FrameHeight:=CLFrame.height;
 
-    FrameCtrl.FrameId:=CallService(MS_CLIST_FRAMES_ADDFRAME,dword(@CLFrame),0);
-    if FrameCtrl.FrameId>=0 then
+    PWATFrameData(FrameCtrl.CustomData).FrameId:=CallService(MS_CLIST_FRAMES_ADDFRAME,dword(@CLFrame),0);
+    if PWATFrameData(FrameCtrl.CustomData).FrameId>=0 then
     begin
       plStatusHook:=PluginLink^.HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);
     end;
@@ -228,19 +230,21 @@ end;
 procedure DestroyFrame;
 var
   h:integer;
+  id:Integer;
 begin
-  if (FrameCtrl<>nil) and (FrameCtrl.FrameId>=0) then
+  if (FrameCtrl<>nil) and (PWATFrameData(FrameCtrl.CustomData).FrameId>=0) then
   begin
     PluginLink^.UnhookEvent(plStatusHook);
 
     h:=CallService(MS_CLIST_FRAMES_GETFRAMEOPTIONS,
-        FO_HEIGHT+(FrameCtrl.FrameId shl 16),0);
+        FO_HEIGHT+(PWATFrameData(FrameCtrl.CustomData).FrameId shl 16),0);
     if h>0 then
     DBWriteWord(0,PluginShort,opt_FrmHeight,h);
+id:=PWATFrameData(FrameCtrl.CustomData).FrameId;
+FrameCtrl.Free;
+    CallService(MS_CLIST_FRAMES_REMOVEFRAME,{PWATFrameData(FrameCtrl.CustomData).Frame}Id,0);
 
-    CallService(MS_CLIST_FRAMES_REMOVEFRAME,FrameCtrl.FrameId,0);
-
-    FrameCtrl.Free;
+//    FrameCtrl.Free;
     FrameCtrl:=nil;
   end;
 end;

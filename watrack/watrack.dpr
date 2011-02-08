@@ -2,13 +2,14 @@
 {$include compilers.inc}
 library WATrack;
 uses
+  fastmm4,
   m_api,dbsettings,activex,winampapi,
   Windows,messages,commctrl,//uxtheme,
   srv_format,srv_player,wat_api,wrapper,
   common,syswin,HlpDlg,mirutils
   ,global,waticons,io,macros
   ,lastfm    in 'lastfm\lastfm.pas'
-  ,statlog   in 'stat\statlog.pas'
+//  ,statlog   in 'stat\statlog.pas'
 //  ,frameunit in 'frame\frameunit.pas'
   ,popups    in 'popup\popups.pas'
   ,proto     in 'proto\proto.pas'
@@ -16,7 +17,7 @@ uses
   ,tmpl      in 'status\tmpl.pas'
   ,templates in 'templates\templates.pas'
 
-  ,kolframe  in 'kolframe\kolframe.pas'
+//  ,kolframe  in 'kolframe\kolframe.pas'
 
   {$include lst_players.inc}
   {$include lst_formats.inc}
@@ -84,9 +85,7 @@ function ReturnInfo(enc:integer;cp:integer=CP_ACP):pointer;
 begin
   if enc<>WAT_INF_UNICODE then
   begin
-    ClearTrackInfo(@SongInfoA);
-    ClearPlayerInfo(@SongInfoA);
-    mFreeMem(SongInfoA.wndtext);
+    ClearSongInfoData(@SongInfoA);
     move(SongInfo,SongInfoA,SizeOf(tSongInfo));
     with SongInfoA do
     begin
@@ -186,17 +185,18 @@ function WATGetMusicInfo(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 type
   ppointer = ^pointer;
 const
-  LastTime:dword=0;
-  LastPlayer:PWideChar=nil;
   giused:bool=false; //!!
-  oldresult:int=WAT_PLS_NOTFOUND;
 var
-  flags:dword;
-  i:integer;
-  NewStatus:integer;
-  p,buf:PWideChar;
+  flags:cardinal;
+  buf:PWideChar;
+  OldPlayerStatus:integer;
+  stat:integer;
 begin
+  result:=WAT_RES_NOTFOUND;
+  if DisablePlugin=dsPermanent then
+    exit;
 
+{
   if giused then
   begin
     result:=oldresult;
@@ -209,57 +209,60 @@ begin
     end;
     exit;
   end;
-//AddEvent(0,EVENTTYPE_WAT_REQUEST,DBEF_READ,nil,0,0);
-
-  result:=WAT_PLS_NOTFOUND;
-  SongInfo.status:=WAT_MES_UNKNOWN;
-  if DisablePlugin=dsPermanent then
-    exit;
-  flags:=0;
-  if CheckTime <>BST_UNCHECKED then flags:=flags or WAT_OPT_CHECKTIME;
-  if UseImplant<>BST_UNCHECKED then flags:=flags or WAT_OPT_IMPLANTANT;
-  if MTHCheck  <>BST_UNCHECKED then flags:=flags or WAT_OPT_MULTITHREAD;
-  if KeepOld   <>BST_UNCHECKED then flags:=flags or WAT_OPT_KEEPOLD;
-  if CheckAll  <>BST_UNCHECKED then flags:=flags or WAT_OPT_CHECKALL;
-  if (wParam and WAT_INF_CHANGES)<>0 then
-    flags:=flags or WAT_OPT_CHANGES;
-
-  flags:=flags or HiddenOption;
-  
   giused:=true;
   i:=GetInfo(SongInfo,flags);
   giused:=false;
-  if i=WAT_RES_NEWFILE then
-    NewStatus:=WAT_RES_OK
-  else
-    NewStatus:=i;
-
-  if (i<>WAT_RES_NOTFOUND) and (SongInfo.status=WAT_MES_STOPPED) then //!!
-    NewStatus:=WAT_PLS_NOMUSIC;
-
-  if LastStatus<>NewStatus then
+}
+  OldPlayerStatus:=SongInfo.status;
+  // Checking player
+  flags:=0;
+  if CheckAll<>BST_UNCHECKED then flags:=flags or WAT_OPT_CHECKALL;
+  result:=CheckPlayers(SongInfo,flags);
+  if result=WAT_RES_NEWPLAYER then
   begin
-    LastStatus:=NewStatus;
-    PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLAYERSTATUS,LastStatus);
+    PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_NEWPLAYER,dword(@SongInfo));
+    result:=WAT_RES_OK;
   end;
 
-  if i<>WAT_RES_NOTFOUND then
+  // Checking player status
+  if result=WAT_RES_OK then
   begin
 
-    if (LastPlayer=nil) or (StrCmpW(LastPlayer,SongInfo.player)<>0) then
-    begin
-      mFreeMem(LastPlayer);
-      StrDupW(LastPlayer,SongInfo.player);
-      PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_NEWPLAYER,dword(@SongInfo));
+    flags:=0;
+    if CheckTime <>BST_UNCHECKED then flags:=flags or WAT_OPT_CHECKTIME;
+    if UseImplant<>BST_UNCHECKED then flags:=flags or WAT_OPT_IMPLANTANT;
+    if MTHCheck  <>BST_UNCHECKED then flags:=flags or WAT_OPT_MULTITHREAD;
+    if KeepOld   <>BST_UNCHECKED then flags:=flags or WAT_OPT_KEEPOLD;
+    result:=CheckFile(SongInfo,flags);
+
+    // here - place for Playerstatus event
+    case SongInfo.status of
+      WAT_MES_STOPPED: stat:=WAT_PLS_NOMUSIC;
+      WAT_MES_PLAYING,
+      WAT_MES_PAUSED:  stat:=WAT_PLS_NORMAL;
+      WAT_MES_UNKNOWN: // depends of file search
+      begin
+        if result=WAT_RES_NOTFOUND then
+          stat:=WAT_PLS_NOMUSIC
+        else
+          stat:=WAT_PLS_NORMAL;
+      end;
     end;
+    SongInfo.status:=(SongInfo.status shl 16) or (stat and $FFFF);
 
-    if SongInfo.mfile=nil then //!!
-      result:=WAT_PLS_NOMUSIC
-    else
-      result:=WAT_PLS_NORMAL;
+    // WAT_PLS_* + WAT_MES_* shl 16
+    if OldPlayerStatus<>SongInfo.status then
+      PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLAYERSTATUS,SongInfo.status);
 
-    if i=WAT_RES_NEWFILE then
+    // now time fo changes (window text, volume)
+    GetInfo(SongInfo,flags or WAT_OPT_CHANGES);
+
+    // full info requires
+    if result=WAT_RES_NEWFILE then
     begin
+      GetInfo(SongInfo,flags);
+
+      // covers
       if (SongInfo.cover=nil) or (SongInfo.cover^=#0) then
         GetCover(SongInfo.cover,SongInfo.mfile)
       else
@@ -268,11 +271,7 @@ begin
         GetTempPathW(MAX_PATH,buf);
         if StrCmpW(buf,SongInfo.cover,StrLenW(buf))=0 then
         begin
-//          StrCopyW(buf,SongInfo.cover);
-          p:=StrEndW(buf);
-//          while p^<>'\' do dec(p);
-          StrCopyW(p,'\wat_cover.');
-          GetExt(SongInfo.cover,p+11);
+          GetExt(SongInfo.cover,StrCatEW(buf,'\wat_cover.'));
           DeleteFileW(buf);
           MoveFileW(SongInfo.cover,buf);
           mFreeMem(SongInfo.cover);
@@ -281,17 +280,28 @@ begin
         else
           mFreeMem(buf);
       end;
+      // lyric
       if (SongInfo.lyric=nil) or (SongInfo.lyric^=#0) then
         GetLyric(SongInfo.lyric,SongInfo.mfile);
+
       PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_NEWTRACK,dword(@SongInfo));
     end;
+
     if lParam<>0 then
       ppointer(lParam)^:=ReturnInfo(wParam and $FF);
   end
-  else if lParam<>0 then
-    ppointer(lParam)^:=nil;
-
-  oldresult:=result;
+  else // Player not found
+  begin
+  // check SongInfo (event if was not empty)
+    if Loword(OldPlayerStatus)<>SongInfo.status then
+    begin
+      SongInfo.status:=WAT_PLS_NOTFOUND+WAT_MES_UNKNOWN shl 16;
+      PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLAYERSTATUS,SongInfo.status);
+    end;
+  // clear SongInfo
+    if lParam<>0 then
+      ppointer(lParam)^:=nil;
+  end;
 end;
 
 function PressButton(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -456,13 +466,11 @@ end;
 
 procedure FreeVariables;
 begin
-  ClearTrackInfo (@SongInfo);
-  ClearPlayerInfo(@SongInfo);
-  mFreeMem(SongInfo.wndtext);
+  ClearSongInfoData(@SongInfo);
+  ClearSongInfoData(@SongInfoA);
   mFreeMem(CoverPaths);
   ClearFormats;
   ClearPlayers;
-  FreeInfoVariables;
 end;
 
 procedure FreeServices;

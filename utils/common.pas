@@ -1,10 +1,11 @@
-{$DEFINE USE_MMI}
+{.$DEFINE USE_MMI}
 {$INCLUDE compilers.inc}
 unit common;
 
 interface
 
-uses windows
+uses
+windows
 {$IFDEF USE_MMI}
 ,m_api
 {$ENDIF}
@@ -123,6 +124,8 @@ function StrLen (Str: PAnsiChar): Cardinal;
 function StrLenW(Str: PWideChar): Cardinal;
 function StrCat (Dest: PAnsiChar; const Source: PAnsiChar): PAnsiChar;
 function StrCatW(Dest: PWideChar; const Source: PWideChar): PWideChar;
+function StrCatE (Dest: PAnsiChar; const Source: PAnsiChar): PAnsiChar;
+function StrCatEW(Dest: PWideChar; const Source: PWideChar): PWideChar;
 function StrCopyE (dst:PAnsiChar;src:PAnsiChar;len:cardinal=0):PAnsiChar;
 function StrCopyEW(dst:PWideChar;src:PWideChar;len:cardinal=0):PWideChar;
 function StrCopy (dst:PAnsiChar;src:PAnsiChar;len:cardinal=0):PAnsiChar;
@@ -1442,6 +1445,20 @@ function StrCatW(Dest: PWideChar; const Source: PWideChar): PWideChar;
 begin
   if dest<>nil then
     StrCopyW(StrEndW(Dest), Source);
+  Result := Dest;
+end;
+
+function StrCatE(Dest: PAnsiChar; const Source: PAnsiChar): PAnsiChar;
+begin
+  if dest<>nil then
+    StrCopyE(StrEnd(Dest), Source);
+  Result := Dest;
+end;
+
+function StrCatEW(Dest: PWideChar; const Source: PWideChar): PWideChar;
+begin
+  if dest<>nil then
+    StrCopyEW(StrEndW(Dest), Source);
   Result := Dest;
 end;
 

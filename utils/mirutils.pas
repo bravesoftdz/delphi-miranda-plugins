@@ -190,7 +190,7 @@ begin
   begin
     StrDup(result,astr);
   end;
-  mFreeMem(pc);
+  mmi.free(pc);
 end;
 
 function ParseVarString(astr:pWideChar;aContact:THANDLE=0;extra:pWideChar=nil):pWideChar;
@@ -229,7 +229,8 @@ begin
   begin
     StrDupW(result,astr);
   end;
-  mFreeMem(pc);
+  mmi.free(pc); // forced!
+//  mFreeMem(pc);
 end;
 
 function ShowVarHelp(dlg:HWND;id:integer=0):integer;
@@ -845,7 +846,7 @@ begin
   result:=nil;
 
   FillChar(req,SizeOf(req),0);
-  req.cbSize     :=SizeOf(req);
+  req.cbSize     :=NETLIBHTTPREQUEST_V1_SIZE;//SizeOf(req);
   req.requestType:=rtype;
   req.szUrl      :=url;
   req.flags      :=NLHRF_NODUMP or NLHRF_HTTP11;
@@ -911,7 +912,7 @@ begin
     exit;
 
   FillChar(req,SizeOf(req),0);
-  req.cbSize     :=SizeOf(req);
+  req.cbSize     :=NETLIBHTTPREQUEST_V1_SIZE;//SizeOf(req);
   req.requestType:=REQUEST_GET;
   req.szUrl      :=url;
   req.flags      :=NLHRF_NODUMP;
@@ -1042,7 +1043,7 @@ begin
     exit;
 
   FillChar(req,SizeOf(req),0);
-  req.cbSize     :=SizeOf(req);
+  req.cbSize     :=NETLIBHTTPREQUEST_V1_SIZE;//SizeOf(req);
   req.requestType:=REQUEST_GET;
   req.szUrl      :=url;
   req.flags      :=NLHRF_NODUMP;

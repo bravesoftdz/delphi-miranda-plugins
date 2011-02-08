@@ -12,7 +12,6 @@ uses io,windows,commdlg,messages,common,commctrl,
 {$include frm_vars.inc}
 {$include frm_opt.inc}
 {$include frm_rc.inc}
-{$include frm_icons.inc}
 {$include frm_chunk.inc}
 
 {$resource frm.res}
@@ -478,7 +477,7 @@ begin
   dec(rc1.right,4);
 
   DrawEdge(dc,rc1,EDGE_SUNKEN,BF_RECT or BF_ADJUST);
-  DrawIconEx(dc,rc.left,rc.top,GetIcon(BTN_SLIDER),16,16,0,0,DI_NORMAL);
+  DrawIconEx(dc,rc.left,rc.top,GetIcon(WAT_CTRL_SEEK,AST_NORMAL),16,16,0,0,DI_NORMAL);
 end;
 
 procedure DrawText(dc:HDC;const rc:TRECT;OnlyText:boolean);
@@ -1356,6 +1355,16 @@ end;
 
 {$include frm_dlg1.inc}
 {$include frm_dlg2.inc}
+
+function IconChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+begin
+  result:=0;
+  if FrameId<>0 then
+  begin
+    ShowWindow(FrameWnd,SW_HIDE);
+    ShowWindow(FrameWnd,SW_SHOW);
+  end;
+end;
 
 // ---------------- base interface procedures ----------------
 function InitProc(aGetStatus:boolean=false):integer;

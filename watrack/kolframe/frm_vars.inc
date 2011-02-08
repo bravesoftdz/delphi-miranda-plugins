@@ -8,8 +8,8 @@ var
   FrameHeight:dword;
 
 type
-  PWATFrame = ^TWATFrame;
-  TWATFrame = object(TObj)
+  PWATFrameData = ^TWATFrameData;
+  TWATFrameData = record
     BkDC        :HDC;       // "buffer" DC and associated bitmap
     BkBitmap    :HBITMAP;   // original bitmap
     BkFile      :PAnsiChar; // original bitmap filename
@@ -18,6 +18,7 @@ type
     BkTimer     :cardinal;  // timer to free original picture buffer
     BkColor     :TCOLORREF;
     padding     :TRect;
+
     ShowControls:dword;
     UseBkPicture:bool;
     UseCover    :bool;
@@ -28,14 +29,18 @@ type
     FrameId     :integer;
     FrmAlpha    :integer;
     UpdInterval :cardinal;
-    UpdTimer    :cardinal;  
+    UpdTimer    :cardinal;
 
-    Form     :PControl;
+    Template :PWideChar;
+
     Trackbar :PTrackbar;
     Buttons  :PControl;
     TextBlock:PTextBlock;
+  end;
 
-    destructor Destroy; virtual;
+  PWATFrame = ^TWATFrame;
+  TWATFrame = object(TControl)
+
     procedure Paint(Sender: PControl; DC: HDC);
     procedure FrameResize(Sender: PObj);
     procedure RefreshAllFrameIcons;

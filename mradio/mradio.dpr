@@ -3,6 +3,7 @@
 library MRadio;
 
 uses
+  FastMM4,
   kol,Windows,messages,commctrl
   ,common,io,wrapper,syswin
   ,Dynamic_Bass,dynbasswma

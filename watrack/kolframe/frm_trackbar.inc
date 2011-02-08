@@ -16,6 +16,8 @@ type
 
 procedure ResetTrackbar(Trackbar:PControl);
 begin
+  if Trackbar=nil then exit;
+
   with pTrackbar(Trackbar)^ do
   begin
     RangeMin:=0;
@@ -29,6 +31,8 @@ var
   D:pAWKTrackbar;
   lpercent:real;
 begin
+  if Trackbar=nil then exit;
+
   with Trackbar^ do
   begin
     D:=pointer(CustomObj);
@@ -56,6 +60,8 @@ end;
 
 procedure SetTrackbarPosition(Trackbar:PTrackbar;pos:integer);
 begin
+  if Trackbar=nil then exit;
+
   if pIcoButton(Trackbar.Children[0]).State<>AST_PRESSED then
     Trackbar.Position:=pos;
 
@@ -69,6 +75,9 @@ var
   offsetthumb,width:integer;
   rc:TRect;
 begin
+  result:=0;
+  if Trackbar=nil then exit;
+
   rmin:=Trackbar.RangeMin;
   rmax:=Trackbar.RangeMax;
   range:=rmax-rmin; // logic width

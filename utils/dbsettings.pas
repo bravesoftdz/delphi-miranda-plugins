@@ -40,6 +40,8 @@ function DBGetSettingType(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiCha
 
 implementation
 
+uses common;
+
 function DBReadByte(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;default:byte=0):byte;
 var
   dbv:TDBVARIANT;
@@ -136,14 +138,12 @@ begin
   i:=PluginLink^.CallService(MS_DB_CONTACT_GETSETTING_STR,hContact,lParam(@cgs));
   if i=0 then
     default:=dbv.szVal.a;
+
   if (default=nil) or (default^=#0) then
     result:=nil
   else
-  begin
-    result:=mmi.malloc(lstrlena(default)+1);
-    if result<>nil then
-      lstrcpya(result,default);
-  end;
+    StrDup(result,default);
+
 //!!  if i=0 then
     DBFreeVariant(@dbv);
 end;
@@ -167,14 +167,12 @@ begin
   i:=PluginLink^.CallService(MS_DB_CONTACT_GETSETTING_STR,hContact,lParam(@cgs));
   if i=0 then
     default:=dbv.szVal.w;
+
   if (default=nil) or (default^=#0) then
     result:=nil
   else
-  begin
-    result:=mmi.malloc((lstrlenw(default)+1)*SizeOf(WideChar));
-    if result<>nil then
-      lstrcpyw(result,default);
-  end;
+    StrDupW(result,default);
+
 //!!  if i=0 then
     DBFreeVariant(@dbv);
 end;
@@ -422,4 +420,3 @@ end;
 
 begin
 end.
-

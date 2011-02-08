@@ -4,7 +4,7 @@ library Translate;
 {$R frm.res}
 
 uses
-  m_api, Windows, tr_frame;
+  {FastMM4,} m_api, Windows, tr_frame;
 
 const
   PluginInfo:TPLUGININFOEX=(

@@ -42,12 +42,15 @@ var
   ChMask:dword;
 
 function GetNumValue(wnd:HWND;usevar:boolean;var dst):boolean;
+var
+  tmp:pWideChar;
 begin
   result:=false;
   pWideChar(dst):=GetDlgText(wnd);
   if Pointer(dst)=nil then exit;
   if not usevar then
   begin
+    tmp:=PWideChar(dst);
     if pWideChar(dst)^='$' then
     begin
       integer(dst):=HexToInt(pWideChar(dst)+1);
@@ -55,6 +58,7 @@ begin
     end
     else
       integer(dst):=StrToInt(pWideChar(dst));
+    mFreeMem(tmp);
   end;
 end;
 

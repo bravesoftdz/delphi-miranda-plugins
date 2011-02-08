@@ -233,6 +233,7 @@ begin
         mmkeyemu  :=IsDlgButtonChecked(Dialog,IDC_APPCOMMAND);
         CheckAll  :=IsDlgButtonChecked(Dialog,IDC_CHECKALL);
 
+        mFreeMem(CoverPaths);
         CoverPaths:=GetDlgText(Dialog,IDC_COVERFN);
 
         DefCheckPlayerList(GetDlgItem(Dialog,IDC_PLAYERLIST));

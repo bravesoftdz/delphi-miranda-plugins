@@ -13,17 +13,18 @@ var
   lf:LOGFONT;
 begin
   result:=0;
+
   case hMessage of
     WM_DESTROY: begin
       // new - if Apply, old - if cancel
       if FrameCtrl<>nil then // for case when FrameCtrl was destryed already
-      FrameCtrl.TextBlock.FontData:=TextLF;
+        PWATFrameData(FrameCtrl.CustomData).TextBlock.FontData:=TextLF;
     end;
 
     WM_INITDIALOG: begin
       DlgInited:=false;
       TranslateDialogDefault(Dialog);
-      with FrameCtrl.TextBlock^ do
+      with PWATFrameData(FrameCtrl.CustomData).TextBlock^ do
       begin
         case Lo(Effects) of
           effWrap: tmp:=IDC_EFF_WRAP;
@@ -42,7 +43,7 @@ begin
 
         CheckDlgButton(Dialog,IDC_ALCENTER,ord((Effects and effCenter)<>0));
 
-        SetDlgItemTextW(Dialog,IDC_FRAME_TEXT,Template);
+        SetDlgItemTextW(Dialog,IDC_FRAME_TEXT,PWATFrameData(FrameCtrl.CustomData).Template);
       end;
 
       SendDlgItemMessage(Dialog,IDC_MACRO_HELP,BM_SETIMAGE,IMAGE_ICON,
@@ -63,27 +64,30 @@ begin
           case LoWord(wParam) of
             IDC_MACRO_HELP: CallService(MS_WAT_MACROHELP,Dialog,0);
             IDC_FRMFONT: begin
-              lf:=FrameCtrl.TextBlock.FontData;
-//            lf:=TextLF;
-              FillChar(pcf,sizeOf(pcf),0);
-              with pcf do
+              with PWATFrameData(FrameCtrl.CustomData).TextBlock^ do
               begin
-                lStructSize:=SizeOf(pcf);
-                lpLogFont:=@lf;
-                Flags:=CF_EFFECTS+CF_FORCEFONTEXIST+CF_LIMITSIZE+CF_NOVERTFONTS+
-                       CF_SCREENFONTS+CF_INITTOLOGFONTSTRUCT;
-                rgbColors:=FrameCtrl.TextBlock.TextColor;
-                nSizeMin:=6;
-                nSizeMax:=32;
+                lf:=FontData;
+  //            lf:=TextLF;
+                FillChar(pcf,sizeOf(pcf),0);
+                with pcf do
+                begin
+                  lStructSize:=SizeOf(pcf);
+                  lpLogFont:=@lf;
+                  Flags:=CF_EFFECTS+CF_FORCEFONTEXIST+CF_LIMITSIZE+CF_NOVERTFONTS+
+                         CF_SCREENFONTS+CF_INITTOLOGFONTSTRUCT;
+                  rgbColors:=TextColor;
+                  nSizeMin:=6;
+                  nSizeMax:=32;
+                end;
+                if ChooseFont(pcf) then
+                begin
+                  FontData:=lf; // paint directly
+                  TextColor:=pcf.rgbColors;
+                  SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
+                end
+                else
+                  exit;
               end;
-              if ChooseFont(pcf) then
-              begin
-                FrameCtrl.TextBlock.FontData:=lf; // paint directly
-                FrameCtrl.TextBlock.TextColor:=pcf.rgbColors;
-                SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
-              end
-              else
-                exit;
             end;
           end;
         end;
@@ -102,8 +106,7 @@ begin
       if PNMHdr(lParam)^.code=PSN_APPLY then
       begin
 //        redraw:=false;
-
-        with FrameCtrl.TextBlock^ do
+        with PWATFrameData(FrameCtrl.CustomData).TextBlock^ do
         begin
           tmp:=GetDlgItemInt(Dialog,IDC_TIMER,tmpb,false);
           if tmp>MaxTxtScrollSpeed then
@@ -151,11 +154,11 @@ begin
 
           if TemplateChanged then
           begin
-            mFreeMem(Template);
-            Template:=GetDlgText(Dialog,IDC_FRAME_TEXT);
+            mFreeMem(PWATFrameData(FrameCtrl.CustomData).Template);
+            PWATFrameData(FrameCtrl.CustomData).Template:=GetDlgText(Dialog,IDC_FRAME_TEXT);
           end;
 
-          TextLF:=FrameCtrl.TextBlock.FontData; // OK - saving for future?
+          TextLF:=FontData; // OK - saving for future?
 
           SaveTextSettings(TemplateChanged);
           TemplateChanged:=false;
