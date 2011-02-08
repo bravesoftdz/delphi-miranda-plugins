@@ -227,12 +227,13 @@ begin
           DBWriteWord(ActiveContact,PluginName,optCurElement,plist.Track);
           plist.free;
         end;
-        StopStation;
+//??        StopStation;
         ControlCenter(MRC_STATUS,RD_STATUS_NOSTATION);
         DBDeleteSetting(0,PluginName,optActiveURL);
         DBDeleteSetting(0,PluginName,optTitle);
         DBDeleteSetting(0,PluginName,optArtist);
       end;
+      StopStation;
       PluginLink^.NotifyEventHooks(hhRadioStatus,MRC_STOP,0);
     end;
 

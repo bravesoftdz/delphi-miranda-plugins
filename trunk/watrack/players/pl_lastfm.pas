@@ -116,27 +116,4 @@ const
 initialization
   ServicePlayer(WAT_ACT_REGISTER,dword(@plRec));
 end.
-{
-  can obtain album cover
-  http://ws.audioscrobbler.com/2.0/?method=track.search&track=  &artist=  &api_key=
 
-<?xml version="1.0" encoding="utf-8"?>
-<lfm status="ok">
-<results for="Believe" xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">
-<opensearch:Query role="request" searchTerms="Believe" startPage="1" />
-<opensearch:totalResults>24836</opensearch:totalResults>
-<opensearch:startIndex>0</opensearch:startIndex>
-<opensearch:itemsPerPage>20</opensearch:itemsPerPage>
-<trackmatches>
-<track>
-    <name>Believe Me Natalie</name>
-    <artist>The Killers</artist>
-    <url>http://www.last.fm/music/The+Killers/_/Believe+Me+Natalie</url>
-    <streamable fulltrack="0">1</streamable>
-    <listeners>265187</listeners>
-            <image size="small">http://userserve-ak.last.fm/serve/34/8634917.jpg</image>
-    <image size="medium">http://userserve-ak.last.fm/serve/64/8634917.jpg</image>
-    <image size="large">http://userserve-ak.last.fm/serve/126/8634917.jpg</image>
-    </track>
-
-}

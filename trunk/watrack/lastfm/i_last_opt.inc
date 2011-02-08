@@ -37,3 +37,8 @@ begin
       SM_WARNING);
 end;
 
+procedure FreeOpt;
+begin
+  mFreeMem(lfm_login);
+  mFreeMem(lfm_password);
+end;

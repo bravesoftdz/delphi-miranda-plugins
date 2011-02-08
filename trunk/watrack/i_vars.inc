@@ -4,6 +4,7 @@ var
   SongInfo :tSongInfo;
 const
   LastStatus:integer = WAT_PLS_NOTFOUND;
+  LastPlayer:PWideChar=nil;
 var
   hINS,
   hGFI,

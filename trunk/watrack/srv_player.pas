@@ -9,22 +9,23 @@ function GetPlayerNote(name:PAnsiChar):pWideChar;
 
 function SetPlayerIcons(fname:pAnsiChar):integer;
 
-procedure FreeInfoVariables;
-
-procedure ClearPlayerInfo(dst:pSongInfo);
-procedure ClearTrackInfo(dst:pSongInfo);
+procedure ClearSongInfoData(dst:pSongInfo);
+procedure ClearPlayerInfo  (dst:pSongInfo);
+procedure ClearTrackInfo   (dst:pSongInfo);
 
 function LoadFromFile(fname:PAnsiChar):integer;
 
 function ServicePlayer(wParam:WPARAM;lParam:LPARAM):integer;cdecl;
-function SendCommand(wParam:WPARAM;lParam:LPARAM;flags:integer):integer;
+function SendCommand  (wParam:WPARAM;lParam:LPARAM;flags:integer):integer;
 
 procedure ClearPlayers;
 
-procedure DefFillPlayerList(hwndList:hwnd);
+procedure DefFillPlayerList (hwndList:hwnd);
 procedure DefCheckPlayerList(hwndList:hwnd);
 
-function GetInfo(var dst:tSongInfo;flags:integer):integer;
+function CheckPlayers(var dst:tSongInfo;flags:cardinal):integer;
+function CheckFile   (var dst:tSongInfo;flags:cardinal):integer;
+function GetInfo     (var dst:tSongInfo;flags:integer):integer;
 
 type
   MusEnumProc = function(param:PAnsiChar;lParam:integer):bool;stdcall;
@@ -135,18 +136,28 @@ begin
   begin
     if (plyLink^[i].flags and WAT_OPT_FIRST)<>0 then
     begin
+      tmp:=plyLink^[i];
+      move(plyLink^[0],plyLink^[1],SizeOf(tPlayerCell)*i);
+      plyLink^[0]:=tmp;
+{
       move(plyLink^[i],tmp,SizeOf(tPlayerCell));
       move(plyLink^[0],plyLink^[1],SizeOf(tPlayerCell)*i);
       move(tmp,plyLink^[0],SizeOf(tPlayerCell));
+}
       break;
     end;
     inc(i);
   end;
   if (plyLink^[0].flags and WAT_OPT_LAST)<>0 then
   begin
+    tmp:=plyLink^[0];
+    move(plyLink^[1],plyLink^[0],SizeOf(tPlayerCell)*(PlyNum-1));
+    plyLink^[PlyNum-1]:=tmp;
+{
     move(plyLink^[0],tmp,SizeOf(tPlayerCell));
     move(plyLink^[1],plyLink^[0],SizeOf(tPlayerCell)*(PlyNum-1));
     move(tmp,plyLink^[PlyNum-1],SizeOf(tPlayerCell));
+}
   end;
 end;
 
@@ -161,10 +172,14 @@ begin
   begin
     if (plyLink^[i].flags and WAT_OPT_LAST)<>0 then
     begin
+      tmp:=plyLink^[i];
+      move(plyLink^[i+1],plyLink^[i],SizeOf(tPlayerCell)*(PlyNum-i-1));
+      plyLink^[PlyNum-1]:=tmp;
+{
       move(plyLink^[i],tmp,SizeOf(tPlayerCell));
       move(plyLink^[i+1],plyLink^[i],SizeOf(tPlayerCell)*(PlyNum-i-1));
       move(tmp,plyLink^[PlyNum-1],SizeOf(tPlayerCell));
-//      break;
+}//      break;
       i:=1;
       dec(j);
       continue;
@@ -297,6 +312,7 @@ begin
   begin
     if pPlayerCell(lParam)^.Check=nil then
       exit;
+    p:=0;
   end
   else
     p:=FindPlayer(PAnsiChar(lParam));
@@ -443,9 +459,14 @@ begin
     WAT_ACT_SETACTIVE: begin
       if p>0 then
       begin
+        tmp:=plyLink^[p];
+        move(plyLink^[0],plyLink^[1],SizeOf(tPlayerCell)*p);
+        plyLink^[0]:=tmp;
+{
         move(plyLink^[p],tmp        ,SizeOf(tPlayerCell));
         move(plyLink^[0],plyLink^[1],SizeOf(tPlayerCell)*p);
         move(tmp        ,plyLink^[0],SizeOf(tPlayerCell));
+}
       end;
 //      PreProcess;
 //      PostProcess;
@@ -561,6 +582,8 @@ begin
   PreProcess;
   oldstat:=-1;
   act:=-1;
+  stat:=WAT_MES_UNKNOWN;
+  wwnd:=0;
   while i<PlyNum do
   begin
     if (plyLink^[i].flags and WAT_OPT_DISABLED)=0 then
@@ -605,6 +628,8 @@ begin
               WAT_MES_STOPPED: j:=00;
               WAT_MES_UNKNOWN: j:=10;
               WAT_MES_PAUSED : j:=20;
+            else
+              j:=00;
             end;
             if oldstat<j then
             begin
@@ -633,9 +658,14 @@ begin
       result:=wwnd;
     if act>0 then // to first position
     begin
+      tmp:=plyLink^[act];
+      move(plyLink^[0],plyLink^[1],SizeOf(tPlayerCell)*act);
+      plyLink^[0]:=tmp;
+{
       move(plyLink^[act],tmp        ,SizeOf(tPlayerCell));
       move(plyLink^[0  ],plyLink^[1],SizeOf(tPlayerCell)*act);
       move(tmp          ,plyLink^[0],SizeOf(tPlayerCell));
+}
     end;
     if PrevPlayerName=plyLink^[0].Desc then
       PlayerChanged:=false
@@ -793,6 +823,21 @@ begin
     result:=nil;
 end;
 
+procedure ClearSongInfoData(dst:pSongInfo);
+begin
+  ClearPlayerInfo(dst);
+
+  dst.volume:=0;
+  dst.status:=WAT_MES_UNKNOWN;
+  mFreeMem(dst.wndtext);
+
+  ClearTrackInfo (dst);
+
+  mFreeMem(dst.mfile);
+  dst.fsize:=0;
+  dst.date :=0;
+end;
+
 procedure ClearPlayerInfo(dst:pSongInfo);
 begin
   with dst^ do
@@ -808,8 +853,6 @@ begin
     plyver   :=0;
     plwnd    :=0;
     winampwnd:=0;
-    volume   :=0;
-    status   :=WAT_MES_UNKNOWN;
   end;
 end;
 
@@ -824,7 +867,6 @@ begin
     mFreeMem(comment);
     mFreeMem(year);
     mFreeMem(lyric);
-    mFreeMem(mfile);
     mFreeMem(cover);
     kbps    :=0;
     khz     :=0;
@@ -832,58 +874,32 @@ begin
     track   :=0;
     total   :=0;
     time    :=0;
-    fsize   :=0;
     vbr     :=0;
     codec   :=0;
     width   :=0;
     height  :=0;
     fps     :=0;
-    date    :=0;
   end;
 end;
 
-const
-  LastFileName:pWideChar=nil;
-  oldartist   :pWideChar=nil;
-  oldtitle    :pWideChar=nil;
-
-procedure FreeInfoVariables;
-begin
-  mFreeMem(LastFileName);
-  mFreeMem(oldartist);
-  mFreeMem(oldtitle);
-end;
-
-// Get Info - main procedure
-function GetInfo(var dst:tSongInfo;flags:integer):integer;
+function CheckPlayers(var dst:tSongInfo;flags:cardinal):integer;
 var
-  wnd:HWND;
-  fname:pWideChar;
-  ftime:int64;
-  FileChanged:boolean;
-  remote:boolean;
-  ls:array [0..7] of WideChar;
-  f:THANDLE;
   PlayerChanged:bool;
-  tmp:dword;
-  lstatus:integer;
+  fname:pWideChar;
 begin
-  result:=CheckAllPlayers(flags,lstatus,PlayerChanged);
-  mFreeMem(dst.wndtext);
+  result:=CheckAllPlayers(flags,dst.status,PlayerChanged);
+
   if result<>WAT_RES_NOTFOUND then
   begin
-    wnd:=result;
-
-    dst.status:=lstatus;
     if PlayerChanged then
     begin
       ClearPlayerInfo(@dst);
       AnsiToWide(plyLink^[0].Desc,dst.player);
-      dst.plwnd:=wnd;
+      dst.plwnd:=result;
       FastANSIToWide(plyLink^[0].URL,dst.url);
       if plyLink^[0].icon<>0 then
         dst.icon:=CopyIcon(plyLink^[0].icon)
-      else if wnd<>0 then
+      else if result<>0 then
       begin
         if GetEXEByWnd(dst.plwnd,fname)<>nil then
         begin
@@ -893,135 +909,124 @@ begin
           mFreeMem(fname);
         end;
       end;
-    end;
-
-    if (plyLink^[0].flags and WAT_OPT_WINAMPAPI)<>0 then
-      flags:=flags or WAT_OPT_WINAMPAPI;
-
-    if plyLink^[0].GetInfo<>nil then
-       tInfoProc(plyLink^[0].GetInfo)(dst,flags or WAT_OPT_CHANGES) // Get Player data
-    else if (flags and WAT_OPT_WINAMPAPI)<>0 then
-       WinampGetInfo(dword(@dst),flags or WAT_OPT_CHANGES);
-
-    if dst.status=WAT_MES_STOPPED then
-    begin
-      ClearTrackInfo(@dst);
-      mFreeMem(oldartist);
-      mFreeMem(oldtitle);
-      result:=WAT_PLS_NOMUSIC;
-      exit;
-    end;
-
-    if (flags and WAT_OPT_CHANGES)<>0 then
-    begin
-      result:=WAT_RES_OK;
-      exit;
-    end;
-
-    fname:=nil;
-    ftime:=0;
-    remote:=false;
-
-    if (plyLink^[0].flags and WAT_OPT_PLAYERINFO)=0 then
-    begin
-      if plyLink^[0].GetName<>nil then
-        fname:=tNameProc(plyLink^[0].GetName)(dst.plwnd,flags);
-      if fname=nil then
-      begin
-       tmp:=0;
-       if (flags and WAT_OPT_MULTITHREAD)<>0 then tmp:=tmp or gffdMultiThread;
-       if (flags and WAT_OPT_KEEPOLD    )<>0 then tmp:=tmp or gffdOld;
-        fname:=GetFileFromWnd(wnd,KnownFileType,tmp);
-      end;
-      if fname<>nil then
-      begin
-        remote:=StrPosW(fname,'://')<>nil;
-        if not remote then
-        begin
-          f:=Reset(fname);
-
-          if dword(f)<>INVALID_HANDLE_VALUE then
-          begin
-            GetFileTime(f,nil,nil,@ftime);
-//            if not GetFileTime(f,nil,nil,@ftime) then
-//              ftime:=0;
-            CloseHandle(f);
-          end;
-        end;
-        if (LastFileName<>nil) and (lstrcmpiw(LastFileName,fname)=0) then
-        begin
-          if remote then
-            FileChanged:=true
-          else if (flags and WAT_OPT_CHECKTIME)<>0 then
-            FileChanged:=dst.date<>ftime
-          else
-            FileChanged:=false;
-        end
-        else  // new filename
-        begin
-          FileChanged:=true;
-          mFreeMem(LastFileName);
-          StrDupW(LastFileName,fname); //!!
-        end;
-
-        if FileChanged then
-        begin
-          ClearTrackInfo(@dst);
-          dst.mfile:=fname; //!! must be when format recognized or remote
-          if not remote then
-          begin
-            GetExt(fname,ls);
-            dst.date:=ftime; //!!
-            if CheckFormat(ls,dst)<>WAT_RES_NOTFOUND then
-            begin
-              dst.fsize:=GetFSize(dst.mfile);
-            end;
-            result:=WAT_RES_NEWFILE;
-          end
-          else
-            result:=WAT_RES_OK;
-        end
-        else
-        begin
-          flags:=flags or WAT_OPT_CHANGES;
-          result:=WAT_RES_OK;
-          mFreeMem(fname);
-        end;
-
-      end
-      else // no filename.
-      begin
-        ClearTrackInfo(@dst);
-        mFreeMem(LastFileName);
-      end;
+      result:=WAT_RES_NEWPLAYER;
     end
-    else // player doing all
+    else
     begin
-//!!
-//ClearTrackInfo(@dst);
-      mFreeMem(LastFileName);
+      dst.plwnd:=result; // to prevent same player, another instance
+      result:=WAT_RES_OK;
+    end
+  end;
+end;
+
+function CheckFile(var dst:tSongInfo;flags:cardinal):integer;
+var
+  fname:pWideChar;
+  tmp:integer;
+  remote,FileChanged:boolean;
+  f:THANDLE;
+  ftime:int64;
+  ls:array [0..7] of WideChar;
+begin
+  if plyLink^[0].GetName<>nil then
+    fname:=tNameProc(plyLink^[0].GetName)(dst.plwnd,flags)
+  else
+    fname:=nil;
+
+  if fname=nil then
+  begin
+   tmp:=0;
+   if (flags and WAT_OPT_MULTITHREAD)<>0 then tmp:=tmp or gffdMultiThread;
+   if (flags and WAT_OPT_KEEPOLD    )<>0 then tmp:=tmp or gffdOld;
+   fname:=GetFileFromWnd(dst.plwnd,KnownFileType,tmp);
+  end;
+
+  if fname<>nil then
+  begin
+    remote:=StrPosW(fname,'://')<>nil;
+    // file changing time (local/lan only)
+    if not remote then
+    begin
+      f:=Reset(fname);
+
+      if dword(f)<>INVALID_HANDLE_VALUE then
+      begin
+        GetFileTime(f,nil,nil,@ftime);
+        CloseHandle(f);
+      end;
+    end;
+    // same file
+    if (dst.mfile<>nil) and (lstrcmpiw(dst.mfile,fname)=0) then
+    begin
+      if remote then
+        FileChanged:=true
+      else if (flags and WAT_OPT_CHECKTIME)<>0 then
+        FileChanged:=dst.date<>ftime
+      else
+        FileChanged:=false;
+    end
+    else  // new filename
+    begin
+      FileChanged:=true;
     end;
 
-    if plyLink^[0].GetInfo<>nil then
-       tInfoProc(plyLink^[0].GetInfo)(dst,flags) // Get Player data
-    else if (flags and WAT_OPT_WINAMPAPI)<>0 then
-       WinampGetInfo(dword(@dst),flags);
-
-    if dst.status=WAT_MES_UNKNOWN then
+    if FileChanged then
     begin
-      if dst.fsize=0 then
+      dst.date :=0;
+      dst.fsize:=0;
+      mFreeMem(dst.mfile);
+      dst.mfile:=fname; //!! must be when format recognized or remote
+      if not remote then
       begin
-        dst.status:=WAT_MES_STOPPED;
-        ClearTrackInfo(@dst);
-        mFreeMem(oldartist);
-        mFreeMem(oldtitle);
-        result:=WAT_PLS_NOMUSIC;
-        exit;
+        GetExt(fname,ls);
+        dst.date:=ftime; //!!
+        if CheckFormat(ls,dst)<>WAT_RES_NOTFOUND then
+        begin
+          dst.fsize:=GetFSize(dst.mfile);
+        end;
+        result:=WAT_RES_NEWFILE;
       end
       else
-        dst.status:=WAT_MES_PLAYING;
+      begin
+        result:=WAT_RES_OK;
+      end;
+    end
+    else
+    begin
+      result:=WAT_RES_OK;
+      mFreeMem(fname);
     end;
+  end
+  else
+  begin
+    result:=WAT_RES_NOTFOUND;
+    ClearTrackInfo(@dst);
+  end;
+end;
 
+// Get Info - main procedure
+function GetInfo(var dst:tSongInfo;flags:integer):integer;
+var
+  oldartist,oldtitle:pWideChar;
+  fname:pWideChar;
+  remote:boolean;
+begin
+  if (flags and WAT_OPT_CHANGES)=0 then
+  begin
+    oldartist:=dst.artist; dst.artist:=nil;
+    oldtitle :=dst.title ; dst.title :=nil;
+
+    ClearTrackInfo(@dst);
+  end;
+
+  if plyLink^[0].GetInfo<>nil then
+    tInfoProc(plyLink^[0].GetInfo)(dst,flags) // Get Player data
+  else if (flags and WAT_OPT_WINAMPAPI)<>0 then
+    WinampGetInfo(dword(@dst),flags);
+
+  if (flags and WAT_OPT_CHANGES)=0 then
+  begin
+    remote:=StrPosW(dst.mfile,'://')<>nil;
     if (plyLink^[0].flags and WAT_OPT_PLAYERINFO)=0 then
       with dst do
       begin
@@ -1030,9 +1035,9 @@ begin
           fname:=nil
         else
           fname:=mfile;
-        if artist =NIL then artist:=DefGetArtist(plwnd,fname,wndtext);
-        if title  =NIL then title :=DefGetTitle (plwnd,fname,wndtext);
-        if txtver =NIL then txtver:=DefGetVersionText(dst.plyver);
+        if artist=NIL then artist:=DefGetArtist(plwnd,fname,wndtext);
+        if title =NIL then title :=DefGetTitle (plwnd,fname,wndtext);
+        if txtver=NIL then txtver:=DefGetVersionText(dst.plyver);
       end;
     if remote or ((plyLink^[0].flags and WAT_OPT_PLAYERINFO)<>0) then
     begin
@@ -1040,19 +1045,11 @@ begin
          ((oldartist<>nil) and (StrCmpW(dst.artist,oldartist)<>0)) or
          ((oldtitle <>nil) and (StrCmpW(dst.title ,oldtitle )<>0)) then
       begin
-        mFreeMem(oldartist);
-        mFreeMem(oldtitle);
-        StrDupW(oldartist,dst.artist);
-        StrDupW(oldtitle ,dst.title);
         result:=WAT_RES_NEWFILE;
       end;
     end;
-  end
-  else
-  begin
-    FreeInfoVariables;
-    ClearTrackInfo (@dst);
-    ClearPlayerInfo(@dst);
+    mFreeMem(oldartist);
+    mFreeMem(oldtitle);
   end;
 end;
 

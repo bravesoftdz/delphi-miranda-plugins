@@ -86,6 +86,7 @@ begin
   PluginLink^.DestroyServiceFunction(hEXP);
   PluginLink^.DestroyServiceFunction(hMacro);
   FreeAliases;
+  FreeOpt;
 end;
 
 var

@@ -65,7 +65,9 @@ begin
 
   mFreeMem(proto);
   if not is_chat then
-    DBFreeVariant(@dbv);
+    DBFreeVariant(@dbv)
+  else
+    mFreeMem(dbv.szVal.W);
 end;
 
 function SaveContact(hContact:THANDLE;num:integer):integer;

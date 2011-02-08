@@ -279,8 +279,8 @@ begin
     hTimer:=0;
   end;
 
-  mFreeMem(lfm_login);
-  mFreeMem(lfm_password);
+  FreeOpt;
+
   mFreeMem(session_id);
   mFreeMem(np_url);
   mFreeMem(sub_url);

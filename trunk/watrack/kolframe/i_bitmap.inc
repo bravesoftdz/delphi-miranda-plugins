@@ -213,35 +213,36 @@ var
   hdcbmp:HDC;
   bf:BLENDFUNCTION;
   hOld:THANDLE;
-
+  D:PWATFrameData;
 begin
-  BkDC:=CreateCompatibleDC(dc);
+  D:=CustomData;
+  D.BkDC:=CreateCompatibleDC(dc);
 
-  FixBitmap(dc,BkBitmap);
+  FixBitmap(dc,D.BkBitmap);
 
-  DeleteObject(SelectObject(BkDC,CreateDIB32(dc,rc.right-rc.left,rc.bottom-rc.top)));
+  DeleteObject(SelectObject(D.BkDC,CreateDIB32(dc,rc.right-rc.left,rc.bottom-rc.top)));
 
   //fill empty space by BK color
-  br:=CreateSolidBrush(BkColor);
-  FillRect(BkDC,rc,br);
+  br:=CreateSolidBrush(D.BkColor);
+  FillRect(D.BkDC,rc,br);
   DeleteObject(br);
 
   CopyRect(dst,rc);
-  hdcbmp:=CreateCompatibleDC(BkDC);
-  GetObject(BkBitmap,SizeOf(bmpinfo),@bmpinfo);
-  hOld:=SelectObject(hdcbmp,BkBitmap);
+  hdcbmp:=CreateCompatibleDC(D.BkDC);
+  GetObject(D.BkBitmap,SizeOf(bmpinfo),@bmpinfo);
+  hOld:=SelectObject(hdcbmp,D.BkBitmap);
 
   SetRect(src,0,0,bmpinfo.bmWidth,bmpinfo.bmHeight);
 
-  if (padding.top+padding.bottom)<(dst.bottom-dst.top) then
-    dec(dst.bottom,padding.top+padding.bottom);
-  if (padding.left+padding.right)<(dst.right-dst.left) then
-    dec(dst.right,padding.left+padding.right);
+  if (D.padding.top+D.padding.bottom)<(dst.bottom-dst.top) then
+    dec(dst.bottom,D.padding.top+D.padding.bottom);
+  if (D.padding.left+D.padding.right)<(dst.right-dst.left) then
+    dec(dst.right,D.padding.left+D.padding.right);
 
-  CalcRect(src,dst,BkMode); // calculate final picture rect
+  CalcRect(src,dst,D.BkMode); // calculate final picture rect
 
   w:=1;
-  if (BkMode and frbkTileX)<>0 then
+  if (D.BkMode and frbkTileX)<>0 then
   begin
     x:=dst.right;
     while x<rc.right do
@@ -251,7 +252,7 @@ begin
     end;
   end;
   h:=1;
-  if (BkMode and frbkTileY)<>0 then
+  if (D.BkMode and frbkTileY)<>0 then
   begin
     y:=dst.bottom;
     while y<rc.bottom do
@@ -265,17 +266,17 @@ begin
   bf.BlendFlags         :=0;
   bf.SourceConstantAlpha:=255;
   bf.AlphaFormat        :=1; // AC_SRC_ALPHA introduced in delphi 7
-  
-  x:=dst.left+padding.left;
+
+  x:=dst.left+D.padding.left;
   if x<dst.right then
     while w>0 do
     begin
       dh:=h;
-      y:=dst.top+padding.top;
+      y:=dst.top+D.padding.top;
       if y<dst.bottom then
         while dh>0 do
         begin
-         AlphaBlend(BkDC,x,y,dst.right-dst.left,dst.bottom-dst.top,
+         Windows.AlphaBlend(D.BkDC,x,y,dst.right-dst.left,dst.bottom-dst.top,
              hdcbmp,src.left,src.top,src.right-src.left,src.bottom-src.top,bf);
           inc(y,dst.bottom);
           dec(dh);

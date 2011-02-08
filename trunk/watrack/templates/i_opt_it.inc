@@ -43,3 +43,8 @@ begin
   DBWriteByte   (0,PluginShort,opt_WriteCBR  ,WriteCBR);
   DBWriteUnicode(0,PluginShort,opt_ExportText,ExportText);
 end;
+
+procedure FreeOpt;
+begin
+  mFreeMem(ExportText);
+end;

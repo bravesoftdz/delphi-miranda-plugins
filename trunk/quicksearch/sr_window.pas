@@ -1160,7 +1160,7 @@ begin
   end
   else
   begin
-    patstr:=nil;
+    mFreeMem(patstr);
   end;
 end;
 
@@ -1215,7 +1215,7 @@ begin
   end
   else
   begin
-    patstr:=nil;
+    mFreeMem(patstr);
   end;
 end;
 

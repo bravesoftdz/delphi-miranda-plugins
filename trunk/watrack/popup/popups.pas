@@ -96,6 +96,7 @@ begin
         result:=PluginLink^.CallServiceSync(MS_WAT_PRESSBUTTON,lParam,0);
     end;
     UM_FREEPLUGINDATA: begin
+      h:=0;
       h:=CallService(MS_POPUP_GETPLUGINDATA,wnd,h);
       if h<>0 then
         DeleteObject(h);
@@ -186,6 +187,9 @@ begin
         cb:=PopUpBack;
         ct:=PopUpFore;
       end;
+    else
+      cb:=0;
+      ct:=0;
     end;
 
     if IsPopup2Present then
@@ -487,8 +491,9 @@ begin
   PluginLink^.UnhookEvent(plStatusHook);
   PluginLink^.DestroyServiceFunction(ssmi);
   PluginLink^.UnhookEvent(sic);
-  mFreeMem(PopTitle);
-  mFreeMem(PopText);
+
+  FreePopup;
+
   if PopupPresent then
   begin
     PluginLink^.UnhookEvent(opthook);

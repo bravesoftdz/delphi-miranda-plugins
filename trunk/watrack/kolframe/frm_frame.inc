@@ -27,9 +27,9 @@ const
 procedure TWATFrame.ResetFrame;
 begin
 // Slider to zero (max to sero)
-  ResetTrackbar(Trackbar);
+  ResetTrackbar(PWATFrameData(CustomData).Trackbar);
 // Clear text
-  ClearText(TextBlock);
+  ClearText(PWATFrameData(CustomData).TextBlock);
 // frame back to default
   RefreshPicture(nil);
 end;
@@ -37,48 +37,52 @@ end;
 procedure FrameTimerProc(wnd:HWND;uMsg:cardinal;idEvent:cardinal;dwTime:dword); stdcall;
 var
   psi:PSongInfo;
+  D:PWATFrameData;
 begin
-  if FrameCtrl.Trackbar<>nil then
+  D:=FrameCtrl.CustomData;
+  if D.Trackbar<>nil then
   begin
-    if (FrameCtrl.ShowControls and scTrackBar)<>0 then
+    if (D.ShowControls and scTrackBar)<>0 then
     begin
       if //(TrackPos>=0) and
          (CallService(MS_WAT_GETMUSICINFO,WAT_INF_CHANGES,dword(@psi))<>
          WAT_PLS_NOTFOUND) then
       begin
-        SetTrackBarPosition(FrameCtrl.Trackbar,(psi^.time*1000) div FrameCtrl.UpdInterval)
+        SetTrackBarPosition(D.Trackbar,(psi^.time*1000) div D.UpdInterval)
       end;
     end;
   end;
 
-  if (FrameCtrl.ShowControls and scText)<>0 then
+  if (D.ShowControls and scText)<>0 then
   begin
-    UpdateTextBlock(FrameCtrl.TextBlock,false); // fase - check for %percent%/%time%
+    UpdateTextBlock(D,false); // fase - check for %percent%/%time%
   end;
 
-  FrameCtrl.Form.Update;
+  FrameCtrl.{Form.}Update;
 end;
 
 procedure TWATFrame.AdjustFrame;
 var
   h:integer;
+  D:PWATFrameData;
 begin
-  h:=Form.Height; // or need to get FRAME height
-  if ((ShowControls and scTrackbar)<>0) and (Trackbar<>nil) then
+  D:=CustomData;
+  h:={Form.}Height; // or need to get FRAME height
+  if ((D.ShowControls and scTrackbar)<>0) and (D.Trackbar<>nil) then
   begin
-    dec(h,Trackbar.Height);
+    dec(h,D.Trackbar.Height);
 //    Trackbar.Top:=h;
   end;
-  if ((ShowControls and scButtons )<>0) and (Buttons<>nil) then
+  if ((D.ShowControls and scButtons )<>0) and (D.Buttons<>nil) then
   begin
-    with Buttons^ do
+    with D.Buttons^ do
     begin
       Top:=h-Height-BtnGap;
       dec(h,Height+2*BtnGap);
     end;
   end;
-  if TextBlock<>nil then
-    with TextBlock^ do
+  if D.TextBlock<>nil then
+    with D.TextBlock^ do
     begin
       Top   :=awkTextPad;
       Height:=h-Top;
@@ -88,82 +92,87 @@ end;
 procedure TWATFrame.SaveSettings;
 var
   D:pIcoGrpData;
+  DW:PWATFrameData;
 begin
-  DBWriteByte  (0,PluginShort,opt_HideFrameM,ord(HideNoMusic));
-  DBWriteByte  (0,PluginShort,opt_HideFrameP,ord(HideNoPlayer));
-  DBWriteByte  (0,PluginShort,opt_FrmUsePic ,ord(UseBkPicture));
-  DBWriteByte  (0,PluginShort,opt_FrmUseCvr ,ord(UseCover));
-  DBWriteDWord (0,PluginShort,opt_FrmBkColor,BkColor);
-  DBWriteWord  (0,PluginShort,opt_FrmBkMode ,BkMode);
-  DBWriteDWord (0,PluginShort,opt_ShowCtrls ,ShowControls);
-  DBWriteByte  (0,PluginShort,opt_FrmAlpha  ,FrmAlpha);
-  DBWriteWord  (0,PluginShort,opt_FrmTimer  ,UpdInterval);
-  DBWriteWord  (0,PluginShort,opt_PadLeft   ,padding.left);
-  DBWriteWord  (0,PluginShort,opt_PadTop    ,padding.top);
-  DBWriteWord  (0,PluginShort,opt_PadRight  ,padding.right);
-  DBWriteWord  (0,PluginShort,opt_PadBottom ,padding.bottom);
-  DBWriteString(0,PluginShort,opt_FrmBkPic  ,BkDefFile);
+  DW:=CustomData;
+  DBWriteByte  (0,PluginShort,opt_HideFrameM,ord(DW.HideNoMusic));
+  DBWriteByte  (0,PluginShort,opt_HideFrameP,ord(DW.HideNoPlayer));
+  DBWriteByte  (0,PluginShort,opt_FrmUsePic ,ord(DW.UseBkPicture));
+  DBWriteByte  (0,PluginShort,opt_FrmUseCvr ,ord(DW.UseCover));
+  DBWriteDWord (0,PluginShort,opt_FrmBkColor,DW.BkColor);
+  DBWriteWord  (0,PluginShort,opt_FrmBkMode ,DW.BkMode);
+  DBWriteDWord (0,PluginShort,opt_ShowCtrls ,DW.ShowControls);
+  DBWriteByte  (0,PluginShort,opt_FrmAlpha  ,DW.FrmAlpha);
+  DBWriteWord  (0,PluginShort,opt_FrmTimer  ,DW.UpdInterval);
+  DBWriteWord  (0,PluginShort,opt_PadLeft   ,DW.padding.left);
+  DBWriteWord  (0,PluginShort,opt_PadTop    ,DW.padding.top);
+  DBWriteWord  (0,PluginShort,opt_PadRight  ,DW.padding.right);
+  DBWriteWord  (0,PluginShort,opt_PadBottom ,DW.padding.bottom);
+  DBWriteString(0,PluginShort,opt_FrmBkPic  ,DW.BkDefFile);
 
   RefreshPicture;
 
-  InvalidateRect(FrameCtrl.Form.GetWindowHandle,nil,true);
+  InvalidateRect(FrameCtrl.{Form.}GetWindowHandle,nil,true);
 
-  if TextBlock<>nil then
+  if DW.TextBlock<>nil then
   begin
-    TextBlock.Visible:=(ShowControls and scText)<>0;
-    TextBlock.BkColor:=BkColor;
+    DW.TextBlock.Visible:=(DW.ShowControls and scText)<>0;
+    DW.TextBlock.BkColor:=DW.BkColor;
   end;
 
-  if Trackbar<>nil then
+  if DW.Trackbar<>nil then
   begin
-    Trackbar.Visible:=(ShowControls and scTrackBar)<>0;
-    TrackbarSetRange(Trackbar,UpdInterval);
+    DW.Trackbar.Visible:=(DW.ShowControls and scTrackBar)<>0;
+    TrackbarSetRange(DW.Trackbar,DW.UpdInterval);
   end;
 
-  if Buttons<>nil then
+  if DW.Buttons<>nil then
   begin
-    Buttons.Visible:=(ShowControls and scButtons)<>0;
-    D:=Pointer(Buttons.CustomObj);
-    D.ShowVolume:=(ShowControls and scVolume)<>0; // like Buttons.Childrens[0].Visible
-    D.ButtonGap :=(ShowControls and scGap   )<>0;
-    SendMessage(Buttons.GetWindowHandle,WM_SIZE,0,0);
+    DW.Buttons.Visible:=(DW.ShowControls and scButtons)<>0;
+    D:=Pointer(DW.Buttons.CustomObj);
+    D.ShowVolume:=(DW.ShowControls and scVolume)<>0; // like Buttons.Childrens[0].Visible
+    D.ButtonGap :=(DW.ShowControls and scGap   )<>0;
+    SendMessage(DW.Buttons.GetWindowHandle,WM_SIZE,0,0);
   end;
 
   AdjustFrame;
-  FrameCtrl.Form.Update;
+  FrameCtrl.{Form.}Update;
 
-  if UpdTimer<>0 then // FrameWnd MUST be present
-    KillTimer(0,UpdTimer);
-  if UpdInterval>0 then
+  if DW.UpdTimer<>0 then // FrameWnd MUST be present
+    KillTimer(0,DW.UpdTimer);
+  if DW.UpdInterval>0 then
   begin
-    UpdTimer:=SetTimer(0,0,UpdInterval,@FrameTimerProc);
+    DW.UpdTimer:=SetTimer(0,0,DW.UpdInterval,@FrameTimerProc);
   end
   else
-    UpdTimer:=0;
+    DW.UpdTimer:=0;
 
 end;
 
 procedure TWATFrame.LoadSettings;
+var
+  D:PWATFrameData;
 begin
-  HideNoMusic :=DBReadByte (0,PluginShort,opt_HideFrameM,0)<>0;
-  HideNoPlayer:=DBReadByte (0,PluginShort,opt_HideFrameP,0)<>0;
-  UseBkPicture:=DBReadByte (0,PluginShort,opt_FrmUsePic ,0)<>0;
-  UseCover    :=DBReadByte (0,PluginShort,opt_FrmUseCvr ,0)<>0;
-  BkColor     :=DBReadDWord(0,PluginShort,opt_FrmBkColor,$00E0E0E0);
-  BkMode      :=DBReadWord (0,PluginShort,opt_FrmBkMode ,frbkCenter);
-  ShowControls:=DBReadDWord(0,PluginShort,opt_ShowCtrls ,scAll);
-  FrmAlpha    :=DBReadByte (0,PluginShort,opt_FrmAlpha  ,255);
+  D:=CustomData;
+  D.HideNoMusic :=DBReadByte (0,PluginShort,opt_HideFrameM,0)<>0;
+  D.HideNoPlayer:=DBReadByte (0,PluginShort,opt_HideFrameP,0)<>0;
+  D.UseBkPicture:=DBReadByte (0,PluginShort,opt_FrmUsePic ,0)<>0;
+  D.UseCover    :=DBReadByte (0,PluginShort,opt_FrmUseCvr ,0)<>0;
+  D.BkColor     :=DBReadDWord(0,PluginShort,opt_FrmBkColor,$00E0E0E0);
+  D.BkMode      :=DBReadWord (0,PluginShort,opt_FrmBkMode ,frbkCenter);
+  D.ShowControls:=DBReadDWord(0,PluginShort,opt_ShowCtrls ,scAll);
+  D.FrmAlpha    :=DBReadByte (0,PluginShort,opt_FrmAlpha  ,255);
 
-  UpdInterval:=DBReadWord(0,PluginShort,opt_FrmTimer,200);
-  if UpdInterval<100 then
-    UpdInterval:=UpdInterval*1000;
+  D.UpdInterval:=DBReadWord(0,PluginShort,opt_FrmTimer,200);
+  if D.UpdInterval<100 then
+    D.UpdInterval:=D.UpdInterval*1000;
 
-  padding.left  :=DBReadWord(0,PluginShort,opt_PadLeft  ,0);
-  padding.top   :=DBReadWord(0,PluginShort,opt_PadTop   ,0);
-  padding.right :=DBReadWord(0,PluginShort,opt_PadRight ,0);
-  padding.bottom:=DBReadWord(0,PluginShort,opt_PadBottom,0);
+  D.padding.left  :=DBReadWord(0,PluginShort,opt_PadLeft  ,0);
+  D.padding.top   :=DBReadWord(0,PluginShort,opt_PadTop   ,0);
+  D.padding.right :=DBReadWord(0,PluginShort,opt_PadRight ,0);
+  D.padding.bottom:=DBReadWord(0,PluginShort,opt_PadBottom,0);
 
-  BkDefFile:=DBReadString(0,PluginShort,opt_FrmBkPic,nil);
+  D.BkDefFile:=DBReadString(0,PluginShort,opt_FrmBkPic,nil);
 end;
 
 {$include i_bitmap.inc}
@@ -176,9 +185,9 @@ var
   wnd:HWND;
   x:cardinal;
 begin
-  if IsFrameFloated(FrameId) then
+  if IsFrameFloated(PWATFrameData(CustomData).FrameId) then
   begin
-    wnd:=GetParent(FrameCtrl.Form.GetWindowHandle);
+    wnd:=GetParent(FrameCtrl.{Form.}GetWindowHandle);
     x:=GetWindowLongW(wnd,GWL_EXSTYLE);
     if value<>255 then
     begin
@@ -194,71 +203,81 @@ end;
 procedure TWATFrame.FrameResize(Sender: PObj);
 var
   tmpBmp:HBITMAP;
+  D:PWATFrameData;
 begin
-  if BkDC<>0 then
+  D:=CustomData;
+  if D.BkDC<>0 then
   begin
-    tmpBmp:=GetCurrentObject(BkDC,OBJ_BITMAP);
-    DeleteDC(BkDC);
-    BkDC:=0;
+    tmpBmp:=GetCurrentObject(D.BkDC,OBJ_BITMAP);
+    DeleteDC(D.BkDC);
+    D.BkDC:=0;
     DeleteObject(tmpBmp);
   end;
   AdjustFrame;
 end;
 
 procedure BkTimerProc(wnd:HWND;uMsg:cardinal;idEvent:cardinal;dwTime:dword); stdcall;
+var
+  D:PWATFrameData;
 begin
-  KillTimer(0,FrameCtrl.BkTimer);
-  FrameCtrl.BkTimer:=0;
-  DeleteObject(FrameCtrl.BkBitmap);
-  FrameCtrl.BkBitmap:=0;
+  D:=FrameCtrl.CustomData;
+  KillTimer(0,D.BkTimer);
+  D.BkTimer:=0;
+  DeleteObject(D.BkBitmap);
+  D.BkBitmap:=0;
 end;
 
 procedure TWATFrame.RefreshPicture(cover:PAnsiChar=nil);
+var
+  D:PWATFrameData;
 begin
-  if BkBitmap<>0 then
+  D:=CustomData;
+  if D.BkBitmap<>0 then
     BkTimerProc(0,0,0,0); // remove old picture
 
   FrameResize(nil); // clear frame bitmap buffer
 
-  if UseBkPicture then
-    BkBitmap:=LoadBkPicture(cover,true,BkDefFile);
+  if D.UseBkPicture then
+    D.BkBitmap:=LoadBkPicture(cover,true,D.BkDefFile);
 
-  if FrameCtrl.BkBitmap=HBITMAP(-1) then // same file
-    FrameCtrl.BkBitmap:=0;
+  if D.BkBitmap=HBITMAP(-1) then // same file
+    D.BkBitmap:=0;
 end;
 
 procedure TWATFrame.Paint(Sender: PControl; DC: HDC);
 var
   rc: TRect;
   br:HBRUSH;
+  D:PWATFrameData;
 begin
+  D:=CustomData;
   GetClientRect(Sender.Handle,rc);
-  if UseBkPicture then
+  if D.UseBkPicture then
   begin
-   if BkDC=0 then
+   if D.BkDC=0 then
    begin
-      if BkBitmap=0 then
+      if D.BkBitmap=0 then
       begin
-        if (BkFile<>nil) and (BkFile^<>#0) then
-          BkBitmap:=CallService(MS_UTILS_LOADBITMAP,0,dword(BkFile));
+        if (D.BkFile<>nil) and (D.BkFile^<>#0) then
+          D.BkBitmap:=CallService(MS_UTILS_LOADBITMAP,0,dword(D.BkFile));
       end;
 
-      if BkBitmap<>0 then
+      if D.BkBitmap<>0 then
       begin
         PreparePicture(dc,rc);
-        BkTimer:=SetTimer(0,0,10000,@BkTimerProc);
+        D.BkTimer:=SetTimer(0,0,10000,@BkTimerProc);
       end;
     end;
-    if BkDC<>0 then
+    if D.BkDC<>0 then
     begin
       BitBlt(dc,rc.left,rc.top,rc.right-rc.left,rc.bottom-rc.top,
-             BkDC,rc.left,rc.top,SRCCOPY);
+             D.BkDC,rc.left,rc.top,SRCCOPY);
       exit;
     end;
   end;
 
   InflateRect(rc,1,1);
-  br:=CreateSolidBrush(BkColor);
+  br:=CreateSolidBrush(D.BkColor);
   FillRect(dc,rc,br);
   DeleteObject(br);
 end;
@@ -270,13 +289,15 @@ function TWATFrame.LoadBkPicture(CoverFName:PAnsiChar;check:boolean=false;
              BackFName:PAnsiChar=nil):integer;
 var
   tmpstr:PAnsiChar;
+  D:PWATFrameData;
 begin
   result:=0;
+  D:=CustomData;
 
   // check the same file, ie only 'next pic'
   if (CoverFName<>nil) and (CoverFName^<>#0) then
   begin
-    if check and (StrCmp(CoverFName,BkFile)=0) then
+    if check and (StrCmp(CoverFName,D.BkFile)=0) then
     begin
       result:=-1;
       Exit;
@@ -285,8 +306,8 @@ begin
     result:=CallService(MS_UTILS_LOADBITMAP,0,dword(CoverFName));
     if result<>0 then
     begin
-        mFreeMem(BkFile);
-        StrDup(BkFile,CoverFName);
+        mFreeMem(D.BkFile);
+        StrDup(D.BkFile,CoverFName);
       Exit;
     end;
   end;
@@ -296,13 +317,13 @@ begin
     tmpstr:=ParseVarString(BackFName);
     if (tmpstr<>nil) and (tmpstr^<>#0) then
     begin
-      if (not check) or (StrCmp(tmpstr,BkFile)<>0) then
+      if (not check) or (StrCmp(tmpstr,D.BkFile)<>0) then
       begin
         result:=CallService(MS_UTILS_LOADBITMAP,0,dword(tmpstr));
         if result<>0 then
         begin
-          mFreeMem(BkFile);
-          StrDup(BkFile,tmpstr);
+          mFreeMem(D.BkFile);
+          StrDup(D.BkFile,tmpstr);
         end;
       end
       else
@@ -312,78 +333,113 @@ begin
   end;
 end;
 
+procedure Destroy(dummy:PControl;sender:PObj);
+var
+  tmpBmp:HBITMAP;
+  D:PWATFrameData;
+begin
+  D:=PWATFrame(Sender).CustomData;
+  if D.UpdTimer<>0 then
+  begin
+    KillTimer(0,D.UpdTimer);
+    D.UpdTimer:=0;
+  end;
+
+  mFreeMem(D.Template);
+  mFreeMem(D.BkDefFile);
+  mFreeMem(D.BkFile);
+  if D.BkDC<>0 then
+  begin
+    tmpBmp:=GetCurrentObject(D.BkDC,OBJ_BITMAP);
+    DeleteDC(D.BkDC);
+    D.BkDC:=0;
+    DeleteObject(tmpBmp);
+  end;
+  if D.BkBitmap<>0 then
+    DeleteObject(D.BkBitmap);
+end;
+{
 destructor TWATFrame.Destroy;
 var
   tmpBmp:HBITMAP;
+  D:PWATFrameData;
 begin
-  if UpdTimer<>0 then
+  D:=CustomData;
+  if D.UpdTimer<>0 then
   begin
-    KillTimer(0,UpdTimer);
-    UpdTimer:=0;
+    KillTimer(0,D.UpdTimer);
+    D.UpdTimer:=0;
   end;
 
-  mFreeMem(BkDefFile);
-  mFreeMem(BkFile);
-  if BkDC<>0 then
+  mFreeMem(D.BkDefFile);
+  mFreeMem(D.BkFile);
+  if D.BkDC<>0 then
   begin
-    tmpBmp:=GetCurrentObject(BkDC,OBJ_BITMAP);
-    DeleteDC(BkDC);
-    BkDC:=0;
+    tmpBmp:=GetCurrentObject(D.BkDC,OBJ_BITMAP);
+    DeleteDC(D.BkDC);
+    D.BkDC:=0;
     DeleteObject(tmpBmp);
   end;
-  if BkBitmap<>0 then
-    DeleteObject(BkBitmap);
+  if D.BkBitmap<>0 then
+    DeleteObject(D.BkBitmap);
 
   inherited;
 end;
-
+}
 procedure TWATFrame.RefreshAllFrameIcons;
+var
+  D:PWATFrameData;
 begin
-  if Buttons <>nil then RefreshButtonIcons(Buttons);
-  if Trackbar<>nil then RefreshTrackbarIcons(Trackbar);
+  D:=CustomData;
+  if D.Buttons <>nil then RefreshButtonIcons(D.Buttons);
+  if D.Trackbar<>nil then RefreshTrackbarIcons(D.Trackbar);
 end;
 
 function CreateFrameWindow(parent:HWND):THANDLE;
+var
+  D:PWATFrameData;
 begin
   result:=0;
 
-  New(FrameCtrl,Create);
+  FrameCtrl:=PWATFrame(NewAlienPanel(parent,esNone));
   if FrameCtrl<>nil then
   begin
+    GetMem(D,SizeOf(TWATFrameData));
+    FillChar(D^,SizeOf(TWATFrameData),0);
     with FrameCtrl^ do
     begin
+      CustomData:=D;
       LoadSettings;
 
-      Form:=NewAlienPanel(parent,esNone);
-      result:=Form.GetWindowHandle;
+      result:={Form.}GetWindowHandle;
 
       if RegisterButtonIcons then
       begin
 
-        Buttons :=MakeNewButtonGroup(Form,
-            (ShowControls and scVolume)<>0,
-            (ShowControls and scGap)<>0);
+        D.Buttons :=MakeNewButtonGroup(FrameCtrl{Form},
+            (D.ShowControls and scVolume)<>0,
+            (D.ShowControls and scGap)<>0);
 
-        Trackbar:=MakeNewTrackbar(Form);
+        D.Trackbar:=MakeNewTrackbar(FrameCtrl{Form});
       end
       else
       begin
-        Buttons :=nil;
-        Trackbar:=nil;
+        D.Buttons :=nil;
+        D.Trackbar:=nil;
       end;
 
-      TextBlock:=MakeTextBlock(Form,BkColor);
+      D.TextBlock:=MakeTextBlock(FrameCtrl{Form},D.BkColor);
       LoadTextSettings;
 
-      if UseBkPicture then
+      if D.UseBkPicture then
       begin
-        BkBitmap:=LoadBkPicture(nil,true,BkDefFile);
-        if BkBitmap=HBITMAP(-1) then
-          BkBitmap:=0;
+        D.BkBitmap:=LoadBkPicture(nil,true,D.BkDefFile);
+        if D.BkBitmap=HBITMAP(-1) then
+          D.BkBitmap:=0;
       end;
     end;
 
-    with FrameCtrl.Form^ do
+    with FrameCtrl{.Form}^ do
     begin
       MinWidth :=80;
       MinHeight:=30;
@@ -391,7 +447,9 @@ begin
       OnPaint    :=FrameCtrl.Paint;
       OnResize   :=FrameCtrl.FrameResize;
       OnMouseDown:=TOnMouse(MakeMethod(nil, @MouseDown));
+
     end;
+    FrameCtrl.OnDestroy:=TOnEvent(MakeMethod(nil,@Destroy));
     FrameCtrl.AdjustFrame;
   end;
 end;

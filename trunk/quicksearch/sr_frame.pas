@@ -375,6 +375,7 @@ begin
   end;
   DestroyWindow(FrameWnd);
   FrameWnd:=0;
+  mFreeMem(pattern);
 end;
 
 end.

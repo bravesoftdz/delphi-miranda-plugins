@@ -42,68 +42,68 @@ function FrameViewDlg(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcal
 const
   DlgInited:boolean=false;
 var
-  tmp,tmp1:cardinal;
+  tmp:cardinal;
   buf1:PAnsiChar;
   buf:PAnsiChar;
   p:PAnsiChar;
-  redraw:boolean;
   tmpb:longbool;
   pcw,tmpPicName:pWideChar;
+  D:PWATFrameData;
 begin
   result:=0;
+  D:=FrameCtrl.CustomData;
   case hMessage of
     WM_INITDIALOG: begin
       DlgInited:=false;
 
       TranslateDialogDefault(Dialog);
-      with FrameCtrl^ do
-      begin
-        SendDlgItemMessage(Dialog,IDC_FRMALPHA,TBM_SETRANGE,0,MAKELONG(0,255));
-        SendDlgItemMessage(Dialog,IDC_FRMALPHA,TBM_SETPOS,1,FrmAlpha);
 
-        if (ShowControls and scButtons )<>0 then CheckDlgButton(Dialog,IDC_SHOWCTRLS,BST_CHECKED);
-        if (ShowControls and scTrackBar)<>0 then CheckDlgButton(Dialog,IDC_SHOWBAR  ,BST_CHECKED);
-        if (ShowControls and scText    )<>0 then CheckDlgButton(Dialog,IDC_SHOWTEXT ,BST_CHECKED);
-        if (ShowControls and scVolume  )<>0 then CheckDlgButton(Dialog,IDC_SHOWVOLUM,BST_CHECKED);
-        if (ShowControls and scGap     )<>0 then CheckDlgButton(Dialog,IDC_BTNGAP   ,BST_CHECKED);
+      SendDlgItemMessage(Dialog,IDC_FRMALPHA,TBM_SETRANGE,0,MAKELONG(0,255));
+      SendDlgItemMessage(Dialog,IDC_FRMALPHA,TBM_SETPOS,1,D.FrmAlpha);
 
-        CheckDlgButton(Dialog,IDC_HIDEFRAMEPLAYER,ORD(HideNoPlayer));
-        CheckDlgButton(Dialog,IDC_HIDEFRAMEMUSIC ,ORD(HideNoMusic));
-        EnableWindow(GetDlgItem(Dialog,IDC_HIDEFRAMEMUSIC),HideNoPlayer);
+      if (D.ShowControls and scButtons )<>0 then CheckDlgButton(Dialog,IDC_SHOWCTRLS,BST_CHECKED);
+      if (D.ShowControls and scTrackBar)<>0 then CheckDlgButton(Dialog,IDC_SHOWBAR  ,BST_CHECKED);
+      if (D.ShowControls and scText    )<>0 then CheckDlgButton(Dialog,IDC_SHOWTEXT ,BST_CHECKED);
+      if (D.ShowControls and scVolume  )<>0 then CheckDlgButton(Dialog,IDC_SHOWVOLUM,BST_CHECKED);
+      if (D.ShowControls and scGap     )<>0 then CheckDlgButton(Dialog,IDC_BTNGAP   ,BST_CHECKED);
 
-        SendDlgItemMessage(Dialog,IDC_FRMCOLOR,CPM_SETCOLOUR,0,BkColor);
-        SendDlgItemMessage(Dialog,IDC_FRMCOLOR,CPM_SETDEFAULTCOLOUR,0,GetSysColor(COLOR_BTNFACE));
-        SetDlgItemInt(Dialog,IDC_FRMCOLOR,BkColor,false);
+      CheckDlgButton(Dialog,IDC_HIDEFRAMEPLAYER,ORD(D.HideNoPlayer));
+      CheckDlgButton(Dialog,IDC_HIDEFRAMEMUSIC ,ORD(D.HideNoMusic));
+      EnableWindow(GetDlgItem(Dialog,IDC_HIDEFRAMEMUSIC),D.HideNoPlayer);
 
-        if UseBkPicture then
-          CheckDlgButton(Dialog,IDC_FRMUSEPIC,ORD(UseBkPicture));
-        if BkDefFile=nil then
-          p:=''
-        else
-          p:=BkDefFile;
-        SetDlgItemTextA(Dialog,IDC_FRMBKPIC,p);
-        CheckDlgButton(Dialog,IDC_USECOVER,ORD(UseCover));
+      SendDlgItemMessage(Dialog,IDC_FRMCOLOR,CPM_SETCOLOUR,0,D.BkColor);
+      SendDlgItemMessage(Dialog,IDC_FRMCOLOR,CPM_SETDEFAULTCOLOUR,0,GetSysColor(COLOR_BTNFACE));
+      SetDlgItemInt(Dialog,IDC_FRMCOLOR,D.BkColor,false);
 
-        tmp:=UpdInterval;
-        if (tmp>=1000) and (tmp mod 1000=0) then
-          tmp:=tmp div 1000;
-        SetDlgItemInt(Dialog,IDC_TIMER,tmp,false);
+      if D.UseBkPicture then
+        CheckDlgButton(Dialog,IDC_FRMUSEPIC,ORD(D.UseBkPicture));
+      if D.BkDefFile=nil then
+        p:=''
+      else
+        p:=D.BkDefFile;
+      SetDlgItemTextA(Dialog,IDC_FRMBKPIC,p);
+      CheckDlgButton(Dialog,IDC_USECOVER,ORD(D.UseCover));
 
-        SetDlgItemInt(Dialog,IDC_PADDING_LEFT  ,padding.left  ,false);
-        SetDlgItemInt(Dialog,IDC_PADDING_TOP   ,padding.top   ,false);
-        SetDlgItemInt(Dialog,IDC_PADDING_RIGHT ,padding.right ,false);
-        SetDlgItemInt(Dialog,IDC_PADDING_BOTTOM,padding.bottom,false);
+      tmp:=D.UpdInterval;
+      if (tmp>=1000) and (tmp mod 1000=0) then
+        tmp:=tmp div 1000;
+      SetDlgItemInt(Dialog,IDC_TIMER,tmp,false);
 
-        if (BkMode and frbkCenterX     )<>0 then CheckDlgButton(Dialog,IDC_CENTERX ,BST_CHECKED);
-        if (BkMode and frbkCenterY     )<>0 then CheckDlgButton(Dialog,IDC_CENTERY ,BST_CHECKED);
-        if (BkMode and frbkTileX       )<>0 then CheckDlgButton(Dialog,IDC_TILEX   ,BST_CHECKED);
-        if (BkMode and frbkTileY       )<>0 then CheckDlgButton(Dialog,IDC_TILEY   ,BST_CHECKED);
-        if (BkMode and frbkStretchX    )<>0 then CheckDlgButton(Dialog,IDC_STRETCHX,BST_CHECKED);
-        if (BkMode and frbkStretchY    )<>0 then CheckDlgButton(Dialog,IDC_STRETCHY,BST_CHECKED);
-        if (BkMode and frbkProportional)<>0 then CheckDlgButton(Dialog,IDC_PROP    ,BST_CHECKED);
-        if (BkMode and frbkBottom      )<>0 then CheckDlgButton(Dialog,IDC_BOTTOM  ,BST_CHECKED);
-        if (BkMode and frbkRight       )<>0 then CheckDlgButton(Dialog,IDC_RIGHT   ,BST_CHECKED);
-      end;
+      SetDlgItemInt(Dialog,IDC_PADDING_LEFT  ,D.padding.left  ,false);
+      SetDlgItemInt(Dialog,IDC_PADDING_TOP   ,D.padding.top   ,false);
+      SetDlgItemInt(Dialog,IDC_PADDING_RIGHT ,D.padding.right ,false);
+      SetDlgItemInt(Dialog,IDC_PADDING_BOTTOM,D.padding.bottom,false);
+
+      if (D.BkMode and frbkCenterX     )<>0 then CheckDlgButton(Dialog,IDC_CENTERX ,BST_CHECKED);
+      if (D.BkMode and frbkCenterY     )<>0 then CheckDlgButton(Dialog,IDC_CENTERY ,BST_CHECKED);
+      if (D.BkMode and frbkTileX       )<>0 then CheckDlgButton(Dialog,IDC_TILEX   ,BST_CHECKED);
+      if (D.BkMode and frbkTileY       )<>0 then CheckDlgButton(Dialog,IDC_TILEY   ,BST_CHECKED);
+      if (D.BkMode and frbkStretchX    )<>0 then CheckDlgButton(Dialog,IDC_STRETCHX,BST_CHECKED);
+      if (D.BkMode and frbkStretchY    )<>0 then CheckDlgButton(Dialog,IDC_STRETCHY,BST_CHECKED);
+      if (D.BkMode and frbkProportional)<>0 then CheckDlgButton(Dialog,IDC_PROP    ,BST_CHECKED);
+      if (D.BkMode and frbkBottom      )<>0 then CheckDlgButton(Dialog,IDC_BOTTOM  ,BST_CHECKED);
+      if (D.BkMode and frbkRight       )<>0 then CheckDlgButton(Dialog,IDC_RIGHT   ,BST_CHECKED);
+
       SwitchBk(Dialog);
 
       DlgInited:=true;
@@ -119,11 +119,8 @@ begin
       begin
         case LoWord(wParam) of
           IDC_HIDEFRAMEPLAYER: begin
-            if IsDlgButtonChecked(Dialog,IDC_HIDEFRAMEPLAYER)<>BST_UNCHECKED then
-              redraw:=true
-            else
-              redraw:=false;
-            EnableWindow(GetDlgItem(Dialog,IDC_HIDEFRAMEMUSIC),redraw);
+            EnableWindow(GetDlgItem(Dialog,IDC_HIDEFRAMEMUSIC),
+                IsDlgButtonChecked(Dialog,IDC_HIDEFRAMEPLAYER)<>BST_UNCHECKED);
           end;
 
           IDC_FRMUSEPIC: begin
@@ -155,134 +152,116 @@ begin
     WM_NOTIFY: begin
       if PNMHdr(lParam)^.code=PSN_APPLY then
       begin
-        redraw:=false;
-        with FrameCtrl^ do
+        // Alpha channel
+        tmp:=SendDlgItemMessage(Dialog,IDC_FRMALPHA,TBM_GETPOS,0,0);
+        if tmp<>Cardinal(D.FrmAlpha) then
         begin
-          // Alpha channel
-          tmp:=SendDlgItemMessage(Dialog,IDC_FRMALPHA,TBM_GETPOS,0,0);
-          if tmp<>Cardinal(FrmAlpha) then
-          begin
-            FrmAlpha:=tmp;
-            if FrameId>=0 then
-              FrameCtrl.SetAlpha(FrmAlpha);
-          end;
+          D.FrmAlpha:=tmp;
+          if D.FrameId>=0 then
+            FrameCtrl.SetAlpha(D.FrmAlpha);
+        end;
 
-          // show/hide controls
-          tmp:=0;
-          if IsDlgButtonChecked(Dialog,IDC_SHOWCTRLS)<>BST_UNCHECKED then tmp:=tmp or scButtons;
-          if IsDlgButtonChecked(Dialog,IDC_SHOWBAR  )<>BST_UNCHECKED then tmp:=tmp or scTrackBar;
-          if IsDlgButtonChecked(Dialog,IDC_SHOWTEXT )<>BST_UNCHECKED then tmp:=tmp or scText;
-          if IsDlgButtonChecked(Dialog,IDC_SHOWVOLUM)<>BST_UNCHECKED then tmp:=tmp or scVolume;
-          if IsDlgButtonChecked(Dialog,IDC_BTNGAP   )<>BST_UNCHECKED then tmp:=tmp or scGap;
+        // show/hide controls
+        tmp:=0;
+        if IsDlgButtonChecked(Dialog,IDC_SHOWCTRLS)<>BST_UNCHECKED then tmp:=tmp or scButtons;
+        if IsDlgButtonChecked(Dialog,IDC_SHOWBAR  )<>BST_UNCHECKED then tmp:=tmp or scTrackBar;
+        if IsDlgButtonChecked(Dialog,IDC_SHOWTEXT )<>BST_UNCHECKED then tmp:=tmp or scText;
+        if IsDlgButtonChecked(Dialog,IDC_SHOWVOLUM)<>BST_UNCHECKED then tmp:=tmp or scVolume;
+        if IsDlgButtonChecked(Dialog,IDC_BTNGAP   )<>BST_UNCHECKED then tmp:=tmp or scGap;
+        D.ShowControls:=tmp;
 
-          tmp1:=0; // mask, what was changed
-          if ((ShowControls and scText    )<>0) xor ((tmp and scText    )<>0) then tmp1:=tmp1 or scText;
-          if ((ShowControls and scButtons )<>0) xor ((tmp and scButtons )<>0) then tmp1:=tmp1 or scButtons;
-          if ((ShowControls and scTrackBar)<>0) xor ((tmp and scTrackBar)<>0) then tmp1:=tmp1 or scTrackBar;
-          if ((ShowControls and scVolume  )<>0) xor ((tmp and scVolume  )<>0) then tmp1:=tmp1 or scVolume;
-          ShowControls:=tmp;
+        // Frame background
+        tmpb:=IsDlgButtonChecked(Dialog,IDC_USECOVER)<>BST_UNCHECKED;
+        if tmpb<>D.UseCover then
+        begin
+          D.UseCover:=tmpb;
+        end;
+        tmpb:=IsDlgButtonChecked(Dialog,IDC_FRMUSEPIC)<>BST_UNCHECKED;
+        if tmpb<>D.UseBkPicture then
+        begin
+          D.UseBkPicture:=tmpb;
+        end;
+        tmp:=SendDlgItemMessage(Dialog,IDC_FRMCOLOR,CPM_GETCOLOUR,0,0);
+        if tmp<>D.BkColor then
+        begin
+          D.BkColor:=tmp;
+        end;
 
-          // Frame background
-          tmp1:=0;
-          tmpb:=IsDlgButtonChecked(Dialog,IDC_USECOVER)<>BST_UNCHECKED;
-          if tmpb<>UseCover then
-          begin
-            UseCover:=tmpb;
-            tmp1:=1;
-          end;
-          tmpb:=IsDlgButtonChecked(Dialog,IDC_FRMUSEPIC)<>BST_UNCHECKED;
-          if tmpb<>UseBkPicture then
-          begin
-            UseBkPicture:=tmpb;
-            tmp1:=1;
-          end;
-          tmp:=SendDlgItemMessage(Dialog,IDC_FRMCOLOR,CPM_GETCOLOUR,0,0);
-          if tmp<>BkColor then
-          begin
-            BkColor:=tmp;
-            tmp1:=1;
-          end;
+        mGetMem(buf1,1024{*SizeOf(WideChar)});
+        buf1^:=#0;
+        buf:=GetDlgText(Dialog,IDC_FRMBKPIC,true);
+        PluginLink^.CallService(MS_UTILS_PATHTORELATIVE,dword(buf),dword(buf1));
+        if StrCmp(buf1,D.BkDefFile)<>0 then
+        begin
+          mFreeMem(D.BkDefFile);
+          StrDup(D.BkDefFile,buf1);
+        end;
+        mFreeMem(buf);
+        mFreeMem(buf1);
 
-          mGetMem(buf1,1024{*SizeOf(WideChar)});
-          buf1^:=#0;
-          buf:=GetDlgText(Dialog,IDC_FRMBKPIC,true);
-          PluginLink^.CallService(MS_UTILS_PATHTORELATIVE,dword(buf),dword(buf1));
-          if StrCmp(buf1,BkDefFile)<>0 then
-          begin
-            mFreeMem(BkDefFile);
-            StrDup(BkDefFile,buf1);
-            tmp1:=1;
-          end;
-          mFreeMem(buf);
-          mFreeMem(buf1);
+        // Picture effects
+        tmp:=0;
+        if IsDlgButtonchecked(Dialog,IDC_CENTERX )<>BST_UNCHECKED then tmp:=tmp or frbkCenterX;
+        if IsDlgButtonchecked(Dialog,IDC_CENTERY )<>BST_UNCHECKED then tmp:=tmp or frbkCenterY;
+        if IsDlgButtonchecked(Dialog,IDC_BOTTOM  )<>BST_UNCHECKED then tmp:=tmp or frbkBottom;
+        if IsDlgButtonchecked(Dialog,IDC_RIGHT   )<>BST_UNCHECKED then tmp:=tmp or frbkRight;
+        if IsDlgButtonchecked(Dialog,IDC_TILEX   )<>BST_UNCHECKED then tmp:=tmp or frbkTileX;
+        if IsDlgButtonchecked(Dialog,IDC_TILEY   )<>BST_UNCHECKED then tmp:=tmp or frbkTileY;
+        if IsDlgButtonchecked(Dialog,IDC_STRETCHX)<>BST_UNCHECKED then tmp:=tmp or frbkStretchX;
+        if IsDlgButtonchecked(Dialog,IDC_STRETCHY)<>BST_UNCHECKED then tmp:=tmp or frbkStretchY;
+        if IsDlgButtonchecked(Dialog,IDC_PROP    )<>BST_UNCHECKED then tmp:=tmp or frbkProportional;
 
-          // Picture effects
-          tmp:=0;
-          if IsDlgButtonchecked(Dialog,IDC_CENTERX )<>BST_UNCHECKED then tmp:=tmp or frbkCenterX;
-          if IsDlgButtonchecked(Dialog,IDC_CENTERY )<>BST_UNCHECKED then tmp:=tmp or frbkCenterY;
-          if IsDlgButtonchecked(Dialog,IDC_BOTTOM  )<>BST_UNCHECKED then tmp:=tmp or frbkBottom;
-          if IsDlgButtonchecked(Dialog,IDC_RIGHT   )<>BST_UNCHECKED then tmp:=tmp or frbkRight;
-          if IsDlgButtonchecked(Dialog,IDC_TILEX   )<>BST_UNCHECKED then tmp:=tmp or frbkTileX;
-          if IsDlgButtonchecked(Dialog,IDC_TILEY   )<>BST_UNCHECKED then tmp:=tmp or frbkTileY;
-          if IsDlgButtonchecked(Dialog,IDC_STRETCHX)<>BST_UNCHECKED then tmp:=tmp or frbkStretchX;
-          if IsDlgButtonchecked(Dialog,IDC_STRETCHY)<>BST_UNCHECKED then tmp:=tmp or frbkStretchY;
-          if IsDlgButtonchecked(Dialog,IDC_PROP    )<>BST_UNCHECKED then tmp:=tmp or frbkProportional;
+        if tmp<>D.BkMode then
+        begin
+          D.BkMode:=tmp;
+        end;
 
-          if (tmp<>BkMode) or (tmp1<>0) then
-          begin
-            BkMode:=tmp;
-          end;
+        // Hide frame option
+        tmpb :=IsDlgButtonChecked(Dialog,IDC_HIDEFRAMEPLAYER)<>BST_UNCHECKED;
+        if tmpb<>D.HideNoPlayer then
+        begin
+          D.HideNoPlayer:=tmpb;
+        end;
+        tmpb:=IsDlgButtonChecked(Dialog,IDC_HIDEFRAMEMUSIC)<>BST_UNCHECKED;
+        if tmpb<>D.HideNoMusic then
+        begin
+          D.HideNoMusic:=tmpb;
+        end;
 
-          // Hide frame option
-          tmpb :=IsDlgButtonChecked(Dialog,IDC_HIDEFRAMEPLAYER)<>BST_UNCHECKED;
-          if tmpb<>HideNoPlayer then
-          begin
-            HideNoPlayer:=tmpb;
-            tmp1:=1;
-          end;
-          tmpb:=IsDlgButtonChecked(Dialog,IDC_HIDEFRAMEMUSIC)<>BST_UNCHECKED;
-          if tmpb<>HideNoMusic then
-          begin
-            HideNoMusic:=tmpb;
-            tmp1:=1;
-          end;
+        // Padding
+        tmp:=GetDlgItemInt(Dialog,IDC_PADDING_LEFT,tmpb,false);
+        if integer(tmp)<>D.padding.left then
+        begin
+          D.padding.left:=tmp;
+        end;
+        tmp:=GetDlgItemInt(Dialog,IDC_PADDING_TOP,tmpb,false);
+        if integer(tmp)<>D.padding.top then
+        begin
+          D.padding.top:=tmp;
+        end;
+        tmp:=GetDlgItemInt(Dialog,IDC_PADDING_RIGHT,tmpb,false);
+        if integer(tmp)<>D.padding.right then
+        begin
+          D.padding.right:=tmp;
+        end;
+        tmp:=GetDlgItemInt(Dialog,IDC_PADDING_BOTTOM,tmpb,false);
+        if integer(tmp)<>D.padding.bottom then
+        begin
+          D.padding.bottom:=tmp;
+        end;
 
-          // Padding
-          tmp:=GetDlgItemInt(Dialog,IDC_PADDING_LEFT,tmpb,false);
-          if integer(tmp)<>padding.left then
-          begin
-            padding.left:=tmp;
-          end;
-          tmp:=GetDlgItemInt(Dialog,IDC_PADDING_TOP,tmpb,false);
-          if integer(tmp)<>padding.top then
-          begin
-            padding.top:=tmp;
-          end;
-          tmp:=GetDlgItemInt(Dialog,IDC_PADDING_RIGHT,tmpb,false);
-          if integer(tmp)<>padding.right then
-          begin
-            padding.right:=tmp;
-          end;
-          tmp:=GetDlgItemInt(Dialog,IDC_PADDING_BOTTOM,tmpb,false);
-          if integer(tmp)<>padding.bottom then
-          begin
-            padding.bottom:=tmp;
-          end;
+        tmp:=GetDlgItemInt(Dialog,IDC_TIMER,tmpb,false);
+        if tmp>0 then
+        begin
+          if tmp<100 then
+            tmp:=tmp*1000;
+          if tmp<200 then
+            tmp:=200;
+        end;
 
-          tmp:=GetDlgItemInt(Dialog,IDC_TIMER,tmpb,false);
-          if tmp>0 then
-          begin
-            if tmp<100 then
-              tmp:=tmp*1000;
-            if tmp<200 then
-              tmp:=200;
-          end;
-
-          if tmp<>UpdInterval then
-          begin
-            UpdInterval:=tmp;
-          end;
-
+        if tmp<>D.UpdInterval then
+        begin
+          D.UpdInterval:=tmp;
         end;
 
         FrameCtrl.SaveSettings;

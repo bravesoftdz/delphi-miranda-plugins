@@ -1,7 +1,7 @@
 {Text}
 
-var
-  Template:pWideChar;
+//var
+//  Template:pWideChar;
 const
   TextLF:TLOGFONT = (
     lfHeight        :-10;
@@ -31,52 +31,59 @@ const
   opt_FrameText :PAnsiChar = 'frame/frametext';
 
 procedure LoadTextSettings;
+var
+  D:PWATFrameData;
 begin
+  D:=FrameCtrl.CustomData;
 //  RollTail    :=DBReadByte (0,PluginShort,opt_RollTail  ,20);
-  FrameCtrl.TextBlock.RollStep  :=DBReadByte (0,PluginShort,opt_RollStep ,2);
-  FrameCtrl.TextBlock.RollGap   :=DBReadByte (0,PluginShort,opt_RollGap  ,16);
-  FrameCtrl.TextBlock.TextColor :=DBReadDWord(0,PluginShort,opt_FrmTxtClr,0);
-  FrameCtrl.TextBlock.Effects   :=DBReadWord (0,PluginShort,opt_FrmEffect,effCut or effCenter);
-  FrameCtrl.TextBlock.UpdateTime:=DBReadWord (0,PluginShort,opt_TxtTimer ,10);
+  D.TextBlock.RollStep  :=DBReadByte (0,PluginShort,opt_RollStep ,2);
+  D.TextBlock.RollGap   :=DBReadByte (0,PluginShort,opt_RollGap  ,16);
+  D.TextBlock.TextColor :=DBReadDWord(0,PluginShort,opt_FrmTxtClr,0);
+  D.TextBlock.Effects   :=DBReadWord (0,PluginShort,opt_FrmEffect,effCut or effCenter);
+  D.TextBlock.UpdateTime:=DBReadWord (0,PluginShort,opt_TxtTimer ,10);
 
-  Template:=DBReadUnicode(0,PluginShort,opt_FrameText);
-  
+  D.Template:=DBReadUnicode(0,PluginShort,opt_FrameText);
+
   DBReadStruct(0,PluginShort,opt_FrmFont,@TextLF,SizeOf(TextLF));
 //  FrameCtrl.TextBlock.Font:=CreateFontIndirect(TextLF);
-  FrameCtrl.TextBlock.FontData:=TextLF;
+  D.TextBlock.FontData:=TextLF;
 end;
 
-procedure UpdateTextBlock(TextBlock:PTextBlock;force:boolean);
+procedure UpdateTextBlock(D:PWATFrameData;force:boolean);
 var
   tmp:pWideChar;
 begin
   if not force then
   begin
-    if (StrPosW(Template,'%percent%')=nil) and
-       (StrPosW(Template,'%time%'   )=nil) then // need to |remake
+    if (StrPosW(D.Template,'%percent%')=nil) and
+       (StrPosW(D.Template,'%time%'   )=nil) then // need to |remake
       exit;
   end;
-  tmp:=pWideChar(CallService(MS_WAT_REPLACETEXT,0,dword(Template)));
-  TextBlock.BlockText:=tmp;
+  tmp:=pWideChar(CallService(MS_WAT_REPLACETEXT,0,dword(D.Template)));
+  D.TextBlock.BlockText:=tmp;
   mFreeMem(tmp);
-TextBlock.Invalidate;
+
+  D.TextBlock.Invalidate;
 end;
 
 procedure SaveTextSettings(withtemplate:boolean);
+var
+  D:PWATFrameData;
 begin
+  D:=FrameCtrl.CustomData;
 //  DBWriteByte   (0,PluginShort,opt_RollTail  ,RollTail);
-  DBWriteDWord(0,PluginShort,opt_FrmTxtClr,FrameCtrl.TextBlock.TextColor); // reaction on chunk?
-  DBWriteByte (0,PluginShort,opt_RollStep ,FrameCtrl.TextBlock.RollStep);
-  DBWriteByte (0,PluginShort,opt_RollGap  ,FrameCtrl.TextBlock.RollGap);
-  DBWriteWord (0,PluginShort,opt_FrmEffect,FrameCtrl.TextBlock.Effects);
-  DBWriteWord (0,PluginShort,opt_TxtTimer ,FrameCtrl.TextBlock.UpdateTime);
+  DBWriteDWord(0,PluginShort,opt_FrmTxtClr,D.TextBlock.TextColor); // reaction on chunk?
+  DBWriteByte (0,PluginShort,opt_RollStep ,D.TextBlock.RollStep);
+  DBWriteByte (0,PluginShort,opt_RollGap  ,D.TextBlock.RollGap);
+  DBWriteWord (0,PluginShort,opt_FrmEffect,D.TextBlock.Effects);
+  DBWriteWord (0,PluginShort,opt_TxtTimer ,D.TextBlock.UpdateTime);
 
   DBWriteStruct(0,PluginShort,opt_FrmFont,@TextLF,SizeOf(TLOGFONT));
 
   if withtemplate then
   begin
-    DBWriteUnicode(0,PluginShort,opt_FrameText,Template);
-    UpdateTextBlock(FrameCtrl.TextBlock,true);
+    DBWriteUnicode(0,PluginShort,opt_FrameText,D.Template);
+    UpdateTextBlock(D,true);
   end;
 end;
 

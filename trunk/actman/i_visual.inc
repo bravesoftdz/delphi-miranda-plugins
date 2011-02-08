@@ -765,6 +765,7 @@
             i:=ptStruct;
             SHControl(IDC_EDIT_WPAR,SW_HIDE);
             SHControl(IDC_WSTRUCT  ,SW_SHOW);
+            mFreeMem(wstruct);
             StrDupW(wstruct,PWideChar(wparam));
           end
           else if (flags and ACF_WUNICODE)<>0 then
@@ -811,6 +812,7 @@
             i:=ptStruct;
             SHControl(IDC_EDIT_LPAR,SW_HIDE);
             SHControl(IDC_LSTRUCT  ,SW_SHOW);
+            mFreeMem(lstruct);
             StrDupW(lstruct,PWideChar(lparam));
           end
           else if (flags and ACF_LUNICODE)<>0 then

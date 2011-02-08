@@ -86,7 +86,6 @@ type
     procedure SetFontData(const value:TLOGFONT);
 
   public
-    destructor Destroy; virtual;
     procedure DrawText(DC: HDC; justpaint:boolean);
 
     property Effects   :integer index idx_effect   read GetEffect write SetEffect;
@@ -209,18 +208,17 @@ begin
   end;
 end;
 
-destructor tTextBlock.Destroy;
+procedure Destroy(dummy:PControl;sender:PObj);
 var
   D:pTextData;
 begin
-  D:=pointer(CustomData);
+  D:=PTextBlock(sender).CustomData;
   if D.UpdTimer<>0 then
   begin
     KillTimer(0,D.UpdTimer);
     D.UpdTimer:=0;
   end;
-  ClearText;
-  inherited;
+  PTextBlock(sender).ClearText;
 end;
 
 // avoiding anchors problems
@@ -306,6 +304,7 @@ begin
   result.OnResize   :=result.myCtrlResize;
   result.OnPaint    :=result.myTextPaint;
   result.OnMouseDown:=result.myMouseDown;
+  Result.OnDestroy:=TOnEvent(MakeMethod(nil,@DEstroy));
 
 //    result..InitFrame;
   D.BkColor   :=BkColor;

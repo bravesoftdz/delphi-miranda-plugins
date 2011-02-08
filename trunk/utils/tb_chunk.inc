@@ -634,6 +634,7 @@ end;
 
 procedure DeleteChunks(var Chunk:pChunkArray);
 begin
-  FreeMem(Chunk);
+  if Chunk<>nil then
+    FreeMem(Chunk);
   Chunk:=nil;
 end;

@@ -83,14 +83,15 @@ type
 
 const
   // result codes
-  WAT_RES_UNKNOWN  = -2;
-  WAT_RES_NOTFOUND = -1;
-  WAT_RES_ERROR    = WAT_RES_NOTFOUND;
-  WAT_RES_OK       = 0;
-  WAT_RES_ENABLED  = WAT_RES_OK;
-  WAT_RES_DISABLED = 1;
+  WAT_RES_UNKNOWN   = -2;
+  WAT_RES_NOTFOUND  = -1;
+  WAT_RES_ERROR     = WAT_RES_NOTFOUND;
+  WAT_RES_OK        = 0;
+  WAT_RES_ENABLED   = WAT_RES_OK;
+  WAT_RES_DISABLED  = 1;
   // internal
-  WAT_RES_NEWFILE  = 3;
+  WAT_RES_NEWFILE   = 3;
+  WAT_RES_NEWPLAYER = 4;
 
 // result for MS_WAT_GETMUSICINFO service
 const
@@ -277,7 +278,7 @@ type
   tMusicFormat = packed record
     proc :tReadFormatProc;
     ext  :array [0..7] of AnsiChar;
-    flags:integer;
+    flags:cardinal;
   end;
 
 const
@@ -314,7 +315,7 @@ type
   pPlayerCell = ^tPlayerCell;
   tPlayerCell = packed record
     Desc     :PAnsiChar; // Short player name
-    flags    :integer;
+    flags    :cardinal;
     Icon     :HICON;     // can be 0. for registration only
     Init     :pointer;   // tInitProc;    can be NIL. initialize any data
     DeInit   :pointer;   // tDeInitProc;  can be NIL. finalize player processing
@@ -355,8 +356,8 @@ const
 }
 type
   pLastFMInfo = ^tLastFMInfo;
-  tLastFMInfo = record
-    request:integer;   // 0 - artist, 1 - album, 2 - track
+  tLastFMInfo = packed record
+    request:cardinal;   // 0 - artist, 1 - album, 2 - track
     artist :pWideChar; // artist
     album  :pWideChar; // album or similar artists for Artist info request
     title  :pWideChar; // track title 
@@ -365,7 +366,7 @@ type
     image  :pAnsiChar; // photo/cover link
     similar:pWideChar;
     release:pWideChar;
-    trknum :integer;
+    trknum :cardinal;
   end;
 const
   MS_WAT_LASTFMINFO:pAnsiChar = 'WATrack/LastFMInfo';

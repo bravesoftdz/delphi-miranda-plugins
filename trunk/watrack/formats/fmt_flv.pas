@@ -19,11 +19,12 @@ type
   end;
 type
   tFLVStream = packed record
-    PreviousTagSize:dword;
-    TagType        :byte;
-    BodyLength     :array [0..2] of byte;
-    Timestamp      :array [0..2] of byte;
-    Padding        :dword;
+    PreviousTagSize  :dword;
+    TagType          :byte;
+    BodyLength       :array [0..2] of byte;
+    Timestamp        :array [0..2] of byte;
+    TimestampExtended:byte;
+    StreamID         :array [0..2] of byte;
 //    Body
   end;
 
@@ -31,13 +32,14 @@ type
     endptr:PAnsiChar;
     Info  :pSongInfo;
     key   :PAnsiChar;
+    len   :cardinal;
   end;
 
 //  FLVTagTypes
 const
   FLV_AUDIO = 8;
   FLV_VIDEO = 9;
-  FLV_META  = $12;
+  FLV_META  = 18;
 
 const
   BufSize = 128*1024;
@@ -66,173 +68,164 @@ begin
     result:=(result shl 8)+tArr(buf)[i];
 end;
 
-function ProcessTag(var ptr:PAnsiChar;var work:twork;skip:integer):integer; forward;
-
-function ProcessValue(var ptr:PAnsiChar;var work:twork;skip:integer):integer;
+function ProcessValue(var ptr:PAnsiChar;key:pAnsiChar;var Info:tSongInfo):integer;
 var
   tmp:int64;
-  i:integer;
+  i,len:integer;
   recode:trecode;
   code:integer;
   codec:transform;
   value:array [0..63] of AnsiChar;
 begin
   result:=1;
-  code:=ord(ptr^); inc(ptr);
-  with work do
-    case code of
-      $00: // numeric, 8 bytes = double
+  code:=ord(ptr^); // type of value
+  ptr^:=#0;        // finalization for key name
+  inc(ptr);        // value data pointer
+
+  case code of // v10.1 specification
+
+    // Numeric, Double (8 bytes)
+    0: begin
+      move(ptr^,tmp,8);
+      recode.i:=Reverse(tmp,8);
+      i:=trunc(recode.d);
+      if      StrCmp(key,'duration'     )=0 then Info.total :=i
+      else if StrCmp(key,'totalduration')=0 then Info.total :=i
+      else if StrCmp(key,'width'        )=0 then Info.width :=i
+      else if StrCmp(key,'height'       )=0 then Info.height:=i
+      else if StrCmp(key,'audiodatarate')=0 then Info.kbps  :=i
+      else if StrCmp(key,'framerate'    )=0 then Info.fps   :=trunc(recode.d*100)
+      else if StrCmp(key,'audiosize'    )=0 then
       begin
-        if skip=0 then
-        begin
-          move(ptr^,tmp,8);
-          recode.i:=Reverse(tmp,8);
-          i:=trunc(recode.d);
-          if      StrCmp(key,'duration'     )=0 then Info.total :=i
-          else if StrCmp(key,'width'        )=0 then Info.width :=i
-          else if StrCmp(key,'height'       )=0 then Info.height:=i
-          else if StrCmp(key,'audiodatarate')=0 then Info.kbps  :=i
-          else if StrCmp(key,'framerate'    )=0 then Info.fps   :=trunc(recode.d*100)
-          else if StrCmp(key,'audiosize'    )=0 then
-          begin
-            if Info.kbps=0 then
-              Info.kbps:=trunc((recode.d*8)/(Info.total*1000))
-          end
-          else if StrCmp(key,'videocodecid')=0 then
-          begin
-            case i of
-              2:   codec.txt:='H263';
-              3:   codec.txt:='Scrn';
-              4,5: codec.txt:='VP6 ';
-              6:   codec.txt:='Src2';
-            end;
-            Info.codec:=codec.num;
-          end;
+        if Info.kbps=0 then
+          Info.kbps:=trunc((recode.d*8)/(Info.total*1000))
+      end
+      else if StrCmp(key,'videocodecid')=0 then
+      begin
+        case i of
+          2:   codec.txt:='H263';
+          3:   codec.txt:='Scrn';
+          4,5: codec.txt:='VP6 ';
+          6:   codec.txt:='Src2';
+          7:   codec.txt:='AVC ';
         end;
-        inc(ptr,8);
+        Info.codec:=codec.num;
       end;
-      $01: // boolean, 1 byte = 0 - false; 1 - true
+
+      inc(ptr,8);
+    end;
+  
+    // Boolean, UI8
+    1: begin
+      if StrCmp(key,'stereo')=0 then Info.channels:=ORD(ptr^)+1;
+
+      inc(ptr);
+    end;
+    
+    // String
+    2: begin
+      i:=reverse(pWord(ptr)^,2); inc(ptr,2);
+
+      if StrCmp(key,'creationdate')=0 then
       begin
-        inc(ptr);
+        move(ptr^,value[0],i);
+        value[i]:=#0;
+        ANSItoWide(value,Info.Year);
       end;
-      $02: // string, 2 bytes - len; len - string UTF8
+
+      inc(ptr,i);
+    end;
+
+    // Object
+    3: begin
+      repeat
+        len:=reverse(pWord(ptr)^,2); inc(ptr,2); // key name length
+        key:=ptr; inc(ptr,len);                  // key name
+
+        result:=ProcessValue(ptr,key,Info);
+      until result<=0;
+
+      if result<0 then
+        result:=1;
+    end;
+
+    // Movie clip, reserved
+    4: begin
+    end;
+  
+    // NULL
+    5: begin
+    end;
+
+    // Undefined
+    6: begin
+    end;
+  
+    // reference, UI16
+    7: begin
+      inc(ptr,2);
+    end;
+  
+    // ECMA array
+    8: begin
+      i:=pdword(ptr)^; inc(ptr,4);
+      i:=Reverse(i,4);
+      while i>0 do
       begin
-        i:=swap(pWord(ptr)^); inc(ptr,2);
-        if skip=0 then
+
+        len:=reverse(pWord(ptr)^,2); inc(ptr,2); // key name length
+        key:=ptr; inc(ptr,len);                  // key name
+
+        result:=ProcessValue(ptr,key,Info);
+
+        if result=0 then break
+        else if result<0 then
         begin
-          move(ptr^,value[0],i);
-          value[i]:=#0;
-          if StrCmp(key,'creationdate')=0 then
-            ANSItoWide(value,Info.Year);
-        end;
-        inc(ptr,i);
-      end;
-      $03: // object, xx = string UTF, xx - element; $00 $00 $09
-      begin
-        repeat
-          result:=ProcessTag(ptr,work,skip+1);
-        until result<=0;
-        if result<0 then
           result:=1;
-      end;
-      $04: // movie clip
-      begin
-        result:=0; // break
-      end;
-  {
-      $05, // null
-      $06, // undefined
-      $0D: // unsupported
-      begin
-      end;
-  }
-      $07: // reference
-      begin
-         result:=0; // break?
-      end;
-      $08: // mixed array, 4 bytes = num of element [xx = string UTF, xx - element], $00 $00 $09
-      begin
-        i:=pdword(ptr)^; inc(ptr,4);
-        i:=Reverse(i,4);
-        while i>0 do
-        begin
-          result:=ProcessTag(ptr,work,skip+1);
-          if result=0 then break
-          else if result<0 then
-          begin
-            result:=1;
-            break;
-          end;
-          dec(i);
+          break;
         end;
-      end;
-      $09: // end of object
-      begin
-        result:=-1;
-      end;
-      $0A: // array, 4 bytes - num of elements, elements
-      begin
-        i:=pdword(ptr)^; inc(ptr,4);
-        i:=Reverse(i,4);
-        while i>0 do
-        begin
-          result:=ProcessValue(ptr,work,skip+1);
-          if result=0 then exit
-          else if result<0 then
-          begin
-            result:=1;
-            break;
-          end;
-          dec(i);
-        end;
-      end;
-      $0B: // date
-      begin
-        inc(ptr,8+2); // double + 2 bytes - GMT
-      end;
-      $0C, // longstring, 4 bytes = len, len - string
-      $0F: // xml = longstring
-      begin
-        i:=pdword(ptr)^; inc(ptr,4);
-        i:=Reverse(i,4);
-        if skip=0 then
-        begin
-        end;
-        inc(ptr,i);
-      end;
-      $0E: // recordset
-      begin
-        result:=0; // break
-      end;
-      $10: // typed object = string UTF, object ($03 type)
-      begin
-        i:=swap(pWord(ptr)^); inc(ptr,i+2);
-        ProcessTag(ptr,work,skip+1)
-      end;
-      $11: // AMF3 data
-      begin
-        result:=0; // break
+        dec(i);
       end;
     end;
-end;
 
-function ProcessTag(var ptr:PAnsiChar;var work:twork;skip:integer):integer;
-var
-  i:integer;
-  key:array [0..127] of AnsiChar;
-begin
-  if ptr>=work.endptr then
-  begin
-    result:=0;
-    exit;
+    // Object end marker, UI8[3]=0,0,9
+    9: begin
+      result:=-1;
+      inc(ptr,3);
+    end;
+  
+    10: // array, 4 bytes - num of elements, elements
+    begin
+      i:=pdword(ptr)^; inc(ptr,4);
+      i:=Reverse(i,4);
+      while i>0 do
+      begin
+        result:=ProcessValue(ptr,nil,Info);
+        if result=0 then exit
+        else if result<0 then
+        begin
+          result:=1;
+          break;
+        end;
+        dec(i);
+      end;
+    end;
+
+    // Date, Double + UI16 (UTC)
+    11: begin
+      inc(ptr,8);
+      inc(ptr,2);
+    end;
+  
+    // LongString, 4 bytes = len, len - string
+    12: begin
+      i:=pdword(ptr)^; inc(ptr,4);
+      i:=Reverse(i,4);
+
+      inc(ptr,i);
+    end;
+
   end;
-  result:=1;
-  i:=swap(pWord(ptr)^); inc(ptr,2);
-  work.key:=@key;
-  if i>0 then
-    move(ptr^,key[0],i); inc(ptr,i);
-  key[i]:=#0;
-  result:=ProcessValue(ptr,work,skip);
 end;
 
 function ReadFLV(var Info:tSongInfo):boolean; cdecl;
@@ -241,9 +234,8 @@ var
   codec:transform;
   FLVHdr:tFLVHeader;
   StrmHdr:tFLVStream;
-  len:integer;
+  i,len:integer;
   buf,pp,p,endbuf:PAnsiChar;
-  work:twork;
 begin
   result:=false;
   f:=Reset(Info.mfile);
@@ -268,6 +260,7 @@ begin
             StrmHdr.BodyLength[2];
       pp:=p;
       case StrmHdr.TagType of
+
         FLV_AUDIO: begin
           Info.channels:=(ord(p^) and 1)+1;
           // samplesize is (S_Byte and 2) shr 1 = 8 or 16
@@ -279,22 +272,42 @@ begin
           end;
           FLVHdr.flags:=FLVHdr.flags and not 4;
         end;
+
         FLV_VIDEO: begin
           case ord(p^) and $0F of
             2:   codec.txt:='H263';
             3:   codec.txt:='Scrn';
             4,5: codec.txt:='VP6 ';
             6:   codec.txt:='Src2';
+            7:   codec.txt:='AVC ';
           end;
           Info.codec:=codec.num;
           FLVHdr.flags:=FLVHdr.flags and not 1;
         end;
+
         FLV_META: begin
-          work.Info  :=@Info;
-          work.endptr:=p+len;
-          inc(p); // 2
-          ProcessTag(p,work,-1);
+          if (StrmHdr.TagType and $40)=0 then // not encripted
+          begin
+            if pByte(p)^=2 then // string
+            begin
+              Inc(p);
+              i:=reverse(pWord(p)^,2); inc(p,2);
+              if StrCmp(p,'onMetaData',i)=0 then // Metadata processing start
+              begin
+                inc(p,i);
+                ProcessValue(p,nil,Info); // metadata, no need key name, our info
+                // checking for video
+                if Info.codec<>0 then
+                  FLVHdr.flags:=FLVHdr.flags and not 1;
+                // checking for audio
+                if (Info.khz<>0) and (Info.channels<>0) then
+                  FLVHdr.flags:=FLVHdr.flags and not 4;
+                // break; // if metainfo is enough
+              end;
+            end;
+          end;
         end;
+
       end;
       p:=pp+len;
     end;

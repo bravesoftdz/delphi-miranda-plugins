@@ -27,3 +27,7 @@ begin
   DBWriteUnicode(0,PluginShort,opt_prototext,ProtoText);
 end;
 
+procedure FreeOptions;
+begin
+  mFreeMem(ProtoText);
+end;

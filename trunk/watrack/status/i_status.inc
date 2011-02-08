@@ -168,7 +168,10 @@ begin
                 begin
                   if not ((oldstatus=staudio) or (oldstatus=stvideo) or // music
                          ((oldstatus=0) and (XStatusSet=2))) then // empty
+                  begin
+                    mFreeMem(txt);
                     exit; //!! do nothing!
+                  end;
                 end;
                 if isvideo then
                   xstat:=stvideo

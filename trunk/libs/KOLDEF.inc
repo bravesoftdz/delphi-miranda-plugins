@@ -256,7 +256,7 @@ That is all to have full compatibility.
 
 //{$DEFINE TEST_VERSION}
 {$IFNDEF _D6orHigher}
- {$DEFINE PARANOIA} //seems not needed under D6 !!! Inprise fixed this, finally... 
+ {$DEFINE PARANOIA} //seems not needed from D6 !!! Inprise fixed this, finally...
 {$ENDIF}
 
 
@@ -264,6 +264,7 @@ That is all to have full compatibility.
          {$DEFINE USE_FLAGS}
 {$ELSE}  {$UNDEF  USE_FLAGS}
 {$ENDIF}
+
 {$IFnDEF EVENTS_STATIC}
          {$DEFINE EVENTS_DYNAMIC}
 {$ENDIF}
@@ -275,6 +276,7 @@ That is all to have full compatibility.
          {$ENDIF}
 {$ENDIF}
 
+{$DEFINE KOL3XX}
 
 
 

@@ -31,7 +31,6 @@ type
     procedure myMouseLeave(Sender: PObj);
     procedure myCtrlBtnClick(Sender: PObj);
   public
-    destructor Destroy; virtual;
 
     procedure RefreshIcon;
     property GetIconProc : tGetIconProc write SetGetIconProc;
@@ -201,16 +200,14 @@ begin
   end;
 end;
 
-destructor tIcoButton.Destroy;
+procedure Destroy(dummy:PControl;sender:PObj);
 var
   D: PIcoBtnData;
 begin
-  D:=CustomData;
+  D:=pIcoButton(sender).CustomData;
   D.ico_normal.Free;
   if D.ico_hovered<>nil then D.ico_hovered.Free;
   if D.ico_pressed<>nil then D.ico_pressed.Free;
-
-  inherited;
 end;
 
 procedure tIcoButton.RefreshIcon;
@@ -288,7 +285,7 @@ begin
 
   Result.SetSize(16,16);
   Result.SetPosition(0,0);
-//  Result.AttachProc(WndProcIcoButton);
+  Result.OnDestroy:=TOnEvent(MakeMethod(nil,@DEstroy));
 end;
 
 end.
