@@ -1011,6 +1011,7 @@ var
   fname:pWideChar;
   remote:boolean;
 begin
+  result:=WAT_RES_OK;
   if (flags and WAT_OPT_CHANGES)=0 then
   begin
     oldartist:=dst.artist; dst.artist:=nil;

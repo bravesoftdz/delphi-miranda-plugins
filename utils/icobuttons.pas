@@ -17,6 +17,7 @@ type
   pIcoButton = ^tIcoButton;
   tIcoButton = object(TControl)
   private
+    function  GetGetIconProc:tGetIconProc;
     procedure SetGetIconProc (val:tGetIconProc);
     procedure SetDoActionProc(val:tActionProc);
     procedure SetCheckFlag(val:boolean);
@@ -33,7 +34,7 @@ type
   public
 
     procedure RefreshIcon;
-    property GetIconProc : tGetIconProc write SetGetIconProc;
+    property GetIconProc : tGetIconProc read GetGetIconProc write SetGetIconProc;
     property DoActionProc: tActionProc  write SetDoActionProc;
 
     property AsCheckbox: boolean read GetCheckFlag write SetCheckFlag;
@@ -43,6 +44,10 @@ type
 
 function CreateIcoButton(AOwner: PControl; pGetIconProc:tGetIconProc;
          pActionProc:tActionProc; action:integer=0; repeattime:integer=0):pIcoButton;
+
+function CreateIcoButtonHandle(AOwner: PControl; pActionProc:tActionProc;
+         ico_normal:HICON; ico_hovered:HICON=0; ico_pressed:HICON=0;
+         action:integer=0; repeattime:integer=0):pIcoButton;
 
 implementation
 
@@ -65,6 +70,11 @@ type
     GetIcon : tGetIconProc;
     DoAction: tActionProc;
   end;
+
+function tIcoButton.GetGetIconProc:tGetIconProc;
+begin
+  result:=pIcoBtnData(CustomData).GetIcon;
+end;
 
 procedure tIcoButton.SetGetIconProc(val:tGetIconProc);
 begin
@@ -215,11 +225,20 @@ var
   D: PIcoBtnData;
 begin
   D:=CustomData;
+  if @D.GetIcon=nil then exit;
+
   D.ico_normal.Handle:=D.GetIcon(D.action,AST_NORMAL);
+  D.ico_normal.ShareIcon:=true;
   if D.ico_hovered<>nil then
+  begin
     D.ico_hovered.Handle:=D.GetIcon(D.action,AST_HOVERED);
+    D.ico_hovered.ShareIcon:=true;
+  end;
   if D.ico_pressed<>nil then
+  begin
     D.ico_pressed.Handle:=D.GetIcon(D.action,AST_PRESSED);
+    D.ico_pressed.ShareIcon:=true;
+  end;
 end;
 
 procedure tIcoButton.myPaint(Sender: PControl; DC: HDC);
@@ -260,16 +279,16 @@ begin
   Result.DoActionProc:=pActionProc;
 
   D.ico_normal:=NewIcon;
-  D.ico_normal.ShareIcon:=true;
   D.ico_normal.Handle   :=D.GetIcon(action,AST_NORMAL);
+  D.ico_normal.ShareIcon:=true;
   D.active:=D.ico_normal;
 
   ico:=D.GetIcon(action,AST_HOVERED);
   if ico<>0 then
   begin
     D.ico_hovered:=NewIcon;
-    D.ico_hovered.ShareIcon:=true;
     D.ico_hovered.Handle   :=ico;
+    D.ico_hovered.ShareIcon:=true;
   end
   else
     D.ico_hovered:=nil;
@@ -277,8 +296,65 @@ begin
   if ico<>0 then
   begin
     D.ico_pressed:=NewIcon;
-    D.ico_pressed.ShareIcon:=true;
     D.ico_pressed.Handle   :=ico;
+    D.ico_pressed.ShareIcon:=true;
+  end
+  else
+    D.ico_pressed:=nil;
+
+  Result.SetSize(16,16);
+  Result.SetPosition(0,0);
+  Result.OnDestroy:=TOnEvent(MakeMethod(nil,@DEstroy));
+end;
+
+function CreateIcoButtonHandle(AOwner: PControl; pActionProc:tActionProc;
+         ico_normal:HICON; ico_hovered:HICON=0; ico_pressed:HICON=0;
+         action:integer=0; repeattime:integer=0):pIcoButton;
+var
+  D: PIcoBtnData;
+begin
+  Result:=pIcoButton(NewBitBtn(AOwner,'',[bboNoBorder,bboNoCaption],glyphOver,0,0));
+  Result.LikeSpeedButton.Flat:=true;
+  Result.Transparent:=true;
+
+  GetMem(D,SizeOf(TIcoBtnData));
+  Result.CustomData:=D;
+
+  Result.OnMouseDown :=Result.myMouseDown;
+  Result.OnMouseUp   :=Result.myMouseUp;
+  Result.OnMouseEnter:=Result.myMouseEnter;
+  Result.OnMouseLeave:=Result.myMouseLeave;
+  Result.OnClick     :=Result.myCtrlBtnClick;
+  Result.OnPaint     :=Result.myPaint;
+
+  Result.AsCheckbox:=false;
+  Result.action:=action;
+
+  D.rptvalue:=repeattime;
+  D.rpttimer:=0;
+
+  Result.GetIconProc :=nil;
+  Result.DoActionProc:=pActionProc;
+
+  D.ico_normal:=NewIcon;
+  D.ico_normal.Handle   :=ico_normal;
+  D.ico_normal.ShareIcon:=true;
+  D.active:=D.ico_normal;
+
+  if ico_hovered<>0 then
+  begin
+    D.ico_hovered:=NewIcon;
+    D.ico_hovered.Handle   :=ico_hovered;
+    D.ico_hovered.ShareIcon:=true;
+  end
+  else
+    D.ico_hovered:=nil;
+
+  if ico_pressed<>0 then
+  begin
+    D.ico_pressed:=NewIcon;
+    D.ico_pressed.Handle   :=ico_pressed;
+    D.ico_pressed.ShareIcon:=true;
   end
   else
     D.ico_pressed:=nil;

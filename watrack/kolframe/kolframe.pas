@@ -139,7 +139,7 @@ begin
       // trackbar
       TrackbarSetRange(D.Trackbar,D.UpdInterval,PSongInfo(lParam)^.total);
 
-      D.UpdTimer:=SetTimer(0,0,D.UpdInterval,@FrameTimerProc);
+//!!      D.UpdTimer:=SetTimer(0,0,D.UpdInterval,@FrameTimerProc);
 
       // text
       UpdateTextBlock(D,true);
@@ -178,8 +178,8 @@ begin
   if PWATFrameData(FrameCtrl.CustomData).FrameId<>0 then
   begin
     FrameCtrl.RefreshAllFrameIcons;
-    ShowWindow(FrameCtrl.{Form.}GetWindowHandle,SW_HIDE);
-    ShowWindow(FrameCtrl.{Form.}GetWindowHandle,SW_SHOW);
+    ShowWindow(FrameCtrl.GetWindowHandle,SW_HIDE);
+    ShowWindow(FrameCtrl.GetWindowHandle,SW_SHOW);
   end;
 end;
 
@@ -229,23 +229,16 @@ end;
 
 procedure DestroyFrame;
 var
-  h:integer;
   id:Integer;
 begin
   if (FrameCtrl<>nil) and (PWATFrameData(FrameCtrl.CustomData).FrameId>=0) then
   begin
     PluginLink^.UnhookEvent(plStatusHook);
 
-    h:=CallService(MS_CLIST_FRAMES_GETFRAMEOPTIONS,
-        FO_HEIGHT+(PWATFrameData(FrameCtrl.CustomData).FrameId shl 16),0);
-    if h>0 then
-    DBWriteWord(0,PluginShort,opt_FrmHeight,h);
-id:=PWATFrameData(FrameCtrl.CustomData).FrameId;
-FrameCtrl.Free;
-    CallService(MS_CLIST_FRAMES_REMOVEFRAME,{PWATFrameData(FrameCtrl.CustomData).Frame}Id,0);
-
-//    FrameCtrl.Free;
+    id:=PWATFrameData(FrameCtrl.CustomData).FrameId;
+    FrameCtrl.Free;
     FrameCtrl:=nil;
+    CallService(MS_CLIST_FRAMES_REMOVEFRAME,Id,0);
   end;
 end;
 

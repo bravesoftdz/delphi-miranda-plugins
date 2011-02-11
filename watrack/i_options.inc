@@ -87,8 +87,7 @@ begin
     i:=1
   else
     i:=0;
-  StrCopy(buf,WATPlayers);
-  StrCat (buf,desc);
+  StrCopy(StrCopyE(buf,WATPlayers),desc);
   DBWriteByte(0,PluginShort,buf,i);
   result:=true;
 end;
@@ -103,8 +102,7 @@ var
   i:integer;
   buf:array [0..63] of AnsiChar;
 begin
-  StrCopy(buf,WATPlayers);
-  StrCat (buf,desc);
+  StrCopy(StrCopyE(buf,WATPlayers),desc);
   i:=DBReadByte(0,PluginShort,buf,1);
   if i=1 then
     i:=WAT_ACT_ENABLE
@@ -133,8 +131,7 @@ begin
     i:=1
   else
     i:=0;
-  StrCopy(buf,WATFormats);
-  StrCat (buf,ext);
+  StrCopy(StrCopyE(buf,WATFormats),ext);
   DBWriteByte(0,PluginShort,buf,i);
   result:=true;
 end;
@@ -149,8 +146,7 @@ var
   i:integer;
   buf:array [0..63] of AnsiChar;
 begin
-  StrCopy(buf,WATFormats);
-  StrCat (buf,ext);
+  StrCopy(StrCopyE(buf,WATFormats),ext);
   i:=DBReadByte(0,PluginShort,buf,1);
   if i=1 then
     i:=WAT_ACT_ENABLE

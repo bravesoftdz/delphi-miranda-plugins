@@ -51,9 +51,12 @@ type
              BackFName:PAnsiChar=nil):integer;
     procedure SaveSettings;
     procedure LoadSettings;
+    procedure CheckControls;
     procedure SetAlpha(value:integer);
     procedure RefreshPicture(cover:PAnsiChar=nil);
+    procedure ClearBitmapData;
     procedure AdjustFrame;
+    procedure MyDestroy(Sender:PObj);
   end;
 
 var

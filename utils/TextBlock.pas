@@ -135,8 +135,12 @@ begin
 end;
 
 procedure TimerProc(wnd:HWND;uMsg:cardinal;TB:pTextBlock;dwTime:dword); stdcall;
+var
+  DC:HDC;
 begin
-  TB.DrawText(GetDC(wnd),false);
+  DC:=GetDC(wnd);
+  TB.DrawText(DC,false);
+  ReleaseDC(wnd,DC);
 end;
 
 procedure tTextBlock.SetEffect(idx:integer;value:integer);
@@ -156,6 +160,7 @@ begin
         OldFont:=SelectObject(DC,value);
         GetObject(GetCurrentObject(dc,OBJ_FONT),SizeOf(TLOGFONT),@TextLF);
         SelectObject(DC,OldFont);
+        ReleaseDC(0,DC);
       end;
       idx_timer   : begin
         // stoptimer
@@ -205,6 +210,7 @@ begin
         TextChunk:=Split(Text);
       end;
     end;
+    Invalidate;
   end;
 end;
 

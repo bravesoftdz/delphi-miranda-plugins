@@ -180,7 +180,7 @@ begin
   begin
     CustomObj:=D;
     SetSize(AOwner.Width-16,18);
-    SetPosition(AOwner.Left+8,AOwner.Top+AOwner.Height-18);
+    SetPosition({AOwner.Left+}8,{AOwner.Top+}AOwner.Height-18);
     Anchor(true,false,true,true);
     ThumbLen:=16;
 

@@ -1,7 +1,5 @@
 {Text}
 
-//var
-//  Template:pWideChar;
 const
   TextLF:TLOGFONT = (
     lfHeight        :-10;
@@ -30,29 +28,12 @@ const
   opt_TxtTimer  :PAnsiChar = 'frame/texttimer';
   opt_FrameText :PAnsiChar = 'frame/frametext';
 
-procedure LoadTextSettings;
-var
-  D:PWATFrameData;
-begin
-  D:=FrameCtrl.CustomData;
-//  RollTail    :=DBReadByte (0,PluginShort,opt_RollTail  ,20);
-  D.TextBlock.RollStep  :=DBReadByte (0,PluginShort,opt_RollStep ,2);
-  D.TextBlock.RollGap   :=DBReadByte (0,PluginShort,opt_RollGap  ,16);
-  D.TextBlock.TextColor :=DBReadDWord(0,PluginShort,opt_FrmTxtClr,0);
-  D.TextBlock.Effects   :=DBReadWord (0,PluginShort,opt_FrmEffect,effCut or effCenter);
-  D.TextBlock.UpdateTime:=DBReadWord (0,PluginShort,opt_TxtTimer ,10);
-
-  D.Template:=DBReadUnicode(0,PluginShort,opt_FrameText);
-
-  DBReadStruct(0,PluginShort,opt_FrmFont,@TextLF,SizeOf(TextLF));
-//  FrameCtrl.TextBlock.Font:=CreateFontIndirect(TextLF);
-  D.TextBlock.FontData:=TextLF;
-end;
-
 procedure UpdateTextBlock(D:PWATFrameData;force:boolean);
 var
   tmp:pWideChar;
 begin
+  if D.TextBlock=nil then exit;
+
   if not force then
   begin
     if (StrPosW(D.Template,'%percent%')=nil) and
@@ -62,8 +43,6 @@ begin
   tmp:=pWideChar(CallService(MS_WAT_REPLACETEXT,0,dword(D.Template)));
   D.TextBlock.BlockText:=tmp;
   mFreeMem(tmp);
-
-  D.TextBlock.Invalidate;
 end;
 
 procedure SaveTextSettings(withtemplate:boolean);
@@ -87,8 +66,21 @@ begin
   end;
 end;
 
+procedure LoadTextSettings(TB:pTextBlock);
+begin
+//  RollTail    :=DBReadByte (0,PluginShort,opt_RollTail  ,20);
+  TB.RollStep  :=DBReadByte (0,PluginShort,opt_RollStep ,2);
+  TB.RollGap   :=DBReadByte (0,PluginShort,opt_RollGap  ,16);
+  TB.TextColor :=DBReadDWord(0,PluginShort,opt_FrmTxtClr,0);
+  TB.Effects   :=DBReadWord (0,PluginShort,opt_FrmEffect,effCut or effCenter);
+  DBReadStruct(0,PluginShort,opt_FrmFont,@TextLF,SizeOf(TextLF));
+  TB.FontData  :=TextLF;
+  TB.UpdateTime:=DBReadWord (0,PluginShort,opt_TxtTimer ,10);
+end;
+
 function MakeTextBlock(AOwner:PControl;BkColor:TCOLORREF):pTextBlock;
 begin
   result:=MakeNewTextBlock(AOwner,BkColor);
   result.OnMouseDown:=TOnMouse(MakeMethod(nil, @MouseDown));
+  LoadTextSettings(result);
 end;
