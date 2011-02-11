@@ -386,13 +386,13 @@ begin
   StartTimer;
 
   PluginLink^.NotifyEventHooks(hHookWATLoaded,0,0);
+  CloseHandle(hEvent);
 end;
 
 function OnModulesLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
   buf:array [0..511] of AnsiChar;
   upd:TUpdate;
-  hEvent:THANDLE;
   p:PAnsiChar;
 begin
    PluginLink^.UnhookEvent(onloadhook);
