@@ -69,6 +69,14 @@ begin
   // refresh
 end;
 
+procedure MakeButtonsDesigner(Buttons:PControl;Designer:PDesigner);
+var
+  i:integer;
+begin
+  for i:=0 to Buttons.ChildCount-1 do
+    Designer.Connect('Button',Buttons.Children[i]);
+end;
+
 function MakeNewButtonGroup(AOwner:PControl;aVolume,aGap:bool):PControl;
 var
   D:pIcoGrpData;

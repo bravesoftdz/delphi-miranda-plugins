@@ -37,6 +37,8 @@ type
     Trackbar :PTrackbar;
     Buttons  :PControl;
     TextBlock:PTextBlock;
+
+    Designer :PDesigner;
   end;
 
   PWATFrame = ^TWATFrame;
@@ -46,6 +48,10 @@ type
     procedure FrameResize(Sender: PObj);
     procedure RefreshAllFrameIcons;
     procedure ResetFrame;
+
+    procedure CreateDesigner(Sender:PControl;var Mouse:TMouseEventData);
+    procedure DesignerSaveSettings;
+    procedure DesignerLoadSettings;
 
     procedure PreparePicture(dc:HDC;rc:TRECT);
     function LoadBkPicture(CoverFName:PAnsiChar;check:boolean=false;
