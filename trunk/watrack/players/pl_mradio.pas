@@ -38,6 +38,8 @@ const
   IsMod:integer=-1;
   PrevFile:PWideChar=nil;
 
+function DeInitmRadio:integer;cdecl; forward;
+
 function SettingsChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
   result:=0;
@@ -86,18 +88,6 @@ begin
     result:=1
   else
     result:=WAT_RES_NOTFOUND;
-end;
-
-function DeInitmRadio:integer;cdecl;
-begin
-  result:=0;
-  if ChangesHook>0 then
-  begin
-    PluginLink^.UnhookEvent(ChangesHook);
-    ChangesHook:=0;
-    CurrentStation:=-1;
-  end;
-  mFreeMem(PrevFile);
 end;
 
 function Check(wnd:HWND;flags:integer):HWND;cdecl;
@@ -332,6 +322,23 @@ const
     Command  :@Command;
     URL      :'http://miranda.kom.pl/dev/bankrut/';
     Notes    :nil);
+
+function DeInitmRadio:integer;cdecl;
+begin
+  result:=0;
+  if plRec.Icon<>0 then
+  begin
+    CloseHandle(plRec.Icon);
+    plRec.Icon:=0;
+  end;
+  if ChangesHook>0 then
+  begin
+    PluginLink^.UnhookEvent(ChangesHook);
+    ChangesHook:=0;
+    CurrentStation:=-1;
+  end;
+  mFreeMem(PrevFile);
+end;
 
 initialization
   plRec.Icon:=LoadImage(hInstance,MAKEINTRESOURCE(ICO_MRADIO),IMAGE_ICON,16,16,0);
