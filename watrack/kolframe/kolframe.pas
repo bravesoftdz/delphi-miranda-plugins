@@ -120,10 +120,6 @@ begin
         end;
       end;
       FrameCtrl.ResetFrame;
-      // clear text, slider to 0, picture to default
-
-      // really, need just position=0;
-      TrackbarSetRange(D.Trackbar,D.UpdInterval,0);
     end;
 
     WAT_EVENT_NEWTRACK: begin

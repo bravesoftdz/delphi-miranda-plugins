@@ -18,6 +18,8 @@ var
 begin
   if NeedResize then
   begin
+    if PControl(Sender)^.ChildCount=0 then exit;
+
     NeedResize:=false;
 
     if ButtonGap then

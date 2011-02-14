@@ -255,7 +255,17 @@ var
   ico:HICON;
   D: PIcoBtnData;
 begin
+  // first, checking what icons are available
+  ico:=pGetIconProc(action,AST_NORMAL);
+  if ico=0 then
+  begin
+    result:=nil;
+    exit;
+  end;
+
   Result:=pIcoButton(NewBitBtn(AOwner,'',[bboNoBorder,bboNoCaption],glyphOver,0,0));
+  if result=nil then exit;
+
   Result.LikeSpeedButton.Flat:=true;
   Result.Transparent:=true;
 
@@ -275,11 +285,11 @@ begin
   D.rptvalue:=repeattime;
   D.rpttimer:=0;
 
-  Result.GetIconProc :=pGetIconProc;
   Result.DoActionProc:=pActionProc;
+  Result.GetIconProc :=pGetIconProc;
 
   D.ico_normal:=NewIcon;
-  D.ico_normal.Handle   :=D.GetIcon(action,AST_NORMAL);
+  D.ico_normal.Handle   :=ico;
   D.ico_normal.ShareIcon:=true;
   D.active:=D.ico_normal;
 
@@ -313,7 +323,14 @@ function CreateIcoButtonHandle(AOwner: PControl; pActionProc:tActionProc;
 var
   D: PIcoBtnData;
 begin
+  if ico_normal=0 then
+  begin
+    result:=nil;
+    exit;
+  end;
+
   Result:=pIcoButton(NewBitBtn(AOwner,'',[bboNoBorder,bboNoCaption],glyphOver,0,0));
+  if result=nil then exit;
   Result.LikeSpeedButton.Flat:=true;
   Result.Transparent:=true;
 

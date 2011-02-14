@@ -40,6 +40,22 @@ var
   D:PWATFrameData;
 begin
   D:=FrameCtrl.CustomData;
+
+  if IsFrameHidden(D.FrameId) then
+  begin
+    if not D.wasHidden then
+    begin
+      D.wasHidden:=true;
+      D.TextBlock.UpdateTime:=0;
+    end;
+    exit;
+  end
+  else if D.wasHidden and (D.TextBlock.UpdateTime=0) then
+  begin
+    D.wasHidden:=false;
+    D.TextBlock.UpdateTime:=DBReadWord(0,PluginShort,opt_TxtTimer,10);
+  end;
+
   if D.Trackbar<>nil then
   begin
     if (CallService(MS_WAT_GETMUSICINFO,WAT_INF_CHANGES,dword(@psi))<>WAT_PLS_NOTFOUND) then
@@ -48,7 +64,7 @@ begin
     end;
   end;
 
-  UpdateTextBlock(D,false); // fase - check for %percent%/%time%
+  UpdateTextBlock(D,false); // false - check for %percent%/%time%
 
   FrameCtrl.Update;
 end;

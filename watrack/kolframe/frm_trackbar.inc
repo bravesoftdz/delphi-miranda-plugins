@@ -61,7 +61,7 @@ end;
 procedure SetTrackbarPosition(Trackbar:PTrackbar;pos:integer);
 begin
   if Trackbar=nil then exit;
-
+//??  if Sender.ChildCount=0 then exit;
   if pIcoButton(Trackbar.Children[0]).State<>AST_PRESSED then
     Trackbar.Position:=pos;
 
@@ -161,17 +161,25 @@ begin
   rc1.Bottom:=rc1.Top+4;
   DrawEdge(DC,rc1,EDGE_SUNKEN,BF_RECT or BF_ADJUST);
   if Sender.ChildCount>0 then
-    Sender.Children[0].Left:=rc.Left;
+    Sender.Children[0].Left:=rc.Left
+  else
+  begin
+    rc.right:=rc.left+8;
+    DrawFrameControl(DC,rc,DFC_BUTTON,DFCS_BUTTONPUSH);
+    Sender.Update;
+  end;
 end;
 
 procedure RefreshTrackbarIcons(Owner:PControl);
 begin
-  pIcoButton(Owner.Children[0]).RefreshIcon;
+  if Owner.ChildCount>0 then
+    pIcoButton(Owner.Children[0]).RefreshIcon;
 end;
 
 function MakeNewTrackBar(AOwner:PControl):PTrackbar;
 var
   D:pAWKTrackbar;
+  btn:pIcoButton;
 begin
   New(D, Create);
   result:=NewTrackbar(AOwner,[trbNoTicks,trbBoth,trbNoBorder],D.Scroll);
@@ -187,18 +195,19 @@ begin
     RangeMin:=0;
     RangeMax:=100;
 
+    btn:=CreateIcoButton(result,GetIcon,DoAction,WAT_CTRL_SEEK);
+    if btn<>nil then
+    begin
+      btn.OnClick:=nil;
+      btn.OnMouseDown:=D.PressButton;
+      btn.OnMouseUp  :=D.UnPressButton;
+      btn.OnMouseMove:=D.DragButton;
+    end;
+
     OnResize    :=D.CtrlResize;
     OnEraseBkGnd:=D.Erase;
     OnPaint     :=D.Paint;
 //    OnScroll    :=D.Scroll;
-  end;
-
-  with CreateIcoButton(result,GetIcon,DoAction,WAT_CTRL_SEEK)^ do
-  begin
-    OnClick:=nil;
-    OnMouseDown:=D.PressButton;
-    OnMouseUp  :=D.UnPressButton;
-    OnMouseMove:=D.DragButton;
   end;
 
 end;
