@@ -10,14 +10,13 @@ uses
   ,global,waticons,io,macros
   ,lastfm    in 'lastfm\lastfm.pas'
 //  ,statlog   in 'stat\statlog.pas'
-//  ,frameunit in 'frame\frameunit.pas'
   ,popups    in 'popup\popups.pas'
   ,proto     in 'proto\proto.pas'
   ,status    in 'status\status.pas'
   ,tmpl      in 'status\tmpl.pas'
   ,templates in 'templates\templates.pas'
 
-//  ,kolframe  in 'kolframe\kolframe.pas'
+  ,kolframe  in 'kolframe\kolframe.pas'
 
   {$include lst_players.inc}
   {$include lst_formats.inc}
@@ -237,7 +236,6 @@ begin
 
     // here - place for Playerstatus event
     case SongInfo.status of
-      WAT_MES_STOPPED: stat:=WAT_PLS_NOMUSIC;
       WAT_MES_PLAYING,
       WAT_MES_PAUSED:  stat:=WAT_PLS_NORMAL;
       WAT_MES_UNKNOWN: // depends of file search
@@ -247,6 +245,8 @@ begin
         else
           stat:=WAT_PLS_NORMAL;
       end;
+    else
+      {WAT_MES_STOPPED:} stat:=WAT_PLS_NOMUSIC;
     end;
     SongInfo.status:=(SongInfo.status shl 16) or (stat and $FFFF);
 
@@ -501,6 +501,8 @@ var
   p:PWideChar;
   ptr:pwModule;
 begin
+
+  PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLAYERSTATUS,WAT_PLS_NOTFOUND);
 
   if hwndTooltip<>0 then
     DestroyWindow(hwndTooltip);

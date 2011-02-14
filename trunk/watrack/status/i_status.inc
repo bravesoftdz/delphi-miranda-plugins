@@ -58,6 +58,7 @@ begin
       isvideo:=pSongInfo(lParam)^.width<>0;
       lParam:=WAT_PLS_NORMAL;
     end;
+
     WAT_EVENT_PLAYERSTATUS: begin
       LastStatus:=lParam;
       if (lParam=WAT_PLS_NORMAL){ or (KeepStatus<>BST_UNCHECKED)} then

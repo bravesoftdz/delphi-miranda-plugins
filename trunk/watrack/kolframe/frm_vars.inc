@@ -25,6 +25,7 @@ type
     HideNoMusic :bool;
     HideNoPlayer:bool;
 
+    WasHidden   :bool;
     // not sure what will keep here
     FrameId     :integer;
     FrmAlpha    :integer;

@@ -197,17 +197,31 @@ begin
 end;
 
 procedure tTextBlock.SetText(value:pWideChar);
+var
+  D:pTextData;
 begin
-  if StrCmpW(pTextData(CustomData).Text,value)<>0 then
+  D:=CustomData;
+  if       (D.Text<>value) or
+   (StrCmpW(D.Text, value)<>0) then
   begin
     ClearText;
     if (value<>nil) and (value^<>#0) then
     begin
-      with pTextData(CustomData)^ do
+      GetMem(D.Text,(StrLenW(value)+1)*SizeOf(WideChar));
+      WStrCopy(D.Text,value);
+      D.TextChunk:=Split(D.Text);
+
+      // start timer if was stopped
+      if (D.UpdTimer=0) and (D.UpdInterval>0) then
+        D.UpdTimer:=SetTimer(Self.GetWindowHandle,integer(@Self),
+          (MaxTxtScrollSpeed+1-D.UpdInterval)*100,@TimerProc);
+    end
+    else // stop timer for empty text
+    begin
+      if D.UpdTimer<>0 then
       begin
-        GetMem(Text,(StrLenW(value)+1)*SizeOf(WideChar));
-        WStrCopy(Text,value);
-        TextChunk:=Split(Text);
+        KillTimer(0,D.UpdTimer);
+        D.UpdTimer:=0;
       end;
     end;
     Invalidate;
