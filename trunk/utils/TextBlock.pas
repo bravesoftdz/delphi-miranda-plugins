@@ -204,7 +204,7 @@ begin
   if       (D.Text<>value) or
    (StrCmpW(D.Text, value)<>0) then
   begin
-    ClearText;
+    self.ClearText;
     if (value<>nil) and (value^<>#0) then
     begin
       GetMem(D.Text,(StrLenW(value)+1)*SizeOf(WideChar));
