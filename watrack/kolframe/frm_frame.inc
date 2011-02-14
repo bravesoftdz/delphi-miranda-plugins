@@ -25,11 +25,12 @@ const
   opt_PadBottom :PAnsiChar = 'frame/paddingbottom';
 
 procedure TWATFrame.ResetFrame;
+var
+  D:PWATFrameData;
 begin
-// Slider to zero (max to sero)
-  ResetTrackbar(PWATFrameData(CustomData).Trackbar);
-// Clear text
-  ClearText(PWATFrameData(CustomData).TextBlock);
+  D:=CustomData;
+  if D.Trackbar <>nil then ResetTrackbar(D.Trackbar);
+  if D.TextBlock<>nil then D.TextBlock.BlockText:=nil;
 // frame back to default
   RefreshPicture(nil);
 end;
