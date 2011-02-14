@@ -368,6 +368,12 @@ begin
   mFreeMem(D.Template);
   mFreeMem(D.BkDefFile);
   ClearBitmapData;
+
+  if D.Designer<>nil then
+  begin
+    D.Designer.Free;
+    D.Designer:=nil;
+  end;
 end;
 
 procedure TWATFrame.RefreshAllFrameIcons;
@@ -474,9 +480,10 @@ begin
       MinWidth :=80;
       MinHeight:=30;
 
-      OnPaint    :=FrameCtrl.Paint;
-      OnResize   :=FrameCtrl.FrameResize;
-      OnMouseDown:=TOnMouse(MakeMethod(nil, @MouseDown));
+      OnPaint      :=FrameCtrl.Paint;
+      OnResize     :=FrameCtrl.FrameResize;
+      OnMouseDown  :=TOnMouse(MakeMethod(nil, @MouseDown));
+      OnMouseDblClk:=FrameCtrl.CreateDesigner;
     end;
     FrameCtrl.OnDestroy:=FrameCtrl.MyDestroy;
     FrameCtrl.AdjustFrame;

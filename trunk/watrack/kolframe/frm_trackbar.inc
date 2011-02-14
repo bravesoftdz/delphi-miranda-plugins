@@ -139,6 +139,9 @@ begin
   tmp:=PControl(Sender).Parent.Width-16;
   if (PTrackbar(Sender)^.Width)>tmp then
     PTrackbar(Sender)^.Width:=tmp;
+  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // need to move slider here
+
 end;
 
 procedure tAWKTrackbar.Erase(Sender: PControl; DC: HDC);

@@ -7,7 +7,7 @@ implementation
 
 uses io,windows,kol,commdlg,messages,common,commctrl, KOLCCtrls,
      wat_api,wrapper,global,m_api,hlpdlg,macros,dbsettings,waticons,mirutils,
-     icobuttons,textblock;
+     icobuttons,textblock,kolsizer;
 
 {$R frm.res}
 
@@ -83,6 +83,7 @@ end;
 {$include frm_trackbar.inc}
 {$include frm_text.inc}
 {$include frm_frame.inc}
+{$include frm_designer.inc}
 
 {$include frm_dlg1.inc}
 {$include frm_dlg2.inc}
