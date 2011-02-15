@@ -14,7 +14,7 @@
   Key Objects Library (C) 2000 by Kladov Vladimir.
 
 ****************************************************************
-* VERSION 3.09
+* VERSION 3.11
 ****************************************************************
 
   K.O.L. - is a set of objects to create small programs
@@ -4114,7 +4114,7 @@ type
                  raJustify, // displayed like raLeft (though stored normally)
                  raInterLetter, raScaled, raGlyphs, raSnapGrid );
   {* Text alignment styles, available for RichEdit control. }
-  TVerticalAlign = ( vaCenter, vaTop, vaBottom );
+  TVerticalAlign = ( vaTop, vaCenter, vaBottom );
   {* Vertical alignments available. }
   TControlAlign = ( caNone, caLeft, caTop, caRight, caBottom, caClient );
   {* Control alignments available. }
@@ -9537,6 +9537,7 @@ function FormNewGradientPanel( Form: PControl ): PControl;
 function FormNewGradientPanelEx( Form: PControl ): PControl;
 function FormNewGroupbox( Form: PControl ): PControl;
 function FormNewPaintbox( Form: PControl ): PControl;
+function FormNewImageShow( Form: PControl ): PControl;
 function FormNewEditBox( Form: PControl ): PControl;
 {$IFDEF USE_RICHEDIT}
 function FormNewRichEdit( Form: PControl ): PControl;
@@ -9653,6 +9654,7 @@ procedure FormSetDroppedWidth( Form: PControl );
 procedure FormSetButtonIcon( Form: PControl );
 procedure FormSetButtonImage( Form: PControl );
 procedure FormSetButtonBitmap( Form: PControl );
+procedure FormSetDefaultBtn( Form: PControl );
 // progress
 procedure FormSetMaxProgress( Form: PControl );
 procedure FormSetProgress( Form: PControl );
@@ -28622,13 +28624,17 @@ begin
 end;
 
 function TIniFile.ValueBoolean(const Key: KOLString; Value: Boolean): Boolean;
+var sec: PKOLChar;
 begin
+  sec := PKOLChar( fSection );
+  if  fSection = '' then
+      sec := nil;
   if fMode = ifmRead then
-     Result := GetPrivateProfileInt( PKOLChar( fSection ), PKOLChar( Key ),
+     Result := GetPrivateProfileInt( sec, PKOLChar( Key ),
                Integer( Value ), PKOLChar( fFileName ) ) <> 0
   else
   begin
-    WritePrivateProfileString( PKOLChar( fSection ), PKOLChar( Key ),
+    WritePrivateProfileString( sec, PKOLChar( Key ),
               PKOLChar( KOLString( Int2Str( Integer( Value ) ) ) ),
               PKOLChar( fFileName ) );
     Result := Value;
@@ -31779,7 +31785,7 @@ end;
 {$IFDEF GTK}
 CONST
   HorAlignments: ARRAY[ TTextAlign ] of Single = ( {taLeft} 0, {taRight} 1, {taCenter} 0.5 );
-  VerAlignments: ARRAY[ TVerticalAlign ] of Single = ( {vaCenter} 0.5, {vaTop} 0, {vaBottom} 1 );
+  VerAlignments: ARRAY[ TVerticalAlign ] of Single = ( {vaTop} 0, {vaCenter} 0.5, {vaBottom} 1 );
 
 PROCEDURE ButtonSetTextAlign( Self_: PControl );
 BEGIN
@@ -64503,6 +64509,8 @@ end;
 {$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
 function FormNewPaintbox( Form: PControl ): PControl;
 begin Result := NewPaintbox( Form.DF.FormCurrentParent ); end;//////////////////
+function FormNewImageShow( Form: PControl ): PControl;
+begin Result := NewImageShow( Form.DF.FormCurrentParent, nil, 0 ); end;/////////
 {$IFDEF ASM_VERSION}{$ELSE}
 function FormNewEditBox( Form: PControl ): PControl;
 type PEditOptions = ^TEditOptions;
@@ -65071,6 +65079,11 @@ begin Form.SetButtonBitmap( LoadBitmap( hInstance,
            ParentForm_PCharParam(Form) ) );
 end;
 {$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+procedure FormSetDefaultBtn( Form: PControl );
+var i: Integer;
+begin i := ParentForm_IntParamPas(Form);
+      Form.SetDefaultBtn( i, TRUE );
+end;
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetMaxProgress( Form: PControl );
 begin Form.MaxProgress := ParentForm_IntParamPas(Form);
@@ -65246,6 +65259,7 @@ begin C := Form;
       Form := Form.ParentForm;
       i := Form.FormGetIntParam;
       Form.DF.FormCurrentParent := C.Pages[i];
+      Form.DF.FormLastCreatedChild := Form.DF.FormCurrentParent;
 end;
 {$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}//////////////////////////////////////////////
