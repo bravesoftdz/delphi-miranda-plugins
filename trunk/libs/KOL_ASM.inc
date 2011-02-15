@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // KOL_ASM.inc ()to be inlude in KOL.pas)
-// v 3.09
+// v 3.11
 
 function MsgBox( const S: KOLString; Flags: DWORD ): DWORD;
 asm
@@ -8608,60 +8608,72 @@ const tk_Tab = 1;
       tk_UD  = 4;
       tk_PuPd= 8;
 asm
+        PUSH     EBX
+        XCHG     EBX, EAX
         PUSH     ESI
         MOV      ESI, offset[@@data]
-        PUSH     EAX
-        MOV      AH, 9
-@@loop:
-        LODSB
-        CMP      DL, AL
-        JE       @@1
-        LODSB
-        CMP      DL, AL
-        JE       @@2
-        ADD      AH, AH
-        JNB      @@loop
-        POP      EAX
-@@exit0:
         XOR      EAX, EAX
-        JMP      @@exit
+@@loop:
+        LODSW
+        TEST     EAX, EAX
+        JZ       @@exit_false
 
-@@data:
-        DB       -1, VK_TAB, VK_LEFT, VK_RIGHT, VK_UP, VK_DOWN, VK_PRIOR, VK_NEXT
+        CMP      AL, DL
+        JNZ      @@loop
 
-@@1:
-        OR       EDX, -1
-        JMP      @@3
-@@2:
-        XOR      EDX, EDX
-        TEST     AH, 1
-        JZ       @@3
-
-          PUSH     ECX
-        PUSH     EAX
-        PUSH     VK_SHIFT
-        CALL     GetKeyState
-        CWDE
-        XCHG EDX, EAX
-        POP      EAX
-          POP      ECX
-@@3:
-        POP      ESI
-        MOV      AL, AH
-        {$IFDEF PARANOIA} DB $24, 1 {$ELSE} AND AL, 1 {$ENDIF}
-        TEST     byte ptr [ESI].TControl.fLookTabKeys, AL
-        JZ       @@exit0
+        TEST     [EBX].TControl.fLookTabKeys, AH
+        JZ       @@exit_false
 
         TEST     CL, CL
-        JNZ      @@exit
+        JNZ      @@exit_true
 
+        MOV      DH, AH
         PUSH     EDX
-        MOV      EAX, ESI
-        CALL     TControl.ParentForm
+            XCHG     EAX, EBX
+            CALL     TControl.ParentForm
+            XCHG     ESI, EAX
+        POP      EAX
+
+        CMP      AL, 9
+        JNZ      @@test_flag
+
+        PUSH     EAX
+            PUSH     VK_SHIFT
+            CALL     GetKeyState
         POP      EDX
+
+        AND      AH, $80
+        OR       AH, DH
+@@test_flag:
+        {XOR      EDX, EDX
+        INC      EDX
+        ADD      AH, AH
+        JNC      @@tabul_1
+        NEG      EDX
+@@tabul_1:}                           //AH<80  //AH>=80
+        ADD      AH, AH               //       //
+        SBB      EDX, EDX             //EDX=0  //EDX=-1
+        ADD      EDX, EDX             //    0  //    -2
+        INC      EDX                  //    1  //    -1
+
+        XCHG     EAX, ESI
         CALL     Tabulate2Next
-@@exit:
+@@exit_true:
+        MOV      AL, 1
         POP      ESI
+        POP      EBX
+        RET
+
+@@data:
+        DB       VK_TAB, tk_Tab, VK_LEFT, tk_LR or $80, VK_RIGHT, tk_LR
+        DB       VK_UP, tk_UD or $80, VK_DOWN, tk_UD
+        DB       VK_PRIOR, tk_PuPd or $80, VK_NEXT, tk_PuPd, 0, 0
+
+@@exit_false:
+        XOR      EAX, EAX
+        POP      ESI
+        POP      EBX
+        RET
 end;
 
 function TControl.Tabulate: PControl;
@@ -14085,9 +14097,8 @@ asm
     CALL TControl.FormGetIntParam
     POP  ECX
     PUSH EAX
-    LEA  ECX, [ECX].TControl.DF.FormCurrentParent
-    MOV  EAX, [ECX]
-    MOV  EDX, [ECX+4]
+    MOV  EAX, [ECX].TControl.DF.FormCurrentParent
+    MOV  EDX, [ECX].TControl.FormString
     POP  ECX
     CALL NewLabelEffect
 end;
@@ -14805,6 +14816,7 @@ asm
     CALL TControl.GetPages
     POP  EDX
     MOV  [EDX].TControl.DF.FormCurrentParent, EAX
+    MOV  [EDX].TControl.DF.FormLastCreatedChild, EAX
 end;
 
 procedure FormSetCurCtl( Form: PControl );
