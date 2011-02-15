@@ -59,8 +59,8 @@ FONT 8, "MS Shell Dlg", 0, 0
  RTEXT "16", -1, 46, 83, 10, 10
 }
 
-BTN_ENABLE  ICON "wat_enable.ico"
-BTN_DISABLE ICON "wat_disable.ico"
+IDI_PLUGIN_ENABLE  ICON "wat_enable.ico"
+IDI_PLUGIN_DISABLE ICON "wat_disable.ico"
 
 PARTS DIALOGEX 0, 0, 304, 226, 0
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE

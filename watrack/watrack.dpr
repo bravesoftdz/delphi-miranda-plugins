@@ -397,9 +397,6 @@ var
 begin
    PluginLink^.UnhookEvent(onloadhook);
 
-  if PluginLink^.ServiceExists(MS_TTB_ADDBUTTON)<>0 then
-    onloadhook:=pluginlink^.HookEvent(ME_TTB_MODULELOADED,@OnTTBLoaded);
-
   if PluginLink^.ServiceExists(MS_UPDATE_REGISTER)<>0 then
   begin
     with upd do
@@ -433,6 +430,9 @@ begin
     wsic:=0;
 
   CreateMenus;
+
+  if PluginLink^.ServiceExists(MS_TTB_ADDBUTTON)<>0 then
+    onloadhook:=pluginlink^.HookEvent(ME_TTB_MODULELOADED,@OnTTBLoaded);
 
   p:=GetAddonFileName(nil,'player','plugins','ini');
   if p<>nil then
