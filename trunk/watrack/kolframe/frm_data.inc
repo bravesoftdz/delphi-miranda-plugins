@@ -30,3 +30,8 @@ const
   frbkProportional = $0040;
   frbkBottom       = $0080;
   frbkRight        = $0100;
+
+const
+  numbuttons = 7;
+  VolBtnDist = 6;
+  BtnGap     = 3;

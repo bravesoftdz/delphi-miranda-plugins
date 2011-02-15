@@ -67,6 +67,8 @@ begin
       if (D.ShowControls and scVolume  )<>0 then CheckDlgButton(Dialog,IDC_SHOWVOLUM,BST_CHECKED);
       if (D.ShowControls and scGap     )<>0 then CheckDlgButton(Dialog,IDC_BTNGAP   ,BST_CHECKED);
 
+      CheckDlgButton(Dialog,IDC_MANUALPLACE,ORD(D.ManualPlacement));
+
       CheckDlgButton(Dialog,IDC_HIDEFRAMEPLAYER,ORD(D.HideNoPlayer));
       CheckDlgButton(Dialog,IDC_HIDEFRAMEMUSIC ,ORD(D.HideNoMusic));
       EnableWindow(GetDlgItem(Dialog,IDC_HIDEFRAMEMUSIC),D.HideNoPlayer);
@@ -169,6 +171,8 @@ begin
         if IsDlgButtonChecked(Dialog,IDC_SHOWVOLUM)<>BST_UNCHECKED then tmp:=tmp or scVolume;
         if IsDlgButtonChecked(Dialog,IDC_BTNGAP   )<>BST_UNCHECKED then tmp:=tmp or scGap;
         D.ShowControls:=tmp;
+
+        D.ManualPlacement:=IsDlgButtonChecked(Dialog,IDC_MANUALPLACE)<>BST_UNCHECKED;
 
         // Frame background
         tmpb:=IsDlgButtonChecked(Dialog,IDC_USECOVER)<>BST_UNCHECKED;

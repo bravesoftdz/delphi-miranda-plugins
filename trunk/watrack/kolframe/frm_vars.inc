@@ -35,15 +35,18 @@ type
     Template :PWideChar;
 
     Trackbar :PTrackbar;
-    Buttons  :PControl;
     TextBlock:PTextBlock;
 
+    // Designer section
     Designer :PDesigner;
+    ManualPlacement:bool;
+    Loaded   :dword;
+
+    btnarray:array [0..numbuttons-1] of pIcoButton;
   end;
 
   PWATFrame = ^TWATFrame;
   TWATFrame = object(TControl)
-
     procedure Paint(Sender: PControl; DC: HDC);
     procedure FrameResize(Sender: PObj);
     procedure RefreshAllFrameIcons;
@@ -64,7 +67,13 @@ type
     procedure ClearBitmapData;
     procedure AdjustFrame;
     procedure MyDestroy(Sender:PObj);
-  end;
+
+    procedure AdjustButtons(atop:integer);
+    procedure RefreshButtonIcons;
+    procedure MakeButtonsDesigner(Designer:PDesigner);
+    procedure FreeButtons;
+    procedure MakeNewButtonGroup;
+ end;
 
 var
   FrameCtrl:PWATFrame;

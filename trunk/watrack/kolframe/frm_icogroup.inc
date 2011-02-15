@@ -1,111 +1,94 @@
 {Panel = group of icons}
-const
-  VolBtnDist = 6;
-  BtnGap     = 3;
-type
-  pIcoGrpData = ^tIcoGrpData;
-  tIcoGrpData = object(TObj)
-    ShowVolume:bool;
-    ButtonGap:bool;
-    NeedResize:boolean;
 
-    procedure GroupResize(Sender: PObj);
-  end;
-
-procedure tIcoGrpData.GroupResize(Sender: PObj);
+procedure TWATFrame.AdjustButtons(atop:integer);
 var
   i,lWidth,lOffs,gap:integer;
+  lleft:integer;
+  D:PWATFrameData;
 begin
-  if NeedResize then
+  D:=CustomData;
+
+  if (D.ShowControls and scGap)<>0 then
+    gap:=BtnGap
+  else
+    gap:=0;
+
+  D.btnarray[0].Visible:=(D.ShowControls and scVolume)<>0;
+  D.btnarray[1].Visible:=(D.ShowControls and scVolume)<>0;
+
+  lWidth:=(Length(D.btnarray)-2)*(16+gap)-gap;
+  if (D.ShowControls and scVolume)<>0 then
+    Inc(lWidth, VolBtnDist+2*(16+gap));
+  lLeft:=(Width-lWidth) div 2;
+
+  lOffs:=0;
+  if (D.ShowControls and scVolume)<>0 then
   begin
-    if PControl(Sender)^.ChildCount=0 then exit;
-
-    NeedResize:=false;
-
-    if ButtonGap then
-      gap:=BtnGap
-    else
-      gap:=0;
-
-    PControl(Sender)^.Children[0].Visible:=ShowVolume;
-    PControl(Sender)^.Children[1].Visible:=ShowVolume;
-
-    with PControl(Sender)^ do
-    begin
-      lWidth:=(ChildCount-2)*(16+gap)-gap;
-      if ShowVolume then
-        Inc(lWidth, VolBtnDist+2*(16+gap));
-      Width:=lWidth;
-      Left:=(Parent.Width-Width) div 2;
-    end;
-
-    lOffs:=0;
-    if ShowVolume then
-    begin
-      PControl(Sender)^.Children[0].Left:=lOffs;
-      Inc(lOffs,16+gap);
-      PControl(Sender)^.Children[1].Left:=lOffs;
-      Inc(lOffs,16+gap+VolBtnDist);
-    end;
-
-    for i:=2 to PControl(Sender)^.ChildCount-1 do
-    begin
-      PControl(Sender)^.Children[i].Left:=lOffs;
-      Inc(lOffs,16+gap);
-    end;
-
-    NeedResize:=true;
+    D.btnarray[0].Left:=lleft+lOffs;
+    D.btnarray[0].Top :=atop;
+    Inc(lOffs,16+gap);
+    D.btnarray[1].Left:=lleft+lOffs;
+    D.btnarray[1].Top :=atop;
+    Inc(lOffs,16+gap+VolBtnDist);
   end;
+
+  for i:=2 to HIGH(D.btnarray) do
+  begin
+    D.btnarray[i].Left:=lleft+lOffs;
+    D.btnarray[i].Top :=atop;
+    Inc(lOffs,16+gap);
+  end;
+
 end;
 
-procedure RefreshButtonIcons(Owner:PControl);
+procedure TWATFrame.RefreshButtonIcons;
 var
   i:integer;
+  D:PWATFrameData;
 begin
-  for i:=0 to Owner.ChildCount-1 do
-  begin
-    pIcoButton(Owner.Children[i]).RefreshIcon;
-  end;
-  // refresh
+  D:=CustomData;
+
+  for i:=0 to HIGH(D.btnarray) do
+    D.btnarray[i].RefreshIcon;
 end;
 
-procedure MakeButtonsDesigner(Buttons:PControl;Designer:PDesigner);
+procedure TWATFrame.MakeButtonsDesigner(Designer:PDesigner);
 var
   i:integer;
+  D:PWATFrameData;
 begin
-  for i:=0 to Buttons.ChildCount-1 do
-    Designer.Connect('Button',Buttons.Children[i]);
+  D:=CustomData;
+
+  for i:=0 to HIGH(D.btnarray) do
+    Designer.Connect('Button',D.btnarray[i]);
 end;
 
-function MakeNewButtonGroup(AOwner:PControl;aVolume,aGap:bool):PControl;
+procedure TWATFrame.FreeButtons;
 var
-  D:pIcoGrpData;
+  i:integer;
+  D:PWATFrameData;
 begin
-  result:=NewPanel(AOwner,esNone);
-  New(D, Create);
-  with result^ do
+  D:=CustomData;
+
+  for i:=0 to HIGH(D.btnarray) do
   begin
-    CustomObj:=D;
-    Transparent:=true;
-
-    SetSize(100,16);
-    SetPosition(0,(AOwner.Top+AOwner.Height-18)-Height-2*BtnGap);
-    Anchor(true,false,true,true); // good for button reposition
-
-    OnResize   :=D.GroupResize;
-    OnMouseDown:=TOnMouse(MakeMethod(nil, @MouseDown));
-
-    D.NeedResize:=true;
+    D.btnarray[i].Free;
+    D.btnarray[i]:=nil;
   end;
-
-  CreateIcoButton(result,GetIcon,DoAction,WAT_CTRL_VOLDN,300);
-  CreateIcoButton(result,GetIcon,DoAction,WAT_CTRL_VOLUP,300);
-  CreateIcoButton(result,GetIcon,DoAction,WAT_CTRL_PREV,2000);
-  CreateIcoButton(result,GetIcon,DoAction,WAT_CTRL_PLAY);
-  CreateIcoButton(result,GetIcon,DoAction,WAT_CTRL_PAUSE);
-  CreateIcoButton(result,GetIcon,DoAction,WAT_CTRL_STOP);
-  CreateIcoButton(result,GetIcon,DoAction,WAT_CTRL_NEXT,2000);
-
-  D.ShowVolume:=aVolume;
-  D.ButtonGap :=aGap;
 end;
+
+procedure TWATFrame.MakeNewButtonGroup;
+var
+  D:PWATFrameData;
+begin
+  D:=CustomData;
+
+  D.btnarray[0]:=CreateIcoButton(@self,waticons.GetIcon,DoAction,WAT_CTRL_VOLDN,300);
+  D.btnarray[1]:=CreateIcoButton(@self,waticons.GetIcon,DoAction,WAT_CTRL_VOLUP,300);
+  D.btnarray[2]:=CreateIcoButton(@self,waticons.GetIcon,DoAction,WAT_CTRL_PREV,2000);
+  D.btnarray[3]:=CreateIcoButton(@self,waticons.GetIcon,DoAction,WAT_CTRL_PLAY);
+  D.btnarray[4]:=CreateIcoButton(@self,waticons.GetIcon,DoAction,WAT_CTRL_PAUSE);
+  D.btnarray[5]:=CreateIcoButton(@self,waticons.GetIcon,DoAction,WAT_CTRL_STOP);
+  D.btnarray[6]:=CreateIcoButton(@self,waticons.GetIcon,DoAction,WAT_CTRL_NEXT,2000);
+end;
+

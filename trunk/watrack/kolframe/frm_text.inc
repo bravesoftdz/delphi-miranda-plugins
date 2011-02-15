@@ -81,6 +81,6 @@ end;
 function MakeTextBlock(AOwner:PControl;BkColor:TCOLORREF):pTextBlock;
 begin
   result:=MakeNewTextBlock(AOwner,BkColor);
-  result.OnMouseDown:=TOnMouse(MakeMethod(nil, @MouseDown));
+//  result.OnMouseDown:=TOnMouse(MakeMethod(nil, @MouseDown));
   LoadTextSettings(result);
 end;

@@ -38,14 +38,14 @@ begin
     DBWriteWord(0,PluginShort,opt_tbheight,D.TextBlock.Height);
   end;
 
-  if D.Buttons<>nil then
+  if (D.ShowControls and scButtons)<>0 then
   begin
     pleft:=StrCopyE(lleft,opt_bleft);
     ptop :=StrCopyE(ltop ,opt_btop);
-    for i:=0 to D.Buttons.ChildCount-1 do
+    for i:=0 to HIGH(D.btnarray) do
     begin
-      IntToStr(pleft,i); DBWriteWord(0,PluginShort,lleft,D.Buttons.Children[i].Left);
-      IntToStr(ptop ,i); DBWriteWord(0,PluginShort,ltop ,D.Buttons.Children[i].Top);
+      IntToStr(pleft,i); DBWriteWord(0,PluginShort,lleft,D.btnarray[i].Left);
+      IntToStr(ptop ,i); DBWriteWord(0,PluginShort,ltop ,D.btnarray[i].Top);
     end;
   end;
 end;
@@ -59,22 +59,29 @@ var
   for_check:integer;
 begin
   D:=CustomData;
-  if D.TrackBar<>nil then
+
+  if (D.TrackBar<>nil) and
+    ((D.ShowControls and scTrackbar)<>0) and
+    ((D.Loaded and scTrackbar)=0) then
   begin
+    D.Loaded:=D.Loaded or scTrackbar;
     for_check:=DBReadWord(0,PluginShort,opt_tbwidth);
     if for_check<>0 then
     begin
       D.Trackbar.SetPosition(
         DBReadWord(0,PluginShort,opt_tbleft),
         DBReadWord(0,PluginShort,opt_tbtop));
-      D.TextBlock.SetSize(
+      D.Trackbar.SetSize(
         for_check,
-        DBReadWord(0,PluginShort,opt_tbheight));
+        {18}DBReadWord(0,PluginShort,opt_tbheight));
     end;
   end;
 
-  if D.TextBlock<>nil then
+  if (D.TextBlock<>nil) and
+    ((D.ShowControls and scText)<>0) and
+    ((D.Loaded and scText)=0) then
   begin
+    D.Loaded:=D.Loaded or scText;
     for_check:=DBReadWord(0,PluginShort,opt_twidth);
     if for_check<>0 then
     begin
@@ -87,21 +94,23 @@ begin
     end;
   end;
 
-  if D.Buttons<>nil then
+  if ((D.ShowControls and scButtons)<>0) and
+     ((D.Loaded and scButtons)=0) then
   begin
+    D.Loaded:=D.Loaded or scButtons;
     pleft:=StrCopyE(lleft,opt_bleft);
     pleft^:='0'; (pleft+1)^:=#0;
     for_check:=SmallInt(DBReadWord(0,PluginShort,lleft,word(-1)));
     if for_check>=0 then
     begin
       ptop :=StrCopyE(ltop,opt_btop);
-      for i:=0 to D.Buttons.ChildCount-1 do
+      for i:=0 to HIGH(D.btnarray) do
       begin
         IntToStr(pleft,i);
         IntToStr(ptop ,i);
-        D.Buttons.Children[i].SetPosition(
+        D.btnarray[i].SetPosition(
           DBReadWord(0,PluginShort,lleft,word(-1)),
-          DBReadWord(0,PluginShort,ltop,word(-1)));
+          DBReadWord(0,PluginShort,ltop ,word(-1)));
       end;
     end;
   end;
@@ -112,23 +121,31 @@ var
   D:PWATFrameData;
 begin
   D:=CustomData;
+  if not D.ManualPlacement then exit;
+
   if D.Designer<>nil then
   begin
     D.Designer.Active:=not D.Designer.Active;
     if not D.Designer.Active then
       DesignerSaveSettings;
+      Sender.Update;
     exit;
   end;
 
-  DesignerLoadSettings;
+// really, must be caled right after creation
+//!!  DesignerLoadSettings;
 
   D.Designer:=NewDesigner(@self);
   // Trackbar
-  if D.Trackbar<>nil then D.Designer.Connect('Trackbar',D.Trackbar);
+  if D.Trackbar<>nil then
+  begin
+    D.Trackbar.Anchor(false,false,false,false);
+    D.Designer.Connect('Trackbar',D.Trackbar);
+  end;
   // TextBlock
   if D.TextBlock<>nil then D.Designer.Connect('Panel',D.TextBlock);
   // Icons
-  if D.Buttons<>nil then MakeButtonsDesigner(D.Buttons,D.Designer);
+  if (D.ShowControls and scButtons)<>0 then MakeButtonsDesigner(D.Designer);
 
   D.Designer.Active:=true;
 end;

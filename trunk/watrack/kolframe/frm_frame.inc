@@ -23,6 +23,7 @@ const
   opt_PadTop    :PAnsiChar = 'frame/paddingtop';
   opt_PadRight  :PAnsiChar = 'frame/paddingright';
   opt_PadBottom :PAnsiChar = 'frame/paddingbottom';
+  opt_Manual    :PAnsiChar = 'frame/manualplacement';
 
 procedure TWATFrame.ResetFrame;
 var
@@ -76,21 +77,27 @@ var
   D:PWATFrameData;
 begin
   D:=CustomData;
+
+  if D.ManualPlacement then
+  begin
+    if D.Trackbar<>nil then D.Trackbar.Anchor(false,false,false,false);
+
+    exit;
+  end;
+
   h:=Height; // or need to get FRAME height
 
   if D.Trackbar<>nil then
   begin
+    D.Trackbar.Anchor(true,false,true,true);
     dec(h,D.Trackbar.Height);
 //    Trackbar.Top:=h;
   end;
 
-  if D.Buttons<>nil then
+  if (D.ShowControls and scButtons)<>0 then
   begin
-    with D.Buttons^ do
-    begin
-      Top:=h-Height-BtnGap;
-      dec(h,Height+2*BtnGap);
-    end;
+    AdjustButtons(h-16-BtnGap);
+    dec(h,16+2*BtnGap);
   end;
 
   if D.TextBlock<>nil then
@@ -106,6 +113,7 @@ var
   D:PWATFrameData;
 begin
   D:=CustomData;
+  DBWriteByte  (0,PluginShort,opt_Manual    ,ord(D.ManualPlacement));
   DBWriteByte  (0,PluginShort,opt_HideFrameM,ord(D.HideNoMusic));
   DBWriteByte  (0,PluginShort,opt_HideFrameP,ord(D.HideNoPlayer));
   DBWriteByte  (0,PluginShort,opt_FrmUsePic ,ord(D.UseBkPicture));
@@ -146,14 +154,15 @@ var
   D:PWATFrameData;
 begin
   D:=CustomData;
-  D.HideNoMusic :=DBReadByte (0,PluginShort,opt_HideFrameM,0)<>0;
-  D.HideNoPlayer:=DBReadByte (0,PluginShort,opt_HideFrameP,0)<>0;
-  D.UseBkPicture:=DBReadByte (0,PluginShort,opt_FrmUsePic ,0)<>0;
-  D.UseCover    :=DBReadByte (0,PluginShort,opt_FrmUseCvr ,0)<>0;
-  D.BkColor     :=DBReadDWord(0,PluginShort,opt_FrmBkColor,$00E0E0E0);
-  D.BkMode      :=DBReadWord (0,PluginShort,opt_FrmBkMode ,frbkCenter);
-  D.ShowControls:=DBReadDWord(0,PluginShort,opt_ShowCtrls ,scAll);
-  D.FrmAlpha    :=DBReadByte (0,PluginShort,opt_FrmAlpha  ,255);
+  D.ManualPlacement:=DBReadByte (0,PluginShort,opt_Manual    ,0)<>0;
+  D.HideNoMusic    :=DBReadByte (0,PluginShort,opt_HideFrameM,0)<>0;
+  D.HideNoPlayer   :=DBReadByte (0,PluginShort,opt_HideFrameP,0)<>0;
+  D.UseBkPicture   :=DBReadByte (0,PluginShort,opt_FrmUsePic ,0)<>0;
+  D.UseCover       :=DBReadByte (0,PluginShort,opt_FrmUseCvr ,0)<>0;
+  D.BkColor        :=DBReadDWord(0,PluginShort,opt_FrmBkColor,$00E0E0E0);
+  D.BkMode         :=DBReadWord (0,PluginShort,opt_FrmBkMode ,frbkCenter);
+  D.ShowControls   :=DBReadDWord(0,PluginShort,opt_ShowCtrls ,scAll);
+  D.FrmAlpha       :=DBReadByte (0,PluginShort,opt_FrmAlpha  ,255);
 
   D.UpdInterval:=DBReadWord(0,PluginShort,opt_FrmTimer,200);
   if D.UpdInterval<100 then
@@ -374,6 +383,7 @@ begin
     D.Designer.Free;
     D.Designer:=nil;
   end;
+
 end;
 
 procedure TWATFrame.RefreshAllFrameIcons;
@@ -381,14 +391,13 @@ var
   D:PWATFrameData;
 begin
   D:=CustomData;
-  if D.Buttons <>nil then RefreshButtonIcons  (D.Buttons);
+  if (D.ShowControls and scButtons)<>0 then RefreshButtonIcons;
   if D.Trackbar<>nil then RefreshTrackbarIcons(D.Trackbar);
 end;
 
 procedure TWATFrame.CheckControls;
 var
   D:PWATFrameData;
-  Dbt:pIcoGrpData;
 begin
   D:=CustomData;
 
@@ -409,28 +418,14 @@ begin
 
   if (D.ShowControls and scButtons)<>0 then
   begin
-    if D.Buttons=nil then
+    if D.btnarray[0]=nil then
     begin
       if RegisterButtonIcons then
-      begin
-        D.Buttons:=MakeNewButtonGroup(@self,
-            (D.ShowControls and scVolume)<>0,
-            (D.ShowControls and scGap   )<>0);
-      end;
+        MakeNewButtonGroup;
     end
-    else
-    begin
-      DBt:=Pointer(D.Buttons.CustomObj);
-      DBt.ShowVolume:=(D.ShowControls and scVolume)<>0;
-      DBt.ButtonGap :=(D.ShowControls and scGap   )<>0;
-      SendMessage(D.Buttons.GetWindowHandle,WM_SIZE,0,0);
-    end;
   end
-  else if D.Buttons<>nil then
-  begin
-    D.Buttons.Free;
-    D.Buttons:=nil;
-  end;
+  else if D.btnarray[0]<>nil then
+    FreeButtons;
 
   if (D.ShowControls and scText)<>0 then
   begin
@@ -454,7 +449,7 @@ begin
   else
     ClearBitmapData;
 
-//  FrameTimerProc(0,0,0,0); at create = making crash (no templates)
+  DesignerLoadSettings;
 end;
 
 function CreateFrameWindow(parent:HWND):THANDLE;
@@ -482,10 +477,11 @@ begin
 
       OnPaint      :=FrameCtrl.Paint;
       OnResize     :=FrameCtrl.FrameResize;
-      OnMouseDown  :=TOnMouse(MakeMethod(nil, @MouseDown));
+//      OnMouseDown  :=TOnMouse(MakeMethod(nil, @MouseDown));
       OnMouseDblClk:=FrameCtrl.CreateDesigner;
     end;
     FrameCtrl.OnDestroy:=FrameCtrl.MyDestroy;
-    FrameCtrl.AdjustFrame;
+// theoretically, must get Resize here.... or after
+//    FrameCtrl.AdjustFrame;
   end;
 end;
