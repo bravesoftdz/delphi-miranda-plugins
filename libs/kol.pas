@@ -14,7 +14,7 @@
   Key Objects Library (C) 2000 by Kladov Vladimir.
 
 ****************************************************************
-* VERSION 3.11
+* VERSION 3.12+
 ****************************************************************
 
   K.O.L. - is a set of objects to create small programs
@@ -4073,7 +4073,7 @@ type
     aGetSelection, aReplaceSel: WORD;
     aTextAlignLeft, aTextAlignRight, aTextAlignCenter: WORD;
     bTextAlignMask: Byte;
-    bVertAlignCenter, bVertAlignTop, bVertAlignBottom: Byte;
+    bVertAlignTop, bVertAlignCenter, bVertAlignBottom: Byte;
     aDir, aSetLimit: Word; aSetImgList: Word;
     aSetBkColor: Word;
     aItem2XY: Word;
@@ -4097,7 +4097,7 @@ type
     aGetSelection, aReplaceSel: WORD;
     aTextAlignLeft, aTextAlignRight, aTextAlignCenter: WORD;
     bTextAlignMask: Byte;
-    bVertAlignCenter, bVertAlignTop, bVertAlignBottom: Byte;
+    bVertAlignTop, bVertAlignCenter, bVertAlignBottom: Byte;
     aDir, aSetLimit: Word; aSetImgList: Word;
     aSetBkColor: Word;
     aItem2XY: Word;
@@ -5941,6 +5941,12 @@ type
     function ParentForm: PControl;
     {* |<#form>
        Returns parent form for a control (of @Self for form itself. }
+    function FormParentForm: PControl;
+    {* |<#form>
+       Returns parent form for a control (of @Self for form itself. For a frame,
+       returns frame panel instead. }
+    function MarkPanelAsForm: PControl;
+    {* Special function for MCK to mark panel as frame parent control. }
     {$IFDEF GDI}
     property ActiveControl: PControl read DF.fCurrentControl write DF.fCurrentControl;
     {* }
@@ -13447,10 +13453,10 @@ const
   #0#1 + //BS_LEFT
   #0#2 + //BS_RIGHT
   #0#3 + //BS_CENTER
-  #0#12 + //0, BS_VCENTER>>8
-  #4#8 + //BS_TOP>>8, BS_BOTTOM>>8
-  #203 + //3 нуля
-  #201;
+  #0#4 + //0, BS_TOP>>8
+  #12#8+ // BS_VCENTER>>8, BS_BOTTOM>>8
+  #204 //4 нуля
+  ;
   {$ELSE}
   ButtonActions: TCommandActions = (
     aClear: ClearText;
@@ -13488,9 +13494,9 @@ const
     aTextAlignRight: BS_RIGHT;
     aTextAlignCenter: BS_CENTER;
     bTextAlignMask: 0;
-    bVertAlignCenter: BS_VCENTER shr 8;
-    bVertAlignTop: BS_TOP shr 8;
-    bVertAlignBottom: BS_BOTTOM shr 8;
+    bVertAlignTop: BS_TOP shr 8;  //=4
+    bVertAlignCenter: BS_VCENTER shr 8; //=12
+    bVertAlignBottom: BS_BOTTOM shr 8; //=8
     aDir: 0;
     aSetLimit: 0;
     aSetImgList: 0;
@@ -13506,7 +13512,8 @@ const
   #229 + //29 нулей
   #2#0 + // SS_RIGHT
   #1#0 + // SS_CENTER
-  #12#2 + // SS_LEFTNOWORDWRAP, SS_CENTERIMAGE>>8
+  #12#0 + // SS_LEFTNOWORDWRAP, 0
+  #2#0 + // SS_CENTERIMAGE>>8, 0
   #205;
   {$ELSE}
   LabelActions: TCommandActions = (
@@ -13545,8 +13552,8 @@ const
     aTextAlignRight: SS_RIGHT;
     aTextAlignCenter: SS_CENTER;
     bTextAlignMask: SS_LEFTNOWORDWRAP;
-    bVertAlignCenter: SS_CENTERIMAGE shr 8;
     bVertAlignTop: 0;
+    bVertAlignCenter: SS_CENTERIMAGE shr 8;
     bVertAlignBottom: 0;
     aDir: 0;
     aSetLimit: 0;
@@ -13625,8 +13632,8 @@ const
     aTextAlignRight: ES_RIGHT;
     aTextAlignCenter: ES_CENTER;
     bTextAlignMask: 0;
-    bVertAlignCenter: 0;
     bVertAlignTop: 0;
+    bVertAlignCenter: 0;
     bVertAlignBottom: 0;
     aDir: 0;
     aSetLimit: EM_SETLIMITTEXT;
@@ -13706,8 +13713,8 @@ const
     aTextAlignRight: 0;
     aTextAlignCenter: 0;
     bTextAlignMask: 0;
-    bVertAlignCenter: 0;
     bVertAlignTop: 0;
+    bVertAlignCenter: 0;
     bVertAlignBottom: 0;
     aDir: LB_DIR;
     aSetLimit: 0;
@@ -13785,8 +13792,8 @@ const
     aTextAlignRight: 0; //ES_RIGHT;
     aTextAlignCenter: 0; //ES_CENTER;
     bTextAlignMask: 0;
-    bVertAlignCenter: 0;
     bVertAlignTop: 0;
+    bVertAlignCenter: 0;
     bVertAlignBottom: 0;
     aDir: CB_DIR;
     aSetLimit: 0;
@@ -13853,8 +13860,8 @@ const
     aTextAlignRight: 0;
     aTextAlignCenter: 0;
     bTextAlignMask: 0;
-    bVertAlignCenter: 0;
     bVertAlignTop: 0;
+    bVertAlignCenter: 0;
     bVertAlignBottom: 0;
     aDir: 0;
     aSetLimit: 0;
@@ -13916,8 +13923,8 @@ const
     aTextAlignRight: 0;
     aTextAlignCenter: 0;
     bTextAlignMask: 0;
-    bVertAlignCenter: 0;
     bVertAlignTop: 0;
+    bVertAlignCenter: 0;
     bVertAlignBottom: 0;
     aDir: 0; //CB_DIR;
     aSetLimit: 0;
@@ -13981,8 +13988,8 @@ const
     aTextAlignRight: 0;
     aTextAlignCenter: 0;
     bTextAlignMask: 0;
-    bVertAlignCenter: 0;
     bVertAlignTop: 0;
+    bVertAlignCenter: 0;
     bVertAlignBottom: 0;
     aDir: 0; // CB_DIR;
     aSetLimit: 0;
@@ -14063,8 +14070,8 @@ const
     aTextAlignRight: ES_RIGHT;
     aTextAlignCenter: ES_CENTER;
     bTextAlignMask: 0;
-    bVertAlignCenter: 0;
     bVertAlignTop: 0;
+    bVertAlignCenter: 0;
     bVertAlignBottom: 0;
     aDir: 0;
     aSetLimit: EM_EXLIMITTEXT;
@@ -31467,7 +31474,7 @@ asm
             {$ENDIF}
         POP      EDX  // pop Style
         OR       EDX, WS_CLIPSIBLINGS or WS_CLIPCHILDREN
-        INC      [EBX].TControl.fVerticalAlign
+        //INC      [EBX].TControl.fVerticalAlign
         MOV      byte ptr [EBX].TControl.fLookTabKeys, $0F
         TEST     [EBX].TControl.fCtl3D_child, 1
         JZ       @@noCtl3D
@@ -42568,6 +42575,30 @@ begin
 end;
 {$ENDIF ASM_VERSION}
 {$IFDEF WIN_GDI}
+
+function TControl.FormParentForm: PControl;
+begin
+  Result := @Self;
+  while ( {$IFDEF USE_FLAGS} G3_IsControl in Result.fFlagsG3
+          {$ELSE} Result.fIsControl {$ENDIF} )
+        and not( {$IFDEF USE_FLAGS}
+                 [G5_IsButton, G5_IsBitBtn] * Result.fFlagsG5 = [G5_IsBitBtn]
+                 {$ELSE}
+                 Result.fIsBitBtn and not Result.fIsButton
+                 {$ENDIF} ) do
+      Result := Result.fParent;
+end;
+
+function TControl.MarkPanelAsForm: PControl;
+begin
+    Result := @ Self;
+    //Exit;
+    {$IFDEF USE_FLAGS}
+    Include( fFlagsG5, G5_IsBitBtn );
+    {$ELSE}
+    fIsBitBtn := TRUE;
+    {$ENDIF}
+end;
 
 {$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
 procedure TControl.SetProgressColor(const Value: TColor);
@@ -64648,7 +64679,7 @@ end;
 //--- this is enough to call method of Control with a single int param ---
 function ParentForm_IntParamAsm(Control: PControl): Integer;
 asm PUSH EAX
-    CALL TControl.ParentForm
+    CALL TControl.FormParentForm
     CALL TControl.FormGetIntParam
     XCHG EDX, EAX
     MOV  ECX, EDX
@@ -64661,14 +64692,14 @@ end;
 {$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
 function ParentForm_PCharParam(Control: PControl): PKOLChar;
 var Form: PControl;
-begin Form := Control.ParentForm;
+begin Form := Control.FormParentForm;
       Form.FormGetStrParam;
       Result := PKOLChar( KOLString( Form.FormString ) );
 end;////////////////////////////////////////////////////////////////////////////
 function ParentForm_IntParamPas(Form: PControl): Integer;
-begin Result := Form.ParentForm.FormGetIntParam; end;///////////////////////////
+begin Result := Form.FormParentForm.FormGetIntParam; end;///////////////////////////
 function ParentForm_ColorParamPas(Form: PControl): Integer;
-begin Result := Form.ParentForm.FormGetColorParam; end;/////////////////////////
+begin Result := Form.FormParentForm.FormGetColorParam; end;/////////////////////////
 {$IFDEF ASM_VERSION} // only to call from asm -- returns EAX=Parent Form, EDX=ECX=PChar param
 function ParentForm_PCharParamAsm(Control: PControl): PChar;
 asm PUSH EAX
@@ -64714,7 +64745,7 @@ begin Form.SetAlign( TControlAlign( ParentForm_IntParamPas(Form) ) ); end;
 procedure FormSetName( Form: PControl );
 var C: PControl;
 begin C := Form;
-      Form := Form.ParentForm;
+      Form := Form.FormParentForm;
       Form.FormGetStrParam;
       C.SetName( Form, Form.FormString );
 end;
@@ -64803,7 +64834,7 @@ begin Form.CursorLoad( 0, MAKEINTRESOURCE( ParentForm_IntParamPas(Form) ) ); end
 procedure FormCursorLoad_hInstance( Form: PControl );
 var C: PControl;
 begin C := Form;
-      Form := Form.ParentForm;
+      Form := Form.FormParentForm;
       Form.FormGetStrParam;
       C.CursorLoad( 0, PKOLChar( KOLString( Form.FormString ) ) );
 end;////////////////////////////////////////////////////////////////////////////
@@ -64819,7 +64850,7 @@ begin Form.Brush.BrushStyle := TBrushStyle( ParentForm_IntParamPas(Form) ); end;
 procedure FormSetBrushBitmap( Form: PControl );
 var C: PControl;
 begin C := Form;
-      Form := Form.ParentForm;
+      Form := Form.FormParentForm;
       {$IFDEF UNICODE_CTRLS}
       Form.FormGetStrParam;
       {$ENDIF}
@@ -64851,12 +64882,12 @@ procedure FormSetFontWidth( Form: PControl );
 begin Form.Font.FontWidth := ParentForm_IntParamPas(Form); end;
 {$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
 procedure ParentForm_StrParam( Form: PControl );
-begin Form := Form.ParentForm;
+begin Form := Form.FormParentForm;
       Form.FormGetStrParam;
 end;////////////////////////////////////////////////////////////////////////////
 procedure FormSetFontName( Form: PControl );
 begin ParentForm_StrParam(Form);
-      Form.Font.FontName := Form.ParentForm.FormString;
+      Form.Font.FontName := Form.FormParentForm.FormString;
 end;////////////////////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetFontOrientation( Form: PControl );
@@ -64968,7 +64999,7 @@ begin Form.IgnoreDefault := Boolean( ParentForm_IntParamPas(Form) ); end;
 procedure FormSetHintText( Form: PControl );
 begin {$IFDEF USE_MHTOOLTIP}
       ParentForm_StrParam(Form);
-      Form.Hint.Text := Form.ParentForm.FormString;
+      Form.Hint.Text := Form.FormParentForm.FormString;
       {$ENDIF USE_MHTOOLTIP}
 end;////////////////////////////////////////////////////////////////////////////
 procedure FormSetAnchor( Form: PControl );
@@ -64983,7 +65014,7 @@ end;////////////////////////////////////////////////////////////////////////////
 procedure FormSetCaption( Form: PControl );
 var   Ctl: PControl;
 begin Ctl := Form;
-      Form := Form.ParentForm;
+      Form := Form.FormParentForm;
       Form.FormGetStrParam;
       Ctl.Caption := Form.FormString;
 end;
@@ -65044,7 +65075,7 @@ var N, i: Integer;
 begin N := ParentForm_IntParamPas(Form);
       for i := 0 to N-1 do BEGIN
           ParentForm_StrParam(Form);
-          Form.Items[i] := Form.ParentForm.FormString;
+          Form.Items[i] := Form.FormParentForm.FormString;
       END;
 end;
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
@@ -65101,7 +65132,7 @@ begin N := ParentForm_IntParamPas(Form);
       for i := 0 to N-1 do BEGIN
           w := ParentForm_IntParamPas(Form);
           ParentForm_StrParam(Form);
-          Form.LVColAdd( Form.ParentForm.FormString, taLeft, w );
+          Form.LVColAdd( Form.FormParentForm.FormString, taLeft, w );
       END;
 end;
 {$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
@@ -65134,7 +65165,7 @@ var   map: array[ 0..1 ] of TColor;
       b: Integer;
       C: PControl;
 begin C := Form;
-      Form := Form.ParentForm;
+      Form := Form.FormParentForm;
       b := Form.FormGetIntParam;
       if  b >= 0 then
       begin
@@ -65160,7 +65191,7 @@ var   A1: array of KOLString;
       N, i: Integer;
       C: PControl;
 begin C := Form;
-      Form := Form.ParentForm;
+      Form := Form.FormParentForm;
       N := Form.FormGetIntParam;
       SetLength( A1, N );
       SetLength( A2, N );
@@ -65201,7 +65232,7 @@ end;////////////////////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetDateTimeFormat( Form: PControl );
 begin ParentForm_StrParam(Form);
-      Form.DateTimeFormat := Form.ParentForm.FormString;
+      Form.DateTimeFormat := Form.FormParentForm.FormString;
 end;
 {$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
 procedure FormSetDateTimeColor( Form: PControl );
@@ -65243,12 +65274,12 @@ begin Form.SBPageSize := ParentForm_IntParamPas(Form); end;
 procedure FormLastCreatedChildAsNewCurrentParent( Form: PControl );
 var   C: PControl;
 begin C := Form;
-      Form := Form.ParentForm;
+      Form := Form.FormParentForm;
       Form.DF.FormCurrentParent := C;
 end;
 {$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
 procedure FormSetUpperParent( Form: PControl );
-begin Form := Form.ParentForm;
+begin Form := Form.FormParentForm;
       Form.DF.FormCurrentParent := Form.DF.FormCurrentParent.Parent;
 end;////////////////////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
@@ -65256,7 +65287,7 @@ procedure FormSetTabpageAsParent( Form: PControl );
 var   i: Integer;
       C: PControl;
 begin C := Form;
-      Form := Form.ParentForm;
+      Form := Form.FormParentForm;
       i := Form.FormGetIntParam;
       Form.DF.FormCurrentParent := C.Pages[i];
       Form.DF.FormLastCreatedChild := Form.DF.FormCurrentParent;
@@ -65266,7 +65297,7 @@ end;
 procedure FormSetCurCtl( Form: PControl );
 var   i: Integer;
       C: PControl;
-begin Form := Form.ParentForm;
+begin Form := Form.FormParentForm;
       i := Form.FormGetIntParam;
       C := PPControl(Integer( Form.DF.FormAddress ) + i * 4)^;
       if  C = nil then C := Form;
@@ -65276,7 +65307,7 @@ end;
 procedure FormSetParent( Form: PControl );
 var   C: PControl;
 begin C := Form;
-      Form := Form.ParentForm;
+      Form := Form.FormParentForm;
       Form.DF.FormCurrentParent := C;
 end;////////////////////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE}/////////////////////////////////////////////////////
@@ -65288,7 +65319,7 @@ var   C: PControl;
       event: TOnEvent;
       set_proc: TSetEventProc;
 begin C := Form;
-      Form := Form.ParentForm;
+      Form := Form.FormParentForm;
       idx_handler := Form.FormGetIntParam;
       idx_setter := Form.FormGetIntParam;
       handler := @Form.DF.FormAlphabet[idx_handler];
@@ -65309,7 +65340,7 @@ var   C: PControl;
       event: TOnEvent;
       set_proc: TSetIndexedEventProc;
 begin C := Form;
-      Form := Form.ParentForm;
+      Form := Form.FormParentForm;
       idx_handler := Form.FormGetIntParam;
       idx := Form.FormGetIntParam;
       idx_setter := Form.FormGetIntParam;
@@ -65524,7 +65555,7 @@ end;////////////////////////////////////////////////////////////////////////////
 function TControl.Get_Ctl3D: Boolean;
 begin Result := fCtl3D_child and 2 <> 0; end;
 procedure TControl.ResetEvent(idx: Integer);
-begin TMethod( EV.MethodEvents[idx] ).Code := DummyProcTable[ InitEventsTable[ idx ] ];
+begin TMethod( EV.MethodEvents[idx] ).Code := DummyProcTable[ InitEventsTable[ idx ] and $F ];
       TMethod( EV.MethodEvents[idx] ).Data := nil;
 end;////////////////////////////////////////////////////////////////////////////
 

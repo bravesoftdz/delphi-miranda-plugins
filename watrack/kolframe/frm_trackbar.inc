@@ -139,9 +139,9 @@ begin
   tmp:=PControl(Sender).Parent.Width-16;
   if (PTrackbar(Sender)^.Width)>tmp then
     PTrackbar(Sender)^.Width:=tmp;
-  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   // need to move slider here
-
+//  PControl(Sender).Update;
 end;
 
 procedure tAWKTrackbar.Erase(Sender: PControl; DC: HDC);
@@ -160,7 +160,9 @@ begin
     rc.left:=rc.left+(w div 2)-8;
 
   copyRect(rc1,Sender.BoundsRect);
-  rc1.Top:=((rc1.Bottom-rc1.Top) div 2)-2;
+  rc1.Right :=rc1.Right-rc1.Left-8;
+  rc1.Left  :=4;
+  rc1.Top   :=7{((rc1.Bottom-rc1.Top) div 2)-2};
   rc1.Bottom:=rc1.Top+4;
   DrawEdge(DC,rc1,EDGE_SUNKEN,BF_RECT or BF_ADJUST);
   if Sender.ChildCount>0 then
@@ -169,7 +171,7 @@ begin
   begin
     rc.right:=rc.left+8;
     DrawFrameControl(DC,rc,DFC_BUTTON,DFCS_BUTTONPUSH);
-    Sender.Update;
+//    Sender.Update;
   end;
 end;
 
@@ -177,6 +179,10 @@ procedure RefreshTrackbarIcons(Owner:PControl);
 begin
   if Owner.ChildCount>0 then
     pIcoButton(Owner.Children[0]).RefreshIcon;
+end;
+
+procedure MyOnClick(DummySelf, Sender:PControl);
+begin
 end;
 
 function MakeNewTrackBar(AOwner:PControl):PTrackbar;
@@ -201,7 +207,8 @@ begin
     btn:=CreateIcoButton(result,GetIcon,DoAction,WAT_CTRL_SEEK);
     if btn<>nil then
     begin
-      btn.OnClick:=nil;
+//      btn.ResetEvent(idx_fOnClick);  включить после исправления бага
+      btn.OnClick:=TOnEvent(MakeMethod(nil, @MyOnClick)); // nil -> crash @_@
       btn.OnMouseDown:=D.PressButton;
       btn.OnMouseUp  :=D.UnPressButton;
       btn.OnMouseMove:=D.DragButton;

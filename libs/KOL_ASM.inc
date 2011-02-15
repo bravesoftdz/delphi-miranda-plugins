@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
-// KOL_ASM.inc ()to be inlude in KOL.pas)
-// v 3.11
+// KOL_ASM.inc (to inlude in KOL.pas)
+// v 3.12
 
 function MsgBox( const S: KOLString; Flags: DWORD ): DWORD;
 asm
@@ -8894,30 +8894,21 @@ end;
 
 procedure TControl.SetVerticalAlign(const Value: TVerticalAlign);
 asm
-        PUSH     EBX
-        MOVZX    EBX, DL
-        MOV      [EAX].fVerticalAlign, BL
+        MOVZX    EDX, DL
+        MOV      [EAX].fVerticalAlign, DL
 
         {$IFDEF  COMMANDACTIONS_OBJ}
         MOV      ECX, [EAX].fCommandActions
-        MOV      ECX, dword ptr [ECX].TCommandActionsObj.bVertAlignCenter
+        MOVZX    ECX, byte ptr [ECX+EDX].TCommandActionsObj.bVertAlignTop
         {$ELSE}
-        MOV      ECX, dword ptr [EAX].fCommandActions.bVertAlignCenter
+        MOVZX    ECX, byte ptr [EAX+EDX].fCommandActions.bVertAlignTop
         {$ENDIF}
-        OR       CH, CL
-        SHR      ECX, 8
-        OR       CL, CH
-        NOT      ECX
+        SHL      ECX, 8
+
         MOV      EDX, [EAX].fStyle
         AND      DH, CL
+        OR       EDX, ECX
 
-        {$IFDEF  COMMANDACTIONS_OBJ}
-        MOV      ECX, [EAX].fCommandActions
-        OR       DH, [ECX+EBX].TCommandActionsObj.bVertAlignCenter
-        {$ELSE}
-        OR       DH, [EAX+EBX].fCommandActions.bVertAlignCenter
-        {$ENDIF}
-        POP      EBX
         CALL     SetStyle
 end;
 
@@ -14311,7 +14302,7 @@ procedure FormSetBrushBitmap( Form: PControl );
 asm
     PUSH EDI
     MOV  EDI, EAX
-    CALL TControl.ParentForm
+    CALL TControl.FormParentForm
 
     PUSH EAX
     CALL ParentForm_PCharParam
@@ -14542,7 +14533,7 @@ end;
 procedure FormSetCaption( Form: PControl );
 asm
     PUSH EAX
-    CALL TControl.ParentForm
+    CALL TControl.FormParentForm
     PUSH EAX
     CALL TControl.FormGetStrParam
     POP  EAX
@@ -14705,7 +14696,7 @@ asm
     PUSH ECX
     CALL ParentForm_StrParam
     MOV  EAX, EDI
-    CALL TControl.ParentForm
+    CALL TControl.FormParentForm
     MOV  EDX, [EAX].TControl.FormString
     XOR  ECX, ECX
     MOV  CL, taLeft
@@ -14749,7 +14740,7 @@ end;
 procedure FormSetDateTimeFormat( Form: PControl );
 asm
     PUSH EAX
-    CALL TControl.ParentForm
+    CALL TControl.FormParentForm
     PUSH EAX
     CALL TControl.FormGetStrParam
     POP  EAX
@@ -14801,14 +14792,14 @@ end;
 procedure FormLastCreatedChildAsNewCurrentParent( Form: PControl );
 asm
     PUSH EAX
-    CALL TControl.ParentForm
+    CALL TControl.FormParentForm
     POP  [EAX].TControl.DF.FormCurrentParent
 end;
 
 procedure FormSetTabpageAsParent( Form: PControl );
 asm
     PUSH EAX
-    CALL TControl.ParentForm
+    CALL TControl.FormParentForm
     CALL ParentForm_IntParamAsm
     POP  ECX
     PUSH EAX
@@ -14821,7 +14812,7 @@ end;
 
 procedure FormSetCurCtl( Form: PControl );
 asm
-    CALL TControl.ParentForm
+    CALL TControl.FormParentForm
     CALL ParentForm_IntParamAsm
     MOV  ECX, [EAX].TControl.DF.FormAddress
     MOV  ECX, [ECX + EDX*4]
@@ -14839,7 +14830,7 @@ asm
     PUSH  EDI
     MOV   EDI, EAX
     PUSH  ESI
-    CALL  TControl.ParentForm
+    CALL  TControl.FormParentForm
     MOV   ESI, EAX
     PUSH  [ESI].TControl.DF.FormObj
     CALL  ParentForm_IntParamAsm
@@ -14857,7 +14848,7 @@ asm
     PUSH  EDI
     MOV   EDI, EAX
     PUSH  ESI
-    CALL  TControl.ParentForm
+    CALL  TControl.FormParentForm
     MOV   ESI, EAX
     PUSH  [ESI].TControl.DF.FormObj
     CALL  ParentForm_IntParamAsm
