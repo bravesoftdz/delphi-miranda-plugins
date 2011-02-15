@@ -44,7 +44,7 @@ var
   buf:array [0..511] of AnsiChar;
   hIconDLL:THANDLE;
 begin
-  result:=false;
+  result:=true;
   sid.pszDefaultFile.a:='icons\'+ICOCtrlName;
 //    ConvertFileName(sid.pszDefaultFile.a,buf);
   PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,dword(sid.pszDefaultFile),dword(@buf));
@@ -58,31 +58,31 @@ begin
     hIconDLL:=LoadLibraryA(buf);
   end;
 
-  if hIconDLL<>0 then
-  begin
-    FillChar(sid,SizeOf(TSKINICONDESC),0);
-    sid.cbSize:=SizeOf(TSKINICONDESC);
-    sid.cx:=16;
-    sid.cy:=16;
-    sid.szSection.a:='WATrack';
+  if hIconDLL=0 then
+    hIconDLL:=hInstance;
 
-    sid.hDefaultIcon   :=LoadImage(hIconDLL,
-        MAKEINTRESOURCE(IDI_PLUGIN_ENABLE),IMAGE_ICON,16,16,0);
-    sid.pszName        :=IcoBtnEnable;
-    sid.szDescription.a:='Plugin Enabled';
-    PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
-    DestroyIcon(sid.hDefaultIcon);
+  FillChar(sid,SizeOf(TSKINICONDESC),0);
+  sid.cbSize:=SizeOf(TSKINICONDESC);
+  sid.cx:=16;
+  sid.cy:=16;
+  sid.szSection.a:='WATrack';
 
-    sid.hDefaultIcon   :=LoadImage(hIconDLL,
-        MAKEINTRESOURCE(IDI_PLUGIN_DISABLE),IMAGE_ICON,16,16,0);
-    sid.pszName        :=IcoBtnDisable;
-    sid.szDescription.a:='Plugin Disabled';
-    PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
-    DestroyIcon(sid.hDefaultIcon);
+  sid.hDefaultIcon   :=LoadImage(hIconDLL,
+      MAKEINTRESOURCE(IDI_PLUGIN_ENABLE),IMAGE_ICON,16,16,0);
+  sid.pszName        :=IcoBtnEnable;
+  sid.szDescription.a:='Plugin Enabled';
+  PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+  DestroyIcon(sid.hDefaultIcon);
 
+  sid.hDefaultIcon   :=LoadImage(hIconDLL,
+      MAKEINTRESOURCE(IDI_PLUGIN_DISABLE),IMAGE_ICON,16,16,0);
+  sid.pszName        :=IcoBtnDisable;
+  sid.szDescription.a:='Plugin Disabled';
+  PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+  DestroyIcon(sid.hDefaultIcon);
+
+  if hIconDLL<>hInstance then
     FreeLibrary(hIconDLL);
-    result:=true;
-  end;
 end;
 
 type

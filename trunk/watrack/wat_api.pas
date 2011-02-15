@@ -4,7 +4,6 @@ interface
 
 uses windows;
 
-{..$Resource genre.res}
 {$Include m_music.inc}
 
 function GenreName(idx:cardinal):pWideChar;

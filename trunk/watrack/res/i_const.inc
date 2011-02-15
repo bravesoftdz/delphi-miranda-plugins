@@ -21,6 +21,6 @@ const
 {DLG 0 - modules}
   IDC_MODULEGROUP = 1025;
 
-{Icons}
-BTN_ENABLE  = 100;
-BTN_DISABLE = 101;
+{Icons - same as in waticons.inc}
+IDI_PLUGIN_ENABLE  = 100;
+IDI_PLUGIN_DISABLE = 101;
