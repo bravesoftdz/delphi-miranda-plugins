@@ -81,6 +81,7 @@ begin
   if D.ManualPlacement then
   begin
     if D.Trackbar<>nil then D.Trackbar.Anchor(false,false,false,false);
+    DesignerLoadSettings;
 
     exit;
   end;
@@ -89,9 +90,10 @@ begin
 
   if D.Trackbar<>nil then
   begin
-    D.Trackbar.Anchor(true,false,true,true);
+    D.Trackbar.SetSize(Width-16,18);
     dec(h,D.Trackbar.Height);
-//    Trackbar.Top:=h;
+    D.Trackbar.SetPosition(8,h);
+    D.Trackbar.Anchor(true,false,true,true);
   end;
 
   if (D.ShowControls and scButtons)<>0 then
@@ -101,11 +103,10 @@ begin
   end;
 
   if D.TextBlock<>nil then
-    with D.TextBlock^ do
-    begin
-      Top   :=awkTextPad;
-      Height:=h-Top;
-    end;
+  begin
+    D.TextBlock.Top   :=awkTextPad;
+    D.TextBlock.Height:=h-D.TextBlock.Top;
+  end;
 end;
 
 procedure TWATFrame.SaveSettings;
@@ -129,13 +130,10 @@ begin
   DBWriteWord  (0,PluginShort,opt_PadBottom ,D.padding.bottom);
   DBWriteString(0,PluginShort,opt_FrmBkPic  ,D.BkDefFile);
 
-  RefreshPicture;
-
-  InvalidateRect(FrameCtrl.GetWindowHandle,nil,true);
-
   CheckControls;
-
   AdjustFrame;
+  RefreshPicture;
+  InvalidateRect(FrameCtrl.GetWindowHandle,nil,true);
   FrameCtrl.Update;
 
   if D.UpdTimer<>0 then // FrameWnd MUST be present
@@ -448,8 +446,6 @@ begin
   end
   else
     ClearBitmapData;
-
-  DesignerLoadSettings;
 end;
 
 function CreateFrameWindow(parent:HWND):THANDLE;

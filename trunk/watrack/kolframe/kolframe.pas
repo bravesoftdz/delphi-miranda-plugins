@@ -105,7 +105,7 @@ begin
 
   case wParam of
     WAT_EVENT_PLAYERSTATUS: begin
-      case lParam of
+      case Integer(loword(lParam)) of
         WAT_PLS_NORMAL  : exit;
         WAT_PLS_NOMUSIC : begin
           if D.HideNoMusic then
@@ -136,7 +136,8 @@ begin
       // trackbar
       TrackbarSetRange(D.Trackbar,D.UpdInterval,PSongInfo(lParam)^.total);
 
-//!!      D.UpdTimer:=SetTimer(0,0,D.UpdInterval,@FrameTimerProc);
+      if (D.UpdTimer=0) and (D.UpdInterval>0) then
+        D.UpdTimer:=SetTimer(0,0,D.UpdInterval,@FrameTimerProc);
 
       // text
       UpdateTextBlock(D,true);
@@ -154,7 +155,8 @@ begin
         dsEnabled: begin
           ShowFrame(D.FrameId);
           // plus - start frame and text timers
-//          FrameCtrl.UpdTimer:=SetTimer(0,0,FrameCtrl.UpdInterval,@);
+          if D.UpdInterval>0 then
+            D.UpdTimer:=SetTimer(0,0,D.UpdInterval,@FrameTimerProc);
         end;
 
         dsPermanent: begin
@@ -162,7 +164,10 @@ begin
 
           // plus - stop frame and text timers
           if D.UpdTimer<>0 then
+          begin
             KillTimer(0,D.UpdTimer);
+            D.UpdTimer:=0;
+          end;
         end;
       end;
     end;

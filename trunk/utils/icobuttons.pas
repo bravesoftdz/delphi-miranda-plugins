@@ -378,7 +378,7 @@ begin
 
   Result.SetSize(16,16);
   Result.SetPosition(0,0);
-  Result.OnDestroy:=TOnEvent(MakeMethod(nil,@DEstroy));
+  Result.OnDestroy:=TOnEvent(MakeMethod(nil,@Destroy));
 end;
 
 end.

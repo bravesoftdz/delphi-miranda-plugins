@@ -51,12 +51,12 @@ var
   D:PWATFrameData;
 begin
   result:=0;
-  D:=FrameCtrl.CustomData;
   case hMessage of
     WM_INITDIALOG: begin
       DlgInited:=false;
 
       TranslateDialogDefault(Dialog);
+      D:=FrameCtrl.CustomData;
 
       SendDlgItemMessage(Dialog,IDC_FRMALPHA,TBM_SETRANGE,0,MAKELONG(0,255));
       SendDlgItemMessage(Dialog,IDC_FRMALPHA,TBM_SETPOS,1,D.FrmAlpha);
@@ -154,6 +154,7 @@ begin
     WM_NOTIFY: begin
       if PNMHdr(lParam)^.code=PSN_APPLY then
       begin
+        D:=FrameCtrl.CustomData;
         // Alpha channel
         tmp:=SendDlgItemMessage(Dialog,IDC_FRMALPHA,TBM_GETPOS,0,0);
         if tmp<>Cardinal(D.FrmAlpha) then
@@ -172,7 +173,10 @@ begin
         if IsDlgButtonChecked(Dialog,IDC_BTNGAP   )<>BST_UNCHECKED then tmp:=tmp or scGap;
         D.ShowControls:=tmp;
 
-        D.ManualPlacement:=IsDlgButtonChecked(Dialog,IDC_MANUALPLACE)<>BST_UNCHECKED;
+        tmp:=IsDlgButtonChecked(Dialog,IDC_MANUALPLACE);
+        // From Auto to Manual = keep position
+        if (tmp<>BST_UNCHECKED) and not D.ManualPlacement then D.Loaded:=$FFFF;
+        D.ManualPlacement:=tmp<>BST_UNCHECKED;
 
         // Frame background
         tmpb:=IsDlgButtonChecked(Dialog,IDC_USECOVER)<>BST_UNCHECKED;

@@ -52,7 +52,7 @@ begin
     D.btnarray[i].RefreshIcon;
 end;
 
-procedure TWATFrame.MakeButtonsDesigner(Designer:PDesigner);
+procedure TWATFrame.FreeButtonsDesigner;
 var
   i:integer;
   D:PWATFrameData;
@@ -60,7 +60,18 @@ begin
   D:=CustomData;
 
   for i:=0 to HIGH(D.btnarray) do
-    Designer.Connect('Button',D.btnarray[i]);
+    D.Designer.Disconnect(D.btnarray[i]);
+end;
+
+procedure TWATFrame.MakeButtonsDesigner;
+var
+  i:integer;
+  D:PWATFrameData;
+begin
+  D:=CustomData;
+
+  for i:=0 to HIGH(D.btnarray) do
+    D.Designer.Connect('Button',D.btnarray[i]);
 end;
 
 procedure TWATFrame.FreeButtons;

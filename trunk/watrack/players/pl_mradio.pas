@@ -38,7 +38,17 @@ const
   IsMod:integer=-1;
   PrevFile:PWideChar=nil;
 
-function DeInitmRadio:integer;cdecl; forward;
+function ClearmRadio:integer; cdecl;
+begin
+  result:=0;
+  if ChangesHook>0 then
+  begin
+    PluginLink^.UnhookEvent(ChangesHook);
+    ChangesHook:=0;
+    CurrentStation:=-1;
+  end;
+  mFreeMem(PrevFile);
+end;
 
 function SettingsChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
@@ -104,7 +114,7 @@ begin
   else
   begin
     integer(result):=WAT_RES_NOTFOUND;
-    DeInitmRadio;
+    ClearmRadio;
   end;
 end;
 
@@ -308,6 +318,8 @@ begin
   end;
 end;
 
+function DeInitmRadio:integer;cdecl; forward;
+
 const
   plRec:tPlayerCell=(
     Desc     :'mRadio';
@@ -326,18 +338,11 @@ const
 function DeInitmRadio:integer;cdecl;
 begin
   result:=0;
+{
   if plRec.Icon<>0 then
-  begin
     CloseHandle(plRec.Icon);
-    plRec.Icon:=0;
-  end;
-  if ChangesHook>0 then
-  begin
-    PluginLink^.UnhookEvent(ChangesHook);
-    ChangesHook:=0;
-    CurrentStation:=-1;
-  end;
-  mFreeMem(PrevFile);
+}
+  ClearmRadio;
 end;
 
 initialization

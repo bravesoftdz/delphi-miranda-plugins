@@ -4,6 +4,8 @@ type
   tAWKTrackbar = object(TObj)
     total:integer;
     UpdInterval:integer;
+    OldMouseDown,
+    OldMouseUp:TOnMouse;
 
     procedure CtrlResize(Sender: PObj);
     procedure Erase(Sender: PControl; DC: HDC);
@@ -97,11 +99,15 @@ end;
 
 procedure tAWKTrackbar.PressButton(Sender: PControl;var Mouse: TMouseEventData);
 begin
+  pAWKTrackbar(Sender.Parent.CustomObj).OldMouseDown(Sender,Mouse);
+
   pIcoButton(Sender)^.Action:=PTrackbar(Sender.Parent).Position;
 end;
 
 procedure tAWKTrackbar.UnPressButton(Sender: PControl;var Mouse: TMouseEventData);
 begin
+  pAWKTrackbar(Sender.Parent.CustomObj).OldMouseUp(Sender,Mouse);
+
   CallService(MS_WAT_PRESSBUTTON,WAT_CTRL_SEEK,
     pIcoButton(Sender)^.Action*pAWKTrackbar(Sender.Parent.CustomObj).UpdInterval div 1000);
   pIcoButton(Sender)^.Action:=-1;
@@ -146,6 +152,7 @@ end;
 
 procedure tAWKTrackbar.Erase(Sender: PControl; DC: HDC);
 begin
+//  Sender.Parent.Update;
 end;
 
 procedure tAWKTrackbar.Paint(Sender: PControl; DC: HDC);
@@ -171,7 +178,6 @@ begin
   begin
     rc.right:=rc.left+8;
     DrawFrameControl(DC,rc,DFC_BUTTON,DFCS_BUTTONPUSH);
-//    Sender.Update;
   end;
 end;
 
@@ -179,10 +185,6 @@ procedure RefreshTrackbarIcons(Owner:PControl);
 begin
   if Owner.ChildCount>0 then
     pIcoButton(Owner.Children[0]).RefreshIcon;
-end;
-
-procedure MyOnClick(DummySelf, Sender:PControl);
-begin
 end;
 
 function MakeNewTrackBar(AOwner:PControl):PTrackbar;
@@ -195,6 +197,7 @@ begin
 
   with result^ do
   begin
+    Transparent:=true;
     CustomObj:=D;
     SetSize(AOwner.Width-16,18);
     SetPosition({AOwner.Left+}8,{AOwner.Top+}AOwner.Height-18);
@@ -205,11 +208,13 @@ begin
     RangeMax:=100;
 
     btn:=CreateIcoButton(result,GetIcon,DoAction,WAT_CTRL_SEEK);
+
     if btn<>nil then
     begin
-//      btn.ResetEvent(idx_fOnClick);  включить после исправления бага
-      btn.OnClick:=TOnEvent(MakeMethod(nil, @MyOnClick)); // nil -> crash @_@
+      btn.ResetEvent(idx_fOnClick);
+      D.OldMouseDown:=btn.OnMouseDown;
       btn.OnMouseDown:=D.PressButton;
+      D.OldMouseUp:=btn.OnMouseUp;
       btn.OnMouseUp  :=D.UnPressButton;
       btn.OnMouseMove:=D.DragButton;
     end;
@@ -217,6 +222,7 @@ begin
     OnResize    :=D.CtrlResize;
     OnEraseBkGnd:=D.Erase;
     OnPaint     :=D.Paint;
+
 //    OnScroll    :=D.Scroll;
   end;
 
