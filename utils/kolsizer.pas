@@ -14,15 +14,15 @@ type
   PDesigner=^TDesigner;
   TDesigner=object(TStrlistEx)
   private
-    FOwner:pControl;
-    FSpacing:Cardinal;
+    fOwner:pControl;
+    fSpacing:Cardinal;
     FOldPaint:TOnPaint;
-    FActive: boolean;
-    FSizer:PControl;
+    fActive: boolean;
+    fSizer:PControl;
     FOnControlChange: TonEvent;
 //    FOnDblClick:TOnEvent;
 //    FOnMouseDown:TOnMouse;
-    FCurrent: pControl;
+    fCurrent: pControl;
 //    FAction:integer;
 
     procedure setactive(const Value: boolean);
@@ -31,7 +31,7 @@ type
     procedure SetCurrent(const Value: pControl);
     procedure InternalControlChange(sender:pObj);
     procedure Setspacing(Space:cardinal = 8);
- protected
+  protected
     procedure init;virtual;
     procedure DoKeyUp( Sender: PControl; var Key: Longint; Shift: DWORD );
   public
@@ -40,11 +40,11 @@ type
     procedure DisConnect(aControl: pControl);
     procedure Paintgrid(sender:pControl;DC:HDC);
 
-    property Spacing:cardinal read FSpacing write setspacing;
-    property Active:boolean read FActive write setactive;
+    property Spacing:cardinal read fSpacing write setspacing;
+    property Active:boolean read fActive write setactive;
 //    property Action:integer read FAction write Faction;
-    property Current:pControl read FCurrent write SetCurrent;
-    property OnControlChange:TOnEvent Read FOnControlchange write FOnControlChange;
+    property Current:pControl read fCurrent write SetCurrent;
+    property OnControlChange:TOnEvent Read FOnControlChange write FOnControlChange;
 //    property OnDblClick:TonEvent read fOnDblClick write FOnDblClick;
 //    property OnMouseDown:TOnMouse read FOnMouseDown write FOnMouseDown;
   end;
@@ -94,31 +94,29 @@ function DesignHandlerProc(Sender: PControl; var Msg: TMsg; var Rslt: Integer): 
 begin
   Result:=false;
   case msg.message of
-  WM_LBUTTONDOWN:
-    begin
-    if Localdesigner.FOwner<> sender then LocalDesigner.current:=sender;
-    Result:=true;
-    {
-    if assigned(Localdesigner.OnMousedown) then
-    // Borrowed from KOL.pas
-    // enables us to pass on KOL mouse events back to the designer
-    // without having to connect to true KOL eventproperties.
-    with MouseData do
-    begin
-      Shift := Msg.wParam;
-      if GetKeyState(VK_MENU) < 0 then
-        Shift := Shift or MK_ALT;
-      X := LoWord(Msg.lParam);
-      Y := HiWord(Msg.lParam);
-      Button := mbNone;
-      StopHandling := true;
-      Rslt := 0; // needed ?
-      LocalDesigner.OnMousedown(sender,Mousedata);
-      Result:=true
-    end;
-     }
+    WM_LBUTTONDOWN: begin
+      if LocalDesigner.fOwner<>Sender then LocalDesigner.Current:=Sender;
+      Result:=true;
+      {
+      if assigned(Localdesigner.OnMousedown) then
+      // Borrowed from KOL.pas
+      // enables us to pass on KOL mouse events back to the designer
+      // without having to connect to true KOL eventproperties.
+      with MouseData do
+      begin
+        Shift := Msg.wParam;
+        if GetKeyState(VK_MENU) < 0 then
+          Shift := Shift or MK_ALT;
+        X := LoWord(Msg.lParam);
+        Y := HiWord(Msg.lParam);
+        Button := mbNone;
+        StopHandling := true;
+        Rslt := 0; // needed ?
+        LocalDesigner.OnMousedown(sender,Mousedata);
+        Result:=true
+      end;
+       }
     end
-
   end;
 end;
 
@@ -128,18 +126,18 @@ var
   Pt: TPoint;
   i: Integer;
   R:Trect;
-  Data:PSizerdata;
+  Data:PSizerData;
 begin
-  Data:=PSizerdata(sender.CustomObj);
+  Data:=PSizerData(Sender.CustomObj);
   Result:=True;
-  with sender^, Data^ do
+  with Sender^, Data^ do
   begin
     case msg.message of
       WM_NCHITTEST: begin
         Pt := MakePoint(loword(Msg.lparam), hiword(Msg.lparam));
         Pt := Screen2Client (Pt);
         Rslt:=0;
-        for i := 0 to  7 do
+        for i := 0 to 7 do
           if PtInRect (FPosInfo [i].rect, Pt) then
           begin
             // The value of rslt is passed on and makes
@@ -173,8 +171,8 @@ begin
       WM_MOVE: begin
         R := BoundsRect;
         InflateRect (R, -2, -2);
-        Fcontrol.Invalidate;
-        Fcontrol.BoundsRect := R;
+        fControl.Invalidate;
+        fControl.BoundsRect := R;
       end;
 
     else
@@ -186,7 +184,7 @@ end;
 function NewSizerControl(AControl: PControl;aDesigner:PDesigner):PControl;
 var
   R: TRect;
-  Data:PSizerdata;
+  Data:PSizerData;
 begin
   New(Data,Create);
   Result:=NewPaintBox(aControl);
@@ -229,45 +227,14 @@ begin
       Rectangle(DC, Left, Top, Right, Bottom);
 end;
 
-procedure TDesigner.init;
-begin
-  inherited;
-  Fspacing:=8;
-end;
-
-procedure TDesigner.Paintgrid(sender: pControl; DC: HDC);
-var
-  i, j: Integer;
-begin
-  i := 0;
-  j := 0;
-  sender.canvas.FillRect(sender.canvas.cliprect);
-  if Assigned(FOldPaint) then FOldPaint(sender,DC);
-  repeat
-    repeat
-      MoveToEx(Dc,i, j,nil);
-      LineTo(Dc,i + 1,j);
-      inc(i, Fspacing);
-    until i > sender.ClientWidth;
-    i := 0;
-    inc(j, Fspacing);
-  until j > sender.Clientheight;
-end;
-
-procedure TDesigner.Setspacing(Space: cardinal);
-begin
-  Fspacing:=Space;
-  FOwner.invalidate;
-end;
-
 { TDesigner }
 function NewDesigner(aOwner:pControl):pDesigner;
 begin
   if Assigned(LocalDesigner) then
   begin
     result:=LocalDesigner;
-    MsgOk(' Exists' );
-  end else
+  end
+  else
   begin
     New(Result,Create);
     with result^ do
@@ -281,9 +248,40 @@ begin
   end
 end;
 
+procedure TDesigner.init;
+begin
+  inherited;
+  Fspacing:=8;
+end;
+
+procedure TDesigner.PaintGrid(Sender: pControl; DC: HDC);
+var
+  i, j: Integer;
+begin
+  i := 0;
+  j := 0;
+  Sender.Canvas.FillRect(Sender.Canvas.ClipRect);
+  if Assigned(FOldPaint) then FOldPaint(Sender,DC);
+  repeat
+    repeat
+      MoveToEx(Dc,i, j,nil);
+      LineTo(Dc,i + 1,j);
+      inc(i, fSpacing);
+    until i > Sender.ClientWidth;
+    i := 0;
+    inc(j, fSpacing);
+  until j > Sender.ClientHeight;
+end;
+
+procedure TDesigner.SetSpacing(Space: cardinal);
+begin
+  fSpacing:=Space;
+  fOwner.invalidate;
+end;
+
 destructor TDesigner.destroy;
 begin
-  setactive(false);
+  SetActive(false);
   FOwner.OnPaint:=FOldPaint;
   inherited;
 end;
@@ -291,82 +289,83 @@ end;
 //Note: Make shure that whatever happens, all pointers are nil or valid!
 //      Took a long time to debug spurious crashes.
 //      So this is not excessively safe.
-procedure TDesigner.setactive(const Value: boolean);
+procedure TDesigner.SetActive(const Value: boolean);
 var
   i:integer;
 begin
   FActive := Value;
   if FActive then
   begin
-    FOwner.OnPaint:=Paintgrid;
+    fOwner.OnPaint:=PaintGrid;
     if count > 1 then
     begin
-      if assigned(Fcurrent) then
-        Fsizer:=NewSizerControl(Fcurrent,@self);
+      if Assigned(fCurrent) then
+        fSizer:=NewSizerControl(fCurrent,@self);
       for i:=0 to count -1 do
-       if not Pcontrol(Objects[i]).IsprocAttached(DesignHandlerProc) then
+       if not PControl(Objects[i]).IsprocAttached(DesignHandlerProc) then
          PControl(Objects[i]).AttachProc(DesignHandlerProc);
     end;
   end
   else
   begin
-   if count > 0 then
-    for i:=0 to count -1 do
-      PControl(Objects[i]).DetachProc(DesignHandlerProc);
-    if assigned(Fsizer) then
+    if count > 0 then
+      for i:=0 to count -1 do
+        PControl(Objects[i]).DetachProc(DesignHandlerProc);
+    if Assigned(fSizer) then
     begin
-      Fsizer.free;
-      Fsizer:=nil;
+      fSizer.free;
+      fSizer:=nil;
     end;
-    Fcurrent:=nil;
-    FOwner.OnPaint:=FOldPaint;
+    fCurrent:=nil;
+    fOwner.OnPaint:=FOldPaint;
   end;
-  Fowner.invalidate;
+  fOwner.Invalidate;
 end;
 
 procedure TDesigner.Connect(aName: String; aControl: pControl);
 begin
-  if (IndexofObj(aControl) = -1) then
+  if (IndexOfObj(aControl) = -1) then
   begin
     if aName = '' then
-      aname := prepareClassname(aControl);
-    AddObject(uniquename(aName), Cardinal(aControl));
+      aName := PrepareClassName(aControl);
+    AddObject(UniqueName(aName), Cardinal(aControl));
     InternalControlChange(aControl);
-    setcurrent(aControl);
+    SetCurrent(aControl);
   end;
 end;
 
 procedure TDesigner.DisConnect(aControl: pControl);
 var
-  Index: Integer;
+  index: Integer;
 begin
-  Index := IndexOfObj(aControl);
+  index := IndexOfObj(aControl);
   if index = -1 then
     exit;
-  Delete(IndexOfObj(aControl));
-//  aControl:=nil;
+  Delete(index);
+
   InternalControlChange(nil);
 end;
 
 procedure TDesigner.SetCurrent(const Value: pControl);
 begin
-  if assigned(Fsizer) then
+  if Assigned(fSizer) then
   begin
-    FSizer.free;
-    Fsizer:=nil;
+    fSizer.free;
+    fsizer:=nil;
   end;
-  if value <> nil then
+  if Value <> nil then
   begin
-    FCurrent := Value;
-    if (FActive =true) and (Fcurrent<>nil) and (Fcurrent<>FOwner) then
-      Fsizer:=Newsizercontrol(Value,@self);
+    fCurrent := Value;
+    if fActive and (fCurrent<>nil) and (fCurrent<>fOwner) then
+      fSizer:=NewSizerControl(Value,@self);
+
     InternalControlChange(Value);
   end;
 end;
 
 procedure TDesigner.InternalControlChange(sender: pObj);
 begin
-  if FActive then
+  if fActive then
     if Assigned(OnControlChange)then
       FOnControlChange(sender);
 end;
@@ -376,31 +375,32 @@ procedure TDesigner.DoKeyUp(Sender: PControl; var Key: Integer; Shift: DWORD);
   procedure DeleteControl(Index:integer);
   var
     i: Integer;
-    C:Pcontrol;
+    C:PControl;
   begin
-    C:=Pcontrol(Objects[index]);
-    if C.ChildCount > 0 then
-      for i := c.Childcount - 1 downto 0 do
-        if C <> Fowner then Deletecontrol(i);
-     if C<> FOwner then
-     begin
-       C.free;
-//       C:=nil;
-       Delete(0);
-     end;
+    C:=PControl(Objects[index]);
+    // delete children, not owner
+    if C.ChildCount>0 then
+      for i:=C.ChildCount-1 downto 0 do
+        if C<>fOwner then DeleteControl(i);
+
+    if C<>fOwner then
+    begin
+      C.free;
+      Delete(0);
+    end;
   end;
 
 var
- i:integer;
+  i:integer;
 begin
-    if Key = VK_DELETE then
+   if Key = VK_DELETE then
    begin
      i:=IndexOfObj(LocalDesigner.Current);
-     if i<> -1 then
+     if i<>-1 then
      begin
-       Deletecontrol(i);
-       internalControlchange(nil);
-       postmessage(sender.Handle,WM_CLOSE,0,0);
+       DeleteControl(i);
+       InternalControlChange(nil);
+       PostMessage(Sender.Handle,WM_CLOSE,0,0); //???
      end;
    end;
 end;
@@ -422,12 +422,16 @@ var
 begin
   // Strip obj_ prefix and all other prefix+underscores from
   // subclassname property: 'obj_BUTTON' becomes 'Button'
-  T := Lowercase(aName);
+  T := LowerCase(aName);
   while T <> '' do aName := Parse(T, '_');
-  //Propercase it.
+
+  aName[1]:=UpCase(aName[1]);
+{
+  //Propercase it
   T := aName[1];
   T := UpperCase(T);
   aName[1] := T[1];
+}
   Result := aName;
   // Add at least a 1 to the name if the last char
   // is not a digit.
@@ -445,7 +449,7 @@ begin
 end;
 
 // This is probably not complete yet.
-function TDesigner.PrepareClassname(aControl: PControl): String;
+function TDesigner.PrepareClassName(aControl: PControl): String;
 begin
   Result := aControl.subclassname;
   with aControl^ do
@@ -453,24 +457,23 @@ begin
     begin
       // Only place where panel and label differ
       // consistently???
+      // why not aControl.SizeRedraw ??
       if pHack(aControl).SizeRedraw = True then
         Result := 'obj_LABEL'
       else
         Result := 'obj_PANEL'
     end
-  else if subclassname = 'obj_BUTTON' then
-  begin
-    if Boolean(Style and BS_AUTOCHECKBOX) then
-      Result := 'obj_CHECKBOX'
-    else if Boolean(style and BS_RADIOBUTTON) then
-      Result := 'obj_RADIOBOX'
-    else if Boolean(style and BS_OWNERDRAW) then
-      Result := 'obj_BITBTN'
-    else if Boolean(style and BS_GROUPBOX) then
-      Result := 'obj_GROUPBOX';
-  end
-  else if indexofstr(Uppercase(subclassname), 'RICHEDIT')>-1 then
-    Result := 'obj_RICHEDIT';
+
+    else if subclassname = 'obj_BUTTON' then
+    begin
+      if      Boolean(Style and BS_AUTOCHECKBOX) then Result := 'obj_CHECKBOX'
+      else if Boolean(style and BS_RADIOBUTTON ) then Result := 'obj_RADIOBOX'
+      else if Boolean(style and BS_OWNERDRAW   ) then Result := 'obj_BITBTN'
+      else if Boolean(style and BS_GROUPBOX    ) then Result := 'obj_GROUPBOX';
+    end
+
+    else if IndexOfStr(UpperCase(subclassname), 'RICHEDIT')>-1 then
+      Result := 'obj_RICHEDIT';
 end;
 
 end.

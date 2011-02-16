@@ -123,29 +123,32 @@ begin
   D:=CustomData;
   if not D.ManualPlacement then exit;
 
-  if D.Designer<>nil then
+  if D.Designer=nil then
+    D.Designer:=NewDesigner(@self);
+
+  if not D.Designer.Active then
   begin
-    D.Designer.Active:=not D.Designer.Active;
-    if not D.Designer.Active then
-      DesignerSaveSettings;
-      Sender.Update;
-    exit;
-  end;
+    // Trackbar
+    if D.Trackbar<>nil then
+    begin
+      D.Trackbar.Anchor(false,false,false,false);
+      D.Designer.Connect('Trackbar',D.Trackbar);
+    end;
+    // TextBlock
+    if D.TextBlock<>nil then D.Designer.Connect('Panel',D.TextBlock);
+    // Icons
+    if (D.ShowControls and scButtons)<>0 then MakeButtonsDesigner;
 
-// really, must be caled right after creation
-//!!  DesignerLoadSettings;
-
-  D.Designer:=NewDesigner(@self);
-  // Trackbar
-  if D.Trackbar<>nil then
+    D.Designer.Active:=true;
+  end
+  else
   begin
-    D.Trackbar.Anchor(false,false,false,false);
-    D.Designer.Connect('Trackbar',D.Trackbar);
-  end;
-  // TextBlock
-  if D.TextBlock<>nil then D.Designer.Connect('Panel',D.TextBlock);
-  // Icons
-  if (D.ShowControls and scButtons)<>0 then MakeButtonsDesigner(D.Designer);
+    D.Designer.Active:=False;
 
-  D.Designer.Active:=true;
+    DesignerSaveSettings;
+    if D.Trackbar <>nil then D.Designer.Disconnect(D.Trackbar);
+    if D.TextBlock<>nil then D.Designer.Disconnect(D.TextBlock);
+    if (D.ShowControls and scButtons)<>0 then FreeButtonsDesigner;
+    Sender.Update;
+  end;
 end;

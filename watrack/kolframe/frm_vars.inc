@@ -70,7 +70,8 @@ type
 
     procedure AdjustButtons(atop:integer);
     procedure RefreshButtonIcons;
-    procedure MakeButtonsDesigner(Designer:PDesigner);
+    procedure FreeButtonsDesigner;
+    procedure MakeButtonsDesigner;
     procedure FreeButtons;
     procedure MakeNewButtonGroup;
  end;
