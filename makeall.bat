@@ -16,6 +16,13 @@ cd ..\
 
 echo.
 echo -----------------------------------------
+echo. Start to compile WATrack frame icons
+cd .\watrack\icons\
+call make.bat %1 %2 %3 %4 %5 %6 %7 %8 %9
+cd ..\..\
+
+echo.
+echo -----------------------------------------
 echo. Start to compile ActMan
 cd .\actman\
 call make.bat %1 %2 %3 %4 %5 %6 %7 %8 %9
