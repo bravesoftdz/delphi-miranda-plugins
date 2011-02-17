@@ -1,4 +1,4 @@
-unit KOLSIZER;
+unit KOLSizer;
 //
 // purpose: KOL control sizercontrol and design grid
 //  author: © 2004, Thaddy de Koning
@@ -145,6 +145,7 @@ begin
             // without us having to do anything more.
             Rslt     :=FPosInfo[i].pos;
             Direction:=FPosInfo[i].direction;
+            break;
           end;
         if Rslt = 0 then
           Result:=False;

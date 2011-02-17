@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // KOL_ASM.inc (to inlude in KOL.pas)
-// v 3.12
+// v 3.14
 
 function MsgBox( const S: KOLString; Flags: DWORD ): DWORD;
 asm
@@ -8906,7 +8906,7 @@ asm
         SHL      ECX, 8
 
         MOV      EDX, [EAX].fStyle
-        AND      DH, CL
+        AND      DH, $F3
         OR       EDX, ECX
 
         CALL     SetStyle

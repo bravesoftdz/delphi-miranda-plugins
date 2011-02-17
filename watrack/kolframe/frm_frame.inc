@@ -14,7 +14,6 @@ const
   opt_FrmBkColor:PAnsiChar = 'frame/frmbkcolor';
   opt_FrmBkPic  :PAnsiChar = 'frame/frmbkpic';
   opt_FrmBkMode :PAnsiChar = 'frame/frmbkmode';
-//  opt_FrmHeight :PAnsiChar = 'frame/frmheight';
   opt_FrmAlpha  :PAnsiChar = 'frame/frmalpha';
   opt_HideFrameM:PAnsiChar = 'frame/hideframem';
   opt_HideFrameP:PAnsiChar = 'frame/hideframep';
@@ -243,6 +242,7 @@ begin
 
   if D.BkBitmap=HBITMAP(-1) then // same file
     D.BkBitmap:=0;
+  Update;
 end;
 
 procedure TWATFrame.Paint(Sender: PControl; DC: HDC);

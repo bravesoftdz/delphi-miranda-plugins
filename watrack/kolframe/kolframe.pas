@@ -125,13 +125,14 @@ begin
 
     WAT_EVENT_NEWTRACK: begin
       // cover
-      if (PSongInfo(lParam)^.Cover<>nil) and (PSongInfo(lParam)^.Cover^<>#0) then
-      begin
-        GetShortPathNameW(PSongInfo(lParam)^.Cover,bufw,SizeOf(bufw));
-        WideToAnsi(bufw,Cover);
-        FrameCtrl.RefreshPicture(Cover);
-        mFreeMem(Cover);
-      end;
+      if D.UseCover then
+        if (PSongInfo(lParam)^.Cover<>nil) and (PSongInfo(lParam)^.Cover^<>#0) then
+        begin
+          GetShortPathNameW(PSongInfo(lParam)^.Cover,bufw,SizeOf(bufw));
+          WideToAnsi(bufw,Cover);
+          FrameCtrl.RefreshPicture(Cover);
+          mFreeMem(Cover);
+        end;
 
       // trackbar
       TrackbarSetRange(D.Trackbar,D.UpdInterval,PSongInfo(lParam)^.total);
@@ -185,8 +186,7 @@ begin
   end;
 end;
 
-const
-  opt_FrmHeight :PAnsiChar = 'frame/frmheight';
+//??const opt_FrmHeight :PAnsiChar = 'frame/frmheight';
 
 function CreateFrame(parent:HWND):boolean;
 var
@@ -213,7 +213,7 @@ begin
       hIcon   :=0;
       align   :=alTop;
       GetClientRect(FrameWnd,rc);
-      height  :=DBReadWord(0,PluginShort,opt_FrmHeight,rc.bottom-rc.top);
+//??      height  :=DBReadWord(0,PluginShort,opt_FrmHeight,rc.bottom-rc.top);
       Flags   :=0;//{F_VISIBLE or} F_SHOWTB;
       name.a  :=PluginShort;
       TBName.a:=PluginShort;
