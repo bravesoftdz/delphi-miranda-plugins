@@ -345,7 +345,7 @@ begin
             end;
             plyLink:=nl;
           end;
-
+          FillChar(plyLink^[p],SizeOf(tPlayerCell),0);
 // doubling notes
           if  (pPlayerCell(lParam)^.Notes<>nil) and
              ((pPlayerCell(lParam)^.flags and WAT_OPT_TEMPLATE)=0) then
@@ -906,6 +906,8 @@ begin
           dst.icon:=ExtractIconW(hInstance,fname,0);
           if dst.icon=1 then
             dst.icon:=0;
+          if dst.icon<>0 then
+            plyLink^[0].icon:=CopyIcon(dst.icon);
           mFreeMem(fname);
         end;
       end;
