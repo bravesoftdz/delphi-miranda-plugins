@@ -71,7 +71,7 @@ begin
   D:=CustomData;
 
   for i:=0 to HIGH(D.btnarray) do
-    D.Designer.Connect('Button',D.btnarray[i]);
+    D.Designer.Connect('Button',D.btnarray[i],DESIGNER_NORESIZE);
 end;
 
 procedure TWATFrame.FreeButtons;

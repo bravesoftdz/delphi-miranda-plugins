@@ -43,6 +43,7 @@ FONT 8, "MS Shell Dlg", 0, 0
 
  AUTOCHECKBOX "Manual element placement", IDC_MANUALPLACE, 155,144,144,16, BS_VCENTER | BS_MULTILINE | BS_RIGHT | BS_LEFTTEXT
 
+//                                                                    TBS_TOOLTIPS
  CONTROL      "",IDC_FRMALPHA,"msctls_trackbar32", TBS_BOTTOM|TBS_NOTICKS|$100,160,168,68,11
  LTEXT        "Alpha",-1,230,168,75,11, SS_CENTERIMAGE
 

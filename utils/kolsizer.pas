@@ -10,6 +10,9 @@ interface
 uses
   Windows, Messages, Kol;
 
+const
+  DESIGNER_NORESIZE = 1;
+
 type
   PDesigner=^TDesigner;
   TDesigner=object(TStrlistEx)
@@ -27,7 +30,7 @@ type
 
     procedure setactive(const Value: boolean);
     function PrepareClassname(aControl: PControl): String;
-    function UniqueName(aName: String): String;
+    function UniqueName(aName: String; flags:cardinal): String;
     procedure SetCurrent(const Value: pControl);
     procedure InternalControlChange(sender:pObj);
     procedure Setspacing(Space:cardinal = 8);
@@ -36,7 +39,7 @@ type
     procedure DoKeyUp( Sender: PControl; var Key: Longint; Shift: DWORD );
   public
     destructor destroy;virtual;
-    procedure Connect(aName: String; aControl: pControl);
+    procedure Connect(aName: String; aControl: pControl; flags:cardinal=0);
     procedure DisConnect(aControl: pControl);
     procedure Paintgrid(sender:pControl;DC:HDC);
 
@@ -49,10 +52,13 @@ type
 //    property OnMouseDown:TOnMouse read FOnMouseDown write FOnMouseDown;
   end;
 
-function NewSizerControl(AControl: PControl;aDesigner:PDesigner):PControl;
+function NewSizerControl(AControl: PControl;aDesigner:PDesigner;flags:cardinal=0):PControl;
 function NewDesigner(aOwner:pControl):pDesigner;
 
 implementation
+
+const
+  FlagDelimeterChar='@';
 
 const
   // Size and move commands for SysCommand
@@ -76,10 +82,11 @@ type
   PSizerdata=^ TSizerdata;
   TSizerdata= object(Tobj)
     FControl :PControl;
-    FPosInfo : array [0..7] of TPosInfo;
+    FPosInfo :array [0..7] of TPosInfo;
+    Szflags  :cardinal;
     Direction:longint;
 
-    procedure Dopaint(sender:pControl;DC:HDC);
+    procedure DoPaint(sender:pControl;DC:HDC);
   end;
 
   PHack =^ THack;
@@ -87,7 +94,7 @@ type
   end;
 
 var
-  LocalDesigner:PDesigner;
+  LocalDesigner:PDesigner=nil;
 
 function DesignHandlerProc(Sender: PControl; var Msg: TMsg; var Rslt: Integer): Boolean;
 //var MouseData:TMouseEventData;
@@ -165,7 +172,8 @@ begin
         FPosInfo[7].rect:=MakeRect (0            ,Height div 2-3,5            ,Height div 2+2);
       end;
 
-      WM_NCLBUTTONDOWN: Perform (WM_SYSCOMMAND, Direction, 0);
+      WM_NCLBUTTONDOWN: if (Szflags and DESIGNER_NORESIZE)=0 then
+        Perform (WM_SYSCOMMAND, Direction, 0);
 
       WM_LBUTTONDOWN: Perform (WM_SYSCOMMAND, SZ_MOVE, 0);
 
@@ -182,7 +190,7 @@ begin
   end;
 end;
 
-function NewSizerControl(AControl: PControl;aDesigner:PDesigner):PControl;
+function NewSizerControl(AControl: PControl;aDesigner:PDesigner;flags:cardinal):PControl;
 var
   R: TRect;
   Data:PSizerData;
@@ -190,10 +198,11 @@ begin
   New(Data,Create);
   Result:=NewPaintBox(aControl);
   Result.ExStyle:=Result.ExStyle or WS_EX_TRANSPARENT;
-  Result.OnKeyUp:=aDesigner.DoKeyUp;
+//  Result.OnKeyUp:=aDesigner.DoKeyUp;
   if aDesigner.fowner<>aControl then
     With result^, Data^  do
     begin
+      Szflags  := flags;
       FControl := AControl;
       // set the size and position
       R := aControl.BoundsRect;
@@ -309,7 +318,7 @@ begin
   end
   else
   begin
-    if count > 0 then
+    if count > 0 then // always coz Owner is first
       for i:=0 to count -1 do
         PControl(Objects[i]).DetachProc(DesignHandlerProc);
     if Assigned(fSizer) then
@@ -323,15 +332,18 @@ begin
   fOwner.Invalidate;
 end;
 
-procedure TDesigner.Connect(aName: String; aControl: pControl);
+procedure TDesigner.Connect(aName: String; aControl: pControl; flags:cardinal=0);
 begin
   if (IndexOfObj(aControl) = -1) then
   begin
     if aName = '' then
       aName := PrepareClassName(aControl);
-    AddObject(UniqueName(aName), Cardinal(aControl));
+    AddObject(UniqueName(aName,flags), Cardinal(aControl));
     InternalControlChange(aControl);
     SetCurrent(aControl);
+    if Active then
+      if not aControl.IsprocAttached(DesignHandlerProc) then
+        aControl.AttachProc(DesignHandlerProc);
   end;
 end;
 
@@ -348,6 +360,10 @@ begin
 end;
 
 procedure TDesigner.SetCurrent(const Value: pControl);
+var
+  idx,dummy:integer;
+  flags:integer;
+  tmpstr:string;
 begin
   if Assigned(fSizer) then
   begin
@@ -356,9 +372,18 @@ begin
   end;
   if Value <> nil then
   begin
+    idx:=IndexOfObj(Value);
+    tmpstr:=Items[idx];
+    idx:=IndexOfChar(tmpstr,FlagDelimeterChar);
+    if idx<0 then flags:=0
+    else
+    begin
+      val(copy(tmpstr,idx+1,15),flags,dummy);
+    end;
+
     fCurrent := Value;
     if fActive and (fCurrent<>nil) and (fCurrent<>fOwner) then
-      fSizer:=NewSizerControl(Value,@self);
+      fSizer:=NewSizerControl(Value,@self,flags);
 
     InternalControlChange(Value);
   end;
@@ -416,7 +441,7 @@ end;
   // It's not a beauty but it works.
   // (A severe case of programming 48 hours without sleep)
 
-function TDesigner.UniqueName(aName: String): String;
+function TDesigner.UniqueName(aName: String; flags:cardinal): String;
 var
   I, J: Integer;
   T: String;
@@ -447,6 +472,11 @@ begin
       Result := Format('%s%d', [aName, J]);
     end;
   until I = -1;
+  if flags<>0 then
+  begin
+    Str(flags,T);
+    Result:=Result+FlagDelimeterChar+T;
+  end;
 end;
 
 // This is probably not complete yet.
