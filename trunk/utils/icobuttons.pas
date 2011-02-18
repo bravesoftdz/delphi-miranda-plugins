@@ -218,6 +218,12 @@ begin
   D.ico_normal.Free;
   if D.ico_hovered<>nil then D.ico_hovered.Free;
   if D.ico_pressed<>nil then D.ico_pressed.Free;
+
+  if D.rpttimer<>0 then
+  begin
+    KillTimer(0,D.rpttimer);
+    D.rpttimer:=0;
+  end;
 end;
 
 procedure tIcoButton.RefreshIcon;
