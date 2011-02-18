@@ -190,7 +190,7 @@ begin
   begin
     if D.rpttimer<>0 then
     begin
-      KillTimer(0,D.rpttimer);
+      KillTimer(Sender.Handle,D.rpttimer);
       D.rpttimer:=0;
     end;
 
