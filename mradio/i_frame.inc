@@ -43,8 +43,12 @@ begin
     end;
 
     WM_HSCROLL: begin
-       if loword(msg.wParam)=SB_ENDSCROLL then
-         Service_RadioSetVolume({Hiword(msg.wParam)}SendMessage(msg.lParam,TBM_GETPOS,0,0),2)
+       case loword(msg.wParam) of
+         SB_THUMBTRACK:
+           Service_RadioSetVolume(Hiword(msg.wParam),2);
+         SB_ENDSCROLL:
+           Service_RadioSetVolume({Hiword(msg.wParam)}SendMessage(msg.lParam,TBM_GETPOS,0,0),2)
+       end;
     end;
 
   end;
@@ -123,7 +127,7 @@ begin
       end;
 
       // Trackbar
-      TB:=NewTrackbar(FrameCtrl,[trbNoTicks,trbBoth,trbNoBorder],nil);
+      TB:=NewTrackbar(FrameCtrl,[trbTooltips,trbNoTicks,trbBoth,trbNoBorder],nil);
       with TB^ do
       begin
         SetSize(FrameCtrl.Width-24,18);
