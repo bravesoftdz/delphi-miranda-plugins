@@ -45,6 +45,7 @@ function OnModulesLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
   Result:=0;
   PluginLink^.UnhookEvent(onloadhook);
+  LoadLangPackModule;
 end;
 
 function Load(link:PPLUGINLINK):int; cdecl;
@@ -62,6 +63,7 @@ end;
 
 function Unload:int; cdecl;
 begin
+  UnloadLangPackModule();
   Result:=0;
 end;
 

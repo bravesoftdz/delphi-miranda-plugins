@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 // KOL_ASM.inc (to inlude in KOL.pas)
-// v 3.14
+// v 3.1415
 
 function MsgBox( const S: KOLString; Flags: DWORD ): DWORD;
 asm
@@ -677,7 +677,7 @@ asm
   XOR    EAX, EAX
 end;
 
-procedure Run( var AppletWnd: PControl );
+procedure Run( var AppletCtl: PControl );
 asm
         CMP       EAX, 0
         JZ        @@exit

@@ -9,11 +9,14 @@ Just introduce some special "plugin section" separators
 function LoadLangPackXML(const fname:PAnsiChar):int;
 var
   f:THANDLE;
-  i,nodenum,plugnum:integer;
+  i,
+  plgnnum,          // cycle, current plugin number (in langpack)
+  nodenum,          // cycle, current node(line) number in group
+  plugnum:integer;  // amount of registered plugins
   res:pWideChar;
   root,node,actnode:HXML;
   xmlparser:XML_API_W;
-  linenum:integer;
+  linenum:integer;  // total loaded lines amount
   ld:integer;
 begin
   result:=0;
@@ -31,7 +34,7 @@ begin
   with xmlparser do
   begin
     root:=parseString(ChangeUnicode(res),@i,nil);
-    // header (langpack info)
+    //----- DESCRIPTION section -----
     actnode:=getNthChild(root,'Description',0);
     if actnode<>0 then
     begin
@@ -58,6 +61,7 @@ begin
     
     ld:=-1;
     linenum:=0;
+    //----- COMMON section -----
     actnode:=getNthChild(root,'Common',0);
     if actnode<>0 then
     begin
@@ -72,15 +76,20 @@ begin
           inc(linenum);
           inc(nodenum);
         until false;
-//!!        LangDirectory[ld].pend:=linenum-1; // close langpack common part ^_^
+// realized in RegisterLangPlugin and MakeGlobalHashes
+//        LangDirectory[0].pend:=linenum-1; // close langpack common part ^_^
       end;
     end;
+
+    //----- PLUGINS section -----
     if ld=0 then // all ok
     begin
+      plgnnum:=0;
       plugnum:=0;
       repeat
-        actnode:=getNthChild(root,'Plugin',0);
+        actnode:=getNthChild(root,'Plugin',plgnnum);
         if actnode=0 then break;
+        inc(plgnnum);
         // register plugin start. "true", if we need this plugin
         ld:=RegisterLangPlugin(linenum,dword(getAttrValue(actnode,'uuid')));
         if ld>0 then
@@ -95,10 +104,12 @@ begin
             inc(linenum);
             inc(nodenum);
           until false;
-//!!          LangDirectory[ld].pend:=linenum-1; // close langpack plugin part ^_^
+// realized in RegisterLangPlugin and MakeGlobalHashes
+//          LangDirectory[plgnum].pend:=linenum-1; // close langpack plugin part ^_^
         end;
       until false;
     end;
+
     DestroyNode(root);
   end;
   mFreeMem(res);
@@ -118,6 +129,7 @@ begin
   i:=0;
   RegisterLangPlugin(0,0);
   linenum:=0;
+  ld:=0;
   while i<sla.Count do
   begin
     // next plugin

@@ -1,7 +1,7 @@
 {}
 
 {
- wParam=0
+ wParam=flags
  lParam=(LPARAM)(const AnsiChar*)szEnglish
 }
 function TranslateString(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -140,9 +140,9 @@ end;
 procedure LoadLangPackServices;
 begin
 	CreateServiceFunction(MS_LANGPACK_TRANSLATESTRING,@TranslateString);
-	CreateServiceFunction(MS_LANGPACK_TRANSLATEMENU,@TranslateMenu);
+	CreateServiceFunction(MS_LANGPACK_TRANSLATEMENU  ,@TranslateMenu);
 	CreateServiceFunction(MS_LANGPACK_TRANSLATEDIALOG,@TranslateDialog);
-	CreateServiceFunction(MS_LANGPACK_GETCODEPAGE,@GetDefaultCodePage);
-	CreateServiceFunction(MS_LANGPACK_GETLOCALE,@GetDefaultLocale);
-	CreateServiceFunction(MS_LANGPACK_PCHARTOTCHAR,@PcharToTchar);
+	CreateServiceFunction(MS_LANGPACK_GETCODEPAGE    ,@GetDefaultCodePage);
+	CreateServiceFunction(MS_LANGPACK_GETLOCALE      ,@GetDefaultLocale);
+	CreateServiceFunction(MS_LANGPACK_PCHARTOTCHAR   ,@PcharToTchar);
 end;

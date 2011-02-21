@@ -1,13 +1,60 @@
 {}
-function LangPackHash(str:pAnsiChar):int;
+function LangPackHash(str:pAnsiChar):int; assembler;
+asm
+		xor  edx,edx
+		mov  esi,str
+		xor  cl,cl
+@@lph_top:
+		xor  eax,eax
+		and  cl,31
+		mov  al,[esi]
+		inc  esi
+		test al,al
+		jz   @@lph_end
+		rol  eax,cl
+		add  cl,5
+		xor  edx,eax
+		jmp  @@lph_top
+@@lph_end:
+		mov  eax,edx
+end;
+{
+var
+  i,shift:integer;
 begin
-  result:=0;
+	result:=0;
+	shift:=0;
+	for i:=0 to high(szStr) do
+	begin
+		hash:=hash xor (dword(ord(szStr[i]) shl shift));
+		if shift>24 then
+		  hash:=hash xor (ord(szStr[i]) shr (32-shift)) and $7F;
+		shift=(shift+5)&0x1F;
+	end;
+
+end;
+}
+function LangPackHashW(str:pAnsiChar):int; assembler;
+asm
+		xor  edx,edx
+		mov  esi,str
+		xor  cl,cl
+@@lph_top:
+		xor  eax,eax
+		and  cl,31
+		mov  al,[esi]
+		inc  esi
+		inc  esi
+		test al,al
+		jz   @@lph_end
+		rol  eax,cl
+		add  cl,5
+		xor  edx,eax
+		jmp  @@lph_top
+@@lph_end:
+		mov  eax,edx
 end;
 
-function LangPackHashW(str:pAnsiChar):int;
-begin
-  result:=0;
-end;
 
 type
   PLangPackEntry = ^TLangPackEntry;
@@ -26,10 +73,11 @@ type
 }
 type //my
   THashEntry = record
-    Hash    : dword;   // english line hash
+    Hash    :dword;    // english line hash
     EntryNum:cardinal; // index strings data in "entry" array
   end;
   THashEntryArray = array of THashEntry;
+
 type
   TLangPackStruct = record
     filename         :pWideChar;
@@ -49,7 +97,7 @@ type
 
 type
   TLangRec = record
-    uuid     : PAnsiChar; // need to get Plugin Lang pack handle
+    uuid     : array [0..15] of byte; // need to get Plugin Lang pack handle (16 bytes)
     pstart   ,            // starting  index of translations in full list
     pend     : integer;   // finishing index of translations in full list
     numhashes:int;
@@ -74,6 +122,8 @@ and fill "directory" data. 'end of section' filling in file reasing code
 *)
 // wParam - start line number
 // lParam - plugin uuid (to load just needed translates)
+// result - plugin number (order)
+//!! NEED - to recognize, need we that plugin or not?
 function RegisterLangPlugin(wParam:WPARAM; lParam:LPARAM):int; cdecl;
 begin
   if lParam<>0 then
@@ -102,13 +152,15 @@ begin
   FillChar(LangDirectory[LangRecNum],SizeOf(TLangRec),0);
   with LangDirectory[LangRecNum] do
   begin
-    FastWideToAnsi(PWideChar(lParam),uuid);
+//    FastWideToAnsi(PWideChar(lParam),uuid); // or to byte array = 16 bytes
+
     pstart:=wParam;
     result:=LangRecNum;
   end;
   inc(LangRecNum);
 end;
 
+// add translation to array, return line number
 function AddToLangpack(szTranslate:pWideChar):int; overload;
 begin
   with langpack do
@@ -143,6 +195,7 @@ begin
   end;
 end;
 
+//??
 procedure MakeGlobalHashes(num:int);
 var
   i,size:integer;
@@ -168,6 +221,7 @@ begin
   // can do GlobHashes sort here
 end;
 
+// add translated line to main array
 procedure AddLine(block:integer;szSource:pWideChar;szTranslate:pWideChar); overload;
 begin
   with LangDirectory[block] do
@@ -319,7 +373,7 @@ begin
 	begin
     CallService(MS_UTILS_PATHTOABSOLUTE,dword(@fd.cFileName),dword(@szSearch));
 		FindClose(hFind);
-    LoadLangPackXML(szSearch);
+    LoadLangPack{XML}(szSearch);
 	end;
 	result:=0;
 end;
