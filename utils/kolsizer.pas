@@ -34,9 +34,11 @@ type
     procedure SetCurrent(const Value: pControl);
     procedure InternalControlChange(sender:pObj);
     procedure Setspacing(Space:cardinal = 8);
+    function  GetFlags(aControl:pControl):cardinal;
   protected
     procedure init;virtual;
     procedure DoKeyUp( Sender: PControl; var Key: Longint; Shift: DWORD );
+    procedure DoChar( Sender: PControl; var Key: KOLChar; Shift: DWORD);
   public
     destructor destroy;virtual;
     procedure Connect(aName: String; aControl: pControl; flags:cardinal=0);
@@ -101,6 +103,11 @@ function DesignHandlerProc(Sender: PControl; var Msg: TMsg; var Rslt: Integer): 
 begin
   Result:=false;
   case msg.message of
+      WM_KEYUP,WM_SYSCHAR,WM_SYSKEYUP,
+      WM_CHAR: begin
+//        if loword(msg.wParam)=VK_TAB then
+          Messagebox(0,'222','',0);
+      end;
     WM_LBUTTONDOWN: begin
       if LocalDesigner.fOwner<>Sender then LocalDesigner.Current:=Sender;
       Result:=true;
@@ -140,6 +147,12 @@ begin
   with Sender^, Data^ do
   begin
     case msg.message of
+      WM_KEYUP,WM_SYSCHAR,WM_SYSKEYUP,
+      WM_CHAR: begin
+//        if loword(msg.wParam)=VK_TAB then
+          Messagebox(0,'111','',0);
+      end;
+
       WM_NCHITTEST: begin
         Pt := MakePoint(loword(Msg.lparam), hiword(Msg.lparam));
         Pt := Screen2Client (Pt);
@@ -196,8 +209,11 @@ var
   Data:PSizerData;
 begin
   New(Data,Create);
-  Result:=NewPaintBox(aControl);
+  Result:={NewPanel(aControl,esNone);//}NewPaintBox(aControl);
   Result.ExStyle:=Result.ExStyle or WS_EX_TRANSPARENT;
+//  Result.TabStop:=true;
+//  Result.OnChar:=aDesigner.DoChar;
+//  Result.OnKeyDown:=aDesigner.DoKeyUp;
 //  Result.OnKeyUp:=aDesigner.DoKeyUp;
   if aDesigner.fowner<>aControl then
     With result^, Data^  do
@@ -310,7 +326,7 @@ begin
     if count > 1 then
     begin
       if Assigned(fCurrent) then
-        fSizer:=NewSizerControl(fCurrent,@self);
+        fSizer:=NewSizerControl(fCurrent,@self,GetFlags(fCurrent));
       for i:=0 to count -1 do
        if not PControl(Objects[i]).IsprocAttached(DesignHandlerProc) then
          PControl(Objects[i]).AttachProc(DesignHandlerProc);
@@ -359,11 +375,22 @@ begin
   InternalControlChange(nil);
 end;
 
-procedure TDesigner.SetCurrent(const Value: pControl);
+function TDesigner.GetFlags(aControl:pControl):cardinal;
 var
   idx,dummy:integer;
-  flags:integer;
   tmpstr:string;
+begin
+  idx:=IndexOfObj(aControl);
+  tmpstr:=Items[idx];
+  idx:=IndexOfChar(tmpstr,FlagDelimeterChar);
+  if idx<0 then result:=0
+  else
+  begin
+    val(copy(tmpstr,idx+1,15),result,dummy);
+  end;
+end;
+
+procedure TDesigner.SetCurrent(const Value: pControl);
 begin
   if Assigned(fSizer) then
   begin
@@ -372,18 +399,10 @@ begin
   end;
   if Value <> nil then
   begin
-    idx:=IndexOfObj(Value);
-    tmpstr:=Items[idx];
-    idx:=IndexOfChar(tmpstr,FlagDelimeterChar);
-    if idx<0 then flags:=0
-    else
-    begin
-      val(copy(tmpstr,idx+1,15),flags,dummy);
-    end;
 
     fCurrent := Value;
     if fActive and (fCurrent<>nil) and (fCurrent<>fOwner) then
-      fSizer:=NewSizerControl(Value,@self,flags);
+      fSizer:=NewSizerControl(Value,@self,GetFlags(Value));
 
     InternalControlChange(Value);
   end;
@@ -394,6 +413,11 @@ begin
   if fActive then
     if Assigned(OnControlChange)then
       FOnControlChange(sender);
+end;
+
+procedure TDesigner.DoChar( Sender: PControl; var Key: KOLChar; Shift: DWORD);
+begin
+   messagebox(0,'444','',0);
 end;
 
 procedure TDesigner.DoKeyUp(Sender: PControl; var Key: Integer; Shift: DWORD);
@@ -419,6 +443,9 @@ procedure TDesigner.DoKeyUp(Sender: PControl; var Key: Integer; Shift: DWORD);
 var
   i:integer;
 begin
+//   if Key = VK_TAB then
+   messagebox(0,'333','',0);
+
    if Key = VK_DELETE then
    begin
      i:=IndexOfObj(LocalDesigner.Current);
