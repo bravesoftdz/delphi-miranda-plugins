@@ -18,22 +18,7 @@ asm
 @@lph_end:
 		mov  eax,edx
 end;
-{
-var
-  i,shift:integer;
-begin
-	result:=0;
-	shift:=0;
-	for i:=0 to high(szStr) do
-	begin
-		hash:=hash xor (dword(ord(szStr[i]) shl shift));
-		if shift>24 then
-		  hash:=hash xor (ord(szStr[i]) shr (32-shift)) and $7F;
-		shift=(shift+5)&0x1F;
-	end;
 
-end;
-}
 function LangPackHashW(str:pAnsiChar):int; assembler;
 asm
 		xor  edx,edx
@@ -97,9 +82,9 @@ type
 
 type
   TLangRec = record
-    uuid     : array [0..15] of byte; // need to get Plugin Lang pack handle (16 bytes)
-    pstart   ,            // starting  index of translations in full list
-    pend     : integer;   // finishing index of translations in full list
+    uuid     :TGUID;   // need to get Plugin Lang pack handle (16 bytes)
+    pstart   ,         // starting  index of translations in full list
+    pend     :integer; // finishing index of translations in full list
     numhashes:int;
     LocHashes:THashEntryArray;
   end;
@@ -152,8 +137,7 @@ begin
   FillChar(LangDirectory[LangRecNum],SizeOf(TLangRec),0);
   with LangDirectory[LangRecNum] do
   begin
-//    FastWideToAnsi(PWideChar(lParam),uuid); // or to byte array = 16 bytes
-
+    uuid:=StringToGUID(PAnsiChar(lParam));
     pstart:=wParam;
     result:=LangRecNum;
   end;
@@ -268,16 +252,23 @@ end;
  for separate plugin. Usable for New API only.
 *)
 // Return langpack handle - for plugin-depend translation
-function GetLangPackHandle(uuid:PAnsiChar):int;
+// lParam = pointer to uuid ?
+function GetLangPackHandle(wPAram:WPARAM;lParam:LPARAM):int; cdecl;
 var
   i:integer;
 begin
   for i:=1 to LangRecNum-1 do // 0 = common translate
   begin
-    if StrCmp(LangDirectory[i].uuid,uuid)=0 then
+    with TGUID(LangDirectory[i].uuid) do
     begin
-      result:=i; // can put number in hiword for LangPackTranslateString compatibility
-      exit;
+      if D1=PGUID(lParam).D1 then
+        if D2=PGUID(lParam).D2 then
+          if D3=PGUID(lParam).D3 then
+            if int64(D4)=int64(PGUID(lParam).D4) then
+            begin
+              result:=i;
+              exit;
+            end;
     end;
   end;
   result:=0;
@@ -306,13 +297,13 @@ begin
 
   // main search cycle here
   line:=-1;
-  if hiword(W)<>0 then
+  if hiword(w)<>0 then // got LP plugin handle
   begin
-    for i:=0 to LangDirectory[hiword(W)].numhashes-1 do
+    for i:=0 to LangDirectory[hiword(w)].numhashes-1 do
     begin
-      if LangDirectory[hiword(W)].LocHashes[i].hash=key then
+      if LangDirectory[hiword(w)].LocHashes[i].hash=key then
       begin
-        line:=LangDirectory[hiword(W)].LocHashes[i].EntryNum;
+        line:=LangDirectory[hiword(w)].LocHashes[i].EntryNum;
         break;
       end;
     end;
@@ -387,7 +378,6 @@ var
 begin
   for i:=0 to LangRecNum-1 do
   begin
-    mFreeMem(LangDirectory[i].uuid);
     SetLength(LangDirectory[i].LocHashes,0);
     LangDirectory[i].LocHashes:=nil;
   end;
