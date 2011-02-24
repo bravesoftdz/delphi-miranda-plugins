@@ -34,9 +34,14 @@ function CB_GetData   (cb:HWND;idx:integer=-1):dword;
 function CB_AddStrData (cb:HWND;astr:pAnsiChar;data:integer=0;idx:integer=-1):HWND;
 function CB_AddStrDataW(cb:HWND;astr:pWideChar;data:integer=0;idx:integer=-1):HWND;
 
+function StringToGUID(const astr:PAnsiChar):TGUID; overload;
+function StringToGUID(const astr:PWideChar):TGUID; overload;
+
 implementation
 uses messages,common,shlobj,activex,commctrl,commdlg;
 
+const
+  EmptyGUID:TGUID = '{00000000-0000-0000-0000-000000000000}';
 {.$IFNDEF DELPHI10_UP}
 const
   LVM_SORTITEMSEX = LVM_FIRST + 81;
@@ -445,6 +450,42 @@ begin
   else
     idx:=SendMessageW(cb,CB_INSERTSTRING,idx,dword(astr));
   SendMessage(cb,CB_SETITEMDATA,idx,data);
+end;
+
+function StringToGUID(const astr:PAnsiChar):TGUID;
+var
+  i:integer;
+begin
+  result:=EmptyGUID;
+  if StrLen(astr)<>38 then exit;
+  result.D1:=HexToInt(PAnsiChar(@astr[01]),8);
+  result.D2:=HexToInt(PAnsiChar(@astr[10]),4);
+  result.D3:=HexToInt(PAnsiChar(@astr[15]),4);
+
+  result.D4[0]:=HexToInt(PAnsiChar(@astr[20]),2);
+  result.D4[1]:=HexToInt(PAnsiChar(@astr[22]),2);
+  for i:=2 to 7 do
+  begin
+    result.D4[i]:=HexToInt(PAnsiChar(@astr[21+i*2]),2);
+  end;
+end;
+
+function StringToGUID(const astr:PWideChar):TGUID;
+var
+  i:integer;
+begin
+  result:=EmptyGUID;
+  if StrLenW(astr)<>38 then exit;
+  result.D1:=HexToInt(pWideChar(@astr[01]),8);
+  result.D2:=HexToInt(pWideChar(@astr[10]),4);
+  result.D3:=HexToInt(pWideChar(@astr[15]),4);
+
+  result.D4[0]:=HexToInt(pWideChar(@astr[20]),2);
+  result.D4[1]:=HexToInt(pWideChar(@astr[22]),2);
+  for i:=2 to 7 do
+  begin
+    result.D4[i]:=HexToInt(pWideChar(@astr[21+i*2]),2);
+  end;
 end;
 
 end.
