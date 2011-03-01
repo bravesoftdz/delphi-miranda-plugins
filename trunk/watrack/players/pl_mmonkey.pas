@@ -126,18 +126,21 @@ function GetInfo(var SongInfo:tSongInfo;flags:integer):integer;cdecl;
 var
   v:variant;
 begin
-  if SongInfo.plyver=0 then
+  if (flags and WAT_OPT_PLAYERDATA)<>0 then
   begin
-    try
-      v:=CreateOleObject(COMName);
-      with SongInfo do
-      begin
-        plyver:=GetVersion(v);
-        txtver:=GetVersionText(v);
+    if SongInfo.plyver=0 then
+    begin
+      try
+        v:=CreateOleObject(COMName);
+        with SongInfo do
+        begin
+          plyver:=GetVersion(v);
+          txtver:=GetVersionText(v);
+        end;
+      except
       end;
-    except
+      v:=Null;
     end;
-    v:=Null;
   end;
   result:=WinampGetInfo(integer(@SongInfo),flags);
 end;

@@ -249,7 +249,15 @@ var
   isChanging:bool;
 begin
   result:=0;
-  if CurrentStation<>0 then
+  if (flags and WAT_OPT_PLAYERDATA)<>0 then
+  begin
+    if SongInfo.plyver=0 then
+    begin
+      SongInfo.plyver:=DBReadDWord(0,playername,'version');
+      SongInfo.txtver:=GetVersionText(SongInfo.plyver);
+    end;
+  end
+  else if CurrentStation<>0 then
     with SongInfo do
     begin
       if (flags and WAT_OPT_CHANGES)<>0 then
@@ -262,11 +270,6 @@ begin
       end
       else
       begin
-        if plyver=0 then
-        begin
-          plyver:=DBReadDWord(0,playername,'version');
-          txtver:=GetVersionText(plyver);
-        end;
         lfile:=GetFileName(plwnd,flags);
         isRemote:=StrPosW(lfile,'://')<>nil;
         if (PrevFile=nil) or (StrCmpW(PrevFile,lfile)<>0) or isRemote then

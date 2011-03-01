@@ -114,13 +114,18 @@ end;
 function GetInfo(var SongInfo:tSongInfo;flags:integer):integer;cdecl;
 begin
   result:=0;
-  if (flags and WAT_OPT_CHANGES)<>0 then
-    SongInfo.wndtext:=GetDlgText(TitleWnd)
-  else if SongInfo.plyver=0 then
+  if (flags and WAT_OPT_PLAYERDATA)<>0 then
   begin
-    SongInfo.plyver:=GetVersion    (SongInfo.plwnd);
-    SongInfo.txtver:=GetVersionText(SongInfo.plyver);
+    if SongInfo.plyver=0 then
+    begin
+      SongInfo.plyver:=GetVersion    (SongInfo.plwnd);
+      SongInfo.txtver:=GetVersionText(SongInfo.plyver);
+    end;
+    exit;
   end;
+
+  if (flags and WAT_OPT_CHANGES)<>0 then
+    SongInfo.wndtext:=GetDlgText(TitleWnd);
 end;
 
 function Command(wnd:HWND;cmd:integer;value:integer):integer;cdecl;

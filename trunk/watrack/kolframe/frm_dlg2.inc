@@ -18,6 +18,7 @@ begin
     WM_DESTROY: begin
       // new - if Apply, old - if cancel
       if FrameCtrl<>nil then // for case when FrameCtrl was destryed already
+        if PWATFrameData(FrameCtrl.CustomData).TextBlock<>nil then
         PWATFrameData(FrameCtrl.CustomData).TextBlock.FontData:=TextLF;
     end;
 

@@ -177,6 +177,16 @@ end;
 function GetInfo(var SongInfo:tSongInfo;flags:integer):integer;cdecl;
 begin
   result:=0;
+  if (flags and WAT_OPT_PLAYERDATA)<>0 then
+  begin
+    if SongInfo.plyver=0 then
+    begin
+      SongInfo.plyver:=GetVersion    (SongInfo.plwnd);
+      SongInfo.txtver:=GetVersionText(SongInfo.plyver);
+    end;
+    exit;
+  end;
+
   with SongInfo do
   begin
     if (flags and WAT_OPT_CHANGES)<>0 then
@@ -187,11 +197,6 @@ begin
     end
     else
     begin
-      if plyver=0 then
-      begin
-        plyver:=GetVersion    (plwnd);
-        txtver:=GetVersionText(plyver);
-      end;
       if total=0 then
         total:=GetTotalTime(plwnd);
     end;

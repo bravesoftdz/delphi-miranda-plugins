@@ -70,8 +70,11 @@ end;
 function GetInfo(var SongInfo:tSongInfo;flags:integer):integer;cdecl;
 begin
   result:=0;
-  if SongInfo.txtver=nil then
-    SongInfo.txtver:=GetVersionText(flags);
+  if (flags and WAT_OPT_PLAYERDATA)<>0 then
+  begin
+    if SongInfo.txtver=nil then
+      SongInfo.txtver:=GetVersionText(flags);
+  end;
 end;
 
 {

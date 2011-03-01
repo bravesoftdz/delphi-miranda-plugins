@@ -271,6 +271,7 @@ const
   WAT_OPT_KEEPOLD     = $00004000; // Keep Old opened file
   WAT_OPT_MULTITHREAD = $00008000; // Use multithread scan
   WAT_OPT_SINGLEINST  = $00010000; // Single player instance
+  WAT_OPT_PLAYERDATA  = $00020000; // (internal) to obtain player data
 
 type
   tReadFormatProc = function(var Info:tSongInfo):boolean; cdecl;

@@ -181,7 +181,16 @@ begin
       wnd:=winampwnd
     else
       wnd:=plwnd;
-    if (lParam and WAT_OPT_CHANGES)<>0 then
+
+    if (lParam and WAT_OPT_PLAYERDATA)<>0 then
+    begin
+      if plyver=0 then
+      begin
+        plyver:=GetVersion(wnd);
+        txtver:=GetVersionText(wnd);
+      end;
+    end
+    else if (lParam and WAT_OPT_CHANGES)<>0 then
     begin
       status:=WinampGetStatus(wnd);
       volume:=GetVolume(wnd);
@@ -191,11 +200,6 @@ begin
     end
     else
     begin
-      if plyver=0 then
-      begin
-        plyver:=GetVersion(wnd);
-        txtver:=GetVersionText(wnd);
-      end;
       if kbps    =0 then kbps    :=GetKbps(wnd);
       if khz     =0 then khz     :=GetKhz(wnd);
       if channels=0 then channels:=GetChannels(wnd);

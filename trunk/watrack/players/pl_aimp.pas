@@ -221,17 +221,22 @@ var
   pStr:PAIMP2FileInfo;
 begin
   result:=0;
-  if SongInfo.plyver=0 then
+  if (flags and WAT_OPT_PLAYERDATA)<>0 then
   begin
-    SongInfo.plyver:=GetVersion(SongInfo.plwnd);
-    SongInfo.txtver:=GetVersionText(SongInfo.plyver);
+    if SongInfo.plyver=0 then
+    begin
+      SongInfo.plyver:=GetVersion    (SongInfo.plwnd);
+      SongInfo.txtver:=GetVersionText(SongInfo.plyver);
+    end;
+    if SongInfo.winampwnd=0 then
+      SongInfo.winampwnd:=WinampFindWindow(SongInfo.plwnd);
+    exit;
   end;
-  if SongInfo.winampwnd=0 then
-    SongInfo.winampwnd:=WinampFindWindow(SongInfo.plwnd);
+
   if SongInfo.winampwnd<>0 then
     WinampGetInfo(integer(@SongInfo),flags);
     
-  ;{else} if (flags and WAT_OPT_CHANGES)=0 then
+  if (flags and WAT_OPT_CHANGES)=0 then
   begin
     s:=AIMP2_RemoteFileSize;
     p:=AIMP2_RemoteClass;

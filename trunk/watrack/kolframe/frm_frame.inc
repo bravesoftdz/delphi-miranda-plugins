@@ -54,7 +54,8 @@ begin
   else if D.wasHidden and (D.TextBlock.UpdateTime=0) then
   begin
     D.wasHidden:=false;
-    D.TextBlock.UpdateTime:=DBReadWord(0,PluginShort,opt_TxtTimer,10);
+    if (D.ShowControls and scText)<>0 then
+      D.TextBlock.UpdateTime:=DBReadWord(0,PluginShort,opt_TxtTimer,10);
   end;
 
   if D.Trackbar<>nil then
@@ -424,20 +425,25 @@ begin
   end
   else if D.btnarray[0]<>nil then
     FreeButtons;
-
+{
   if (D.ShowControls and scText)<>0 then
   begin
+}
     if D.TextBlock=nil then
     begin
       D.TextBlock:=MakeTextBlock(@self,D.BkColor);
     end;
+
+    if (D.ShowControls and scText)<>0 then                         
+      D.TextBlock.UpdateTime:=DBReadWord(0,PluginShort,opt_TxtTimer,10);
+{
   end
   else if D.TextBlock<>nil then
   begin
     D.TextBlock.Free;
     D.TextBlock:=nil;
   end;
-
+}
   if D.UseBkPicture then
   begin
     D.BkBitmap:=LoadBkPicture(nil,true,D.BkDefFile);
