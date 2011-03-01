@@ -216,11 +216,9 @@ end;
 function GetInfo(var SongInfo:tSongInfo;flags:integer):integer;cdecl;
 var
   FFile:Cardinal;
-  wnd:HWND;
   s:integer;
   p:PAnsiChar;
   pStr:PAIMP2FileInfo;
-  WinampWindow:HWND;
 begin
   result:=0;
   if SongInfo.plyver=0 then
@@ -228,14 +226,11 @@ begin
     SongInfo.plyver:=GetVersion(SongInfo.plwnd);
     SongInfo.txtver:=GetVersionText(SongInfo.plyver);
   end;
-  WinampWindow:=WinampFindWindow(SongInfo.plwnd);
-  if WinampWindow<>0 then
-  begin
-    wnd:=SongInfo.plwnd;
-    SongInfo.plwnd:=WinampWindow;
+  if SongInfo.winampwnd=0 then
+    SongInfo.winampwnd:=WinampFindWindow(SongInfo.plwnd);
+  if SongInfo.winampwnd<>0 then
     WinampGetInfo(integer(@SongInfo),flags);
-    SongInfo.plwnd:=wnd;
-  end
+    
   ;{else} if (flags and WAT_OPT_CHANGES)=0 then
   begin
     s:=AIMP2_RemoteFileSize;

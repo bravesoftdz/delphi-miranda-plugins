@@ -30,7 +30,7 @@ function GetEXEbyWnd(w:HWND; var dst:pWideChar):pWideChar; overload;
 function GetEXEbyWnd(w:HWND; var dst:PAnsiChar):PAnsiChar; overload;
 function IsExeRunning(exename:PWideChar):boolean; {hwnd}
 function GetFileFromWnd(wnd:HWND;Filter:FFWFilterProc;
-         flags:dword=gffdMultiThread+gffdOld):pWideChar;
+         flags:dword=gffdMultiThread+gffdOld;timeout:cardinal=ThreadTimeout):pWideChar;
 
 function WaitFocusedWndChild(Wnd:HWnd):HWnd;
 
@@ -642,7 +642,7 @@ begin
   end;
 end;
 
-function TestHandle(Handle:THANDLE;MultiThread:bool):pWideChar;
+function TestHandle(Handle:THANDLE;MultiThread:bool;timeout:cardinal):pWideChar;
 var
   hThread:THANDLE;
   rec:trec;
@@ -665,7 +665,7 @@ begin
   else
   begin
     hThread:=BeginThread(nil,0,@GetName,@rec,0,pdword(nil)^);
-    if WaitForSingleObject(hThread,ThreadTimeout)=WAIT_TIMEOUT then
+    if WaitForSingleObject(hThread,timeout)=WAIT_TIMEOUT then
     begin
       TerminateThread(hThread,0);
     end
@@ -676,7 +676,7 @@ begin
 end;
 
 function GetFileFromWnd(wnd:HWND;Filter:FFWFilterProc;
-         flags:dword=gffdMultiThread+gffdOld):pWideChar;
+         flags:dword=gffdMultiThread+gffdOld;timeout:cardinal=ThreadTimeout):pWideChar;
 var
   hProcess,h:THANDLE;
   pid:dword;
@@ -697,7 +697,7 @@ begin
   begin
     if DuplicateHandle(pid,i,hProcess,@h,GENERIC_READ,false,0) then
     begin
-      pc:=TestHandle(h,(flags and gffdMultiThread)<>0);
+      pc:=TestHandle(h,(flags and gffdMultiThread)<>0,timeout);
       if pc<>nil then
       begin
 //        if GetFileType(h)=FILE_TYPE_DISK then

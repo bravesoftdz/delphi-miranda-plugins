@@ -2,6 +2,7 @@
 var
   SongInfoA:tSongInfoA;
   SongInfo :tSongInfo;
+  WorkSI   :tSongInfo;
 const
   LastStatus:integer = WAT_PLS_NOTFOUND;
 var
@@ -36,5 +37,6 @@ var
   CheckTime:dword;
   mmkeyemu: dword;
   mTimer:dword;
+  TimeoutForThread:cardinal;
 var
   HiddenOption:dword;

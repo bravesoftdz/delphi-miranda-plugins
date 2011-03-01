@@ -11,20 +11,19 @@
         KKKKK    KKKKK  OOOOOOOOOOOOO  LLLLLLLLLLLLL
         KKKKK    KKKKK    OOOOOOOOO    LLLLLLLLLLLLL
 
-  Key Objects Library (C) 2000 by Kladov Vladimir.
+  Key Objects Library (C) 2000 by Vladimir Kladov.
 
 ****************************************************************
-* VERSION 3.14159
+* VERSION 3.1415926535897
 ****************************************************************
 
-  K.O.L. - is a set of objects to create small programs
-  with the Delphi, but without the VCL. KOL allows to
-  create executables of size about 10 times smaller then
-  those created with the VCL. But this does not mean that
+  K.O.L. - is a set of objects and functions to create small programs
+  with the Delphi, but without the VCL/CLX. KOL allows to create
+  executables of size about 10 times smaller. But this does not mean that
   KOL is less power then the VCL - perhaps just the opposite...
 
   KOL is provided free with the source code.
-  Copyright (C) Vladimir Kladov, 2000-2010.
+  Copyright (C) Vladimir Kladov, 2000-2011.
 
   For code provided by other  developers (even if later
   changed by me) authors are noted in the source.
@@ -295,6 +294,8 @@ unit KOL;
   OLD_REGKEYGETVALUENAMES - to use elder version of RegKeyGetValueNames
                           (newer version is faster).
   USE_CUSTOMEXTENSIONS  - to extend TControl with custom additions.
+  DATE0_0001            - to correct correctly TDateTime to TSystemTime and vice
+                          versa even for dates earlier then 1-Jan-1601.
   UNICODE_CTRLS         - to use Unicode versions of controls (WM_XXXXW messages,
                           etc.)
   SAFE_CODE             - use more safe code in some algorithms (but more slowly
@@ -673,6 +674,12 @@ const
 {$IFNDEF ASM_VERSION}
   {$DEFINE PAS_VERSION}
 {$ENDIF ASM_VERSION}
+
+{$IFDEF PAS_VERSION}
+        {$UNDEF ASM_VERSION}
+        {$UNDEF ASM_UNICODE}
+        {$UNDEF ASM_TLIST}
+{$ENDIF}
 
 {BCB++}(*type DWORD = Windows.DWORD;*){--BCB}
 
@@ -1598,7 +1605,7 @@ type
     fList: PList;
     fCount: Integer;
     fCaseSensitiveSort: Boolean;
-    fAnsiSort: Boolean;   
+    fAnsiSort: Boolean;
     fTextBuf: PAnsiChar;
     fTextSiz: DWORD;
     fCompareStrListFun: TCompareStrListFun;
@@ -3793,19 +3800,21 @@ const
     idx_FOnLVStateChange    = 47;
     idx_fOnDeleteLVItem     = 48;
     idx_fOnColumnClick      = 49;
-    idx_FOnTVEndEdit        = 50;
-    idx_FOnTVExpanded       = 51;
-    idx_FOnTVExpanding      = 52;
-    idx_FOnTVSelChanging    = 53;
-    idx_FOnSBBeforeScroll   = 54;
-    idx_FOnSBScroll         = 55;
-    idx_FOnDropDown         = 56;
-    idx_FOnCloseUp          = 57;
-    idx_FOnSplit            = 58;
-    idx_FOnProgress         = 59;
-    idx_FOnBitBtnDraw       = 60;
-    idx_FOnTVBeginDrag      = 61;
-    idx_FOnTVBeginEdit      = 62;
+    idx_FOnSBBeforeScroll   = 50;
+    idx_FOnSBScroll         = 51;
+    idx_FOnDropDown         = 52;
+    idx_FOnCloseUp          = 53;
+    idx_FOnSplit            = 54;
+    idx_FOnProgress         = 55;
+    idx_FOnBitBtnDraw       = 56;
+    idx_FOnTVBeginDrag      = 57;
+    idx_FOnTVBeginEdit      = 58;
+
+    idx_FOnTVEndEdit        = 59;
+    idx_FOnTVExpanding      = 60;
+    idx_FOnTVExpanded       = 61;
+    idx_FOnTVSelChanging    = 62;
+
     idx_FOnTVDelete         = 63;
     idx_FOnDTPUserString    = 64;
     idx_FOnREInsModeChg     = 65;
@@ -4582,11 +4591,6 @@ type
     fOnDeleteLVItem: TOnDeleteLVItem;
     fOnColumnClick: TOnLVColumnClick;
 
-    FOnTVEndEdit: TOnTVEndEdit;
-    FOnTVExpanded: TOnTVExpanded;
-    FOnTVExpanding: TOnTVExpanding;
-    FOnTVSelChanging: TOnTVSelChanging;
-
     FOnSBBeforeScroll: TOnSBBeforeScroll;
     FOnSBScroll: TOnSBScroll;
 
@@ -4601,6 +4605,11 @@ type
 
     FOnTVBeginDrag: TOnTVBeginDrag;
     FOnTVBeginEdit: TOnTVBeginEdit;
+    FOnTVEndEdit: TOnTVEndEdit;
+    FOnTVExpanding: TOnTVExpanding;
+    FOnTVExpanded: TOnTVExpanded;
+    FOnTVSelChanging: TOnTVSelChanging;
+
     FOnTVDelete: TOnTVDelete;
 
     FOnDTPUserString: TDTParseInputEvent;
@@ -11493,6 +11502,8 @@ function WStrComp(const S1, S2: KOLWideString): Integer;
 {* }
 function _WStrComp(S1, S2: PWideChar): Integer;
 {* }
+function _WStrLComp(S1, S2: PWideChar; Len: Integer): Integer;
+{* }
 function WStrScan(Str: PWideChar; Chr: WideChar): PWideChar;
 {* Fast search of given character in a string. Pointer to found character
    (or nil) is returned. }
@@ -11535,6 +11546,8 @@ var _AnsiCompareStrA: function(S1, S2: PAnsiChar): Integer =
     {$IFDEF SPEED_FASTER} _AnsiCompareStrA_Fast
     {$ELSE}               _AnsiCompareStrA_Slow {$ENDIF};
 {* The same, but for PChar ANSI strings }
+function _AnsiCompareStrA_Fast2(S1, S2: PAnsiChar): Integer;
+function _AnsiCompareStrNoCaseA_Fast2(S1, S2: PAnsiChar): Integer;
 function AnsiCompareStrNoCaseA(const S1, S2: AnsiString): Integer;
 {* AnsiCompareStr compares S1 to S2, with case-sensitivity. The compare
   operation is controlled by the current Windows locale. The return value
@@ -11788,6 +11801,20 @@ procedure SupportAnsiMnemonics( LocaleID: Integer );
 }
 {$ENDIF WIN_GDI}
 {$IFDEF WIN_GDI}
+
+{$IFnDEF _D5orHigher}
+            {$DEFINE DATE0_0001}
+{$ENDIF _D5orHigher}
+{$IFnDEF DATE0_0001}
+                    {$DEFINE DATE0_1601}
+{$ENDIF} //Starting from the version 3.1415926, (so called PI-version), datetime
+         //can be correctly handled (by default) from 1-Jan-1601 to 1-Jan-38827.
+         //This made it possible to use short calls to API functions to convert date and time.
+         //If you still want to count time correctly from 1-Jan-1 B.C., or a compatibility
+         //is required for old applications, define symbol DATE0_0001 in your
+         //project options. Actually this does not mean that TDateTime forma changed,
+         //but only restrictions are in converting date to TSystemTime from TDateTime
+         //and vice versa.
 type
   //TDateTime = Double; // well, it is already defined so in System.pas
   {* Basic date and time type. Integer part represents year and days (as is,
@@ -11819,6 +11846,7 @@ const
   MSecsPerDay = SecsPerDay * 1000;
   {* Milliseconds per day. }
 
+  Date1601 = 584389;
   VCLDate0 = 693594;
   {* Value to convert VCL "date 0" to KOL "date 0" and back.
      This value corresponds to 30-Dec-1899, 0:00:00. So,
@@ -13390,6 +13418,7 @@ function WinVer : TWindowsVersion;
 function IsWinVer( Ver : TWindowsVersions ) : Boolean;
 {* Returns True if Windows version is in given range of values. }
 {$IFNDEF PARAMS_DEFAULT}
+function SkipParam(P: PKOLChar): PKOLChar; //forward;
 function ParamStr( Idx: Integer ): KOLString;
 {* Returns command-line parameter by index. This function supersides
    standard ParamStr function. }
@@ -14743,34 +14772,6 @@ type
 
 var ComCtl32_Module: HModule;
 {$IFDEF ASM_UNICODE}
-const comctl32_const: PKOLChar = 'comctl32';
-      InitCommonControlsEx_const: PKOLChar = 'InitCommonControlsEx';
-procedure DoInitCommonControls( dwICC: DWORD );
-asm
-    PUSH  EAX                             // dwICC
-    CALL  InitCommonControls
-    MOV   EAX, [ComCtl32_Module]
-    TEST  EAX, EAX
-    JNZ   @@1
-    PUSH  [comctl32_const]
-    CALL  LoadLibrary
-    MOV   [ComCtl32_Module], EAX
-@@1:PUSH  [InitCommonControlsEx_const]
-    PUSH  EAX
-    CALL  GetProcAddress
-    XCHG  ECX, EAX
-    {$IFDEF SAFE_CODE}
-    POP   EDX
-    JECXZ @@fin
-    PUSH  EDX
-    {$ENDIF}
-    PUSH  8                               // dwSize
-    PUSH  ESP                             // @ ICC
-    CALL  ECX                             // Proc( @ ICC )
-    POP   ECX
-    POP   ECX
-@@fin:
-end;
 {$ELSE PASCAL}
 procedure DoInitCommonControls( dwICC: DWORD );
 var Proc: procedure( ICC: PInitCommonControlsEx ); stdcall;
@@ -14906,6 +14907,10 @@ procedure Tabulate2Next( Form: PControl; Dir: Integer ); forward;
 function Tabulate2Control( Self_: PControl; Key: DWORD; checkOnly: Boolean ): Boolean;
   forward;
 function GetPrevCtrlBoundsRect( P: PControl; var R: TRect ): Boolean; forward;
+
+////////////---------------------------------------------------/////////////////
+function WndProcDateTimePickerNotify( Self_: PControl; var Msg: TMsg;
+         var Rslt: Integer ): Boolean; forward;
 
 ////////////////////////////////////////////////////////////////////////////////
 var MapFile: PKOLStrList;
@@ -15241,7 +15246,7 @@ end;
 {$ENDIF SNAPMOUSE2DFLTBTN}
 
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function MsgBox( const S: KOLString; Flags: DWORD ): DWORD;
 var Title: PKOLChar;
 begin
@@ -15269,53 +15274,14 @@ begin
         Applet.DetachProc( WndProcSnapMouse2DfltBtn );
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure MsgOK( const S: KOLString );
 begin
   MsgBox( S, MB_OK );
 end;
 
-{$IFDEF ASM_UNICODE}
-function ShowMsg( const S: KOLString; Flags: DWORD ): DWORD;
-asm
-  push edx // Flags
-  mov  ecx, [Applet]
-  {$IFDEF SNAPMOUSE2DFLTBTN}
-  {$IFDEF SAFE_CODE}
-  jecxz @@0
-  {$ENDIF}
-  pushad
-  xchg eax, ecx
-  mov  edx, offset[WndProcSnapMouse2DfltBtn]
-  call TControl.AttachProc
-  popad
-@@0:
-  {$ENDIF}
-  mov  edx, 0
-  {$IFDEF SAFE_CODE}
-  jecxz @@1
-  {$ENDIF}
-  mov  edx, [ecx].TControl.fHandle
-  mov  ecx, [ecx].TControl.fCaption
-@@1: push ecx // Title
-  push eax    // S
-  push edx    // Wnd
-  call MessageBox
-  {$IFDEF SNAPMOUSE2DFLTBTN}
-  mov  ecx, [Applet]
-  {$IFDEF SAFE_CODE}
-  jecxz @@2
-  {$ENDIF}
-  pushad
-  xchg eax, ecx
-  mov  edx, offset[WndProcSnapMouse2DfltBtn]
-  call TControl.DetachProc
-  popad
-@@2:
-  {$ENDIF}
-end;
-{$ELSE PASCAL}
+{$IFDEF ASM_UNICODE}{$ELSE PASCAL}
 function ShowMsg( const S: KOLString; Flags: DWORD ): DWORD;
 var Title: PKOLChar;
     Wnd: HWnd;
@@ -15345,7 +15311,7 @@ begin
         Applet.DetachProc( WndProcSnapMouse2DfltBtn );
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure ShowMessage( const S: KOLString );
 begin
@@ -15393,8 +15359,9 @@ begin
   Len := FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM or
     FORMAT_MESSAGE_ARGUMENT_ARRAY, nil, ErrorCode, 0, Buffer,
     SizeOf(Buffer), nil);
-  while (Len > 0) and ((Buffer[Len - 1] >= #0) and (Buffer[Len - 1] <= ' ')) do Dec(Len);
+  while (Len > 0) and ({(Buffer[Len - 1] >= #0) and} (Buffer[Len - 1] <= ' ')) do Dec(Len);
   SetString(Result, Buffer, Len);
+  //Result := Trim( Result );
 end;
 {$ENDIF WIN_GDI}
 
@@ -15425,7 +15392,7 @@ begin
   Result.Code := Code;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function MakeRect( Left, Top, Right, Bottom: Integer ): TRect; stdcall;
 begin
    Result.Left := Left;
@@ -15433,14 +15400,14 @@ begin
    Result.Right:= Right;
    Result.Bottom := Bottom;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function RectsEqual( const R1, R2: TRect ): Boolean;
 begin
   Result := CompareMem( @R1, @R2, Sizeof( TRect ) );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function RectsIntersected( const R1, R2: TRect ): Boolean;
 begin
@@ -15453,61 +15420,61 @@ begin
              (R1.Top >= R2.Top) and (R1.Bottom <= R2.Bottom)) ;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function PointInRect( const P: TPoint; const R: TRect ): Boolean;
 begin
    Result := (P.x >= R.Left) and (P.x < R.Right)
              and (P.y >= R.Top) and (P.y < R.Bottom);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} // Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} // Pascal
 function OffsetPoint( const T: TPoint; dX, dY: Integer ): TPoint;
 begin
   Result := MakePoint( T.X + dX, T.Y + dY );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} // Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} // Pascal
 function OffsetSmallPoint( const T: TSmallPoint; dX, dY: SmallInt ): TSmallPoint;
 begin
   Result.x := T.x + dX;
   Result.y := T.y + dY;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} // Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} // Pascal
 function Point2SmallPoint( const T: TPoint ): TSmallPoint;
 begin
   Result.x := T.X;
   Result.y := T.Y;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function SmallPoint2Point( const T: TSmallPoint ): TPoint;
 begin
   Result := MakePoint( T.x, T.y );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function MakePoint( X, Y: Integer ): TPoint;
 begin
    Result.x := X;
    Result.y := Y;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} // Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} // Pascal
 function MakeSmallPoint( X, Y: Integer ): TSmallPoint;
 begin
   Result.x := X;
   Result.y := Y;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function MakeFlags( FlgSet: PDWORD; FlgArray: array of Integer): Integer;
 var I : Integer;
     Mask : DWORD;
@@ -15524,7 +15491,7 @@ begin
     Mask := Mask shr 1;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function MakeDateTimeRange( D1, D2: TDateTime ): TDateTimeRange;
 begin
@@ -15839,10 +15806,6 @@ const InitEventsTable: array[ 0..idx_LastEvent ] of Byte = (
       idummy6,           //idx_FOnLVStateChange                                          = 47;
       idummy123,         //idx_fOnDeleteLVItem                                           = 48;
       idummy123,         //idx_fOnColumnClick                                            = 49;
-      idummy4_TRUE,      //idx_FOnTVEndEdit                                              = 50;
-      idummy4_TRUE,      //idx_FOnTVExpanded                                             = 51;
-      idummy4_0,         //idx_FOnTVExpanding                                            = 52;
-      idummy4_TRUE,      //idx_FOnTVSelChanging                                          = 53;
       idummy6,           //idx_FOnSBBeforeScroll                                         = 54;
       idummy123,         //idx_FOnSBScroll                                               = 55;
       idummy123,         //idx_FOnDropDown                                               = 56;
@@ -15852,6 +15815,12 @@ const InitEventsTable: array[ 0..idx_LastEvent ] of Byte = (
       idummy123_0,       //idx_FOnBitBtnDraw                                             = 60;
       idummy123,         //idx_FOnTVBeginDrag                                            = 61;
       idummy123_TRUE,    //idx_FOnTVBeginEdit                                            = 62;
+
+      idummy4_TRUE,      //idx_FOnTVEndEdit                                              = 50;
+      idummy4_0,         //idx_FOnTVExpanding                                            = 52;
+      idummy4_TRUE,      //idx_FOnTVExpanded                                             = 51;
+      idummy4_TRUE,      //idx_FOnTVSelChanging                                          = 53;
+
       idummy123,         //idx_FOnTVDelete                                               = 63;
       idummy5_TRUE,      //idx_FOnDTPUserString                                          = 64;
       idummy123,         //idx_FOnREInsModeChg                                           = 65;
@@ -15902,15 +15871,15 @@ asm
 @@exit:
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 constructor TObj.Create;
 begin
   Init;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF OLD_REFCOUNT}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TObj.DoDestroy;
 begin
   {$IFDEF OLD_REFCOUNT}
@@ -15933,10 +15902,10 @@ begin
   else Self.Destroy;
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF OLD_REFCOUNT}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TObj.RefDec: Integer;
 begin
   Result := 0; // stop Delphi alerting the Warning
@@ -15950,7 +15919,7 @@ begin
       Destroy;
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TObj.RefInc;
 begin
@@ -15969,12 +15938,12 @@ asm
 end;
 
 {$IFDEF OLD_FREE}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION}
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION}
 procedure TObj.Free;
 begin
     RefDec;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF OLD_FREE}
 
 {$UNDEF ASM_LOCAL}
@@ -15983,7 +15952,7 @@ end;
 {$IFDEF ASM_DEBUG} {$DEFINE ASM_LOCAL} {$ENDIF}
 
 {$IFDEF ASM_LOCAL}
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 destructor TObj.Destroy;
 begin
   Final;
@@ -16007,7 +15976,7 @@ begin
   {$ENDIF}
   FreeMem( @ Self );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_VERSION}
   {$DEFINE ASM_TLIST}
@@ -16053,7 +16022,7 @@ asm     //cmd    //opd
 @@exit:
         POP      EBX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TObj.Final;
 var N: Integer;
     ProcMethod: TMethod;
@@ -16084,9 +16053,9 @@ begin
   fAutoFree.Free;
   fAutoFree := nil;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TObj.Add2AutoFree(Obj: PObj);
 begin
   if  fAutoFree = nil then
@@ -16094,9 +16063,9 @@ begin
   fAutoFree.Insert( 0, Obj );
   fAutoFree.Insert( 0, Pointer( @TObj.RefDec ) );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION} {$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TObj.Add2AutoFreeEx( Proc: TObjectMethod );
 {$IFDEF F_P}
 var Ptr1, Ptr2: Pointer;
@@ -16118,9 +16087,9 @@ begin
   fAutoFree.Insert( 0, Pointer( TMethod( Proc ).Code ) );
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION}
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION}
 procedure TObj.RemoveFromAutoFree(Obj: PObj);
 var i: Integer;
 begin
@@ -16135,7 +16104,7 @@ begin
     end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TObj.RemoveFromAutoFreeEx(Proc: TObjectMethod);
 var i: Integer;
@@ -16296,13 +16265,13 @@ begin
 end;
 {$ENDIF}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 destructor TList.Destroy;
 begin
    Clear;
    inherited;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_TLIST}
 procedure TList.Release;
@@ -16326,7 +16295,7 @@ asm
        POP       EAX
 @@e:   CALL      TObj.RefDec
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TList.Release;
 var I: Integer;
 begin
@@ -16336,7 +16305,7 @@ begin
       FreeMem( {$IFDEF TLIST_FAST} Items {$ELSE} fItems {$ENDIF}[ I ] );
   Free;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TList.ReleaseObjects;
 var I: Integer;
@@ -16347,7 +16316,7 @@ begin
   Free;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TList.SetCapacity( Value: Integer );
 begin
   {$IFDEF TLIST_FAST}
@@ -16367,9 +16336,9 @@ begin
      fCapacity := Value;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TList.Clear;
 {$IFDEF TLIST_FAST}
 var i: Integer;
@@ -16391,7 +16360,7 @@ begin
    fLastKnownCountBefore := 0;
    {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TList.SetAddBy(Value: Integer);
 begin
@@ -16400,7 +16369,7 @@ begin
 end;
 
 {$IFDEF ASM_NO_VERSION}  /// ASM-version disabled due some problems - 20-May-2010
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TList.Add( Value: Pointer );
 {$IFDEF TLIST_FAST}
 var LastBlockCount: Integer;
@@ -16455,7 +16424,7 @@ begin
   end;
   Inc( fCount );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF _D4orHigher}
 procedure TList.AddItems(const AItems: array of Pointer);
@@ -16501,7 +16470,7 @@ asm     //cmd    //opd
         POP      EBX
 @@exit:
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TList.DeleteRange(Idx, Len: Integer);
 {$IFDEF TLIST_FAST}
 var i, DelFromBlock: Integer;
@@ -16511,7 +16480,9 @@ var i, DelFromBlock: Integer;
 begin
   if Len <= 0 then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
   if Idx >= Count then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
+  {$IFDEF KOL_ASSERTIONS}
   Assert( (Idx >= 0), 'TList.DeleteRange: index out of bounds' );
+  {$ENDIF KOL_ASSERTIONS}
   if DWORD( Idx + Len ) > DWORD( Count ) then
     Len := Count - Idx;
   {$IFDEF TLIST_FAST}
@@ -16570,7 +16541,7 @@ begin
     Dec( fCount, Len );
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TList.Remove(Value: Pointer);
 var I: Integer;
@@ -16634,7 +16605,7 @@ begin
       Result := Pointer( Integer( fItems ) + Idx * Sizeof( Pointer ) );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE not ASM_VERSION}
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION}
 procedure TList.Put( Idx: Integer; Value: Pointer );
 {$IFDEF TLIST_FAST}
 var i: Integer;
@@ -16674,9 +16645,9 @@ begin
    {$ENDIF}
        fItems[ Idx ] := Value;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE not ASM_VERSION}
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION}
 function TList.Get( Idx: Integer ): Pointer;
 {$IFDEF TLIST_FAST}
 var i: Integer;
@@ -16725,7 +16696,7 @@ begin
   {$ENDIF}
       Result := fItems[ Idx ];
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_TLIST}
 function TList.IndexOf( Value: Pointer ): Integer;
@@ -16753,7 +16724,7 @@ asm
 
         POP       EDI
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function TList.IndexOf( Value: Pointer ): Integer;
 var I: Integer;
     {$IFDEF TLIST_FAST}
@@ -16801,7 +16772,7 @@ begin
   END;
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_TLIST}
 procedure TList.Insert(Idx: Integer; Value: Pointer);
@@ -16830,7 +16801,7 @@ asm
         POP       ECX            // ECX = Value
         MOV       [EAX], ECX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TList.Insert(Idx: Integer; Value: Pointer);
 {$IFDEF TLIST_FAST}
 var i: Integer;
@@ -16838,7 +16809,9 @@ var i: Integer;
     BlockStart, NewBlock: Pointer;
 {$ENDIF}
 begin
+   {$IFDEF KOL_ASSERTIONS}
    Assert( (Idx >= 0) and (Idx <= FCount+1), 'List index out of bounds' );
+   {$ENDIF KOL_ASSERTIONS}
    {$IFDEF TLIST_FAST}
    if fUseBlocks and (( fBlockList <> nil ) or (fCount >= 256)) then
    begin
@@ -16923,13 +16896,13 @@ begin
        FItems[ Idx ] := Value;
    end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_VERSION} {$DEFINE MoveItem_ASM} {$ENDIF}
 {$IFDEF TLIST_FAST}  {$UNDEF  MoveItem_ASM} {$ENDIF}
 
 {$IFDEF MoveItem_ASM}
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TList.MoveItem(OldIdx, NewIdx: Integer);
 var Item: Pointer;
 begin
@@ -16939,7 +16912,7 @@ begin
   Delete( OldIdx );
   Insert( NewIdx, Item );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_TLIST}
 function TList.Last: Pointer;
@@ -16951,14 +16924,14 @@ asm     //cmd    //opd
         MOV      ECX, [EAX + ECX*4]
 @@0:    XCHG     EAX, ECX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function TList.Last: Pointer;
 begin
   if   Count = 0 then
        Result := nil
   else Result := Items[ Count-1 ];
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_TLIST}
 procedure TList.Swap(Idx1, Idx2: Integer);
@@ -16972,7 +16945,7 @@ asm
           POP       EDX
         MOV       [EAX + ECX*4], EDX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TList.Swap(Idx1, Idx2: Integer);
 var Tmp: DWORD;
     AItem1, AItem2: PDWORD;
@@ -16988,7 +16961,7 @@ begin
   AItem1^ := AItem2^;
   AItem2^ := Tmp;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TList.SetCount(const Value: Integer);
 begin
@@ -17140,7 +17113,7 @@ asm
 
         MOV       ESP, EBP
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function WndFunc( W: HWnd; Msg: Cardinal; wParam, lParam: Integer )
                                    : Integer; stdcall;
 var M: TMsg;
@@ -17241,7 +17214,7 @@ begin
       OnMonitorMessage( M, FALSE );
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TList.OptimizeForRead;
 {$IFDEF TLIST_FAST}
@@ -17349,46 +17322,7 @@ begin
 end;
 
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}
-procedure TerminateExecution( var AppletCtl: PControl );
-asm
-          PUSH EBX
-          PUSH ESI
-          MOV  BX, $0100
-          XCHG BX, word ptr [AppletRunning]
-          XOR  ECX, ECX
-          XCHG ECX, [Applet]
-          JECXZ @@exit
-
-          PUSH EAX
-
-          XCHG EAX, ECX
-          MOV  ESI, EAX
-          CALL TObj.RefInc
-
-          TEST BH, BH
-          JNZ  @@closed
-
-          MOV  EAX, ESI
-          CALL TControl.ProcessMessages
-          PUSH 0
-          PUSH 0
-          PUSH WM_CLOSE
-          PUSH ESI
-          CALL TControl.Perform
-@@closed:
-          POP  EAX
-          XOR  ECX, ECX
-          MOV  dword ptr [EAX], ECX
-          MOV  EAX, ESI
-          CALL TObj.RefDec
-          XCHG EAX, ESI
-          CALL TObj.RefDec
-@@exit:
-          POP  ESI
-          POP  EBX
-end;
-{$ELSE ASM_VERSION}
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION}
 procedure TerminateExecution( var AppletCtl: PControl );
 var App: PControl;
     Appalreadyterminated: Boolean;
@@ -17411,7 +17345,7 @@ begin
     App.RefDec;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 //22{$IFDEF ASM_VERSION}
 function CallTControlCreateWindow( Ctl: PControl ): Boolean;
@@ -17432,7 +17366,7 @@ end;
 {$ENDIF WIN_GDI}
 
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure Run( var AppletCtl: PControl );
     {$IFDEF PSEUDO_THREADS}
 var n: Integer;
@@ -17481,7 +17415,7 @@ begin
   if  Assigned( AppletCtl ) then
       TerminateExecution( AppletCtl );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -17591,26 +17525,9 @@ begin
     {$ENDIF GDI}
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}
-function NormalGetCtlBrushHandle( Sender: PControl ): HBrush;
-asm
-        PUSH  ESI
-        PUSH  [EAX].TControl.fParent
-        CALL  TControl.GetBrush
-        XCHG  ESI, EAX // ESI = Sender.Brush
-        POP   ECX
-        JECXZ @@retHandle
-        XCHG  EAX, ECX
-        CALL  TControl.GetBrush
-        MOV   [ESI].TGraphicTool.fParentGDITool, EAX
-@@retHandle:
-        XCHG  EAX, ESI
-        CALL  TGraphicTool.GetHandle
-        POP   ESI
-end;
-{$ELSE notASM_VERSION}
+{$IFDEF ASM_VERSION}{$ELSE notASM_VERSION}
 function NormalGetCtlBrushHandle( Sender: PControl ): HBrush;
 var B: PGraphicTool;
     //P: PControl;
@@ -17625,7 +17542,7 @@ begin
   {$ELSE} Result := 0;
   {$ENDIF GDI}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function MakeFontHandle( Self_: PGraphicTool ): THandle; forward;
 function MakeBrushHandle( Self_: PGraphicTool ): THandle; forward;
@@ -17633,7 +17550,7 @@ function MakePenHandle( Self_: PGraphicTool ): THandle; forward;
 function MakeGeometricPenHandle( Self_: PGraphicTool ): THandle; forward;
 
 {$ENDIF WIN_GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewBrush: PGraphicTool;
 begin
   {$IFDEF GDI}
@@ -17651,9 +17568,9 @@ begin
     Result.fData.Brush.Style := bsSolid;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewPen: PGraphicTool;
 begin
   Result := _NewGraphicTool;
@@ -17667,7 +17584,7 @@ begin
     fData.Pen.Mode := pmCopy;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 var ApplyFont2Wnd_Proc: procedure( _Self: PObj ) = DummyObjProc;
 procedure DoApplyFont2Wnd( _Self: PControl ); forward;
@@ -17678,7 +17595,7 @@ const size_FontData = sizeof( Integer {fFontHeight} ) + sizeof( Integer {fFontWi
                       sizeof( Integer {fFontWeight} ) + sizeof( TFontCharset ) +
                       sizeof( TFontQuality );
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewFont: PGraphicTool;
 begin
   ApplyFont2Wnd_Proc := @ DoApplyFont2Wnd;
@@ -17697,16 +17614,16 @@ begin
     {$ENDIF GTK}
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION}
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION}
 function Color2RGB( Color: TColor ): TColor;
 begin
   if   Color < 0 then
        Result := GetSysColor(Color and $7F)
   else Result := Color;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function RGB2BGR( Color: TColor ): TColor;
 begin
@@ -17738,7 +17655,7 @@ end;
 {$ENDIF F_P/DELPHI}
 
 {$IFDEF WIN_GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function Color2RGBQuad( Color: TColor ): TRGBQuad;
 var C: Integer;
 begin
@@ -17748,9 +17665,9 @@ begin
     or (C and $FF00);
   Result := TRGBQuad( C );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION}
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION}
 function Color2Color16( Color: TColor ): WORD;
 begin
   Color := Color2RGB( Color );
@@ -17758,7 +17675,7 @@ begin
             (Color shr 5) and $7E0 or
             (Color shl 8) and $F800;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function Color2Color15( Color: TColor ): WORD;
 begin
@@ -17771,7 +17688,7 @@ end;
 {$ENDIF WIN_GDI}
 { TGraphicTool }
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION}
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION}
 function TGraphicTool.Assign(Value: PGraphicTool): PGraphicTool;
 var _Self: PGraphicTool;
 begin
@@ -17797,11 +17714,13 @@ begin
      if Value.fHandle = _Self.fHandle then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
   {$ENDIF GDI}
   _Self.Changed; // to destroy handle if allocated and release it from the canvas (if any uses it)
+  {$IFDEF KOL_ASSERTIONS}
   Assert( Value.fType = _Self.fType, 'Attempt to assign to different GDI tool type' );
+  {$ENDIF KOL_ASSERTIONS}
   Move( Value.fData, _Self.fData, Sizeof( fData ) );
   _Self.Changed; // to inform owner control, that its tool (font, brush) changed
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$IFDEF WIN_GDI}
 
 procedure TGraphicTool.AssignHandle(NewHandle: Integer);
@@ -17814,7 +17733,7 @@ begin
 end;
 
 {$ENDIF WIN_GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TGraphicTool.Changed;
 {$IFDEF GDI} var H: THandle; {$ENDIF GDI}
 begin
@@ -17853,9 +17772,9 @@ begin
        fOnGTChange( @Self );
    {$ENDIF GTK}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 destructor TGraphicTool.Destroy;
 begin
   {$IFDEF GDI}
@@ -17880,7 +17799,7 @@ begin
   {$ENDIF GDI}
   inherited;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF WIN_GDI}
 function TGraphicTool.HandleAllocated: Boolean;
@@ -17895,10 +17814,10 @@ begin
     Result := fHandle;
     fHandle := 0;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF WIN_GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TGraphicTool.SetInt( const Index: Integer; Value: Integer );
 var Where: PInteger;
 begin
@@ -17907,7 +17826,7 @@ begin
   Where^ := Value;
   Changed;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TGraphicTool.GetInt(const Index: Integer): Integer;
 var Where: PInteger;
@@ -17925,7 +17844,7 @@ begin
 end;
 {$IFDEF WIN_GDI}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TGraphicTool.IsFontTrueType: Boolean;
 var OldFont: HFont;
     DC: HDC;
@@ -17939,7 +17858,7 @@ begin
   SelectObject( DC, OldFont );
   ReleaseDC( 0, DC );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TGraphicTool.GetBrushBitmap: HBitmap;
 begin
@@ -18006,29 +17925,7 @@ begin
   {$ENDIF GTK}
 end;
 
-{$IFDEF ASM_UNICODE}
-procedure TGraphicTool.SetFontName(const Value: KOLString);
-asm
-          PUSH  EAX
-          LEA   EAX, [EAX].fData.Font.Name
-          XOR   ECX, ECX
-          MOV   CL, 32
-          PUSH  EAX
-          PUSH  ECX
-          PUSH  EDX
-          CALL  StrLComp
-          //TEST  EAX, EAX
-          POP   EDX
-          POP   ECX
-          POP   EAX
-          JZ    @@exit
-          CALL  StrLCopy
-          POP   EAX
-          PUSH  EAX
-          CALL  Changed
-@@exit:   POP   EAX
-end;
-{$ELSE notASM_VERSION}
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION}
 procedure TGraphicTool.SetFontName(const Value: KOLString);
 begin
   if KOLString(fData.Font.Name) = Value then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>}
@@ -18038,10 +17935,10 @@ begin
   ( PKOLChar(@fData.Font.Name[0]), PKOLChar( Value ), Length(Value) * SizeOf(KOLChar) {LF_FACESIZE} );
   Changed;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF WIN_GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TextAreaEx( Sender: PCanvas; var Sz : TSize; var Pt : TPoint );
 var Orient : Integer;
     Pts : array[ 1..4 ] of TPoint;
@@ -18082,14 +17979,14 @@ begin
    end;
    Pt := Pts[ 1 ];
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TGraphicTool.GetFontOrientation: Integer;
 begin
   Result := fData.Font.Orientation; // for BCB only
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TGraphicTool.SetFontOrientation(Value: Integer);
 begin
   GlobalGraphics_UseFontOrient := True;
@@ -18098,7 +17995,7 @@ begin
   SetInt( go_FontOrientation, Value );
   SetInt( go_FontEscapement, Value );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TGraphicTool.GetFontPitch: TFontPitch;
 begin
@@ -18113,7 +18010,7 @@ begin
 end;
 {$ENDIF WIN_GDI}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TGraphicTool.GetFontStyle: TFontStyle;
 type PFontStyle = ^TFontStyle;
 begin
@@ -18123,9 +18020,9 @@ begin
   if fData.Font.Underline     then include( Result, fsUnderline );
   if fData.Font.StrikeOut     then include( Result, fsStrikeOut );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TGraphicTool.SetFontStyle(const Value: TFontStyle);
 begin
   if FontStyle = Value then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
@@ -18143,7 +18040,7 @@ begin
   fData.Font.StrikeOut := fsStrikeOut in Value;
   Changed;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF WIN_GDI}
 function TGraphicTool.GetPenMode: TPenMode;
@@ -18170,7 +18067,7 @@ begin
   Changed;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TGraphicTool.GetHandle: THandle;
 begin
   Result := fHandle;
@@ -18197,9 +18094,9 @@ begin
     Result := fHandle;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function MakeBrushHandle( Self_: PGraphicTool ): THandle;
 var
   LogBrush: TLogBrush;
@@ -18232,7 +18129,7 @@ begin
   end;
   Result := Self_.fHandle;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$UNDEF ASM_LOCAL}
 {$IFNDEF UNICODE_CTRLS}
@@ -18240,7 +18137,7 @@ end;
     {$IFNDEF AUTO_REPLACE_CLEARTYPE}
       {$DEFINE ASM_LOCAL}
     {$ENDIF  AUTO_REPLACE_CLEARTYPE}
-  {$ENDIF ASM_VERSION}
+  {$ENDIF PAS_VERSION}
 {$ENDIF}
 
 {$IFDEF ASM_LOCAL}
@@ -18258,7 +18155,7 @@ asm
          MOV    [EDX].TGraphicTool.fHandle, EAX
 @@exit:
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function MakeFontHandle( Self_: PGraphicTool ): THandle;
 {$IFDEF AUTO_REPLACE_CLEARTYPE}
 var LF: TLogFont;
@@ -18286,9 +18183,9 @@ begin
     Result := fHandle;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function MakePenHandle( Self_: PGraphicTool ): THandle;
 var
   LogPen: TLogPen;
@@ -18311,7 +18208,7 @@ begin
     Result := fHandle;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TGraphicTool.GetGeometricPen: Boolean;
 begin
@@ -18350,7 +18247,7 @@ begin
   Changed;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function MakeGeometricPenHandle( Self_: PGraphicTool ): THandle;
 const
   PenStyles: array[ TPenStyle ] of Word =
@@ -18398,7 +18295,7 @@ begin
   {$ENDIF}
   Result := Self_.fHandle;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF WIN_GDI}
 function TGraphicTool.GetFontWeight: Integer;
@@ -18494,7 +18391,7 @@ begin
   inherited;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TCanvas.Assign(SrcCanvas: PCanvas): Boolean;
 begin
   fFont := fFont.Assign( SrcCanvas.fFont );
@@ -18513,9 +18410,9 @@ begin
      ModeCopy := SrcCanvas.ModeCopy;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.CreateBrush;
 begin
   if assigned( fBrush ) then
@@ -18540,9 +18437,9 @@ begin
       SetBkMode( fHandle, OPAQUE );
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.CreateFont;
 begin
   if  ( fFont <> nil ) then
@@ -18557,9 +18454,9 @@ begin
           Color2RGB( PControl( fOwnerControl ).fTextColor ) );
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.CreatePen;
 begin
   if  ( fPen <> nil ) then
@@ -18569,7 +18466,7 @@ begin
       AssignChangeEvents;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TCanvas.GetPixels(X, Y: Integer): TColor;
 begin
@@ -18621,7 +18518,7 @@ END;
 {$ENDIF _X_}
 
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.DeselectHandles;
 begin
    if  (fHandle <> 0) and
@@ -18640,7 +18537,7 @@ begin
        fState := fState and not( PenValid or BrushValid or FontValid );
    end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -18657,7 +18554,7 @@ END;
 {$ENDIF _X_}
 
 {$IFDEF WIN_GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TCanvas.RequiredState(ReqState: DWORD): HDC; stdcall;
 var
   NeededState: Byte;
@@ -18688,7 +18585,7 @@ begin
   end;
   Result := fHandle;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF WIN_GDI}
 
 {$IFDEF _X_}
@@ -18705,7 +18602,7 @@ END;
 
 {$IFDEF WIN_GDI}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.SetHandle(Value: HDC);
 {$IFDEF F_P}
 var Ptr1: Pointer;
@@ -18750,10 +18647,10 @@ begin
     SetPenPos( fPenPos );
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF WIN_GDI}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.SetPenPos(const Value: TPoint);
 begin
   fPenPos := Value;
@@ -18761,26 +18658,26 @@ begin
   MoveTo( Value.x, Value.y );
   {$ENDIF GDI}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$IFDEF WIN_GDI}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.Changing;
 begin
   if  Assigned( fOnChangeCanvas ) then
       fOnChangeCanvas( @Self );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF WIN_GDI}
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.Arc(X1, Y1, X2, Y2, X3, Y3, X4, Y4: Integer); stdcall;
 begin
   RequiredState( HandleValid or PenValid or ChangingCanvas );
   Windows.Arc(FHandle, X1, Y1, X2, Y2, X3, Y3, X4, Y4);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -18820,15 +18717,15 @@ END;
 {$ENDIF _X_}
 {$IFDEF WIN_GDI}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.Chord(X1, Y1, X2, Y2, X3, Y3, X4, Y4: Integer); stdcall;
 begin
   RequiredState( HandleValid or PenValid or BrushValid or ChangingCanvas );
   Windows.Chord(FHandle, X1, Y1, X2, Y2, X3, Y3, X4, Y4);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.CopyRect(const DstRect: TRect; SrcCanvas: PCanvas;
   const SrcRect: TRect);
 begin
@@ -18838,27 +18735,27 @@ begin
     DstRect.Bottom - DstRect.Top, SrcCanvas.Handle, SrcRect.Left, SrcRect.Top,
     SrcRect.Right - SrcRect.Left, SrcRect.Bottom - SrcRect.Top, ModeCopy);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.DrawFocusRect({$IFNDEF FPC}const{$ENDIF} Rect: TRect);
 begin
   RequiredState( HandleValid or BrushValid or FontValid or ChangingCanvas );
   Windows.DrawFocusRect(FHandle, Rect);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.Ellipse(X1, Y1, X2, Y2: Integer);
 begin
   RequiredState( HandleValid or PenValid or BrushValid or ChangingCanvas );
   Windows.Ellipse(FHandle, X1, Y1, X2, Y2);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF WIN_GDI}
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.FillRect({$IFNDEF FPC}const{$ENDIF} Rect: TRect);
 var Br: HBrush;
 begin
@@ -18882,7 +18779,7 @@ begin
   end else
       Windows.FillRect(fHandle, Rect, HBrush(COLOR_WINDOW + 1) );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -18898,7 +18795,7 @@ END;
 {$ENDIF _X_}
 {$IFDEF WIN_GDI}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.FillRgn(const Rgn: HRgn);
 var Br : HBrush;
 begin
@@ -18924,9 +18821,9 @@ begin
       DeleteObject( Br );
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.FloodFill(X, Y: Integer; Color: TColor;
   FillStyle: TFillStyle);
 const
@@ -18936,9 +18833,9 @@ begin
   RequiredState( HandleValid or BrushValid or ChangingCanvas );
   Windows.ExtFloodFill(FHandle, X, Y, Color, FillStyles[FillStyle]);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.FrameRect({$IFNDEF FPC}const{$ENDIF} Rect: TRect);
 var SolidBr : HBrush;
 begin
@@ -18952,17 +18849,17 @@ begin
     Windows.FrameRect(FHandle, Rect, SolidBr);
     DeleteObject( SolidBr );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF WIN_GDI}
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.LineTo(X, Y: Integer);
 begin
   RequiredState( HandleValid or PenValid or BrushValid or ChangingCanvas );
   Windows.LineTo( fHandle, X, Y );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -18976,13 +18873,13 @@ END;
 {$ENDIF _X_}
 
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.MoveTo(X, Y: Integer);
 begin
   RequiredState( HandleValid );
   Windows.MoveToEx( fHandle, X, Y, nil );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -18999,15 +18896,15 @@ begin
 end;
 
 {$IFDEF WIN_GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.Pie(X1, Y1, X2, Y2, X3, Y3, X4, Y4: Integer); stdcall;
 begin
   RequiredState( HandleValid or PenValid or BrushValid or ChangingCanvas );
   Windows.Pie( fHandle, X1, Y1, X2, Y2, X3, Y3, X4, Y4);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.Polygon(const Points: array of TPoint);
 type
   PPoints = ^TPoints;
@@ -19018,9 +18915,9 @@ begin
   {$ELSE DELPHI} Windows.Polygon
   {$ENDIF}( fHandle, PPoints(@Points)^, High(Points) + 1);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.Polyline(const Points: array of TPoint);
 type
   PPoints = ^TPoints;
@@ -19031,26 +18928,26 @@ begin
   {$ELSE DELPHI}Windows.Polyline
   {$ENDIF}( fHandle, PPoints(@Points)^, High(Points) + 1);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.Rectangle(X1, Y1, X2, Y2: Integer);
 begin
   RequiredState( HandleValid or BrushValid or PenValid or ChangingCanvas );
   Windows.Rectangle( fHandle, X1, Y1, X2, Y2);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.RoundRect(X1, Y1, X2, Y2, X3, Y3: Integer);
 begin
   RequiredState( HandleValid or BrushValid or PenValid or ChangingCanvas );
   Windows.RoundRect( fHandle, X1, Y1, X2, Y2, X3, Y3);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF WIN_GDI}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.TextArea(const Text: KOLString; var Sz: TSize;
   var P0: TPoint);
 begin
@@ -19058,7 +18955,7 @@ begin
   P0.x := 0; P0.y := 0;
   TOnTextArea( GlobalCanvas_OnTextArea )( @Self, Sz, P0 );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF _D3orHigher}
 procedure TCanvas.WTextArea(const Text: KOLWideString; var Sz: TSize;
@@ -19072,72 +18969,7 @@ end;
 
 {$IFDEF GDI}
 {$IFDEF TEXT_EXTENT_OLD}
-{$IFDEF ASM_UNICODE}
-function TCanvas.TextExtent(const Text: KOLString): TSize;
-asm
-        PUSH     EBX
-        PUSH     ESI
-        MOV      EBX, EAX
-        PUSH     ECX
-        PUSH     ECX               // prepare @Result
-        MOV      EAX, EDX
-        CALL     System.@LStrLen
-        PUSH     EAX               // prepare Length(Text)
-        CALL     EDX2PChar
-        PUSH     EDX               // prepare PChar(Text)
-        {$IFDEF  SAFE_CODE}
-        MOV      EAX, EBX
-        CALL     RefInc
-        {$ENDIF}
-        PUSH     HandleValid or FontValid
-        PUSH     EBX
-        CALL     RequiredState
-        XCHG     ESI, EAX
-        TEST     ESI, ESI          // ESI = fHandle before
-        JNZ      @@1
-        PUSH     ESI
-        CALL     CreateCompatibleDC
-        MOV      EDX, EBX
-        XCHG     EAX, EDX // EAX := @Self; EDX := DC
-        CALL     SetHandle
-//****************************************************** // Added By M.Gerasimov
-        CMP      WORD PTR [EBX].TCanvas.fIsPaintDC, 0
-        JNZ      @@2
-        XOR      ESI,ESI
-@@2:
-//******************************************************
-@@1:
-        PUSH     HandleValid or FontValid
-        PUSH     EBX
-        CALL     RequiredState
-        PUSH     EAX               // prepare DC
-        CALL     Windows.GetTextExtentPoint32A  // KOL_ANSI
-        POP      EDX // @ Result
-        {$IFDEF FIX_ITALIC_TEXT_WIDTH}
-        MOV      ECX, [EBX].fFont
-        //JECXZ    @@0
-        CMP      [ECX].TGraphicTool.fData.Font.Italic, 0
-        JZ       @@0
-        MOV      EAX, [EDX].TSize.cy
-        SHR      EAX, 2
-        ADD      DWORD PTR [EDX], EAX
-@@0:    {$ENDIF}
-        TEST     ESI, ESI
-        JNZ      @@exit
-        XOR      EDX, EDX
-        XCHG     EAX, EBX
-        CALL     SetHandle
-@@exit:
-        {$IFDEF  SAFE_CODE}
-        PUSH     EAX
-        XCHG     EAX, EBX
-        CALL     RefDec
-        POP      EAX
-        {$ENDIF}
-        POP      ESI
-        POP      EBX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function TCanvas.TextExtent(const Text: KOLString): TSize;
 var DC : HDC;
     ClearHandle : Boolean;
@@ -19167,42 +18999,9 @@ begin
       if Canvas created on base of existing DC, no memDC created,
       if Canvas has fHandle:HDC = 0, it is not fIsPaintDC always. }
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ELSE TEXT_EXTENT_NEW}
-{$IFDEF ASM_UNICODE}
-function TCanvas.TextExtent(const Text: KOLString): TSize;
-asm
-         PUSH  ESI
-         {$IFDEF FIX_ITALIC_TEXT_WIDTH}
-         PUSH  EBX
-         MOV   EBX, ECX
-         {$ENDIF}
-         XCHG  ESI, EAX // ESI = @Self: PCanvas
-         CALL  EDX2PChar
-         PUSH  ECX
-         PUSH  EDX
-
-         XCHG  EAX, EDX
-         CALL  StrLen
-         XCHG  [ESP], EAX
-         PUSH  EAX
-
-         PUSH  HandleValid or FontValid
-         PUSH  ESI
-         CALL  TCanvas.RequiredState
-         PUSH  [ESI].TCanvas.fHandle
-         CALL  GetTextExtentPoint32
-         {$IFDEF FIX_ITALIC_TEXT_WIDTH}
-         CMP   [ESI].TGraphicTool.fData.Font.Italic, 0
-         JZ    @@1
-         MOV   EAX, [EBX].TSize.cy
-         SHR   EAX, 2
-         ADD   DWORD PTR [EBX].TSize, EAX
-@@1:     POP   EBX
-         {$ENDIF}
-         POP   ESI
-end;
-{$ELSE  notASM_VERSION}
+{$IFDEF ASM_UNICODE}{$ELSE  notASM_VERSION}
 function TCanvas.TextExtent(const Text: KOLString): TSize;
 begin
   RequiredState( HandleValid or FontValid );
@@ -19212,7 +19011,7 @@ begin
       inc( Result.cx, Result.cy div 4 );
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF TEXT_EXTENT_NEW}
 {$ENDIF GDI}
 {$IFDEF _X_}
@@ -19254,31 +19053,7 @@ begin
   Windows.TextOutA(FHandle, X, Y, PAnsiChar(Text), Length(Text));
 end;
 
-{$IFDEF ASM_UNICODE}
-procedure TCanvas.TextOut(X, Y: Integer; const Text: KOLString); stdcall;
-asm
-        PUSH     EBX
-        MOV      EBX, [EBP+8]
-
-        MOV      EAX, [Text]
-        PUSH     EAX
-        CALL     System.@LStrLen
-        XCHG     EAX, [ESP]             // prepare Length(Text)
-
-        //CALL     System.@LStrToPChar  // string does not need to be null-terminated !
-        PUSH     EAX                    // prepare PChar(Text)
-        PUSH     [Y]                    // prepare Y
-        PUSH     [X]                    // prepare X
-
-        PUSH     HandleValid or FontValid or BrushValid or ChangingCanvas
-        PUSH     EBX
-        CALL     RequiredState
-        PUSH     EAX                    // prepare fHandle
-        CALL     Windows.TextOutA // KOL_ANSI
-
-        POP      EBX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.TextOut(X, Y: Integer; const Text: KOLString); stdcall;
 begin
   RequiredState( HandleValid or FontValid or BrushValid or ChangingCanvas );
@@ -19286,7 +19061,7 @@ begin
   {$ELSE}               Windows.TextOutA
   {$ENDIF}(FHandle, X, Y, PKOLChar(Text), Length(Text));
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -19301,7 +19076,7 @@ END;
 {$ENDIF _X_}
 
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.TextRect(const Rect: TRect; X, Y: Integer; const Text: Ansistring);
 var
   Options: Integer;
@@ -19315,7 +19090,7 @@ begin
                        @Rect, PAnsiChar(Text),
                        Length(Text), nil); // KOL_ANSI
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -19392,28 +19167,13 @@ END;
 {$ENDIF _X_}
 
 {$IFDEF WIN_GDI}
-{$IFDEF ASM_VERSION}
-procedure TCanvas.DrawText(Text: AnsiString; var Rect:TRect; Flags:DWord);
-asm
-          PUSH  [Flags]
-          PUSH  ECX
-          PUSH  -1
-          CALL  EDX2PChar
-          PUSH  EDX
-
-          PUSH  HandleValid or FontValid or BrushValid or ChangingCanvas
-          PUSH  EAX
-          CALL  RequiredState
-          PUSH  EAX
-          CALL  Windows.DrawTextA
-end;
-{$ELSE}
+{$IFDEF ASM_VERSION}{$ELSE}
 procedure TCanvas.DrawText(Text: AnsiString; var Rect:TRect; Flags:DWord);
 begin
   RequiredState( HandleValid or FontValid or BrushValid or ChangingCanvas );
   Windows.DrawTextA(Handle, PAnsiChar(Text), -1, Rect, Flags); // KOL_ANSI
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TCanvas.ClipRect: TRect;
 begin
@@ -19428,7 +19188,7 @@ begin
 end;
 
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TCanvas.GetBrush: PGraphicTool;
 begin
   if ( fBrush = nil ) then
@@ -19445,7 +19205,7 @@ begin
   end;
   Result := fBrush;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -19468,7 +19228,7 @@ END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TCanvas.GetFont: PGraphicTool;
 begin
   if ( fFont = nil ) then
@@ -19484,9 +19244,9 @@ begin
   end;
   Result := fFont;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TCanvas.GetPen: PGraphicTool;
 begin
   if ( fPen = nil ) then
@@ -19496,10 +19256,10 @@ begin
   end;
   Result := fPen;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TCanvas.GetHandle: HDC;
 begin
   /////////////////////////////////
@@ -19511,7 +19271,7 @@ begin
   end else
       Result := fHandle;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -19526,7 +19286,7 @@ END;
 {$ENDIF GTK}
 {$ENDIF _X_}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TCanvas.AssignChangeEvents;
 begin
   if ( fBrush <> nil ) then
@@ -19536,7 +19296,7 @@ begin
   if ( fFont <> nil ) then
      fFont.fOnGTChange := ObjectChanged;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$IFDEF WIN_GDI}
 
 {$IFNDEF _FPC}
@@ -19690,7 +19450,7 @@ asm
   POP   ESI
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function Mul64i( const X: I64; Mul: Integer ): I64;
 var Minus: Boolean;
 begin
@@ -19704,7 +19464,7 @@ begin
   if Minus then
     Result := Neg64( Result );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function Div64EDX( const X: I64; D: Integer ): I64;
 asm
@@ -19724,7 +19484,7 @@ asm
   POP   ESI
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function Div64i( const X: I64; D: Integer ): I64;
 var Minus: Boolean;
 begin
@@ -19744,7 +19504,7 @@ begin
   if Minus then
     Result := Neg64( Result );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function Mod64i( const X: I64; D: Integer ): Integer;
 begin
@@ -19932,7 +19692,8 @@ begin
   while I <= Length( S ) do
   begin
     case S[ I ] of
-    '.': if not Pt then Pt := TRUE else break;
+    '.' {$IFNDEF SMALLEST_CODE}, ','{$ENDIF}:
+        if not Pt then Pt := TRUE else break;
     '0'..'9': if  not Pt then
                   Result := Result * 10 + Integer( S[ I ] ) - Integer( '0' )
               else
@@ -19972,7 +19733,8 @@ begin
   while I <= Length( S ) do
   begin
     case S[ I ] of
-    '.': if not Pt then Pt := TRUE else break;
+    '.' {$IFNDEF SMALLEST_CODE}, ','{$ENDIF}:
+        if not Pt then Pt := TRUE else break;
     '0'..'9': if  not Pt then
                   Result := Result * 10 + Integer( S[ I ] ) - Integer( '0' )
               else
@@ -20056,7 +19818,7 @@ function Extended2Str( E: Extended ): KOLString;
         Result[ J ] := KOLChar( Ord('0') + K );
         Inc( J );
       end;
-      Assert( Result[ 1 ] = '0', 'error!' );
+      //Assert( Result[ 1 ] = '0', 'error!' );
       Delete( Result, 1, 1 );
       if  N <= 0 then
       begin
@@ -20264,44 +20026,7 @@ asm
 end;
 {$ENDIF}
 
-{$IFDEF ASM_UNICODE}
-function Int2Hex( Value : DWord; Digits : Integer ) : KOLString;
-asm     // EAX = Value
-        // EDX = Digits
-        // ECX = @Result
-        PUSH      0
-        ADD       ESP, -0Ch
-      PUSH      EDI
-      PUSH      ECX
-        LEA       EDI, [ESP+8+0Fh]  // EBX := @Buf[ 15 ]
-        {$IFDEF SMALLEST_CODE}
-        {$ELSE}
-        AND       EDX, $F
-        {$ENDIF}
-@@loop: DEC       EDI
-        DEC       EDX
-          PUSH      EAX
-          {$IFDEF PARANOIA} DB $24, $0F {$ELSE} AND AL, 0Fh {$ENDIF}
-          AAM
-          DB $D5, $11 //AAD
-          ADD      AL, $30
-        STOSB
-        DEC       EDI
-        POP       EAX
-        SHR       EAX, 4
-        JNZ       @@loop
-        TEST      EDX, EDX
-        JG        @@loop
-          POP       EAX      // EAX = @Result
-          MOV       EDX, EDI // EDX = @resulting string
-          {$IFDEF _D2009orHigher}
-          XOR      ECX, ECX
-          {$ENDIF}
-          CALL      System.@LStrFromPChar
-          POP       EDI
-          ADD       ESP, 10h
-end;
-{$ELSE ASM_VERSION}
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION}
 function Int2Hex( Value : DWord; Digits : Integer ) : KOLString;
 const
   HexDigitChr: array[ 0..15 ] of KOLChar = ( '0','1','2','3','4','5','6','7',
@@ -20323,45 +20048,9 @@ begin
   until (Value = 0) and (Digits <= 0);
   Result := Dest;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function Hex2Int( const Value : AnsiString) : Integer;
-asm
-        CALL     EAX2PChar
-        PUSH     ESI
-        XCHG     ESI, EAX
-        XOR      EDX, EDX
-        TEST     ESI, ESI
-        JE       @@exit
-        LODSB
-        {$IFDEF PARANOIA} DB $3C, '$' {$ELSE} CMP AL, '$' {$ENDIF}
-        JNE      @@1
-@@0:    LODSB
-@@1:    TEST     AL, AL
-        JE       @@exit
-        {$IFDEF PARANOIA} DB $2C, '0' {$ELSE} SUB AL, '0' {$ENDIF}
-        {$IFDEF PARANOIA} DB $3C, 9 {$ELSE} CMP AL, '9' - '0' {$ENDIF}
-        JBE      @@3
-
-        {$IFDEF PARANOIA} DB $2C, $11 {$ELSE} SUB AL, 'A' - '0' {$ENDIF}
-        {$IFDEF PARANOIA} DB $3C, 5 {$ELSE} CMP AL, 'F' - 'A' {$ENDIF}
-        JBE      @@2
-
-        {$IFDEF PARANOIA} DB $2C, 32 {$ELSE} SUB AL, 32 {$ENDIF}
-        {$IFDEF PARANOIA} DB $3C, 5 {$ELSE} CMP AL, 'F' - 'A' {$ENDIF}
-        JA       @@exit
-@@2:
-        {$IFDEF PARANOIA} DB $04, 0Ah {$ELSE} ADD AL, 0Ah {$ENDIF}
-@@3:
-        SHL      EDX, 4
-        ADD      DL, AL
-        JMP      @@0
-
-@@exit: XCHG     EAX, EDX
-        POP      ESI
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function Hex2Int( const Value : KOLString) : Integer;
 var I : Integer;
 begin
@@ -20384,7 +20073,7 @@ begin
     Inc( I );
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function Octal2Int( const Value: AnsiString ) : Integer;
 var I: Integer;
@@ -20418,8 +20107,10 @@ var Buf: array[ 0..64 ] of KOLChar;
     numd: Extended;
     {$ENDIF}
 begin
+  {$IFDEF KOL_ASSERTIONS}
   Assert( (radix >= 2) and (radix <= 36), 'Radix base must be between 2 and 36' );
   Assert( min_digits <= 64, 'Maximum possible digits number is 64' );
+  {$ENDIF KOL_ASSERTIONS}
     p := @ Buf[ 64 ];
     p^ := #0;
     while (number <> 0) do
@@ -20458,7 +20149,9 @@ end;
 function FromRadixStr( var Rslt: Radix_int; s: PKOLChar; radix: Integer ): PKOLChar;
 var n: Integer;
 begin
+  {$IFDEF KOL_ASSERTIONS}
   Assert( (radix >= 2) and (radix <= 36), 'Radix base must be between 2 and 36' );
+  {$ENDIF KOL_ASSERTIONS}
     Rslt := 0;
     while s^ <> #0 do
     begin
@@ -20507,7 +20200,7 @@ begin
     end;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION}
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION}
 function cHex2Int( const Value : KOLString) : Integer;
 begin
   if   (Length(Value)>2) and (Value[1]='0')
@@ -20515,51 +20208,9 @@ begin
        Result := Hex2Int( CopyEnd( Value, 3 ) )
   else Result := Hex2Int( Value );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function Int2Str( Value : Integer ) : KOLString;
-asm
-        XOR       ECX, ECX
-        PUSH      ECX
-        ADD       ESP, -0Ch
-
-        PUSH      EBX
-        LEA       EBX, [ESP + 15 + 4]
-        PUSH      EDX
-        CMP       EAX, ECX
-        PUSHFD
-        JGE       @@1
-        NEG       EAX
-@@1:
-        MOV       CL, 10
-
-@@2:
-        DEC       EBX
-        XOR       EDX, EDX
-        DIV       ECX
-        ADD       DL, 30h
-        MOV       [EBX], DL
-        TEST      EAX, EAX
-        JNZ       @@2
-
-        POPFD
-        JGE       @@3
-
-        DEC       EBX
-        MOV       byte ptr [EBX], '-'
-@@3:
-        POP       EAX
-        MOV       EDX, EBX
-        {$IFDEF _D2009orHigher}
-        XOR      ECX, ECX // TODO: safe to destory twice?
-        {$ENDIF}
-        CALL      System.@LStrFromPChar
-
-        POP       EBX
-        ADD       ESP, 10h
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function Int2Str( Value : Integer ) : KOLString;
 var Buf : Array[ 0..15 ] of KOLChar;
     Dst : PKOLChar;
@@ -20587,7 +20238,7 @@ begin
   end;
   Result := Dst;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure Int2PChar( s: PAnsiChar; Value: Integer );
 var Buf : array[ 0..15 ] of AnsiChar;
@@ -20671,66 +20322,7 @@ begin
   end;
 end;
 
-{$IFDEF ASM_UNICODE}
-function Int2Ths( I : Integer ) : AnsiString;
-asm
-        PUSH     EBP
-        MOV      EBP, ESP
-        PUSH     EAX
-        PUSH     EDX
-        CALL     Int2Str
-        POP      EDX
-        POP      EAX
-        TEST     EAX, EAX
-        JGE      @@0
-        NEG      EAX
-@@0:
-        CMP      EAX, 1000
-        JL       @@Exit
-        PUSH     EDX
-        MOV      EAX, [EDX]
-        PUSH     EAX
-        CALL     System.@LStrLen         // EAX = Length(Result)
-        POP      EDX
-        PUSH     EDX                     // EDX = @Result[ 1 ]
-        XOR      ECX, ECX
-
-@@1:
-        ROL      ECX, 8
-        DEC      EAX
-        MOV      CL, [EDX+EAX]
-        JZ       @@fin
-        CMP      ECX, 300000h
-        JL       @@1
-
-        PUSH     ECX
-        XOR      ECX, ECX
-        MOV      CL, [ThsSeparator]
-        JMP      @@1
-
-@@fin:  CMP      CL, '-'
-        JNE      @@fin1
-        CMP      CH, [ThsSeparator]
-        JNE      @@fin1
-        MOV      CH, 0                   // this corrects -,ddd,...
-@@fin1: CMP      ECX, 01000000h
-        JGE      @@fin2
-        INC      EAX
-        ROL      ECX, 8
-        JMP      @@fin1
-@@fin2: PUSH     ECX
-
-        LEA      EDX, [ESP+EAX]
-        MOV      EAX, [EBP-4]
-        {$IFDEF _D2009orHigher}
-        XOR      ECX, ECX // TODO: safe to change ecx?
-        {$ENDIF}
-        CALL     System.@LStrFromPChar
-@@Exit:
-        MOV      ESP, EBP
-        POP      EBP
-end;
-{$ELSE ASM_VERSION}
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION}
 function Int2Ths( I : Integer ): KOLString;
 var S : KOLString;
 begin
@@ -20746,59 +20338,9 @@ begin
   if Copy( Result, 1, 2 ) = KOLString('-') + KOLString(ThsSeparator) then
      Result := '-' + CopyEnd( Result, 3 );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function Int2Digs( Value, Digits : Integer ) : KOLString;
-asm
-        PUSH     EBP
-        MOV      EBP, ESP
-        PUSH     EDX             // [EBP-4] = Digits
-        PUSH     ECX
-        MOV      EDX, ECX
-        CALL     Int2Str
-        POP      ECX
-        PUSH     ECX             // [EBP-8] = @Result
-        MOV      EAX, [ECX]
-        PUSH     EAX
-        CALL     System.@LStrLen
-        POP      EDX             // EDX = @Result[1]
-        MOV      ECX, EAX        // ECX = Length( Result )
-        ADD      EAX, EAX
-        SUB      ESP, EAX
-        MOV      EAX, ESP
-        PUSHAD
-        CALL     StrCopy
-        POPAD
-        MOV      EDX, EAX
-        ADD      ESP, -100
-        CMP      byte ptr [EDX], '-'
-        PUSHFD
-        JNE      @@1
-        INC      EDX
-@@1:
-        MOV      EAX, [EBP-4]    // EAX = Digits
-        CMP      ECX, EAX
-        JGE      @@2
-        DEC      EDX
-        MOV      byte ptr [EDX], '0'
-        INC      ECX
-        JMP      @@1
-@@2:
-        POPFD
-        JNE      @@3
-        DEC      EDX
-        MOV      byte ptr [EDX], '-'
-@@3:
-        MOV      EAX, [EBP-8]
-        {$IFDEF _D2009orHigher}
-        XOR      ECX, ECX // TODO: eax or ecx affect result?
-        {$ENDIF}
-        CALL     System.@LStrFromPChar
-        MOV      ESP, EBP
-        POP      EBP
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function Int2Digs( Value, Digits : Integer ) : KOLString;
 var M : KOLString;
 begin
@@ -20817,95 +20359,9 @@ begin
           Result := '0' + Result;
   Result := M + Result;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function Num2Bytes( Value : Double ) : KOLString;
-asm     PUSH     EBX
-        PUSH     ESI
-        PUSH     EDI
-        MOV      EBX, ESP
-        MOV      ESI, EAX
-        MOV      ECX, 4
-        MOV      EDX, 'TGMk'
-@@1:    FLD      [Value]
-@@10:   FICOM    dword ptr [@@1024]
-        FSTSW    AX
-        SAHF
-        JB       @@2
-        FIDIV    dword ptr [@@1024]
-        FST      [Value]
-        WAIT
-        TEST     DL, 20h
-        JE       @@ror
-        AND      DL, not 20h
-        JMP      @@nxt
-@@1024: DD       1024
-@@100:  DD       100
-@@ror:  ROR      EDX, 8
-@@nxt:  LOOP     @@10
-@@2:    TEST     DL, 20h
-        JZ       @@3
-        MOV      DL, 0
-@@3:    MOV      DH, 0
-        PUSH     DX
-        MOV      EDI, ESP
-        FLD      ST(0)
-        CALL     System.@TRUNC
-        {$IFDEF _D2orD3}
-        PUSH     0
-        {$ELSE}
-        PUSH     EDX
-        {$ENDIF}
-        PUSH     EAX
-        FILD     qword ptr [ESP]
-        POP      EDX
-        POP      EDX
-        MOV      EDX, ESI
-        CALL     Int2Str
-        FSUBP    ST(1), ST
-        FIMUL    dword ptr [@@100]
-        CALL     System.@TRUNC
-        TEST     EAX, EAX
-        JZ       @@4
-        XOR      ECX, ECX
-        MOV      CL, 0Ah
-        CDQ
-        IDIV     ECX
-        TEST     EDX, EDX
-        JZ       @@5
-        MOV      AH, DL
-        SHL      EAX, 16
-        ADD      EAX, '00. '
-        PUSH     EAX
-        MOV      EDI, ESP
-        INC      EDI
-        JMP      @@4
-@@5:    SHL      EAX, 8
-        ADD      AX, '0.'
-        PUSH     AX
-        MOV      EDI, ESP
-@@4:    MOV      EAX, [ESI]
-        CALL     System.@LStrLen
-        ADD      ESP, -100
-        SUB      EDI, EAX
-        PUSH     ESI
-        PUSH     EDI
-        MOV      ESI, [ESI]
-        MOV      ECX, EAX
-        REP      MOVSB
-        POP      EDX
-        POP      EAX
-        {$IFDEF _D2009orHigher}
-        XOR      ECX, ECX // TODO: IDIV
-        {$ENDIF}
-        CALL     System.@LStrFromPChar
-        MOV      ESP, EBX
-        POP      EDI
-        POP      ESI
-        POP      EBX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 {$IFDEF _D2009orHigher}  const Suffix: AnsiString = 'KMGT';
 {$ELSE}                  const Suffix = 'KMGT';    {$ENDIF}
 function Num2Bytes( Value : Double ) : KOLString;
@@ -20929,38 +20385,9 @@ begin
   if I > 0 then
      Result := Result + KOLString( Suffix[ I ] );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function S2Int( S: PKOLChar ): Integer;
-asm
-        XCHG     EDX, EAX
-        XOR      EAX, EAX
-        TEST     EDX, EDX
-        JZ       @@exit
-
-        XOR      ECX, ECX
-        MOV      CL, [EDX]
-        INC      EDX
-        CMP      CL, '-'
-        PUSHFD
-        JE       @@0
-@@1:    CMP      CL, '+'
-        JNE      @@2
-@@0:    MOV      CL, [EDX]
-        INC      EDX
-@@2:    SUB      CL, '0'
-        CMP      CL, '9'-'0'
-        JA       @@fin
-        LEA      EAX, [EAX+EAX*4] //
-        LEA      EAX, [ECX+EAX*2] //
-        JMP      @@0
-@@fin:  POPFD
-        JNE      @@exit
-        NEG      EAX
-@@exit:
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function S2Int( S: PKOLChar ): Integer;
 var M : Integer;
 begin
@@ -20981,20 +20408,14 @@ begin
    end;
    if  M < 0 then Result := -Result;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function Str2Int(const Value : KOLString) : Integer;
-asm
-        CALL     EAX2PChar
-        CALL     S2Int
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function Str2Int(const Value : KOLString) : Integer;
 begin
   Result := S2Int( PKOLChar( Value ) );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function StrCopy( Dest, Source: PAnsiChar ): PAnsiChar; assembler;
 asm
@@ -21097,24 +20518,7 @@ asm
              ZF = 0 if character found. }
 end {$IFDEF F_P} [ 'EAX', 'EDX', 'ECX' ] {$ENDIF};
 
-{$IFDEF ASM_UNICODE}
-function TrimLeft(const S: Ansistring): Ansistring;
-asm
-        XCHG     EAX, EDX
-        CALL     EDX2PChar
-        DEC      EDX
-@@1:    INC      EDX
-        MOVZX    ECX, byte ptr [EDX]
-        JECXZ    @@fin
-        CMP      CL, ' '
-        JBE      @@1
-@@fin:
-        {$IFDEF _D2009orHigher}
-        XOR      ECX, ECX
-        {$ENDIF}
-        CALL     System.@LStrFromPChar
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function TrimLeft(const S: KOLString): KOLString;
 var
   I, L: Integer;
@@ -21124,33 +20528,9 @@ begin
   while (I <= L) and (S[I] <= ' ') do Inc(I);
   Result := Copy(S, I, Maxint);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function TrimRight(const S: Ansistring): Ansistring;
-asm
-        PUSH     EDX
-        PUSH     EAX
-
-        PUSH     EAX
-        CALL     System.@LStrLen
-        XCHG     EAX, [ESP]
-        CALL     EAX2PChar
-        POP      ECX
-        INC      ECX
-@@1:    DEC      ECX
-        MOV      DL, [EAX+ECX]
-        JL       @@fin
-        CMP      DL, ' '
-        JBE      @@1
-@@fin:
-        INC      ECX
-        POP      EAX
-        XOR      EDX, EDX
-        INC      EDX
-        CALL     System.@LStrCopy
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function TrimRight(const S: KOLString): KOLString;
 var
   I: Integer;
@@ -21159,14 +20539,14 @@ begin
   while (I > 0) and (S[I] <= ' ') do Dec(I);
   Result := Copy(S, 1, I);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function Trim( const S : KOLString): KOLString;
 begin
    Result := TrimLeft( TrimRight( S ) );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function RemoveSpaces( const S: KOLString ): KOLString;
 var I: Integer;
@@ -21194,7 +20574,7 @@ asm
 @@exit:
 end {$IFDEF F_P} [ 'EAX', 'ECX' ] {$ENDIF};
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function LowerCase(const S: Ansistring): Ansistring;
 var I : Integer;
 begin
@@ -21203,9 +20583,9 @@ begin
       if  (Result[ I ] >= 'A') and (Result[ I ] <= 'Z') then
           Inc( Result[ I ], 32 );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function UpperCase(const S: Ansistring): Ansistring;
 var I : Integer;
 begin
@@ -21214,7 +20594,7 @@ begin
       if  (Result[ I ] >= 'a') and (Result[ I ] <= 'z') then
           Dec( Result[ I ], 32 );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF F_P}
 function DummyStrFun( const S: AnsiString ): AnsiString;
@@ -21223,64 +20603,14 @@ begin
 end;
 {$ENDIF F_P}
 
-{$IFDEF ASM_UNICODE}
-function CopyEnd( const S : AnsiString; Idx : Integer ) : AnsiString;
-asm
-        PUSH     ECX
-        PUSH     EAX
-        PUSH     EDX
-
-        CALL     System.@LStrLen
-
-        POP      EDX
-        TEST     EDX, EDX
-        JG       @@1
-        XOR      EDX, EDX
-        INC      EDX
-@@1:
-        SUB      EAX, EDX
-        MOV      ECX, EAX
-
-        POP      EAX
-        JGE      @@ret_end
-
-        POP      EAX
-        JL       System.@LStrClr
-
-@@ret_end:
-        INC      ECX
-        CALL     System.@LStrCopy
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function CopyEnd( const S : KOLString; Idx : Integer ) : KOLString;
 begin
   Result := Copy( S, Idx, MaxInt );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function CopyTail( const S : AnsiString; Len : Integer ) : AnsiString;
-asm
-        PUSH     ECX
-        PUSH     EAX
-          PUSH     EDX
-            CALL     System.@LStrLen
-          POP      ECX
-          CMP      ECX, EAX
-          {$IFDEF USE_CMOV}
-          CMOVG    ECX, EAX
-          {$ELSE}
-          JLE      @@1
-          MOV      ECX, EAX
-@@1:      {$ENDIF}
-
-        MOV      EDX, EAX
-        SUB      EDX, ECX
-        INC      EDX
-        POP      EAX
-        CALL     System.@LStrCopy
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function CopyTail( const S : KOLString; Len : Integer ) : KOLString;
 var L : Integer;
 begin
@@ -21291,31 +20621,9 @@ begin
   if Len = 0 then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
   Result := Copy( S, L - Len + 1, Len );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-procedure DeleteTail( var S : AnsiString; Len : Integer );
-asm
-        PUSH     EAX
-        PUSH     EDX
-        MOV      EAX, [EAX]
-        CALL     System.@LStrLen
-        POP      ECX
-        CMP      ECX, EAX
-        {$IFDEF USE_CMOV}
-        CMOVG    ECX, EAX
-        {$ELSE}
-        JLE      @@1
-        MOV      ECX, EAX
-@@1:    {$ENDIF}
-
-        MOV      EDX, EAX
-        SUB      EDX, ECX
-        INC      EDX
-        POP      EAX
-        CALL     System.@LStrDelete
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 procedure DeleteTail( var S : KOLString; Len : Integer );
 var L : Integer;
 begin
@@ -21324,22 +20632,10 @@ begin
      Len := L;
   Delete( S, L - Len + 1, Len );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFNDEF TEST_INDEXOFCHARS_COMPAT}
-{$IFDEF ASM_UNICODE}
-function IndexOfChar( const S : KOLString; Chr : KOLChar ) : Integer;
-asm
-        CALL     EAX2PChar
-        PUSH     EAX
-        MOV      ECX, [EAX-4]
-        CALL     StrScanLen
-        POP      EDX
-        JZ       @@1
-        LEA      EDX, [EAX+1]
-@@1:    SUB      EAX, EDX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function IndexOfChar( const S : KOLString; Chr : KOLChar ) : Integer;
 var //P, F : PChar;
  i, l : integer;
@@ -21356,7 +20652,7 @@ begin
     end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ELSE TEST_INDEXOFCHARS_COMPAT}////////////////////////////////////////////////
 function IndexOfChar_Old( const S : AnsiString; Chr : AnsiChar ) : Integer;
 var P, F : PAnsiChar;
@@ -21416,44 +20712,7 @@ begin
 end;
 {$ENDIF}
 
-{$IFDEF ASM_UNICODE}
-function IndexOfCharsMin( const S, Chars : AnsiString ) : Integer;
-asm     PUSH     ESI
-        PUSH     EBX
-        PUSH     EAX
-        CALL     EDX2PChar
-        MOV      ESI, EDX
-
-        OR       EBX, -1
-        MOV      ECX, [EDX-4]
-        JECXZ    @@EXIT
-
-@@1:    LODSB
-
-        XCHG     EDX, EAX
-        POP      EAX
-        PUSH     EAX
-
-        PUSH     ECX
-        CALL     IndexOfChar
-        POP      ECX
-        TEST     EAX, EAX
-        JLE      @@NEXT
-
-        TEST     EBX, EBX
-        JLE      @@ASGN
-        CMP      EAX, EBX
-        JGE      @@NEXT
-@@ASGN:
-        XCHG     EAX, EBX
-@@NEXT: LOOP     @@1
-
-@@EXIT: XCHG     EAX, EBX
-        POP      ECX
-        POP      EBX
-        POP      ESI
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function IndexOfCharsMin( const S, Chars : KOLString ) : Integer;
 var I, J : Integer;
 begin
@@ -21468,7 +20727,7 @@ begin
     end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF _D3orHigher}
 function WIndexOfCharsMin( const S, Chars : KOLWideString ) : Integer;
@@ -21572,50 +20831,15 @@ asm
         POP      ESI
         POP      EBX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function IndexOfStr( const S, Sub : KOLString ) : Integer;
 begin
   Result := pos( Sub, S );
   if  Result = 0 then Result := -1;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE} //???
-function Parse( var S : AnsiString; const Separators : AnsiString ) : AnsiString;
-asm
-         PUSH    EBX
-         PUSH    ESI
-         PUSH    EDI
-         MOV     EDI, ECX
-         XCHG    ESI, EAX
-         MOV     EAX, [ESI]
-         CALL    IndexOfCharsMin
-         XCHG    EBX, EAX
-         TEST    EBX, EBX
-         JG      @@1
-         MOV     EAX, [ESI]
-         CALL    System.@LStrLen
-         XCHG    EBX, EAX
-         INC     EBX
-@@1:
-         XOR     EDX, EDX
-         INC     EDX
-         PUSH    EDX
-
-         PUSH    EDI
-         MOV     ECX, EBX
-         DEC     ECX
-         MOV     EAX, [ESI]
-         CALL    System.@LStrCopy
-         XCHG    EAX, ESI
-         MOV     ECX, EBX
-         POP     EDX
-         CALL    System.@LStrDelete
-         POP     EDI
-         POP     ESI
-         POP     EBX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function Parse( var S : KOLString; const Separators : KOLString ) : KOLString;
 var Pos : Integer;
 begin
@@ -21625,7 +20849,7 @@ begin
   Result := Copy( S, 1, Pos-1 );
   Delete( S, 1, Pos );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF _D3orHigher}
 function ParseW( var S : KOLWideString; const Separators : KOLWideString ) : KOLWideString;
@@ -21825,7 +21049,7 @@ asm
         POP     ESI
 end {$IFDEF F_P} [ 'EAX', 'EDX', 'ECX' ] {$ENDIF};
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function AllocMem( Size : Integer ) : Pointer;
 begin
    Result := nil;
@@ -21836,7 +21060,7 @@ begin
      ZeroMemory( Result, Size );
    end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure DisposeMem( var Addr : Pointer );
 begin
@@ -21935,26 +21159,7 @@ begin
   Result := Length( S1 ) - Length( S2 );
 end;
 
-{$IFDEF ASM_VERSION}
-function _WStrComp(S1, S2: PWideChar): Integer;
-asm
-    PUSH  ESI
-    XCHG  ESI, EAX
-    XOR   EAX, EAX
-@@1:
-    LODSW
-    MOV   ECX, EAX
-    SUB   AX, word ptr [EDX]
-    JNZ   @@exit
-    JECXZ @@exit
-    INC   EDX
-    INC   EDX
-    JMP   @@1
-@@exit:
-    MOVSX EAX, AX
-    POP   ESI
-end;
-{$ELSE}
+{$IFDEF ASM_VERSION}{$ELSE}
 function _WStrComp(S1, S2: PWideChar): Integer;
 var
   L, R : PWideChar;
@@ -21976,6 +21181,27 @@ begin
   until (False);
 end;
 {$ENDIF}
+
+function _WStrLComp(S1, S2: PWideChar; Len: Integer): Integer;
+asm
+  {$IFDEF F_P}
+        MOV     EAX, [S1]
+        MOV     EDX, [S2]
+        MOV     ECX, [Len]
+  {$ENDIF F_P}
+        PUSH    EDI
+        PUSH    ESI
+        MOV     EDI,EDX
+        XCHG    ESI,EAX
+        CMP     EAX, EAX
+        REPE    CMPSW
+        MOVZX   EAX, word ptr [ESI-2]
+        MOVZX   EDX, word ptr [EDI-2]
+        SUB     EAX,EDX
+        POP     ESI
+        POP     EDI
+end {$IFDEF F_P} [ 'EAX', 'EDX', 'ECX' ] {$ENDIF};
+
 
 function WStrScan(Str: PWideChar; Chr: WideChar): PWideChar;
 begin
@@ -22048,28 +21274,7 @@ begin
           Integer( R.A[AnsiChar(e2)] ) );
 end;
 
-{$IFDEF ASM_VERSION}
-function _AnsiCompareStrA_Fast2(S1, S2: PAnsiChar): Integer;
-asm
-        CALL     EAX2PChar
-        CALL     EDX2PChar
-        PUSH     ESI
-        XCHG     ESI, EAX
-        XOR      EAX, EAX
-@@1:
-        LODSB
-        MOV      CX, word ptr [EAX*2 + SortAnsiOrder]
-        MOV      AL, [EDX]
-        SUB      CX, word ptr [EAX*2 + SortAnsiOrder]
-        JNZ      @@retCL
-        INC      EDX
-        TEST     AL, AL
-        JNZ      @@1
-@@retCL:
-        MOVSX    EAX, CX
-        POP      ESI
-end;
-{$ELSE ASM_VERSION}
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION}
 function _AnsiCompareStrA_Fast2(S1, S2: PAnsiChar): Integer;
 begin
     if  S1 = nil then
@@ -22086,7 +21291,7 @@ begin
         inc( S2 );
     end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function _AnsiCompareStrA_Fast(S1, S2: PAnsiChar): Integer;
 var c: AnsiChar;
@@ -22150,29 +21355,7 @@ begin
     );
 end;
 
-{$IFDEF ASM_VERSION}
-function _AnsiCompareStrNoCaseA_Fast2(S1, S2: PAnsiChar): Integer;
-asm
-        CALL     EAX2PChar
-        CALL     EDX2PChar
-        PUSH     ESI
-        XCHG     ESI, EAX
-        XOR      EAX, EAX
-@@1:
-        LODSB
-        MOV      CX, word ptr [EAX*2 + SortAnsiOrderNoCase]
-        MOV      AL, [EDX]
-        SUB      CX, word ptr [EAX*2 + SortAnsiOrderNoCase]
-        JNZ      @@retCL
-        INC      EDX
-        TEST     AL, AL
-        JNZ      @@1
-@@retCL:
-        MOVSX    EAX, CX
-        POP      ESI
-end;
-{$ELSE ASM_VERSION}
-
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION}
 //{$DEFINE DEBUG_SORTFAST}
 {$IFDEF DEBUG_SORTFAST}
 var DBSF: Integer;
@@ -22211,7 +21394,7 @@ begin
             '"' + S01 + '" = "' + S02 + '"' )
     {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function _AnsiCompareStrNoCaseA_Fast(S1, S2: PAnsiChar): Integer;
 var c: AnsiChar;
@@ -22296,27 +21479,27 @@ asm
         POP     EDI
 end {$IFDEF F_P} [ 'EAX', 'EDX', 'ECX' ] {$ENDIF};
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function StrPCopy(Dest: PAnsiChar; const Source: Ansistring): PAnsiChar;
 begin
   Result := StrLCopy(Dest, PAnsiChar(Source), Length(Source));
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function StrEq( const S1, S2 : AnsiString ) : Boolean;
 begin
   Result := (Length( S1 ) = Length( S2 )) and
             (LowerCase( S1 ) = LowerCase( S2 ));
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function AnsiEq( const S1, S2 : KOLString ) : Boolean;
 begin
   Result := AnsiCompareStrNoCase( S1, S2 ) = 0;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFNDEF _D2}
 {$IFNDEF _FPC}
@@ -22327,7 +21510,7 @@ end;
 {$ENDIF _FPC}
 {$ENDIF _D2}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function StrIn(const S: AnsiString; const A: array of AnsiString): Boolean;
 var I : Integer;
 begin
@@ -22338,7 +21521,7 @@ begin
       end;
   Result := False;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFNDEF _D2}
 {$IFNDEF _FPC}
@@ -22387,83 +21570,7 @@ begin
   end;
 end;
 
-{$IFDEF ASM_UNICODE}
-function _StrSatisfy( S, Mask : PKOLChar ) : Boolean;
-asm
-    TEST EAX, EAX
-    JZ   @@exit
-        XCHG     ECX, EAX
-        //       EDX <- Mask
-        //       ECX <- S
-        XOR      EAX, EAX
-        MOV      AL, '*'
-@@rest_satisfy:
-        PUSH     ECX
-        PUSH     EDX
-
-@@nx_char:
-        MOV      AH, [EDX]
-        OR       AH, [ECX]
-        JZ       @@fin //@@ret_true
-
-        MOV      AH, 0
-
-        CMP      word ptr [EDX], AX //'*'
-        JE       @@fin //@@ret_true
-
-        CMP      byte ptr [ECX], AH
-        JNE      @@10
-
-        DEC      EDX
-@@1:
-        INC      EDX
-        CMP      byte ptr [EDX], AL //'*'
-        JE       @@1
-
-        CMP      byte ptr [EDX], AH
-        SETZ     AL
-        JMP      @@fin
-
-@@10:   CMP      byte ptr [EDX], AH
-        JE       @@ret_false
-
-        CMP      byte ptr [EDX], '?'
-        JNE      @@11
-
-@@go_nx_char:
-        INC      ECX
-        INC      EDX
-        JMP      @@nx_char
-
-@@11:
-        CMP      byte ptr [EDX], AL //'*'
-        JNE      @@20
-
-        INC      EDX
-@@12:   CMP      byte ptr [ECX], AH
-        JE       @@ret_false
-
-        CALL     @@rest_satisfy
-        TEST     AL, AL
-        JNE      @@fin
-        MOV      AL, '*'
-
-        INC      ECX
-        JMP      @@12
-
-@@20:   MOV      AH, [EDX]
-        XOR      AH, [ECX]
-
-        JE       @@go_nx_char
-@@ret_false:
-        XOR      EAX, EAX
-
-@@fin:
-        POP      EDX
-        POP      ECX
-@@exit:
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function _StrSatisfy( S, Mask : PKOLChar ) : Boolean;
 label next_char;
 begin
@@ -22498,92 +21605,26 @@ next_char:
   Inc( S ); Inc( Mask );
   if Result then goto next_char;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function StrSatisfy( const S, Mask: AnsiString ): Boolean;
-asm
-        PUSH     ESI
-        XCHG     ESI, EAX
-        PUSH     0
-        XCHG     EAX, EDX
-        CALL     EAX2PChar
-        MOV      EDX, ESP
-
-        CMP      byte ptr [EAX], 0
-        JZ       @@0
-        CALL     AnsiLowerCase
-@@0:
-        XCHG     EAX, ESI
-        PUSH     0
-        CALL     EAX2PChar
-        MOV      EDX, ESP
-
-        CMP      byte ptr [EAX], 0
-        JZ       @@1
-        CALL     AnsiLowerCase
-@@1:
-        POP      EAX
-        POP      EDX
-        PUSH     EDX
-        PUSH     EAX
-        CALL     _StrSatisfy
-
-        XCHG     ESI, EAX
-
-        CALL     RemoveStr
-        CALL     RemoveStr
-        XCHG     EAX, ESI
-
-        POP      ESI
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function StrSatisfy( const S, Mask: KOLString ): Boolean;
 begin
+  Result := FALSE;
+  if  (S = '') or (Mask = '') then Exit;
   Result := _StrSatisfy( PKOLChar( {$IFDEF UNICODE_CTRLS} WAnsiLowerCase
                                    {$ELSE} AnsiLowerCase {$ENDIF} ( S ) ),
                          PKOLChar( {$IFDEF UNICODE_CTRLS} WAnsiLowerCase
                                    {$ELSE} AnsiLowerCase {$ENDIF} ( Mask ) ) );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function _2StrSatisfy( S, Mask: PAnsiChar ): Boolean;
-asm     //     //
-        PUSH   EBX
-        PUSH   ECX 
-        XCHG   EBX, EAX
-        PUSH   0
-        MOV    EAX, ESP
-        {$IFDEF _D2009orHigher}
-        XOR      ECX, ECX
-        {$ENDIF}
-        CALL   System.@LStrFromPChar
-        PUSH   0
-        MOV    EAX, ESP
-        MOV    EDX, EBX
-        {$IFDEF _D2009orHigher}
-        XOR      ECX, ECX
-        {$ENDIF}
-        CALL   System.@LStrFromPChar
-        POP    EAX
-        POP    EDX
-        PUSH   EDX
-        PUSH   EAX
-        CALL   StrSatisfy
-        XCHG   EBX, EAX
-        CALL   RemoveStr
-        CALL   RemoveStr
-        XCHG   EAX, EBX
-        POP    ECX
-        POP    EBX
-end;
-{$ELSE ASM_VERSION} // Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} // Pascal
 function _2StrSatisfy( S, Mask: PKOLChar ): Boolean;
 begin
   Result := StrSatisfy( S, Mask );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function StrReplace( var S: KOLString; const From, ReplTo: KOLString ): Boolean;
 var I: Integer;
@@ -22678,7 +21719,7 @@ begin
   {$ELSE}
   for I := 0 to Count-1 do
     Move( S[ 1 ], Result[ 1 + I * L ], L * Sizeof( WideChar ) );
-  {$ENDIF ASM_VERSION}
+  {$ENDIF PAS_VERSION}
 end;
 {$ENDIF _D2}
 {$ENDIF _FPC}
@@ -22745,10 +21786,10 @@ begin
   for I := 0 to Count-1 do
       Move( S[ 1 ], Result[ 1 + I * L * Sizeof(KOLChar) ], L );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_noVERSION}
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure NormalizeUnixText( var S: AnsiString );
 var I, J, N: Integer;
 begin
@@ -22783,7 +21824,7 @@ begin
     end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 var Koi8_to_Ansi: array[ Char ] of AnsiChar;
 procedure Koi8ToAnsi( s: PAnsiChar );
@@ -23056,7 +22097,7 @@ asm
 end {$IFDEF F_P} [ 'EAX', 'EDX', 'ECX' ] {$ENDIF};
 
 {$IFDEF ASM_UNICODE}
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function __DelimiterLast( Str, Delimiters: PKOLChar ): PKOLChar;
 var
     P, F : PKOLChar;
@@ -23073,7 +22114,7 @@ begin
     Inc( Delimiters );
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF _D3orHigher}
 function W__DelimiterLast( Str, Delimiters: PWideChar ): PWideChar;
@@ -23095,50 +22136,15 @@ end;
 
 {$IFDEF WIN}
 {$IFNDEF PARAMS_DEFAULT}
-{$IFDEF ASM_UNICODE}
-function SkipSpaces( P: PKOLChar ): PKOLChar;
-asm
-         DEC   EAX
-@@loop:  INC   EAX
-         CMP   byte ptr [EAX], 0
-         JE    @@exit
-         CMP   byte ptr [EAX], ' '
-         JBE   @@loop
-@@exit:
-end;
-{$ELSE PAS_VERSION}
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION}
 function SkipSpaces( P: PKOLChar ): PKOLChar;
 begin
   while (P[0] <> #0) and (P[0] <= ' ') do Inc(P);
-  {while True do
-  begin
-      while (P[0] <> #0) and (P[0] <= ' ') do Inc(P);
-      if (P[0] = '"') and (P[1] = '"') then Inc(P, 2) else Break;
-  end;}
   Result := P;
 end;
 {$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function SkipParam(P: PKOLChar): PKOLChar;
-asm
-         CALL  SkipSpaces
-@@while: CMP   byte ptr [EAX], ' '
-         JBE   @@exit
-         CMP   byte ptr [EAX], '"'
-         JNE   @@incP_goLoop
-@@untilQuot:
-         INC   EAX
-         CMP   byte ptr [EAX], 0
-         JE    @@exit
-         CMP   byte ptr [EAX], '"'
-         JNE   @@untilQuot
-@@incP_goLoop:
-         INC   EAX
-         JMP   @@while
-@@exit:
-end;
-{$ELSE}
+{$IFDEF ASM_UNICODE}{$ELSE}
 function SkipParam(P: PKOLChar): PKOLChar;
 begin
   P := SkipSpaces( P );
@@ -23154,7 +22160,14 @@ begin
 end;
 {$ENDIF}
 
+{$UNDEF ASM_LOCAL}
+{$IFDEF _D3orHigher}
 {$IFDEF ASM_UNICODE}
+        {$DEFINE ASM_LOCAL}
+{$ENDIF ASM_UNICODE}
+{$ENDIF _D3orHigher}
+
+{$IFDEF ASM_LOCAL}
 function ParamStr( Idx: Integer ): KOLString;
 asm
          PUSH EDI
@@ -23211,11 +22224,8 @@ begin
     repeat
       P1 := SkipSpaces( P );
       P := SkipParam(P1);
-      //if Idx = 0 then Break;
       Dec(Idx);
     until (Idx < 0); // or (P = P1);
-    //SetString( Result, P1, P-P1 );
-    //if Length( Result ) >= 2 then
     if  Integer(P-P1) >= 2 then
     if (P1^ = '"') and ( (P-1)^ = '"') then
     begin
@@ -23223,25 +22233,13 @@ begin
         dec( P );
     end;
     SetString( Result, P1, P-P1 );
-      //Result := Copy( Result, 2, Length( Result ) - 2 );
   end;
 end;
 {$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION}
 function ParamCount: Integer;
-asm
-         CALL GetCommandLine
-         OR   EDX, -1
-@@while: INC  EDX
-         CALL SkipParam
-         CALL SkipSpaces
-         CMP  byte ptr [EAX], 0
-         JNE  @@while
-end;
-{$ELSE PAS_VERSION}
-function ParamCount: Integer;
-var p: PChar;
+var p: PKOLChar;
 begin
     p := GetCommandLine;
     Result := -1;
@@ -23253,77 +22251,10 @@ begin
     end;
 end;
 {$ENDIF PAS_VERSION}
-{var
-  S: KOLString;
-begin
-  Result := 0;
-  while True do
-  begin
-    S := ParamStr(Result + 1);
-    if S = '' then Break;
-    Inc(Result);
-  end;
-end;}
 {$ENDIF PARAMS_DEFAULT}
 {$ENDIF WIN}
 
-{$IFDEF ASM_UNICODE}
-function __DelimiterLast( Str: PAnsiChar; Delimiters: PAnsiChar ): PAnsiChar;
-asm
-        PUSH     ESI
-
-        CALL     EAX2PChar
-
-        MOV      ESI, EDX
-        MOV      EDX, EAX
-
-@@tolast:
-        CMP      byte ptr [EAX], 0
-        JZ       @@next1
-        INC      EAX
-        JMP      @@tolast
-
-@@next1:
-        PUSH     EAX
-
-@@next:
-        LODSB
-        TEST     AL, AL
-        JZ       @@exit
-
-        PUSH     EDX
-        XCHG     EDX, EAX
-        CALL     StrRScan
-        POP      EDX
-
-        TEST     EAX, EAX
-        JZ       @@next
-
-        POP      ECX
-        CMP      byte ptr [ECX], 0
-        JZ       @@next1
-
-        CMP      EAX, ECX
-        JG       @@next1
-
-        PUSH     ECX
-        JLE      @@next
-
-@@exit: POP      EAX
-        POP      ESI
-end;
-
-function DelimiterLast( const Str, Delimiters: AnsiString ): Integer;
-asm
-        CALL     EAX2PChar
-        CALL     EDX2PChar
-        PUSH     EAX
-        CALL     __DelimiterLast
-        POP      EDX
-        SUB      EAX, EDX
-        INC      EAX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function DelimiterLast( const Str, Delimiters: KOLString ): Integer;
 var PStr: PKOLChar;
 begin
@@ -23333,30 +22264,10 @@ begin
           + {$IFDEF UNICODE_CTRLS} 2 {$ELSE} 1 {$ENDIF}; // {Viman}
   {$IFDEF UNICODE_CTRLS} Result := Result div SizeOf( WideChar ) {$ENDIF};
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 // Thanks to Marco Bobba - Marisa Bo for this code
-{$IFDEF ASM_UNICODE}
-function StrIsStartingFrom( Str, Pattern: PKOLChar ): Boolean;
-asm
-  {$IFDEF F_P}
-        MOV     EAX, [Str]
-        MOV     EDX, [Pattern]
-  {$ENDIF F_P}
-        XOR     ECX, ECX
-      @@1:
-        MOV     CL, [EDX]   // pattern[ i ]
-        INC     EDX
-        MOV     CH, [EAX]   // str[ i ]
-        INC     EAX
-        JECXZ   @@2         // str = pattern; CL = #0, CH = #0
-        CMP     CL, CH
-        JE      @@1
-      @@2:
-        TEST    CL, CL
-        SETZ    AL
-end {$IFDEF F_P} [ 'EAX', 'EDX', 'ECX' ] {$ENDIF};
-{$ELSE}
+{$IFDEF ASM_UNICODE}{$ELSE}
 function StrIsStartingFrom( Str, Pattern: PKOLChar ): Boolean;
 begin
   Result := FALSE;
@@ -23409,50 +22320,7 @@ asm
 end {$IFDEF F_P} [ 'EAX', 'EDX', 'ECX' ] {$ENDIF};
 {$IFDEF WIN}
 {$IFNDEF _FPC}
-{$IFDEF ASM_UNICODE}
-function Format( const fmt: KOLString; params: array of const ): AnsiString;
-asm
-        PUSH    ESI
-        PUSH    EDI
-        PUSH    EBX
-        MOV     EBX, ESP
-        {$IFDEF UNICODE_CTRLS}
-        ADD     ESP, -2048
-        {$ELSE}
-        ADD     ESP, -1024
-        {$ENDIF}
-        MOV     ESI, ESP
-
-        INC     ECX
-        JZ      @@2
-@@1:
-        MOV     EDI, [EDX + ECX*8 - 8]
-        PUSH    EDI
-        LOOP    @@1
-@@2:
-        PUSH    ESP
-        PUSH    EAX
-        PUSH    ESI
-
-        CALL    wvsprintf
-
-        MOV     EDX, ESI
-        MOV     EAX, @Result
-        {$IFDEF _D2009orHigher}
-        PUSH     ECX
-        XOR      ECX, ECX
-        {$ENDIF}
-        CALL    System.@LStrFromPChar
-        {$IFDEF _D2009orHigher}
-        POP      ECX
-        {$ENDIF}
-
-        MOV     ESP, EBX
-        POP     EBX
-        POP     EDI
-        POP     ESI
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function Format( const fmt: KOLString; params: Array of const ): KOLString;
 var Buffer: array[ 0..1023 ] of KOLChar;
     ElsArray, El: PDWORD;
@@ -23475,7 +22343,7 @@ begin
   if ElsArray <> nil then
      FreeMem( ElsArray );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF WIN}
 
 function LStrFromPWCharLen(Source: PWideChar; Length: Integer): AnsiString;
@@ -23563,10 +22431,10 @@ end;
 {$UNDEF ASM_LOCAL}
 {$IFDEF ASM_VERSION}
   {$DEFINE ASM_LOCAL}
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF WIN}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function FileCreate(const FileName: KOLString; OpenFlags: DWord): THandle;
 var Attr: DWORD;
 begin
@@ -23576,7 +22444,7 @@ begin
                         OpenFlags and $F, nil, (OpenFlags shr 8) and $F,
                         Attr, 0 );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF WIN}
 
 {$IFDEF _D3orHigher}
@@ -23592,67 +22460,16 @@ end;
 {$ENDIF _D3orHigher}
 
 {$IFDEF WIN}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function FileClose(Handle: THandle): Boolean;
 begin
      Result := CloseHandle(Handle);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF WIN}
 
 {$IFDEF WIN}
-{$IFDEF ASM_UNICODE}
-function FileExists( const FileName : KOLString ) : Boolean;
-const size_TWin32FindData = sizeof( {$IFDEF UNICODE_CTRLS} TWin32FindDataW {$ELSE} TWin32FindDataA {$ENDIF} );
-      Size_TFindFileData = (sizeof(TFindFileData) + 3) and not 3;
-asm
-{$IFDEF FILE_EXISTS_EX}
-        PUSH     EBX
-        MOV      BL, 0
-        PUSH     EAX
-        PUSH     SEM_NOOPENFILEERRORBOX or SEM_FAILCRITICALERRORS
-        CALL     SetErrorMode
-        XCHG     EAX, [ESP]
-        SUB      ESP, Size_TFindFileData
-        MOV      EDX, ESP
-        CALL     Find_First
-        TEST     AL, AL
-        JZ       @@fin
-        MOV      EAX, ESP
-        CALL     Find_Close
-        TEST     byte ptr [ESP].TFindFileData.dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY
-        JNZ      @@fin
-        PUSH     ESP
-        LEA      EAX, [ESP+4].TFindFileData.ftLastWriteTime
-        PUSH     EAX
-        CALL     FileTimeToLocalFileTime
-        LEA      EAX, [ESP+8]
-        PUSH     EAX
-        INC      EAX
-        INC      EAX
-        PUSH     EAX
-        SUB      EAX, 10
-        PUSH     EAX
-        CALL     FileTimeToDOSDateTime
-        TEST     EAX, EAX
-        SETNZ    BL
-@@fin:  ADD      ESP, Size_TFindFileData
-        CALL     SetErrorMode
-        XCHG     EAX, EBX
-        POP      EBX
-{$ELSE}
-        CALL     EAX2PChar
-        PUSH     EAX
-        CALL     GetFileAttributes
-        INC      EAX
-        JZ       @@exit
-        DEC      EAX
-        {$IFDEF PARANOIA} DB $24, FILE_ATTRIBUTE_DIRECTORY {$ELSE} AND AL, FILE_ATTRIBUTE_DIRECTORY {$ENDIF}
-        SETZ     AL
-@@exit:
-{$ENDIF}
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function FileExists( const FileName : KOLString ) : Boolean;
 {$IFDEF FILE_EXISTS_EX}
 var FD: TFindFileData;
@@ -23682,7 +22499,7 @@ begin
   Result := (Code <> -1) and (FILE_ATTRIBUTE_DIRECTORY and Code = 0);
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF WIN}
 
 {$IFDEF _D3orHigher}
@@ -23721,7 +22538,7 @@ asm
         PUSH     EAX
         CALL     SetFilePointer
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function FileSeek(Handle: THandle; {$IFNDEF STREAM_COMPAT} const {$ENDIF} MoveTo: TStrmMove; MoveMethod: TMoveMethod): TStrmSize;
 {$IFDEF STREAM_LARGE64}
 var HiPtr: DWORD;
@@ -23739,20 +22556,20 @@ begin
   Result := SetFilePointer(Handle, MoveTo, nil, Ord( MoveMethod ) );
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF WIN}
 
 {$IFDEF WIN}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function FileRead(Handle: THandle; var Buffer; Count: DWord): DWord;
 begin
      if not ReadFile(Handle, Buffer, Count, Result, nil) then
        Result := 0;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF WIN}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function File2Str(Handle: THandle): AnsiString;
 var Pos, Size: DWORD;
 begin
@@ -23764,7 +22581,7 @@ begin
   FileRead( Handle, Result[ 1 ], Size - Pos );
   Result[ Size - Pos + 1 ] := #0;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFNDEF _D2}
 function File2WStr(Handle: THandle): KOLWideString;
@@ -23781,16 +22598,16 @@ end;
 {$ENDIF _D2}
 
 {$IFDEF WIN}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function FileWrite(Handle: THandle; const Buffer; Count: DWord): DWord;
 begin
      if not WriteFile(Handle, Buffer, Count, Result, nil) then
        Result := 0;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF WIN}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function FileEOF( Handle: THandle ) : Boolean;
 var Siz, Pos : DWord;
 begin
@@ -23798,7 +22615,7 @@ begin
   Pos := FileSeek( Handle, 0, spCurrent );
   Result := Pos >= Siz;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF WIN}
 {$IFDEF ASM_noVERSION_UNICODE}
@@ -23893,7 +22710,7 @@ asm
         POP      ESI
         POP      EBX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function FileFullPath( const FileName: KOLString ) : KOLString;
 var SFI: TShFileInfo;
     Src, S: KOLString;
@@ -23921,7 +22738,7 @@ begin
   // in the Explorer:
     Result := Result + ExtractFileExt( FileName );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF WIN}
 
 {$IFDEF WIN}
@@ -24092,35 +22909,7 @@ begin
 end;
 {$ENDIF WIN}
 
-{$IFDEF ASM_VERSION}
-procedure FileTime( const Path: KOLString;
-  CreateTime, LastAccessTime, LastModifyTime: PFileTime ); stdcall;
-const Size_TFindFileData = (sizeof(TFindFileData) + 3) and not 3;
-asm
-          PUSH  ESI
-          PUSH  EDI
-          SUB   ESP, Size_TFindFileData
-          MOV   EDX, ESP
-          MOV   EAX, [Path]
-          CALL  Find_First
-          TEST  AL, AL
-          JZ    @@exit
-          MOV   EAX, ESP
-          CALL  Find_Close
-          XOR   ECX, ECX
-          MOV   CL, 3
-@@loop:   LEA   ESI, [ESP+ECX*8-8].TFindFileData.ftCreationTime
-          MOV   EDI, [ECX*4+EBP+8]
-          TEST  EDI, EDI
-          JZ    @@e_loop
-          MOVSD
-          MOVSD
-@@e_loop: LOOP  @@loop
-@@exit:   ADD   ESP, Size_TFindFileData
-          POP   EDI
-          POP   ESI
-end;
-{$ELSE PAS_VERSION}
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION}
 procedure FileTime( const Path: KOLString;
   CreateTime, LastAccessTime, LastModifyTime: PFileTime ); stdcall;
 var FD : TFindFileData;
@@ -24170,8 +22959,11 @@ begin
 end;
 
 {$IFDEF WIN}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function CompareSystemTime(const D1, D2 : TSystemTime) : Integer;
+{$IFDEF DATE0_1601}
+var ft1, ft2: TFileTime;
+{$ELSE}
 var R: Integer;
    procedure CompareFields(const F1, F2 : Integer);
    begin
@@ -24181,7 +22973,13 @@ var R: Integer;
            R := -1
       else R := 1;
    end;
+{$ENDIF DATE0_0001}
 begin
+   {$IFDEF DATE0_1601}
+   SystemTimeToFileTime( D1, ft1 );
+   SystemTimeToFileTime( D2, ft2 );
+   Result := CompareFileTime( ft1, ft2 );
+   {$ELSE}
    R := 0;
    CompareFields( D1.wYear, D2.wYear );
    CompareFields( D1.wMonth, D2.wMonth );
@@ -24191,8 +22989,9 @@ begin
    CompareFields( D1.wSecond, D2.wSecond );
    CompareFields( D1.wMilliseconds, D2.wMilliseconds );
    Result := R;
+   {$ENDIF DATE0_0001}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function FileTimeCompare( const FT1, FT2 : TFileTime ) : Integer;
 begin
@@ -24201,7 +23000,7 @@ end;
 {$ENDIF WIN}
 
 {$IFDEF WIN}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function DirectoryExists(const Name: KOLString): Boolean;
 var
   Code: Integer;
@@ -24212,44 +23011,9 @@ begin
   Result := (Code <> -1) and (FILE_ATTRIBUTE_DIRECTORY and Code <> 0);
   SetErrorMode( e );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function DiskPresent( const DrivePath: KOLString ): Boolean;
-asm
-         PUSH  EBX
-         MOV   BH, 0
-         TEST  EAX, EAX
-         JZ    @@dirExists
-         CMP   byte ptr [EAX], '\'
-         JZ    @@dirExists
-         PUSH  EAX
-         PUSH  EAX
-         CALL  GetDriveType
-         CMP   AL, DRIVE_REMOVABLE
-         JE    @@setErrMode
-         CMP   AL, DRIVE_CDROM
-         JE    @@setErrMode
-         CMP   AL, DRIVE_RAMDISK
-         JNE   @@popPath_dirExists
-@@setErrMode:
-         INC   BH
-         PUSH  SEM_NOOPENFILEERRORBOX or SEM_FAILCRITICALERRORS
-         CALL  SetErrorMode
-         XCHG  [ESP], EAX
-         PUSH  EAX
-@@popPath_dirExists:
-         POP   EAX
-@@dirExists:
-         CALL  DirectoryExists
-         MOV   BL, AL
-         TEST  BH, BH
-         JZ    @@exit
-         CALL  SetErrorMode
-@@exit:  XCHG  EAX, EBX
-         POP   EBX
-end;
-{$ELSE  PAS_VERSION}
+{$IFDEF ASM_UNICODE}{$ELSE  PAS_VERSION}
 function DiskPresent( const DrivePath: KOLString ): Boolean;
 var e: DWORD;
     restore: Boolean;
@@ -24317,40 +23081,7 @@ begin
   Result := not CheckDirectoryContent( Path, TRUE, '*.*' );
 end;
 
-{$IFDEF ASM_UNICODE}
-function GetStartDir : AnsiString;
-asm
-        PUSH     EBX
-        MOV      EBX, EAX
-
-        XOR      EAX, EAX
-        MOV      AH, 2
-        SUB      ESP, EAX
-        MOV      EDX, ESP
-        PUSH     EAX
-        PUSH     EDX
-        PUSH     0
-        CALL     GetModuleFileName // in KOL_ANSI
-
-        LEA      EDX, [ESP + EAX]
-@@1:    DEC      EDX
-        CMP      byte ptr [EDX], '\'
-        JNZ      @@1
-
-        INC      EDX
-        MOV      byte ptr [EDX], 0
-
-        MOV      EAX, EBX
-        MOV      EDX, ESP
-        {$IFDEF _D2009orHigher}
-        XOR      ECX, ECX
-        {$ENDIF}
-        CALL     System.@LStrFromPChar // AnsiSafe!
-
-        ADD      ESP, 200h
-        POP      EBX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
   {$IFDEF WIN}
     {$UNDEF LINUX_USE_HOME_STARTFDIR}
   {$ENDIF}
@@ -24373,7 +23104,7 @@ begin
     Result := Buffer;
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function ExePath: KOLString;
 var Buffer: array[ 0..MAX_PATH+1 ] of KOLChar;
@@ -24436,49 +23167,14 @@ begin
     Delete( Result, Length( Result ), 1 );
 end;
 
-{$IFDEF ASM_UNICODE}
-function IncludeTrailingChar( const S: KOLString; C: KOLChar ): KOLString;
-asm
-  push edx
-  push ecx
-  xchg ecx, eax
-  xchg edx, ecx
-  call System.@LStrAsg
-  pop  eax
-  pop  edx
-  mov  ecx, [eax]
-  jecxz @@1
-  add  ecx, [ecx-4]
-  dec  ecx
-  cmp  byte ptr [ecx], dl
-  jz   @@exit
-@@1:
-  push eax
-  push 0
-  mov  eax, esp
-  {$IFDEF _D2009orHigher}
-  //push ecx
-  xor ecx, ecx
-  {$ENDIF}
-  call System.@LStrFromChar
-  {$IFDEF _D2009orHigher}
-  //pop  ecx
-  {$ENDIF}
-  mov  edx, [esp]
-  mov  eax, [esp+4]
-  call System.@LStrCat 
-  call RemoveStr
-  pop  eax
-@@exit:
-end;
-{$ELSE PASCAL}
+{$IFDEF ASM_UNICODE}{$ELSE PASCAL}
 function IncludeTrailingChar( const S: KOLString; C: KOLChar ): KOLString;
 begin
   Result := S;
   if (Result = '') or (Result[ Length( Result ) ] <> C) then
     Result := Result + KOLString(C);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 
 //---------------------------------------------------------
@@ -24556,7 +23252,7 @@ begin
        Result := ''
   else Result := Copy( Path, 1, P - P0 + 1 );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF _D3orHigher}
 function WExtractFilePath( const Path: KOLWideString ) : KOLWideString;
@@ -24573,34 +23269,14 @@ end;
 {$IFDEF ASM_VERSION}{$IFNDEF _D2}
 {$DEFINE ASM_LStrFromPCharLen}
 {$ENDIF}
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function IsNetworkPath( const Path: KOLString ): Boolean;
 begin
   Result := (Length( Path ) >= 2) and (Path[1] = '\') and (Path[2] = '\');
 end;
 
-{$IFDEF ASM_UNICODE}
-const
-  DirDelimiters: PAnsiChar = ':\/';
-function ExtractFileName( const Path : AnsiString ) : AnsiString;
-asm
-        PUSH     EDX
-        PUSH     EAX
-        MOV      EDX, [DirDelimiters]
-        CALL     __DelimiterLast
-        POP      EDX
-        CMP      byte ptr [EAX], 0
-        JZ       @@1
-        XCHG     EDX, EAX
-        INC      EDX
-@@1:    POP      EAX
-        {$IFDEF _D2009orHigher}
-        XOR      ECX, ECX 
-        {$ENDIF}
-        CALL     System.@LStrFromPChar // Safe!
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function ExtractFileName( const Path : KOLString ) : KOLString;
 var P: PKOLChar;
 begin
@@ -24609,108 +23285,26 @@ begin
        Result := Path
   else Result := P + 1;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function ExtractFileNameWOext( const Path : KOLString ) : KOLString;
-asm
-  push ebx
-
-  push edx
-  push eax
-  call ExtractFileName
-  pop  edx // Path - не нужен больше
-  mov  eax, [esp] // eax = Result = ExtractFileName(Path)
-  mov  eax, [eax]
-  push 0
-  mov  edx, esp
-  call ExtractFileExt
-  mov  eax, [esp]
-  call System.@LStrLen
-  xchg ebx, eax   // ebx = Length(ExtractFileExt(Result))
-  call RemoveStr  // ExtractFileExt - больше не нужен
-  mov  eax, [esp]
-  mov  eax, [eax]
-  call System.@LStrLen // eax = Length(Result)
-  sub  eax, ebx
-  xchg ecx, eax
-  xor  edx, edx
-  inc  edx
-  mov  eax, [esp]
-  mov  eax, [eax]
-  call System.@LStrCopy
-
-  pop  ebx
-end;
-{$ELSE PASCAL}
+{$IFDEF ASM_UNICODE}{$ELSE PASCAL}
 function ExtractFileNameWOext( const Path : KOLString ) : KOLString;
 begin
   Result := ExtractFileName( Path );
   Result := Copy( Result, 1, Length( Result ) - Length( ExtractFileExt( Result ) ) );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-const
-  ExtDelimeters: PAnsiChar = '.';
-
-function ExtractFileExt( const Path : KOLString ) : KOLString;
-asm
-        PUSH     EDX
-        MOV      EDX, [ExtDelimeters]
-        CALL     EAX2PChar
-        CALL     __DelimiterLast
-@@1:    XCHG     EDX, EAX
-        POP      EAX
-        {$IFDEF _D2009orHigher}
-        PUSH     ECX
-        XOR      ECX, ECX
-        {$ENDIF}
-        CALL     System.@LStrFromPChar
-        {$IFDEF _D2009orHigher}
-        POP      ECX // this routine hasn't touch ECX
-        {$ENDIF}
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function ExtractFileExt( const Path : KOLString ) : KOLString;
 var P: PKOLChar;
 begin
   P := __DelimiterLast( PKOLChar( Path ), '.' );
   Result := P;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function ReplaceExt( const Path, NewExt: KOLString ): KOLString;
-asm
-  push ecx // result
-  push edx // NewExt
-  push eax // Path
-
-  push 0
-  mov  edx, esp
-  call ExtractFilePath
-  pop  eax
-  xchg [esp], eax // eax=Path, Path in stack replaced with ExtractFilePath(Path)
-
-  push 0
-  mov  edx, esp
-  call ExtractFileNameWOext
-  // now stack conatins: result,NewExt,ExtractFilePath(Path),ExtractFileNameWOext(Path)<-ESP
-
-  mov  eax, [esp+12]
-  mov  edx, esp
-  push dword ptr [edx+4] // ExtractFilePath(Path)
-  push dword ptr [edx]   // ExtractFileNameWOext(Path)
-  push dword ptr [edx+8] // NewExt
-  mov  edx,  3
-  call System.@LStrCatN
-  call RemoveStr
-  call RemoveStr
-  pop  ecx
-  pop  ecx
-end;
-{$ELSE PASCAL}
+{$IFDEF ASM_UNICODE}{$ELSE PASCAL}
 function ReplaceExt( const Path, NewExt: KOLString ): KOLString;
 begin
   Result := ExtractFilePath( Path ) + ExtractFileNameWOext( Path ) +
@@ -24878,26 +23472,7 @@ begin
 end;
 {$ENDIF GDI}
 
-{$IFDEF ASM_UNICODE}
-function GetSystemDir: KOLString;
-asm
-         PUSH  EBX
-         XCHG  EBX, EAX
-         SUB   ESP, MAX_PATH
-         MOV   EAX, ESP
-         PUSH  MAX_PATH
-         PUSH  EAX
-         CALL  GetSystemDirectory
-         MOV   EAX, EBX
-         MOV   EDX, ESP
-         CALL  System.@LStrFromPChar
-         MOV   EDX, EBX
-         MOV   EAX, [EDX]
-         CALL  IncludeTrailingPathDelimiter
-         ADD   ESP, MAX_PATH
-         POP   EBX
-end;
-{$ELSE  PAS_VERSION}
+{$IFDEF ASM_UNICODE}{$ELSE  PAS_VERSION}
 function GetSystemDir: KOLString;
 var Buf: array[ 0..MAX_PATH-1 ] of KOLChar;
 begin
@@ -24906,26 +23481,7 @@ begin
 end;
 {$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function GetWindowsDir : KOLString;
-asm
-         PUSH  EBX
-         XCHG  EBX, EAX
-         SUB   ESP, MAX_PATH
-         MOV   EAX, ESP
-         PUSH  MAX_PATH
-         PUSH  EAX
-         CALL  GetWindowsDirectory
-         MOV   EAX, EBX
-         MOV   EDX, ESP
-         CALL  System.@LStrFromPChar
-         MOV   EDX, EBX
-         MOV   EAX, [EDX]
-         CALL  IncludeTrailingPathDelimiter
-         ADD   ESP, MAX_PATH
-         POP   EBX
-end;
-{$ELSE  PAS_VERSION}
+{$IFDEF ASM_UNICODE}{$ELSE  PAS_VERSION}
 function GetWindowsDir : KOLString;
 var Buf : array[ 0..MAX_PATH-1 ] of KOLChar;
 begin
@@ -24934,25 +23490,7 @@ begin
 end;
 {$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function GetWorkDir : KOLString;
-asm
-         PUSH  EBX
-         XCHG  EBX, EAX
-         SUB   ESP, MAX_PATH
-         PUSH  ESP
-         PUSH  MAX_PATH
-         CALL  GetCurrentDirectory
-         MOV   EAX, EBX
-         MOV   EDX, ESP
-         CALL  System.@LStrFromPChar
-         MOV   EDX, EBX
-         MOV   EAX, [EDX]
-         CALL  IncludeTrailingPathDelimiter
-         ADD   ESP, MAX_PATH
-         POP   EBX
-end;
-{$ELSE  PAS_VERSION}
+{$IFDEF ASM_UNICODE}{$ELSE  PAS_VERSION}
 function GetWorkDir : KOLString;
 var Buf: array[ 0..MAX_PATH ] of KOLChar;
 begin
@@ -24962,26 +23500,7 @@ end;
 {$ENDIF PAS_VERSION}
 {$ENDIF WIN}
 
-{$IFDEF ASM_UNICODE}
-function GetTempDir : KOLString;
-asm
-  push eax
-  sub esp, 264
-  push esp
-  push 261
-  call GetTempPath
-  mov  edx, esp
-  mov  eax, [esp+264]
-  {$IFDEF _D2009orHigher}
-  xor  ecx, ecx 
-  {$ENDIF}
-  call System.@LStrFromPChar
-  add esp, 264
-  pop edx
-  mov eax, [edx]
-  call IncludeTrailingPathDelimiter
-end;
-{$ELSE PASCAL}
+{$IFDEF ASM_UNICODE}{$ELSE PASCAL}
 function GetTempDir : KOLString;
 {$IFDEF WIN} var Buf : Array[ 0..MAX_PATH ] of KOLChar; {$ENDIF WIN}
 begin
@@ -24993,34 +23512,14 @@ end;
 {$ENDIF}
 
 {$IFDEF WIN}
-{$IFDEF ASM_UNICODE}
-function CreateTempFile( const DirPath, Prefix: KOLString ): KOLString;
-asm
-  push ecx
-  call EAX2PCHAR
-  call EDX2PCHAR
-  sub  esp, 264
-  push esp
-  push 0
-  push edx
-  push eax
-  call GetTempFileName
-  mov  eax, [esp+264]
-  mov  edx, esp
-  {$IFDEF _D2009orHigher}
-  xor ecx, ecx // ecx is argument
-  {$ENDIF}
-  call System.@LStrFromPChar
-  add  esp, 268
-end;
-{$ELSE PASCAL}
+{$IFDEF ASM_UNICODE}{$ELSE PASCAL}
 function CreateTempFile( const DirPath, Prefix: KOLString ): KOLString;
 var Buf: array[ 0..MAX_PATH ] of KOLChar;
 begin
   GetTempFileName( PKOLChar( DirPath ), PKOLChar( Prefix ), 0, Buf );
   Result := Buf;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF WIN}
 
 function GetFileListStr(FPath{e.g.'c:\tmp\'}, FMask{e.g.'*.*'}: KOLString): KOLString;
@@ -25180,47 +23679,30 @@ begin
   Result.ScanDirectoryEx( DirPath, Filters, Attr );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TDirList.Clear;
 begin
   Free_And_Nil( FListPositions );
   Free_And_Nil( fStoreFiles );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 destructor TDirList.Destroy;
 begin
   Clear;
   FPath := '';
   inherited;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function FindFilter( const Filter: AnsiString): AnsiString;
-asm
-        XCHG     EAX, EDX
-        PUSH     EAX
-        CALL     System.@LStrAsg
-        POP      EAX
-        CMP      dword ptr [EAX], 0
-        JNE      @@exit
-        LEA      EDX, @@mask_all
-        {$IFDEF _D2009orHigher}
-        XOR      ECX, ECX 
-        {$ENDIF}
-        JE       System.@LStrFromPChar
-@@mask_all:  DB  '*.*',0
-@@exit:
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function FindFilter(const Filter: KOLString): KOLString;
 begin
   Result := Filter;
   if Result = '' then Result := '*.*';
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TDirList.Get(Idx: Integer): PFindFileData;
 begin
@@ -25232,48 +23714,21 @@ begin
   {$ENDIF}
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TDirList.GetCount: Integer;
 begin
   Result := 0;
   if FListPositions = nil then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
   Result := FListPositions.Count;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF noASM_UNICODE}
-function TDirList.GetNames(Idx: Integer): Ansistring;
-asm
-        MOV      EAX, [EAX].fList
-        {$IFDEF TLIST_FAST}
-        PUSH     ECX
-        CALL     TList.Get
-        LEA      EDX, [EAX + offset TWin32FindData.cFileName] //
-        POP      EAX
-        {$IFDEF _D2009orHigher}
-        XOR      ECX, ECX
-        {$ENDIF}
-        CALL     System.@LStrFromPChar
-        {$ELSE}
-        MOV      EAX, [EAX].TList.fItems
-        MOV      EDX, [EAX + EDX*4]
-        ADD      EDX, offset TWin32FindData.cFileName //
-        MOV      EAX, ECX
-          {$IFDEF _D2009orHigher}
-          XOR      ECX, ECX
-          {$ENDIF}
-        CALL     System.@LStrFromPChar
-        {$ENDIF}
-end;
-{$ELSE ASM_VERSION} //Pascal
 function TDirList.GetNames(Idx: Integer): KOLString;
 var FData: PFindFileData;
 begin
-  //Result := PKOLChar(@PFindFileData(fList.Items[ Idx ]).cFileName[0]);
   FData := Get( Idx );
   Result := FData.cFileName;
 end;
-{$ENDIF ASM_VERSION}
 
 function TDirList.GetIsDirectory(Idx: Integer): Boolean;
 begin
@@ -25387,7 +23842,7 @@ asm
         POP      ESI
         POP      EBX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function TDirList.SatisfyFilter(FileName: PKOLChar; FileAttr,
   FindAttr: DWord): Boolean;
 {$IFDEF F_P}
@@ -25438,7 +23893,7 @@ begin
 
   Result := HasOnlyNegFilters and not dots;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_nononoVERSION}
 procedure TDirList.ScanDirectory(const DirPath, Filter: KOLString;
@@ -25589,7 +24044,7 @@ asm
         POP      EDI
         POP      EBX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TDirList.ScanDirectory(const DirPath, Filter: KOLString;
   Attr: DWord);
 var FindData : TFindFileData;
@@ -25690,65 +24145,9 @@ begin
   end;
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-procedure TDirList.ScanDirectoryEx(const DirPath, Filters: AnsiString;
-  Attr: DWord);
-asm
-        PUSH     EBX
-        MOV      EBX, EAX
-
-        PUSHAD
-        LEA      EAX, [EBX].fFilters
-        CALL     Free_And_Nil
-
-        CALL     NewStrList
-        MOV      [EBX].fFilters, EAX
-        POPAD
-
-        PUSHAD
-        PUSH     0
-        MOV      EAX, ESP
-        MOV      EDX, ECX
-        CALL     System.@LStrLAsg
-@@1:    MOV      ECX, [ESP]
-        JECXZ    @@2
-        MOV      EAX, ESP
-        MOV      EDX, offset[@@semicolon]
-        PUSH     0
-        MOV      ECX, ESP
-        CALL     Parse
-        MOV      EAX, [ESP]
-        MOV      EDX, ESP
-        CALL     Trim
-        POP      EDX
-        PUSH     EDX
-        TEST     EDX, EDX
-        JZ       @@filt_added
-        MOV      EAX, [EBX].fFilters
-        CALL     TStrList.Add
-@@filt_added:
-        CALL     RemoveStr
-        JMP      @@1
-
-        //       ';' string literal
-        {$IFDEF _D2009orHigher}
-        DW       0, 1 
-        {$ENDIF}
-        DD       -1, 1
-@@semicolon:
-        DB       ';',0
-
-@@2:    POP      ECX
-        POPAD
-        XOR      ECX, ECX
-        PUSH     [Attr]
-        CALL     ScanDirectory
-        POP      EBX
-@@exit:
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 procedure TDirList.ScanDirectoryEx(const DirPath, Filters: KOLString;
   Attr: DWord);
 var F, FF: KOLString;
@@ -25763,7 +24162,7 @@ begin
   until FF = '';
   ScanDirectory( DirPath, '', Attr );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 type
   PSortDirData = ^TSortDirData;
@@ -25782,7 +24181,9 @@ var I : Integer;
     W1, W2: KOLWideString;
     {$ENDIF}
     IsDir1, IsDir2 : Boolean;
+    {$IFDEF _D4orHigher}
     sz1, sz2: I64;
+    {$ENDIF}
 begin
   Item1 := Data.Dir.Get( e1 ); // fList.Items[ e1 ];
   Item2 := Data.Dir.Get( e2 ); // fList.Items[ e2 ];
@@ -25893,28 +24294,13 @@ begin
       Result := -Result;
 end;
 
-{$IFDEF ASM_VERSION}
-procedure SwapDirItems( Data : PSortDirData; const e1, e2 : DWORD );
-asm
-        MOV      EAX, [EAX].TSortDirData.Dir
-        MOV      EAX, [EAX].TDirList.FListPositions
-        {$IFDEF  xxSPEED_FASTER} //|||||||||||||||||||||||||||||||||||||||||||||
-        MOV      EAX, [EAX].TList.fItems
-        LEA      EDX, [EAX+EDX*4]
-        LEA      ECX, [EAX+ECX*4]
-        MOV      EAX, [EDX]
-        XCHG     EAX, [ECX]
-        MOV      [EDX], EAX
-        {$ELSE}
-        CALL     TList.Swap
-        {$ENDIF}
-end;
-{$ELSE ASM_VERSION}
+procedure SwapDirItems( Data : PSortDirData; const e1, e2 : DWORD ); forward;
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION}
 procedure SwapDirItems( Data : PSortDirData; const e1, e2 : DWORD );
 begin
     Data.Dir.FListPositions.Swap( e1, e2 );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF noASM_VERSION}
 procedure TDirList.Sort(Rules: array of TSortDirRules);
@@ -26000,7 +24386,7 @@ asm
         POP      ESI
         POP      EBX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TDirList.Sort(Rules: array of TSortDirRules);
 var SortDirData : TSortDirData;
     I, J : Integer;
@@ -26050,7 +24436,7 @@ begin
   {$ENDIF}
   SortData( Pointer( @SortDirData ), FListPositions.fCount, @CompareDirItems, @SwapDirItems );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TDirList.FileList(const Separator: KOLString; Dirs,
   FullPaths: Boolean): KOLString;
@@ -26561,10 +24947,27 @@ begin
 end;
 
 function SystemTime2DateTime(const SystemTime : TSystemTime; var DateTime : TDateTime ) : Boolean;
+{$IFDEF DATE0_1601}
+type
+    TTimeRec = record
+    CASE Integer OF
+    0: ( ft: TFileTime );
+    1: ( it: I64 );
+    END;
+var TR: TTimeRec;
+{$ELSE}
 var I : Integer;
     _Day : Integer;
     DayTable: PDayTable;
+{$ENDIF}
 begin
+  {$IFDEF DATE0_1601}
+//Result := FALSE;
+//if  (SystemTime.wYear < 1601) or (SystemTime.wYear > 30827) then Exit; {>>>>>}
+  Result := SystemTimeToFileTime( SystemTime, TR.ft );
+  if  Result then
+      DateTime := Int64( TR.it ) / (10000000.0 * 24 * 3600 ) + Date1601;
+  {$ELSE}
   Result := False;
   DateTime := 0.0;
   DayTable := @MonthDays[IsLeapYear(SystemTime.wYear)];
@@ -26586,11 +24989,12 @@ begin
     //--------------- by Vadim Petrov ------++
     if I<0 then i := 0;                     //
     //--------------------------------------++
-    DateTime := I * 365 + I div 4 - I div 100 + I div 400 + _Day
-             + (((wHour * 60 + wMinute) * 60 + wSecond) * 1000 + wMilliSeconds)
+    DateTime := (((wHour * 60 + wMinute) * 60 + wSecond) * 1000 + wMilliSeconds)
              / MSecsPerDay;
+    DateTime := DateTime + I * 365 + I div 4 - I div 100 + I div 400 + _Day;
     Result := True;
   end;
+  {$ENDIF DATE0_0001}
 end;
 
 function DayOfWeek(Date: TDateTime): Integer;
@@ -26598,8 +25002,78 @@ begin
   Result := (Trunc( Date ) + 6) mod 7 + 1;
 end;
 
+{$IFDEF DATE0_1601}
+
+{$UNDEF ASM_LOCAL}
 {$IFDEF ASM_VERSION}
+{$IFDEF _D6orHigher} {$DEFINE ASM_LOCAL}
+{$ENDIF}
+{$ENDIF PAS_VERSION}
+
+{$IFDEF ASM_LOCAL}
+function DateTime2SystemTime(const DateTime : TDateTime; var SystemTime : TSystemTime ) : Boolean;
+asm
+    PUSH  EDI
+    XCHG  EDI, EAX
+    FLD   qword ptr [DateTime]
+    FSUB  dword ptr [@@date1601]
+    FLD   tbyte ptr [@@nsecsperday]
+    DB    $DE, $C9 //FMULP ST(1)
+    JMP   @@truncD7
+@@date1601: DB $50, $AC, $0E, $49
+@@nsecsperday: DB 0,0,0,0,$C0,$69,$2A,$C9,$26,$40
+@@truncD7:     CALL  System.@TRUNC
+    PUSH  EDX
+    PUSH  EAX
+    MOV   EAX, ESP
+    PUSH  EDI
+    PUSH  EAX
+    CALL  Windows.FileTimeToSystemTime
+    POP   ECX
+    POP   ECX
+    CMP   EAX, 1
+    SBB   EAX, EAX
+    INC   EAX
+    POP   EDI
+end;
+{$ELSE}
+function DateTime2SystemTime(const DateTime : TDateTime; var SystemTime : TSystemTime ) : Boolean;
+type
+    TTimeRec = record
+    CASE Integer OF
+    0: ( ft: TFileTime );
+    1: ( it: I64 );
+    END;
+var TR: TTimeRec;
+    {$IFnDEF _D6orHigher}
+    DD, DH, DL: Double;
+    {$ENDIF}
+begin
+  {$IFDEF _D6orHigher}
+  TR.it := I64(
+      Trunc( (DateTime - Date1601) * (24.0 * 3600 * 10000000) ) );
+  {$ELSE}
+  DD := Trunc( (DateTime - Date1601) * (24.0 * 3600 * 10000000) );
+  DH := DD / (4.0 * 1024.0 * 1024.0 * 1024.0);
+  TR.it.Hi := Trunc( DH );
+  DL := DD - TR.it.Hi * (4.0 * 1024.0 * 1024.0);
+  TR.it.Lo := Trunc( DL );
+  {$ENDIF}
+  Result := FileTimeToSystemTime( TR.ft, SystemTime );
+end;
+{$ENDIF PAS_VERSION}
+{$ELSE DATE0_0001}
+
+{$UNDEF ASM_LOCAL}
+{$IFDEF ASM_VERSION}
+{$IFDEF DATE0_0001}
+                   {$DEFINE ASM_LOCAL}
+{$ENDIF DATE0_0001}
+{$ENDIF PAS_VERSION}
+
+{$IFDEF ASM_LOCAL}
 var _MSecsPerDay: Double = MSecsPerDay;
+//function DateTime2SystemTime_Asm(const DateTime : TDateTime; var SystemTime : TSystemTime ) : Boolean;
 function DateTime2SystemTime(const DateTime : TDateTime; var SystemTime : TSystemTime ) : Boolean;
 const
   D1 = 365;
@@ -26618,7 +25092,7 @@ asm
          FILD  DWORD PTR [ESP]
          POP   ECX
          FSUBR QWORD PTR [DateTime]
-         FMUL  DWORD PTR [_MSecsPerDay]
+         FMUL  QWORD PTR [_MSecsPerDay]
          CALL  System.@ROUND
          XCHG  EBX, EAX                // EBX = MSecs
          XOR   EAX, EAX
@@ -26627,12 +25101,13 @@ asm
 
          DEC   EDI
          INC   EAX // EAX = Y = 1
-@@while1:SUB   EDI, D400
+         MOV   ECX, D400
+@@while1:CMP   EDI, ECX
          JL    @@1end
+         SUB   EDI, ECX
          ADD   EAX, 400
          JMP   @@while1
-@@1end:  ADD   EDI, D400
-         PUSH  EAX
+@@1end:  PUSH  EAX
 
          MOV   EAX, EDI
          XOR   EDX, EDX
@@ -26648,7 +25123,7 @@ asm
          XOR   EDX, EDX
          OR    DL, 100
          MUL   EDX        // EAX = I * 100
-         SUB   ECX, EAX   // ECX = Y - I * 100
+         ADD   ECX, EAX   // ECX = Y + I * 100
          XCHG  [ESP], ECX // ECX = D, [ESP] = Y
 
          XCHG  EAX, ECX
@@ -26725,6 +25200,7 @@ asm
          POP   EBX
 end;
 {$ELSE  PAS_VERSION}
+//function DateTime2SystemTime_Pas(const DateTime : TDateTime; var SystemTime : TSystemTime ) : Boolean;
 function DateTime2SystemTime(const DateTime : TDateTime; var SystemTime : TSystemTime ) : Boolean;
 const
   D1 = 365;
@@ -26740,6 +25216,7 @@ begin
   Days := Trunc( DateTime );
   MSec := Round((DateTime - Days) * MSecsPerDay);
   Result := False;
+  if  IsNAN( DateTime ) then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
   with SystemTime do
   if Days > 0 then
   begin
@@ -26786,6 +25263,26 @@ begin
   end;
 end;
 {$ENDIF PAS_VERSION}
+
+{$ENDIF DATE0_0001}
+
+{function DateTime2SystemTime(const DateTime : TDateTime; var SystemTime : TSystemTime ) : Boolean;
+var ST_Pas, ST_Asm: TSystemTime;
+begin
+    if  IsNAN( DateTime ) then
+    asm
+        nop
+    end;
+    Result := DateTime2SystemTime_Pas( DateTime, ST_Pas );
+    DateTime2SystemTime_Asm( DateTime, ST_Asm );
+    if  Result and not CompareMem( @ ST_Asm, @ST_Pas, Sizeof( TSystemTime ) ) then
+    while TRUE do
+    begin
+        DateTime2SystemTime_Pas( DateTime, ST_Pas );
+        DateTime2SystemTime_Asm( DateTime, ST_Asm );
+    end;
+    Result := DateTime2SystemTime_Pas( DateTime, SystemTime );
+end;}
 
 function DateTime_DiffSysLoc: TDateTime;
 var ST, LT: TSystemTime;
@@ -27218,14 +25715,14 @@ asm
         POP      EAX
         RET
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function NewThreadEx( const Proc: TOnThreadExecute ): PThread;
 begin
   Result := NewThread;
   Result.OnExecute := Proc;
   Result.Resume;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_CONSTRUCTORS}
 
@@ -27298,7 +25795,7 @@ begin
   {$ENDIF}
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 destructor TThread.Destroy;
 begin
   RefInc;
@@ -27326,7 +25823,7 @@ begin
   {$ENDIF}
   inherited;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TThread.Execute: integer;
 {$IFDEF TERMAUTOFREE_THREAD}
@@ -27594,7 +26091,9 @@ end;
 
 procedure TThread.SynchronizeEx( Method: TThreadMethodEx; Param: Pointer );
 begin
+  {$IFDEF KOL_ASSERTIONS}
   Assert( Param <> nil, 'Parameter must not be NIL' );
+  {$ENDIF KOL_ASSERTIONS}
   {$IFDEF PSEUDO_THREADS}
   Method( TMethod( Method ).Data, Param );
   {$ELSE}
@@ -27735,24 +26234,24 @@ function TStream.GetSize: TStrmSize;
 asm
         CALL     [EAX].fMethods.fGetSiz
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function TStream.GetSize: TStrmSize;
 begin
   Result := fMethods.fGetSiz( @Self );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_STREAM}
 procedure TStream.SetSize(const NewSize: TStrmSize);
 asm
         CALL     [EAX].fMethods.fSetSiz
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TStream.SetSize(const NewSize: TStrmSize);
 begin
   fMethods.fSetSiz( @Self, NewSize );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TStream.GetFileStreamHandle: THandle;
 begin
@@ -27764,12 +26263,12 @@ function TStream.Read(var Buffer; const Count: TStrmSize): TStrmSize;
 asm
         CALL     [EAX].fMethods.fRead
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function TStream.Read(var Buffer; const Count: TStrmSize): TStrmSize;
 begin
   Result := fMethods.fRead( @Self, Buffer, Count );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TStream.GetCapacity: TStrmSize;
 begin
@@ -27875,12 +26374,12 @@ function TStream.Write(var Buffer; {$IFNDEF STREAM_COMPAT} const {$ENDIF} Count:
 asm
         CALL     [EAX].fMethods.fWrite
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function TStream.Write(var Buffer; {$IFNDEF STREAM_COMPAT} const {$ENDIF} Count: TStrmSize): TStrmSize;
 begin
   Result := fMethods.fWrite( @Self, Buffer, Count );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TStream.WriteVal(Value, Count: DWORD): DWORD;
 begin
@@ -28028,21 +26527,21 @@ function TStream.Seek({$IFNDEF STREAM_COMPAT} const {$ENDIF} MoveTo: TStrmMove; 
 asm
         CALL     [EAX].fMethods.fSeek
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function TStream.Seek({$IFNDEF STREAM_COMPAT} const {$ENDIF} MoveTo: TStrmMove; MoveMethod: TMoveMethod): TStrmSize;
 begin
   Result := fMethods.fSeek( @Self, MoveTo, MoveMethod );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 destructor TStream.Destroy;
 begin
   fMethods.fClose( @Self );
   fData.fThread.Free;
   inherited;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TStream.SaveToFile(const Filename: KOLString; const Start, CountSave: TStrmSize);
 var F: PStream;
@@ -28158,7 +26657,7 @@ asm
         XCHG     EAX, EBX
         POP      EBX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function WriteFileStreamEOF( Strm: PStream; var Buffer; {$IFNDEF STREAM_COMPAT} const {$ENDIF} Count: TStrmSize ): TStrmSize;
 begin
   Result := WriteFileStream( Strm, Buffer, Count );
@@ -28167,7 +26666,7 @@ begin
   {$ENDIF}
   SetEndOfFile( Strm.fData.fHandle );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function WriteFileStreamEOFWithEvent( Strm: PStream; var Buffer; {$IFNDEF STREAM_COMPAT} const {$ENDIF} Count: TStrmSize ): TStrmSize;
 begin
@@ -28210,7 +26709,7 @@ asm
         MOV      [EBX].TStream.fData.fPosition, EAX
         POP      EBX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function SeekMemStream( Strm: PStream; {$IFNDEF STREAM_COMPAT} const {$ENDIF}
          MoveTo: TStrmMove; MoveFrom: TMoveMethod ): TStrmSize;
 var NewPos: DWORD;
@@ -28226,7 +26725,7 @@ begin
   Strm.fData.fPosition := NewPos;
   Result := NewPos;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function SeekMemStreamWithEvent( Strm: PStream; {$IFNDEF STREAM_COMPAT} const {$ENDIF} MoveTo: TStrmMove; MoveFrom: TMoveMethod ): TStrmSize;
 var OldPos: DWORD;
@@ -28294,7 +26793,7 @@ asm
 @@exit:
         pop      ebx
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure SetSizeMemStream( Strm: PStream; {$IFNDEF STREAM_COMPAT} const {$ENDIF} NewSize: TStrmSize );
 var S: PStream;
     NewCapacity: DWORD;
@@ -28327,7 +26826,7 @@ begin
   if S.fData.fPosition > S.fData.fSize then
      S.fData.fPosition := S.fData.fSize;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_STREAM}
 function ReadMemStream( Strm: PStream; var Buffer; {$IFNDEF STREAM_COMPAT} const {$ENDIF} Count: TStrmSize ): TStrmSize;
@@ -28349,7 +26848,7 @@ asm
         ADD      [EBX].TStream.fData.fPosition, EAX
         POP      EBX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function ReadMemStream( Strm: PStream; var Buffer; {$IFNDEF STREAM_COMPAT} const {$ENDIF} Count: TStrmSize ): TStrmSize;
 var S: PStream;
     C: TStrmSize;
@@ -28362,7 +26861,7 @@ begin
   Move( Pointer( DWORD(S.fMemory) + S.fData.fPosition )^, Buffer, Result );
   Inc( S.fData.fPosition, Result );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function ReadMemStreamWithEvent( Strm: PStream; var Buffer; {$IFNDEF STREAM_COMPAT} const {$ENDIF} Count: TStrmSize ): TStrmSize;
 begin
@@ -28397,7 +26896,7 @@ asm
         ADD      [EBX].TStream.fData.fPosition, EAX
         POP      EBX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function WriteMemStream( Strm: PStream; var Buffer; {$IFNDEF STREAM_COMPAT} const {$ENDIF} Count: TStrmSize ): TStrmSize;
 var S: PStream;
 begin
@@ -28408,7 +26907,7 @@ begin
   Move( Buffer, Pointer( DWORD(S.fMemory) + S.fData.fPosition )^, Result );
   Inc( S.fData.fPosition, Result );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function WriteMemStreamWithEvent( Strm: PStream; var Buffer; {$IFNDEF STREAM_COMPAT} const {$ENDIF} Count: TStrmSize ): TStrmSize;
 begin
@@ -28418,7 +26917,7 @@ begin
      Strm.OnChangePos( Strm );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure CloseMemStream( Strm: PStream );
 var S: PStream;
 begin
@@ -28429,7 +26928,7 @@ begin
     S.fMemory := nil;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure DummyCloseStream( Strm: PStream );
 begin
@@ -28739,7 +27238,7 @@ begin
   Result.fData.fHandle := FileCreate( FileName, Options );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewReadFileStream( const FileName: KOLString ): PStream;
 begin
   Result := _NewStream( BaseFileMethods );
@@ -28747,7 +27246,7 @@ begin
   Result.fData.fHandle := FileCreate( FileName,
                                       ofOpenRead or ofShareDenyWrite or ofOpenExisting );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function NewReadFileStreamWithEvent( const FileName: KOLString ): PStream;
 begin
@@ -28776,7 +27275,7 @@ begin
 end;
 {$ENDIF _D3orHigher}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewWriteFileStream( const FileName: KOLString ): PStream;
 begin
   Result := _NewStream( BaseFileMethods );
@@ -28785,7 +27284,7 @@ begin
   Result.fData.fHandle := FileCreate( FileName,
                                       ofOpenWrite or ofCreateAlways or ofShareDenyWrite );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function NewWriteFileStreamWithEvent( const FileName: KOLString ): PStream;
 begin
@@ -28831,7 +27330,7 @@ asm
         XCHG     EAX, EBX
         POP      EBX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function NewReadWriteFileStream( const FileName: KOLString ): PStream;
 var Creation: DWORD;
 begin
@@ -28844,7 +27343,7 @@ begin
   Result.fData.fHandle := FileCreate( FileName,
                           ofOpenReadWrite or Creation or ofShareDenyWrite );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF _D3orHigher}
 function NewReadWriteFileStreamW( const FileName: KOLWideString ): PStream;
@@ -28901,7 +27400,7 @@ asm
         ADD      [EBX].TStream.fData.fPosition, EAX
         POP      EBX
 end;
-{$ELSE ASM_VERSION}
+{$ELSE PAS_VERSION}
 function WriteExMemoryStream( Strm: PStream; var Buffer; {$IFNDEF STREAM_COMPAT} const {$ENDIF} Count: TStrmSize ): TStrmSize; 
 var S: PStream;
     C: TStrmSize;
@@ -28914,7 +27413,7 @@ begin
   Move( Buffer, Pointer( DWORD(S.fMemory) + S.fData.fPosition )^, Result );
   Inc( S.fData.fPosition, Result );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure DummyClose_ExMemStream( Strm: PStream );
 begin
@@ -29106,7 +27605,7 @@ asm
         POP      ESI
         POP      EBX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function Resource2Stream( DestStrm : PStream; Inst : HInst;
                           ResName : PKOLChar; ResType : PKOLChar ): Integer;
 var R : HRSRC;
@@ -29138,7 +27637,7 @@ begin
     end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 ///////////////////////////////////////////////////////////////////////////
 //                        I  N  I  -  F  I  L  E  S
@@ -29146,14 +27645,14 @@ end;
 
 { TIniFile }
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 destructor TIniFile.Destroy;
 begin
   fFileName := '';
   fSection := '';
   inherited;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TIniFile.ClearAll;
 begin
@@ -29255,167 +27754,7 @@ const
   IniBufferSize = 32767;
   IniBufferStrSize = IniBufferSize+4;         /// для махинаций :)
 
-{$IFDEF ASM_UNICODE}
-procedure _FillStrList;    // Эта часть кода общая для двух следующих процедур
-asm
-///////////////////////////////
-        OR      EAX,0
-        JE      @@EXIT                  //ERROR
-//        LEA     EAX,[EAX-IniBufferSize]
-//        JE      @@EXIT
-//      возможна нехватка Буфера... в принципе не ошибка :)
-//      возвращаем что влезло...
-@@LOOP:
-        LEA     EAX,[ESI+4]
-        CALL    StrLen
-        MOV     [ESI],EAX
-        LEA     EDX,[ESI+4]
-        INC     EAX
-        ADD     ESI,EAX
-
-        MOV     EAX,EDI
-
-        CALL    TStrList.ADD
-
-        CMP     byte ptr [ESI+4],0
-        JNE     @@LOOP
-
-@@EXIT:
-        POP     EAX
-        CALL    System.@FreeMem
-
-
-        POP     ECX
-        POP     EBX
-        POP     EDI
-        POP     ESI
-end;
-
-procedure TIniFile.GetSectionNames(Names: PStrList);
-asm
-        PUSH    ESI
-        PUSH    EDI
-        PUSH    EBX
-        PUSH    ECX
-
-        MOV     EBX,EAX
-        MOV     EAX, IniBufferStrSize
-        MOV     EDI,EDX
-
-        CALL    System.@GetMem
-        MOV     ESI,EAX
-        PUSH    EAX
-
-        PUSH    [EBX].fFileName
-        MOV     EAX,IniBufferSize
-        PUSH    EAX
-
-        LEA     EAX,[ESI+4]
-        PUSH    EAX
-
-        CALL    GetPrivateProfileSectionNames
-        JMP     _FillStrList
-end;
-
-procedure TIniFile.SectionData(Names: PStrList);
-asm
-        PUSH    ESI
-        PUSH    EDI
-        PUSH    EBX
-        PUSH    ECX
-
-        MOV     EBX,EAX
-        MOV     EAX, IniBufferStrSize
-        MOV     EDI,EDX
-
-        CALL    System.@GetMem
-        MOV     ESI,EAX
-        PUSH    EAX
-
-        OR     [EBX].fMode,0
-        JNE     @@DOWrite
-
-        PUSH    [EBX].fFileName
-        MOV     EAX,IniBufferSize
-        PUSH    EAX
-
-        LEA     EAX,[ESI+4]
-        PUSH    EAX
-        PUSH    [EBX].fSection
-
-        CALL    GetPrivateProfileSection
-        JMP     _FillStrList
-
-@@DOWrite:
-
-        PUSH    EBX
-        PUSH    ESI
-        PUSH    EDX
-        PUSH    EBP
-
-        MOV     EDX,0
-        MOV     EBP,[EDI].TStrList.fCount
-        MOV     EBX,IniBufferSize-2 // оставим место для #0#0
-
-{ECM+++>} OR      EBP,EBP  // otherwise GetPChars when StrList.Count = 0 crashed
-
-@@LOOP:
-        JE      @@ENDLOOP
-
-        OR      EBX,EBX
-        JE      @@ENDLOOP
-
-        PUSH    EDX
-        MOV     EAX,EDI
-        CALL    TStrList.GetPChars
-
-        PUSH    EAX
-        CALL    StrLen
-        POP     EAX
-
-        XOR     ECX,-1
-        MOV     EDX,ESI
-
-        SUB     EBX,ECX
-        JA      @@L1
-        ADD     ECX,EBX
-        XOR     EBX,EBX
-@@L1:
-
-        ADD     ESI,ECX
-
-        CALL    MOVE
-@@L2:
-        POP     EDX
-        INC     EDX
-        DEC     EBP
-        JMP     @@LOOP
-@@ENDLOOP:
-        MOV     WORD PTR [ESI],0
-
-        POP     EBP
-        POP     EDX
-        POP     ESI
-        POP     EBX
-        MOV     EAX,EBX
-        CALL    ClearSection
-
-        PUSH    [EBX].fFileName
-        PUSH    ESI
-        PUSH    [EBX].fSection
-
-        CALL    WritePrivateProfileSection
-
-        POP     EAX
-        CALL    System.@FreeMem
-
-        POP     ECX
-        POP     EBX
-        POP     EDI
-        POP     ESI
-
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 procedure TIniFile.GetSectionNames(Names:PKOLStrList);
 var
   i:integer;
@@ -29467,7 +27806,7 @@ begin
   end;
   FreeMem(Buffer);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 /////////////////////////////////////////////////////////////////////////
 //                                M  E  N  U
@@ -29475,13 +27814,13 @@ end;
 
 { -- Menu implementation -- }
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function MakeAccelerator( fVirt: Byte; Key: Word ): TMenuAccelerator;
 begin
   Result.fVirt := fVirt;
   Result.Key := Key;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function GetAcceleratorText( const Accelerator: TMenuAccelerator ): KOLString;
 var
@@ -31055,51 +29394,7 @@ begin
     {$ENDIF}
 end;
 
-{$IFDEF ASM_VERSION}
-function NewCommandActionsObj_Packed( fromPack: PAnsiChar ): PCommandActionsObj;
-asm
-    PUSH ESI
-    PUSH EDI
-    PUSH EAX
-    CALL NewCommandActionsObj
-    POP  ESI
-    CMP  ESI, 120
-    MOV  [EAX].TCommandActionsObj.fIndexInActions, ESI
-    JB   @@exit
-    PUSH EAX
-    LEA  EDI, [EAX].TCommandActionsObj.aClick
-    XOR  EAX, EAX
-    LODSB
-    MOV  dword ptr [EDI + 76], EAX // Result.fIndexInActions := fromPack[0]
-    XOR  ECX, ECX
-    MOV  CL, 38
-@@loop:
-    CMP  byte ptr[ESI], 200
-    JB   @@copy_word
-    JA   @@clear_words
-    INC  ESI
-@@copy_word:
-    MOVSW
-    LOOP @@loop
-    JMP  @@fin
-@@clear_words:
-    LODSB
-    SUB  AL, 200
-    SUB  CL, AL
-    PUSH ECX
-    MOVZX ECX, AL
-    XOR   EAX, EAX
-    REP   STOSW
-    POP   ECX
-    INC   ECX
-    LOOP  @@loop
-@@fin:
-    POP  EAX
-@@exit:
-    POP  EDI
-    POP  ESI
-end;
-{$ELSE PASCAL}
+{$IFDEF ASM_VERSION}{$ELSE PASCAL}
 function NewCommandActionsObj_Packed( fromPack: PAnsiChar ): PCommandActionsObj;
 var Dest: PWord;
     N, i: Integer;
@@ -31148,7 +29443,7 @@ begin
         end;
     end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF COMMANDACTIONS_OBJ}
 
 function DumpWindowed( c: PControl ): PControl;
@@ -31176,191 +29471,7 @@ begin
     Result := c;
 end;
 
-{$IFDEF ASM_VERSION}
-function _NewTControl( AParent: PControl ): PControl;
-begin
-  New( Result, CreateParented( AParent ) );
-end;
-
-function _NewWindowed( AParent: PControl; ControlClassName: PKOLChar;
-         Ctl3D: Boolean; ACommandActions: TCommandActionsParam ): PControl;
-const   Sz_TCommandActions = Sizeof(TCommandActions);
-asm
-        PUSH     EBX
-        PUSH     ESI
-        PUSH     EDI
-        MOV      EDI, ACommandActions
-        MOV      [ACommandActions], ECX // Ctl3D -> ACommandActions
-
-        PUSH     EDX // ControlClassName
-
-        MOV      ESI, EAX // ESI = AParent
-        CALL     _NewTControl
-        XCHG     EBX, EAX // EBX = Result
-        POP      [EBX].TControl.fControlClassName
-        //INC      [EBX].TControl.fWindowed // set in TControl.Init
-
-        {$IFDEF  COMMANDACTIONS_OBJ}
-        MOV      EAX, EDI
-        CMP      EAX, 120
-        JB       @@IdxActions_Loaded
-        MOVZX    EAX, byte ptr[EDI]
-@@IdxActions_Loaded:
-        PUSH     EAX
-        MOV      ECX, dword ptr [AllActions_Objs + EAX*4]
-        JECXZ    @@create_new_action
-        XCHG     EAX, ECX
-        PUSH     EAX
-            CALL     TObj.RefInc
-        POP      EAX
-        JMP      @@action_assign
-
-@@create_new_action:
-        {$IFDEF  PACK_COMMANDACTIONS}
-                MOV      EAX, EDI
-                CALL     NewCommandActionsObj_Packed
-        {$ELSE   not PACK_COMMANDACTIONS}
-                CALL     NewCommandActionsObj
-
-                TEST     EDI, EDI
-                JZ       @@no_actions
-
-                PUSH     EAX
-                LEA      EDX, [EAX].TCommandActionsObj.aClear
-                XCHG     EAX, EDI
-                XOR      ECX, ECX
-                MOV      CL, Sz_TCommandActions
-                CALL     Move
-                POP      EAX
-                JMP      @@action_assign
-        @@no_actions:
-        {$ENDIF  not PACK_COMMANDACTIONS}
-                MOV      [EAX].TCommandActionsObj.aClear, offset[ClearText]
-
-@@action_assign:
-        POP      EDX
-        MOV      dword ptr [AllActions_Objs + EDX*4], EAX
-
-        MOV      [EBX].TControl.fCommandActions, EAX
-        XCHG     EDX, EAX
-        MOV      EAX, EBX
-        CALL     TControl.Add2AutoFree
-
-        {$ELSE}
-        TEST     EDI, EDI
-        JZ       @@no_actions2
-        PUSH     ESI
-        MOV      ESI, EDI
-        LEA      EDI, [EBX].TControl.fCommandActions
-        XOR      ECX, ECX
-        MOV      CL, Sz_TCommandActions
-        REP      MOVSB
-        POP      ESI
-        JMP      @@actions_created
-@@no_actions2:
-        MOV      [EBX].TControl.fCommandActions.TCommandActions.aClear, offset[ClearText]
-        {$ENDIF}
-@@actions_created:
-
-        TEST     ESI, ESI
-        JZ       @@no_parent
-
-        MOV      EAX, [ESI].TControl.PP.fGotoControl
-        MOV      [EBX].TControl.PP.fGotoControl, EAX
-
-        LEA      ESI, [ESI].TControl.fTextColor
-        LEA      EDI, [EBX].TControl.fTextColor
-        MOVSD    // fTextColor
-        MOVSD    // fColor
-
-        {$IFDEF SMALLEST_CODE}
-            {$IFDEF SMALLEST_CODE_PARENTFONT}
-                LODSD
-                XCHG     EDX, EAX
-                XOR      EAX, EAX
-                CALL     TGraphicTool.Assign
-                STOSD    // fFont
-            {$ELSE}
-                LODSD
-                XOR     EAX, EAX
-                STOSD   // fFont = nil
-            {$ENDIF}
-        {$ELSE}
-            LODSD
-            XCHG     EDX, EAX
-            XOR      EAX, EAX
-            PUSH     EDX
-            CALL     TGraphicTool.Assign
-            STOSD    // fFont
-            POP      EDX
-            XCHG     ECX, EAX
-            JECXZ    @@no_font
-            MOV      [ECX].TGraphicTool.fParentGDITool, EDX
-            MOV      [ECX].TGraphicTool.fOnGTChange.TMethod.Code, offset[TControl.FontChanged]
-            MOV      [ECX].TGraphicTool.fOnGTChange.TMethod.Data, EBX
-            MOV      EAX, EBX
-            MOV      EDX, ECX
-            CALL     TControl.FontChanged
-            {$IFDEF USE_AUTOFREE4CONTROLS}
-                MOV      EAX, EBX
-                MOV      EDX, [EBX].TControl.fFont
-                CALL     TControl.Add2AutoFree
-            {$ENDIF}
-@@no_font:
-        {$ENDIF}
-
-        {$IFDEF SMALLEST_CODE}
-            LODSD
-            XOR      EAX, EAX
-            STOSD
-        {$ELSE}
-            LODSD
-            XCHG     EDX, EAX
-            XOR      EAX, EAX
-            PUSH     EDX
-            CALL     TGraphicTool.Assign
-            STOSD    // fBrush
-            POP      EDX
-            XCHG     ECX, EAX
-            JECXZ    @@no_brush
-            MOV      [ECX].TGraphicTool.fParentGDITool, EDX
-            MOV      [ECX].TGraphicTool.fOnGTChange.TMethod.Code, offset[TControl.BrushChanged]
-            MOV      [ECX].TGraphicTool.fOnGTChange.TMethod.Data, EBX
-            MOV      EAX, EBX
-            MOV      EDX, ECX
-            CALL     TControl.BrushChanged
-            {$IFDEF USE_AUTOFREE4CONTROLS}
-                MOV      EAX, EBX
-                MOV      EDX, [EBX].TControl.fBrush
-                CALL     TControl.Add2AutoFree
-            {$ENDIF}
-@@no_brush:
-        {$ENDIF}
-
-        MOVSB    // fMargin
-        LODSD           // skip fClientXXXXX
-        ADD      EDI, 4
-
-        LODSB    // fCtl3D_child
-        TEST     AL, 2
-        JZ       @@passed3D
-        MOV      EDX, [ACommandActions] // DL <- Ctl3D !!!
-        AND      AL, not 1
-        AND      DL, 1
-        OR       EAX, EDX
-@@passed3D:
-        STOSB    // fCtl3D_child
-
-@@no_parent:
-        XCHG     EAX, EBX
-        POP      EDI
-        POP      ESI
-        POP      EBX
-        {$IFDEF  DUMP_WINDOWED}
-        CALL     DumpWindowed
-        {$ENDIF}
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION}
 function _NewWindowed( AParent: PControl; ControlClassName: PKOLChar;
          Ctl3D: Boolean; ACommandActions: TCommandActionsParam ): PControl;
 {$IFDEF COMMANDACTIONS_OBJ}
@@ -31455,7 +29566,7 @@ begin
   DumpWindowed( Result );
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 
 {$IFDEF _X_}
@@ -31573,7 +29684,7 @@ end;
 {$ELSE not_USE_CONSTRUCTORS}
 
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewForm( AParent: PControl; const Caption: KOLString ): PControl;
 begin
   Result := _NewWindowed( AParent, 'Form', True,
@@ -31594,7 +29705,7 @@ begin
           Result.fIsForm := TRUE;
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 const Edgestyles: array[ TEdgeStyle ] of DWORD = ( WS_DLGFRAME, SS_SUNKEN, 0, 0, 0);
 
@@ -31889,7 +30000,7 @@ asm
         CALL     TControl.SetCaption
         POP      EAX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 
 procedure CreateAppButton( App: PControl );
 var M: HMenu;
@@ -31922,7 +30033,7 @@ begin
   {$ENDIF}
   Result.Caption := Caption;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF USE_CONSTRUCTORS}
 
 {$IFDEF CREATEAPPBUTTON_USED}
@@ -31974,113 +30085,7 @@ var CtlIdCount: WORD = $8000;
 
 {$IFDEF GDI}
 
-{$IFDEF ASM_UNICODE}
-function _NewControl( AParent: PControl; ControlClassName: PKOLChar;
-                      Style: DWORD; Ctl3D: Boolean;
-                      Actions: TCommandActionsParam ): PControl;
-const szActions = sizeof(TCommandActions);
-asm
-        PUSH     EBX
-        PUSH     EAX  // push AParent
-        PUSH     ECX  // push Style
-            MOVZX    ECX, [Ctl3D]
-            PUSH     [Actions]
-            CALL     _NewWindowed
-            XCHG     EBX, EAX
-            {$IFDEF  USE_FLAGS}
-            OR       [EBX].TControl.fFlagsG3, (1 shl G3_IsControl)
-            {$ELSE}
-            INC      [EBX].TControl.fIsControl
-            {$ENDIF}
-        POP      EDX  // pop Style
-        OR       EDX, WS_CLIPSIBLINGS or WS_CLIPCHILDREN
-        //INC      [EBX].TControl.fVerticalAlign
-        MOV      byte ptr [EBX].TControl.fLookTabKeys, $0F
-        TEST     [EBX].TControl.fCtl3D_child, 1
-        JZ       @@noCtl3D
-        AND      EDX, not WS_BORDER
-        OR       byte ptr [EBX].TControl.fExStyle + 1, WS_EX_CLIENTEDGE shr 8
-@@noCtl3D:
-        MOV      [EBX].TControl.fStyle, EDX
-        {$IFDEF  USE_FLAGS}
-        {$ELSE}
-            TEST     EDX, WS_VISIBLE
-            SETNZ    AL
-            MOV      [EBX].TControl.fVisible, AL
-            TEST     EDX, WS_TABSTOP
-            SETNZ    AL
-            MOV      [EBX].TControl.fTabstop, AL
-        {$ENDIF  USE_FLAGS}
-        POP      ECX // pop AParent
-        JECXZ    @@noParent
-
-        PUSH     ESI
-        PUSH     EDI
-        PUSH     ECX
-            LEA      ESI, [ECX].TControl.fMargin
-            LEA      EDI, [EBX].TControl.fBoundsRect
-            LODSB
-            MOVSX    EAX, AL
-            {$IFNDEF SMALLEST_CODE}
-            PUSH     EAX
-            MOVSX    ECX, byte ptr [ESI+2]
-            ADD      EAX, ECX // AParent.fClientLeft
-            {$ENDIF}
-            STOSD    // fBoundsRect.Left
-            {$IFNDEF SMALLEST_CODE}
-            POP      EAX
-            PUSH     EAX
-            MOVSX    ECX, byte ptr [ESI+0]
-            ADD      EAX, ECX // AParent.fClientTop
-            {$ENDIF}
-            STOSD    // fBoundsRect.Top
-            {$IFNDEF SMALLEST_CODE}
-            XCHG     EDX, EAX
-            POP      EAX
-            {$ENDIF}
-            ADD      EAX, 64
-            STOSD    // fBoundsRect.Right
-            {$IFNDEF SMALLEST_CODE}
-            XCHG     EAX, EDX
-            ADD      EAX, 64
-            {$ENDIF}
-            STOSD    // fBoundsRect.Bottom}
-        POP      ECX
-            MOV      EAX, [ECX].TControl.fCursor
-            STOSD
-        POP      EDI
-        POP      ESI
-
-        XCHG     EAX, ECX
-        CALL     TControl.ParentForm
-        XCHG     ECX, EAX
-        JECXZ    @@noParentForm
-        INC      [ECX].TControl.fTabOrder
-        MOV      DX, WORD PTR [ECX].TControl.fTabOrder
-        MOV      WORD PTR [EBX].TControl.fTabOrder, DX
-        TEST     [EBX].TControl.fStyle, WS_TABSTOP
-        JZ       @@CurrentControl_set
-        CMP      [ECX].TControl.DF.fCurrentControl, 0
-        JNZ      @@CurrentControl_set
-        MOV      [ECX].TControl.DF.fCurrentControl, EBX
-@@CurrentControl_set:
-@@noParentForm:
-@@noParent:
-        MOVZX    EDX, [CtlIdCount]
-        INC      [CtlIdCount]
-        MOV      [EBX].TControl.fMenu, EDX
-        MOV      EDX, offset[WndProcCtrl]
-        MOV      EAX, EBX
-        CALL     TControl.AttachProc
-        XCHG     EAX, EBX
-        POP      EBX
-        {$IFDEF  DEBUG_ALTSPC}
-        PUSH     EAX
-        CALL     DumpWindowed
-        POP      EAX
-        {$ENDIF}
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function _NewControl( AParent: PControl; ControlClassName: PKOLChar;
   Style: DWORD; Ctl3D: Boolean; Actions: TCommandActionsParam ): PControl;
 var Form: PControl;
@@ -32133,7 +30138,7 @@ begin
   DumpWindowed(Result);
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 
 {$IFDEF _X_}
@@ -32265,7 +30270,7 @@ begin
 end;
 {$ELSE USE_CONSTRUCTORS}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewButton( AParent: PControl; const Caption: KOLString ): PControl;
 begin
   Result := _NewControl( AParent, 'BUTTON',
@@ -32303,7 +30308,7 @@ begin
   Attach_WM_THEMECHANGED( Result, XP_Themes_For_BitBtn );
 {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_CONSTRUCTORS}
 {$ENDIF WIN_GDI}
@@ -32349,7 +30354,7 @@ END;
 {$IFDEF WIN_GDI}
 //----------------- BitBtn -----------------------
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function WndProc_DrawItem( Sender: PControl; var Msg: TMsg; var Rslt: Integer )
                           : Boolean;
 var DI: PDrawItemStruct;
@@ -32371,7 +30376,7 @@ begin
     end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function ExcludeAmpersands( Self_: PControl; const S: KOLString ): KOLString;
 var I: Integer;
@@ -32983,7 +30988,7 @@ asm
         POP      EBX
 @@not_fixed:
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function WndProcBitBtn( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 var DIS: PDrawItemStruct;
     IsDown, IsDefault, IsDisabled: Boolean;
@@ -33285,7 +31290,7 @@ begin
     Self_.Invalidate;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF USE_CONSTRUCTORS}
 function NewBitBtn( AParent: PControl; const Caption: AnsiString;
@@ -33300,7 +31305,7 @@ end;
 {$ELSE not_USE_CONSTRUCTORS}
 
 {$IFDEF ASM_noVERSION} // todo: first correct asm version, then remove <no>
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function NewBitBtn( AParent: PControl; const Caption: KOLString;
          Options: TBitBtnOptions; Layout: TGlyphLayout; GlyphBitmap: HBitmap;
          GlyphCount: Integer ): PControl;
@@ -33408,7 +31413,7 @@ begin
   Attach_WM_THEMECHANGED(Result, XP_Themes_For_BitBtn);
  {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_CONSTRUCTORS}
 
@@ -33424,7 +31429,7 @@ begin
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewCheckbox( AParent: PControl; const Caption: KOLString ): PControl;
 begin
   Result := NewButton( AParent, Caption );
@@ -33440,7 +31445,7 @@ begin
   Attach_WM_THEMECHANGED(Result, XP_Themes_For_CheckBox );
 {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_CONSTRUCTORS}
 
@@ -33452,60 +31457,7 @@ end;
 
 //===================== Radiobox ========================//
 
-{$IFDEF ASM_VERSION}
-procedure ClickRadio( Sender:PObj );
-asm
-        PUSH     EBX
-        MOV      EBX, [EAX].TControl.fParent
-        TEST     EBX, EBX
-        JZ       @@exit
-        {$IFDEF  USE_FLAGS}
-        PUSH     ESI
-        PUSH     EDI
-        XCHG     ESI, EAX
-        OR       EDI, -1
-@@cont_loop:
-        INC      EDI
-        MOV      EAX, [EBX].TControl.fChildren
-        CMP      EDI, [EAX].TList.fCount
-        JGE      @@e_loop
-        MOV      EDX, EDI
-        CALL     TList.Get
-        TEST     [EAX].TControl.fFlagsG5, 1 shl G5_IsButton
-        JZ       @@cont_loop
-        TEST     [EAX].TControl.fStyle.f0_Style, BS_RADIOBUTTON
-        JZ       @@cont_loop
-        CMP      EAX, ESI
-        PUSH     EAX
-            SETZ     DL
-            PUSH     EDX
-                CALL     TControl.GetChecked
-            POP      EDX
-            CMP      DL, AL
-        POP      EAX
-        JZ       @@cont_loop
-        CALL     TControl.SetChecked
-        JMP      @@cont_loop
-@@e_loop:
-        POP      EDI
-        POP      ESI
-        {$ELSE   not USE_FLAGS}
-        PUSH     [EAX].TControl.fMenu
-        MOV      EAX, EBX
-        MOV      EDX, offset[RADIO_LAST]
-        CALL     TControl.Get_Prop_Int
-        PUSH     EAX
-        MOV      EAX, EBX
-        MOV      EDX, offset[RADIO_1ST]
-        CALL     TControl.Get_Prop_Int
-        PUSH     EAX
-        PUSH     [EBX].TControl.fHandle
-        CALL     CheckRadioButton
-        {$ENDIF  USE_FLAGS}
-@@exit:
-        POP      EBX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure ClickRadio( Sender:PObj );
 var Self_:PControl;
     {$IFDEF USE_FLAGS}
@@ -33537,7 +31489,7 @@ begin
                       Self_.fMenu );
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF USE_CONSTRUCTORS}
 function NewRadiobox( AParent: PControl; const Caption: AnsiString ): PControl;
@@ -33549,7 +31501,7 @@ begin
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewRadiobox( AParent: PControl; const Caption: KOLString ): PControl;
 begin
   Result := NewCheckbox( AParent, Caption );
@@ -33577,7 +31529,7 @@ begin
   Attach_WM_THEMECHANGED(Result, XP_Themes_For_RadioBox);
 {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_CONSTRUCTORS}
 
@@ -33597,48 +31549,7 @@ end;
 {$ELSE not_USE_CONSTRUCTORS}
 
 {$IFDEF GDI}
-{$IFDEF ASM_UNICODE}
-const StaticClass: Array[0..6] of AnsiChar=('S','T','A','T','I','C',#0);
-{$ENDIF}
-{$IFDEF ASM_UNICODE}
-function NewLabel( AParent: PControl; const Caption: KOLString ): PControl;
-asm
-        PUSH     EDX
-
-        PUSH     0
-        {$IFDEF  PACK_COMMANDACTIONS}
-        PUSH     [LabelActions_Packed]
-        {$ELSE}
-        PUSH     offset[LabelActions]
-        {$ENDIF}
-        MOV      ECX, WS_VISIBLE or WS_CHILD or SS_LEFTNOWORDWRAP or SS_NOPREFIX or SS_NOTIFY
-        MOV      EDX, offset[StaticClass]
-        CALL     _NewControl
-        //INC      byte ptr [EAX].TControl.aAutoSzX
-        //INC      byte ptr [EAX].TControl.aAutoSzY
-        MOV      word ptr [EAX].TControl.aAutoSzX, $101
-        {$IFDEF  USE_FLAGS}
-        OR       [EAX].TControl.fFlagsG1, (1 shl G1_SizeRedraw) or (1 shl G1_IsStaticControl)
-        {$ELSE}
-        INC      [EAX].TControl.fIsStaticControl
-        INC      [EAX].TControl.fSizeRedraw
-        {$ENDIF}
-        MOV      EDX, [EAX].TControl.fBoundsRect.Top
-        ADD      EDX, 22
-        MOV      [EAX].TControl.fBoundsRect.Bottom, EDX
-        POP      EDX
-        PUSH     EAX
-        CALL     TControl.SetCaption
-        POP      EAX
-
-{$IFDEF GRAPHCTL_XPSTYLES}
-        PUSH     EAX
-        MOV      EDX, offset[XP_Themes_For_Label]
-        CALL     Attach_WM_THEMECHANGED
-        POP      EAX
-{$ENDIF}
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function NewLabel( AParent: PControl; const Caption: KOLString ): PControl;
 begin
   Result := _NewControl( AParent, 'STATIC', WS_VISIBLE or WS_CHILD or
@@ -33662,7 +31573,7 @@ begin
   Attach_WM_THEMECHANGED(Result, XP_Themes_For_Label);
 {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 
 {$IFDEF _X_}
@@ -33704,7 +31615,7 @@ begin
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewWordWrapLabel( AParent: PControl; const Caption: KOLString ): PControl;
 begin
   Result := NewLabel( AParent, Caption );
@@ -33716,7 +31627,7 @@ begin
   end;
   Result.fStyle.Value := Result.fStyle.Value and not SS_LEFTNOWORDWRAP;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_CONSTRUCTORS}
 
@@ -33732,7 +31643,7 @@ begin
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewLabelEffect( AParent: PControl; const Caption: KOLString; ShadowDeep: Integer ): PControl;
 begin
   Result := NewLabel( AParent, '' );
@@ -33752,7 +31663,7 @@ begin
   end;
   Result.DF.fColor2 := clNone;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_CONSTRUCTORS}
 
@@ -33774,7 +31685,7 @@ end;
 {$IFNDEF GRAPHCTL_XPSTYLES}
   {$IFDEF ASM_VERSION}
     {$DEFINE ASM_LOCAL}
-  {$ENDIF ASM_VERSION}
+  {$ENDIF PAS_VERSION}
 {$ENDIF  GRAPHCTL_XPSTYLES}
 
 {$IFDEF ASM_LOCAL}
@@ -33815,7 +31726,7 @@ begin
   end;
 {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 
 {$IFDEF _X_}
@@ -33855,7 +31766,7 @@ begin
     Rslt := 1;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function WndProcImageShow( Sender: PControl; var Msg: TMsg;
          var Rslt: Integer ): Boolean;
@@ -34357,59 +32268,7 @@ begin
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
-{$IFDEF ASM_UNICODE}
-function NewGroupbox( AParent: PControl; const Caption: KOLString ): PControl;
-asm
-        PUSH     EDX
-        PUSH     0
-        {$IFDEF  PACK_COMMANDACTIONS}
-        PUSH     [ButtonActions_Packed]
-        {$ELSE}
-        PUSH     offset[ButtonActions]
-        {$ENDIF}
-        MOV      EDX, offset[ButtonClass]
-        MOV      ECX, WS_VISIBLE or WS_CHILD or BS_GROUPBOX or WS_CLIPCHILDREN or WS_CLIPSIBLINGS
-        CALL     _NewControl
-        OR       [EAX].TControl.fExStyle, WS_EX_CONTROLPARENT
-        MOV      EDX, [EAX].TControl.fBoundsRect.Left
-        ADD      EDX, 100
-        MOV      [EAX].TControl.fBoundsRect.Right, EDX
-        MOV      EDX, [EAX].TControl.fBoundsRect.Top
-        ADD      EDX, 100
-        MOV      [EAX].TControl.fBoundsRect.Bottom, EDX
-        MOV      byte ptr [EAX].TControl.fClientTop, 22
-        XOR      EDX, EDX
-        {$IFDEF  USE_FLAGS}
-        AND      [EAX].TControl.fStyle.f2_Style, not(1 shl F2_Tabstop)
-        {$ELSE}
-        MOV      [EAX].TControl.fTabstop, DL
-        {$ENDIF  USE_FLAGS}
-        MOV      DL, 2
-        ADD      [EAX].TControl.fClientBottom, DL
-        ADD      [EAX].TControl.fClientLeft, DL
-        ADD      [EAX].TControl.fClientRight, DL
-        POP      EDX
-        PUSH     EAX
-        CALL     TControl.SetCaption
-        POP      EAX
-        PUSH     EAX
-        {$IFDEF  USE_FLAGS}
-        OR       [EAX].TControl.fFlagsG5, 1 shl G5_IsGroupbox
-        {$ELSE}
-        INC      [EAX].TControl.fIsGroupBox
-        {$ENDIF}
-        MOV      EDX, offset[WndProcDoEraseBkgnd]
-        CALL     TControl.AttachProc
-        POP      EAX
-
-{$IFDEF GRAPHCTL_XPSTYLES}
-        PUSH     EAX
-        MOV      EDX, offset[XP_Themes_For_GroupBox]
-        CALL     Attach_WM_THEMECHANGED
-        POP      EAX
-{$ENDIF}
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function NewGroupbox( AParent: PControl; const Caption: KOLString ): PControl;
 begin
   Result := _NewControl( AParent, 'BUTTON',
@@ -34445,7 +32304,7 @@ begin
   Attach_WM_THEMECHANGED(Result, XP_Themes_For_GroupBox);
 {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_CONSTRUCTORS}
 
@@ -34461,69 +32320,7 @@ begin
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
-{$IFDEF ASM_UNICODE}
-function NewPanel( AParent: PControl; EdgeStyle: TEdgeStyle ): PControl;
-const CreateStyle = WS_VISIBLE or WS_CHILD or SS_LEFTNOWORDWRAP or
-                    SS_NOPREFIX or SS_NOTIFY;
-asm
-{$IFDEF GRAPHCTL_XPSTYLES}
-        MOVZX    EDX, EdgeStyle
-        PUSH     EDX
-{$ENDIF}
-
-        PUSH     EDX
-        MOV      EDX, offset[StaticClass]
-        MOV      ECX, CreateStyle
-        PUSH     0
-        {$IFDEF  PACK_COMMANDACTIONS}
-        PUSH     [LabelActions_Packed]
-        {$ELSE}
-        PUSH     offset[LabelActions]
-        {$ENDIF}
-        CALL     _NewControl
-        //INC      byte ptr [EAX].TControl.aAutoSzX
-        //INC      byte ptr [EAX].TControl.aAutoSzY
-        MOV      word ptr [EAX].TControl.aAutoSzX, $101
-        ADD      [EAX].TControl.fBoundsRect.Right, 100-64
-        ADD      [EAX].TControl.fBoundsRect.Bottom, 100-64
-        OR       byte ptr [EAX].TControl.fExStyle+2, 1
-        POP      ECX
-        CMP      CL, 1
-        JG       @@exit
-        JE       @@sunken
-        OR       byte ptr [EAX].TControl.fStyle+2, $40
-{$IFDEF GRAPHCTL_XPSTYLES}
-        JMP      @@visual
-{$ELSE}
-        RET
-{$ENDIF}
-@@sunken:
-        OR       byte ptr [EAX].TControl.fStyle+1, $10
-@@exit:
-
-{$IFDEF GRAPHCTL_XPSTYLES}
-@@visual:
-        CMP      AppTheming, TRUE
-        JNE      @@es_none_
-        CMP      CL, 1
-        JG       @@es_none_
-        JE       @@not_sunken
-        AND      byte ptr [EAX].TControl.fStyle+2, $00
-        JNE      @@es_none_
-@@not_sunken:
-        AND      byte ptr [EAX].TControl.fStyle+1, $00
-@@es_none_:
-        POP      EDX
-        PUSH     EAX
-        CALL     TControl.SetEdgeStyle
-        POP      EAX
-        PUSH     EAX
-        MOV      EDX, offset[XP_Themes_For_Panel]
-        CALL     Attach_WM_THEMECHANGED
-        POP      EAX
-{$ENDIF}
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function NewPanel( AParent: PControl; EdgeStyle: TEdgeStyle ): PControl;
 begin
   Result := _NewControl( AParent, 'STATIC', WS_VISIBLE or WS_CHILD or SS_NOTIFY or
@@ -34550,7 +32347,7 @@ begin
   Attach_WM_THEMECHANGED(Result, XP_Themes_For_Panel);
 {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_CONSTRUCTORS}
 
@@ -34664,7 +32461,7 @@ const
 
 {$DEFINE USE!_ASM_DODRAG}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function WndProcSplitter( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 var I: Integer;
     Prev: PControl;
@@ -34731,7 +32528,7 @@ begin
   end;
   Result := False;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function NewSplitter( AParent: PControl; MinSizePrev, MinSizeNext: Integer ): PControl;
 begin
@@ -34749,7 +32546,7 @@ begin
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewSplitterEx( AParent: PControl; MinSizePrev, MinSizeNext: Integer;
          EdgeStyle: TEdgeStyle ): PControl;
 var PrevCtrl: PControl;
@@ -34789,7 +32586,7 @@ begin
   Attach_WM_THEMECHANGED(Result, XP_Themes_For_Splitter);
 {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_CONSTRUCTORS}
 
@@ -35117,8 +32914,10 @@ var MDIClient: PControl;
     MDIChildren: PList;
     i: Integer;
 begin
+  {$IFDEF KOL_ASSERTIONS}
   Assert( (AParent <> nil) and (AParent.ParentForm <> nil) and
           (AParent.ParentForm.MDIClient <> nil), 'Error creating MDI child' );
+  {$ENDIF KOL_ASSERTIONS}
   MDIClient := AParent.ParentForm.MDIClient;
   MDIChildren := Pointer( MDIClient.PropInt[ MDI_CHLDRN ] );
 
@@ -35167,7 +32966,7 @@ begin
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewGradientPanel( AParent: PControl; Color1, Color2: TColor ): PControl;
 begin
   Result := NewLabel( AParent, '' );
@@ -35180,7 +32979,7 @@ begin
     Bottom := Top + 40;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_CONSTRUCTORS}
 
@@ -35196,7 +32995,7 @@ begin
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewGradientPanelEx( AParent: PControl; Color1, Color2: TColor;
                              Style: TGradientStyle; Layout: TGradientLayout ): PControl;
 begin
@@ -35212,7 +33011,7 @@ begin
     Bottom := Top + 40;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_CONSTRUCTORS}
 
@@ -35279,7 +33078,7 @@ begin
 end;
 {$ENDIF _D3orHigher}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewEditbox( AParent: PControl; Options: TEditOptions ) : PControl;
 var Flags: Integer;
 begin
@@ -35317,7 +33116,7 @@ begin
   {$ENDIF}
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_CONSTRUCTORS}
 
@@ -35341,39 +33140,7 @@ begin
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
-{$IFDEF ASM_UNICODE}
-const ListBoxClass : Array[ 0..7 ] of AnsiChar = ( 'L','I','S','T','B','O','X',#0 );
-function NewListbox( AParent: PControl; Options: TListOptions ): PControl;
-asm
-        PUSH     EAX
-        PUSH     EDX
-        MOV      EAX, ESP
-        MOV      EDX, offset[ListFlags]
-        XOR      ECX, ECX
-        MOV      CL, 11
-        CALL     MakeFlags
-        POP      EDX
-        OR       EAX, WS_VISIBLE or WS_CHILD or WS_TABSTOP or WS_BORDER or WS_VSCROLL or LBS_NOTIFY
-        XCHG     ECX, EAX
-        POP      EAX
-        PUSH     1
-        {$IFDEF  PACK_COMMANDACTIONS}
-        PUSH     [ListActions_Packed]
-        {$ELSE}
-        PUSH     offset[ListActions]
-        {$ENDIF}
-        MOV      EDX, offset[ListBoxClass]
-        CALL     _NewControl
-        {$IFDEF  PACK_COMMANDACTIONS}
-        MOV      EDX, [EAX].TControl.fCommandActions
-        MOV      [EDX].TCommandActionsObj.aClear, offset[ClearListbox]
-        {$ENDIF}
-        ADD      [EAX].TControl.fBoundsRect.Right, 100
-        ADD      [EAX].TControl.fBoundsRect.Bottom, 200-64
-        MOV      [EAX].TControl.fColor, clWindow
-        MOV      [EAX].TControl.fLookTabKeys, 3
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function NewListbox( AParent: PControl; Options: TListOptions ): PControl;
 var Flags: Integer;
 begin
@@ -35397,14 +33164,14 @@ begin
   Result.fColor := clWindow;
   Result.fLookTabKeys := [ tkTab, tkLeftRight ];
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_CONSTRUCTORS}
 
 //===================== Combo box ========================//
 
 {$IFNDEF USE_DROPDOWNCOUNT}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure ComboboxDropDown( Sender: PObj );
 var
   CB: PControl;
@@ -35427,7 +33194,7 @@ begin
   {$ENDIF}
       CB.EV.fOnDropDown( CB );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ELSE newcode}
 procedure ComboboxDropDown( Sender: PObj );
 var
@@ -35571,36 +33338,7 @@ begin
       Result := DefWindowProc( W, Msg, wParam, lParam );
 end;
 
-{$IFDEF ASM_UNICODE}
-procedure CreateComboboxWnd( Combo: PControl );
-//const PrevProcStr: PAnsiChar = 'PREV_PROC'; //************ Remarked By M.Gerasimov
-asm
-        PUSH     EDI
-        PUSH     EBX
-        XCHG     EBX, EAX
-        PUSH     GW_CHILD
-        PUSH     [EBX].TControl.fHandle
-@@getwindow:
-        CALL     GetWindow
-        TEST     EAX, EAX
-        JZ       @@fin
-        PUSH     offset[WndFuncCombo]
-        PUSH     GWL_WNDPROC
-        PUSH     EAX
-        XCHG     EDI, EAX
-        CALL     SetWindowLong
-        PUSH     EAX
-        PUSH     offset [ID_PREVPROC]                       //
-        PUSH     EDI
-        CALL     SetProp
-@@2getnext:
-        PUSH     GW_HWNDNEXT
-        PUSH     EDI
-        JMP      @@getwindow
-@@fin:  POP      EBX
-        POP      EDI
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 procedure CreateComboboxWnd( Combo: PControl );
 var W : HWND;
     PrevProc: DWORD;
@@ -35616,7 +33354,7 @@ begin
      W := GetWindow( W, GW_HWNDNEXT );
    end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure RemoveChldPrevProc( fHandle: HWnd );
 var Chld: HWnd;
@@ -35724,7 +33462,7 @@ begin
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewCombobox( AParent: PControl; Options: TComboOptions ): PControl;
 var Flags: Integer;
 begin
@@ -35767,7 +33505,7 @@ begin
   Result.DropDownCount := 8;
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_CONSTRUCTORS}
 
@@ -35795,7 +33533,7 @@ asm
 @@exit: XOR      EAX, EAX
         POP      ESI
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function WndProcResize(Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 var I: Integer;
     C: PControl;
@@ -35810,9 +33548,9 @@ begin
   end;
   Result := False; // don't stop further processing
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function WndProcParentResize(Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 begin
   Result := False;
@@ -35824,27 +33562,9 @@ begin
     end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}
-procedure InitCommonControlCommonNotify( Ctrl: PControl );
-asm
-    {$IFDEF   USE_FLAGS}
-    OR        [EAX].TControl.fFlagsG5, 1 shl G5_IsCommonCtl
-    {$ELSE}
-    MOV       [EAX].TControl.fIsCommonControl, 1
-    {$ENDIF}
-    MOV       ECX, [EAX].TControl.fParent
-    JECXZ     @@fin
-    PUSH      ECX
-    MOV       EDX, offset[WndProcCommonNotify]
-    CALL      TControl.AttachProc
-    POP       EAX
-    MOV       EDX, offset[WndProcNotify]
-    CALL      TControl.AttachProc
-@@fin:
-end;
-{$ELSE PASCAL}
+{$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure InitCommonControlCommonNotify( Ctrl: PControl );
 var AParent: PControl;
 begin
@@ -35857,7 +33577,7 @@ begin
       AParent.AttachProc( WndProcNotify );
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure InitCommonControlSizeNotify( Ctrl: PControl );
 var AParent: PControl;
@@ -35893,7 +33613,7 @@ begin
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewProgressbar( AParent: PControl ): PControl;
 begin
   Result := _NewCommonControl( AParent, PROGRESS_CLASS,
@@ -35913,7 +33633,7 @@ begin
   Result.fCommandActions.aSetBkColor := PBM_SETBKCOLOR;
   //Result.fNCDestroyed := TRUE; // do not call DestroyWindow!
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_CONSTRUCTORS}
 
@@ -35927,7 +33647,7 @@ begin
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewProgressbarEx( AParent: PControl; Options: TProgressbarOptions ): PControl;
 const ProgressBarFlags: array[ TProgressbarOption ] of Integer =
       (PBS_VERTICAL, PBS_SMOOTH );
@@ -35936,13 +33656,13 @@ begin
   Result.fStyle.Value := Result.fStyle.Value or
       DWORD( MakeFlags( @Options, ProgressBarFlags ) );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_CONSTRUCTORS}
 
 //===================== List view ========================//
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function WndProcNotify( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 var NMhdr: PNMHdr;
     Child: PControl;
@@ -35965,9 +33685,9 @@ begin
     end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function WndProcCommonNotify( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 var NMhdr: PNMHdr;
 begin
@@ -36000,7 +33720,7 @@ begin
     end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 const ListViewStyles: array[ TListViewStyle ] of DWORD = ( LVS_ICON, LVS_SMALLICON,
                       LVS_LIST, LVS_REPORT, LVS_REPORT or LVS_NOCOLUMNHEADER );
@@ -36018,7 +33738,7 @@ const ListViewStyles: array[ TListViewStyle ] of DWORD = ( LVS_ICON, LVS_SMALLIC
                       LVS_EX_TWOCLICKACTIVATE, LVS_EX_FLATSB, LVS_EX_REGIONAL,
                       LVS_EX_INFOTIP, LVS_EX_UNDERLINEHOT, LVS_EX_MULTIWORKAREAS, 0, 0 );
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure ApplyImageLists2Control( Sender: PControl );
 var IL: PImageList;
 begin
@@ -36033,9 +33753,9 @@ begin
   if IL <> nil then
     Sender.Perform( Sender.fCommandActions.aSetImgList, LVSIL_STATE, IL.Handle );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure ApplyImageLists2ListView( Sender: PControl );
 var Flags: DWORD;
 begin
@@ -36046,7 +33766,7 @@ begin
   Sender.Perform( LVM_SETEXTENDEDLISTVIEWSTYLE, $3FFF, Flags );
   ApplyImageLists2Control( Sender );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF USE_CONSTRUCTORS}
 function NewListView( AParent: PControl; Style: TListViewStyle; Options: TListViewOptions;
@@ -36060,7 +33780,7 @@ begin
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewListView( AParent: PControl; Style: TListViewStyle; Options: TListViewOptions;
                       ImageListSmall, ImageListNormal, ImageListState: PImageList ): PControl;
 begin
@@ -36091,295 +33811,12 @@ begin
   Result.fLookTabKeys := [ tkTab ];
   //Result.fMargin := 0;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_CONSTRUCTORS}
 
 //=====================  Tree view  ========================//
-{$IFDEF ASM_UNICODE}
-function WndProcTreeView( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
-asm     //cmd    //opd
-        CMP      word ptr [EDX].TMsg.message, WM_NOTIFY
-        JNZ      @@ret_false
-        PUSH     EBX
-        XCHG     EBX, EAX
-        MOV      EDX, [EDX].TMsg.lParam
-        {$IFDEF  EVENTS_DYNAMIC}
-        MOV      EAX, [EBX].TControl.EV
-        LEA      EAX, [EAX].TEvents.fOnTVBeginDrag
-        {$ELSE}
-        LEA      EAX, [EBX].TControl.EV.fOnTVBeginDrag
-        {$ENDIF}
-        CMP      word ptr [EDX].TNMTreeView.hdr.code, NM_RCLICK
-        JNE      @@chk_TVN_BEGINDRAG
-        PUSH     ECX
-        PUSH     ECX
-        PUSH     ESP
-        CALL     GetCursorPos
-        MOV      EAX, EBX
-        MOV      EDX, ESP
-        MOV      ECX, EDX
-        CALL     TControl.Screen2Client
-        POP      EAX
-        AND      EAX, $FFFF
-        POP      EDX
-        SHL      EDX, 16
-        OR       EAX, EDX
-        PUSH     EAX
-        CALL     GetShiftState
-        PUSH     EAX
-        PUSH     WM_RBUTTONUP
-        PUSH     [EBX].TControl.fHandle
-        CALL     PostMessage
-        JMP      @@2fin_false1
-
-@@chk_TVN_BEGINDRAG:
-        {$IFDEF UNICODE_CTRLS}
-        CMP      word ptr [EDX].TNMTreeView.hdr.code, TVN_BEGINDRAGW
-        JZ       @@event_drag
-        CMP      word ptr [EDX].TNMTreeView.hdr.code, TVN_BEGINRDRAGW
-        JZ       @@event_drag
-        {$ENDIF UNICODE_CTRLS}
-        CMP      word ptr [EDX].TNMTreeView.hdr.code, TVN_BEGINDRAG
-        JZ       @@event_drag
-        CMP      word ptr [EDX].TNMTreeView.hdr.code, TVN_BEGINRDRAG
-        JNZ      @@chk_BEGINLABELEDIT
-@@event_drag:
-        MOV      EDX, [EDX].TNMTreeView.itemNew.hItem
-@@event_call:
-        MOV      ECX, [EAX].TMethod.Code
-        JECXZ    @@2fin_false1
-        MOV      EAX, [EAX].TMethod.Data
-        XCHG     EBX, ECX
-        XCHG     EDX, ECX
-        CALL     EBX
-@@2fin_false1:   JMP      @@fin_false
-@@chk_BEGINLABELEDIT:
-        {$IFDEF  EVENTS_DYNAMIC}
-        MOV      EAX, [EBX].TControl.EV
-        LEA      EAX, [EAX].TEvents.FOnTVBeginEdit
-        {$ELSE}
-        LEA      EAX, [EBX].TControl.EV.fOnTVBeginEdit
-        {$ENDIF}
-        {$IFDEF UNICODE_CTRLS}
-        CMP      word ptr [EDX].TNMTreeView.hdr.code, TVN_BEGINLABELEDITW
-        JZ       @@beginlabeledit
-        {$ENDIF UNICODE_CTRLS}
-        CMP      word ptr [EDX].TNMTreeView.hdr.code, TVN_BEGINLABELEDIT
-        JNZ      @@chk_ITEMEXPANDED //@@chk_DELETEITEM
-@@beginlabeledit:
-        {$IFDEF  USE_FLAGS}
-        TEST     [EBX].TControl.fFlagsG6, 1 shl G6_Dragging
-        {$ELSE}
-        CMP      [EBX].TControl.fDragging, 0
-        {$ENDIF}
-        JZ       @@allow_LABELEDIT
-        XOR      EAX, EAX
-        INC      EAX
-        MOV      [ECX], EAX
-        JMP      @@ret_true
-
-@@allow_LABELEDIT:
-        PUSH     ECX // @Rslt
-
-        MOV      ECX, [EAX].TMethod.Code
-        JECXZ    @@2fin_false1
-        PUSH     EBX
-        XCHG     EBX, ECX
-        MOV      EDX, [EDX].TTVDispInfo.item.hItem
-        XCHG     EDX, ECX
-        MOV      EAX, [EAX].TMethod.Data
-        CALL     EBX
-        TEST     AL, AL
-        SETZ     AL        // Rslt := not event result;
-        POP      EBX
-        JMP      @@ret_EAX
-
-@@call_EBX:
-        CALL     EBX
-@@2fin_false:
-        JMP      @@fin_false
-@@chk_ITEMEXPANDED:
-        {$IFDEF  EVENTS_DYNAMIC}
-        MOV      EAX, [EBX].TControl.EV
-        LEA      EAX, [EAX].TEvents.fOnTVExpanded
-        {$ELSE}
-        LEA      EAX, [EBX].TControl.EV.fOnTVExpanded
-        {$ENDIF}
-        {$IFDEF UNICODE_CTRLS}
-        CMP      word ptr [EDX].TNMTreeView.hdr.code, TVN_ITEMEXPANDEDW
-        JZ       @@itemexpanded
-        {$ENDIF UNICODE_CTRLS}
-        CMP      word ptr [EDX].TNMTreeView.hdr.code, TVN_ITEMEXPANDED
-        JNZ      @@chk_SELCHANGING
-@@itemexpanded:
-        MOV      ECX, [EAX].TMethod.Code
-        JECXZ    @@2fin_false
-        CMP      [EDX].TNMTreeView.action, TVE_EXPAND
-        PUSH     ECX
-        SETZ     CL
-        XCHG     ECX, [ESP]
-        JMP      @@event_drag
-@@chk_SELCHANGING:
-        CMP      word ptr [EDX].TNMTreeView.hdr.code, TVN_SELCHANGING
-        JNE      @@chk_ITEMEXPANDING
-        XCHG     EAX, ECX
-        {$IFDEF  EVENTS_DYNAMIC}
-        MOV      ECX, [EBX].TControl.EV
-        MOV      ECX, [ECX].TEvents.fOnTVSelChanging.TMethod.Code
-        {$ELSE}
-        MOV      ECX, [EBX].TControl.EV.fOnTVSelChanging.TMethod.Code
-        {$ENDIF}
-@@2fin_false2:
-        JECXZ    @@2fin_false
-        PUSH     EAX  //@Rslt
-        PUSH     [EDX].TNMTreeView.itemNew.hItem
-        XCHG     ECX, EBX //EBX=OnTVSelChanging.Code ECX=Sender
-        XCHG     ECX, EDX //EDX=Sender ECX=Msg
-        MOV      ECX, [ECX].TNMTreeView.itemOld.hItem
-        {$IFDEF  EVENTS_DYNAMIC}
-        MOV      EAX, [EDX].TControl.EV
-        MOV      EAX, [EAX].TEvents.fOnTVSelChanging.TMethod.Data
-        {$ELSE}
-        MOV      EAX, [EDX].TControl.EV.fOnTVSelChanging.TMethod.Data
-        {$ENDIF}
-        CALL     EBX
-        XOR      AL, 1
-        MOVZX    EAX, AL
-        JMP      @@ret_EAX
-
-@@chk_ITEMEXPANDING:
-        {$IFDEF UNICODE_CTRLS}
-        CMP      word ptr [EDX].TNMTreeView.hdr.code, TVN_ITEMEXPANDINGW
-        JZ       @@itemexpanding
-        {$ENDIF UNICODE_CTRLS}
-        CMP      word ptr [EDX].TNMTreeView.hdr.code, TVN_ITEMEXPANDING
-        JNE      @@chk_ENDLABELEDIT
-@@itemexpanding:
-        XCHG     EAX, ECX
-        {$IFDEF  EVENTS_DYNAMIC}
-        MOV      ECX, [EBX].TControl.EV
-        MOV      ECX, [ECX].TEvents.fOnTVExpanding.TMethod.Code
-        {$ELSE}
-        MOV      ECX, [EBX].TControl.EV.fOnTVExpanding.TMethod.Code
-        {$ENDIF}
-        JECXZ    @@2fin_false2
-        PUSH     EAX // @Rslt
-        CMP      [EDX].TNMTreeView.action, TVE_EXPAND
-        PUSH     ECX
-        SETZ     CL
-        XCHG     ECX, [ESP]
-        XCHG     ECX, EBX  //EBX=OnTVExpanding.Code ECX=Seneder
-        XCHG     EDX, ECX  //ECX=Msg EDX=Sender
-        MOV      ECX, [ECX].TNMTreeView.itemNew.hItem //ECX=Item
-        {$IFDEF  EVENTS_DYNAMIC}
-        MOV      EAX, [EDX].TControl.EV
-        MOV      EAX, [EAX].TEvents.fOnTVExpanding.TMethod.Data
-        {$ELSE}
-        MOV      EAX, [EDX].TControl.EV.fOnTVExpanding.TMethod.Data //EAX=object
-        {$ENDIF}
-@@111:
-        CALL     EBX
-@@ret_EAX:
-        POP      EDX //EDX=@Rslt
-        MOVZX    EAX, AL
-        NEG      EAX
-        MOV      [EDX], EAX
-@@ret_true:
-        MOV      AL, 1
-        POP      EBX
-        RET
-@@chk_ENDLABELEDIT:
-        {$IFDEF UNICODE_CTRLS}
-        CMP      word ptr [EDX].TNMTreeView.hdr.code, TVN_ENDLABELEDITW
-        JZ       @@endlabeledit
-        {$ENDIF UNICODE_CTRLS}
-        CMP      word ptr [EDX].TNMTreeView.hdr.code, TVN_ENDLABELEDIT
-        JNZ      @@chk_SELCHANGED
-@@endlabeledit:
-        XCHG     EAX, ECX
-        {$IFDEF  EVENTS_DYNAMIC}
-        MOV      ECX, [EBX].TControl.EV
-        MOV      ECX, [ECX].TEvents.fOnTVEndEdit.TMethod.Code
-        {$ELSE}
-        MOV      ECX, [EBX].TControl.EV.fOnTVEndEdit.TMethod.Code
-        {$ENDIF}
-        JECXZ    @@ret_1
-        PUSH     EAX
-        PUSH     EBX
-        PUSH     0
-
-        XCHG     EDX, EBX
-        MOV      EAX, [EBX].TTVDispInfo.item.pszText
-        PUSH     EDX
-        PUSH     ECX
-        XCHG     EAX, EDX
-        {$IFDEF UNICODE_CTRLS}
-        CMP      [EBX].TNMTreeView.hdr.code, TVN_ENDLABELEDITW
-        JNZ      @@endlabeleditA
-        CALL     TControl.TVGetItemTextW
-        JMP      @@NewTxt_ready
-@@endlabeleditA:
-        {$ENDIF UNICODE_CTRLS}
-        TEST     EDX, EDX
-        JNZ      @@prepare_NewTxt
-        // NewTxt := [EDX].TControl.TVItemText[ hItem ]
-        LEA      ECX, [ESP + 8]
-        MOV      EDX, [EBX].TTVDispInfo.item.hItem
-        CALL     TControl.TVGetItemText
-        JMP      @@NewTxt_ready
-@@prepare_NewTxt:
-        LEA      EAX, [ESP+8]
-        {$IFDEF _D2009orHigher}
-        PUSH     ECX
-        XOR      ECX, ECX
-        {$ENDIF}
-        CALL     System.@LStrFromPChar
-        {$IFDEF _D2009orHigher}
-        POP      ECX
-        {$ENDIF}
-@@NewTxt_ready:
-        POP      ECX
-        POP      EDX
-        POP      EAX
-        PUSH     EAX
-        PUSH     EAX
-        {$IFDEF  EVENTS_DYNAMIC}
-        MOV      EAX, [EDX].TControl.EV
-        MOV      EAX, [EAX].TEvents.fOnTVEndEdit.TMethod.Data
-        {$ELSE}
-        MOV      EAX, [EDX].TControl.EV.fOnTVEndEdit.TMethod.Data
-        {$ENDIF}
-        MOV      EBX, [EBX].TTVDispInfo.item.hItem
-        XCHG     ECX, EBX
-        CALL     EBX
-        XCHG     EBX, EAX
-        CALL     RemoveStr
-        XCHG     EAX, EBX
-        POP      EBX
-        JMP      @@ret_EAX
-@@ret_1:
-        INC      ECX
-        MOV      [EAX], ECX
-        JMP      @@ret_true
-
-@@chk_SELCHANGED:
-        {$IFDEF UNICODE_CTRLS}
-        CMP      word ptr [EDX].TNMTreeView.hdr.code, TVN_SELCHANGEDW
-        JZ       @@selchanged
-        {$ENDIF UNICODE_CTRLS}
-        CMP      word ptr [EDX].TNMTreeView.hdr.code, TVN_SELCHANGED
-        JNZ      @@fin_false
-@@selchanged:
-        XCHG     EAX, EBX
-        CALL     TControl.DoSelChange
-
-@@fin_false:
-        POP      EBX
-@@ret_false:
-        XOR      EAX, EAX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function WndProcTreeView( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 var NM: PNMTreeView;
     DI: PTVDispInfo;
@@ -36388,87 +33825,87 @@ var NM: PNMTreeView;
 begin
   if Msg.message = WM_NOTIFY then
   begin
-    NM := Pointer( Msg.lParam );
-    case NM.hdr.code of
+      NM := Pointer( Msg.lParam );
+      case NM.hdr.code of
       NM_RCLICK:
-        begin
-          GetCursorPos( P );
-          P := Self_.Screen2Client( P );
-          PostMessage( Self_.fHandle, WM_RBUTTONUP, MK_RBUTTON or GetShiftState,
-                       (P.x and $FFFF) or (P.y shl 16) );
-        end;
+          begin
+            GetCursorPos( P );
+            P := Self_.Screen2Client( P );
+            Self_.PostMsg( WM_RBUTTONUP, MK_RBUTTON or GetShiftState,
+                         (P.x and $FFFF) or (P.y shl 16) );
+          end;
       TVN_BEGINDRAG {$IFDEF TV_DRAG_RBUTTON}, TVN_BEGINRDRAG{$ENDIF}:
-        {$IFDEF NIL_EVENTS}
-        if  Assigned( Self_.EV.fOnTVBeginDrag ) then
-        {$ENDIF}
-            Self_.EV.fOnTVBeginDrag( Self_, NM.itemNew.hItem );
+          {$IFDEF NIL_EVENTS}
+          if  Assigned( Self_.EV.fOnTVBeginDrag ) then
+          {$ENDIF}
+              Self_.EV.fOnTVBeginDrag( Self_, NM.itemNew.hItem );
       TVN_BEGINLABELEDIT:
-      begin
-          if  {$IFDEF USE_FLAGS} G6_Dragging in Self_.fFlagsG6
-              {$ELSE} Self_.fDragging {$ENDIF} then
           begin
-              Rslt := 1; // do not allow edit while dragging
-              Result := TRUE; Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
-          end;
-          DI := Pointer( NM );
-          {$IFDEF NIL_EVENTS}
-          if  Assigned( Self_.EV.fOnTVBeginEdit ) then
-          {$ENDIF}
-          begin
-              Rslt := Integer( not Self_.EV.fOnTVBeginEdit( Self_, DI.item.hItem ) );
-              Result := TRUE; Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>} 
-          end;
-      end;
-      TVN_ENDLABELEDIT:
-      begin
-          DI := Pointer( NM );
-          if  Assigned( Self_.EV.fOnTVEndEdit ) then
-          begin
-              S := DI.item.pszText;
-              if  (DI.item.pszText = nil) then
+              if  {$IFDEF USE_FLAGS} G6_Dragging in Self_.fFlagsG6
+                  {$ELSE} Self_.fDragging {$ENDIF} then
               begin
-                  Result := True; Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
+                  Rslt := 1; // do not allow edit while dragging
+                  Result := TRUE; Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
               end;
-              Rslt := Integer(
-                   Self_.EV.fOnTVEndEdit( Self_, DI.item.hItem, S ) );
-          end
-          else
-              Rslt := 1;
-          Result := True; Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
-      end;
-      TVN_ITEMEXPANDING:
-      begin
-        {$IFDEF NIL_EVENTS}
-        if  Assigned( Self_.EV.fOnTVExpanding ) then
-        {$ENDIF}
-        begin
-            Rslt := Integer( Self_.EV.fOnTVExpanding( Self_, NM.itemNew.hItem,
-                             NM.action = TVE_EXPAND ) );
-            //Result := TRUE; //Exit;
-        end;
-      end;
-      TVN_ITEMEXPANDED:
-        {$IFDEF NIL_EVENTS}
-        if  Assigned( Self_.EV.fOnTVExpanded ) then
-        {$ENDIF}
-            Self_.EV.fOnTVExpanded( Self_, NM.itemNew.hItem, NM.action=TVE_EXPAND );
-      TVN_SELCHANGING:
-        begin //------------------ TVN_SELCHANGING by Sergey Shisminzev
-          {$IFDEF NIL_EVENTS}
-          if  Assigned( Self_.EV.fOnTVSelChanging ) then
-          {$ENDIF}
-          begin
-              Rslt := Integer( not Self_.EV.fOnTVSelChanging( Self_, NM.itemOld.hItem, NM.itemNew.hItem ) );
-              //Result := TRUE; //Exit;
+              DI := Pointer( NM );
+              {$IFDEF NIL_EVENTS}
+              if  Assigned( Self_.EV.fOnTVBeginEdit ) then
+              {$ENDIF}
+              begin
+                  Rslt := Integer( not Self_.EV.fOnTVBeginEdit( Self_, DI.item.hItem ) );
+                  Result := TRUE; Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
+              end;
           end;
-        end;  //----------------------------------------
+      TVN_ENDLABELEDIT:
+          begin
+              DI := Pointer( NM );
+              if  Assigned( Self_.EV.fOnTVEndEdit ) then
+              begin
+                  S := DI.item.pszText;
+                  if  (DI.item.pszText = nil) then
+                  begin
+                      Result := True; Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
+                  end;
+                  Rslt := Integer(
+                       Self_.EV.fOnTVEndEdit( Self_, DI.item.hItem, S ) );
+              end
+              else
+                  Rslt := 1;
+              Result := True; Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
+          end;
+      TVN_ITEMEXPANDING:
+          begin
+            {$IFDEF NIL_EVENTS}
+            if  Assigned( Self_.EV.fOnTVExpanding ) then
+            {$ENDIF}
+            begin
+                Rslt := Integer( Self_.EV.fOnTVExpanding( Self_, NM.itemNew.hItem,
+                                 NM.action = TVE_EXPAND ) );
+                //Result := TRUE; //Exit;
+            end;
+          end;
+      TVN_ITEMEXPANDED:
+          {$IFDEF NIL_EVENTS}
+          if  Assigned( Self_.EV.fOnTVExpanded ) then
+          {$ENDIF}
+              Self_.EV.fOnTVExpanded( Self_, NM.itemNew.hItem, NM.action=TVE_EXPAND );
+      TVN_SELCHANGING:
+          begin //------------------ TVN_SELCHANGING by Sergey Shisminzev
+            {$IFDEF NIL_EVENTS}
+            if  Assigned( Self_.EV.fOnTVSelChanging ) then
+            {$ENDIF}
+            begin
+                Rslt := Integer( not Self_.EV.fOnTVSelChanging( Self_, NM.itemOld.hItem, NM.itemNew.hItem ) );
+                //Result := TRUE; //Exit;
+            end;
+          end;  //----------------------------------------
       TVN_SELCHANGED:
-        Self_.DoSelChange;
-    end;
+          Self_.DoSelChange;
+      end;
   end;
   Result := False;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function ProcTVDeleteItem( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 var NM: PNMTreeView;
@@ -36510,7 +33947,7 @@ begin
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewTreeView( AParent: PControl; Options: TTreeViewOptions;
                       ImgListNormal, ImgListState: PImageList ): PControl;
 var Flags: Integer;
@@ -36537,13 +33974,13 @@ begin
   Result.ImageListState := ImgListState;
   Result.fLookTabKeys := [ tkTab ];
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_CONSTRUCTORS}
 
 //===================== Tab Control ========================//
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function WndProcTabControl( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 var Hdr: PNMHdr;
     A: Integer;
@@ -36630,7 +34067,7 @@ begin
   end;
   Result := False;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF GRAPHCTL_XPSTYLES}
   {$DEFINE RICHEDIT_XPBORDER}
@@ -36698,82 +34135,7 @@ begin
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
-{$IFDEF ASM_UNICODE}
-function NewTabControl( AParent: PControl; const Tabs: array of PKOLChar; Options: TTabControlOptions;
-         ImgList: PImageList; ImgList1stIdx: Integer ): PControl;
-const lenf=high(TabControlFlags); //+++
-asm     //cmd    //opd
-        PUSH     EBX
-        PUSH     ESI
-        PUSH     EDI
-        XCHG     EBX, EAX
-        PUSH     EDX
-        PUSH     ECX
-        LEA      EAX, [Options]
-        MOV      EDX, offset[TabControlFlags]
-        XOR      ECX, ECX
-        MOV      CL, lenf
-        CALL     MakeFlags
-        TEST     byte ptr [Options], 4
-        JZ       @@0
-        OR       EAX, WS_TABSTOP or TCS_FOCUSONBUTTONDOWN
-@@0:    OR       EAX, WS_CHILD or WS_CLIPSIBLINGS or WS_CLIPCHILDREN or WS_VISIBLE
-        XCHG     ECX, EAX
-        XCHG     EAX, EBX
-        MOV      EDX, offset[WC_TABCONTROL]
-        PUSH     1
-        {$IFDEF  PACK_COMMANDACTIONS}
-        PUSH     [TabControlActions_Packed]
-        {$ELSE}
-        PUSH     offset[TabControlActions]
-        {$ENDIF}
-        CALL     _NewCommonControl
-        MOV      EBX, EAX
-        TEST     [Options], 2 shl (tcoBorder - 1)
-        JNZ      @@borderfixed
-        AND      [EBX].TControl.fExStyle, not WS_EX_CLIENTEDGE
-@@borderfixed:
-        MOV      EDX, offset[WndProcTabControl]
-        CALL     TControl.AttachProc
-        ADD      [EBX].TControl.fBoundsRect.Right, 100-64
-        ADD      [EBX].TControl.fBoundsRect.Bottom, 100-64
-        MOV      ECX, [ImgList]
-        JECXZ    @@2
-        XCHG     EAX, ECX
-        CALL     TImageList.GetHandle
-        PUSH     EAX
-        PUSH     0
-        PUSH     TCM_SETIMAGELIST
-        PUSH     EBX
-        CALL     TControl.Perform
-@@2:
-        POP      EDI // EDI = High(Tabs)
-        POP      ESI // ESI = Tabs
-        XOR      EDX, EDX // EDX := 0 (=I)
-        MOV      EAX, [ImgList1stIdx] //(=II)
-@@loop:
-        CMP      EDX, EDI
-        JG       @@e_loop
-        PUSH     EAX
-        PUSH     EDX
-        PUSH     EAX
-        LODSD
-        XCHG     ECX, EAX
-        MOV      EAX, EBX
-        CALL     TControl.TC_Insert
-        POP      EDX
-        POP      EAX
-        INC      EAX
-        INC      EDX
-        JMP      @@loop
-@@e_loop:
-        MOV      byte ptr [EBX].TControl.fLookTabKeys, 1
-        XCHG     EAX, EBX
-        POP      EDI
-        POP      ESI
-        POP      EBX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function NewTabControl( AParent: PControl; const Tabs: array of PKOLChar; Options: TTabControlOptions;
          ImgList: PImageList; ImgList1stIdx: Integer ): PControl;
 var I, II : Integer;
@@ -36809,10 +34171,10 @@ begin
   end;
   Result.fLookTabKeys := [ tkTab ];
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFNDEF OLD_ALIGN}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewTabEmpty( AParent: PControl; Options: TTabControlOptions;
          ImgList: PImageList ): PControl;
 var Flags: Integer;
@@ -36838,7 +34200,7 @@ begin
     Result.Perform( TCM_SETIMAGELIST, 0, ImgList.Handle );
   Result.fLookTabKeys := [ tkTab ];
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF}
 
 {$ENDIF USE_CONSTRUCTORS}
@@ -36846,16 +34208,59 @@ end;
 //===================== Tool bar ========================//
 
 {$IFDEF ASM_TLIST} //TTN_NEEDTEXTW  ASM_TLIST!
+{$IFDEF _D3orHigher}
+{$IFDEF ASM_VERSION}
+procedure CopyPChar2WideChars( dest: PWideChar; src: PChar; Len: Integer );
+asm
+          PUSH  ESI
+          PUSH  EDI
+          XCHG  EDI, EAX
+          MOV   ESI, ECX
+          PUSH  0
+          MOV   EAX, ESP
+          CALL  System.@LStrFromPChar
+          MOV   EAX, [ESP]
+          CALL  System.@LStrLen
+          TEST  EAX, EAX
+          JZ    @@exit_copy
+          CMP   ESI, EAX
+          JL    @@1_len
+          XCHG  EAX, ESI
+@@1_len:
+          POP   EDX
+          PUSH  EDX
+          PUSH  0
+          MOV   EAX, ESP
+          CALL  System.@WStrFromLStr
+
+          MOV   ECX, ESI
+          INC   ECX
+          POP   ESI
+          PUSH  ESI
+          REP   MOVSW
+          MOV   EAX, ESP
+          CALL  System.@WStrClr
+          POP   EAX
+@@exit_copy:
+          MOV   EAX, ESP
+          CALL  System.@LStrClr
+          POP   EAX
+          POP   EDI
+          POP   ESI
+end;
+{$ELSE  PAS_VERSION}
 procedure CopyPChar2WideChars( dest: PWideChar; src: PChar; Len: Integer );
 var W: WideString;
     s: String;
 begin
     s := src;
-    if  Length(s) > Len then
-        s := Copy(s, 1, Len);
+    if  Len > Length(s) then
+        Len := Length(s);
     W := s;
-    Move( W[1], dest^, (Length(s)+1) * Sizeof( WideChar ) );
+    Move( W[1], dest^, (Len+1) * Sizeof( WideChar ) );
 end;
+{$ENDIF PAS_VERSION}
+{$ENDIF _D3orHigher}
 
 function WndProcToolbarCtrl(Self_: PControl; var Msg: TMsg; var Rslt: Integer): Boolean;
 asm
@@ -36931,15 +34336,11 @@ asm
         XCHG     EAX, ECX
         CALL     TList.IndexOf
 @@idxReady: // EAX = -1 or index of button tooltip
-        TEST     EAX, EAX
         POP      EDX  //<***
         LEA      EDX, [EDX].TTooltipText.szText
-        {$IFDEF  UNICODE_CTRLS}
-        MOV      word ptr [EDX], 0
-        {$ELSE}
-        MOV      byte ptr [EDX], 0
-        {$ENDIF}
+        AND      word ptr [EDX], 0
         POP      ECX  //<###
+        TEST     EAX, EAX
         JL       @@ret_true1
         MOV      ECX, [ECX].TControl.DF.fTBttTxt
         MOV      ECX, [ECX].TStrList.fList
@@ -36948,14 +34349,51 @@ asm
         XCHG     EAX, EDX
         XOR      ECX, ECX
         MOV      CL, 79
+        {$IFDEF  _D3orHigher}
         CMP      BL, 0
         JZ       @@strlcopy
         {$IFDEF  UNICODE_CTRLS}
         CALL     WStrLCopy
         {$ELSE}
-        CALL     CopyPChar2WideChars
+        //CALL     CopyPChar2WideChars (inlined here)
+          PUSH  ESI
+          PUSH  EDI
+          XCHG  EDI, EAX
+          MOV   ESI, ECX
+          PUSH  0
+          MOV   EAX, ESP
+          CALL  System.@LStrFromPChar
+          MOV   EAX, [ESP]
+          CALL  System.@LStrLen
+          TEST  EAX, EAX
+          JZ    @@exit_copy
+          CMP   ESI, EAX
+          JL    @@1_len
+          XCHG  EAX, ESI
+@@1_len:
+          POP   EDX
+          PUSH  EDX
+          PUSH  0
+          MOV   EAX, ESP
+          CALL  System.@WStrFromLStr
+
+          MOV   ECX, ESI
+          INC   ECX
+          POP   ESI
+          PUSH  ESI
+          REP   MOVSW
+          MOV   EAX, ESP
+          CALL  System.@WStrClr
+          POP   EAX
+@@exit_copy:
+          MOV   EAX, ESP
+          CALL  System.@LStrClr
+          POP   EAX
+          POP   EDI
+          POP   ESI
         {$ENDIF}
         JMP      @@ret_true1
+        {$ENDIF _D3orHigher}
 @@strlcopy:
         CALL     StrLCopy
         JMP      @@ret_true1
@@ -37019,7 +34457,7 @@ asm
         XOR      EAX, EAX
         POP      EBX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function WndProcToolbarCtrl(Self_: PControl; var Msg: TMsg; var Rslt: Integer): Boolean;
 var lpttt: PTooltipText;
     idBtn, Idx: Integer;
@@ -37128,7 +34566,7 @@ begin
     end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 const ToolbarAligns: array[ TControlAlign ] of DWORD =
       ( CCS_NOPARENTALIGN {or CCS_NOMOVEY} {or CCS_NORESIZE} or CCS_NODIVIDER, CCS_TOP or CCS_VERT, CCS_TOP, CCS_BOTTOM or CCS_VERT, CCS_BOTTOM,
@@ -37149,162 +34587,7 @@ begin
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
-{$IFDEF ASM_UNICODE}
-function NewToolbar( AParent: PControl; Align: TControlAlign; Options: TToolbarOptions;
-                     Bitmap: HBitmap; const Buttons: array of PKOLChar;
-                     const BtnImgIdxArray: array of Integer ) : PControl;
-const szTBButton = Sizeof( TTBButton );
-      Option3DBorder = 1 shl Ord( tbo3DBorder );
-asm     //cmd    //opd
-   PUSH EDI
-        MOVZX    EDX, DL
-        PUSH     EDX // Align
-        PUSH     EAX // AParent
-
-        XOR      EAX, EAX
-        TEST     CL, Option3DBorder
-        SETNZ    AL
-        PUSH     EAX
-
-        PUSH     ECX // Options
-
-        MOV      AL, ICC_BAR_CLASSES
-        CALL     DoInitCommonControls
-
-        MOV      EAX, ESP
-        MOV      EDX, offset[ToolbarOptions]
-        XOR      ECX, ECX
-        MOV      CL, 6
-        CALL     MakeFlags
-        POP      EDX
-
-        {$IFDEF  COMMANDACTIONS_OBJ}
-        PUSH     TOOLBAR_ACTIONS
-        {$ELSE}
-        PUSH     0   //: actions : = nil
-        {$ENDIF}
-        XCHG     ECX, EAX // ECX = MakeFlags(...)
-   MOV  EDI, ECX
-        MOV      EAX, [ESP+8] // EAX = AParent
-        MOV      EDX, [ESP+12] // EDX = Align
-        OR       ECX, [EDX*4+offset ToolbarAligns]
-        OR       ECX, WS_CHILD or WS_VISIBLE or TBSTYLE_TOOLTIPS
-        MOV      EDX, offset[ TOOLBARCLASSNAME ]
-        CALL     _NewCommonControl
-        {$IFDEF  COMMANDACTIONS_OBJ}
-        MOV      EDX, [EAX].TControl.fCommandActions
-        MOV      [EDX].TCommandActionsObj.aClear, offset[ClearToolbar]
-        MOV      [EDX].TCommandActionsObj.aGetCount, TB_BUTTONCOUNT
-        {$ELSE}
-        MOV      [EAX].TControl.fCommandActions.aClear, offset[ClearToolbar]
-        MOV      [EAX].TControl.fCommandActions.aGetCount, TB_BUTTONCOUNT
-        {$ENDIF}
-        {$IFDEF  USE_FLAGS}
-        OR       [EAX].TControl.fFlagsG5, 1 shl G5_IsButton
-        {$ELSE}
-        INC      [EAX].TControl.fIsButton
-        {$ENDIF}
-        POP      EDX // pop AParent
-        POP      EDX // EDX = Align
-        PUSH     EDX
-        TEST     EDX, EDX
-        JE       @@zero_bounds
-        ADD      [EAX].TControl.fBoundsRect.Bottom, 26-64
-        ADD      [EAX].TControl.fBoundsRect.Right, 1000-64
-        JMP      @@bounds_ready
-@@zero_bounds:
-        MOV      [EAX].TControl.fBoundsRect.Left, EDX
-        MOV      [EAX].TControl.fBoundsRect.Top, EDX
-        MOV      [EAX].TControl.fBoundsRect.Right, EDX
-        MOV      [EAX].TControl.fBoundsRect.Bottom, EDX
-@@bounds_ready:
-        PUSH     EBX
-        PUSH     ESI
-            XCHG     EBX, EAX
-            MOV      ESI, offset[TControl.Perform]
-            PUSH     0
-            PUSH     0
-            PUSH     TB_GETEXTENDEDSTYLE
-            PUSH     EBX
-            CALL     ESI
-            OR       EAX, TBSTYLE_EX_DRAWDDARROWS
-            PUSH     EAX
-            PUSH     0
-            PUSH     TB_SETEXTENDEDSTYLE
-            PUSH     EBX
-            CALL     ESI
-            MOV      EDX, offset[WndProcToolbarCtrl]
-            MOV      EAX, EBX
-            CALL     TControl.AttachProc
-            MOV      EDX, offset[WndProcDoEraseBkgnd]
-            MOV      EAX, EBX
-            CALL     TControl.AttachProc
-            PUSH     0
-            PUSH     szTBButton
-            PUSH     TB_BUTTONSTRUCTSIZE
-            PUSH     EBX
-            CALL     ESI
-            PUSH     0
-            MOVSX    EAX, [EBX].TControl.fMargin
-            PUSH     EAX
-            PUSH     TB_SETINDENT
-            PUSH     EBX
-            CALL     ESI
-            MOV      EAX, [ESP+8] // Align
-            {$IFDEF PARANOIA} DB $2C, 1 {$ELSE} SUB AL, 1 {$ENDIF}
-            JL       @@bounds_correct
-            JE       @@corr_right
-            {$IFDEF PARANOIA} DB $2C, 2 {$ELSE} SUB AL, 2 {$ENDIF}
-            JNE      @@corr_bottom
-    @@corr_right:
-            MOV      EDX, [EBX].TControl.fBoundsRect.Left
-            ADD      EDX, 24
-            MOV      [EBX].TControl.fBoundsRect.Right, EDX
-            JMP      @@bounds_correct
-    @@corr_bottom:
-            MOV      EDX, [EBX].TControl.fBoundsRect.Top
-            ADD      EDX, 22
-            MOV      [EBX].TControl.fBoundsrect.Bottom, EDX
-    @@bounds_correct:
-            {$IFnDEF TBBUTTONS_DFLT_NOAUTOSIZE}
-            MOV      byte ptr [EBX].TControl.DF.fDefaultTBBtnStyle, TBSTYLE_AUTOSIZE
-            {$ENDIF}
-            MOV      EDX, [Bitmap]
-            TEST     EDX, EDX
-            JZ       @@bitmap_added
-            MOV      EAX, EBX
-            CALL     TControl.TBAddBitmap
-    @@bitmap_added:
-
-            PUSH     dword ptr [BtnImgIdxArray]
-            PUSH     dword ptr [BtnImgIdxArray-4]
-            MOV      ECX, [Buttons-4]
-            MOV      EDX, [Buttons]
-            MOV      EAX, EBX
-            CALL     TControl.TBAddButtons
-
-            PUSH     0
-            PUSH     0
-            PUSH     WM_SIZE
-            PUSH     EBX
-            CALL     ESI
-    // ---
-    {+|ecm|}
-    // ---
-            MOV      EDX,EDI
-            OR       EDX,[EBX].TControl.FStyle
-            MOV      EAX,EBX
-            CALL     TControl.SetStyle
-    //  ---
-    {/+|ecm|}
-    //  ---
-            XCHG     EAX, EBX
-        POP      ESI
-        POP      EBX
-        POP      EDX
-   POP  EDI
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function NewToolbar( AParent: PControl; Align: TControlAlign; Options: TToolbarOptions;
                      Bitmap: HBitmap; const Buttons: array of PKOLChar;
                      const BtnImgIdxArray: array of Integer ) : PControl;
@@ -37372,111 +34655,13 @@ begin
   Result.Perform( WM_SIZE, 0, 0 );
   Result.Style := Result.Style or Flags; {+ecm}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_CONSTRUCTORS}
 
 //================== DateTimePicker =====================//
 
-{$IFDEF ASM_UNICODE}
-function WndProcDateTimePickerNotify( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
-type
-    TStrStr = record
-        param_Date: TDateTime;
-        param_PtrToAccept: PInteger;
-        Accept: Integer;
-        UserString: String;
-    end;
-const Size_TStrStr = sizeof( TStrStr );
-asm
-         PUSH  ESI
-         PUSH  EDI
-         MOV   EDI, EDX
-         CMP   WORD PTR [EDI].TMsg.message, WM_NOTIFY
-         JNZ   @@ret_false
-         {$IFDEF EVENTS_DYNAMIC}
-         MOV   ESI, [EAX].TControl.EV
-         {$ENDIF}
-         MOV   ECX, [EDI].TMsg.lParam
-         MOV   EDX, [ECX].TNMHdr.code
-         CMP   EDX, DTN_DROPDOWN
-         JNZ   @@chk_DTN_CLOSEUP
-         {$IFDEF EVENTS_DYNAMIC}
-         LEA   ECX, [ESI].TEvents.fOnDropDown.TMethod.Code
-         {$ELSE}
-         LEA   ECX, [EAX].TControl.EV.fOnDropDown.TMethod.Code
-         {$ENDIF}
-@@event1:
-         MOV   EDX, [ECX].TMethod.Data
-         MOV   ECX, [ECX].TMethod.Code
-         {$IFDEF NIL_EVENTS}
-         JECXZ @@ret_false
-         {$ENDIF}
-         XCHG  EAX, EDX
-         CALL  ECX
-         JMP   @@ret_false
-@@chk_DTN_CLOSEUP: /////////////////////////////////////////////////////////////
-         {$IFDEF EVENTS_DYNAMIC}
-         LEA   ECX, [ESI].TEvents.fOnCloseUp.TMethod.Code
-         {$ELSE}
-         LEA   ECX, [EAX].TControl.EV.fOnCloseUp.TMethod.Code
-         {$ENDIF}
-         CMP   EDX, DTN_CLOSEUP
-         JE    @@event1
-////////////////////////////////////////////////////////////////////////////////
-         {$IFDEF EVENTS_DYNAMIC}
-         LEA   ECX, [ESI].TEvents.fOnChangeCtl.TMethod.Code
-         {$ELSE}
-         LEA   ECX, [EAX].TControl.EV.fOnChangeCtl.TMethod.Code
-         {$ENDIF}
-         CMP   EDX, DTN_DATETIMECHANGE
-         JE    @@event1
-         CMP   EDX, DTN_USERSTRING
-         JNE   @@ret_false
-////////////////////////////////////////////////////////////////////////////////
-         {$IFDEF EVENTS_DYNAMIC}
-         MOV   ECX, [ESI].TEvents.fOnDTPUserString.TMethod.Code
-         MOV   EDX, [ESI].TEvents.fOnDTPUserString.TMethod.Data
-         {$ELSE}
-         MOV   ECX, [EAX].TControl.EV.fOnDTPUserString.TMethod.Code
-         MOV   EDX, [EAX].TControl.EV.fOnDTPUserString.TMethod.Data
-         {$ENDIF}
-         {$IFDEF NIL_EVENTS}
-         JECXZ @@ret_false
-         {$ENDIF}
-         SUB   ESP, Size_TStrStr
-         MOV   ESI, ESP
-         PUSHAD
-         CALL  TControl.GetDateTime
-         FSTP  QWORD PTR [ESI].TStrStr.param_Date
-         WAIT
-         //POPAD
-         //PUSHAD
-         LEA   EAX, [ESI].TStrStr.UserString
-         AND   dword ptr [EAX], 0
-         MOV   EDI, [EDI].TMsg.lParam
-         MOV   EDX, [EDI].TNMDateTimeString.pszUserString
-         CALL  System.@LStrFromPChar
-         LEA   EAX, [ESI].TStrStr.Accept
-         MOV   byte ptr [EAX], 1
-         MOV   [ESI].TStrStr.param_PtrToAccept, EAX
-         POPAD
-         MOV   ESI, ECX
-         MOV   ECX, [ESI].TStrStr.UserString
-         XCHG  EAX, EDX
-         CALL  ESI
-         MOV   EAX, [ESP].TStrStr.Accept
-         AND   EAX, 1
-         MOV   [EDI].TNMDateTimeString.dwFlags, EAX
-         LEA   EAX, [ESI].TStrStr.UserString
-         CALL  System.@LStrClr
-         ADD   ESP, Size_TStrStr
-@@ret_false:
-         XOR   EAX, EAX
-         POP   EDI
-         POP   ESI
-end;
-{$ELSE  PAS_VERSION}
+{$IFDEF ASM_UNICODE}{$ELSE  PAS_VERSION}
 function WndProcDateTimePickerNotify( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 var NMhdr: PNMHdr;
     D: TDateTime;
@@ -37857,7 +35042,7 @@ type PENLink = ^TENLink;
     lpstrText: PAnsiChar;
   end;
 
-{$IFDEF not_ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF not_ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function WndProc_RE_LinkNotify( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 var Link: PENLink;
     Range: TextRangeA;
@@ -37910,7 +35095,7 @@ begin
     Result := TRUE;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_noVERSION}
 function WndProcRichEditNotify( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
@@ -37932,7 +35117,7 @@ asm
         XOR      EAX, EAX
         RET
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function WndProcRichEditNotify( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 var NMhdr: PNMHdr;
 begin
@@ -37958,7 +35143,7 @@ begin
     Self_.DF.fREURL := nil;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 const RichEditflags: array [ TEditOption ] of Integer = (
                   not (es_AutoHScroll or WS_HSCROLL),
@@ -38095,7 +35280,7 @@ asm
         XCHG     EAX, EBX
         POP      EBX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function NewRichEdit1( AParent: PControl; Options: TEditOptions ): PControl;
 var Flags, I, d, Last, SaveErrMode: Integer;
 label search_richedit;
@@ -38187,7 +35372,7 @@ begin
   END;
   {$ENDIF INPACKAGE}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF NOT_USE_RICHEDIT}
 
 {$ENDIF USE_CONSTRUCTORS}
@@ -38197,7 +35382,7 @@ function OleInitialize(pwReserved: Pointer): HResult; stdcall;
 procedure OleUninitialize; stdcall;
   external 'ole32.dll' name 'OleUninitialize';
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function OleInit: Boolean;
 begin
   if OleInitCount = 0 then
@@ -38208,9 +35393,9 @@ begin
   Inc( OleInitCount );
   Result := True;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure OleUnInit;
 begin
   if OleInitCount > 0 then
@@ -38220,7 +35405,7 @@ begin
       OleUninitialize;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function SysAllocStringLen;
          external 'oleaut32.dll' name 'SysAllocStringLen';
@@ -38257,25 +35442,7 @@ begin
 end;
 {$ELSE not_USE_CONSTRUCTORS}
 
-{$IFDEF ASM_VERSION}
-const RichEdit50W: array[0..11] of AnsiChar = ('R','i','c','h','E','d','i','t','5','0','W',#0 );
-function NewRichEdit( AParent: PControl; Options: TEditOptions ): PControl;
-const deltaChr = 24; // sizeof( TCharFormat2 ) - sizeof( RichEdit.TCharFormat );
-      deltaPar = sizeof( TParaFormat2 ) - sizeof( RichEdit.TParaFormat );
-asm
-        PUSHAD
-        CALL     OleInit
-        TEST     EAX, EAX
-        POPAD
-        JZ       @@new1
-        MOV      [RichEditIdx], 0
-        CALL     NewRichEdit1
-        MOV      byte ptr [EAX].TControl.DF.fCharFmtDeltaSz, deltaChr
-        MOV      byte ptr [EAX].TControl.DF.fParaFmtDeltaSz, deltaPar
-        RET
-@@new1: CALL     NewRichEdit1
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewRichEdit( AParent: PControl; Options: TEditOptions ): PControl;
 begin
   {$IFDEF INPACKAGE}
@@ -38311,7 +35478,7 @@ begin
   END;
   {$ENDIF INPACKAGE}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_CONSTRUCTORS}
 {$ENDIF NOT_USE_RICHEDIT}
@@ -38321,7 +35488,7 @@ end;
 
 { TControl }
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.Init;
 {$IFNDEF OLD_EVENTS_MODEL}
 var i: Integer;
@@ -38385,10 +35552,10 @@ begin
   {$ENDIF}
   fDynHandlers := NewList;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.InitParented( AParent: PControl );
 begin
   Init;
@@ -38396,7 +35563,7 @@ begin
      fColor := AParent.fColor;
   Parent := AParent;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -38430,7 +35597,7 @@ begin
     FParentWnd := AParentWnd;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 destructor TControl.Destroy;
 var I: Integer;
     F: PControl;
@@ -38578,7 +35745,7 @@ begin
        inherited;
    end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
    {$IFDEF USE_MHTOOLTIP}
    {$DEFINE code}
@@ -38591,7 +35758,7 @@ end;
    {$UNDEF code}
    {$ENDIF}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetEnabled( Value: Boolean );
 begin
    if GetEnabled = Value then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
@@ -38612,53 +35779,17 @@ begin
    end;
    Invalidate; // necessary for Graphic controls
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_noVERSION}
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function TControl.GetParentWindow: HWnd;
 begin
   Result := GetParentWnd( TRUE );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function TControl.GetWindowHandle: HWnd;
-asm
-         MOV      ECX, [EAX].fHandle
-         JECXZ    @@1
-         XCHG     EAX, ECX
-         RET
-@@1:
-         PUSH     EBX
-         MOV      EBX, EAX
-         {$IFDEF  USE_FLAGS}
-         TEST     [EBX].fFlagsG4, 1 shl G4_CreateVisible
-         {$ELSE}
-         CMP      [EBX].fCreateVisible, 0
-         {$ENDIF}
-         JNZ      @@2
-
-         XOR      EDX, EDX
-         CALL     TControl.Set_Visible
-
-         MOV      EAX, EBX
-         CALL     CallTControlCreateWindow
-         { This is a call to Pascal piece of code, which
-           calls virtual method TControl.CreateWindow }
-
-         {$IFDEF  USE_FLAGS}
-         OR       [EBX].fFlagsG4, 1 shl G4_CreateHidden
-         {$ELSE}
-         INC      [EBX].fCreateHidden
-         {$ENDIF}
-         JMP      @@0
-
-@@2:     CALL     CallTControlCreateWindow
-@@0:     MOV      EAX, [EBX].fHandle
-         POP      EBX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetWindowHandle: HWnd;
 begin
   {$IFDEF INPACKAGE}
@@ -38687,7 +35818,7 @@ begin
   END;
   {$ENDIF INPACKAGE}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF DEBUG_CREATEWINDOW}
 procedure Debug_CreateWindow1( _Self: PControl );
@@ -38731,273 +35862,7 @@ end;
 
 var LockedWindow: HWnd;
 
-{$IFDEF ASM_UNICODE}
-function TControl.CreateWindow: Boolean;
-type PCreateWndParams = ^TCreateWndParams;
-const
-  CS_OFF = CS_OWNDC or CS_CLASSDC or CS_PARENTDC or CS_GLOBALCLASS;
-  CS_ON = 0; //CS_VREDRAW or CS_HREDRAW;
-  szWndClass = sizeof( TWndClass );
-  int_IDC_ARROW = integer( IDC_ARROW );
-asm
-        PUSH     EBX
-        XCHG     EBX, EAX
-        {$IFDEF DEBUG_CREATEWINDOW}
-        MOV     EAX, EBX
-        CALL    Debug_CreateWindow1
-        {$ENDIF}
-        MOV      ECX, [EBX].fParent
-        JECXZ    @@chk_handle
-        XCHG     EAX, ECX
-        CALL     GetWindowHandle
-        TEST     EAX, EAX
-        JZ       @@ret_0
-@@chk_handle:
-        MOV      ECX, [EBX].fHandle
-        JECXZ    @@prepare_Params
-        MOV      EAX, EBX
-        {$IFDEF  USE_FLAGS}
-        TEST     [EBX].fFlagsG4, 1 shl G4_CreateHidden
-        {$ELSE}
-        CMP      [EBX].fCreateHidden, 0
-        {$ENDIF}
-        JZ       @@create_children
-        CALL     CreateChildWindows
-        MOV      EAX, EBX
-        MOV      DL, 1
-        CALL     Set_Visible
-        {$IFDEF  USE_FLAGS}
-        AND      [EBX].fFlagsG4, not(1 shl G4_CreateHidden)
-        {$ELSE}
-        MOV      [EBX].fCreateHidden, 0
-        {$ENDIF}
-        JMP      @@ret_true
-@@create_children:
-        CALL     CreateChildWindows
-@@ret_true:
-        MOV      AL, 1
-@@ret_0:
-        POP      EBX
-        RET
-@@prepare_params:
-        {$IFDEF USE_GRAPHCTLS}
-            {$IFDEF  USE_FLAGS}
-            TEST    [EBX].fFlagsG6, 1 shl G6_GraphicCtl
-            SETNZ   AL
-            JNZ     @@ret_0
-            {$ELSE}
-            MOV      AL, [EBX].fWindowed
-            CMP      AL, 0
-            JZ       @@ret_0
-            {$ENDIF}
-        {$ENDIF}
-        PUSH     EBP
-        MOV      EBP, ESP
-
-        PUSH     ECX        // Params.WindowClass.lpszClassName := nil
-        PUSH     ECX        // Params.WindowClass.lpszMenuName := nil
-        PUSH     ECX        // Params.WindowClass.hbrBackground := 0
-        PUSH     int_IDC_ARROW
-        PUSH     ECX
-        CALL     LoadCursor
-        PUSH     EAX        // Params.WindowClass.hCursor := LoadCursor( 0, IDC_ARROW )
-        XOR      ECX, ECX
-        PUSH     ECX        // Params.WindowClass.hIcon := 0
-        PUSH     [hInstance]// Params.WindowClass.hInstance := hInstance
-        PUSH     ECX        // Params.WindowClass.cbWndExtra := 0
-        PUSH     ECX        // Params.WindowClass.cbClsExtra := 0
-        {$IFDEF  SAFE_CODE}
-        PUSH     [EBX].fDefWndProc     // Params.WindowClass.lpfnWndProc := fDefWndProc
-        {$ELSE}
-        PUSH     0
-        {$ENDIF}
-        PUSH     [EBX].fClsStyle       // Params.WindowClass.style := fStyle
-        ADD      ESP, -64
-        PUSH     ECX
-        MOV      EAX, EBX
-        MOV      EDX, ESP
-        CALL     get_ClassName
-        POP      EDX
-        MOV      EAX, ESP
-        PUSH     EDX
-        //CALL     StrPCopy    // StrPCopy( Params.WinClsNamBuf, ClassName )
-        CALL     StrCopy
-        CALL     RemoveStr
-        PUSH     0           // Params.Param := nil
-        PUSH     [hInstance] // Params.Inst := hInstance
-        PUSH     [EBX].fMenu // Params.Menu := fMenu
-        MOV      DL, 1
-        MOV      EAX, EBX
-        CALL     GetParentWnd
-        PUSH     EAX         // Params.WndParent := GetParentWnd( True )
-
-        MOV      ECX, CW_USEDEFAULT
-        MOV      EAX, [EBX].fBoundsRect.Bottom
-        MOV      EDX, [EBX].fBoundsRect.Top
-        SUB      EAX, EDX
-        JNZ      @@1
-        MOV      EAX, ECX
-@@1:    PUSH     EAX         // Params.Height := Height | CW_UseDefault
-        MOV      EAX, [EBX].fBoundsRect.Right
-        SUB      EAX, [EBX].fBoundsRect.Left
-        {$IFDEF USE_CMOV}
-        CMOVZ    EAX, ECX
-        {$ELSE}
-        JNZ      @@2
-        MOV      EAX, ECX
-@@2:    {$ENDIF}
-
-        PUSH     EAX         // Params.Width := Width | CW_UseDefault
-        MOV      EAX, [EBX].fBoundsRect.Left
-        {$IFDEF  USE_FLAGS}
-        TEST     [EBX].fFlagsG3, 1 shl G3_IsControl
-        {$ELSE}
-        CMP      [EBX].fIsControl, CL
-        {$ENDIF}
-        JNZ      @@3
-        {$IFDEF  USE_FLAGS}
-        TEST     [EBX].fFlagsG2, (1 shl G2_ChangedPos)
-        {$ELSE}
-        TEST     byte ptr [EBX].fChangedPosSz, 3
-        {$ENDIF  USE_FLAGS}
-        JNZ      @@3
-        MOV      EDX, ECX
-        XCHG     EAX, ECX
-@@3:    PUSH     EDX         // Params.Y := Top | CW_UseDefault
-        PUSH     EAX         // Params.X := Left | CW_UseDefault
-        PUSH     [EBX].fStyle    // Params.Style := fStyle
-        PUSH     [EBX].fCaption  // Params.Caption := fCaption
-        LEA      EAX, [ESP+40]
-        PUSH     EAX         // Params.WinClassName := @Params.WinClsNamBuf
-        PUSH     [EBX].fExStyle  // Params.ExStyle := fExStyle
-
-        MOV      ECX, [EBX].fControlClassName
-        JECXZ    @@registerClass
-        LEA      EAX, [ESP].TCreateWndParams.WindowClass
-        PUSH     EAX           // @Params.WindowClass
-        PUSH     ECX           // fControlClassName
-        PUSH     [hInstance]   // hInstance
-        CALL     GetClassInfo
-        MOV      EAX, [ESP].TCreateWndParams.Inst
-        MOV      [ESP].TCreateWndParams.WindowClass.hInstance, EAX
-        AND      [ESP].TCreateWndParams.WindowClass.style, not CS_OFF
-@@registerClass:
-        CMP      [EBX].fDefWndProc, 0
-        JNE      @@fDefWndProc_ready
-        MOV      EAX, [ESP].TCreateWndParams.WindowClass.lpfnWndProc
-        MOV      [EBX].fDefWndProc, EAX
-@@fDefWndProc_ready:
-        MOV      ECX, [ESP].TCreateWndParams.WndParent
-        TEST     ECX, ECX
-        JNZ      @@registerClass1
-        TEST     byte ptr [ESP].TCreateWndParams.Style+3, $40
-        XCHG     EAX, ECX
-        JNZ      @@fin
-@@registerClass1:
-        MOV      EAX, [ESP].TCreateWndParams.WinClassName
-        MOV      EDX, [ESP].TCreateWndParams.WindowClass.hInstance
-        ADD      ESP, -szWndClass
-        PUSH     ESP
-        PUSH     EAX
-        PUSH     EDX
-        CALL     GetClassInfo
-        ADD      ESP, szWndClass
-        TEST     EAX, EAX
-        JNZ      @@registered
-        MOV      EAX, [ESP].TCreateWndParams.WinClassName
-        MOV      [ESP].TCreateWndParams.WindowClass.lpszClassName, EAX
-        MOV      [ESP].TCreateWndParams.WindowClass.lpfnWndProc, offset WndFunc
-        LEA      EAX, [ESP].TCreateWndParams.WindowClass
-        PUSH     EAX
-        CALL     RegisterClass
-        TEST     EAX, EAX
-        JZ       @@fin
-@@registered:
-        MOV      [CreatingWindow], EBX
-        {$IFDEF DEBUG_CREATEWINDOW}
-        MOV     EAX, EBX
-        MOV     EDX, ESP
-        CALL    Debug_CreateWindow2
-        {$ENDIF}
-        CALL     CreateWindowEx
-        MOV      [EBX].fHandle, EAX
-        TEST     EAX, EAX
-        JZ       @@fin
-        PUSH     EAX
-        {$IFDEF USE_PROP}
-        PUSH     offset ID_SELF
-        {$ELSE}
-        PUSH     GWL_USERDATA
-        {$ENDIF}
-        PUSH     EAX
-
-        PUSH     0
-        PUSH     $10002 //UIS_CLEAR or (UISF_HIDEFOCUS shl 16)
-        PUSH     $0128  //WM_UPDATEUISTATE
-        PUSH     EAX
-        CALL     SendMessage
-
-        {$IFDEF USE_PROP}
-        CALL     GetProp
-        {$ELSE}
-        CALL     GetWindowLong
-        {$ENDIF}
-        XCHG     ECX, EAX
-        POP      EAX
-        INC      ECX
-        LOOP     @@propSet
-        MOV      [CreatingWindow], ECX
-        PUSH     EBX
-        {$IFDEF USE_PROP}
-        PUSH     offset ID_SELF
-        PUSH     EAX
-        CALL     SetProp
-        {$ELSE}
-        PUSH     GWL_USERDATA
-        PUSH     EAX
-        CALL     SetWindowLong
-        {$ENDIF}
-@@propSet:
-        {$IFDEF SMALLEST_CODE}
-        {$ELSE}
-        {$IFDEF  USE_FLAGS}
-        TEST     [EBX].fFlagsG3, 1 shl G3_IsControl
-        {$ELSE}
-        CMP      [EBX].fIsControl, 0
-        {$ENDIF}
-        JNZ      @@iconSet
-        MOV      EAX, EBX
-        CALL     GetIcon
-        PUSH     EAX
-        PUSH     1
-        PUSH     WM_SETICON
-        PUSH     EBX
-        CALL     Perform
-@@iconSet:
-        {$ENDIF}
-        MOV      ECX, [EBX].PP.fCreateWndExt
-        {$IFDEF  NIL_EVENTS}
-        JECXZ    @@dblbufcreate
-        {$ENDIF}
-        MOV      EAX, EBX
-        CALL     ECX
-@@dblbufcreate:
-@@applyfont:
-        MOV      EAX, EBX
-        CALL     [ApplyFont2Wnd_Proc]
-        MOV      EAX, EBX
-        CALL     [ApplyFont2Wnd_Proc]
-@@createchildren:
-        XCHG     EAX, EBX
-        CALL     CreateChildWindows
-        MOV      AL, 1
-@@fin:
-        MOV      ESP, EBP
-        POP      EBP
-@@ret_false:
-        POP      EBX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function TControl.CreateWindow: Boolean;
 const
   CS_OFF = CS_OWNDC or CS_CLASSDC or CS_PARENTDC or CS_GLOBALCLASS;
@@ -39007,7 +35872,7 @@ var TempClass: TWndClass;
     ClassRegistered: Boolean;
     {$IFDEF _FPC}
     SClassName: AnsiString;
-    {$ENDIF ASM_VERSION}
+    {$ENDIF PAS_VERSION}
     {$IFDEF UNICODE_CTRLS}
     TempOleStr : PWideChar;
     {$ENDIF}
@@ -39309,7 +36174,7 @@ begin
     end;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function WndProcMouse(Self_: PControl; var Msg: TMsg; var Rslt: Integer): Boolean;
 var MouseData: TMouseEventData;
 begin
@@ -39419,70 +36284,9 @@ begin
     Result := StopHandling;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function WndProcKeybd( Self_: PControl; var Msg: TMsg; var Rslt: Integer): Boolean;
-asm
-        PUSH     EBX
-        MOV      ECX, [EDX].TMsg.message
-        SUB      CX, $100
-        CMP      ECX, 5
-        JA       @@fin_false
-        XCHG     EBX, EAX   // EBX = @Self
-        XCHG     EAX, ECX   // EAX = message - WM_KEYFIRST
-        {$IFDEF  EVENTS_DYNAMIC}
-        MOV      ECX, [EBX].TControl.EV
-        LEA      ECX, [ECX].TEvents.fOnKeyUp
-        {$ELSE}
-        LEA      ECX, [EBX].TControl.EV.fOnKeyUp
-        {$ENDIF}
-        JZ       @@event
-        {$IFDEF PARANOIA} DB $34, 1 {$ELSE} XOR AL, 1 {$ENDIF}
-        JZ       @@event
-        //LEA      ECX, [EBX].TControl.EV.fOnKeyDown
-        ADD      ECX, 8
-        {$IFDEF PARANOIA} DB $34, 1 {$ELSE} XOR AL, 1 {$ENDIF}
-        JZ       @@event
-        {$IFDEF PARANOIA} DB $34, 4 {$ELSE} XOR AL, 4 {$ENDIF}
-        JZ       @@event
-        //LEA      ECX, [EBX].TControl.EV.fOnChar
-        SUB      ECX, 24
-        {$IFDEF PARANOIA} DB $34, 6 {$ELSE} XOR AL, 2 xor 4 {$ENDIF}
-        JZ       @@event
-        {$IFDEF PARANOIA} DB $34, 4 {$ELSE} XOR AL, 6 xor 2 {$ENDIF}
-        JNZ      @@fin_false
-@@event:
-        {$IFDEF  NIL_EVENTS}
-        CMP      word ptr [ECX].TMethod.Code+2, 0
-        JZ       @@fin_false
-        {$ENDIF}
-        PUSH     EDX
-        PUSH     ECX
-        LEA      ECX, [EDX].TMsg.wParam
-        PUSH     ECX
-        CALL     GetShiftState
-        POP      ECX         // @wParam
-        XCHG     EAX, [ESP]  // ShiftState; EAX=@event
-        MOV      EDX, EBX    // @Self
-        MOV      EBX, [EAX].TMethod.Code
-        MOV      EAX, [EAX].TMethod.Data
-        CALL     EBX
-
-        POP      EDX
-        MOV      ECX, [EDX].TMsg.wParam
-        JECXZ    @@fin_true
-
-@@fin_false:
-        XOR      EAX, EAX
-        POP      EBX
-        RET
-
-@@fin_true:
-        MOV      AL, 1
-        POP      EBX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function WndProcKeybd(Self_: PControl; var Msg: TMsg; var Rslt: Integer): Boolean;
 var C : KOLChar;
 begin
@@ -39525,7 +36329,7 @@ begin
   if Msg.wParam <> 0 then
     Result := False;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function WndProcDummy(Self_: PControl; var Msg: TMsg; var Rslt: Integer): Boolean;
 begin
@@ -40068,7 +36872,7 @@ begin
 end;
 
 {$IFDEF WIN_GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetClsStyle( Value: DWord );
 begin
    if fClsStyle = Value then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
@@ -40076,9 +36880,9 @@ begin
    if fHandle = 0 then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
    SetClassLong( fHandle, GCL_STYLE, Value );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetStyle( Value: DWord );
 begin
    if fStyle.Value = Value then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
@@ -40091,7 +36895,7 @@ begin
                  SWP_NOZORDER or SWP_FRAMECHANGED );
    Invalidate;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF GRAPHCTL_XPSTYLES}
 function TControl.GetEdgeStyle: TEdgeStyle;
@@ -40137,7 +36941,7 @@ begin
 end;
 {$ENDIF}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetExStyle( Value: DWord );
 begin
    if fExStyle = Value then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
@@ -40150,7 +36954,7 @@ begin
                  SWP_NOZORDER or SWP_FRAMECHANGED );
    Invalidate;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function WndProcSetCursor( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 var Cur: HCursor;
@@ -40174,7 +36978,7 @@ begin
   end;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetCursor( Value: HCursor );
 var P: TPoint;
 begin
@@ -40188,7 +36992,7 @@ begin
    if PointInRect( P, ClientRect ) then
    Windows.SetCursor( Value );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TControl.CursorLoad(Inst: Integer; ResName: PKOLChar);
 begin
@@ -40197,7 +37001,7 @@ begin
   //{$ELSE}            fCursorShared := TRUE; {$ENDIF}
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetIcon( Value: HIcon );
 var OldIco: HIcon;
 begin
@@ -40209,9 +37013,9 @@ begin
    if  OldIco <> 0 then
        DestroyIcon( OldIco );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetMenu( Value: HMenu );
 begin
   if fMenu = Value then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
@@ -40228,7 +37032,7 @@ begin
   if fHandle = 0 then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
   Windows.SetMenu( fHandle, Value );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure CallWinHelp( Context: Integer; CtxCtl: PControl );
 var Cmd: Integer;
@@ -40375,7 +37179,9 @@ end;
 procedure AssignHtmlHelp( const HtmlHelpPath: KOLString );
 var Lbytes: Integer;
 begin
+  {$IFDEF KOL_ASSERTIONS}
   Assert( (HtmlHelpPath <> '') and (Applet <> nil), 'Error parameters' );
+  {$ENDIF KOL_ASSERTIONS}
   if HelpFilePath <> '' then
     FreeMem( HelpFilePath );
   Lbytes := (Length( HtmlHelpPath ) + 1) * Sizeof( KOLChar );
@@ -40403,7 +37209,9 @@ end;
 procedure TControl.SetHelpPath(const Value: KOLString);
 var Lbytes: Integer;
 begin
+  {$IFDEF KOL_ASSERTIONS}
   Assert( Value <> '', 'Error parameter' );
+  {$ENDIF KOL_ASSERTIONS}
   if  HelpFilePath <> '' then
       FreeMem( HelpFilePath );
   Lbytes := (Length( Value ) + 1)*Sizeof( KOLChar );
@@ -40423,48 +37231,7 @@ end;
 {$ENDIF}
 
 {$IFDEF GDI}
-{$IFDEF ASM_UNICODE}
-function TControl.GetCaption: KOLString;
-asm
-        PUSH      EBX
-        PUSH      EDI
-        XCHG      EBX, EAX
-        MOV       EDI, EDX
-        {$IFDEF   USE_FLAGS}
-        TEST      [EBX].fFlagsG1, (1 shl G1_IgnoreWndCaption)
-        {$ELSE}
-        CMP       [EBX].fIgnoreWndCaption, 0
-        {$ENDIF   USE_FLAGS}
-        JNZ       @@getFCaption
-        MOV       ECX, [EBX].fHandle
-        JECXZ     @@getFCaption
-@@getWndCaption:
-        PUSH      ECX
-        CALL      GetWindowTextLength
-        PUSH      EAX
-          XCHG      EDX, EAX
-          LEA       EAX, [EBX].fCaption
-          CALL      System.@LStrSetLength
-        POP       ECX
-        JECXZ     @@getFCaption
-        INC       ECX
-        PUSH      ECX
-        PUSH      [EBX].fCaption
-        PUSH      [EBX].fHandle
-        CALL      GetWindowText
-@@getFCaption:
-        MOV       EDX, [EBX].fCaption
-        XCHG      EAX, EDI
-        {$IFNDEF UNICODE_CTRLS}
-        CALL      System.@LStrAsg
-        {$ELSE}
-        CALL      System.@WStrFromPChar
-        {$ENDIF}
-@@exit:
-        POP       EDI
-        POP       EBX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetCaption: KOLString;
 var Sz: Integer;
 begin
@@ -40485,7 +37252,7 @@ begin
    end;
    Result := FCaption;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -40500,7 +37267,7 @@ END;
 {$ENDIF _X_}
 
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetCaption( const Value: KOLString );
 begin
   fCaption := Value;
@@ -40512,7 +37279,7 @@ begin
       Invalidate;
   DoAutoSize;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -40527,7 +37294,7 @@ END;
 {$ENDIF _X_}
 {$IFDEF WIN_GDI}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION}
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION}
 function TControl.GetVisible: Boolean;
 begin
    //UpdateWndStyles;
@@ -40545,9 +37312,9 @@ begin
    Result := fVisible;
    {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} // Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} // Pascal
 function TControl.Get_Visible: Boolean;
 begin
    {$IFDEF USE_FLAGS}
@@ -40558,9 +37325,9 @@ begin
    Result := fVisible;
    {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} // Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} // Pascal
 procedure TControl.Set_Visible( Value: Boolean );
 {$IFDEF OLD_ALIGN}
 var CmdShow: DWORD;
@@ -40618,7 +37385,7 @@ begin
   end;
 {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure TControl.SetVisible( Value: Boolean );
@@ -40627,12 +37394,12 @@ begin
     {$ELSE} fCreateVisible := TRUE; {$ENDIF}
     Set_Visible( Value );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF WIN_GDI}
 
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetBoundsRect: TRect;
 var W: HWnd;
     P: TPoint;
@@ -40659,7 +37426,7 @@ begin
       fBoundsRect := Result;
    end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 
 {$IFDEF _X_}
@@ -40695,7 +37462,7 @@ END;
 {$ENDIF _X_}
 
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetBoundsRect( const Value: TRect );
 var Rect: TRect;
 begin
@@ -40726,7 +37493,7 @@ begin
        {$ELSE} fSizeRedraw {$ENDIF} then
        Invalidate;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 
 {$IFDEF _X_}
@@ -40771,7 +37538,7 @@ END;
 const
   WindowStateShowCommands: array[TWindowState] of Byte =
     (SW_SHOWNOACTIVATE, SW_SHOWMINNOACTIVE, SW_SHOWMAXIMIZED);
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetWindowState( Value: TWindowState );
 begin
    if WindowState <> Value then
@@ -40781,9 +37548,9 @@ begin
       ShowWindow(fHandle, WindowStateShowCommands[Value]);
    end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.Show;
 begin
    CreateWindow;
@@ -40791,35 +37558,35 @@ begin
    SetForegroundWindow( Handle );
    DoSetFocus;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TControl.Hide;
 begin
    SetVisible( False );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.Client2Screen( const P: TPoint ): TPoint;
 begin
    Result := P;
    if fHandle <> 0 then
       Windows.ClientToScreen( fHandle, Result );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.Screen2Client( const P: TPoint ): TPoint;
 begin
    Result := P;
    if Handle <> 0 then
       Windows.ScreenToClient( Handle, Result );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF WIN_GDI}
 
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.ClientRect: TRect;
 const BorderParams: array[ 0..5 ] of DWORD =
       ( SM_CXBORDER, SM_CXFRAME, SM_CXSIZEFRAME, SM_CYBORDER, SM_CYFRAME, SM_CYSIZEFRAME );
@@ -40833,7 +37600,7 @@ begin
    Inc( Result.Left, fClientLeft );
    Dec( Result.Right, fClientRight );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -40860,7 +37627,7 @@ begin
      InvalidateRect( fHandle, nil, TRUE );
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -40887,11 +37654,11 @@ begin
    if  PControl( Sender ).fHandle <> 0 then
        InvalidateRect( PControl( Sender ).fHandle, nil, TRUE );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF USE_GRAPHCTLS}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetIcon: HIcon;
 begin
    Result := DF.fIcon;
@@ -40917,7 +37684,7 @@ begin
        end;
    DF.fIcon := Result;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TControl.IconLoad(Inst: Integer; ResName: PKOLChar);
 begin
@@ -40933,7 +37700,7 @@ begin
   {$ELSE}            fIconShared := TRUE; {$ENDIF}
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.CallDefWndProc(var Msg: TMsg): Integer;
 begin
   {$IFDEF INPACKAGE}
@@ -40974,9 +37741,9 @@ begin
   END;
   {$ENDIF INPACKAGE}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetWindowState: TWindowState;
 begin
    Result := DF.fWindowState;
@@ -40992,9 +37759,9 @@ begin
       //DF.fWindowState := Result;
    end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.DoSetFocus: Boolean;
 begin
   Result := False;
@@ -41009,24 +37776,24 @@ begin
     Result := True;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TControl.HandleAllocated: Boolean;
 begin
   Result := FHandle <> 0;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetEnabled: Boolean;
 begin
   if   FHandle = 0 then
        Result := (Style and WS_DISABLED) = 0
   else Result := IsWindowEnabled( FHandle );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF WIN_GDI}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.IsMainWindow: Boolean;
 begin
   if Applet = nil then
@@ -41036,42 +37803,10 @@ begin
   else
     Result := Applet.Children[ 0 ] = @ Self;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF WIN_GDI}
-{$IFDEF ASM_UNICODE}
-function TControl.get_ClassName: AnsiString;
-asm
-        PUSH      EBX
-        XCHG      EBX, EAX
-        XCHG      EAX, EDX
-        MOV       EDX, [EBX].fControlClassName
-        PUSH      EAX
-        {$IFDEF _D2009orHigher}
-        XOR       ECX, ECX 
-        {$ENDIF}
-        CALL      System.@LStrFromPChar // EAX^ := String(EDX)
-        POP       EAX
-        {$IFDEF   USE_FLAGS}
-        TEST      [EBX].fFlagsG6, 1 shl G6_CtlClassNameChg
-        {$ELSE}
-        CMP       [EBX].fCtlClsNameChg, 0
-        {$ENDIF}
-        JNZ       @@exit
-        MOV       ECX, [EAX]
-        MOV       EDX, offset[ @@obj ]
-        CALL      System.@LStrCat3 // EAX^ := EDX + ECX
-        JMP       @@exit
-
-        {$IFDEF _D2009orHigher}
-        DW        1252, 1  // CP_ANSI_LATIN1, Byte // TODO: CP_ACP
-        {$ENDIF}
-        DD        -1, 4    // FFFFFFFF 04000000 obj_, 0
-@@obj:  DB        'obj_', 0
-@@exit:
-        POP       EBX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function TControl.get_ClassName: KOLString;
 begin
   Result := fControlClassName;
@@ -41079,7 +37814,7 @@ begin
       {$ELSE} not fCtlClsNameChg {$ENDIF} then
       Result := KOLString('obj_') + Result;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TControl.set_ClassName(const Value: KOLString);
 begin
@@ -41217,7 +37952,7 @@ end;
 
 {$IFDEF GDI}
 {$IFDEF ASM_LOCAL}
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetParent( Value: PControl );
 begin
    if Value = fParent then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
@@ -41270,7 +38005,7 @@ begin
      {$ENDIF}
    end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -41309,7 +38044,9 @@ procedure TControl.MoveChild(Child: PControl; NewIdx: Integer);
 var I: Integer;
 begin
   I := ChildIndex( Child );
+  {$IFDEF KOL_ASSERTIONS}
   Assert( I>=0, 'TControl.MoveChild: index out of bounds' );
+  {$ENDIF KOL_ASSERTIONS}
   fChildren.MoveItem( I, NewIdx );
 end;
 
@@ -41329,12 +38066,12 @@ end;
 
 {$ENDIF WIN_GDI}
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 constructor TControl.CreateParented(AParent: PControl);
 begin
   InitParented( AParent ); // because InitParented is virtual, but CreateParented
 end;                       // can not be virtual (as an _object_ - not a class - constructor)
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -41352,14 +38089,14 @@ begin
     InitOrthaned( AParentWnd );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetLeft: Integer;
 begin
    Result := BoundsRect.Left;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetLeft( Value: Integer );
 var R: TRect;
 begin
@@ -41368,16 +38105,16 @@ begin
    R.Right := Value + Width;
    SetBoundsRect( R );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetTop: Integer;
 begin
    Result := BoundsRect.Top;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetTop( Value: Integer );
 var R: TRect;
 begin
@@ -41386,17 +38123,17 @@ begin
    R.Bottom := Value + Height;
    SetBoundsRect( R );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetWidth: Integer;
 begin
   with BoundsRect do
     Result := Right - Left;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetWidth( Value: Integer );
 var R: TRect;
 begin
@@ -41405,17 +38142,17 @@ begin
     Right := Left + Value;
   SetBoundsRect( R );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetHeight: Integer;
 begin
   with BoundsRect do
    Result := Bottom - Top;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetHeight( Value: Integer );
 var R: TRect;
 begin
@@ -41424,17 +38161,17 @@ begin
      Bottom := Top + Value;
    SetBoundsRect( R );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetPosition: TPoint;
 begin
   Result.x := BoundsRect.Left;
   Result.y := BoundsRect.Top;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.Set_Position( Value: TPoint );
 var R: TRect;
 begin
@@ -41444,7 +38181,7 @@ begin
    R.Bottom := R.Top + Height;
    BoundsRect := R;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF WIN_GDI}
 function WndProcConstraints( Sender: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
@@ -41551,7 +38288,7 @@ begin
 end;
 {$ENDIF WIN_GDI}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure DefaultPaintBackground( Sender: PControl; DC: HDC; Rect: PRect );
 {$IFDEF GDI} var B: HBrush; {$ENDIF GDI}
 begin
@@ -41561,7 +38298,7 @@ begin
   DeleteObject( B );
   {$ENDIF GDI}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF WIN_GDI}
 procedure TControl.PaintBackground( DC: HDC; Rect: PRect );
@@ -41571,7 +38308,7 @@ end;
 {$ENDIF WIN_GDI}
 
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetCtlColor( Value: TColor );
 begin
   {$IFNDEF INPACKAGE}
@@ -41592,7 +38329,7 @@ begin
     fBrush.Color := Value;
   Invalidate;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -41622,7 +38359,7 @@ END;
 {$ENDIF _X_}
 
 {$IFDEF WIN_GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetParentWnd( NeedHandle: Boolean ): HWnd;
 var C: PControl;
 begin
@@ -41635,7 +38372,7 @@ begin
      Result := C.fHandle;
    end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_TLIST}
 procedure TControl.CreateChildWindows;
@@ -41654,7 +38391,7 @@ asm
 
 @@exit: POP       ESI
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TControl.CreateChildWindows;
 var I: Integer;
     C: PControl;
@@ -41678,7 +38415,7 @@ begin
   END;
   {$ENDIF INPACKAGE}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF WIN_GDI}
 function TControl.GetMembers(Idx: Integer): PControl;
@@ -41716,7 +38453,7 @@ asm
 
         POP       ESI
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TControl.DestroyChildren;
 var I: Integer;
     W: PControl;
@@ -41728,9 +38465,9 @@ begin
    end;
    fChildren.Clear;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.ProcessMessage: Boolean;
 var Msg: TMsg;
 begin
@@ -41761,14 +38498,14 @@ begin
       end;
    end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.ProcessMessages;
 begin
   while ProcessMessage do ;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TControl.ProcessMessagesEx;
 begin
@@ -41793,7 +38530,7 @@ begin
     Applet.ProcessMessage;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function WndProcForm(Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 {$IFDEF ENDSESSION_HALT}
 var App: PControl;
@@ -41855,10 +38592,10 @@ begin
   else Result := False;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF WIN_GDI}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function GetPrevCtrlBoundsRect( P: PControl; var R: TRect ): Boolean;
 var Idx: Integer;
 begin
@@ -41869,9 +38606,9 @@ begin
   Result := True;
   R := P.FParent.Children[ Idx ].BoundsRect;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.PlaceUnder: PControl;
 var R: TRect;
 begin
@@ -41880,9 +38617,9 @@ begin
   Top := R.Bottom + fParent.fMargin;
   Left := R.Left;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.PlaceDown: PControl;
 var R: TRect;
 begin
@@ -41890,9 +38627,9 @@ begin
   if not GetPrevCtrlBoundsRect( @Self, R ) then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>}
   Top := R.Bottom + fParent.fMargin;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.PlaceRight: PControl;
 var R: TRect;
 begin
@@ -41901,9 +38638,9 @@ begin
   Top := R.Top;
   Left := R.Right + fParent.fMargin;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.SetSize(W, H: Integer): PControl;
 var R: TRect;
 begin
@@ -41913,7 +38650,7 @@ begin
   SetBoundsRect( R );
   Result := @Self;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$IFDEF WIN_GDI}
 
 function TControl.SetClientSize(W, H: Integer): PControl;
@@ -41923,21 +38660,21 @@ begin
   Result := @Self;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.AlignLeft(P: PControl): PControl;
 begin
   Result := @Self;
   Left := P.Left;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.AlignTop(P: PControl): PControl;
 begin
   Result := @Self;
   Top := P.Top;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF KEY_PREVIEW}
   {$DEFINE KEY_PREVIEW_OR_ESC_CLOSE_DIALOGS}
@@ -41949,7 +38686,7 @@ end;
 {$ENDIF}
 
 {$IFDEF ASM_VERSION} // see addition for combobox in pas version
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function WndProcCtrl(Self_: PControl; var Msg: TMsg; var Rslt: Integer): Boolean;
 var F: PControl;
     Cmd : DWORD;
@@ -42079,7 +38816,7 @@ begin
   {$ENDIF KEY_PREVIEW_OR_ESC_CLOSE_DIALOGS}
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF OLD_TRANSPARENT}
 function WndProcTransparent( Sender: PControl; var Msg: TMsg;
@@ -42562,7 +39299,7 @@ asm
 @@ret_false:
         XOR      EAX, EAX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function WndProcPaint( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 var PaintStruct: TPaintStruct;
     Cplxity: Integer;
@@ -42608,7 +39345,7 @@ begin
   end;
   Result := FALSE;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF WIN_GDI}
 {$IFDEF GDI}
@@ -43191,7 +39928,7 @@ begin
   end;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.DoClick;
 begin
   PP.fControlClick( @Self );
@@ -43200,10 +39937,10 @@ begin
   {$ENDIF}
       EV.fOnClick( @Self );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF WIN_GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.ParentForm: PControl;
 begin
   Result := @Self;
@@ -43215,7 +39952,7 @@ begin
         {$IFDEF USE_FLAGS} not(G3_IsControl in Result.fFlagsG3)
         {$ELSE} not Result.fIsControl {$ENDIF};
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$IFDEF WIN_GDI}
 
 function TControl.FormParentForm: PControl;
@@ -43241,13 +39978,13 @@ begin
     {$ENDIF}
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetProgressColor(const Value: TColor);
 begin
   if Perform( PBM_SETBARCOLOR, 0, Color2RGB(Value) ) <> 0 then
     fTextColor := Value;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TControl.SetShadowDeep(const Value: Integer);
 begin
@@ -43256,7 +39993,7 @@ begin
 end;
 {$ENDIF WIN_GDI}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetFont: PGraphicTool;
 begin
   if FFont = nil then
@@ -43270,10 +40007,10 @@ begin
   end;
   Result := FFont;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF WIN_GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetBrush: PGraphicTool;
 begin
   if FBrush = nil then
@@ -43287,20 +40024,20 @@ begin
   end;
   Result := FBrush;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF WIN_GDI}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.FontChanged(Sender: PGraphicTool);
 begin
   fTextColor := Sender.fData.Color;
   ApplyFont2Wnd_Proc(@Self);
   Invalidate;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF WIN_GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.BrushChanged(Sender: PGraphicTool);
 begin
   fColor := Sender.fData.Color;
@@ -43313,11 +40050,11 @@ begin
   // only if not in painting already :
     Invalidate;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF WIN_GDI}
 
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure DoApplyFont2Wnd( _Self: PControl );
 begin
   if _Self.fFont <> nil then
@@ -43337,7 +40074,7 @@ begin
     _Self.DoAutoSize;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -43368,7 +40105,7 @@ END;
 {$ENDIF _X_}
 
 {$IFDEF WIN_GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.ResizeParent: PControl;
 begin
             ResizeParentBottom;
@@ -43378,9 +40115,9 @@ begin
             // SetWindowLong( GWL_[EX}STYLE,... )
   Result := ResizeParentBottom;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.ResizeParentBottom: PControl;
 var NewCH: Integer;
 begin
@@ -43396,9 +40133,9 @@ begin
     {$ELSE} fParent.fChangedPosSz := fParent.fChangedPosSz or $20; {$ENDIF}
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.ResizeParentRight: PControl;
 var NewCW: Integer;
 begin
@@ -43414,25 +40151,25 @@ begin
     {$ELSE} fParent.fChangedPosSz := fParent.fChangedPosSz or $10; {$ENDIF}
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetClientHeight: Integer;
 begin
   with ClientRect do
     Result := Bottom - Top;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetClientWidth: Integer;
 begin
   with ClientRect do
     Result := Right - Left;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetClientHeight(const Value: Integer);
 var Delta: Integer;
 begin
@@ -43440,9 +40177,9 @@ begin
   Delta := Height - Delta;
   Height := Value + Delta;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetClientWidth(const Value: Integer);
 var Delta: Integer;
 begin
@@ -43450,9 +40187,9 @@ begin
   Delta := Width - Delta;
   Width := Value + Delta;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.CenterOnParent: PControl;
 var PCR: TRect;
 begin
@@ -43467,7 +40204,7 @@ begin
   Left := (PCR.Right - PCR.Left - Width) div 2;
   Top := (PCR.Bottom - PCR.Top - Height) div 2;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TControl.CenterOnForm( Form1: PControl ): PControl;
 var PCR, DR: TRect;
@@ -43493,14 +40230,14 @@ begin
   BoundsRect := PCR;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetHasBorder: Boolean;
 begin
   UpdateWndStyles;
   Result := LongBool( fStyle.Value and (WS_BORDER or WS_THICKFRAME or WS_DLGFRAME))
          or LongBool( fExStyle and WS_EX_CLIENTEDGE );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_noVERSION} // YS
 procedure TControl.SetHasBorder(const Value: Boolean);
@@ -43557,7 +40294,7 @@ asm
         CALL     SetStyle
 @@exit:
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetHasBorder(const Value: Boolean);
 var NewStyle: DWORD;
 begin
@@ -43594,18 +40331,18 @@ begin
   else Style := fStyle.Value {xor} and not WS_TABSTOP;
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetHasCaption: Boolean;
 begin
   UpdateWndStyles;
   Result := not LongBool( fStyle.Value and (WS_POPUP or WS_DLGFRAME))
             or  LongBool( fStyle.Value and WS_CAPTION);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetHasCaption(const Value: Boolean);
 begin
   if Value = GetHasCaption then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
@@ -43623,9 +40360,9 @@ begin
     ExStyle := fExStyle or WS_EX_DLGMODALFRAME;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetCanResize: Boolean;
 begin
     {$IFDEF USE_FLAGS}
@@ -43634,7 +40371,7 @@ begin
     Result := not fPreventResize;
     {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function WndProcCanResize( Sender: PControl; var M: TMsg; var Rslt: Integer ): Boolean;
 var W, H: Integer;
@@ -43682,7 +40419,7 @@ begin
   Result := False; // continue message processing
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetCanResize( const Value: Boolean );
 begin
   if Value = CanResize then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
@@ -43705,17 +40442,17 @@ begin
   {$ENDIF FIX_WIDTH_HEIGHT}
   AttachProc( WndProcCanResize );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetStayOnTop: Boolean;
 begin
   UpdateWndStyles;
   Result := LongBool( fExStyle and WS_EX_TOPMOST);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetStayOnTop(const Value: Boolean);
 begin
   if Value = GetStayOnTop then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
@@ -43730,9 +40467,9 @@ begin
   if Value then fExStyle := fExStyle or WS_EX_TOPMOST
            else fExStyle := fExStyle and not WS_EX_TOPMOST;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.UpdateWndStyles: PControl;
 begin
   Result := @Self;
@@ -43741,9 +40478,9 @@ begin
   fExStyle := GetWindowLong( fHandle, GWL_EXSTYLE );
   fClsStyle := GetClassLong( fHandle, GCL_STYLE );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetChecked: Boolean;
 begin
   if bboFixed in DF.fBitBtnOptions then
@@ -43752,9 +40489,9 @@ begin
   else
     Result := LongBool( Perform( BM_GETCHECK, 0, 0 ) ) ; //= BST_CHECKED;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.Set_Checked(const Value: Boolean);
 begin
   if  bboFixed in DF.fBitBtnOptions then
@@ -43766,7 +40503,7 @@ begin
   else
       Perform( BM_SETCHECK, Integer( Value ), 0 );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TControl.SetChecked(const Value: Boolean): PControl;
 begin
@@ -43795,7 +40532,7 @@ begin
   {$ENDIF}
   Result := @Self;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TControl.GetCheck3: TTriStateCheck;
 begin
@@ -43830,21 +40567,21 @@ type
     cpMax: LongInt;
   end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetSelStart: Integer;
 begin
   Result := 0;
   if fCommandActions.aGetSelRange <> 0 then
     Perform( fCommandActions.aGetSelRange, Integer( @ Result ), 0 );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TControl.SetSelStart(const Value: Integer);
 begin
   ItemSelected[ Value ] := True;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetSelLength: Integer;
 var Start, Finish: Integer;
 begin
@@ -43862,9 +40599,9 @@ begin
     end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetSelLength(const Value: Integer);
 var SR: TCharRange;
 begin
@@ -43878,97 +40615,9 @@ begin
   if fCommandActions.aExSetSelRange <> 0 then
      Perform( fCommandActions.aExSetSelRange, 0, Integer( @SR ) );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function TControl.GetItems(Idx: Integer): AnsiString;
-asm
-        PUSH     ESI
-        PUSH     EDI
-        PUSH     EBX
-        PUSH     EBP
-        MOV      EBP, ESP
-
-        MOV      EBX, EAX       // @Self
-        MOV      ESI, EDX       // Idx
-        MOV      EDI, ECX       // @Result
-
-        CALL     Item2Pos
-        PUSH     0              // push  0
-        PUSH     EAX            // store Pos
-
-        XCHG     EDX, EAX
-        MOV      EAX, EBX
-        CALL     Pos2Item       // EAX = Idx'
-        XCHG     ESI, EAX       // ESI = Idx'
-
-        XOR      EAX, EAX
-        {$IFDEF  COMMANDACTIONS_OBJ}
-        MOV      ECX, [EBX].fCommandActions
-        MOVZX    ECX, [ECX].TCommandActionsObj.aGetItemLength
-        {$ELSE}
-        MOVZX    ECX, [EBX].fCommandActions.aGetItemLength
-        {$ENDIF}
-        JECXZ    @@ret_empty
-
-        PUSH     ECX            // push aGetItemLength
-
-        PUSH     EBX
-        CALL     Perform
-
-        TEST     EAX, EAX
-        JZ       @@ret_empty
-
-        PUSH     EAX              // save L
-        ADD      EAX, 4
-
-        CALL     System.@GetMem   // GetMem( L+4 )
-        POP      EDX              // restore L
-        LEA      ECX, [EDX+1]
-        MOV      dword ptr [EAX], ECX
-        {$IFDEF  COMMANDACTIONS_OBJ}
-        MOV      ECX, [EBX].fCommandActions
-        MOVZX    ECX, [ECX].TCommandActionsObj.aGetItemText
-        {$ELSE}
-        MOVZX    ECX, [EBX].fCommandActions.aGetItemText
-        {$ENDIF}
-        JECXZ    @@ret_buf
-
-        PUSH     EDX              // save L
-
-        PUSH     EAX
-          PUSH     EAX            // push Buf
-          PUSH     ESI            // push Idx
-
-          PUSH     ECX            // push aGetItemText
-          PUSH     EBX
-          CALL     Perform
-        POP      EAX
-
-        POP      EDX
-@@ret_buf:
-        MOV      byte ptr [EAX + EDX], 0   // Buf[ L ] := #0
-
-@@ret_empty:     // EAX = 0
-        XCHG     EDX, EAX
-        MOV      EAX, EDI
-        PUSH     EDX
-        {$IFDEF _D2009orHigher}
-        XOR      ECX, ECX 
-        {$ENDIF}
-        CALL     System.@LStrFromPChar
-        POP      ECX
-        JECXZ    @@exit
-        XCHG     EAX, ECX
-        CALL     System.@FreeMem
-@@exit:
-        MOV      ESP, EBP
-        POP      EBP
-        POP      EBX
-        POP      EDI
-        POP      ESI
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetItems(Idx: Integer): KOLString;
 var L, Pos: Integer;
     Buf: PKOLChar;
@@ -43988,123 +40637,9 @@ begin
   Result := Buf;
   FreeMem( Buf );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-procedure TControl.SetItems(Idx: Integer; const Value: AnsiString);
-asm
-        PUSH     EDI
-        PUSH     EBX
-        XCHG     EBX, EAX
-        XCHG     EDI, EDX       // EDI = Idx
-        CALL     ECX2PChar
-        PUSH     ECX       // @Value[1]
-
-        {$IFDEF  COMMANDACTIONS_OBJ}
-        MOV      ECX, [EBX].fCommandActions
-        MOVZX    ECX, [ECX].TCommandActionsObj.aSetItemText
-        {$ELSE}
-        MOVZX    ECX, [EBX].fCommandActions.aSetItemText
-        {$ENDIF}
-        JECXZ    @@1
-
-        PUSH     0
-        PUSH     ECX
-
-        MOV      EDX, EDI
-        MOV      EAX, EBX
-        CALL     Item2Pos
-        PUSH     EAX            // store Strt
-
-        MOV      EDX, EDI
-        INC      EDX
-        MOV      EAX, EBX
-        CALL     Item2Pos
-        POP      EDX            // EDX = Strt
-
-        SUB      EAX, EDX
-        PUSH     EAX            // store L
-
-        MOV      EAX, EBX
-        CALL     SetSelStart
-
-        POP      EDX            // EDX = L
-        PUSH     EBX            // prepare @Self for Perform
-        XCHG     EAX, EBX
-        CALL     SetSelLength
-
-        // @Value[1] already in stack,
-        // 0 already in stack
-        // aSetItemText already in stack
-        // @Self already in stack
-
-        CALL     Perform
-        JMP      @@exit
-
-@@1:    // @Value[1] in stack already
-        POP      EDX
-        {$IFDEF  COMMANDACTIONS_OBJ}
-        MOV      ECX, [EBX].fCommandActions
-        MOVZX    ECX, [ECX].TCommandActionsObj.aDeleteItem
-        {$ELSE}
-        MOVZX    ECX, [EBX].fCommandActions.aDeleteItem
-        {$ENDIF}
-        JECXZ    @@exit
-
-        {$IFNDEF  NOT_FIX_CURINDEX}
-        PUSH     ESI
-        PUSH     EBP
-
-        PUSH     EDX
-
-        MOV      EAX, EBX               // +AK
-        CALL     GetCurIndex            // +AK
-        XCHG     ESI, EAX    // ESI = TmpCurIdx
-
-        MOV      EAX, EBX
-        MOV      EDX, EDI
-        CALL     GetItemData
-        XCHG     EBP, EAX   // EBP = TmpData
-
-        MOV      EDX, EDI
-        MOV      EAX, EBX
-        CALL     Delete
-
-        MOV      EAX, EBX               // *AK
-        MOV      EDX, EDI
-        POP      ECX
-        CALL     Insert
-
-        MOV      ECX, EBP // ECX = TmpData
-        MOV      EDX, EDI
-        MOV      EAX, EBX
-        CALL     SetItemData
-
-        XCHG     EAX, EBX               // +AK
-        MOV      EDX, ESI               // +AK
-        CALL     SetCurIndex            // +AK
-
-        POP      EBP
-        POP      ESI
-        {$ELSE NOT_FIX_CURINDEX}
-        PUSH     EDX
-
-        MOV      EDX, EDI
-        MOV      EAX, EBX
-        CALL     Delete
-
-        XCHG     EAX, EBX
-        XCHG     EDX, EDI
-
-        POP      ECX
-        CALL     Insert
-        {$ENDIF NOT_FIX_CURINDEX}
-
-@@exit:
-        POP      EBX
-        POP      EDI
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetItems(Idx: Integer; const Value: KOLString);
 var Strt, L : DWORD;
     {$IFNDEF NOT_FIX_CURINDEX}
@@ -44135,9 +40670,9 @@ begin
     {$ENDIF}
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetItemsCount: Integer;
 begin
   Result := 0;
@@ -44154,7 +40689,7 @@ begin
   end;
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TControl.SetItemsCount(const Value: Integer);
 begin
@@ -44162,23 +40697,23 @@ begin
   Perform( fCommandActions.aSetCount, Value, 0 );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.Item2Pos(ItemIdx: Integer): DWORD;
 begin
   Result := ItemIdx;
   if  Byte( fCommandActions.bItem2Pos ) <> 0 then
       Result := Perform( fCommandActions.bItem2Pos, ItemIdx, 0 );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.Pos2Item(Pos: Integer): DWORD;
 begin
   Result := Pos;
   if  Byte( fCommandActions.bPos2Item ) <> 0 then
       Result := Perform( fCommandActions.bPos2Item, Pos, 0 );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TControl.SavePosition: TEditPositions;
 var {$IFNDEF NOT_USE_RICHEDIT}
@@ -44295,66 +40830,7 @@ begin
   Result := @Self;
 end;
 
-{$IFDEF ASM_UNICODE}
-function TControl.Add(const S: KOLString): Integer;
-asm
-        PUSH     EBX
-        MOV      EBX, EAX               // EBX = @Self
-
-        {$IFDEF  COMMANDACTIONS_OBJ}
-        MOV      ECX, [EBX].fCommandActions
-        MOVZX    ECX, [ECX].TCommandActionsObj.aAddItem
-        {$ELSE}
-        MOVZX    ECX, [EBX].fCommandActions.aAddItem   // ECX = aAddItem
-        {$ENDIF}
-        JECXZ    @@chk_addtext
-
-        CALL     EDX2PChar
-        PUSH     EDX
-        PUSH     0
-        PUSH     ECX
-        PUSH     EBX
-        CALL     Perform
-        PUSH     EAX
-
-        MOV      EAX, EBX
-        CALL     TControl.GetItemsCount
-        XCHG     EAX, ECX
-        LOOP     @@ret_EAX
-
-        XCHG     EAX, EBX
-        INC      ECX
-        XOR      EDX, EDX
-        CALL     TControl.SetItemSelected
-@@ret_EAX:
-        POP      EAX
-        JMP      @@exit
-
-@@chk_addtext:
-        {$IFDEF  COMMANDACTIONS_OBJ}
-        MOV      ECX, [EBX].fCommandActions
-        MOV      ECX, [ECX].TCommandActionsObj.aAddText
-        {$ELSE}
-        MOV      ECX, [EBX].fCommandActions.aAddText
-        {$ENDIF}
-        JECXZ    @@add_text_simple
-
-        CALL     ECX
-        JMP      @@exit_0
-
-@@add_text_simple:
-        LEA      EAX, [EBX].fCaption
-        CALL     System.@LStrCat
-        MOV      EDX, [EBX].fCaption
-        MOV      EAX, EBX
-        CALL     SetCaption
-
-@@exit_0:
-        XOR      EAX, EAX
-@@exit:
-        POP      EBX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function TControl.Add(const S: KOLString): Integer;
 begin
   if fCommandActions.aAddItem <> 0 then
@@ -44372,39 +40848,17 @@ begin
     Result := 0;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.Delete(Idx: Integer);
 begin
   if fCommandActions.aDeleteItem <> 0 then
     Perform( fCommandActions.aDeleteItem, Idx, 0 );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function TControl.Insert(Idx: Integer; const S: AnsiString): Integer;
-asm
-         CALL    ECX2PChar
-         PUSH    ECX
-         {$IFDEF COMMANDACTIONS_OBJ}
-         MOV     ECX, [EAX].fCommandActions
-         MOVZX   ECX, [ECX].TCommandActionsObj.aInsertItem
-         {$ELSE}
-         MOVZX   ECX, [EAX].fCommandActions.aInsertItem
-         {$ENDIF}
-         JECXZ   @@exit_1
-
-         PUSH    EDX
-         PUSH    ECX
-         PUSH    EAX
-         CALL    Perform
-         RET
-
-@@exit_1:OR      EAX, -1
-         POP     ECX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function TControl.Insert(Idx: Integer; const S: KOLString): Integer;
 begin
   if fCommandActions.aInsertItem <> 0 then
@@ -44412,9 +40866,9 @@ begin
   else
     Result := -1;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetItemSelected(ItemIdx: Integer): Boolean;
 var SS: Integer;
 begin
@@ -44434,9 +40888,9 @@ begin
     Result := (ItemIdx >= SS) and (ItemIdx < SS + SelLength);
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetItemSelected(ItemIdx: Integer; const Value: Boolean);
 var SR: TCharRange;
 begin
@@ -44461,9 +40915,9 @@ begin
     Invalidate;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetCtl3D(const Value: Boolean);
 begin
   fCtl3D_child := fCtl3D_child and not 1 or Integer( Value ) and 1;
@@ -44478,16 +40932,16 @@ begin
       ExStyle := fExStyle and not WS_EX_CLIENTEDGE;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.Shift(dX, dY: Integer): PControl;
 begin
   Left := fBoundsRect.Left + dX;
   Top := fBoundsRect.Top + dY;
   Result := @Self;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure SetKeyEvent( Self_: PControl );
 begin
@@ -44626,7 +41080,7 @@ asm
         TEST     EBP, EBP
         POP      EBP
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function CollectTabControls( Form: PControl ): PList;
 var R: PList;
   function CollectTab( P: PControl ): Boolean;
@@ -44692,7 +41146,7 @@ begin
 
   Result := R;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_TLIST}
 procedure Tabulate2Next( Form: PControl; Dir: Integer );
@@ -44816,7 +41270,7 @@ asm
         CALL     TObj.RefDec
         POPAD
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure Tabulate2Next( Form: PControl; Dir: Integer );
 var CL : PList;
     I, J : Integer;
@@ -44863,9 +41317,9 @@ begin
   end;
   CL.Free;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function Tabulate2Control( Self_: PControl; Key: DWORD; checkOnly: Boolean ): Boolean;
 var Form: PControl;
 begin
@@ -44891,7 +41345,7 @@ begin
   VK_LEFT, VK_UP, VK_PRIOR:   Tabulate2Next( Form, -1 );
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_TLIST}
 function Tabulate2ControlEx( Self_: PControl; Key: DWORD; checkOnly: Boolean ): Boolean;
@@ -45109,7 +41563,7 @@ asm
         POP      EDI
         MOV      AL, 1      // Result = True
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function Tabulate2ControlEx( Self_: PControl; Key: DWORD; checkOnly: Boolean ): Boolean;
 label search_tabcontrol;
 var Form: PControl;
@@ -45226,9 +41680,9 @@ begin
     CL.Free;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.Tabulate: PControl;
 var F : PControl;
 begin
@@ -45237,9 +41691,9 @@ begin
   if F = nil then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
   F.PP.fGotoControl := Tabulate2Control;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.TabulateEx: PControl;
 var F : PControl;
 begin
@@ -45248,7 +41702,7 @@ begin
   if F = nil then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
   F.PP.fGotoControl := Tabulate2ControlEx;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function WndProcMouseTransparent( Sender: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 begin
@@ -45277,7 +41731,7 @@ begin
       Form.PP.fGotoControl( Form.DF.fCurrentControl, Key, false );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetCurIndex: Integer;
 var I, J: Integer;
 begin
@@ -45294,9 +41748,9 @@ begin
   end;
   Result := Perform( fCommandActions.aGetCurrent, I, J );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetCurIndex(const Value: Integer);
 var NMHdr: TNMHdr; idx: Integer;
 begin
@@ -45314,11 +41768,11 @@ begin
   else
      ItemSelected[ Value ] := True;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF WIN_GDI}
 
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetTextAlign: TTextAlign;
 begin
   UpdateWndStyles;
@@ -45330,7 +41784,7 @@ begin
   else
      Result := fTextAlign;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -45342,7 +41796,7 @@ END;
 {$ENDIF _X_}
 
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetTextAlign(const Value: TTextAlign);
 var NewStyle: DWORD;
 begin
@@ -45360,7 +41814,7 @@ begin
   NewStyle := NewStyle and not DWORD(fCommandActions.bTextAlignMask);
   Style := NewStyle;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -45375,7 +41829,7 @@ END;
 {$ENDIF _X_}
 
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetVerticalAlign: TVerticalAlign;
 begin
   UpdateWndStyles;
@@ -45389,7 +41843,7 @@ begin
   else
       Result := fVerticalAlign;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -45401,7 +41855,7 @@ END;
 {$ENDIF _X_}
 
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetVerticalAlign(const Value: TVerticalAlign);
 var NewStyle: DWORD;
 begin
@@ -45418,7 +41872,7 @@ begin
   end;
   Style := NewStyle;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -45433,7 +41887,7 @@ END;
 {$ENDIF _X_}
 
 {$IFDEF WIN_GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.Dc2Canvas( Sender: PCanvas ): HDC;
 begin
   if fPaintDC <> 0 then
@@ -45450,12 +41904,12 @@ begin
        Result := GetDC( GetWindowHandle );
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF WIN_GDI}
 
 {$IFDEF GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetCanvas: PCanvas;
 begin
   {$IFDEF SAFE_CODE}
@@ -45473,7 +41927,7 @@ begin
   end;
   Result := fCanvas;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF GDI}
 {$IFDEF _X_}
 {$IFDEF GTK}
@@ -45543,9 +41997,9 @@ begin
     Global_AttachProcExtension := @TransparentAttachProcExtension;
     {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetTransparent(const Value: Boolean);
 begin
     if fParent = nil then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
@@ -45571,7 +42025,7 @@ begin
         fParent.DoubleBuffered := TRUE;
     end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TControl.SetBorder( Value: Integer ): PControl;
 begin
@@ -45640,7 +42094,7 @@ asm
         XOR      EAX, EAX
         POP      ECX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function WndProcTray( Control: PControl; var Msg: TMsg; var Rslt: Integer ) : Boolean;
 var Self_: PTrayIcon;
     I : Integer;
@@ -45669,7 +42123,7 @@ begin
     end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function WndProcTrayIconWnd( Wnd: HWnd; Msg: DWORD; wParam, lParam: Integer ): Integer;
          stdcall;
@@ -45723,7 +42177,7 @@ begin
 end;
 // [END TTrayIcon.DetachProc2Wnd]
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewTrayIcon( Wnd: PControl; Icon: HIcon ): PTrayIcon;
 begin
   if FTrayItems = nil then
@@ -45739,11 +42193,11 @@ begin
   Result.FIcon := Icon;
   Result.Active := True;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 var fRecreateMsg: DWORD;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function WndProcRecreateTrayIcons( Sender: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 var I: Integer;
     TI: PTrayIcon;
@@ -45763,21 +42217,21 @@ begin
   end;
   Result := False;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 const
   TaskbarCreatedMsg: array[ 0..14 ] of KOLChar = ('T','a','s','k','b','a','r',
                      'C','r','e','a','t','e','d',#0);
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TTrayIcon.SetAutoRecreate(const Value: Boolean);
 begin
   fAutoRecreate := Value;
   FControl.ParentForm.AttachProc( WndProcRecreateTrayIcons );
   fRecreateMsg := RegisterWindowMessage( TaskbarCreatedMsg );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 destructor TTrayIcon.Destroy;
 begin
   Active := False;
@@ -45791,9 +42245,9 @@ begin
   FTooltip := '';
   inherited;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TTrayIcon.SetActive(const Value: Boolean);
 begin
   if FActive = Value then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
@@ -45806,9 +42260,9 @@ begin
   else
      SetTrayIcon( NIM_DELETE );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TTrayIcon.SetIcon(const Value: HIcon);
 var Cmd : DWORD;
 begin
@@ -45823,30 +42277,9 @@ begin
   if FActive then
      SetTrayIcon( Cmd );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-procedure TTrayIcon.SetTooltip(const Value: AnsiString);
-asm
-        PUSH     EBX
-        XCHG     EBX, EAX
-        MOV      EAX, [EBX].fTooltip
-        PUSH     EDX
-        CALL     System.@LStrCmp
-        POP      EDX
-        JE       @@exit
-        LEA      EAX, [EBX].fTooltip
-        CALL     System.@LStrAsg
-        CMP      [EBX].fActive, 0
-        JE       @@exit
-        XOR      EDX, EDX
-        INC      EDX     // EDX = NIM_MODIFY
-        XCHG     EAX, EBX
-        CALL     SetTrayIcon
-@@exit:
-        POP      EBX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 procedure TTrayIcon.SetTooltip(const Value: KOLString);
 begin
   if FTooltip = Value then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
@@ -45854,57 +42287,9 @@ begin
   if Active then
      SetTrayIcon( NIM_MODIFY );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-procedure TTrayIcon.SetTrayIcon(const Value: DWORD);
-const sz_tid = sizeof( TNotifyIconData );
-asm
-        CMP      [AppletTerminated], 0
-        JE       @@1
-        MOV      DL, NIM_DELETE
-@@1:
-        PUSH     EBX
-        PUSH     ESI
-        MOV      ESI, EAX
-        MOV      EBX, EDX
-
-        XOR      ECX, ECX
-        PUSH     ECX
-        ADD      ESP, -60
-        MOV      EDX, [ESI].fToolTip
-        CALL     EDX2PChar
-        MOV      EAX, ESP
-        MOV      CL, 63
-        CALL     StrLCopy
-
-        PUSH     [ESI].fIcon
-        PUSH     CM_TRAYICON
-        XOR      EDX, EDX
-        CMP      BL, NIM_DELETE
-        JE       @@2
-        MOV      DL, NIF_ICON or NIF_MESSAGE or NIF_TIP
-@@2:    PUSH     EDX
-        PUSH     ESI
-        MOV      EAX, [ESI].FWnd
-        TEST     EAX, EAX
-        JNZ      @@3
-        MOV      EAX, [ESI].fControl
-        MOV      EAX, [EAX].TControl.fHandle
-@@3:
-        PUSH     EAX
-        PUSH     sz_tid
-
-        PUSH     ESP
-        PUSH     EBX
-        CALL     Shell_NotifyIcon
-
-        ADD      ESP, sz_tid
-        POP      ESI
-        POP      EBX
-@@exit:
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 procedure TTrayIcon.SetTrayIcon(const Value: DWORD);
 var NID : {$IFDEF UNICODE_CTRLS} TNotifyIconDataW {$ELSE} TNotifyIconData {$ENDIF};
     L : Integer;
@@ -45932,13 +42317,13 @@ begin
 
   Shell_NotifyIcon( V, @NID );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 { -- JustOne -- }
 
 var JustOneMutex: THandle;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function WndProcJustOne( Control: PControl; var Msg: TMsg; var Rslt: Integer ) : Boolean;
 begin
   Result := False;
@@ -45951,7 +42336,7 @@ begin
       end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_noUNICODE}
 function JustOne( Wnd: PControl; const Identifier : KOLString ) : Boolean;
@@ -46006,7 +42391,7 @@ asm
         POP      ESI
         POP      EBX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function JustOne( Wnd: PControl; const Identifier : KOLString ) : Boolean;
 var CritSecMutex : THandle;
     DW : Longint;
@@ -46024,7 +42409,7 @@ begin
    Wnd.AttachProc( WndProcJustOne );
    CloseHandle( CritSecMutex );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 { JustOneNotify }
 
@@ -46032,55 +42417,7 @@ var
   OnAnotherInstance: TOnAnotherInstance;
   JustOneMsg: DWORD;
 
-{$IFDEF ASM_UNICODE}
-function WndProcJustOneNotify( Control: PControl; var Msg: TMsg; var Rslt: Integer ) : Boolean;
-asm
-        PUSH     EBP
-        MOV      EBP, ESP
-        PUSHAD
-        CALL     WndProcJustOne
-        POPAD
-        XOR      EAX, EAX
-        PUSH     ECX
-          MOV      ECX, [EDX].TMsg.message
-          SUB      ECX, [JustOneMsg]
-        POP      ECX
-        JNE      @@exit
-        MOV      [ECX], EAX
-        CMP      [OnAnotherInstance].TMethod.Code, EAX
-        JE       @@exit_1
-
-        //MOV      EAX, (MAX_PATH + 3) and 0FFFFCh
-        MOV      AH, 2
-        SUB      ESP, EAX
-
-        MOV      ECX, ESP
-        PUSH     EAX
-        PUSH     ECX
-        PUSH     [EDX].TMsg.lParam
-        CALL     GetWindowText
-
-        MOV      EDX, ESP
-        PUSH     0
-        MOV      EAX, ESP
-        {$IFDEF _D2009orHigher}
-        XOR      ECX, ECX 
-        {$ENDIF}
-        CALL     System.@LStrFromPChar
-
-        MOV      EDX, [ESP]
-        MOV      EAX, [OnAnotherInstance].TMethod.Data
-        CALL     [OnAnotherInstance].TMethod.Code
-
-        MOV      EAX, ESP
-        CALL     System.@LStrClr
-@@exit_1:
-        MOV      AL, 1
-@@exit:
-        MOV      ESP, EBP
-        POP      EBP
-end;
-{$ELSE ASM_UNICODE} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE ASM_UNICODE} //Pascal
 function WndProcJustOneNotify( Control: PControl; var Msg: TMsg; var Rslt: Integer ) : Boolean;
 var Buf : array[0..MAX_PATH] of KOLChar;
 begin
@@ -46097,7 +42434,7 @@ begin
       Rslt := 0;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 // Redefine here incorrectly declared BroadcastSystemMessage API function.
 // It should not refer to BroadcastSystemMessageA, which is not present in
@@ -46107,91 +42444,7 @@ function BroadcastSystemMessage(Flags: DWORD; Recipients: PDWORD;
   uiMessage: UINT; wParam: WPARAM; lParam: LPARAM): Longint; stdcall;
 external user32 name 'BroadcastSystemMessage';
 
-{$IFDEF ASM_UNICODE}
-function JustOneNotify( Wnd: PControl; const Identifier : AnsiString;
-                        const aOnAnotherInstance: TOnAnotherInstance ) : Boolean;
-asm
-        PUSHAD
-        MOV      EBP, ESP
-
-        XCHG     EAX, EDX
-        PUSH     EAX
-        CALL     System.@LStrLen
-        POP      EDX
-        ADD      EAX, EAX
-        SUB      ESP, EAX
-        MOV      EAX, ESP
-        CALL     StrPCopy
-        PUSH     '.ega'
-        PUSH     'sseM'
-        PUSH     ESP
-        CALL     RegisterWindowMessage
-        MOV      [JustOneMsg], EAX
-        TEST     EAX, EAX
-          MOV      ESP, EBP
-          POPAD
-          JE       @@exit_f
-        PUSHAD
-        CALL     JustOne
-        DEC      AL
-        POPAD
-        JZ       @@exit_t
-          PUSH     EBX
-          XCHG     EBX, EAX
-          XOR      EDX, EDX
-          XCHG     [EBX].TControl.fCaption, EDX
-          PUSH     EDX
-        CALL     GetCommandLine
-        XCHG     EDX, EAX
-        LEA      EAX, [EBX].TControl.fCaption
-        {$IFDEF _D2009orHigher}
-        PUSH     ECX
-        XOR      ECX, ECX
-        {$ENDIF}
-        CALL     System.@LStrFromPChar
-        {$IFDEF _D2009orHigher}
-        POP      ECX
-        {$ENDIF}
-        MOV      EAX, EBX
-        MOV      EDX, [EBX].TControl.fCaption
-        CALL     TControl.SetCaption
-        MOV      EAX, EBX
-        CALL     TControl.GetWindowHandle
-        TEST     EAX, EAX
-        JZ       @@rest_cap
-          PUSH     BSM_APPLICATIONS
-          MOV      EDX, ESP
-        PUSH     EAX
-        PUSH     0
-        PUSH     [JustOneMsg]
-        PUSH     EDX
-        PUSH     BSF_QUERY or BSF_IGNORECURRENTTASK
-        CALL     BroadcastSystemMessage
-          POP      EDX
-@@rest_cap:
-        LEA      EAX, [EBX].TControl.fCaption
-        CALL     System.@LStrClr
-        POP      EDX
-        MOV      [EBX].TControl.fCaption, EDX
-        MOV      EAX, EBX
-        CALL     TControl.SetCaption
-        POP      EBX
-@@exit_f:
-        XOR      EAX, EAX
-        JMP      @@exit
-@@exit_t:
-        PUSHAD
-        LEA      ESI, [aOnAnotherInstance]
-        LEA      EDI, [OnAnotherInstance]
-        MOVSD
-        MOVSD
-        MOV      EDX, offset[WndProcJustOneNotify]
-        CALL     TControl.AttachProc
-        POPAD
-        MOV      AL, 1
-@@exit:
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function JustOneNotify( Wnd: PControl; const Identifier : KOLString;
                         const aOnAnotherInstance: TOnAnotherInstance ) : Boolean;
 var Recipients : DWord;
@@ -46223,7 +42476,7 @@ begin
       Wnd.AttachProc( WndProcJustOneNotify );
    end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 ///////////////////////////////////////// STRING LIST OBJECT /////////////////
 
@@ -46238,13 +42491,13 @@ begin
   {$ENDIF}
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 destructor TStrList.Destroy;
 begin
   Clear;
   inherited;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TStrList.Init;
 begin
@@ -46254,30 +42507,30 @@ begin
   fNameDelim := DefaultNameDelimiter;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TStrList.Add(const S: Ansistring): integer;
 begin
   Result := fCount;
   Insert( Result, S );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TStrList.AddStrings(Strings: PStrList);
 begin
   SetText( Strings.Text, True );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TStrList.Assign(Strings: PStrList);
 begin
   Clear;
   AddStrings( Strings );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TStrList.Clear;
 var I: Integer;
 begin
@@ -46294,13 +42547,13 @@ begin
     fTextSiz := 0;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_VERSION} {$DEFINE TStrList_Delete_ASM} {$ENDIF}
 {$IFDEF TLIST_FAST}  {$UNDEF  TStrList_Delete_ASM} {$ENDIF}
 
 {$IFDEF TStrList_Delete_ASM}
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TStrList.Delete(Idx: integer);
 var P: DWORD;
     El:Pointer;
@@ -46316,21 +42569,21 @@ begin
   fList.Delete( Idx );
   Dec( fCount );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TStrList.DeleteLast;
 begin
   Delete( Count-1 );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TStrList.Get(Idx: integer): Ansistring;
 begin
   if fList <> nil then
     Result := PAnsiChar( fList.Items[ Idx ] )
   else Result := '';
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_TLIST}
 function TStrList.GetPChars(Idx: Integer): PAnsiChar;
@@ -46339,13 +42592,12 @@ asm
         MOV      EAX, [EAX].TList.fItems
         MOV      EAX, [EAX+EDX*4]
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function TStrList.GetPChars(Idx: Integer): PAnsiChar;
 begin
   Result := PAnsiChar( fList.{$IFDEF TLIST_FAST}Items{$ELSE}fItems{$ENDIF}[ Idx ] )
 end;
-{$ENDIF ASM_VERSION}
-
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_TLIST}
 function TStrList.GetTextStr: Ansistring;
@@ -46404,7 +42656,7 @@ asm
 @@exit: POP      EDI
         POP      ESI
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function TStrList.GetTextStr: Ansistring;
 var
    I, Len, Size: integer;
@@ -46439,7 +42691,7 @@ begin
        {$ENDIF WIN}
      end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_TLIST}
 function TStrList.IndexOf(const S: Ansistring): integer;
@@ -46471,7 +42723,7 @@ asm
         POP      ESI
         POP      EDI
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function TStrList.IndexOf(const S: AnsiString): integer;
 var Word1: Word;
 begin
@@ -46489,7 +42741,7 @@ begin
   end;
   Result := -1;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TStrList.IndexOf_NoCase(const S: AnsiString): integer;
 var tmp: PAnsiChar;
@@ -46593,7 +42845,7 @@ begin
   end;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TStrList.Insert(Idx: integer; const S: Ansistring);
 var Mem: PAnsiChar;
     L: Integer;
@@ -46608,20 +42860,20 @@ begin
   fList.Insert( Idx, Mem );
   Inc( fCount );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TStrList.Move(CurIndex, NewIndex: integer);
 begin
   fList.MoveItem( CurIndex, NewIndex );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TStrList.Put(Idx: integer; const Value: Ansistring);
 begin
   Delete( Idx );
   Insert( Idx, Value );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_TLIST}
 procedure TStrList.SetText(const S: Ansistring; Append2List: boolean);
@@ -46733,7 +42985,7 @@ asm
         POP      EBX
 @@exit:
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TStrList.SetText(const S: Ansistring; Append2List: Boolean);
 var
   P, TheLast : PAnsiChar;
@@ -46803,7 +43055,7 @@ begin
        {$ENDIF}
      end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TStrList.SetUnixText(const S: AnsiString; Append2List: Boolean);
 var S1: AnsiString;
@@ -46828,7 +43080,7 @@ asm
         XCHG     EAX, EDX
         JMP      StrComp_NoCase
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function CompareStrListItems_NoCase( const Sender : Pointer; const e1, e2 : DWORD ) : Integer;
 var S1, S2 : PAnsiChar;
 begin
@@ -46836,7 +43088,7 @@ begin
   S2 := PStrList( Sender ).fList.Items[ e2 ];
   Result := StrComp_NoCase( S1, S2 );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_TLIST}
 function CompareStrListItems_Case( const Sender : Pointer; const e1, e2 : DWORD ) : Integer;
@@ -46848,7 +43100,7 @@ asm
         XCHG     EAX, EDX
         JMP      StrComp
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function CompareStrListItems_Case( const Sender : Pointer; const e1, e2 : DWORD ) : Integer;
 var S1, S2 : PAnsiChar;
 begin
@@ -46856,7 +43108,7 @@ begin
   S2 := PStrList( Sender ).fList.Items[ e2 ];
   Result := StrComp( S1, S2 );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_TLIST}
 function CompareAnsiStrListItems( const Sender : Pointer; const e1, e2 : DWORD ) : Integer;
@@ -46868,7 +43120,7 @@ asm
         XCHG     EAX, EDX
         JMP      _AnsiCompareStrNoCase
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function CompareAnsiStrListItems( const Sender : Pointer; const e1, e2 : DWORD ) : Integer;
 var S1, S2 : PAnsiChar;
 begin
@@ -46876,7 +43128,7 @@ begin
   S2 := PStrList( Sender ).fList.Items[ e2 ];
   Result := _AnsiCompareStrNoCaseA( S1, S2 );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_TLIST}
 function CompareAnsiStrListItems_Case( const Sender : Pointer; const e1, e2 : DWORD ) : Integer;
@@ -46888,7 +43140,7 @@ asm
         XCHG     EAX, EDX
         JMP      _AnsiCompareStr
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function CompareAnsiStrListItems_Case( const Sender : Pointer; const e1, e2 : DWORD ) : Integer;
 var S1, S2 : PAnsiChar;
 begin
@@ -46896,9 +43148,9 @@ begin
   S2 := PStrList( Sender ).fList.Items[ e2 ];
   Result := _AnsiCompareStrA( S1, S2 )
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TStrList.Sort(CaseSensitive: Boolean);
 begin
   fCaseSensitiveSort := CaseSensitive;
@@ -46925,7 +43177,7 @@ begin
       SortData( @Self, fCount, @CompareStrListItems_NoCase, @TStrList.Swap )
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF noASM_VERSION}
 procedure TStrList.AnsiSort(CaseSensitive: Boolean);
@@ -46955,7 +43207,7 @@ asm
         CALL     SortData
         {$ENDIF}
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TStrList.AnsiSort(CaseSensitive: Boolean);
 begin
   fCaseSensitiveSort := CaseSensitive;
@@ -46989,7 +43241,7 @@ begin
       {$ENDIF}
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TStrList.SortEx(const CompareFun: TCompareEvent);
 begin
@@ -47138,40 +43390,7 @@ end;
 
 {$IFDEF WIN_GDI}
 
-{$IFDEF ASM_UNICODE}
-function TStrList.AppendToFile(const FileName: Ansistring): Boolean;
-asm
-        PUSH     EBX
-        MOV      EBX, EDX
-        PUSH     0
-        MOV      EDX, ESP
-        CALL     GetTextStr
-        XCHG     EAX, EBX
-        MOV      EDX, ofOpenWrite or ofOpenAlways
-        CALL     FileCreate
-        MOV      EBX, EAX
-        INC      EAX
-        JZ       @@exit
-        DEC      EAX
-        XOR      EDX, EDX
-        XOR      ECX, ECX
-        MOV      CL, spEnd
-        CALL     FileSeek
-        POP      EAX
-        PUSH     EAX
-        CALL     System.@LStrLen
-        XCHG     ECX, EAX
-        MOV      EAX, EBX
-        POP      EDX
-        PUSH     EDX
-        CALL     FileWrite
-        XCHG     EAX, EBX
-        CALL     FileClose
-@@exit:
-        CALL     RemoveStr
-        POP      EBX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function TStrList.AppendToFile(const FileName: KOLString): Boolean;
 var F: HFile;
     Buf: AnsiString;
@@ -47188,55 +43407,9 @@ begin
     FileClose( F );
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function TStrList.LoadFromFile(const FileName: AnsiString): Boolean;
-asm
-      PUSH     EAX
-        XCHG     EAX, EDX
-        MOV      EDX, ofOpenRead or ofShareDenyWrite or ofOpenExisting
-        CALL     FileCreate
-        INC      EAX
-        JZ       @@exit
-        DEC      EAX
-        PUSH     EBX
-        XCHG     EBX, EAX
-        PUSH     0
-        PUSH     EBX
-        CALL     GetFileSize
-        XOR      EDX, EDX
-        PUSH     EDX
-        XCHG     ECX, EAX
-        MOV      EAX, ESP
-        PUSH     ECX
-        {$IFDEF _D2}
-        CALL     _LStrFromPCharLen
-        {$ELSE}
-        {$IFDEF _D2009orHigher}
-        PUSH EDX // ushort 0, CodePage?
-        {$ENDIF}
-        CALL     System.@LStrFromPCharLen
-        {$ENDIF}
-        POP      ECX
-        MOV      EAX, EBX
-        POP      EDX
-        PUSH     EDX
-        CALL     FileRead
-        XCHG     EAX, EBX
-        CALL     FileClose
-        POP      EDX
-        POP      EBX
-      POP      EAX     
-        PUSH     EDX
-        XOR      ECX, ECX
-        CALL     SetText
-        CALL     RemoveStr
-        PUSH     EDX
-        MOV      AL, 1
-@@exit: POP      EDX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function TStrList.LoadFromFile(const FileName: KOLString): Boolean;
 var Buf: AnsiString;
     F: HFile;
@@ -47254,7 +43427,7 @@ begin
     SetText( Buf, False );
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_STREAM}
 procedure TStrList.LoadFromStream(Stream: PStream; Append2List: boolean);
@@ -47295,7 +43468,7 @@ asm
         CALL     SetText
         CALL     RemoveStr
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TStrList.LoadFromStream(Stream: PStream; Append2List: Boolean);
 var Buf: AnsiString;
     Sz: Integer;
@@ -47305,9 +43478,9 @@ begin
   Stream.Read( Buf[1], Sz );
   SetText( Buf, Append2List );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TStrList.MergeFromFile(const FileName: KOLString);
 var TmpStream: PStream;
 begin
@@ -47315,44 +43488,9 @@ begin
   LoadFromStream( TmpStream, True );
   TmpStream.Free;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function TStrList.SaveToFile(const FileName: Ansistring): Boolean;
-asm
-        PUSH     EBX
-        PUSH     EAX
-        XCHG     EAX, EDX
-        MOV      EDX, ofOpenWrite or ofCreateAlways
-        CALL     FileCreate
-        INC      EAX
-        JZ       @@exit
-        DEC      EAX
-        XCHG     EBX, EAX
-        POP      EAX
-        PUSH     0
-        MOV      EDX, ESP
-        CALL     GetTextStr
-        POP      EAX
-        PUSH     EAX
-        CALL     System.@LStrLen
-        XCHG     ECX, EAX
-        POP      EDX
-        PUSH     EDX
-        MOV      EAX, EBX
-        CALL     FileWrite
-        PUSH     EBX
-        CALL     SetEndOfFile
-        XCHG     EAX, EBX
-        CALL     FileClose
-        CALL     RemoveStr
-        PUSH     EDX
-        INC      EAX
-@@exit:
-        POP      EDX
-        POP      EBX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function TStrList.SaveToFile(const FileName: KOLString): Boolean;
 var F: HFile;
     Buf: AnsiString;
@@ -47367,9 +43505,9 @@ begin
     FileClose( F );
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TStrList.SaveToStream(Stream: PStream);
 var S: Ansistring;
     L: Integer;
@@ -47379,7 +43517,7 @@ begin
    if L <> 0 then
    Stream.Write( S[1], L );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TStrList.OptimizeForRead;
 begin
@@ -47859,7 +43997,9 @@ var Buf: KOLWideString;
     L: Integer;
 begin
   L := Strm.Size - Strm.Position;
+  {$IFDEF KOL_ASSERTIONS}
   Assert( L mod 1 = 0, 'Wide strings streams must be of even length in bytes.' );
+  {$ENDIF KOL_ASSERTIONS}
   if L = 0 then Exit;
   SetLength( Buf, L div 2 );
   Strm.Read( Buf[ 1 ], L );
@@ -48335,7 +44475,7 @@ end;
 //////////////////////////////////////////////////////////////////////////
 
 { -- qsort -- }
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure SortData( const Data: Pointer; const uNElem: Dword;
                     const CompareFun: TCompareEvent;
                     const SwapProc: TSwapEvent );
@@ -48460,10 +44600,10 @@ begin
   if (uNElem < 2) then  exit; { nothing to sort } {>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
   qSortHelp(1, uNElem);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF _D3orHigher}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION}
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION}
 procedure SortArray( const Data: Pointer; const uNElem: Dword;
                      const CompareFun: TCompareArrayEvent );
 { uNElem - number of elements to sort }
@@ -48586,10 +44726,10 @@ begin
   if (uNElem < 2) then  exit; { nothing to sort } {>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
   qSortArrayHelp(1, uNElem);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF _D3orHigher}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function CompareIntegers( const Sender : Pointer; const e1, e2 : DWORD ) : Integer;
 var I1, I2 : Integer;
 begin
@@ -48600,14 +44740,14 @@ begin
   else
   if I1 > I2 then Result := 1;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function Compare2Integers( e1, e2: Integer ) : Integer;
 begin
     Result := e1-e2;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function CompareDwords( const Sender : Pointer; const e1, e2 : DWORD ) : Integer;
 var I1, I2 : DWord;
 begin
@@ -48618,22 +44758,10 @@ begin
   else
   if I1 > I2 then Result := 1;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}
-function Compare2Dwords( e1, e2 : DWORD ) : Integer;
-asm
-    SUB  EAX, EDX
-    JZ   @@exit
-    MOV  EAX, 0
-    JB   @@neg
-    INC  EAX
-    INC  EAX
-@@neg:
-    DEC  EAX
-@@exit:
-end;
-{$ELSE ASM_VERSION}
+function Compare2Dwords( e1, e2 : DWORD ) : Integer; forward;
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION}
 function Compare2Dwords( e1, e2 : DWORD ) : Integer;
 begin
     if  e1 < e2 then
@@ -48644,9 +44772,9 @@ begin
     else
         Result := 0;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure SwapIntegers( const Sender : Pointer; const e1, e2 : DWORD );
 var Tmp : Integer;
 begin
@@ -48655,7 +44783,7 @@ begin
   PInteger( DWORD( Sender ) + e2 * Sizeof( Integer ) )^;
   PInteger( DWORD( Sender ) + e2 * Sizeof( Integer ) )^ := Tmp;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure SortIntegerArray( var A : array of Integer );
 begin
@@ -48683,50 +44811,8 @@ end;
 
 { -- status bar implementation -- }
 
-{$IFDEF ASM_VERSION}
-function _NewStatusbar( AParent: PControl ): PControl;
-const STAT_CLS_NAM: PKOLChar = STATUSCLASSNAME;
-asm
-        PUSH     0
-        {$IFDEF  COMMANDACTIONS_OBJ}
-        PUSH     OTHER_ACTIONS
-        {$ELSE}
-        PUSH     0
-        {$ENDIF}
-        {$IFDEF  USE_FLAGS}
-        TEST     [EAX].TControl.fFlagsG3, (1 shl G3_SizeGrip)
-        {$ELSE}
-        CMP      [EAX].TControl.fSizeGrip, 0
-        {$ENDIF}
-        MOV      ECX, WS_CHILD or WS_CLIPSIBLINGS or WS_CLIPCHILDREN or 3 or WS_VISIBLE
-        JZ       @@1
-        INC      CH
-        AND      CL, not 3
-@@1:
-        MOV      EDX, [STAT_CLS_NAM]
-        CALL     _NewCommonControl
-        PUSH     EBX
-        XCHG     EBX, EAX
-        PUSH     EDI
-        LEA      EDI, [EBX].TControl.fBoundsRect
-        XOR      EAX, EAX
-        STOSD
-        STOSD
-        STOSD
-        STOSD
-        MOV      [EBX].TControl.fAlign, caBottom
-        {$IFDEF  USE_FLAGS}
-        OR       [EBX].TControl.fFlagsG4, 1 shl G4_NotUseAlign
-        {$ELSE}
-        INC      [EBX].TControl.fNotUseAlign
-        {$ENDIF}
-        POP      EDI
-        MOV      EAX, EBX
-        CALL     InitCommonControlSizeNotify
-        XCHG     EAX, EBX
-        POP      EBX
-end;
-{$ELSE ASM_VERSION} //Pascal
+function _NewStatusbar( AParent: PControl ): PControl; forward;
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function _NewStatusbar( AParent: PControl ): PControl;
 var Style: DWORD;
 begin
@@ -48756,104 +44842,9 @@ begin
   {$ENDIF}
   InitCommonControlSizeNotify( Result );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-procedure TControl.SetStatusText(Index: Integer; const Value: KOLString);
-asm
-        PUSHAD
-        MOV      EBX, EDX // EBX = Index
-        MOV      ESI, EAX // ESI = @Self
-        PUSH     Value    // prepare value for call at the end of procedure
-        PUSH     EBX      // prepare Index for call at the end of procedure
-        MOV      ECX, [ESI].fStatusCtl
-        MOV      EBP, ECX
-        INC      ECX
-        LOOP     @@status_created
-        CALL     GetClientHeight
-        PUSH     EAX      // ch = old client height
-              MOV      EAX, ESI
-              CALL     _NewStatusBar
-              MOV      [ESI].fStatusCtl, EAX
-              XCHG     EBP, EAX
-              XOR      EDX, EDX
-                       PUSH     EDX
-                       INC      DH
-                       DEC      EDX
-                       CMP      EBX, EDX
-                       SETZ     DL
-                       NEG      EDX
-                       PUSH     EDX
-                       PUSH     SB_SIMPLE
-                       PUSH     EBP
-                       CALL     TControl.Perform
-                  ADD      ESP, -16
-                  PUSH     ESP
-                  PUSH     [EBP].fHandle
-                  CALL     GetWindowRect
-                  POP      EAX
-                  POP      EDX
-                  POP      EAX
-                  POP      EAX
-              SUB      EAX, EDX
-              MOV      [ESI].fClientBottom,  AL
-        POP      EDX // ch
-                 PUSH     0
-                 PUSH     0
-                 PUSH     WM_SIZE
-                 PUSH     EBP
-        MOV      EAX, ESI
-        CALL     TControl.SetClientHeight
-                 CALL     TControl.Perform
-@@status_created:
-        CMP      EBX, 255
-        JGE      @@not_simple
-                 PUSH     0
-                 PUSH     0
-                 PUSH     SB_GETPARTS
-                 PUSH     EBP
-                 CALL     Perform
-        CMP      EAX, EBX
-        JG       @@reset_simple
-        MOV      EAX, ESI
-        CALL     GetWidth
-        CDQ
-        MOV      ECX, EBX
-        INC      ECX
-        IDIV     ECX
-        MOV      EDX, EAX
-        ADD      ESP, -1024
-        ///////////////////
-        MOV      ECX, EBX
-        MOV      EDI, ESP
-        JECXZ    @@2
-@@store_loo:
-        STOSD
-        ADD      EAX, EDX
-        LOOP     @@store_loo
-@@2:
-        OR       dword ptr [ESP+EBX*4], -1
-                 PUSH     ESP
-        INC      EBX
-                 PUSH     EBX
-                 PUSH     SB_SETPARTS
-                 PUSH     EBP
-                 CALL     Perform
-        ////////////////////
-        ADD      ESP, 1024
-@@reset_simple:
-                 PUSH     0
-                 PUSH     0
-                 PUSH     SB_SIMPLE
-                 PUSH     EBP
-                 CALL     Perform
-@@not_simple:
-        PUSH     SB_SETTEXT
-        PUSH     EBP
-        CALL     Perform
-        POPAD
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetStatusText(Index: Integer; const Value: KOLString);
 var ch: Integer;
     R : TRect;
@@ -48895,7 +44886,7 @@ begin
   fStatusCtl.Perform(
     {$IFDEF UNICODE_CTRLS} SB_SETTEXTW {$ELSE} SB_SETTEXT {$ENDIF}, Index, Val );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF noASM_UNICODE}
 function TControl.GetStatusText( Index: Integer ): KOLString;
@@ -48951,7 +44942,7 @@ asm
         POP      EBX
 @@exit: XCHG     EAX, ECX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function TControl.GetStatusText( Index: Integer ): KOLString;
 var L, I: Integer;
     Msg: DWORD;
@@ -48975,9 +44966,9 @@ begin
     fStatusCtl.Perform( Msg, I, Integer( @ Result[1] ) );
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.RemoveStatus;
 var ch: Integer;
 begin
@@ -48988,18 +44979,18 @@ begin
   fClientBottom := 0;
   ClientHeight := ch;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.StatusPanelCount: Integer;
 begin
   Result := 0;
   if fStatusCtl = nil then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
   Result := fStatusCtl.Perform( SB_GETPARTS, 0, 0 );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetStatusPanelX(Idx: Integer): Integer;
 var Buf: array[0..254] of Integer;
     N : Integer;
@@ -49010,9 +45001,9 @@ begin
   if N <= Idx then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
   Result := Buf[ Idx ];
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetStatusPanelX(Idx: Integer; const Value: Integer);
 var Buf: array[0..254] of Integer;
     N : Integer;
@@ -49023,7 +45014,7 @@ begin
   Buf[ Idx ] := Value;
   fStatusCtl.Perform( SB_SETPARTS, N, Integer( @Buf[ 0 ] ) );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TControl.SetColor1(const Value: TColor);
 begin
@@ -49085,7 +45076,7 @@ begin
   {$ENDIF}
   AOwner.fImageList := Result;
 end;
-{$ENDIF}
+{$ENDIF USE_CONSTRUCTORS}
 
 function ImageList_Create; stdcall; external cctrl name 'ImageList_Create';
 function ImageList_Destroy; external cctrl name 'ImageList_Destroy';
@@ -49248,7 +45239,7 @@ begin
    ImageList_Remove( FHandle, Idx );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 destructor TImageList.Destroy;
 begin
   Clear;
@@ -49266,7 +45257,7 @@ begin
   end;
   inherited;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TImageList.Draw(Idx: Integer; DC: HDC; X, Y: Integer);
 begin
@@ -49323,13 +45314,13 @@ begin
   Result := Result or WORD(FOverlayIdx shl 8);
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TImageList.GetHandle: THandle;
 begin
   HandleNeeded;
   Result := FHandle;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TImageList.GetMask: HBitmap;
 var II : TImageInfo;
@@ -49378,7 +45369,7 @@ asm
         TEST     ECX, ECX
         SETNZ    AL
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function TImageList.HandleNeeded: Boolean;
 const ColorFlags : array[ TImageListColors ] of Byte = ( ILC_COLOR,
                  ILC_COLOR4, ILC_COLOR8, ILC_COLOR16, ILC_COLOR24,
@@ -49398,7 +45389,7 @@ begin
     SetBkColor( fBkColor );
   Result := FHandle <> 0;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TImageList.ImgRect(Idx: Integer): TRect;
 var II : TImageInfo;
@@ -49439,7 +45430,7 @@ asm
         MOV      AL, 1
 @@exit: POP      EBX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function TImageList.LoadBitmap(ResourceName: PKOLChar;
   TranspColor: TColor): Boolean;
 var NewHandle : THandle;
@@ -49456,7 +45447,7 @@ begin
      Handle := NewHandle;
   ImageList_GetIconSize( fHandle, FImgWidth, FImgHeight );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TImageList.LoadFromFile(FileName: PKOLChar; TranspColor: TColor;
   ImgType: TImageType): Boolean;
@@ -49541,7 +45532,7 @@ begin
   FColors := Value;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TImageList.SetHandle(const Value: THandle);
 begin
   if FHandle = Value then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
@@ -49556,7 +45547,7 @@ begin
     FImgHeight := 0;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TImageList.SetImgHeight(const Value: Integer);
 begin
@@ -49845,7 +45836,7 @@ procedure TControl.LVSetItem(Idx, Col: Integer; const aText: KOLString;
   ImgIdx: Integer; State: TListViewItemState; StateImgIdx,
   OverlayImgIdx: Integer; Data: DWORD);
 var LVI: TLVItem;
-    I: Integer;
+    {$IFDEF KOL_ASSERTIONS} I: Integer; {$ENDIF}
 begin
   LVI.mask := LVIF_TEXT or {LVIF_STATE or} LVIF_DI_SETITEM;
   if Col = 0 then
@@ -49880,9 +45871,12 @@ begin
   LVI.pszText := PKOL_Char( aText );
   LVI.iImage := ImgIdx;
   LVI.lParam := Data;
-  I := Perform( LVM_SETITEM, 0, Integer( @LVI ) );
+  {$IFDEF KOL_ASSERTIONS} I := {$ENDIF}
+          Perform( LVM_SETITEM, 0, Integer( @LVI ) );
+  {$IFDEF KOL_ASSERTIONS}
   if (I = 0) and (Col = 0) then
     Assert( False, 'Can not set item ' );
+  {$ENDIF KOL_ASSERTIONS}
 end;
 
 procedure LVGetItem( Sender: PControl; Idx, Col: Integer; var LVI: TLVItem;
@@ -49967,14 +45961,14 @@ begin
   ApplyImageLists2ListView( @Self );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.Perform(msgcode: DWORD; wParam, lParam: Integer): Integer; stdcall;
 begin
   {$IFDEF INPACKAGE}
   Log( '->TControl.Perform' );
   TRY
   {$ENDIF INPACKAGE}
-  Result := SendMessage( GetWindowHandle, msgcode, wParam, lParam ); 
+  Result := SendMessage( GetWindowHandle, msgcode, wParam, lParam );
   {$IFDEF INPACKAGE}
     LogOK;
   FINALLY
@@ -49982,22 +45976,22 @@ begin
   END;
   {$ENDIF INPACKAGE}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.Postmsg(msgcode: DWORD; wParam, lParam: Integer): Boolean; stdcall;
 begin
   Result := PostMessage( GetWindowHandle, msgcode, wParam, lParam );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$ENDIF WIN_GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.GetChildCount: Integer;
 begin
   Result := fChildren.Count;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$IFDEF WIN_GDI}
 
 procedure TControl.LVDelete(Idx: Integer);
@@ -50140,7 +46134,7 @@ begin
   Result := Perform( LoWord(Index), Item, 0 );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.SetItemVal(Item: Integer; const Index: Integer; const Value: Integer);
 var MsgCode: Integer;
 begin
@@ -50151,7 +46145,7 @@ begin
   if (MsgCode and $8000) <> 0 then
     Invalidate;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TControl.GetSBMinMax: TPoint;
 {$IFDEF _D2}
@@ -50283,7 +46277,7 @@ end;
 
 { TOpenSaveDialog }
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 destructor TOpenSaveDialog.Destroy;
 begin
   FFilter := '';
@@ -50296,180 +46290,9 @@ begin
   {$ENDIF}
   inherited;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function TOpenSaveDialog.Execute: Boolean;
-asm
-        PUSH     EBX
-        XCHG     EBX, EAX
-
-        XOR      ECX, ECX
-        {$IFDEF OpenSaveDialog_Extended}
-        MOVZX    EAX, [EBX].NoPlaceBar
-        PUSH     EAX
-        PUSH     ECX
-        PUSH     ECX
-        PUSH     [EBX].TemplateName
-        PUSH     [EBX].HookProc
-        {$ELSE}
-        PUSH     ECX                      // prepare lpTemplateName = nil
-        PUSH     ECX                      // prepare lpfnHook = nil
-        {$ENDIF}
-        PUSH     EBX                      // prepare lCustData = @Self
-        MOV      EDX, [EBX].FDefExtension
-        CALL     EDX2PChar
-        PUSH     EDX                      // prepare lpstrDefExt = FDefExtension
-        PUSH     ECX                      // prepare nFileExtension, nFileOffset: Word = 0, 0
-        // prepare flags:
-        LEA      EAX, [EBX].FOptions
-        MOV      EDX, Offset[@@OpenSaveFlags]
-        {$IFDEF OpenSaveDialog_Extended}
-        MOV      CL, 14
-        {$ELSE}
-        MOV      CL, 12
-        {$ENDIF}
-        CALL     MakeFlags
-        XOR      ECX, ECX
-        OR       EAX, OFN_EXPLORER or OFN_LONGNAMES or OFN_ENABLESIZING
-        PUSH     EAX                       // push Flags
-        PUSH     [EBX].FTitle              // prepare lpstrTitle
-        PUSH     [EBX].FInitialDir         // prepare lpstrInitialDir
-        PUSH     ECX                       // prepare nMaxFileTitle = 0
-        PUSH     ECX                       // prepare lpstrFileTitle = nil
-        TEST     AH, 2      // MultiSelect?
-        MOV      EAX, 65520
-        JNZ      @@1
-        MOV      AX, MAX_PATH+2
-@@1:    PUSH     EAX                       // prepare nMaxFile
-        CALL     System.@GetMem
-        POP      ECX
-        PUSH     ECX
-        PUSH     EAX                       // prepare lpStrFile
-        XOR      EDX, EDX
-
-@@2:    MOV      EDX, [EBX].fFileName // no, fill it initilly by FileName
-        CALL     EDX2PChar
-        DEC      ECX // added 5 october 2003 to prevent possible error if FileName too big
-        CALL     StrLCopy
-        XOR      EDX, EDX
-
-        PUSH     [EBX].FFilterIndex        // prepare nFilterIndex
-        PUSH     EDX                       // prepare nMaxCustFilter
-        PUSH     EDX                       // prepare lpstrCustomFilter
-        PUSH     EDX                       // prepare lpstrFilter = nil
-        MOV      EAX, ESP
-        OR       EDX, [EBX].FFilter
-        JZ       @@5
-
-        MOV      ECX, offset[@@0]
-        CALL     System.@LStrCat3          // prepare lpStrFilter = FFilter + #0
-        POP      EAX
-        PUSH     EAX
-        XOR      EDX, EDX
-@@3:    INC      EAX   // filter is not starting from ';' or '|'...
-        CMP      [EAX], DL
-        JZ       @@5
-        CMP      byte ptr [EAX], '|'
-        JNZ      @@3
-@@4:    MOV      [EAX], DL
-        JMP      @@3
-@@OpenSaveFlags:
-        DD OFN_CREATEPROMPT, OFN_EXTENSIONDIFFERENT, OFN_FILEMUSTEXIST
-        DD OFN_HIDEREADONLY, OFN_NOCHANGEDIR, OFN_NODEREFERENCELINKS
-        DD OFN_ALLOWMULTISELECT, OFN_NONETWORKBUTTON, OFN_NOREADONLYRETURN
-        DD OFN_OVERWRITEPROMPT, OFN_PATHMUSTEXIST, OFN_READONLY, OFN_NOVALIDATE
-        {$IFDEF OpenSaveDialog_Extended}
-        DD OFN_ENABLETEMPLATE, OFN_ENABLEHOOK
-        {$ENDIF}
-
-        {$IFDEF _D2009orHigher}
-        DW       0, 1 
-        {$ENDIF}
-        DD       -1, 1
-@@0:    DB       0
-
-
-@@5:
-        PUSH     [hInstance]               // prepare hInstance
-
-        MOV      ECX, [EBX].TControl.fWnd
-        INC      ECX
-        LOOP     @@6
-        MOV      ECX, [Applet]
-        JECXZ    @@6
-        MOV      ECX, [ECX].TControl.fHandle
-@@6:    PUSH     ECX                       // prepare hWndOwner
-        {$IFDEF OpenSaveDialog_Extended}
-        CALL     WinVer
-        CMP      AL, wvNT
-        MOV      DL, 76+12
-        JA       @@6a
-        CMP      AL, wvME
-        JE       @@6a
-        MOV      DL, 76
-@@6a:   MOVZX    EAX, DL
-        PUSH     EAX
-        {$ELSE}
-        PUSH     76                        // prepare lStructSize
-        {$ENDIF}
-
-        PUSH     ESP
-        CMP      [EBX].TControl.FOpenDialog, 0
-        JZ       @@7
-        CALL     GetOpenFileName
-        JMP      @@8
-@@7:    CALL     GetSaveFileName
-@@8:
-        PUSH     EAX
-        XOR      EDX, EDX
-        TEST     EAX, EAX
-        JZ       @@10
-
-        MOV      EAX, [ESP+4].TOpenFileName.nFilterIndex
-        MOV      [EBX].FFilterIndex, EAX
-
-        TEST     BYTE PTR [ESP+4].TOpenFileName.Flags, OFN_READONLY
-        SETNZ    AL
-        MOV      [EBX].fOpenReadOnly, AL
-
-        MOV      EAX, [ESP+4].TOpenFileName.lpstrFile
-        MOV      EDX, EAX
-        XOR      ECX, ECX
-
-        TEST     [EBX].FOptions, 1 shl OSAllowMultiSelect
-        JZ       @@10
-
-        DEC      EAX
-@@9:    INC      EAX
-        CMP      byte ptr [EAX], CL
-        JNZ      @@9
-        CMP      byte ptr [EAX+1], CL
-        JZ       @@10
-        MOV      byte ptr [EAX], 13
-        JMP      @@9
-
-@@10:
-        LEA      EAX, [EBX].FFileName
-        {$IFDEF _D2009orHigher}
-        XOR      ECX, ECX
-        {$ENDIF}
-        CALL     System.@LStrFromPChar
-        MOV      EAX, [ESP+4].TOpenFileName.lpstrFile
-        CALL     System.@FreeMem // v1.86 +AK
-
-        LEA      EAX, [ESP+4].TOpenFileName.lpstrFilter
-        CALL     System.@LStrClr
-
-        POP      EAX
-        {$IFDEF OpenSaveDialog_Extended}
-        ADD      ESP, 76+12
-        {$ELSE}
-        ADD      ESP, 76
-        {$ENDIF}
-        POP      EBX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function TOpenSaveDialog.Execute: Boolean;
 const OpenSaveFlags: array[ TOpenSaveOption ] of Integer = (
       OFN_CREATEPROMPT,
@@ -50585,7 +46408,7 @@ begin
   end else
     FFilename:='';
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 { -- OpenDirDialog -- }
 
@@ -50604,7 +46427,7 @@ end;
 
 { TOpenDirDialog }
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 destructor TOpenDirDialog.Destroy;
 begin
   FTitle := '';
@@ -50612,7 +46435,7 @@ begin
   FStatusText := '';
   inherited;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 type
   PSHItemID = ^TSHItemID;
@@ -50685,53 +46508,7 @@ const
   BFFM_SETSELECTION      = WM_USER + 102;
   BFFM_SETSELECTIONW     = WM_USER + 103;
 
-{$IFDEF ASM_UNICODE} // WndOwner
-function TOpenDirDialog.Execute: Boolean;
-asm
-          PUSH     EBX
-          XCHG     EBX, EAX
-        XOR      ECX, ECX
-        PUSH     ECX             // prepare iImage = 0
-        PUSH     EBX             // prepare lParam = @Self
-        PUSH     [EBX].FCallBack // prepare lpfn = FCallBack
-        LEA      EAX, [EBX].FOptions
-        MOV      EDX, Offset[@@FlagsArray]
-        MOV      CL, 8
-        CALL     MakeFlags
-        PUSH     EAX             // prepare ulFlags = Options
-        PUSH     [EBX].FTitle    // prepare lpszTitle
-        LEA      EAX, [EBX].FBuf
-        PUSH     EAX             // prepare pszDisplayName
-        PUSH     0               // prepare pidlRoot
-        MOV      ECX, [EBX].fWnd
-        INC      ECX
-        LOOP     @@1
-        MOV      ECX, Applet
-        JECXZ    @@1
-        MOV      ECX, [ECX].TControl.fHandle
-@@1:    PUSH     ECX             // prepare hwndOwner
-            PUSH     ESP
-            CALL     SHBrowseForFolderA
-            ADD      ESP, 32
-            TEST     EAX, EAX
-            JZ       @@exit
-          PUSH     EAX
-        LEA      EDX, [EBX].FBuf
-        PUSH     EDX
-        PUSH     EAX
-        CALL     SHGetPathFromIDListA
-            CALL     CoTaskMemFree
-        MOV      AL, 1
-        JMP      @@fin
-@@FlagsArray:
-        DD BIF_BROWSEFORCOMPUTER, BIF_BROWSEFORPRINTER, BIF_DONTGOBELOWDOMAIN
-        DD BIF_RETURNFSANCESTORS, BIF_RETURNONLYFSDIRS, BIF_STATUSTEXT
-        DD BIF_BROWSEINCLUDEFILES, BIF_EDITBOX, BIF_NEWDIALOGSTYLE
-@@exit: XOR      EAX, EAX
-@@fin:
-        POP      EBX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function TOpenDirDialog.Execute: Boolean;
 const FlagsArray: array[ TOpenDirOption ] of Integer =
       ( BIF_BROWSEFORCOMPUTER, BIF_BROWSEFORPRINTER, BIF_DONTGOBELOWDOMAIN,
@@ -50763,7 +46540,7 @@ begin
     Result := True;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TOpenDirDialog.GetInitialPath: KOLString;
 begin
@@ -50775,40 +46552,7 @@ begin
   Result := FBuf;
 end;
 
-{$IFDEF ASM_UNICODE}
-function OpenDirSelChangeCallBack( Wnd: HWnd; Msg: DWORD; lParam, lpData: LParam ):
-         Integer; stdcall;
-asm
-        MOV      EAX, [lpData]
-        MOV      ECX, [EAX].TOpenDirDialog.FOnSelChanged.TMethod.Code
-        JECXZ    @@exit
-          LEA      EDX, [EAX].TOpenDirDialog.FBuf
-          PUSH     EDX
-          PUSH     [lParam]
-          CALL     SHGetPathFromIDListA
-        MOV      EDX, [lpData]
-        LEA      ECX, [EDX].TOpenDirDialog.FBuf
-        PUSH     0
-        PUSH     ESP
-        LEA      EAX, [EDX].TOpenDirDialog.FStatusText
-        PUSH     EAX
-        MOV      EAX, [EDX].TOpenDirDialog.FOnSelChanged.TMethod.Data
-        CALL     dword ptr [EDX].TOpenDirDialog.FOnSelChanged.TMethod.Code
-        PUSH     0
-        PUSH     BFFM_ENABLEOK
-        PUSH     [Wnd]
-        CALL     SendMessage
-@@1:      MOV      EDX, [lpData]
-          MOV      ECX, [EDX].TOpenDirDialog.FStatusText
-          JECXZ    @@exit
-        PUSH     ECX
-        PUSH     0
-        PUSH     BFFM_SETSTATUSTEXT
-        PUSH     [Wnd]
-        CALL     SendMessage
-@@exit: XOR      EAX, EAX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function OpenDirSelChangeCallBack( Wnd: HWnd; Msg: DWORD; lParam, lpData: LParam ):
          Integer; stdcall;
 var _Self_: POpenDirDialog;
@@ -50827,7 +46571,7 @@ begin
   end;
   Result := 0;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_LOCAL} {$UNDEF ASM_LOCAL} {$ENDIF}
 {$IFNDEF NEW_OPEN_DIR_STYLE_EX}
@@ -50835,7 +46579,7 @@ end;
 {$ENDIF}
 
 {$IFDEF ASM_LOCAL}
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function OpenDirCallBack( Wnd: HWnd; Msg: DWORD; lParam, lpData: LParam ): Integer;
          stdcall;
 const
@@ -50890,9 +46634,9 @@ begin
   end;
   Result := 0;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure OpenDirDlgCenter( Wnd: HWnd );
 var R: TRect;
     W, H: Integer;
@@ -50904,9 +46648,9 @@ begin
   R.Top := (GetSystemMetrics( SM_CYSCREEN ) - H) div 2;
   MoveWindow( Wnd, R.Left, R.Top, W, H, True );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TOpenDirDialog.SetCenterOnScreen(const Value: Boolean);
 var P: procedure( Wnd: HWnd );
 begin
@@ -50916,7 +46660,7 @@ begin
     P := @OpenDirDlgCenter;
   FCenterProc := P;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TOpenDirDialog.SetInitialPath(const Value: KOLString);
 begin
@@ -51089,7 +46833,7 @@ asm
         POP      ECX
 @@exit:
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TControl.TBAddBitmap(Bitmap: HBitmap);
 const NstdBitmaps: array[ 0..5 ] of DWORD = ( 15, 15, 0, 0, 13, 13 );
 var BI: TBitmapInfo;
@@ -51117,189 +46861,9 @@ begin
   end else Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
   Perform( TB_ADDBITMAP, N, Integer( @AB ) );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_UNICODE}
-function TControl.TBAddInsButtons(Idx: Integer; const Buttons: array of PKOLChar;
-  const BtnImgIdxArray: array of Integer): Integer; stdcall;
-asm     { [EBP+$8] = @Self
-          [EBP+$C] = Idx
-          [EBP+$10] = Buttons
-          [EBP+$14] = High(Butons)
-          [EBP+$18] = BtnImgIdxArray
-          [EBP+$1C] = High(BtnImgIdxArray) }
-        PUSH     EBX
-        PUSH     ESI
-        PUSH     EDI
-        OR       EBX, -1
-        MOV      EAX, 20
-        MOV      ECX, [EBP+$14]
-        CMP      ECX, EBX
-        JLE      @@fin
-        INC      ECX
-        MUL      ECX
-        CALL     System.@GetMem
-        PUSH     EAX           // save AB to FreeMem after
-        MOV      EDX, EBX
-        DEC      EDX           // nBmp := -2
-          MOV      ECX, [EBP+$14]
-          INC      ECX
-          JZ       @@exit
-        MOV      ECX, [EBP+$1C]
-        INC      ECX
-        JZ       @@1
-        MOV      ECX, [BtnImgIdxArray]
-        MOV      EDX, [ECX]
-        DEC      EDX           // nBmp := BtnImgIdxArray[ 0 ] - 1
-@@1:    MOV      ECX, [EBP+$14]
-        INC      ECX
-        MOV      ESI, [Buttons]
-        MOV      EDI, EAX      // EDI = PAB
-        PUSH     0             // N:=0 in [EBP-$14]
-@@loop:
-        LODSD
-        TEST     EAX, EAX
-        JZ       @@break
-        PUSH     ECX
-          CMP      word ptr [EAX], '-'
-          JNE      @@2
-        OR       EAX, -1
-        STOSD
-        MOV      EAX, [ToolbarsIDcmd]
-        TEST     EBX, EBX
-        {$IFDEF USE_CMOV}
-        CMOVL    EBX, EAX
-        {$ELSE}
-        JGE      @@b0
-        MOV      EBX, EAX
-@@b0:   {$ENDIF}
-          STOSD
-          XOR      EAX, EAX
-          INC      AH  // TBSTYLE_SEP = 1
-          STOSD
-          DEC      AH
-          STOSD
-          DEC      EAX
-          JMP      @@3
-        {$IFDEF _D2009orHigher}
-        DW       0, 1
-        {$ENDIF}
-        DD       -1, 1
-@@0:    DB       0
-@@2:
-          INC      EDX  // Inc( nBmp )
-          PUSH     EAX
-        MOV      EAX, [EBP+$1C]
-        MOV      ECX, [EBP-$14]
-        CMP      EAX, ECX
-        MOV      EAX, EDX
-        JL       @@21
-        MOV      EAX, [BtnImgIdxArray]
-        MOV      EAX, [EAX+ECX*4]
-@@21:   STOSD
-          TEST     EDX, EDX
-          JGE      @@2a
-          DEC      EDX
-@@2a:
-        MOV      EAX, [ToolbarsIDcmd]
-        STOSD
-        TEST     EBX, EBX
-        {$IFDEF USE_CMOV}
-        CMOVL    EBX, EAX
-        {$ELSE}
-        JGE      @@210
-        MOV      EBX, EAX
-@@210:  {$ENDIF}
-          MOV      ECX, [EBP+8]
-          MOV      AH,  BYTE PTR [ECX].TControl.DF.fDefaultTBBtnStyle
-        POP      ECX
-        MOV      AL, 4 // AL=fsState=_ENABLED, AH=fsStyle=_AUTOSIZE if fDefaultTBBtnStyle contains
-        CMP      byte ptr [ECX], '^'
-        JNE      @@22
-        OR       AH, TBSTYLE_DROPDOWN
-        INC      ECX
-@@22:   CMP      byte ptr [ECX], '-'
-        JZ       @@23
-        CMP      byte ptr [ECX], '+'
-        JNZ      @@24
-        MOV      AL, TBSTATE_ENABLED or TBSTATE_CHECKED
-@@23:   INC      ECX
-        OR       AH, TBSTYLE_CHECK
-        CMP      byte ptr [ECX], '!'
-        JNZ      @@24
-        OR       AH, TBSTYLE_GROUP
-        INC      ECX
-@@24:   {$IFDEF TOOLBAR_DOT_NOAUTOSIZE_BUTTON}
-        CMP      byte ptr [ECX], '.'
-        JNZ      @@25
-        AND      AH, not TBSTYLE_AUTOSIZE
-        INC      ECX
-@@25:
-        {$ENDIF TOOLBAR_DOT_NOAUTOSIZE_BUTTON}
-          STOSD
-          MOV      EAX, [EBP+8]
-          STOSD
-          OR       EAX, -1
-          CMP      word ptr [ECX], ' '
-          JZ       @@3
-          CMP      byte ptr [ECX], 0
-          JZ       @@3
-        PUSH     EDX
-        PUSH     0
-        MOV      EDX, ECX
-        MOV      EAX, ESP
-        {$IFDEF _D2009orHigher}
-        PUSH     ECX
-        XOR      ECX, ECX
-        {$ENDIF}
-        CALL     System.@LStrFromPChar
-        {$IFDEF _D2009orHigher}
-        POP      ECX
-        {$ENDIF}
-        MOV      EAX, ESP
-        MOV      EDX, offset[@@0]
-        CALL     System.@LStrCat
-        PUSH     dword ptr [ESP]
-        PUSH     0
-        PUSH     TB_ADDSTRING
-        PUSH     dword ptr [EBP+8]
-        CALL     Perform
-        STOSD
-          CALL     RemoveStr
-          POP      EDX
-          JMP      @@30
-@@3:    STOSD
-@@30:   INC      dword ptr [EBP-$14]
-        INC      [ToolbarsIDcmd]
-        POP      ECX
-        DEC      ECX
-        JNZ      @@loop
-@@break:
-          POP      ECX
-          JECXZ    @@exit
-          PUSH     dword ptr [ESP]
-          MOV      EAX, [Idx]
-          TEST     EAX, EAX
-          JGE      @@31
-        PUSH     ECX
-        PUSH     TB_ADDBUTTONS
-        JMP      @@32
-@@31:
-        PUSH     EAX
-        PUSH     TB_INSERTBUTTON
-@@32:
-        PUSH     dword ptr [EBP+8]
-        CALL     Perform
-@@exit:
-        POP      EAX
-        CALL     System.@FreeMem
-@@fin:
-        POP      EDI
-        POP      ESI
-        XCHG     EAX, EBX
-        POP      EBX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function TControl.TBAddInsButtons(Idx: Integer; const Buttons: array of PKOLChar;
   const BtnImgIdxArray: array of Integer): Integer; stdcall;
 
@@ -51401,15 +46965,15 @@ begin
   else
     Result := AddInsButtons;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.TBAddButtons(const Buttons: array of PKOLChar;
          const BtnImgIdxArray: array of Integer): Integer;
 begin
   Result := TBAddInsButtons( -1, Buttons, BtnImgIdxArray );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TControl.TBInsertButtons(BeforeIdx: Integer;
   Buttons: array of PKOLChar; const BtnImgIdxArray: array of Integer): Integer;
@@ -51550,13 +47114,13 @@ begin
   Perform( TB_HIDEBUTTON, BtnID, Integer( not Value ) );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.TBGetBtnStt(BtnID: Integer; const Index: Integer): Boolean;
 begin
   BtnID := GetTBBtnGoodID( @Self, BtnID );
   Result := Perform( Index + 8, BtnID, 0 ) <> 0;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TControl.TBSetBtnStt(BtnID: Integer; const Index: Integer; const Value: Boolean);
 begin
@@ -51564,7 +47128,7 @@ begin
   Perform( Index, BtnID, Integer( Value ) );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.TBIndex2Item(Idx: Integer): Integer;
 var ButtonInfo: TTBButton;
 begin
@@ -51572,7 +47136,7 @@ begin
   if Perform( TB_GETBUTTON, Idx, Integer( @ButtonInfo ) ) <> 0 then
     Result := ButtonInfo.idCommand;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TControl.TBConvertIdxArray2ID(const IdxVars: array of PDWORD);
 var i: Integer;
@@ -51581,32 +47145,7 @@ begin
     IdxVars[ i ]^ := TBIndex2Item( IdxVars[ I ]^ );
 end;
 
-{$IFDEF ASM_UNICODE}
-function TControl.TBGetButtonText( BtnID: Integer ): AnsiString;
-asm
-        PUSH     ECX
-        ADD      ESP, -1024
-        PUSH     ESP
-        PUSH     EAX
-        CALL     GetTBBtnGoodID
-        POP      EDX
-        PUSH     EAX
-        PUSH     TB_GETBUTTONTEXT
-        PUSH     EDX
-        CALL     Perform
-        TEST     EAX, EAX
-        JLE      @@2
-        MOV      EDX, ESP
-        JMP      @@1
-@@2:    XOR      EDX, EDX
-@@1:    MOV      EAX, [ESP+1024]
-        {$IFDEF _D2009orHigher}
-        XOR      ECX, ECX 
-        {$ENDIF}
-        CALL     System.@LStrFromPChar
-        ADD      ESP, 1028
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 function TControl.TBGetButtonText( BtnID: Integer ): KOLString;
 var Buffer: array[ 0..1023 ] of KOLChar;
 begin
@@ -51616,7 +47155,7 @@ begin
   else
   Result := '';
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TControl.TBGetButtonRect(BtnID: Integer): TRect;
 begin
@@ -51651,7 +47190,7 @@ begin
   Perform(TB_INSERTBUTTON,ToIdx,integer(@btn));
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.TBSetTooltips(BtnID1st: Integer;
   const Tooltips: array of PKOLChar);
 var I, J: Integer;
@@ -51678,7 +47217,7 @@ begin
     Inc( BtnID1st );
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TControl.TBBtnTooltip( BtnID: Integer ): KOLString;
 var J: Integer;
@@ -51734,7 +47273,7 @@ begin
         Toolbar.TBAddBitmap( Bitmap );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.TBButtonAtPos(X, Y: Integer): Integer;
 var I: Integer;
 begin
@@ -51743,9 +47282,9 @@ begin
      I := TBIndex2Item( I );
   Result := I;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.TBBtnIdxAtPos(X, Y: Integer): Integer;
 var I: Integer;
     R: TRect;
@@ -51762,7 +47301,7 @@ begin
   end;
   Result := -1;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TControl.TBButtonSeparator(BtnID: Integer): Boolean;
 var B: TTBButton;
@@ -51812,22 +47351,21 @@ asm
         POP      EAX
         ADD      ESP, szTBButton-4
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function TControl.TBGetBtnImgIdx(BtnID: Integer): Integer;
 var B: TTBButton;
 begin
   Perform( TB_GETBUTTON, TBItem2Index( GetTBBtnGoodID( @Self, BtnID ) ), Integer( @B ) );
   Result := B.iBitmap;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-//*
 procedure TControl.TBSetBtnImgIdx(BtnID: Integer; const Value: Integer);
 begin
   Perform( TB_CHANGEBITMAP, GetTBBtnGoodID( @Self, BtnID ), Value );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.TBSetButtonText(BtnID: Integer; const Value: KOLString);
 var BI: TTBButtonInfo;
 begin
@@ -51837,18 +47375,18 @@ begin
   BI.pszText := PKOLChar( Value );
   Perform( TB_SETBUTTONINFO, BtnID, Integer( @BI ) );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.TBGetBtnWidth(BtnID: Integer): Integer;
 var R: TRect;
 begin
   R := TBButtonRect[ BtnID ];
   Result := R.Right - R.Left;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.TBSetBtnWidth(BtnID: Integer; const Value: Integer);
 var BI: TTBButtonInfo;
 begin
@@ -51860,7 +47398,7 @@ begin
   BI.fsStyle := BI.fsStyle and not TBSTYLE_AUTOSIZE;
   Perform( TB_SETBUTTONINFO, BtnID, Integer( @BI ) );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TControl.TBSetBtMinMaxWidth(const Idx: Integer; const Value: Integer);
 begin
@@ -51941,16 +47479,16 @@ begin
   Perform( CB_SHOWDROPDOWN, Integer( Value ), 0 );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.AddDirList(const Filemask: KOLString; Attrs: DWORD);
 begin
   if fCommandActions.aDir <> 0 then
   Perform( fCommandActions.aDir, Attrs, Integer( PKOLChar( Filemask ) ) );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_noVERSION}
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function WndProcShowModal( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 //var Accept: Boolean; // {Alexander Pravdin, AP}
 begin
@@ -51964,7 +47502,7 @@ begin
   end
   ;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 // by TR"]F
 function WndProcFixModal( Self_: PControl; var Msg: TMsg; var Rslt:
@@ -52138,7 +47676,7 @@ asm
         POPAD
         MOV      EAX, [EAX].fModalResult
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 {$IFDEF USE_SHOWMODALPARENTED_ALWAYS}
 function TControl.ShowModal: Integer;
 begin
@@ -52234,7 +47772,7 @@ begin
   Result := ModalResult;
 end;
 {$ENDIF USE_SHOWMODALPARENTED_ALWAYS}
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFNDEF NEW_MODAL}
 function TControl.ShowModalParented( const AParent: PControl ): Integer;
@@ -52471,7 +48009,7 @@ end;
 { -- Timer procedure -- }
 
 {$IFDEF WIN}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TimerProc( Wnd : HWnd; Msg : Integer; T : PTimer; CurrentTime : DWord ): Integer;
           stdcall;
 begin
@@ -52482,12 +48020,12 @@ begin
       T.fOnTimer( T );
    Result := 0;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF WIN}
 
 { TTimer }
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 destructor TTimer.Destroy;
 begin
   Enabled := False;
@@ -52501,10 +48039,10 @@ begin
   end;
   {$ENDIF WIN}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF WIN_GDI}
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TTimer.SetEnabled(const Value: Boolean);
 var WasEnabled: Boolean;
 begin
@@ -52544,7 +48082,7 @@ begin
     end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF WIN_GDI}
 
 {$IFDEF _X_}
@@ -52580,53 +48118,53 @@ BEGIN
   END;
 END;
 {$ELSE not GTK}
-var fActiveTimerList: PTimer;
+VAR fActiveTimerList: PTimer;
     fClockPerSecond: Integer;
     fAlarmHandling: Boolean;
 
-procedure SetAlarm; forward;
+PROCEDURE SetAlarm; FORWARD;
 
-procedure AlarmHandler(SigNum: Integer); cdecl;
-var T, NT: PTimer;
+PROCEDURE AlarmHandler(SigNum: Integer); CDECL;
+VAR T, NT: PTimer;
     c: Integer;
     count_handled: Integer;
-begin
+BEGIN
   c := clock;
   fAlarmHandling := TRUE; // to prevent SetAlarm working while timers are handling
   TRY
     //--- 1. Clear fTimerHandled flag for all active timers
     T := fActiveTimerList;
-    while T <> nil do
-    begin
+    WHILE T <> nil DO
+    BEGIN
       T.fTimerHandled := FALSE;
       T := T.fNext;
-    end;
+    END;
     //--- 2. Handle all expired timers
     count_handled := 0;
-    while not AppletTerminated do // until all timers expired are handled or
-    begin                         // until the application is terminated
+    WHILE not AppletTerminated DO // until all timers expired are handled or
+    BEGIN                         // until the application is terminated
       //--- 2.A. Search a timer which was expired before all others
       T := fActiveTimerList;
       NT := nil;
-      while T <> nil do
-      begin
-        if not T.fTimerHandled and (
+      WHILE T <> nil do
+      BEGIN
+        IF not T.fTimerHandled and (
             (NT = nil) or ((T.fExpireNext - c) < (NT.fExpireNext - c))
-           ) then
-          NT := T;
+           ) THEN
+           NT := T;
         T := T.fNext;
-      end;
-      if NT = nil then break; // there are no more timers expired
-      if (count_handled > 0) and
+      END;
+      IF NT = nil then break; // there are no more timers expired
+      IF (count_handled > 0) and
          ((NT.fExpireNext - c > 0) or (NT.fExpireNext < 0) and (c > 0)) then break;
       //--- 2.B. Handle found timer (NT)
       inc( count_handled ); // count handled timer to ensure that at least 1 timer
                             // was handled in result of alarm call
       {$IFDEF SUPPORT_LONG_TIMER}
       NT.fExpireTotal := NT.fExpireTotal - (c - NT.fTimeStart);
-      if NT.fExpireTotal > 30 * 60 * fClockPerSecond then
+      IF NT.fExpireTotal > 30 * 60 * fClockPerSecond then
         NT.fExpireNext := c + 30 * 60 * fClockPerSecond
-      else
+      ELSE
         NT.fExpireNext := c + NT.fExpireTotal;
       {$ELSE not SUPPORT_LONG_TIMER}
       NT.fExpireNext := // next time to expire this timer
@@ -52634,94 +48172,89 @@ begin
       {$ENDIF SUPPORT_LONG_TIMER}
       NT.fTimerHandled := TRUE; // do not handle that timer again in that loop
       {$IFDEF SUPPORT_LONG_TIMER}
-      if NT.fExpireTotal <= 0 then
+      IF NT.fExpireTotal <= 0 then
       {$ENDIF SUPPORT_LONG_TIMER}
-      begin if  NT.fMultimedia and not NT.fPeriodic then
+      BEGIN IF  NT.fMultimedia and not NT.fPeriodic then
                 NT.Enabled := FALSE; // one-shot timer, disable it now
-            if  Assigned( NT.fOnTimer ) then
+            IF  Assigned( NT.fOnTimer ) then
                 NT.fOnTimer( NT ); // in result of this action, timer NT or any
                 // other active timer can be disabled and dropped from
                 // fActiveTimerList and any amount of previously disabled timers
                 // can be added
-      end;
-    end;
+      END;
+    END;
   FINALLY
     fAlarmHandling := FALSE;
   END;
   // 3. finally, install the next alarm to the nearest expirating timer if any
   SetAlarm;
-end;
+END;
 
-procedure SetAlarm;
-var i: Integer;
+PROCEDURE SetAlarm;
+VAR i: Integer;
     T, NT: PTimer;
     TV: itimerval;
     c: clock_t;
-begin
-  if  AppletTerminated then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
+BEGIN
+  IF  AppletTerminated then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
       // if the application is terminated we do not install alarms
-  if  fAlarmHandling then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
+  IF  fAlarmHandling then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
       // while alarm is handling do not reinstall alarms
   c := clock;
   T := fActiveTimerList;
   NT := T;
-  while T <> nil do
-  begin
+  WHILE T <> nil do
+  BEGIN
     if (T.fExpireNext - c) < (NT.fExpireNext - c) then
       NT := T;
     T := T.fNext;
-  end;
-  if NT = nil then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
+  END;
+  IF NT = nil then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
   i := (NT.fExpireNext - c) * 1000 div fClockPerSecond;
-  if i < 0 then i := 10; // 10 milliseconds as minimum time to alarm
+  IF i < 0 then i := 10; // 10 milliseconds as minimum time to alarm
   TV.it_interval.tv_sec := 0; // set interval to alarm once
   TV.it_interval.tv_usec := 0;
   TV.it_value.tv_sec := i div 1000; // set time to alarm next time
   TV.it_value.tv_usec := (i mod 1000) * 1000;
   signal( SIGALRM, AlarmHandler );
   setitimer( ITIMER_REAL, TV, nil );
-end;
+END;
 
-procedure TTimer.SetEnabled(const Value: Boolean);
-begin
-  if FEnabled = Value then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
+PROCEDURE TTimer.SetEnabled(const Value: Boolean);
+BEGIN
+  IF FEnabled = Value then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
   fEnabled := Value;
-  if Value then
-  begin
-    if fClockPerSecond = 0 then
+  IF Value then
+  BEGIN
+    IF fClockPerSecond = 0 then
       fClockPerSecond := CLK_TCK;
     fExpireTotal := Int64( fClockPerSecond ) * fInterval;
     {$IFDEF SUPPORT_LONG_TIMER}
-    if fExpireTotal > 30 * 60 * fClockPerSecond then
+    IF fExpireTotal > 30 * 60 * fClockPerSecond then
       fExpireNext := clock + 30 * 60 * fClockPerSecond
-    else
+    ELSE
       fExpireNext := clock + fExpireTotal;
     {$ELSE}
     fExpireNext := clock + fExpireTotal;
     {$ENDIF SUPPORT_LONG_TIMER}
-    if fActiveTimerList <> nil then
-    begin
+    IF fActiveTimerList <> nil then
+    BEGIN
       fNext := fActiveTimerList;
       fActiveTimerList.fPrev := @ Self;
-    end;
+    END;
     fActiveTimerList := @ Self;
-  end
-     else
-  begin
-    if fPrev <> nil then
-      fPrev.fNext := fNext;
-    if fNext <> nil then
-      fNext.fPrev := fPrev;
-    if fActiveTimerList = @ Self then
-      fActiveTimerList := fNext;
+  END ELSE
+  BEGIN
+    IF fPrev <> nil then fPrev.fNext := fNext;
+    IF fNext <> nil then fNext.fPrev := fPrev;
+    IF fActiveTimerList = @ Self then
+       fActiveTimerList := fNext;
     fPrev := nil;
     fNext := nil;
   end;
   if fActiveTimerList <> nil then
-  begin // set alarm to the nearest expiring timer
-    SetAlarm;
-  end;
-end;
+     SetAlarm; // set alarm to the nearest expiring timer
+END;
 {$ENDIF not GTK}
 {$ENDIF _X_}
 
@@ -52814,33 +48347,37 @@ begin
 end;
 {$ENDIF LIN}
 
-{$IFDEF WIN_GDI} //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+{$IFDEF WIN_GDI} //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 ////////////////////////////////////////////////////////////////////////
 //                         t  B  I  T  M  A  P
 ///////////////////////////////////////////////////////////////////////
 
 { -- bitmap -- }
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function PrepareBitmapHeader( W, H, BitsPerPixel: Integer ): PBitmapInfo;
 begin
+  {$IFDEF KOL_ASSERTIONS}
   Assert( W > 0, 'Width must be >0' );
   Assert( H > 0, 'Height must be >0' );
+  {$ENDIF KOL_ASSERTIONS}
   Result := AllocMem( 256*Sizeof(TRGBQuad)+Sizeof(TBitmapInfoHeader) );
+  {$IFDEF KOL_ASSERTIONS}
   Assert( Result <> nil, 'No memory' );
+  {$ENDIF KOL_ASSERTIONS}
   Result.bmiHeader.biSize := Sizeof( TBitmapInfoHeader );
   Result.bmiHeader.biWidth := W;
   Result.bmiHeader.biHeight := H; // may be, -H ?
   Result.bmiHeader.biPlanes := 1;
   Result.bmiHeader.biBitCount := BitsPerPixel;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 const
   BitsPerPixel_By_PixelFormat: array[ TPixelFormat ] of Byte =
                                ( 0, 1, 4, 8, 16, 16, 24, 32, 0 );
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function Bits2PixelFormat( BitsPerPixel: Integer ): TPixelFormat;
 var I: TPixelFormat;
 begin
@@ -52851,13 +48388,13 @@ begin
     end;
   Result := pfDevice;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure DummyDetachCanvas( Sender: PBitmap );
 begin
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewBitmap( W, H: Integer ): PBitmap;
 var DC: HDC;
 begin
@@ -52873,24 +48410,26 @@ begin
   begin
     DC := GetDC( 0 );
     Result.fHandle := CreateCompatibleBitmap( DC, W, H );
+    {$IFDEF KOL_ASSERTIONS}
     Assert( Result.fHandle <> 0, 'Can not create bitmap handle' );
+    {$ENDIF KOL_ASSERTIONS}
     ReleaseDC( 0, DC );
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 const InitColors: array[ 0..17 ] of DWORD = ( $F800, $7E0, $1F, 0, $800000, $8000,
       $808000, $80, $800080, $8080, $808080, $C0C0C0, $FF0000, $FF00, $FFFF00, $FF,
       $FF00FF, $FFFF );
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure PreparePF16bit( DIBHeader: PBitmapInfo );
 begin
         DIBHeader.bmiHeader.biCompression := BI_BITFIELDS;
         Move( InitColors[ 0 ], DIBHeader.bmiColors[ 0 ], 19*Sizeof(TRGBQUAD) );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function NewDIBBitmap( W, H: Integer; PixelFormat: TPixelFormat ): PBitmap;
 const BitsPerPixel: array[ TPixelFormat ] of Byte = ( 0, 1, 4, 8, 16, 16, 24, 32, 0 );
 var BitsPixel: Integer;
@@ -52912,7 +48451,9 @@ begin
     end
        else
        Result.fNewPixelFormat := PixelFormat;
+    {$IFDEF KOL_ASSERTIONS}
     ASSERT( Result.fNewPixelFormat in [ pf1bit..pf32bit ], 'Strange pixel format' );
+    {$ENDIF KOL_ASSERTIONS}
     Result.fDIBHeader := PrepareBitmapHeader( W, H, BitsPixel );
     if PixelFormat = pf16bit then
     begin
@@ -52922,14 +48463,16 @@ begin
     Result.fDIBSize := Result.ScanLineSize * H;
     Result.fDIBBits :=
       Pointer( GlobalAlloc( GMEM_FIXED or GMEM_ZEROINIT, Result.fDIBSize + 16 ) );
+    {$IFDEF KOL_ASSERTIONS}
     ASSERT( Result.fDIBBits <> nil, 'No memory' );
+    {$ENDIF KOL_ASSERTIONS}
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 { TBitmap }
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.ClearData;
 begin
   fDetachCanvas( @Self );
@@ -52955,9 +48498,9 @@ begin
   fSetDIBPixels := nil;
   ClearTransImage;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.Clear;
 begin
   RemoveCanvas;
@@ -52966,20 +48509,20 @@ begin
   fHeight := 0;
   fDIBAutoFree := FALSE;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TBitmap.GetBoundsRect: TRect;
 begin
   Result := MakeRect( 0, 0, Width, Height );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 destructor TBitmap.Destroy;
 begin
   Clear;
   inherited;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TBitmap.BitsPerPixel: Integer;
 var B: tagBitmap;
@@ -53001,7 +48544,7 @@ begin
   END;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.Draw(DC: HDC; X, Y: Integer);
 var
     DCfrom, DC0: HDC;
@@ -53019,14 +48562,18 @@ TRYAgain:
     oldHeight := fHeight;
     if GetObject( fHandle, sizeof( B ), @B ) <> 0 then
        oldHeight := B.bmHeight;
+    {$IFDEF KOL_ASSERTIONS}
     ASSERT( oldHeight > 0, 'oldHeight must be > 0' );
+    {$ENDIF KOL_ASSERTIONS}
 
     DC0 := GetDC( 0 );
     DCfrom := CreateCompatibleDC( DC0 );
     ReleaseDC( 0, DC0 );
 
     oldBmp := SelectObject( DCfrom, fHandle );
+    {$IFDEF KOL_ASSERTIONS}
     ASSERT( oldBmp <> 0, 'Can not select bitmap to DC' );
+    {$ENDIF KOL_ASSERTIONS}
 
     BitBlt( DC, X, Y, fWidth, oldHeight, DCfrom, 0, 0, SRCCOPY );
     {$IFDEF CHK_BITBLT} Chk_BitBlt; {$ENDIF}
@@ -53038,8 +48585,10 @@ TRYAgain:
   if fDIBBits <> nil then
   begin
     oldHeight := Abs(fDIBHeader.bmiHeader.biHeight);
+    {$IFDEF KOL_ASSERTIONS}
     ASSERT( oldHeight > 0, 'oldHeight must be > 0' );
     ASSERT( fWidth > 0, 'Width must be > 0' );
+    {$ENDIF KOL_ASSERTIONS}
     if StretchDIBits( DC, X, Y, fWidth, oldHeight, 0, 0, fWidth, oldHeight,
                    fDIBBits, fDIBHeader^, DIB_RGB_COLORS, SRCCOPY ) = 0 then
     begin
@@ -53048,9 +48597,9 @@ TRYAgain:
     end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.StretchDraw(DC: HDC; const Rect: TRect);
 var DCfrom: HDC;
     oldBmp: HBitmap;
@@ -53063,7 +48612,9 @@ DrawHandle:
     fDetachCanvas( @Self );
     DCfrom := CreateCompatibleDC( 0 );
     oldBmp := SelectObject( DCfrom, fHandle );
+    {$IFDEF KOL_ASSERTIONS}
     ASSERT( oldBmp <> 0, 'Can not select bitmap to DC' );
+    {$ENDIF KOL_ASSERTIONS}
     StretchBlt( DC, Rect.Left, Rect.Top, Rect.Right - Rect.Left,
                 Rect.Bottom - Rect.Top, DCfrom, 0, 0, fWidth, fHeight,
                 SRCCOPY );
@@ -53082,14 +48633,14 @@ DrawHandle:
     end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TBitmap.DrawMasked(DC: HDC; X, Y: Integer; Mask: HBitmap);
 begin
   StretchDrawMasked( DC, MakeRect( X, Y, X + fWidth, Y + fHeight ), Mask );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.DrawTransparent(DC: HDC; X, Y: Integer; TranspColor: TColor);
 begin
   if TranspColor = clNone then
@@ -53098,9 +48649,9 @@ begin
     StretchDrawTransparent( DC, MakeRect( X, Y, X + fWidth, Y + fHeight ),
                             TranspColor );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.StretchDrawTransparent(DC: HDC; const Rect: TRect; TranspColor: TColor);
 begin
   if TranspColor = clNone then
@@ -53121,7 +48672,7 @@ begin
     StretchDrawMasked( DC, Rect, fTransMaskBmp.Handle );
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF DEBUG_DRAWTRANSPARENT}
 procedure DebugDrawTransparent( DC: HDC; X, Y, W, H: Integer; PF: TPixelFormat;
@@ -53139,7 +48690,7 @@ end;
 
 const
   ROP_DstCopy = $00AA0029;
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.StretchDrawMasked(DC: HDC; const Rect: TRect; Mask: HBitmap);
 var
   DCfrom, MemDC, MaskDC: HDC;
@@ -53165,11 +48716,15 @@ begin
   DCFrom := Canvas.Handle;
   MaskDC := CreateCompatibleDC( 0 );
   Save4Mask := SelectObject( MaskDC, Mask );
+  {$IFDEF KOL_ASSERTIONS}
   ASSERT( Save4Mask <> 0, 'Can not select mask bitmap to DC' );
+  {$ENDIF KOL_ASSERTIONS}
   MemDC := CreateCompatibleDC( 0 );
   MemBmp := CreateCompatibleBitmap( DCfrom, fWidth, fHeight );
   Save4Mem := SelectObject( MemDC, MemBmp ); if Save4Mem <> 0 then;
+  {$IFDEF KOL_ASSERTIONS}
   ASSERT( Save4Mem <> 0, 'Can not select memory bitmap to DC' );
+  {$ENDIF KOL_ASSERTIONS}
   StretchBlt( MemDC, 0, 0, fWidth, fHeight, MaskDC, 0, 0, fWidth, fHeight, SrcCopy);
   {$IFDEF DEBUG_DRAWTRANSPARENT}
   DebugDrawTransparent( MemDC, 0, 0, fWidth, fWidth, PixelFormat, '1SrcCopy.bmp' );
@@ -53197,7 +48752,7 @@ begin
   SelectObject( MaskDC, Save4Mask );
   DeleteDC( MaskDC );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure ApplyBitmapBkColor2Canvas( Sender: PBitmap );
 begin
@@ -53205,16 +48760,16 @@ begin
   Sender.fCanvas.Brush.Color := Sender.BkColor;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure DetachBitmapFromCanvas( Sender: PBitmap );
 begin
   if Sender.fCanvasAttached = 0 then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
   SelectObject( Sender.fCanvas.fHandle, Sender.fCanvasAttached );
   Sender.fCanvasAttached := 0;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TBitmap.GetCanvas: PCanvas;
 var DC: HDC;
 begin
@@ -53241,19 +48796,23 @@ begin
   if fCanvasAttached = 0 then
   begin
     fCanvasAttached := SelectObject( fCanvas.Handle, fHandle );
+    {$IFDEF KOL_ASSERTIONS}
     ASSERT( fCanvasAttached <> 0, 'Can not select bitmap to DC of Canvas' );
+    {$ENDIF KOL_ASSERTIONS}
   end;
   fDetachCanvas := DetachBitmapFromCanvas;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TBitmap.GetEmpty: Boolean;
 begin
   Result := (fWidth = 0) or (fHeight = 0);
+  {$IFDEF KOL_ASSERTIONS}
   ASSERT( (fWidth >= 0) and (fHeight >= 0), 'Bitmap dimensions can be negative' );
+  {$ENDIF KOL_ASSERTIONS}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_noVERSION}
 function TBitmap.GetHandle: HBitmap;
@@ -53301,7 +48860,7 @@ asm
 @@exit:   MOV      EAX, [EBX].fHandle
           POP      EBX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function TBitmap.GetHandle: HBitmap;
 var OldBits: Pointer;
     DC0: HDC;
@@ -53323,8 +48882,10 @@ begin
         ShowMessage( 'Can not create DIB section, error: ' + Int2Str( GetLastError ) +
         ', ' + SysErrorMessage( GetLastError ) );
       {$ELSE}
+      {$IFDEF KOL_ASSERTIONS}
       ASSERT( fHandle <> 0, 'Can not create DIB section, error: ' + Int2Str( GetLastError ) +
       ', ' + SysErrorMessage( GetLastError ) );
+      {$ENDIF KOL_ASSERTIONS}
       {$ENDIF}
       ReleaseDC( 0, DC0 );
       if fHandle <> 0 then
@@ -53343,14 +48904,14 @@ begin
   end;
   Result := fHandle;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TBitmap.GetHandleAllocated: Boolean;
 begin
   Result := fHandle <> 0;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.LoadFromFile(const Filename: KOLString);
 var Strm: PStream;
 begin
@@ -53358,44 +48919,14 @@ begin
   LoadFromStream( Strm );
   Strm.Free;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TBitmap.LoadFromResourceID(Inst: DWORD; ResID: Integer);
 begin
   LoadFromResourceName( Inst, MAKEINTRESOURCE( ResID ) );
 end;
 
-{$IFDEF ASM_UNICODE}
-procedure TBitmap.LoadFromResourceName(Inst: DWORD; ResName: PAnsiChar);
-asm
-        PUSH     EBX
-        MOV      EBX, EAX
-        PUSHAD
-        CALL     Clear
-        POPAD
-        XOR      EAX, EAX
-        PUSH     ECX
-        MOVZX    ECX, [EBX].fHandleType
-        INC      ECX
-        LOOP     @@1
-        MOV      AH, LR_CREATEDIBSECTION shr 8 // = $2000
-@@1:    MOV      AL, LR_DEFAULTSIZE // = $40
-        POP      ECX
-        PUSH     EAX
-        PUSH     0
-        PUSH     0
-        PUSH     IMAGE_BITMAP
-        PUSH     ECX
-        PUSH     EDX
-        CALL     LoadImage
-        TEST     EAX, EAX
-        JZ       @@exit
-        XCHG     EDX, EAX
-        XCHG     EAX, EBX
-        CALL     SetHandle
-@@exit: POP      EBX
-end;
-{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_UNICODE}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.LoadFromResourceName(Inst: DWORD; ResName: PKOLChar);
 var ResHandle: HBitmap;
     Flg: DWORD;
@@ -53408,7 +48939,7 @@ begin
   if ResHandle = 0 then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
   Handle := ResHandle;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF F_P}
 type
@@ -53598,7 +49129,7 @@ asm
 @@exit: POP      ESI
         POP      EBX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.LoadFromStream(Strm: PStream);
 type
   TColorsArray = array[ 0..15 ] of TColor;
@@ -53652,19 +49183,27 @@ var Pos : DWORD;
       end else Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
       fNewPixelFormat := Bits2PixelFormat( fDIBHeader.bmiHeader.biBitCount
                          * fDIBHeader.bmiHeader.biPlanes );
+      {$IFDEF KOL_ASSERTIONS}
       if (fNewPixelFormat = pf15bit) and (fDIBHeader.bmiHeader.biCompression <> BI_RGB) then
       begin
         ASSERT( fDIBHeader.bmiHeader.biCompression = BI_BITFIELDS, 'Unsupported bitmap format' );
       end;
+      {$ENDIF KOL_ASSERTIONS}
       fWidth := fDIBHeader.bmiHeader.biWidth;
+      {$IFDEF KOL_ASSERTIONS}
       ASSERT( fWidth > 0, 'Bitmap width must be > 0' );
+      {$ENDIF KOL_ASSERTIONS}
       fHeight := Abs(fDIBHeader.bmiHeader.biHeight);
+      {$IFDEF KOL_ASSERTIONS}
       ASSERT( fHeight > 0, 'Bitmap height must be > 0' );
+      {$ENDIF KOL_ASSERTIONS}
 
       fDIBSize := ScanLineSize * fHeight;
       fDIBBits :=
         Pointer( GlobalAlloc( GMEM_FIXED or GMEM_ZEROINIT, fDIBSize ) );
+      {$IFDEF KOL_ASSERTIONS}
       ASSERT( fDIBBits <> nil, 'No memory' );
+      {$ENDIF KOL_ASSERTIONS}
 
       ColorCount := 0;
       if fDIBHeader.bmiHeader.biBitCount <= 8 then
@@ -53737,7 +49276,7 @@ begin
      Clear;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 ////////////////// bitmap RLE-decoding and loading - by Vyacheslav A. Gavrik
 
@@ -53929,9 +49468,13 @@ var Pos : DWORD;
       fNewPixelFormat := Bits2PixelFormat( fDIBHeader.bmiHeader.biBitCount
                          * fDIBHeader.bmiHeader.biPlanes );
       fWidth := fDIBHeader.bmiHeader.biWidth;
+      {$IFDEF KOL_ASSERTIONS}
       ASSERT( fWidth > 0, 'Bitmap width must be > 0' );
+      {$ENDIF KOL_ASSERTIONS}
       fHeight := Abs(fDIBHeader.bmiHeader.biHeight);
+      {$IFDEF KOL_ASSERTIONS}
       ASSERT( fHeight > 0, 'Bitmap height must be > 0' );
+      {$ENDIF KOL_ASSERTIONS}
 
       fDIBSize := ScanLineSize * fHeight;
       ZI := 0;
@@ -53939,11 +49482,13 @@ var Pos : DWORD;
          (fDIBHeader.bmiHeader.biCompression = BI_RLE4) then
          ZI := GMEM_ZEROINIT;
       fDIBBits := Pointer( GlobalAlloc( GMEM_FIXED or ZI, fDIBSize + 4 ) );
+      {$IFDEF KOL_ASSERTIONS}
       ASSERT( fDIBBits <> nil, 'No memory' );
       ASSERT( (fDIBHeader.bmiHeader.biCompression and
               (BI_RLE8 or BI_RLE4 or BI_RLE8 or BI_BITFIELDS) <> 0) or
               (fDIBHeader.bmiHeader.biCompression = BI_RGB),
               'Unknown compression algorithm');
+      {$ENDIF KOL_ASSERTIONS}
 
       ColorCount := 0;
       if fDIBHeader.bmiHeader.biBitCount <= 8 then
@@ -54088,7 +49633,7 @@ end;
 
 ///////////////////////////
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TBitmap.ReleaseHandle: HBitmap;
 var OldBits: Pointer;
 begin
@@ -54104,9 +49649,9 @@ begin
   end;
   fHandle := 0;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.SaveToFile(const Filename: KOLString);
 var Strm: PStream;
 begin
@@ -54115,7 +49660,7 @@ begin
   SaveToStream( Strm );
   Strm.Free;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TBitmap.CoreSaveToFile(const Filename: KOLString);
 var Strm: PStream;
@@ -54216,7 +49761,7 @@ asm
         POP      ESI
         POP      EBX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.SaveToStream(Strm: PStream);
 var BFH : TBitmapFileHeader;
     Pos : Integer;
@@ -54251,7 +49796,7 @@ begin
   if not WriteBitmap then
      Strm.Seek( Pos, spBegin );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TBitmap.CoreSaveToStream(Strm: PStream);
 type TRGBTriple = packed record
@@ -54683,7 +50228,7 @@ begin
      Strm.Seek( Pos, spBegin );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.SetHandle(const Value: HBitmap);
 var B: tagBitmap;
     Dib: TDIBSection;
@@ -54714,7 +50259,7 @@ begin
     fHandleType := bmDDB;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TBitmap.SetWidth(const Value: Integer);
 begin
@@ -54723,7 +50268,7 @@ begin
   FormatChanged;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.SetHeight(const Value: Integer);
 {$IFNDEF SMALLER_CODE}
 var
@@ -54743,9 +50288,9 @@ begin
   PixelFormat := pf;
 {$ENDIF SMALLER_CODE}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.SetPixelFormat(Value: TPixelFormat);
 begin
   if PixelFormat = Value then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
@@ -54759,16 +50304,16 @@ begin
     FormatChanged;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function CalcScanLineSize( Header: PBitmapInfoHeader ): Integer;
 begin
   Result := ((Header.biBitCount * Header.biWidth + 31) shr 3) and $FFFFFFFC;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure FillBmpWithBkColor( Bmp: PBitmap; DC2: HDC; oldWidth, oldHeight: Integer );
 var oldBmp: HBitmap;
     R: TRect;
@@ -54780,7 +50325,9 @@ begin
     if GetHandle <> 0 then
     begin
       oldBmp := SelectObject( DC2, fHandle );
+      {$IFDEF KOL_ASSERTIONS}
       ASSERT( oldBmp <> 0, 'Can not select bitmap to DC' );
+      {$ENDIF KOL_ASSERTIONS}
       Br := CreateSolidBrush( Color2RGB( fBkColor ) );
       R := MakeRect( oldWidth, oldHeight, fWidth, fHeight );
       if  oldWidth = fWidth then
@@ -54792,10 +50339,10 @@ begin
       SelectObject( DC2, oldBmp );
     end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 const BitCounts: array[ TPixelFormat ] of Byte = ( 0, 1, 4, 8, 16, 16, 24, 32, 0 );
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.FormatChanged;
 // This method is used whenever Width, Height, PixelFormat or HandleType
 // properties are changed.
@@ -54846,11 +50393,15 @@ begin
     // New HandleType is bmDDB: old bitmap can be copied using Draw method
     DC0 := GetDC( 0 );
     NewHandle := CreateCompatibleBitmap( DC0, fWidth, fHeight );
+    {$IFDEF KOL_ASSERTIONS}
     ASSERT( NewHandle <> 0, 'Can not create DDB' );
+    {$ENDIF KOL_ASSERTIONS}
     ReleaseDC( 0, DC0 );
 
     oldBmp := SelectObject( DC2, NewHandle );
+    {$IFDEF KOL_ASSERTIONS}
     ASSERT( oldBmp <> 0, 'Can not select bitmap to DC' );
+    {$ENDIF KOL_ASSERTIONS}
 
     Br := CreateSolidBrush( Color2RGB( fBkColor ) );
     FillRect( DC2, MakeRect( 0, 0, fWidth, fHeight ), Br );
@@ -54887,7 +50438,9 @@ begin
     sizeBits := CalcScanLineSize( @NewHeader.bmiHeader ) * fHeight;
 
       NewBits := Pointer( GlobalAlloc( GMEM_FIXED, sizeBits ) );
+      {$IFDEF KOL_ASSERTIONS}
       ASSERT( NewBits <> nil, 'No memory' );
+      {$ENDIF KOL_ASSERTIONS}
 
       Hndl := GetHandle;
       if Hndl = 0 then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
@@ -54900,9 +50453,13 @@ begin
         NewBits := nil;
         NewHandle := CreateDIBSection( DC2, NewHeader^, DIB_RGB_COLORS, NewBits, 0, 0 );
         NewDIBAutoFree := TRUE;
+        {$IFDEF KOL_ASSERTIONS}
         ASSERT( NewHandle <> 0, 'Can not create DIB secion for pf16bit bitmap' );
+        {$ENDIF KOL_ASSERTIONS}
         oldBmp := SelectObject( DC2, NewHandle );
+        {$IFDEF KOL_ASSERTIONS}
         ASSERT( oldBmp <> 0, 'Can not select pf16bit to DC' );
+        {$ENDIF KOL_ASSERTIONS}
         Draw( DC2, 0, 0 );
         SelectObject( DC2, oldBmp );
       end;
@@ -54922,13 +50479,15 @@ begin
   DeleteDC( DC2 );
 
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TBitmap.GetScanLine(Y: Integer): Pointer;
 begin
+  {$IFDEF KOL_ASSERTIONS}
   ASSERT( (Y >= 0) {and (Y < fHeight)}, 'ScanLine index out of bounds' );
   ASSERT( fDIBBits <> nil, 'No bits available' );
+  {$ENDIF KOL_ASSERTIONS}
   Result := nil;
   if fDIBHeader = nil then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
   if fDIBHeader.bmiHeader.biHeight > 0 then
@@ -54938,9 +50497,9 @@ begin
 
   Result := Pointer( Integer( fDIBBits ) + fScanLineSize * Y );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TBitmap.GetScanLineSize: Integer;
 begin
   Result := 0;
@@ -54948,26 +50507,26 @@ begin
   FScanLineSize := CalcScanLineSize( @fDIBHeader.bmiHeader );
   Result := FScanLineSize;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.CanvasChanged( Sender : PObj );
 begin
   fBkColor := PCanvas( Sender ).Brush.Color;
   ClearTransImage;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.Dormant;
 begin
   RemoveCanvas;
   if fHandle <> 0 then
     DeleteObject( ReleaseHandle );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.SetBkColor(const Value: TColor);
 begin
   if fBkColor = Value then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
@@ -54976,9 +50535,9 @@ begin
   if  Assigned( fApplyBkColor2Canvas ) then
       fApplyBkColor2Canvas( @Self );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TBitmap.Assign(SrcBmp: PBitmap): Boolean;
 begin
   Clear;
@@ -54992,34 +50551,40 @@ begin
   if SrcBmp.fHandleType = bmDDB then
   begin
     fHandle := CopyImage( SrcBmp.fHandle, IMAGE_BITMAP, 0, 0, 0 {LR_COPYRETURNORG} );
+    {$IFDEF KOL_ASSERTIONS}
     ASSERT( fHandle <> 0, 'Can not copy bitmap image' );
+    {$ENDIF KOL_ASSERTIONS}
     Result := fHandle <> 0;
     if not Result then Clear;
   end
      else
   begin
     GetMem( fDIBHeader, Sizeof(TBitmapInfoHeader) + 256*sizeof(TRGBQuad) );
+    {$IFDEF KOL_ASSERTIONS}
     ASSERT( fDIBHeader <> nil, 'No memory' );
+    {$ENDIF KOL_ASSERTIONS}
     Move( SrcBmp.fDIBHeader^, fDIBHeader^, Sizeof(TBitmapInfoHeader) + 256*sizeof(TRGBQuad) );
     fDIBSize := SrcBmp.fDIBSize;
     fDIBBits := Pointer( GlobalAlloc( GMEM_FIXED {or GMEM_ZEROINIT}, fDIBSize ) );
+    {$IFDEF KOL_ASSERTIONS}
     ASSERT( fDIBBits <> nil, 'No memory' );
+    {$ENDIF KOL_ASSERTIONS}
     Move( SrcBmp.fDIBBits^, fDIBBits^, fDIBSize );
     Result := True;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.RemoveCanvas;
 begin
   fDetachCanvas( @Self );
   fCanvas.Free;
   fCanvas := nil;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TBitmap.DIBPalNearestEntry(Color: TColor): Integer;
 var I, Diff, D: Integer;
     C : Integer;
@@ -55039,22 +50604,24 @@ begin
     end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TBitmap.GetDIBPalEntries(Idx: Integer): TColor;
 begin
   Result := TColor(-1);
   if fDIBBits = nil then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
+  {$IFDEF KOL_ASSERTIONS}
   ASSERT( PixelFormat in [pf1bit..pf8bit], 'Format has no DIB palette entries available' );
   ASSERT( (Idx >= 0) and (Idx < (1 shl fDIBHeader.bmiHeader.biBitCount)),
           'DIB palette index out of bounds' );
+  {$ENDIF KOL_ASSERTIONS}
   Result := PDWORD( Integer( @fDIBHeader.bmiColors[ 0 ] )
           + Idx * Sizeof( TRGBQuad ) )^;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TBitmap.GetDIBPalEntryCount: Integer;
 begin
   Result := 0;
@@ -55066,7 +50633,7 @@ begin
   else;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TBitmap.SetDIBPalEntries(Idx: Integer; const Value: TColor);
 begin
@@ -55092,7 +50659,9 @@ begin
     Result := Bits2PixelFormat( fDIBHeader.bmiHeader.biBitCount );
     if fDIBHeader.bmiHeader.biCompression <> 0 then
     begin
+      {$IFDEF KOL_ASSERTIONS}
       Assert( fDIBHeader.bmiHeader.biCompression = BI_BITFIELDS, 'Unsupported bitmap format' );
+      {$ENDIF KOL_ASSERTIONS}
       if (TColor( fDIBHeader.bmiColors[ 0 ] ) = $F800) and
          (PInteger( DWORD(@ fDIBHeader.bmiColors[ 0 ])+4 )^ =  $7E0) and
          (PInteger( DWORD(@ fDIBHeader.bmiColors[ 0 ])+8 )^ =   $1F) then
@@ -55108,16 +50677,16 @@ begin
   end;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.ClearTransImage;
 begin
   fTransColor := clNone;
   fTransMaskBmp.Free;
   fTransMaskBmp := nil;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 {$IFDEF USE_OLDCONVERT2MASK}
 procedure TBitmap.Convert2Mask(TranspColor: TColor);
 var MonoHandle: HBitmap;
@@ -55128,13 +50697,19 @@ begin
   if GetHandle = 0 then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
   fDetachCanvas( @Self );
   MonoHandle := CreateBitmap( fWidth, fHeight, 1, 1, nil );
+  {$IFDEF KOL_ASSERTIONS}
   ASSERT( MonoHandle <> 0, 'Can not create monochrome bitmap' );
+  {$ENDIF KOL_ASSERTIONS}
   MonoDC := CreateCompatibleDC( 0 );
   SaveMono := SelectObject( MonoDC, MonoHandle );
+  {$IFDEF KOL_ASSERTIONS}
   ASSERT( SaveMono <> 0, 'Can not select bitmap to DC' );
+  {$ENDIF KOL_ASSERTIONS}
   DCfrom := CreateCompatibleDC( 0 );
   SaveFrom := SelectObject( DCfrom, fHandle );
+  {$IFDEF KOL_ASSERTIONS}
   ASSERT( SaveFrom <> 0, 'Can not select source bitmap to DC' );
+  {$ENDIF KOL_ASSERTIONS}
   TranspColor := Color2RGB( TranspColor );
   SaveBkColor := Windows.SetBkColor( DCfrom, TranspColor );
   BitBlt( MonoDC, 0, 0, fWidth, fHeight, DCfrom, 0, 0, SRCCOPY );
@@ -55300,7 +50875,7 @@ begin
   TmpMsk.Free;
 end;
 {$ENDIF USE_OLDCONVERT2MASK} //Pascal
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TBitmap.Invert;
 var R: TRect;
@@ -55318,7 +50893,7 @@ begin
                  fDIBBits, fDIBHeader^, DIB_RGB_COLORS, SRCCOPY );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure _RotateBitmapMono( var DstBmp: PBitmap; SrcBmp: PBitmap );
 var X, Y, Z, Shf, Wbytes, BytesPerDstLine: Integer;
     Src, Dst, Dst1: PByte;
@@ -55360,9 +50935,9 @@ begin
     end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure _RotateBitmap4bit( var DstBmp: PBitmap; SrcBmp: PBitmap );
 var X, Y, Shf, Wbytes, BytesPerDstLine: Integer;
     Src, Dst, Dst1: PByte;
@@ -55400,9 +50975,9 @@ begin
     end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure _RotateBitmap8bit( var DstBmp: PBitmap; SrcBmp: PBitmap );
 var X, Y, Wbytes, BytesPerDstLine: Integer;
     Src, Dst, Dst1: PByte;
@@ -55435,9 +51010,9 @@ begin
   end;
 
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure _RotateBitmap16bit( var DstBmp: PBitmap; SrcBmp: PBitmap );
 var X, Y, Wwords, BytesPerDstLine: Integer;
     Src, Dst, Dst1: PWord;
@@ -55464,9 +51039,9 @@ begin
     Dec( Dst );
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure _RotateBitmap2432bit( var DstBmp: PBitmap; SrcBmp: PBitmap );
 var X, Y, Wwords, BytesPerDstLine, IncW: Integer;
     Src, Dst, Dst1: PDWord;
@@ -55501,7 +51076,7 @@ begin
   end;
 
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 type
   TRotateBmpRefs = packed record
@@ -55515,7 +51090,7 @@ type
 var
   RotateProcs: TRotateBmpRefs;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure _RotateBitmapRight( SrcBmp: PBitmap );
 var DstBmp: PBitmap;
     RotateProc: procedure( var DstBmp: PBitmap; SrcBmp: PBitmap );
@@ -55555,7 +51130,7 @@ begin
   SrcBmp.fHeight := DstBmp.fHeight;
   DstBmp.Free;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TBitmap.RotateRight;
 const AllRotators: TRotateBmpRefs = (
@@ -55653,7 +51228,7 @@ begin
   _RotateBitmapRight( @Self );
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TBitmap.GetPixels(X, Y: Integer): TColor;
 var DC: HDC;
     Save: THandle;
@@ -55663,14 +51238,16 @@ begin
   fDetachCanvas( @Self );
   DC := CreateCompatibleDC( 0 );
   Save := SelectObject( DC, GetHandle );
+  {$IFDEF KOL_ASSERTIONS}
   ASSERT( Save <> 0, 'Can not select bitmap to DC' );
+  {$ENDIF KOL_ASSERTIONS}
   Result := Windows.GetPixel( DC, X, Y );
   SelectObject( DC, Save );
   DeleteDC( DC );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.SetPixels(X, Y: Integer; const Value: TColor);
 var DC: HDC;
     Save: THandle;
@@ -55679,14 +51256,16 @@ begin
   fDetachCanvas( @Self );
   DC := CreateCompatibleDC( 0 );
   Save := SelectObject( DC, GetHandle );
+  {$IFDEF KOL_ASSERTIONS}
   ASSERT( Save <> 0, 'Can not select bitmap to DC' );
+  {$ENDIF KOL_ASSERTIONS}
   Windows.SetPixel( DC, X, Y, Color2RGB( Value ) );
   SelectObject( DC, Save );
   DeleteDC( DC );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function _GetDIBPixelsPalIdx( Bmp: PBitmap; X, Y: Integer ): TColor;
 var Pixel: Byte;
 begin
@@ -55698,9 +51277,9 @@ begin
   Result := TColor( Color2RGBQuad( TColor( PRGBQuad( DWORD(@Bmp.fDIBHeader.bmiColors[ 0 ])
                            + Pixel * Sizeof( TRGBQuad ) )^ ) ) );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function _GetDIBPixels16bit( Bmp: PBitmap; X, Y: Integer ): TColor;
 var Pixel: Word;
 begin
@@ -55712,9 +51291,9 @@ begin
     Result := (Pixel shr 8) and $F8 or (Pixel shl 5) and $FC00
            or (Pixel shl 19) and $F80000;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function _GetDIBPixelsTrueColor( Bmp: PBitmap; X, Y: Integer ): TColor;
 var Pixel: DWORD;
 begin
@@ -55722,9 +51301,9 @@ begin
                    X * Bmp.fBytesPerPixel )^ and $FFFFFF;
   Result := TColor( Color2RGBQuad( TColor( Pixel ) ) );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION}
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION}
 function _GetDIBPixelsTrueColorAlpha( Bmp: PBitmap; X, Y: Integer ): TColor;
 var Pixel: DWORD;
     RGB:   TRGBQuad;
@@ -55739,9 +51318,9 @@ begin
   RGB.rgbRed  := red;
   Result := TColor( RGB );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TBitmap.GetDIBPixels(X, Y: Integer): TColor;
 begin
   if not Assigned( fGetDIBPixels ) then
@@ -55802,9 +51381,9 @@ begin
   end;
   Result := fGetDIBPixels( @Self, X, Y );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure _SetDIBPixels1bit( Bmp: PBitmap; X, Y: Integer; Value: TColor );
 var Pixel: Byte;
     Pos: PByte;
@@ -55817,9 +51396,9 @@ begin
   Shf := X and 7;
   Pos^ := Pos^ and ($FF7F shr Shf) or (Pixel shr Shf);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure _SetDIBPixelsPalIdx( Bmp: PBitmap; X, Y: Integer; Value: TColor );
 var Pixel: Byte;
     Pos: PByte;
@@ -55832,9 +51411,9 @@ begin
          * Bmp.fDIBHeader.bmiHeader.biBitCount;
   Pos^ := Pos^ and not (Bmp.fPixelMask shl Shf) or (Pixel shl Shf);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure _SetDIBPixels16bit( Bmp: PBitmap; X, Y: Integer; Value: TColor );
 var RGB16: Word;
     Pos: PWord;
@@ -55849,9 +51428,9 @@ begin
   Pos := PWord( Integer(Bmp.fScanLine0) + Y * Bmp.fScanLineDelta + X * 2 );
   Pos^ := RGB16;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure _SetDIBPixelsTrueColor( Bmp: PBitmap; X, Y: Integer; Value: TColor );
 var RGB: TRGBQuad;
     Pos: PDWord;
@@ -55861,9 +51440,9 @@ begin
                  + X * Bmp.fBytesPerPixel );
   Pos^ := Pos^ and $FF000000 or DWORD(RGB);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION}
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION}
 procedure _SetDIBPixelsTrueColorAlpha( Bmp: PBitmap; X, Y: Integer; Value: TColor );
 var RGB: TRGBQuad;
     Pos: PDWord;
@@ -55878,9 +51457,9 @@ begin
                  + X * Bmp.fBytesPerPixel );
   Pos^ := Pos^ or DWORD(RGB);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.SetDIBPixels(X, Y: Integer; const Value: TColor);
 begin
   if not Assigned( fSetDIBPixels ) then
@@ -55941,9 +51520,9 @@ begin
   end;
   fSetDIBPixels( @Self, X, Y, Value );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.FlipVertical;
 var DC: HDC;
     Save: THandle;
@@ -55971,9 +51550,9 @@ begin
     end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.FlipHorizontal;
 var DC: HDC;
     Save: THandle;
@@ -55988,9 +51567,9 @@ begin
     DeleteDC( DC );
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TBitmap.CopyRect(const DstRect: TRect; SrcBmp: PBitmap;
   const SrcRect: TRect);
 var DCsrc, DCdst: HDC;
@@ -56020,7 +51599,7 @@ begin
   SelectObject( DCsrc, SaveSrc );
   DeleteDC( DCsrc );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TBitmap.CopyToClipboard: Boolean;
 var DibMem: PAnsiChar;
@@ -56139,7 +51718,7 @@ end;
 
 { TIcon }
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TIcon.Clear;
 begin
   if fHandle <> 0 then
@@ -56150,7 +51729,7 @@ begin
   end;
   fShareIcon := False;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_LOCAL}
   {$UNDEF ASM_LOCAL}
@@ -56161,7 +51740,7 @@ end;
 {$ENDIF}
 
 {$IFDEF ASM_LOCAL}
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function TIcon.Convert2Bitmap(TranColor: TColor): HBitmap;
 var DC0, DC2: HDC;
     Save: THandle;
@@ -56189,17 +51768,17 @@ begin
   DeleteDC( DC2 );
   ReleaseDC( 0, DC0 );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 destructor TIcon.Destroy;
 begin
   Clear;
   inherited;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TIcon.Draw(DC: HDC; X, Y: Integer);
 begin
   if Empty then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
@@ -56209,16 +51788,16 @@ begin
   DrawIconEx( DC, X, Y, fHandle, fSize, fSize, 0, 0, DI_NORMAL );
   {$ENDIF}
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TIcon.StretchDraw(DC: HDC; Dest: TRect);
 begin
   if Empty then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
   DrawIconEx( DC, Dest.Left, Dest.Top, FHandle, Dest.Right - Dest.Left,
               Dest.Bottom - Dest.Top, 0, 0, DI_NORMAL );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TIcon.GetEmpty: Boolean;
 begin
@@ -56458,19 +52037,19 @@ begin
   TmpBmp.Free;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TIcon.SaveToFile(const FileName: KOLString);
 begin
   SaveIcons2File( [ @Self ], FileName );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TIcon.SaveToStream(Strm: PStream);
 begin
   SaveIcons2Stream( [ @Self ], Strm );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_noVERSION}
 procedure TIcon.SetHandle(const Value: HIcon);
@@ -56510,7 +52089,7 @@ asm     //cmd    //opd
 @@fin:  POPAD
 @@exit:
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 procedure TIcon.SetHandle(const Value: HIcon);
 var II : TIconInfo;
     B: TagBitmap;
@@ -56534,7 +52113,7 @@ begin
        DeleteObject( II.hbmColor );
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TIcon.SetHandleEx(NewHandle: HIcon);
 begin
@@ -56566,7 +52145,7 @@ begin
 end;
 {$ENDIF}
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function ColorBits( ColorsCount : Integer ) : Integer;
 var I : Integer;
 begin
@@ -56576,7 +52155,7 @@ begin
       if (1 shl Result) >= ColorsCount then break;
    end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function SaveIcons2StreamEx( const BmpHandles: array of HBitmap; Strm: PStream ): Boolean;
 var I, Off : Integer;
@@ -56611,8 +52190,10 @@ var BColor, BMask: HBitmap;
     IH : TIconHeader;
     Colors : PList;
 begin
+  {$IFDEF KOL_ASSERTIONS}
   Assert( (High(BmpHandles) >= 0) and (High(BmpHandles) and 1 <> 0),
           'Incorrect parameters count in call to SaveIcons2StreamEx' );
+  {$ENDIF KOL_ASSERTIONS}
   Result := False;
   IH.idReserved := 0;
   IH.idType := 1;
@@ -56629,15 +52210,19 @@ begin
       BColor := BmpHandles[ I * 2 ];
       BMask  := BmpHandles[ I * 2 + 1 ];
       if (BColor = 0) and (BMask = 0) then break;
+      {$IFDEF KOL_ASSERTIONS}
       Assert( BMask <> 0, 'Mask bitmap not provided for saving icons in SaveIcons2StreamEx' );
+      {$ENDIF KOL_ASSERTIONS}
       GetObject( BMask, Sizeof( B ), @ B );
       W := B.bmWidth;
       H := B.bmHeight;
       if BColor <> 0 then
       begin
         GetObject( BColor, Sizeof( B ), @B );
+        {$IFDEF KOL_ASSERTIONS}
         Assert( (B.bmWidth = W) and (B.bmHeight = H),
                 'Mask bitmap size must much color bitmap size in SaveIcons2StreamEx' );
+        {$ENDIF KOL_ASSERTIONS}
       end;
       ZeroMemory( @IDI, Sizeof( IDI ) );
 
@@ -57303,7 +52888,7 @@ begin
   if (S <> nil) and ToBeAlign(S) then
     AlignChildrenProc_(S);
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF OLD_ALIGN}
 
 procedure TControl.Set_Align(const Value: TControlAlign);
@@ -57357,7 +52942,7 @@ begin
   end;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function WndProcUpdate( Sender: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 begin
   if Sender.fUpdateCount <> 0 then
@@ -57377,7 +52962,7 @@ begin
   end
     else Result := FALSE;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TControl.BeginUpdate;
 begin
@@ -57426,7 +53011,9 @@ var I1, I2: DWORD;
     SStart, SLength: DWORD;
 begin
   if FromLine > ToLine then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
+  {$IFDEF KOL_ASSERTIONS}
   Assert( FromLine >= 0, 'Incorrect line index' );
+  {$ENDIF KOL_ASSERTIONS}
   I1 := Item2Pos( FromLine );
   I2 := Item2Pos( ToLine+1 ) - I1;
   SStart := SelStart;
@@ -57486,6 +53073,7 @@ begin
       Result := GetForegroundWindow = fHandle;
 end;
 
+{$IFDEF ASM_VERSION}{$ELSE  PAS_VERSION}
 procedure TControl.SetFocused(const Value: Boolean);
 var PF: PControl;
 begin
@@ -57512,6 +53100,7 @@ begin
     else
     SetForegroundWindow( GetWindowHandle );
 end;
+{$ENDIF PAS_VERSION}
 
 {$IFNDEF NOT_USE_RICHEDIT}
 
@@ -58375,7 +53964,7 @@ asm     //cmd    //opd
 @@fin_false:
         XOR      EAX, EAX
 end;
-{$ELSE ASM_VERSION} //Pascal
+{$ELSE PAS_VERSION} //Pascal
 function EnumDynHandlers( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 var I: Integer;
     Proc: TWindowFunc;
@@ -58414,7 +54003,7 @@ begin
     Result := True; // If Self_ will be destroyed now, stop further processing
   Self_.RefDec; // Destroy Self_, if Free was called for it while processing attached procedures
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TransparentAttachProcExtension ( DynHandlers: PList );
 var i: integer;
@@ -58432,7 +54021,7 @@ procedure DummyAttachProcExtension ( DynHandlers: PList );
 begin
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 procedure TControl.AttachProcEx( Proc: TWindowFunc; ExecuteAfterAppletTerminated: Boolean );
 begin
   //if fDynHandlers = nil then
@@ -58447,7 +54036,7 @@ begin
   {$ENDIF}
   PP.fOnDynHandlers := EnumDynHandlers;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TControl.AttachProc(Proc: TWindowFunc);
 begin
@@ -58466,144 +54055,16 @@ begin
   end;
 end;
 
-{$IFDEF ASM_VERSION}{$ELSE ASM_VERSION} //Pascal
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal
 function TControl.IsProcAttached(Proc: TWindowFunc): Boolean;
 var I: Integer;
 begin
   I := fDynHandlers.IndexOf( @Proc );
   Result := I >=0;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
-{$IFDEF nASM_VERSION}
-function WndProcAutoPopupMenu( Control: PControl; var Msg: TMsg; var MsgRslt: Integer ): Boolean;
-asm
-    CMP  WORD PTR[EDX].TMsg.message, WM_CONTEXTMENU
-    JNZ  @@ret_0
-    CMP  DWORD PTR[EAX].TControl.fAutoPopupMenu, 0
-    JZ   @@ret_0
-    PUSH ESI
-    PUSH EDI
-    PUSH EBX
-    XCHG ESI, EAX // ESI = Control
-    MOV  EDI, EDX
-
-    MOVSX EAX, WORD PTR[EDX].TMsg.lParam+2
-    PUSH  EAX  // P.Y
-    MOVSX EAX, WORD PTR[EDX].TMsg.lParam
-    PUSH  EAX  // P.X
-
-    CMP   DWORD PTR[EDX].TMsg.lParam, -1
-    JNZ   @@auto_popup
-
-    MOV   EAX, ESI
-    CALL  TControl.GetCurIndex
-    CMP   EAX, 0
-    JL    @@coords_2screen
-    // EAX = I
-
-    MOVZX EBX, WORD PTR[ESI].TControl.fCommandActions.aItem2XY
-    CMP   EBX, 0
-    JZ    @@coords_2screen
-
-    CMP   BX, EM_POSFROMCHAR
-    JNZ   @@chk_LB_LV_TC
-
-    PUSH  1
-    MOV   EAX, ESI
-    CALL  TControl.GetSelStart
-    PUSH  EAX
-    MOV   EAX, ESI
-    CALL  TControl.GetSelLength
-    ADD   DWORD PTR[ESP], EAX
-    PUSH  EBX
-    PUSH  ESI
-    CALL  TControl.Perform
-    MOVSX EBX, AX
-    SHR   EAX, 16
-    MOVSX EAX, AX
-    POP   ECX
-    POP   ECX
-    PUSH  EAX
-    PUSH  EBX
-    JMP   @@check_bounds
-
-@@chk_LB_LV_TC:
-    CMP   BX, LB_GETITEMRECT
-    JZ    @@LB_LV_TC
-    CMP   BX, LVM_GETITEMRECT
-    JZ    @@LB_LV_TC
-    CMP   BX, TCM_GETITEMRECT
-    JNZ   @@chk_TVM
-@@LB_LV_TC: // EAX = I
-    PUSH  ECX
-    PUSH  LVIR_BOUNDS
-    PUSH  ESP // @R
-    PUSH  EAX // I
-    JMP   @@get_2
-
-@@chk_TVM:
-    CMP   BX, TVM_GETITEMRECT
-    JNZ   @@check_bounds
-
-    MOV   EDX, TVGN_CARET
-    MOV   EAX, ESI
-    CALL  TControl.TVGetItemIdx
-    PUSH  ECX
-    PUSH  EAX
-    PUSH  ESP // @R
-    PUSH  1   // 1
-@@get_2:
-    PUSH  EBX // M
-    PUSH  ESI // Control
-    CALL  TControl.Perform
-    POP   EAX
-    POP   ECX
-    POP   ECX
-    PUSH  EAX
-
-@@check_bounds:
-    POP   EBX // P.X
-    POP   EDI // P.Y
-    SUB   ESP, 16
-    MOV   EDX, ESP
-    MOV   EAX, ESI
-    CALL  TControl.ClientRect
-
-    POP   EAX // R.Left == 0
-    POP   EAX // R.Top  == 0
-    POP   EAX // R.Right
-    CMP   EBX, EAX
-    JLE   @@1
-    XCHG  EBX, EAX
-@@1:POP   EAX // R.Bottom
-    CMP   EDI, EAX
-    JLE   @@2
-    XCHG  EDI, EAX
-@@2:PUSH  EDI // P.Y
-    PUSH  EBX // P.X
-
-@@coords_2screen:
-    MOV  EDX, ESP
-    MOV  EAX, ESI
-    MOV  ECX, EDX
-    CALL TControl.Client2Screen
-
-@@auto_popup:
-    POP  EDX  // P.X
-    POP  ECX  // P.Y
-    MOV  EAX, [ESI].TControl.fAutoPopupMenu
-    CALL TMenu.Popup
-
-    POP  EBX
-    POP  EDI
-    POP  ESI
-    OR   EAX, -1
-    RET
-@@ret_0:
-    XOR  EAX, EAX
-end;
-{$ELSE ASM_VERSION}
+{$IFDEF nASM_VERSION}{$ELSE PAS_VERSION}
 function WndProcAutoPopupMenu( Control: PControl; var Msg: TMsg; var MsgRslt: Integer ): Boolean;
 var {$IFNDEF SMALLEST_CODE}
     R: TRect;
@@ -58667,7 +54128,7 @@ begin
     else
   Result := FALSE;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure TControl.SetAutoPopupMenu(PopupMenu: PObj);
 { new version - by Alexander Pravdin. Allows to attach a submenu (e.g. of the
@@ -59430,177 +54891,9 @@ begin
   Result := FunTrack( lpEventTrack );
 end;
 
-{$IFDEF ASM_VERSION}
 function WndProcMouseEnterLeave( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
-asm
-    PUSH ESI
-    XCHG ESI, EAX
-
-    MOV  AX, word ptr [EDX].TMsg.message
-    CMP  AX, WM_MOUSELEAVE
-    JE   @@MOUSELEAVE
-    SUB  AX, WM_MOUSEFIRST
-    CMP  AX, WM_MOUSELEAVE-WM_MOUSEFIRST
-    JA   @@retFalse
-
-    {$IFDEF USE_FLAGS}
-    TEST [ESI].TControl.fFlagsG3, 1 shl G3_MouseInCtl
-    SETNZ AL
-    {$ELSE}
-    MOV  AL, [ESI].TControl.fMouseInControl
-    {$ENDIF}
-    PUSH EAX
-    {$IFDEF EVENTS_DYNAMIC}
-    MOV  EAX, [ESI].TControl.EV
-    MOV  ECX, [EAX].TEvents.fOnTestMouseOver.TMethod.Code
-    {$ELSE}
-    MOV  ECX, [ESI].TControl.EV.fOnTestMouseOver.TMethod.Code
-    {$ENDIF}
-    JECXZ     @@1
-    {$IFDEF  EVENTS_DYNAMIC}
-    MOV  EAX, [EAX].TEvents.fOnTestMouseOver.TMethod.Data
-    {$ELSE}
-    MOV  EAX, [ESI].TControl.EV.fOnTestMouseOver.TMethod.Data
-    {$ENDIF}
-    MOV  EDX, ESI
-    CALL ECX
-    JMP  @@2
-@@1:
-    PUSH ECX
-    PUSH ECX
-    PUSH ESP
-    CALL GetCursorPos
-    MOV  EAX, ESI
-    MOV  EDX, ESP
-    MOV  ECX, EDX
-    CALL TControl.Screen2Client
-    MOV  ECX, ESP  // @P
-    SUB  ESP, 16
-    MOV  EDX, ESP  // @ClientRect
-    MOV  EAX, ESI
-
-    PUSH EDX
-    PUSH ECX
-    CALL TControl.ClientRect
-    POP  EAX
-    POP  EDX
-    CALL PointInRect
-    ADD  ESP, 16+8
-
-@@2:
-    POP  EDX
-    CMP  AL, DL
-    JE   @@retFalse
-
-    //MouseWasInControl <> Yes
-    PUSH EAX
-    MOV  EAX, ESI
-    CALL TControl.Invalidate
-    POP  EAX
-
-    TEST AL, AL
-    JZ   @@3
-
-    {$IFDEF USE_FLAGS}
-    OR   [ESI].TControl.fFlagsG3, 1 shl G3_MouseInCtl
-    {$ELSE}
-    MOV  [ESI].TControl.fMouseInControl, 1
-    {$ENDIF}
-    {$IFDEF EVENTS_DYNAMIC}
-    MOV  EAX, [ESI].TControl.EV
-    MOV  ECX, [EAX].TEvents.fOnMouseEnter.TMethod.Code
-    {$ELSE}
-    MOV  ECX, [ESI].TControl.EV.fOnMouseEnter.TMethod.Code
-    {$ENDIF}
-    JECXZ @@2_1
-    {$IFDEF EVENTS_DYNAMIC}
-    MOV  EAX, [EAX].TEvents.fOnMouseEnter.TMethod.Data
-    {$ELSE}
-    MOV  EAX, [ESI].TControl.EV.fOnMouseEnter.TMethod.Data
-    {$ENDIF}
-    MOV  EDX, ESI
-    CALL ECX
-@@2_1:
-    PUSH ECX
-    PUSH [ESI].TControl.fHandle
-    PUSH TME_LEAVE
-    PUSH 16
-    MOV  EAX, ESP
-    CALL DoTrackMouseEvent
-    JMP  @@4
-
-@@3:
-    {$IFDEF USE_FLAGS}
-    AND  byte ptr [ESI].TControl.fFlagsG3, $7F // not(1 shl G3_MouseInCtl)
-    {$ELSE}
-    MOV  [ESI].TControl.fMouseInControl, 0
-    {$ENDIF}
-    PUSH ECX
-    PUSH [ESI].TControl.fHandle
-    PUSH TME_LEAVE or TME_CANCEL
-    PUSH 16
-    MOV  EAX, ESP
-    CALL DoTrackMouseEvent
-
-@@3_X:
-    {$IFDEF EVENTS_DYNAMIC}
-    MOV  EAX, [ESI].TControl.EV
-    MOV  ECX, [EAX].TEvents.fOnMouseLeave.TMethod.Code
-    {$ELSE}
-    MOV  ECX, [ESI].TControl.EV.fOnMouseLeave.TMethod.Code
-    {$ENDIF}
-    JECXZ @@3_1
-    {$IFDEF  EVENTS_DYNAMIC}
-    MOV  EAX, [EAX].TEvents.fOnMouseLeave.TMethod.Data
-    {$ELSE}
-    MOV  EAX, [ESI].TControl.EV.fOnMouseLeave.TMethod.Data
-    {$ENDIF}
-    MOV  EDX, ESI
-    CALL ECX
-@@3_1:
-
-@@4:
-    ADD  ESP, 16
-@@4_1:
-    MOV  EAX, ESI
-    CALL TControl.Invalidate
-    JMP  @@retFalse
-
-@@MOUSELEAVE:
-    {$IFDEF USE_FLAGS}
-    BTR  dword ptr [ESI].TControl.fFlagsG3, G3_MouseInCtl
-    JNC  @@retFalse
-    {$ELSE}
-    BTR  DWORD PTR [ESI].TControl.fMouseInControl, 0
-    JNC  @@retFalse
-    {$ENDIF}
-
-    {$IFDEF GRAPHCTL_HOTTRACK}
-        {$IFDEF EVENTS_DYNAMIC}
-        MOV  EAX, [ESI].TControl.EV
-        MOV  ECX, [EAX].TEvents.fMouseLeaveProc.TMethod.Code
-        {$ELSE}
-        MOV  ECX, [ESI].TControl.EV.fMouseLeaveProc.TMethod.Code
-        {$ENDIF}
-        {$IFDEF NIL_EVENTS}
-        JECXZ @@4_1
-        {$ENDIF}
-        {$IFDEF EVENTS_DYNAMIC}
-        MOV  EAX, [EAX].TEvents.fMouseLeaveProc.TMethod.Data
-        {$ELSE}
-        MOV  EAX, [ESI].TControl.EV.fMouseLeaveProc.TMethod.Data
-        {$ENDIF}
-        CALL ECX
-    {$ENDIF}
-
-    SUB  ESP, 16
-    JMP  @@3_X
-
-@@retFalse:
-    XOR  EAX, EAX
-    POP  ESI
-end;
-{$ELSE PASCAL}
+         forward;
+{$IFDEF ASM_VERSION}{$ELSE PASCAL}
 function WndProcMouseEnterLeave( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 var P: TPoint;
     MouseWasInControl: Boolean;
@@ -59676,7 +54969,7 @@ begin
   end;
   Result := False;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 procedure ProvideMouseEnterLeave( Self_: PControl );
 begin
@@ -60615,7 +55908,7 @@ begin
       end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 ///////////////////////////////////////////////////////////////////////
 //                         W  I  N  D  O  W  S
@@ -61287,8 +56580,7 @@ end;
 
 var SaveWinVer: Byte = $FF;
 
-{$IFDEF ASM_VERSION} // asm version by MTsv DN  (v 2.90)
-{$ELSE ASM_VERSION}
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} // asm version by MTsv DN  (v 2.90)
 function WinVer : TWindowsVersion;
 var MajorVersion, MinorVersion: Byte;
     dwVersion: Integer;
@@ -61335,7 +56627,7 @@ begin
     SaveWinVer := Ord( Result );
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function IsWinVer( Ver : TWindowsVersions ) : Boolean;
 {* Returns True if Windows version is in given range of values. }
@@ -61945,7 +57237,7 @@ end;
         //{$ENDIF NIL_EVENTS}
         {$ENDIF EVENTS_DYNAMIC}
         {$ENDIF USE_FLAGS}
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_LOCAL}
 function TControl.DefaultBtnProc(var Msg: TMsg; var Rslt: Integer): Boolean;
@@ -62088,7 +57380,7 @@ asm
          POP   ESI
          POP   EBX
 end;
-{$ELSE notASM_VERSION}
+{$ELSE PAS_VERSION}
 function TControl.DefaultBtnProc(var Msg: TMsg;
   var Rslt: Integer): Boolean;
 var Btn: PControl;
@@ -62170,7 +57462,7 @@ begin
   end;
   Result := FALSE;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$UNDEF ASM_LOCAL}
 {$IFDEF ASM_VERSION}
@@ -62181,7 +57473,7 @@ end;
         {$ENDIF EVENTS_DYNAMIC}
         {$ENDIF  DEFAULT_CANCEL_BTN_EXCLUSIVE}
         {$ENDIF USE_FLAGS}
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 {$IFDEF ASM_LOCAL}
 procedure TControl.SetDefaultBtn(const Index: Integer;
@@ -62325,7 +57617,7 @@ begin
       end;
   end;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 
 function TControl.GetDefaultBtn(const Index: Integer): Boolean;
 begin
@@ -63000,29 +58292,7 @@ begin                                                                           
   end;                                                                          //
 end;                                                                            //
                                                                                 //
-{$IFDEF ASM_VERSION}                                                            //
-constructor TControl.CreateGradientPanel(AParent: PControl; AColor1,            //
-  AColor2: TColor);                                                             //
-asm     //cmd    //opd                                                          //
-        XOR      EDX, EDX                                                       //
-        PUSH     EDX                                                            //
-        CALL     CreateLabel                                                    //
-        MOV      ECX, AColor1                                                   //
-        MOV      [EAX].fColor1, ECX                                             //
-        MOV      ECX, AColor2                                                   //
-        MOV      [EAX].fColor2, ECX                                             //
-        MOV      EDX, [EAX].fBoundsRect.Left                                    //
-        ADD      EDX, 40                                                        //
-        MOV      [EAX].fBoundsRect.Right, EDX                                   //
-        MOV      EDX, [EAX].fBoundsRect.Top                                     //
-        ADD      EDX, 40                                                        //
-        MOV      [EAX].fBoundsRect.Bottom, EDX                                  //
-        PUSH     EAX                                                            //
-        MOV      EDX, offset[ WndProcGradient ]                                 //
-        CALL     AttachProc                                                     //
-        POP      EAX                                                            //
-end;                                                                            //
-{$ELSE ASM_VERSION} //Pascal                                                                //
+{$IFDEF ASM_VERSION}{$ELSE PAS_VERSION} //Pascal                                                                //
 constructor TControl.CreateGradientPanel(AParent: PControl; AColor1,            //
   AColor2: TColor);                                                             //
 begin                                                                           //
@@ -63036,7 +58306,7 @@ begin                                                                           
     Bottom := Top + 40;                                                         //
   end;                                                                          //
 end;                                                                            //
-{$ENDIF ASM_VERSION}                                                                        //
+{$ENDIF PAS_VERSION}                                                                        //
                                                                                 //
 constructor TControl.CreateGradientPanelEx(AParent: PControl; AColor1,          //
   AColor2: TColor; AStyle: TGradientStyle; ALayout: TGradientLayout);           //
@@ -63360,39 +58630,36 @@ begin                                                                           
   ImageListNormal := AImgListNormal;                                            //
   ImageListState := AImgListState;                                              //
   fLookTabKeys := [ tkTab ];                                                    //
-end;                                                                            //
-                                                                                //
+end; ///////////////////////////////////////////////////////////////////////////                                                                            
 constructor TControl.CreateTabControl(AParent: PControl; ATabs: array of String;//
          AOptions: TTabControlOptions;                                          //
          AImgList: PImageList; AImgList1stIdx: Integer);                        //
 var I, II : Integer;                                                            //
     Flags: Integer;                                                             //
-begin                                                                           //
-  Flags := MakeFlags( @AOptions, TabControlFlags );                             //
-  if tcoFocusTabs in AOptions then                                              //
-    Flags := Flags or (WS_TABSTOP or TCS_FOCUSONBUTTONDOWN);                    //
-  CreateCommonControl( AParent, WC_TABCONTROL,                                  //
-            Flags or (WS_CHILD or WS_CLIPSIBLINGS or WS_CLIPCHILDREN or         //
-            WS_VISIBLE), True, @TabControlActions );                            //
-  if not( tcoBorder in AOptions ) then                                           //
-    fExStyle := fExStyle and not WS_EX_CLIENTEDGE;                              //
-  AttachProc( WndProcTabControl );                                              //
-  with fBoundsRect do                                                           //
-  begin                                                                         //
-    Right := Left + 100;                                                        //
-    Bottom := Top + 100;                                                        //
-  end;                                                                          //
-  if AImgList <> nil then                                                       //
-    Perform( TCM_SETIMAGELIST, 0, AImgList.Handle );                            //
-  II := AImgList1stIdx;                                                         //
-  for I := 0 to High( ATabs ) do                                                //
-  begin                                                                         //
-    TC_Insert( I, ATabs[ I ], II );                                             //
-    Inc( II );                                                                  //
-  end;                                                                          //
-  fLookTabKeys := [ tkTab ];                                                    //
-end;                                                                            //
-                                                                                //
+begin Flags := MakeFlags( @AOptions, TabControlFlags );                             //
+      if tcoFocusTabs in AOptions then                                              //
+        Flags := Flags or (WS_TABSTOP or TCS_FOCUSONBUTTONDOWN);                    //
+      CreateCommonControl( AParent, WC_TABCONTROL,                                  //
+                Flags or (WS_CHILD or WS_CLIPSIBLINGS or WS_CLIPCHILDREN or         //
+                WS_VISIBLE), True, @TabControlActions );                            //
+      if not( tcoBorder in AOptions ) then                                           //
+        fExStyle := fExStyle and not WS_EX_CLIENTEDGE;                              //
+      AttachProc( WndProcTabControl );                                              //
+      with fBoundsRect do                                                           //
+      begin                                                                         //
+        Right := Left + 100;                                                        //
+        Bottom := Top + 100;                                                        //
+      end;                                                                          //
+      if AImgList <> nil then                                                       //
+        Perform( TCM_SETIMAGELIST, 0, AImgList.Handle );                            //
+      II := AImgList1stIdx;                                                         //
+      for I := 0 to High( ATabs ) do                                                //
+      begin                                                                         //
+        TC_Insert( I, ATabs[ I ], II );                                             //
+        Inc( II );                                                                  //
+      end;                                                                          //
+      fLookTabKeys := [ tkTab ];                                                    //
+end; ///////////////////////////////////////////////////////////////////////////
 constructor TControl.CreateToolbar(AParent: PControl;                           //
   AAlign: TControlAlign; AOptions: TToolbarOptions; ABitmap: HBitmap;           //
   AButtons: array of PAnsiChar; ABtnImgIdxArray: array of Integer);             //
@@ -63411,20 +58678,16 @@ begin                                                                           
   fCommandActions.aClear := ClearToolbar;                                       //
   fCommandActions.aGetCount := TB_BUTTONCOUNT;                                  //
   with fBoundsRect do                                                           //
-  begin                                                                         //
-    if AAlign in [ caNone ] then                                                //
-    begin                                                                       //
-      Bottom := Top + 26;                                                       //
-      Right := Left + 1000;                                                     //
-    end else                                                                     //
-    begin                                                                       //
-      Left := 0; Right := 0;                                                    //
-      Top := 0; Bottom := 0;                                                    //
-    end;                                                                        //
+  begin if AAlign in [ caNone ] then                                                //
+        begin Bottom := Top + 26;                                                       //
+              Right := Left + 1000;                                                     //
+        end else                                                                     //
+        begin Left := 0; Right := 0;                                                    //
+              Top := 0; Bottom := 0;                                                    //
+        end;                                                                        //
   end;                                                                          //
   Perform(TB_SETEXTENDEDSTYLE, 0, Perform(TB_GETEXTENDEDSTYLE, 0, 0) or         //
       TBSTYLE_EX_DRAWDDARROWS);                                                 //
-                                                                                //
   AttachProc( WndProcToolbarCtrl );                                             //
   Perform( TB_BUTTONSTRUCTSIZE, Sizeof( TTBButton ), 0 );                       //
   Perform( TB_SETINDENT, fMargin, 0 );                                          //
@@ -63439,82 +58702,68 @@ begin                                                                           
     TBAddBitmap( ABitmap );                                                     //
   TBAddButtons( AButtons, ABtnImgIdxArray );                                    //
   Perform( WM_SIZE, 0, 0 );                                                     //
-end;                                                                            //
-                                                                                //
+end; ///////////////////////////////////////////////////////////////////////////                                                                            
 constructor TImageList.CreateImageList(POwner: Pointer);                        //
 var AOwner: PControl;                                                           //
-begin                                                                           //
-  {*************} DoInitCommonControls( ICC_WIN95_CLASSES );                    //
-  Create;                                                                       //
-  FAllocBy := 1;                                                                //
-  FMasked := True;                                                              //
-  if POwner = nil then exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
-  FBkColor := TColor( CLR_NONE );
-  AOwner := POwner;                                                             //
-  FControl := AOwner;                                                           //
-  fNext := PImageList( AOwner.fImageList );                                     //
-  if AOwner.fImageList <> nil then                                              //
-     PImageList( AOwner.fImageList ).fPrev := @Self;                            //
-  AOwner.fImageList := @Self;                                                   //
-end;                                                                            //
-                                                                                //
+begin {*************} DoInitCommonControls( ICC_WIN95_CLASSES );                    //
+      Create;                                                                       //
+      FAllocBy := 1;                                                                //
+      FMasked := True;                                                              //
+      if POwner = nil then exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
+      FBkColor := TColor( CLR_NONE );
+      AOwner := POwner;                                                             //
+      FControl := AOwner;                                                           //
+      fNext := PImageList( AOwner.fImageList );                                     //
+      if AOwner.fImageList <> nil then                                              //
+         PImageList( AOwner.fImageList ).fPrev := @Self;                            //
+      AOwner.fImageList := @Self;                                                   //
+end;////////////////////////////////////////////////////////////////////////////
 constructor TThread.ThreadCreate;                                               //
-begin                                                                           //
-  IsMultiThread := True;                                                        //
-  Create;                                                                       //
-  FSuspended := True;                                                           //
-  FHandle := CreateThread( nil, // no security                                  //
-                          0,   // the same stack size                           //
-                          @ThreadFunc, // thread entry point                    //
-                          @Self,      // parameter to pass to ThreadFunc        //
-                          CREATE_SUSPENDED,   // always SUSPENDED               //
-                          FThreadID ); // receive thread ID                     //
-end;                                                                            //
-                                                                                //
+begin IsMultiThread := True;                                                        //
+      Create;                                                                       //
+      FSuspended := True;                                                           //
+      FHandle := CreateThread( nil, // no security                                  //
+                              0,   // the same stack size                           //
+                              @ThreadFunc, // thread entry point                    //
+                              @Self,      // parameter to pass to ThreadFunc        //
+                              CREATE_SUSPENDED,   // always SUSPENDED               //
+                              FThreadID ); // receive thread ID                     //
+end;////////////////////////////////////////////////////////////////////////////
 constructor TThread.ThreadCreateEx( const Proc: TOnThreadExecute );             //
 begin                                                                           //
   ThreadCreate;                                                                 //
   OnExecute := Proc;                                                            //
   Resume;                                                                       //
 end;                                                                            //
-                                                                                //
 {$ENDIF USE_CONSTRUCTORS} //****************************************************//
-
 procedure InvalidateExW( Wnd: HWnd );
-begin
-  InvalidateRect( Wnd, nil, TRUE );
-  Wnd := GetWindow( Wnd, GW_CHILD );
-  while Wnd <> 0 do
-  begin
-    InvalidateExW( Wnd );
-    Wnd := GetWindow( Wnd, GW_HWNDNEXT );
-  end;
-end;
-
+begin InvalidateRect( Wnd, nil, TRUE );
+      Wnd := GetWindow( Wnd, GW_CHILD );
+      while Wnd <> 0 do
+      begin
+        InvalidateExW( Wnd );
+        Wnd := GetWindow( Wnd, GW_HWNDNEXT );
+      end;
+end; ///////////////////////////////////////////////////////////////////////////
 procedure TControl.InvalidateEx;
-begin
-  if fHandle = 0 then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
-  InvalidateExW( fHandle );
-end;
-
+begin if fHandle = 0 then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
+      InvalidateExW( fHandle );
+end; ///////////////////////////////////////////////////////////////////////////
 procedure InvalidateNCW( Wnd: HWnd; Recursive: Boolean );
-begin
-  SendMessage( Wnd, WM_NCPAINT, 1, 0 );
-  if not Recursive then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
-  Wnd := GetWindow( Wnd, GW_CHILD );
-  while Wnd <> 0 do
-  begin
-    InvalidateNCW( Wnd, Recursive );
-    Wnd := GetWindow( Wnd, GW_HWNDNEXT );
-  end;
-end;
-
+begin SendMessage( Wnd, WM_NCPAINT, 1, 0 );
+      if not Recursive then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
+      Wnd := GetWindow( Wnd, GW_CHILD );
+      while Wnd <> 0 do
+      begin
+        InvalidateNCW( Wnd, Recursive );
+        Wnd := GetWindow( Wnd, GW_HWNDNEXT );
+      end;
+end; ///////////////////////////////////////////////////////////////////////////
 procedure TControl.InvalidateNC(Recursive: Boolean);
 begin
   if fHandle = 0 then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
   InvalidateNCW( fHandle, Recursive );
-end;
-
+end; ///////////////////////////////////////////////////////////////////////////
 procedure TControl.SetClientMargin(const Index: Integer; Value: ShortInt);
 begin
   case Index of
@@ -63526,7 +58775,6 @@ begin
   {$IFNDEF OLD_ALIGN}include(fAligning,oaFromSelf);{$ENDIF}//???
   Global_Align( @Self );
 end;
-
 {$IFDEF F_P}
 function TControl.GetClientMargin(const Index: Integer): Integer;
 begin
@@ -63538,19 +58786,15 @@ begin
   END;
 end;
 {$ENDIF F_P}
-
 {------------------------------------------------------------------------------}
-
 {                        G R A P H   C O N T R O L S                           }
-
 {------------------------------------------------------------------------------}
 type TGrayTextData = packed record
        Ctl: PControl;
        W, H: Integer;
        Flags: DWORD;
      end;
-     PGrayTextData = ^TGrayTextData;
-
+     PGrayTextData = ^TGrayTextData; ///////////////////////////////////////////
 function DrawTextGrayed( DC: HDC; lData, wData, cX, cY: Integer ): BOOL; stdcall;
 var GDT: PGrayTextData;
     R: TRect;
@@ -63559,8 +58803,7 @@ begin
   R := MakeRect( 0, 0, cX, cY );
   DrawFormattedText( GDT.Ctl, DC, R, GDT.Flags or $80000000 );
   Result := TRUE;
-end;
-
+end; ///////////////////////////////////////////////////////////////////////////
 procedure DrawFormattedText( Ctl: PControl; DC: HDC; var R: TRect; Flags: DWORD {EditCtl: Boolean} );
 var Fmt: DWORD;
     OldFont: Integer;
@@ -63570,69 +58813,55 @@ var Fmt: DWORD;
     GTD: TGrayTextData;
     dX, dY: Integer;
     R1: TRect;
-begin
-  Fmt := DT_EXPANDTABS or Flags and $7FFFFFFF;
-  if Ctl.WordWrap then
-    Fmt := Fmt or DT_WORDBREAK;
-  if Flags and DT_EDITCONTROL <> 0 then
-    Inc( R.Left, 4 );
-
+begin Fmt := DT_EXPANDTABS or Flags and $7FFFFFFF;
+  if  Ctl.WordWrap then
+      Fmt := Fmt or DT_WORDBREAK;
+  if  Flags and DT_EDITCONTROL <> 0 then
+      Inc( R.Left, 4 );
   ParentHavingFont := Ctl;
   while (ParentHavingFont <> nil) and ( ParentHavingFont.FFont = nil )
         and {$IFDEF USE_FLAGS} not(G3_IsForm in ParentHavingFont.fFlagsG3)
             {$ELSE} not ParentHavingFont.IsForm {$ENDIF} do
-    ParentHavingFont := ParentHavingFont.Parent;
+      ParentHavingFont := ParentHavingFont.Parent;
   OldFont := 0;
-  if ( ParentHavingFont <> nil ) then
-  begin
-      OldFont := SelectObject( DC, ParentHavingFont.Font.Handle );
-      SetTextColor( DC, ParentHavingFont.Font.FColorRGB );
+  if  ( ParentHavingFont <> nil ) then
+  begin OldFont := SelectObject( DC, ParentHavingFont.Font.Handle );
+        SetTextColor( DC, ParentHavingFont.Font.FColorRGB );
   end;
-
   R1 := R;
   {$IFDEF UNICODE_CTRLS}Windows.DrawTextW
   {$ELSE}               Windows.DrawTextA
   {$ENDIF}( DC, PKOLChar( Ctl.Caption ), Length( Ctl.Caption ), R,
     Fmt or DT_CALCRECT ); // TODO: fixme (Length('kanji') != WStrLen('kanji'))
   CASE Ctl.fTextAlign OF
-  taCenter:
-    dX := (R1.Right - R1.Left - (R.Right - R.Left)) div 2;
-  taRight:
-    dX := R1.Right - R.Right;
-  else
-    dX := 0;
+  taCenter: dX := (R1.Right - R1.Left - (R.Right - R.Left)) div 2;
+  taRight:  dX := R1.Right - R.Right;
+  else      dX := 0;
   END;
   CASE Ctl.fVerticalAlign OF
-  vaCenter:
-    dY := (R1.Bottom - R1.Top - (R.Bottom - R.Top)) div 2;
-  vaBottom:
-    dY := R1.Bottom - R.Bottom;
-  else
-    dY := 0;
+  vaCenter: dY := (R1.Bottom - R1.Top - (R.Bottom - R.Top)) div 2;
+  vaBottom: dY := R1.Bottom - R.Bottom;
+  else      dY := 0;
   END;
   OffsetRect( R, dX, dY );
-
   if  {$IFDEF USE_FLAGS} not(F3_Disabled in Ctl.fStyle.f3_Style)
       {$ELSE}            Ctl.fEnabled {$ENDIF}
   or (Flags and $80000000 <> 0) then
-  begin
-      OldBk := SetBkMode( DC, TRANSPARENT );
-      OldBrush := SelectObject( DC, GetStockObject( NULL_BRUSH ) );
-      {$IFDEF UNICODE_CTRLS}Windows.DrawTextW
-      {$ELSE}               Windows.DrawTextA
-      {$ENDIF}( DC, PKOLChar( Ctl.Caption ), Length( Ctl.Caption ), R, Fmt );
-      SelectObject( DC, OldBrush );
-      SetBkMode( DC, OldBk );
-  end
-    else
-  begin
-    GTD.Ctl := Ctl;
-    GTD.W := R.Right - R.Left;
-    GTD.H := R.Bottom - R.Top;
-    GTD.Flags := Flags;
-    Windows.DrawState( DC, GetStockObject( NULL_BRUSH ), @ DrawTextGrayed,
-      Integer( @ GTD ), Length( Ctl.fCaption ), R.Left, R.Top, R.Right - R.Left, R.Bottom - R.Top,
-      DST_COMPLEX or DSS_DISABLED );
+  begin OldBk := SetBkMode( DC, TRANSPARENT );
+        OldBrush := SelectObject( DC, GetStockObject( NULL_BRUSH ) );
+        {$IFDEF UNICODE_CTRLS}Windows.DrawTextW
+        {$ELSE}               Windows.DrawTextA
+        {$ENDIF}( DC, PKOLChar( Ctl.Caption ), Length( Ctl.Caption ), R, Fmt );
+        SelectObject( DC, OldBrush );
+        SetBkMode( DC, OldBk );
+  end else
+  begin GTD.Ctl := Ctl;
+        GTD.W := R.Right - R.Left;
+        GTD.H := R.Bottom - R.Top;
+        GTD.Flags := Flags;
+        Windows.DrawState( DC, GetStockObject( NULL_BRUSH ), @ DrawTextGrayed,
+          Integer( @ GTD ), Length( Ctl.fCaption ), R.Left, R.Top, R.Right - R.Left, R.Bottom - R.Top,
+          DST_COMPLEX or DSS_DISABLED );
   end;
   if  ( ParentHavingFont <> nil ) then
       SelectObject( DC, OldFont );
@@ -63660,35 +58889,33 @@ var fOpenThemeDataProc: TOpenThemeDataProc;
     fCloseThemeData: TCloseThemeData;
     uxtheme_lib: THandle;
 function OpenThemeDataProc: TOpenThemeDataProc;
-begin
-  Result := nil;
-  if Integer(uxtheme_lib) = -1 then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
-  if uxtheme_lib = 0 then
-    uxtheme_lib := LoadLibrary( 'uxtheme' );
-  if uxtheme_lib = 0 then
-  begin
-    uxtheme_lib := DWORD( -1 ); Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
-  end;
-  fOpenThemeDataProc := GetProcAddress( uxtheme_lib, 'OpenThemeData' );
-  fDrawthemeBackground := GetProcAddress( uxtheme_lib, 'DrawThemeBackground' );
-  fGetThemeBackgroundcontentRect := GetProcAddress( uxtheme_lib, 'GetThemeBackgroundContentRect' );
-  fDrawThemeText := GetProcAddress( uxtheme_lib, 'DrawThemeText' );
-  fCloseThemeData := GetProcAddress( uxtheme_lib, 'CloseThemeData' );
-  if not Assigned( fOpenThemeDataProc ) or
-     not Assigned( fDrawThemeBackground ) or
-     not Assigned( fGetThemeBackgroundcontentRect ) or
-     not Assigned( fDrawThemeText ) or
-     not Assigned( fCloseThemeData ) then
-  begin
-    FreeLibrary( uxtheme_lib );
-    uxtheme_lib := DWORD( -1 );
-    fOpenThemeDataProc := nil;
-    fDrawThemeBackground := nil;
-    fGetThemeBackgroundcontentRect := nil;
-    fDrawThemeText := nil;
-    fCloseThemeData := nil;
-  end;
-  Result := fOpenThemeDataProc;
+begin Result := nil;
+      if Integer(uxtheme_lib) = -1 then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
+      if uxtheme_lib = 0 then
+         uxtheme_lib := LoadLibrary( 'uxtheme' );
+      if uxtheme_lib = 0 then
+      begin uxtheme_lib := DWORD( -1 ); Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
+      end;
+      fOpenThemeDataProc := GetProcAddress( uxtheme_lib, 'OpenThemeData' );
+      fDrawthemeBackground := GetProcAddress( uxtheme_lib, 'DrawThemeBackground' );
+      fGetThemeBackgroundcontentRect := GetProcAddress( uxtheme_lib, 'GetThemeBackgroundContentRect' );
+      fDrawThemeText := GetProcAddress( uxtheme_lib, 'DrawThemeText' );
+      fCloseThemeData := GetProcAddress( uxtheme_lib, 'CloseThemeData' );
+      if not Assigned( fOpenThemeDataProc ) or
+         not Assigned( fDrawThemeBackground ) or
+         not Assigned( fGetThemeBackgroundcontentRect ) or
+         not Assigned( fDrawThemeText ) or
+         not Assigned( fCloseThemeData ) then
+      begin
+        FreeLibrary( uxtheme_lib );
+        uxtheme_lib := DWORD( -1 );
+        fOpenThemeDataProc := nil;
+        fDrawThemeBackground := nil;
+        fGetThemeBackgroundcontentRect := nil;
+        fDrawThemeText := nil;
+        fCloseThemeData := nil;
+      end;
+      Result := fOpenThemeDataProc;
 end;
 
 procedure DrawFormattedTextXP( Theme: THandle; Ctl: PControl; DC: HDC;
@@ -63696,8 +58923,7 @@ procedure DrawFormattedTextXP( Theme: THandle; Ctl: PControl; DC: HDC;
 var OldFont: Integer;
     OldBrush: Integer;
     ParentHavingFont: PControl;
-begin
-  ParentHavingFont := Ctl;
+begin ParentHavingFont := Ctl;
   while (ParentHavingFont <> nil) and ( ParentHavingFont.FFont = nil )
         and {$IFDEF USE_FLAGS} not(G3_IsForm in ParentHavingFont.fFlagsG3)
             {$ELSE} not ParentHavingFont.IsForm {$ENDIF} do
@@ -63709,8 +58935,7 @@ begin
   fDrawThemeText( Theme, DC, CtlType, CtlStates, @ KOLWideString( Ctl.fCaption )[ 1 ],
                   Length( Ctl.fCaption ), Flags1, Flags2, @ R );
   SelectObject( DC, OldBrush );
-  if  ( ParentHavingFont <> nil ) then
-      SelectObject( DC, OldFont );
+  if  ( ParentHavingFont <> nil ) then SelectObject( DC, OldFont );
 end;
 {$ENDIF}
 
@@ -63736,31 +58961,24 @@ begin
       SelectClipRgn( DC, rgn );
       DeleteObject( rgn );
       Free_And_Nil( C.fCanvas );
-
       C.fCanvas := Self_.Canvas;
       Self_.Canvas.Brush.Assign( Self_.Brush );
       Self_.Canvas.Font.Assign( Self_.Font ); // не присваивается?
       Self_.fCanvas.DeselectHandles;          // не помогает???
-
       {$IFDEF NIL_EVENTS}
       if  Assigned( C.EV.fOnPrepaint ) then
       {$ENDIF}
           C.EV.fOnPrePaint( C, DC );
-
       C.EV.fPaintProc( DC );
       if  Assigned( C.EV.fOnPaint ) then
           C.EV.fOnPaint( C, DC );
-
       {$IFDEF NIL_EVENTS}
       if  Assigned( C.EV.fOnPostPaint ) then
       {$ENDIF}
           C.EV.fOnPostPaint( C, DC );
-
       C.fCanvas := nil;
-
       Self_.Canvas.Brush.Assign( Self_.Brush );
       Self_.Canvas.Font.Assign( Self_.Font );
-
       RestoreDC( DC, sav );
       ExcludeClipRect( DC, R.Left, R.Top, R.Right, R.Bottom );
     end;
@@ -63774,12 +58992,10 @@ begin
       Self_.Canvas.FillRect( R );
       Self_.GroupBoxPaint( DC );
       Self_.DF.fErasingBkgnd := FALSE;
-  end
-    else
-  if  Assigned( Self_.EV.fOnPaint2 ) then
-      Self_.EV.fOnPaint2( Self_, DC )
-  else
-      Self_.Canvas.FillRect( Self_.ClientRect );
+  end else
+  if   Assigned( Self_.EV.fOnPaint2 ) then
+       Self_.EV.fOnPaint2( Self_, DC )
+  else Self_.Canvas.FillRect( Self_.ClientRect );
 end;
 
 function WndProc_ParentOfGraphicCtl( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
@@ -63791,7 +59007,6 @@ var WasOnPaint: TOnPaint;
     save_Paint2: TOnPaint;
 begin
   Result := FALSE;
-
   if (Msg.message = WM_PAINT) {or (Msg.message = WM_PRINT)} then
   begin WasOnPaint := Self_.EV.fOnPaint;
       Self_.{$IFDEF EVENTS_DYNAMIC} ProvideUniqueEvents {$ELSE} EV {$ENDIF}
@@ -63803,7 +59018,6 @@ begin
       TMethod( Self_.EV.fOnPaint ).Code := @ PaintGraphicChildren;
       TMethod( Self_.EV.fOnPaint ).Data := Self_;
       {$ENDIF}
-
       save_Paint2 := Self_.EV.fOnPaint2;
       if  not Assigned( Self_.EV.fOnPaint2 ) then
       begin
@@ -63814,14 +59028,10 @@ begin
           //TMethod( Self_.EV.fOnPaint2 ).Data := nil;
           {$ENDIF}
       end;
-
       i := Self_.fDynHandlers.fCount;
       Self_.fDynHandlers.fCount := Self_.fDynHandlers.IndexOf( @ WndProc_ParentOfGraphicCtl );
       Result := EnumDynHandlers( Self_, Msg, Rslt );
       Self_.fDynHandlers.fCount := i;
-
-      //Self_.fOnPaint2 := save_Paint2;
-
       if not Result then
         {Result :=} WndProcPaint( Self_, Msg, Rslt );
       Self_.EV.fOnPaint := WasOnPaint;
@@ -63833,10 +59043,9 @@ begin
     Pt.Y := SmallInt( HiWord( Msg.lParam ) );
     for i := 0 to Self_.ChildCount-1 do
     begin
-      if (i = 0) and (Self_.fPushedBtn <> nil) then
-        C := Self_.fPushedBtn
-      else
-        C := Self_.Children[ i ];
+      if   (i = 0) and (Self_.fPushedBtn <> nil) then
+           C := Self_.fPushedBtn
+      else C := Self_.Children[ i ];
       if  (C = Self_.fPushedBtn) OR
           {$IFDEF USE_FLAGS}
                   (F3_Visible in C.fStyle.f3_Style)
@@ -63848,15 +59057,13 @@ begin
             {$ELSE} not C.fWindowed {$ENDIF}
         and (C.fCursor <> 0) and (C.fCursor <> Self_.fCursor) and
             (ScreenCursor = 0) then
-        begin
-          if Self_.fSaveCursor = 0 then
-          begin
-            Self_.fSaveCursor := Self_.fCursor;
-            if Self_.fCursor = 0 then
-              Self_.fSaveCursor := LoadCursor( 0, IDC_ARROW );
-          end;
-          Self_.Cursor := C.fCursor;
-          Windows.SetCursor( C.fCursor );
+        begin if Self_.fSaveCursor = 0 then
+              begin Self_.fSaveCursor := Self_.fCursor;
+                    if  Self_.fCursor = 0 then
+                        Self_.fSaveCursor := LoadCursor( 0, IDC_ARROW );
+              end;
+              Self_.Cursor := C.fCursor;
+              Windows.SetCursor( C.fCursor );
         end;
         {$IFDEF GRAPHCTL_HOTTRACK}
         if  {$IFDEF USE_FLAGS} (G6_GraphicCtl in C.fFlagsG6)
@@ -63907,11 +59114,9 @@ begin
             if  Assigned( C.EV.fGraphCtlMouseEvent ) then
             {$ENDIF}
                 C.EV.fGraphCtlMouseEvent( Msg )
-          else
-          if (Msg.message = WM_LBUTTONDOWN) or
-             (Msg.message = WM_RBUTTONDOWN) or
-             (Msg.message = WM_MBUTTONDOWN) then
-             C.DoClick;
+          else if (Msg.message = WM_LBUTTONDOWN) or
+                  (Msg.message = WM_RBUTTONDOWN) or
+                  (Msg.message = WM_MBUTTONDOWN) then C.DoClick;
         Result := TRUE; Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
       end;
     end;
@@ -63929,31 +59134,24 @@ begin
       Self_.Invalidate;
     end;
     if Self_.fSaveCursor <> 0 then
-    begin
-      Self_.Cursor := Self_.fSaveCursor;
-      Self_.fSaveCursor := 0;
-      if ScreenCursor = 0 then
-        Windows.SetCursor( Self_.fCursor );
+    begin Self_.Cursor := Self_.fSaveCursor;
+          Self_.fSaveCursor := 0;
+          if  ScreenCursor = 0 then Windows.SetCursor( Self_.fCursor );
     end;
-  end
-    else
+  end else
   if (Msg.message >= WM_KEYFIRST) and (Msg.message <= WM_KEYLAST) then
   begin
-    if Self_.IsControl then
-      PF := Self_.ParentForm
-    else
-      PF := Self_;
+    if   Self_.IsControl then
+         PF := Self_.ParentForm
+    else PF := Self_;
     if  (PF.DF.fCurrentControl <> nil)
     and {$IFDEF USE_FLAGS} (G6_GraphicCtl in PF.DF.fCurrentControl.fFlagsG6)
         {$ELSE} not PF.DF.fCurrentControl.fWindowed {$ENDIF} then
-    begin
-      if  Assigned( PF.DF.fCurrentControl.fKeyboardProcess ) and
-          PF.DF.fCurrentControl.fKeyboardProcess( Msg, Rslt ) then
-      else
-          Rslt := PF.DF.fCurrentControl.WndProc( Msg );
-      Result := TRUE;
-    end
-      else
+    begin if   Assigned( PF.DF.fCurrentControl.fKeyboardProcess ) and
+               PF.DF.fCurrentControl.fKeyboardProcess( Msg, Rslt ) then
+          else Rslt := PF.DF.fCurrentControl.WndProc( Msg );
+          Result := TRUE;
+    end else
     begin
       if  {$IFDEF USE_FLAGS} (G5_IsGroupbox in Self_.fFlagsG5)
           {$ELSE} Self_.fIsGroupBox {$ENDIF}
@@ -63970,14 +59168,12 @@ begin
         Self_.Invalidate;
       end;
     end;
-  end
-    else
+  end else
   if Msg.message = CM_QUIT then
   begin
     C := Pointer( Msg.wParam );
     C.Free;
-  end
-    else
+  end else
   if Msg.message = CM_FOCUSGRAPHCTL then
   begin
     C := Pointer( Msg.wParam );
@@ -64900,6 +60096,7 @@ begin if not DF.fErasingBkgnd then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
       END;
 end;
 {$ENDIF USE_GRAPHCTLS}//--------------------------------------------------------
+
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 function TControl.MakeWordWrap: PControl;
 begin {$IFDEF USE_FLAGS} include( fFlagsG1, G1_WordWrap );
@@ -64910,7 +60107,7 @@ begin {$IFDEF USE_FLAGS} include( fFlagsG1, G1_WordWrap );
           Style := fStyle.Value and not SS_LEFTNOWORDWRAP;
       Result := @ Self;
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 function ParentAnchorChildren( Sender: PControl; var Msg: TMsg;
   var Rslt: Integer ): Boolean;
 var NewW, NewH: Integer;
@@ -65004,13 +60201,13 @@ begin Result := 0;
           End;
       End;
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE}
 function TControl.FormGetColorParam: Integer;
 begin Result := FormGetIntParam;
       Result := (Result shr 1) or (Result shl 31);
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE  PASCAL}
 procedure TControl.FormGetStrParam;
 var i: Integer;
@@ -65018,7 +60215,7 @@ begin i := FormGetIntParam;
       SetString( FormString, DF.FormParams, i );
       inc( DF.FormParams, i );
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 procedure TControl.FormCreateParameters(
     alphabet: PFormInitFuncArray;
     params: PAnsiChar );
@@ -65050,7 +60247,7 @@ begin while {FormParams <> ''} TRUE do begin
       end;
       FormString := '';
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}
 procedure FormPrepareStrParamCreateCtrl;
 asm PUSH EAX
@@ -65066,7 +60263,7 @@ asm PUSH EAX
     POP  ECX
     MOV  EAX, [ECX].TControl.DF.FormCurrentParent
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE}
 function FormNewLabel( Form: PControl ): PControl;
 begin Form.FormGetStrParam;
@@ -65078,7 +60275,7 @@ function FormNewWordWrapLabel( Form: PControl ): PControl;
 begin Form.FormGetStrParam;
       Result := NewWordWrapLabel( Form.DF.FormCurrentParent, Form.FormString );
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE}
 function FormNewLabelEffect( Form: PControl ): PControl;
 var Shd: Integer;
@@ -65139,7 +60336,7 @@ begin Form.FormGetStrParam;
       Result := NewGroupbox( Form.DF.FormCurrentParent,
                              Form.FormString );
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 function FormNewPaintbox( Form: PControl ): PControl;
 begin Result := NewPaintbox( Form.DF.FormCurrentParent ); end;//////////////////
 function FormNewImageShow( Form: PControl ): PControl;
@@ -65151,14 +60348,9 @@ var  i: Integer;
 begin i := Form.FormGetIntParam;
       Result := NewEditbox( Form.DF.FormCurrentParent, PEditOptions( @ i )^ );
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF USE_RICHEDIT}///////////////////////////////////////////////////////////
-{$IFDEF ASM_VERSION}
-function FormNewRichEdit( Form: PControl ): PControl;
-asm CALL FormPrepareIntParamCreateCtrl
-    CALL NewRichEdit
-end;
-{$ELSE}
+{$IFDEF ASM_VERSION}{$ELSE}
 function FormNewRichEdit( Form: PControl ): PControl;
 type PEditOptions = ^TEditOptions;
 var  i: Integer;
@@ -65166,7 +60358,7 @@ begin i := Form.FormGetIntParam;
       Result := NewRichEdit( Form.DF.FormCurrentParent,
                              PEditOptions( @ i )^ );
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$ENDIF USE_RICHEDIT}///////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE}
 function FormNewComboBox( Form: PControl ): PControl;
@@ -65175,19 +60367,19 @@ var  i: Integer;
 begin i := Form.FormGetIntParam;
       Result := NewCombobox( Form.DF.FormCurrentParent, PComboOptions( @ i )^ );
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE}
 function FormNewCheckbox( Form: PControl ): PControl;
 begin Form.FormGetStrParam;
       Result := NewCheckbox( Form.DF.FormCurrentParent, Form.FormString );
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE}
 function FormNewRadiobox( Form: PControl ): PControl;
 begin Form.FormGetStrParam;
       Result := NewRadiobox( Form.DF.FormCurrentParent, Form.FormString );
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 function FormNewSplitter( Form: PControl ): PControl;
 var p, n: Integer;
 begin p := Form.FormGetIntParam;
@@ -65201,7 +60393,7 @@ var  i: Integer;
 begin i := Form.FormGetIntParam;
       Result := NewListbox( Form.DF.FormCurrentParent, PListOptions( @ i )^ );
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 function FormNewListView( Form: PControl ): PControl;
 type PListViewOptions = ^TListViewOptions;
 var lvs: TListViewStyle;
@@ -65275,23 +60467,7 @@ begin N := Form.FormGetIntParam;
       SetLength( Tabs2, 0 );
 end;
 {$ENDIF}////////////////////////////////////////////////////////////////////////
-{$IFDEF ASM_VERSION}
-//!!! asm version returns in EAX Control,
-//    and integer parameter in EDX and ECX (EDX=ECX) !!!
-//--- this is enough to call method of Control with a single int param ---
-function ParentForm_IntParamAsm(Control: PControl): Integer;
-asm PUSH EAX
-    CALL TControl.FormParentForm
-    CALL TControl.FormGetIntParam
-    XCHG EDX, EAX
-    MOV  ECX, EDX
-    POP  EAX
-end;
-function ParentForm_ColorParamAsm(Control: PControl): Integer;
-asm CALL ParentForm_IntParamAsm
-    ROR  EDX, 1
-end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$IFDEF ASM_VERSION}{$ENDIF PAS_VERSION}////////////////////////////////////////
 function ParentForm_PCharParam(Control: PControl): PKOLChar;
 var Form: PControl;
 begin Form := Control.FormParentForm;
@@ -65303,13 +60479,6 @@ begin Result := Form.FormParentForm.FormGetIntParam; end;///////////////////////
 function ParentForm_ColorParamPas(Form: PControl): Integer;
 begin Result := Form.FormParentForm.FormGetColorParam; end;/////////////////////////
 {$IFDEF ASM_VERSION} // only to call from asm -- returns EAX=Parent Form, EDX=ECX=PChar param
-function ParentForm_PCharParamAsm(Control: PControl): PChar;
-asm PUSH EAX
-    CALL ParentForm_PCharParam
-    XCHG EDX, EAX
-    MOV  ECX, EDX
-    POP  EAX
-end;
 {$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE  PASCAL}
 procedure FormSetSize( Form: PControl );
@@ -65338,11 +60507,11 @@ begin W := ParentForm_IntParamPas(Form);
       H := ParentForm_IntParamPas(Form);
       Form.SetClientSize( W, H );
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE  PASCAL}
 procedure FormSetAlign( Form: PControl );
 begin Form.SetAlign( TControlAlign( ParentForm_IntParamPas(Form) ) ); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF USE_NAMES}
 procedure FormSetName( Form: PControl );
 var C: PControl;
@@ -65353,7 +60522,11 @@ begin C := Form;
 end;
 {$ENDIF USE_NAMES}//////////////////////////////////////////////////////////////
 procedure FormSetTag( Form: PControl );
-begin Form.Tag := ParentForm_IntParamPas(Form); end;
+var tag: DWORD;
+begin
+    tag := ParentForm_IntParamPas(Form);
+    Form.Tag := tag;
+end;
 {$IFDEF UNICODE_CTRLS}
 procedure FormSetUnicode( Form: PControl );
 begin Form.SetUnicode( TRUE ); end;
@@ -65363,11 +60536,11 @@ begin Form.AssignHelpContext( ParentForm_IntParamPas( Form ) ); end;////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetCanResizeFalse( Form: PControl );
 begin Form.CanResize := FALSE; end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormInitMenu( Form: PControl );
 begin Form.Perform( WM_INITMENU, 0, 0 ); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 procedure FormSizeGripFalse( Form: PControl );
 begin Form.SizeGrip := FALSE; end; /////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
@@ -65377,7 +60550,7 @@ begin Form.ExStyle := Form.ExStyle or DWORD( ParentForm_IntParamPas(Form) ); end
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetVisibleFalse( Form: PControl );
 begin Form.Visible := FALSE; end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetEnabledFalse( Form: PControl );
 begin Form.Enabled := FALSE; end;
@@ -65385,11 +60558,11 @@ begin Form.Enabled := FALSE; end;
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormResetStyles( Form: PControl );
 begin Form.Style := Form.Style and not ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetStyle( Form: PControl );
 begin Form.Style := Form.Style or DWORD( ParentForm_IntParamPas(Form)); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE  PASCAL}
 procedure FormSetAlphaBlend( Form: PControl );
 begin Form.AlphaBlend := ParentForm_IntParamPas( Form ); end;
@@ -65397,30 +60570,30 @@ begin Form.AlphaBlend := ParentForm_IntParamPas( Form ); end;
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetHasBorderFalse( Form: PControl );
 begin Form.HasBorder := FALSE; end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetHasCaptionFalse( Form: PControl );
 begin Form.HasCaption := FALSE; end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormResetCtl3D( Form: PControl );
 begin Form.Ctl3D := FALSE; end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormIconLoad_hInstance( Form: PControl );
 begin Form.IconLoad( hInstance,
                      MAKEINTRESOURCE( ParentForm_IntParamPas(Form) ) );
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormIconLoadCursor_0( Form: PControl );
 begin Form.IconLoadCursor( 0, MakeIntResource( ParentForm_IntParamPas(Form) ) );
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetIconNeg1( Form: PControl );
 begin Form.Icon := THandle( -1 ); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 procedure FormIconLoad_hInstance_str( Form: PControl );
 begin Form.FormGetStrParam;
       Form.IconLoad( hInstance, PKOLChar( KOLString( Form.FormString ) ) );
@@ -65428,11 +60601,11 @@ end;////////////////////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetWindowState( Form: PControl );
 begin Form.WindowState := TWindowState( ParentForm_IntParamPas(Form) ); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormCursorLoad_0( Form: PControl );
 begin Form.CursorLoad( 0, MAKEINTRESOURCE( ParentForm_IntParamPas(Form) ) ); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 procedure FormCursorLoad_hInstance( Form: PControl );
 var C: PControl;
 begin C := Form;
@@ -65443,11 +60616,11 @@ end;////////////////////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetColor( Form: PControl );
 begin Form.Color := ParentForm_ColorParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetBrushStyle( Form: PControl );
 begin Form.Brush.BrushStyle := TBrushStyle( ParentForm_IntParamPas(Form) ); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetBrushBitmap( Form: PControl );
 var C: PControl;
@@ -65462,11 +60635,11 @@ begin C := Form;
           {$ELSE}                ParentForm_PCharParam(Form)
           {$ENDIF}               , Form );
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetFontColor( Form: PControl );
 begin Form.Font.Color := ParentForm_ColorParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetFontStyles( Form: PControl );
 type PFontStyle = ^TFontStyle;
@@ -65474,15 +60647,15 @@ var fs: Byte;
 begin fs := ParentForm_IntParamPas(Form);
       Form.Font.FontStyle := PFontStyle( @ fs )^;
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetFontHeight( Form: PControl );
 begin Form.Font.FontHeight := ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetFontWidth( Form: PControl );
 begin Form.Font.FontWidth := ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 procedure ParentForm_StrParam( Form: PControl );
 begin Form := Form.FormParentForm;
       Form.FormGetStrParam;
@@ -65494,70 +60667,70 @@ end;////////////////////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetFontOrientation( Form: PControl );
 begin Form.Font.FontOrientation := ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetFontCharset( Form: PControl );
 begin Form.Font.FontCharset := ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetFontPitch( Form: PControl );
 begin Form.Font.FontPitch := TFontPitch( ParentForm_IntParamPas(Form) ); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetBorder( Form: PControl );
 begin Form.Border := ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetMarginTop( Form: PControl );
 begin Form.MarginTop := ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetMarginBottom( Form: PControl );
 begin Form.MarginBottom := ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetMarginLeft( Form: PControl );
 begin Form.MarginLeft := ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetMarginRight( Form: PControl );
 begin Form.MarginRight := ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetSimpleStatusText( Form: PControl );
 begin Form.SimpleStatusText := ParentForm_PCharParam(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetStatusText( Form: PControl );
 var I: Integer;
 begin I := ParentForm_IntParamPas(Form);
       Form.StatusText[I] := ParentForm_PCharParam(Form);
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormRemoveCloseIcon( Form: PControl );
 begin DeleteMenu( GetSystemMenu( Form.GetWindowHandle, False ),
                   SC_CLOSE, MF_BYCOMMAND );
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 procedure FormSetEraseBkgndTrue( Form: PControl );
 begin Form.EraseBackground := TRUE; end;
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetMinWidth( Form: PControl );
 begin Form.MinWidth := ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetMaxWidth( Form: PControl );
 begin Form.MaxWidth := ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetMinHeight( Form: PControl );
 begin Form.MinHeight := ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetMaxHeight( Form: PControl );
 begin Form.MaxHeight := ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF noASM_VERSION}
 procedure FormSetRepeatInterval( Form: PControl );
 asm CALL ParentForm_IntParamAsm
@@ -65566,7 +60739,7 @@ end;
 {$ELSE PAS_VERSION}
 procedure FormSetRepeatInterval( Form: PControl );
 begin Form.RepeatInterval := ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 procedure FormSetKeyPreviewTrue( Form: PControl );
 begin {$IFDEF KEY_PREVIEW}
           Form.KeyPreview := TRUE;
@@ -65575,29 +60748,29 @@ end;////////////////////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetTextShiftX( Form: PControl );
 begin Form.TextShiftX := ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetTextShiftY( Form: PControl );
 begin Form.TextShiftY := ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetColor2( Form: PControl );
 begin Form.Color2 := ParentForm_ColorParamPas( Form ); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetTextAlign( Form: PControl );
 begin Form.TextAlign := TTextAlign( ParentForm_IntParamPas(Form) ); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetTextVAlign( Form: PControl );
 begin Form.VerticalAlign := TVerticalAlign( ParentForm_IntParamPas(Form) ); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 procedure FormSetTabStopFalse( Form: PControl );
 begin Form.TabStop := FALSE; end;
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetIgnoreDefault( Form: PControl );
 begin Form.IgnoreDefault := Boolean( ParentForm_IntParamPas(Form) ); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 procedure FormSetHintText( Form: PControl );
 begin {$IFDEF USE_MHTOOLTIP}
       ParentForm_StrParam(Form);
@@ -65620,46 +60793,46 @@ begin Ctl := Form;
       Form.FormGetStrParam;
       Ctl.Caption := Form.FormString;
 end;
-{$ENDIF ASM_VERSION}
+{$ENDIF PAS_VERSION}
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetGradienStyle( Form: PControl );
 begin Form.GradientStyle := TGradientStyle( ParentForm_IntParamPas(Form) ); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 procedure FormOverrideScrollbars( Form: PControl );
 begin OverrideScrollbars( Form ); end;
 {$IFDEF USE_RICHEDIT}
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetRE_AutoFontFalse( Form: PControl );
 begin Form.RE_AutoFont := FALSE; end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetRE_AutoFontSizeAdjustFalse( Form: PControl );
 begin Form.RE_AutoFontSizeAdjust := FALSE; end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetRE_DualFontTrue( Form: PControl );
 begin Form.RE_DualFont := TRUE; end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetRE_UIFontsTrue( Form: PControl );
 begin Form.RE_UIFonts := TRUE; end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetRE_IMECancelCompleteTrue( Form: PControl );
 begin Form.RE_IMECancelComplete := TRUE; end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetRE_IMEAlwaysSendNotifyTrue( Form: PControl );
 begin Form.RE_IMEAlwaysSendNotify := TRUE; end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetMaxTextSize( Form: PControl );
 begin Form.MaxTextSize := DWORD( ParentForm_IntParamPas(Form) ); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetRE_AutoKeyboardTrue( Form: PControl );
 begin Form.RE_AutoKeyboard := TRUE; end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 procedure FormSetRE_DisableOverwriteChangeTrue( Form: PControl );
 begin Form.RE_DisableOverwriteChange := TRUE;
 end;////////////////////////////////////////////////////////////////////////////
@@ -65670,7 +60843,7 @@ begin zoom.X := ParentForm_IntParamPas(Form);
       zoom.Y := ParentForm_IntParamPas(Form);
       Form.RE_Zoom := zoom;
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$ENDIF USE_RICHEDIT}
 procedure FormSetListItems( Form: PControl );
 var N, i: Integer;
@@ -65684,12 +60857,12 @@ end;
 procedure FormSetCount( Form: PControl );
 begin Form.Count := ParentForm_IntParamPas(Form);
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetDroppedWidth( Form: PControl );
 begin Form.DroppedWidth := ParentForm_IntParamPas(Form);
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 procedure FormSetButtonIcon( Form: PControl );
 begin
     Form.SetButtonIcon( LoadImage( hInstance,
@@ -65705,13 +60878,13 @@ begin w := ParentForm_IntParamPas(Form);
           ParentForm_PCharParam(Form),
           IMAGE_ICON, w, h, $8000 {LR_SHARED} ) );
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetButtonBitmap( Form: PControl );
 begin Form.SetButtonBitmap( LoadBitmap( hInstance,
            ParentForm_PCharParam(Form) ) );
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 procedure FormSetDefaultBtn( Form: PControl );
 var i: Integer;
 begin i := ParentForm_IntParamPas(Form);
@@ -65721,12 +60894,12 @@ end;
 procedure FormSetMaxProgress( Form: PControl );
 begin Form.MaxProgress := ParentForm_IntParamPas(Form);
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetProgress( Form: PControl );
 begin Form.Progress := ParentForm_IntParamPas(Form);
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormLVColumsAdd( Form: PControl );
 var   N, i, w: Integer;
@@ -65737,7 +60910,7 @@ begin N := ParentForm_IntParamPas(Form);
           Form.LVColAdd( Form.FormParentForm.FormString, taLeft, w );
       END;
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetLVColOrder( Form: PControl );
 var   N, i: Integer;
@@ -65745,7 +60918,7 @@ begin N := ParentForm_IntParamPas(Form);
       i := ParentForm_IntParamPas(Form);
       Form.LVColOrder[N] := i;
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetLVColImage( Form: PControl );
 var   N, i: Integer;
@@ -65753,12 +60926,12 @@ begin N := ParentForm_IntParamPas(Form);
       i := ParentForm_IntParamPas(Form);
       Form.LVColImage[N] := i;
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetTVIndent( Form: PControl );
 begin Form.TVIndent := ParentForm_IntParamPas(Form);
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 procedure FormSetTBBtnImgWidth( Form: PControl );
 begin Form.TBBtnImgWidth := ParentForm_IntParamPas( Form );
 end;////////////////////////////////////////////////////////////////////////////
@@ -65836,7 +61009,7 @@ procedure FormSetDateTimeFormat( Form: PControl );
 begin ParentForm_StrParam(Form);
       Form.DateTimeFormat := Form.FormParentForm.FormString;
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 procedure FormSetDateTimeColor( Form: PControl );
 var   i: Integer;
       C: TColor;
@@ -65851,27 +61024,27 @@ begin i := ParentForm_IntParamPas(Form);
       Form.CurIndex := i;
       Form.Pages[i].BringToFront;
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetCurIdx( Form: PControl );
 begin Form.CurIndex := ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetSBMin( Form: PControl );
 begin Form.SBMin := ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetSBMax( Form: PControl );
 begin Form.SBMax := ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetSBPosition( Form: PControl );
 begin Form.SBPosition := ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormSetSBPageSize( Form: PControl );
 begin Form.SBPageSize := ParentForm_IntParamPas(Form); end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}
 procedure FormLastCreatedChildAsNewCurrentParent( Form: PControl );
 var   C: PControl;
@@ -65879,7 +61052,7 @@ begin C := Form;
       Form := Form.FormParentForm;
       Form.DF.FormCurrentParent := C;
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 procedure FormSetUpperParent( Form: PControl );
 begin Form := Form.FormParentForm;
       Form.DF.FormCurrentParent := Form.DF.FormCurrentParent.Parent;
@@ -65894,7 +61067,7 @@ begin C := Form;
       Form.DF.FormCurrentParent := C.Pages[i];
       Form.DF.FormLastCreatedChild := Form.DF.FormCurrentParent;
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 {$IFDEF ASM_VERSION}{$ELSE PASCAL}//////////////////////////////////////////////
 procedure FormSetCurCtl( Form: PControl );
 var   i: Integer;
@@ -65905,7 +61078,7 @@ begin Form := Form.FormParentForm;
       if  C = nil then C := Form;
       Form.DF.FormLastCreatedChild := C;
 end;
-{$ENDIF ASM_VERSION}////////////////////////////////////////////////////////////
+{$ENDIF PAS_VERSION}////////////////////////////////////////////////////////////
 procedure FormSetParent( Form: PControl );
 var   C: PControl;
 begin C := Form;
@@ -65958,10 +61131,12 @@ procedure DummyOverrideScrollbars(Sender: PControl);
 begin
 end;
 
-{$IFNDEF PAS_VERSION}
- // {$DEFINE ASM_VERSION}
- // {$DEFINE ASM_UNICODE}
-{$I KOL_ASM.inc} {$ENDIF ASM_VERSION}
+{$IFnDEF PAS_VERSION}
+    {$I KOL_ASM.inc} //<<<<<<<<<<<<<<<<<<<<<<< KOL_ASM.inc
+    {$IFnDEF UNICODE_CTRLS}
+        {$I KOL_ASM_NOUNICODE.inc} //<<<<<<<<< KOL_ASM_NOUNICODE.inc
+    {$ENDIF noUNICODE}
+{$ENDIF PAS_VERSION}
 {$IFDEF LIN}
   {$DEFINE implementation} {$I KOL_Linux.inc} {$UNDEF implementation}
 {$ENDIF LIN}
@@ -65971,6 +61146,32 @@ end;
 {$ENDIF USE_CUSTOMEXTENSIONS}
 
 {$IFDEF EVENTS_DYNAMIC}//-------------------------------------------------------
+{$IFDEF ASM_VERSION}
+function TControl.ProvideUniqueEvents: PEvents;
+const Size_TEvents = Sizeof(TEvents);
+asm      PUSH  ESI
+         XCHG  ESI, EAX
+         MOV   EAX, [ESI].TControl.EV
+         CMP   EAX, offset[EmptyEvents]
+         JNZ   @@ready
+
+         MOV   EAX, Size_TEvents
+         CALL  System.@GetMem
+         MOV   [ESI].TControl.EV, EAX 
+         PUSH  EAX
+         XCHG  EDX, EAX
+         MOV   EAX, offset[EmptyEvents]
+         MOV   ECX, Size_TEvents
+         CALL  Move
+         PUSH  ESI
+         PUSH  offset[FreeEV]
+         XCHG  EAX, ESI
+         CALL  TControl.Add2AutoFreeEx
+         POP   EAX
+@@ready:
+         POP   ESI
+end;
+{$ELSE}
 function TControl.ProvideUniqueEvents: PEvents;
 begin if  EV = @EmptyEvents then
       begin
@@ -65979,7 +61180,8 @@ begin if  EV = @EmptyEvents then
           Add2AutoFreeEx( FreeEV );
       end;
       Result := EV;
-end;////////////////////////////////////////////////////////////////////////////
+end; {$ENDIF PAS_VERSION}///////////////////////////////////////////////////////
+
 procedure TControl.FreeEV;
 begin FreeMem( EV );
       EV := @EmptyEvents;
@@ -66160,7 +61362,6 @@ procedure TControl.ResetEvent(idx: Integer);
 begin TMethod( EV.MethodEvents[idx] ).Code := DummyProcTable[ InitEventsTable[ idx ] and $F ];
       TMethod( EV.MethodEvents[idx] ).Data := nil;
 end;////////////////////////////////////////////////////////////////////////////
-
 {$IFDEF COMMANDACTIONS_OBJ}
 { TCommandActionsObj }
 {$IFDEF ASM_VERSION}////////////////////////////////////////////////////////////
@@ -66174,21 +61375,13 @@ begin AllActions_Objs[fIndexInActions] := nil;
       inherited;
 end; {$ENDIF}///////////////////////////////////////////////////////////////////
 {$ENDIF}
-
-{$IFDEF GRAPHCTL_XPSTYLES}
-    {$DEFINE INIT_FINIT}
-{$ENDIF}
-{$IFDEF USE_NAMES}
-    {$DEFINE INIT_FINIT}
-{$ENDIF}
-{$IFNDEF NOT_UNLOAD_RICHEDITLIB}
-{$IFDEF UNLOAD_RICHEDITLIB}
-    {$DEFINE INIT_FINIT}
-{$ENDIF}
-{$ENDIF}
+{$IFDEF GRAPHCTL_XPSTYLES}{$DEFINE INIT_FINIT}{$ENDIF}
+{$IFDEF USE_NAMES}{$DEFINE INIT_FINIT}{$ENDIF}
+{$IFNDEF NOT_UNLOAD_RICHEDITLIB}{$IFDEF UNLOAD_RICHEDITLIB}
+         {$DEFINE INIT_FINIT}
+{$ENDIF}{$ENDIF}
 {$IFDEF INIT_FINIT}//-----------------------------------------------------------
 //******************************************************************************
-
 initialization //...............................................................
 {$IFDEF GRAPHCTL_XPSTYLES}
  CheckThemes;

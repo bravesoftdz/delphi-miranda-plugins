@@ -96,6 +96,10 @@ begin
         'Use this option if WATrack freeze while player running. Slower processing.');
       CheckDlgButton(Dialog,IDC_MTHCHECK,MTHCheck);
 
+      MakeHint(Dialog,IDC_TIMEOUT,
+        'Timeout (msec) for separate thread handles checking.');
+      SetDlgItemInt(Dialog,IDC_TIMEOUT,TimeoutForThread,false);
+
       MakeHint(Dialog,IDC_KEEPOLD,
         'Keep opened file as active, not newly founded.');
       CheckDlgButton(Dialog,IDC_KEEPOLD,KeepOld);
@@ -225,6 +229,10 @@ begin
           StopTimer;
           StartTimer;
         end;
+
+        TimeoutForThread:=GetDlgItemInt(Dialog,IDC_TIMEOUT,tmp,false);
+        if TimeoutForThread>=100 then
+          TimeoutForThread:=SysWin.ThreadTimeout;
 
         CheckTime :=IsDlgButtonChecked(Dialog,IDC_CHECKTIME);
         UseImplant:=IsDlgButtonChecked(Dialog,IDC_IMPLANTANT);

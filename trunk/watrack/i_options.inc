@@ -30,6 +30,8 @@ const
   opt_KeepOld   :PAnsiChar = 'keepold';
   opt_mmkeyemu  :PAnsiChar = 'mmkeyemu';
   opt_CheckAll  :PAnsiChar = 'checkall';
+
+  opt_ThTimeout :PAnsiChar = 'thtimeout';
 const
   opt_HiddenOption:PAnsiChar = 'hiddenoption';
 
@@ -56,6 +58,8 @@ begin
   CoverPaths   :=DBReadUnicode(0,PluginShort,opt_coverpaths,defcoverpaths);
 
   mmkeyemu     :=DBReadByte (0,PluginShort,opt_mmkeyemu  ,BST_UNCHECKED);
+
+  TimeoutForThread:=DBReadByte(0,PluginShort,opt_ThTimeout,SysWin.ThreadTimeout);
 end;
 
 procedure _saveopt;
@@ -64,6 +68,7 @@ begin
 
   DBWriteWord(0,PluginShort,opt_InsHotKey ,inshotkey);
   DBWriteWord(0,PluginShort,opt_HotKey    ,globhotkey);
+  DBWriteByte(0,PluginShort,opt_ThTimeout ,TimeoutForThread);
   DBWriteByte(0,PluginShort,opt_CheckTime ,CheckTime);
   DBWriteByte(0,PluginShort,opt_Implantant,UseImplant);
   DBWriteByte(0,PluginShort,opt_MTHCheck  ,MTHCheck);

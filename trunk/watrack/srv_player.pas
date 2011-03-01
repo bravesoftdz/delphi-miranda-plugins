@@ -9,10 +9,6 @@ function GetPlayerNote(name:PAnsiChar):pWideChar;
 
 function SetPlayerIcons(fname:pAnsiChar):integer;
 
-procedure ClearSongInfoData(dst:pSongInfo);
-procedure ClearPlayerInfo  (dst:pSongInfo);
-procedure ClearTrackInfo   (dst:pSongInfo);
-
 function LoadFromFile(fname:PAnsiChar):integer;
 
 function ServicePlayer(wParam:WPARAM;lParam:LPARAM):integer;cdecl;
@@ -20,17 +16,32 @@ function SendCommand  (wParam:WPARAM;lParam:LPARAM;flags:integer):integer;
 
 procedure ClearPlayers;
 
+// options procedures
 procedure DefFillPlayerList (hwndList:hwnd);
 procedure DefCheckPlayerList(hwndList:hwnd);
-
-function CheckPlayers(var dst:tSongInfo;flags:cardinal):integer;
-function CheckFile   (var dst:tSongInfo;flags:cardinal):integer;
-function GetInfo     (var dst:tSongInfo;flags:integer):integer;
 
 type
   MusEnumProc = function(param:PAnsiChar;lParam:integer):bool;stdcall;
 
 function EnumPlayers(param:MusEnumProc;lParam:integer):bool;
+
+// "Get info" procedures
+function CheckPlayers   (var dst:tSongInfo;flags:cardinal):integer;
+function CheckFile      (var dst:tSongInfo;flags:cardinal;timeout:cardinal):integer;
+function GetChangingInfo(var dst:tSongInfo;flags:cardinal):integer;
+function GetInfo        (var dst:tSongInfo;flags:cardinal):integer;
+
+// support procedures
+procedure ClearSongInfoData(var dst:tSongInfo;withFree:bool);
+procedure ClearPlayerInfo  (var dst:tSongInfo;withFree:bool);
+procedure ClearFileInfo    (var dst:tSongInfo;withFree:bool);
+procedure ClearChangingInfo(var dst:tSongInfo;withFree:bool);
+procedure ClearTrackInfo   (var dst:tSongInfo;withFree:bool);
+
+procedure CopyPlayerInfo  (const src:tSongInfo;var dst:tSongInfo);
+procedure CopyFileInfo    (const src:tSongInfo;var dst:tSongInfo);
+procedure CopyChangingInfo(const src:tSongInfo;var dst:tSongInfo);
+procedure CopyTrackInfo   (const src:tSongInfo;var dst:tSongInfo);
 
 implementation
 
@@ -823,63 +834,138 @@ begin
     result:=nil;
 end;
 
-procedure ClearSongInfoData(dst:pSongInfo);
+procedure ClearSongInfoData(var dst:tSongInfo;withFree:bool);
 begin
-  ClearPlayerInfo(dst);
+  ClearPlayerInfo  (dst,withFree);
+  ClearChangingInfo(dst,withFree);
+  ClearFileInfo    (dst,withFree);
+  ClearTrackInfo   (dst,withFree);
+end;
 
+procedure CopyChangingInfo(const src:tSongInfo;var dst:tSongInfo);
+begin
+  dst.time   :=src.time;
+  dst.volume :=src.volume;
+  dst.wndtext:=src.wndtext;
+end;
+
+procedure ClearChangingInfo(var dst:tSongInfo;withFree:bool);
+begin
+  dst.time  :=0;
   dst.volume:=0;
-  dst.status:=WAT_MES_UNKNOWN;
-  mFreeMem(dst.wndtext);
 
-  ClearTrackInfo (dst);
+  if withFree then
+    mFreeMem(dst.wndtext)
+  else
+    dst.wndtext:=nil;
+end;
 
-  mFreeMem(dst.mfile);
+procedure CopyFileInfo(const src:tSongInfo;var dst:tSongInfo);
+begin
+  dst.fsize:=src.fsize;
+  dst.date :=src.date;
+  dst.mfile:=src.mfile;
+end;
+
+procedure ClearFileInfo(var dst:tSongInfo;withFree:bool);
+begin
+  if withFree then
+    mFreeMem(dst.mfile)
+  else
+    dst.mfile:=nil;
   dst.fsize:=0;
   dst.date :=0;
 end;
 
-procedure ClearPlayerInfo(dst:pSongInfo);
+procedure CopyPlayerInfo(const src:tSongInfo;var dst:tSongInfo);
 begin
-  with dst^ do
-  begin
-    mFreeMem(player);
-    mFreeMem(txtver);
-    mFreeMem(url);
-    if icon<>0 then
-    begin
-      DestroyIcon(icon);
-      icon:=0;
-    end;
-    plyver   :=0;
-    plwnd    :=0;
-    winampwnd:=0;
-  end;
+  dst.player   :=src.player;
+  dst.txtver   :=src.txtver;
+  dst.url      :=src.url;
+  dst.icon     :=src.icon;
+  dst.plyver   :=src.plyver;
+  dst.plwnd    :=src.plwnd;
+  dst.winampwnd:=src.winampwnd;
 end;
 
-procedure ClearTrackInfo(dst:pSongInfo);
+procedure ClearPlayerInfo(var dst:tSongInfo;withFree:bool);
 begin
-  with dst^ do
+  if withFree then
   begin
-    mFreeMem(artist);
-    mFreeMem(title);
-    mFreeMem(album);
-    mFreeMem(genre);
-    mFreeMem(comment);
-    mFreeMem(year);
-    mFreeMem(lyric);
-    mFreeMem(cover);
-    kbps    :=0;
-    khz     :=0;
-    channels:=0;
-    track   :=0;
-    total   :=0;
-    time    :=0;
-    vbr     :=0;
-    codec   :=0;
-    width   :=0;
-    height  :=0;
-    fps     :=0;
+    mFreeMem(dst.player);
+    mFreeMem(dst.txtver);
+    mFreeMem(dst.url);
+    if dst.icon<>0 then
+      DestroyIcon(dst.icon);
+  end
+  else
+  begin
+    dst.player:=nil;
+    dst.txtver:=nil;
+    dst.url   :=nil;
   end;
+  dst.icon     :=0;
+  dst.plyver   :=0;
+  dst.plwnd    :=0;
+  dst.winampwnd:=0;
+end;
+
+procedure CopyTrackInfo(const src:tSongInfo;var dst:tSongInfo);
+begin
+  dst.artist  :=src.artist;
+  dst.title   :=src.title;
+  dst.album   :=src.album;
+  dst.genre   :=src.genre;
+  dst.comment :=src.comment;
+  dst.year    :=src.year;
+  dst.lyric   :=src.lyric;
+  dst.cover   :=src.cover;
+  dst.kbps    :=src.kbps;
+  dst.khz     :=src.khz;
+  dst.channels:=src.channels;
+  dst.track   :=src.track;
+  dst.total   :=src.total;
+  dst.vbr     :=src.vbr;
+  dst.codec   :=src.codec;
+  dst.width   :=src.width;
+  dst.height  :=src.height;
+  dst.fps     :=src.fps;
+end;
+
+procedure ClearTrackInfo(var dst:tSongInfo;withFree:bool);
+begin
+  if withFree then
+  begin
+    mFreeMem(dst.artist);
+    mFreeMem(dst.title);
+    mFreeMem(dst.album);
+    mFreeMem(dst.genre);
+    mFreeMem(dst.comment);
+    mFreeMem(dst.year);
+    mFreeMem(dst.lyric);
+    mFreeMem(dst.cover);
+  end
+  else
+  begin
+    dst.artist :=nil;
+    dst.title  :=nil;
+    dst.album  :=nil;
+    dst.genre  :=nil;
+    dst.comment:=nil;
+    dst.year   :=nil;
+    dst.lyric  :=nil;
+    dst.cover  :=nil;
+  end;
+  dst.kbps    :=0;
+  dst.khz     :=0;
+  dst.channels:=0;
+  dst.track   :=0;
+  dst.total   :=0;
+  dst.vbr     :=0;
+  dst.codec   :=0;
+  dst.width   :=0;
+  dst.height  :=0;
+  dst.fps     :=0;
 end;
 
 function CheckPlayers(var dst:tSongInfo;flags:cardinal):integer;
@@ -893,7 +979,7 @@ begin
   begin
     if PlayerChanged then
     begin
-      ClearPlayerInfo(@dst);
+      ClearPlayerInfo(dst,false);
       AnsiToWide(plyLink^[0].Desc,dst.player);
       dst.plwnd:=result;
       FastANSIToWide(plyLink^[0].URL,dst.url);
@@ -921,14 +1007,13 @@ begin
   end;
 end;
 
-function CheckFile(var dst:tSongInfo;flags:cardinal):integer;
+function CheckFile(var dst:tSongInfo;flags:cardinal;timeout:cardinal):integer;
 var
   fname:pWideChar;
   tmp:integer;
   remote,FileChanged:boolean;
   f:THANDLE;
   ftime:int64;
-  ls:array [0..7] of WideChar;
 begin
   if plyLink^[0].GetName<>nil then
     fname:=tNameProc(plyLink^[0].GetName)(dst.plwnd,flags)
@@ -940,7 +1025,7 @@ begin
    tmp:=0;
    if (flags and WAT_OPT_MULTITHREAD)<>0 then tmp:=tmp or gffdMultiThread;
    if (flags and WAT_OPT_KEEPOLD    )<>0 then tmp:=tmp or gffdOld;
-   fname:=GetFileFromWnd(dst.plwnd,KnownFileType,tmp);
+   fname:=GetFileFromWnd(dst.plwnd,KnownFileType,tmp,timeout);
   end;
 
   if fname<>nil then
@@ -960,9 +1045,7 @@ begin
     // same file
     if (dst.mfile<>nil) and (lstrcmpiw(dst.mfile,fname)=0) then
     begin
-      if remote then
-        FileChanged:=true
-      else if (flags and WAT_OPT_CHECKTIME)<>0 then
+      if (not remote) and ((flags and WAT_OPT_CHECKTIME)<>0) then
         FileChanged:=dst.date<>ftime
       else
         FileChanged:=false;
@@ -972,26 +1055,20 @@ begin
       FileChanged:=true;
     end;
 
+    // if not proper ext (we don't working with it)
+    //!!!! check for remotes
+    if CheckExt(fname)=WAT_RES_NOTFOUND then
+    begin
+      mFreeMem(fname);
+      result:=WAT_RES_NOTFOUND;
+    end;
     if FileChanged then
     begin
-      dst.date :=0;
-      dst.fsize:=0;
-      mFreeMem(dst.mfile);
+      ClearFileInfo(dst,false);
       dst.mfile:=fname; //!! must be when format recognized or remote
-      if not remote then
-      begin
-        GetExt(fname,ls);
-        dst.date:=ftime; //!!
-        if CheckFormat(ls,dst)<>WAT_RES_NOTFOUND then
-        begin
-          dst.fsize:=GetFSize(dst.mfile);
-        end;
-        result:=WAT_RES_NEWFILE;
-      end
-      else
-      begin
-        result:=WAT_RES_OK;
-      end;
+      dst.date:=ftime; //!!
+      dst.fsize:=GetFSize(dst.mfile);
+      result:=WAT_RES_NEWFILE;
     end
     else
     begin
@@ -1002,57 +1079,64 @@ begin
   else
   begin
     result:=WAT_RES_NOTFOUND;
-    ClearTrackInfo(@dst);
   end;
 end;
 
 // Get Info - main procedure
-function GetInfo(var dst:tSongInfo;flags:integer):integer;
+function GetChangingInfo(var dst:tSongInfo;flags:cardinal):integer;
+begin
+  result:=WAT_RES_OK;
+
+  ClearChangingInfo(dst,false);
+
+  if plyLink^[0].GetInfo<>nil then
+    tInfoProc(plyLink^[0].GetInfo)(dst,flags or WAT_OPT_CHANGES)
+  else if (flags and WAT_OPT_WINAMPAPI)<>0 then
+    WinampGetInfo(dword(@dst),flags or WAT_OPT_CHANGES);
+end;
+
+function GetInfo(var dst:tSongInfo;flags:cardinal):integer;
 var
   oldartist,oldtitle:pWideChar;
   fname:pWideChar;
   remote:boolean;
 begin
   result:=WAT_RES_OK;
-  if (flags and WAT_OPT_CHANGES)=0 then
-  begin
-    oldartist:=dst.artist; dst.artist:=nil;
-    oldtitle :=dst.title ; dst.title :=nil;
+  remote:=StrPosW(dst.mfile,'://')<>nil;
 
-    ClearTrackInfo(@dst);
-  end;
+//  if remote or ((plyLink^[0].flags and WAT_OPT_PLAYERINFO)<>0) then
+  oldartist:=dst.artist; oldtitle:=dst.title;
 
+  ClearTrackInfo(dst,false);
+
+  // info from player
   if plyLink^[0].GetInfo<>nil then
-    tInfoProc(plyLink^[0].GetInfo)(dst,flags) // Get Player data
+    tInfoProc(plyLink^[0].GetInfo)(dst,flags and not WAT_OPT_CHANGES)
   else if (flags and WAT_OPT_WINAMPAPI)<>0 then
-    WinampGetInfo(dword(@dst),flags);
+    WinampGetInfo(dword(@dst),flags and not WAT_OPT_CHANGES);
+  // info from file
+  GetFileFormatInfo(dst);
 
-  if (flags and WAT_OPT_CHANGES)=0 then
-  begin
-    remote:=StrPosW(dst.mfile,'://')<>nil;
-    if (plyLink^[0].flags and WAT_OPT_PLAYERINFO)=0 then
-      with dst do
-      begin
-        if wndtext=NIL then wndtext:=DefGetWndText(plwnd);
-        if remote then
-          fname:=nil
-        else
-          fname:=mfile;
-        if artist=NIL then artist:=DefGetArtist(plwnd,fname,wndtext);
-        if title =NIL then title :=DefGetTitle (plwnd,fname,wndtext);
-        if txtver=NIL then txtver:=DefGetVersionText(dst.plyver);
-      end;
-    if remote or ((plyLink^[0].flags and WAT_OPT_PLAYERINFO)<>0) then
+  if (plyLink^[0].flags and WAT_OPT_PLAYERINFO)=0 then
+    with dst do
     begin
-      if (oldartist=oldtitle) or
-         ((oldartist<>nil) and (StrCmpW(dst.artist,oldartist)<>0)) or
-         ((oldtitle <>nil) and (StrCmpW(dst.title ,oldtitle )<>0)) then
-      begin
-        result:=WAT_RES_NEWFILE;
-      end;
+      if wndtext=NIL then wndtext:=DefGetWndText(plwnd);
+      if remote then
+        fname:=nil
+      else
+        fname:=mfile;
+      if artist=NIL then artist:=DefGetArtist(plwnd,fname,wndtext);
+      if title =NIL then title :=DefGetTitle (plwnd,fname,wndtext);
+      if txtver=NIL then txtver:=DefGetVersionText(dst.plyver);
     end;
-    mFreeMem(oldartist);
-    mFreeMem(oldtitle);
+  if remote or ((plyLink^[0].flags and WAT_OPT_PLAYERINFO)<>0) then
+  begin
+    if (oldartist=oldtitle) or
+       ((oldartist<>nil) and (StrCmpW(dst.artist,oldartist)<>0)) or
+       ((oldtitle <>nil) and (StrCmpW(dst.title ,oldtitle )<>0)) then
+    begin
+      result:=WAT_RES_NEWFILE;
+    end;
   end;
 end;
 

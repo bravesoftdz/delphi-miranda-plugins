@@ -8,7 +8,8 @@ uses windows,wat_api;
 procedure DefFillFormatList (hwndList:hwnd);
 procedure DefCheckFormatList(hwndList:hwnd);
 
-function CheckFormat(ext:PWideChar;var dst:tSongInfo):integer;
+function GetFileFormatInfo(var dst:tSongInfo):integer;
+function CheckExt(fname:pWideChar):integer;
 
 function DeleteKnownExt(src:pWideChar):pWideChar;
 function KnownFileType(fname:PWideChar):boolean;
@@ -210,17 +211,28 @@ begin
   end;
 end;
 
-function CheckFormat(ext:PWideChar;var dst:tSongInfo):integer;
+function GetFileFormatInfo(var dst:tSongInfo):integer;
+begin
+  result:=CheckExt(dst.mfile);
+  if result=WAT_RES_OK then
+  begin
+    fmtLink^[0].proc(dst);
+  end;
+end;
+
+function CheckExt(fname:pWideChar):integer;
 var
   i:integer;
   tmp:tMusicFormat;
+  ls:array [0..7] of WideChar;
   ss:array [0..7] of AnsiChar;
 begin
+  GetExt(fname,ls);
   i:=0;
   int64(ss):=0;
-  while (ext[i]<>#0) and (i<8) do
+  while (ls[i]<>#0) and (i<8) do
   begin
-    ss[i]:=AnsiChar(ext[i]);
+    ss[i]:=AnsiChar(ls[i]);
     inc(i);
   end;
   i:=0;
@@ -235,13 +247,7 @@ begin
           tmp:=fmtLink^[i];
           move(fmtLink^[0],fmtLink^[1],SizeOf(tMusicFormat)*i);
           fmtLink^[0]:=tmp;
-{
-          move(fmtLink^[i],tmp,SizeOf(tMusicFormat));
-          move(fmtLink^[0],fmtLink^[1],SizeOf(tMusicFormat)*i);
-          move(tmp,fmtLink^[0],SizeOf(tMusicFormat));
-}
         end;
-        fmtLink^[0].proc(dst);
         result:=WAT_RES_OK;
         exit;
       end

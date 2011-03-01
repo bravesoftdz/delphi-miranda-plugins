@@ -179,16 +179,13 @@ begin
 end;
 
 function GetInfo(var SongInfo:tSongInfo;flags:integer):integer;cdecl;
-var
-  wnd,winampwnd:HWND;
 begin
-  winampwnd:=WinampFindWindow(SongInfo.plwnd);
-  if winampwnd<>0 then
+  if SongInfo.winampwnd=0 then
+    SongInfo.winampwnd:=WinampFindWindow(SongInfo.plwnd);
+
+  if SongInfo.winampwnd<>0 then
   begin
-    wnd:=SongInfo.plwnd;
-    SongInfo.plwnd:=winampwnd;
     result:=WinampGetInfo(integer(@SongInfo),flags);
-    SongInfo.plwnd:=wnd;
   end
   else
     result:=0;
