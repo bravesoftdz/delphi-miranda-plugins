@@ -32,10 +32,10 @@ begin
 
   if D.TextBlock<>nil then
   begin
-    DBWriteWord(0,PluginShort,opt_tbleft  ,D.TextBlock.Left);
-    DBWriteWord(0,PluginShort,opt_tbtop   ,D.TextBlock.Top);
-    DBWriteWord(0,PluginShort,opt_tbwidth ,D.TextBlock.Width);
-    DBWriteWord(0,PluginShort,opt_tbheight,D.TextBlock.Height);
+    DBWriteWord(0,PluginShort,opt_tleft  ,D.TextBlock.Left);
+    DBWriteWord(0,PluginShort,opt_ttop   ,D.TextBlock.Top);
+    DBWriteWord(0,PluginShort,opt_twidth ,D.TextBlock.Width);
+    DBWriteWord(0,PluginShort,opt_theight,D.TextBlock.Height);
   end;
 
   if (D.ShowControls and scButtons)<>0 then
@@ -135,7 +135,11 @@ begin
       D.Designer.Connect('Trackbar',D.Trackbar);
     end;
     // TextBlock
-    if D.TextBlock<>nil then D.Designer.Connect('Panel',D.TextBlock);
+    if D.TextBlock<>nil then
+    begin
+      D.TextBlock.Anchor(false,false,false,false);
+      D.Designer.Connect('Panel',D.TextBlock);
+    end;
     // Icons
     if (D.ShowControls and scButtons)<>0 then MakeButtonsDesigner;
 

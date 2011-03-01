@@ -80,9 +80,9 @@ begin
 
   if D.ManualPlacement then
   begin
-    if D.Trackbar<>nil then D.Trackbar.Anchor(false,false,false,false);
+    if D.Trackbar <>nil then D.Trackbar .Anchor(false,false,false,false);
+    if D.TextBlock<>nil then D.TextBlock.Anchor(false,false,false,false);
     DesignerLoadSettings;
-
     exit;
   end;
 
@@ -106,6 +106,7 @@ begin
   begin
     D.TextBlock.Top   :=awkTextPad;
     D.TextBlock.Height:=h-D.TextBlock.Top;
+    D.Trackbar.Anchor(true,true,true,true);
   end;
 end;
 
