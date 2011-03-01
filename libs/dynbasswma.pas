@@ -172,6 +172,7 @@ begin
       begin
         WMA_Handle:=pHPlugin^;
         SetProcs(pHPlugin^);
+        BASS_SetConfig(BASS_CONFIG_WMA_BASSFILE,1);
         from:=2;
         result:=true;
         exit;

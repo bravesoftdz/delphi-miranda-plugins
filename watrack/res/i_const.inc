@@ -17,6 +17,7 @@ const
   IDC_CHK_FORMAT  = 1036;
   IDC_APPCOMMAND  = 1037;
   IDC_CHECKALL    = 1038;
+  IDC_TIMEOUT     = 1039;
 
 {DLG 0 - modules}
   IDC_MODULEGROUP = 1025;

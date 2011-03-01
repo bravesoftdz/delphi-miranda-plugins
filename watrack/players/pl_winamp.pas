@@ -61,11 +61,12 @@ end;
 
 function GetInfo(var SongInfo:tSongInfo;aflags:integer):integer;cdecl;
 begin
+  SongInfo.winampwnd:=SongInfo.plwnd;
   result:=WinampGetInfo(integer(@SongInfo),aflags);
   with SongInfo do
   begin
     if (aflags and WAT_OPT_CHANGES)<>0 then
-      wndText:=WinampGetWindowText(plwnd)
+      wndText:=WinampGetWindowText(winampwnd)
     else
     begin
 {

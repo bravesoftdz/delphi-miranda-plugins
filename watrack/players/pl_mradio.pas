@@ -271,7 +271,7 @@ begin
         isRemote:=StrPosW(lfile,'://')<>nil;
         if (PrevFile=nil) or (StrCmpW(PrevFile,lfile)<>0) or isRemote then
         begin
-          ClearTrackInfo(@SongInfo);
+          ClearTrackInfo(SongInfo,false);
           mfile:=lfile;
           mFreeMem(prevfile);
           StrDupW(prevfile,mfile);
@@ -340,12 +340,17 @@ begin
   result:=0;
 {
   if plRec.Icon<>0 then
-    CloseHandle(plRec.Icon);
+    DestroyIcon(plRec.Icon);
 }
   ClearmRadio;
 end;
 
 initialization
-  plRec.Icon:=LoadImage(hInstance,MAKEINTRESOURCE(ICO_MRADIO),IMAGE_ICON,16,16,0);
-  ServicePlayer(WAT_ACT_REGISTER,dword(@plRec));
+  if plRec.Icon=0 then // one time only
+  begin
+    plRec.Icon:=LoadImage(hInstance,MAKEINTRESOURCE(ICO_MRADIO),IMAGE_ICON,16,16,0);
+    ServicePlayer(WAT_ACT_REGISTER,dword(@plRec));
+    if plRec.Icon<>0 then DestroyIcon(plRec.Icon);
+    plRec.Icon:=THANDLE(-1);
+  end;
 end.

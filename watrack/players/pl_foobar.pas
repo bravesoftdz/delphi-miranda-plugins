@@ -412,7 +412,6 @@ end;
 function GetInfo(var SongInfo:tSongInfo;flags:integer):integer;cdecl;
 var
   v:variant;
-  lwnd:HWND;
 begin
   result:=0;
   with SongInfo do
@@ -445,12 +444,10 @@ begin
         end;
       end;
     except
-      if WinampWindow<>0 then
+      SongInfo.winampwnd:=WinampWindow;
+      if SongInfo.winampwnd<>0 then
       begin
-        lwnd:=plwnd;
-        plwnd:=WinampWindow;
         result:=WinampGetInfo(integer(@SongInfo),flags);
-        plwnd:=lwnd;
       end;
     end;
     v:=Null;
