@@ -305,7 +305,15 @@ begin
   begin
     try
       v:=CreateOleObject(COMName);
-      if (flags and WAT_OPT_CHANGES)<>0 then
+      if (flags and WAT_OPT_PLAYERDATA)<>0 then
+      begin
+        if plyver=0 then
+        begin
+          txtver:=GetVersionText(v);
+          plyver:=GetVersion(txtver);
+        end;
+      end
+      else if (flags and WAT_OPT_CHANGES)<>0 then
       begin
         volume:=GetVolume(v);
         if status<>WAT_MES_STOPPED then
@@ -322,11 +330,6 @@ begin
         if comment=NIL then comment:=GetComment(v);
         if kbps   =0   then kbps   :=GetKbps(v);
         if khz    =0   then khz    :=GetKhz(v);
-        if plyver=0 then
-        begin
-          txtver:=GetVersionText(v);
-          plyver:=GetVersion(txtver);
-        end;
       end;
 //      wndtext:=GetWndText(v);
     except

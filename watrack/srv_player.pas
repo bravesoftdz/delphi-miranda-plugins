@@ -997,6 +997,12 @@ begin
           mFreeMem(fname);
         end;
       end;
+
+      if plyLink^[0].GetInfo<>nil then
+        tInfoProc(plyLink^[0].GetInfo)(dst,flags or WAT_OPT_PLAYERDATA)
+      else if (flags and WAT_OPT_WINAMPAPI)<>0 then
+        WinampGetInfo(dword(@dst),flags or WAT_OPT_PLAYERDATA);
+      
       result:=WAT_RES_NEWPLAYER;
     end
     else

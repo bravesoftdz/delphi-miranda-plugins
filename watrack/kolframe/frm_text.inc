@@ -32,6 +32,7 @@ procedure UpdateTextBlock(D:PWATFrameData;force:boolean);
 var
   tmp:pWideChar;
 begin
+  if (D.ShowControls and scText)=0 then exit;
   if D.TextBlock=nil then exit;
 
   if not force then
@@ -50,6 +51,8 @@ var
   D:PWATFrameData;
 begin
   D:=FrameCtrl.CustomData;
+  if D.TextBlock=nil then exit;
+
 //  DBWriteByte   (0,PluginShort,opt_RollTail  ,RollTail);
   DBWriteDWord(0,PluginShort,opt_FrmTxtClr,D.TextBlock.TextColor); // reaction on chunk?
   DBWriteByte (0,PluginShort,opt_RollStep ,D.TextBlock.RollStep);
@@ -68,6 +71,7 @@ end;
 
 procedure LoadTextSettings(TB:pTextBlock);
 begin
+  if TB=nil then exit;
 //  RollTail    :=DBReadByte (0,PluginShort,opt_RollTail  ,20);
   TB.RollStep  :=DBReadByte (0,PluginShort,opt_RollStep ,2);
   TB.RollGap   :=DBReadByte (0,PluginShort,opt_RollGap  ,16);

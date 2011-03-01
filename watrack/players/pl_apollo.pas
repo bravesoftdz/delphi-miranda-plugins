@@ -180,15 +180,23 @@ end;
 
 function GetInfo(var SongInfo:tSongInfo;flags:integer):integer;cdecl;
 begin
-  if SongInfo.winampwnd=0 then
-    SongInfo.winampwnd:=WinampFindWindow(SongInfo.plwnd);
+  result:=0;
+
+  if (flags and WAT_OPT_PLAYERDATA)<>0 then
+  begin
+    if SongInfo.plyver=0 then
+    begin
+      SongInfo.plyver:=GetVersion    (SongInfo.plwnd);
+      SongInfo.txtver:=GetVersionText(SongInfo.plyver);
+    end;
+    if SongInfo.winampwnd=0 then
+      SongInfo.winampwnd:=WinampFindWindow(SongInfo.plwnd);
+    exit;
+  end;
 
   if SongInfo.winampwnd<>0 then
-  begin
     result:=WinampGetInfo(integer(@SongInfo),flags);
-  end
-  else
-    result:=0;
+
   if (flags and WAT_OPT_CHANGES)<>0 then
   begin
     with SongInfo do
@@ -204,11 +212,6 @@ begin
       if (status<>WAT_MES_STOPPED) and
          (mfile<>nil) and (StrPosW(mfile,'://')<>nil) and (album=nil) then
         album:=GetRemoteTitle(plwnd);
-      if plyver=0 then
-      begin
-        plyver:=GetVersion(plwnd);
-        txtver:=GetVersionText(plyver);
-      end;
     end;
   end;
 end;

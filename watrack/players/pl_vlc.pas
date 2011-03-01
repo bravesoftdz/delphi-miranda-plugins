@@ -305,29 +305,32 @@ var
   v:variant;
 begin
   result:=0;
-  if SongInfo.plyver=0 then
+  if (flags and WAT_OPT_PLAYERDATA)<>0 then
   begin
-    try
+    if SongInfo.plyver=0 then
+    begin
       try
-        v:=CreateOleObject(COMName);
-      except
         try
-          v:=CreateOleObject(COMNameNew);
+          v:=CreateOleObject(COMName);
         except
-          v:=Null;
+          try
+            v:=CreateOleObject(COMNameNew);
+          except
+            v:=Null;
+          end;
         end;
+        if v<>Null then
+          with SongInfo do
+          begin
+            txtver:=GetVersionText(v);
+            plyver:=GetVersion(txtver);
+          end;
+      except
       end;
-      if v<>Null then
-        with SongInfo do
-        begin
-          txtver:=GetVersionText(v);
-          plyver:=GetVersion(txtver);
-        end;
-    except
+      v:=Null;
+      if (flags and WAT_OPT_CHANGES)<>0 then
+        SongInfo.wndtext:=GetWndText(SongInfo.plwnd);
     end;
-    v:=Null;
-    if (flags and WAT_OPT_CHANGES)<>0 then
-      SongInfo.wndtext:=GetWndText(SongInfo.plwnd);
   end;
 end;
 {

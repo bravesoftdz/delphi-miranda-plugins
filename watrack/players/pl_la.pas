@@ -86,8 +86,13 @@ end;
 function GetInfo(var SongInfo:tSongInfo;flags:integer):integer;cdecl;
 begin
   result:=0;
-  if SongInfo.plyver=0 then
-    SongInfo.plyver:=GetVersion(SongInfo.plwnd);
+  if (flags and WAT_OPT_PLAYERDATA)<>0 then
+  begin
+    if SongInfo.plyver=0 then
+    begin
+      SongInfo.plyver:=GetVersion(SongInfo.plwnd);
+    end;
+  end;
 end;
 
 function Command(wnd:HWND;cmd:integer;value:integer):integer;cdecl;

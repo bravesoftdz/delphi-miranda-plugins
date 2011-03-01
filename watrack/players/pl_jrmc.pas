@@ -61,18 +61,21 @@ var
   v:variant;
 begin
   result:=0;
-  if SongInfo.plyver=0 then
+  if (flags and WAT_OPT_PLAYERDATA)<>0 then
   begin
-    try
-      v:=CreateOleObject(JRMCComName);
-      with SongInfo do
-      begin
-        plyver:=GetVersion(v);
-        txtver:=GetVersionText(v);
+    if SongInfo.plyver=0 then
+    begin
+      try
+        v:=CreateOleObject(JRMCComName);
+        with SongInfo do
+        begin
+          plyver:=GetVersion(v);
+          txtver:=GetVersionText(v);
+        end;
+      except
       end;
-    except
+      v:=Null;
     end;
-    v:=Null;
   end;
 end;
 

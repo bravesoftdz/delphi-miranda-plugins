@@ -419,7 +419,15 @@ begin
     try
       v:=GetActiveOleObject(COMName);
 //        v:=CreateOleObject(COMName);
-      if (flags and WAT_OPT_CHANGES)<>0 then
+      if (flags and WAT_OPT_PLAYERDATA)<>0 then
+      begin
+        if SongInfo.plyver=0 then
+        begin
+          SongInfo.txtver:=GetVersionText(v);
+          SongInfo.plyver:=GetVersion(txtver);
+        end;
+      end
+      else if (flags and WAT_OPT_CHANGES)<>0 then
       begin
         volume:=GetVolume(v);
         if status<>WAT_MES_STOPPED then
@@ -437,11 +445,6 @@ begin
         if title   =NIL then title   :=GetTitle(v);
         if album   =NIL then album   :=GetAlbum(v);
         if genre   =NIL then genre   :=GetGenre(v);
-        if plyver=0 then
-        begin
-          txtver:=GetVersionText(v);
-          plyver:=GetVersion(txtver);
-        end;
       end;
     except
       SongInfo.winampwnd:=WinampWindow;
