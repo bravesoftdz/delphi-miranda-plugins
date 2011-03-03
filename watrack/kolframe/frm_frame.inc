@@ -465,7 +465,7 @@ begin
   if FrameCtrl<>nil then
   begin
     GetMem  (D ,SizeOf(TWATFrameData));
-    FillChar(D^,SizeOf(TWATFrameData),0);
+    FillChar(D^,SizeOf(TWATFrameData),0); // clear all including buttons
     with FrameCtrl^ do
     begin
       CustomData:=D;

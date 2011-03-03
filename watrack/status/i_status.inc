@@ -61,7 +61,7 @@ begin
 
     WAT_EVENT_PLAYERSTATUS: begin
       LastStatus:=lParam;
-      if (lParam=WAT_PLS_NORMAL){ or (KeepStatus<>BST_UNCHECKED)} then
+      if (loword(lParam)=WAT_PLS_NORMAL){ or (KeepStatus<>BST_UNCHECKED)} then
         exit
       else
         isvideo:=false;
@@ -78,8 +78,12 @@ begin
 
     if (SimpleMode<>BST_UNCHECKED) or ((mask and psf_enabled)<>0) then
     begin
-      status:=CallProtoService(proto,PS_GETSTATUS,0,0);
-      todo:=(SimpleMode<>BST_UNCHECKED) or IsOurStatus(mask,status);
+
+      if (UseStatus<>BST_UNCHECKED) or (UseExtStatus<>BST_UNCHECKED) then
+      begin
+        status:=CallProtoService(proto,PS_GETSTATUS,0,0);
+        todo:=(SimpleMode<>BST_UNCHECKED) or IsOurStatus(mask,status);
+      end;
 
       if (UseListeningTo<>BST_UNCHECKED) and
          (ProtoServiceExists(proto,PS_SET_LISTENINGTO)<>0) then
