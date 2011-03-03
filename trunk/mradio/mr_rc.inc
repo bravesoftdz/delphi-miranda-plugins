@@ -34,6 +34,7 @@ const
   IDC_TIMEOUT    = 1051;
   IDC_PRESET     = 1052;
   IDC_TRIES      = 1053;
+  IDC_MONO       = 1054;
 
   IDC_BASSPATH   = 1100;
   IDC_BASSPTHBTN = 1101;
