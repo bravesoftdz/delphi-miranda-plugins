@@ -40,12 +40,15 @@ begin
 
   if (D.ShowControls and scButtons)<>0 then
   begin
-    pleft:=StrCopyE(lleft,opt_bleft);
-    ptop :=StrCopyE(ltop ,opt_btop);
-    for i:=0 to HIGH(D.btnarray) do
+    if D.btnarray[0]<>nil then
     begin
-      IntToStr(pleft,i); DBWriteWord(0,PluginShort,lleft,D.btnarray[i].Left);
-      IntToStr(ptop ,i); DBWriteWord(0,PluginShort,ltop ,D.btnarray[i].Top);
+      pleft:=StrCopyE(lleft,opt_bleft);
+      ptop :=StrCopyE(ltop ,opt_btop);
+      for i:=0 to HIGH(D.btnarray) do
+      begin
+        IntToStr(pleft,i); DBWriteWord(0,PluginShort,lleft,D.btnarray[i].Left);
+        IntToStr(ptop ,i); DBWriteWord(0,PluginShort,ltop ,D.btnarray[i].Top);
+      end;
     end;
   end;
 end;
@@ -97,20 +100,23 @@ begin
   if ((D.ShowControls and scButtons)<>0) and
      ((D.Loaded and scButtons)=0) then
   begin
-    D.Loaded:=D.Loaded or scButtons;
-    pleft:=StrCopyE(lleft,opt_bleft);
-    pleft^:='0'; (pleft+1)^:=#0;
-    for_check:=SmallInt(DBReadWord(0,PluginShort,lleft,word(-1)));
-    if for_check>=0 then
+    if D.btnarray[0]<>nil then
     begin
-      ptop :=StrCopyE(ltop,opt_btop);
-      for i:=0 to HIGH(D.btnarray) do
+      D.Loaded:=D.Loaded or scButtons;
+      pleft:=StrCopyE(lleft,opt_bleft);
+      pleft^:='0'; (pleft+1)^:=#0;
+      for_check:=SmallInt(DBReadWord(0,PluginShort,lleft,word(-1)));
+      if for_check>=0 then
       begin
-        IntToStr(pleft,i);
-        IntToStr(ptop ,i);
-        D.btnarray[i].SetPosition(
-          DBReadWord(0,PluginShort,lleft,word(-1)),
-          DBReadWord(0,PluginShort,ltop ,word(-1)));
+        ptop :=StrCopyE(ltop,opt_btop);
+        for i:=0 to HIGH(D.btnarray) do
+        begin
+          IntToStr(pleft,i);
+          IntToStr(ptop ,i);
+          D.btnarray[i].SetPosition(
+            DBReadWord(0,PluginShort,lleft,word(-1)),
+            DBReadWord(0,PluginShort,ltop ,word(-1)));
+        end;
       end;
     end;
   end;

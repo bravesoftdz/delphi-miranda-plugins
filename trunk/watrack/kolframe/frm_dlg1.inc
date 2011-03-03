@@ -67,6 +67,8 @@ begin
       if (D.ShowControls and scVolume  )<>0 then CheckDlgButton(Dialog,IDC_SHOWVOLUM,BST_CHECKED);
       if (D.ShowControls and scGap     )<>0 then CheckDlgButton(Dialog,IDC_BTNGAP   ,BST_CHECKED);
 
+      MakeHint(Dialog,IDC_MANUALPLACE,
+        'Use manual frame elements placement. Doubleclick on free space to start designer.');
       CheckDlgButton(Dialog,IDC_MANUALPLACE,ORD(D.ManualPlacement));
 
       CheckDlgButton(Dialog,IDC_HIDEFRAMEPLAYER,ORD(D.HideNoPlayer));

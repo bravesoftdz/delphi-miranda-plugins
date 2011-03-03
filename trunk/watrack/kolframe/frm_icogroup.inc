@@ -8,6 +8,8 @@ var
 begin
   D:=CustomData;
 
+  if D.btnarray[0]=nil then exit;
+
   if (D.ShowControls and scGap)<>0 then
     gap:=BtnGap
   else
@@ -48,6 +50,8 @@ var
 begin
   D:=CustomData;
 
+  if D.btnarray[0]<>nil then exit;
+
   for i:=0 to HIGH(D.btnarray) do
     D.btnarray[i].RefreshIcon;
 end;
@@ -58,6 +62,8 @@ var
   D:PWATFrameData;
 begin
   D:=CustomData;
+
+  if D.btnarray[0]<>nil then exit;
 
   for i:=0 to HIGH(D.btnarray) do
     D.Designer.Disconnect(D.btnarray[i]);
@@ -70,6 +76,8 @@ var
 begin
   D:=CustomData;
 
+  if D.btnarray[0]<>nil then exit;
+
   for i:=0 to HIGH(D.btnarray) do
     D.Designer.Connect('Button',D.btnarray[i],DESIGNER_NORESIZE);
 end;
@@ -80,6 +88,8 @@ var
   D:PWATFrameData;
 begin
   D:=CustomData;
+
+  if D.btnarray[0]<>nil then exit;
 
   for i:=0 to HIGH(D.btnarray) do
   begin
