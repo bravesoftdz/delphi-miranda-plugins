@@ -606,6 +606,8 @@ begin
       SetDlgItemInt(Dialog,IDC_TIMEOUT,sTimeout,false);
       SetDlgItemInt(Dialog,IDC_TRIES  ,NumTries,false);
 
+      CheckDlgButton(Dialog,IDC_MONO,ForcedMono);
+
       hEAXCombo:=GetDlgItem(Dialog,IDC_EAXTYPE);
       for i:=0 to EAX_ENVIRONMENT_COUNT do
         SendMessageW(hEAXCombo,CB_ADDSTRING,0,dword(TranslateW(EAXItems[i].name)));
@@ -763,6 +765,9 @@ begin
         dst:=GetDlgText(Dialog,IDC_BASSPATH);
         DBWriteUnicode(0,PluginName,optBASSPath,dst);
         mFreeMem(dst);
+
+        ForcedMono:=IsDlgButtonChecked(Dialog,IDC_MONO);
+        DBWriteByte(0,PluginName,optForcedMono,ForcedMono);
 
         i:=SendDlgItemMessage(Dialog,IDC_EAXTYPE,CB_GETCURSEL,0,0);
         DBWriteByte(0,PluginName,optEAXType,i);

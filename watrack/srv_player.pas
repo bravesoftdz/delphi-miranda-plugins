@@ -797,8 +797,11 @@ end;
 
 function DefGetVersionText(ver:integer):pWideChar;
 begin
-  mGetMem(result,10*SizeOf(WideChar));
-  IntToHex(result,ver);
+  if ver<>0 then
+  begin
+    mGetMem(result,10*SizeOf(WideChar));
+    IntToHex(result,ver);
+  end;
 end;
 
 function DefGetWndText(wnd:HWND):pWideChar;
@@ -1003,6 +1006,9 @@ begin
       else if (flags and WAT_OPT_WINAMPAPI)<>0 then
         WinampGetInfo(dword(@dst),flags or WAT_OPT_PLAYERDATA);
       
+     if (plyLink^[0].flags and WAT_OPT_PLAYERINFO)=0 then
+      if dst.txtver=NIL then dst.txtver:=DefGetVersionText(dst.plyver);
+
       result:=WAT_RES_NEWPLAYER;
     end
     else
@@ -1067,6 +1073,7 @@ begin
     begin
       mFreeMem(fname);
       result:=WAT_RES_NOTFOUND;
+      exit;
     end;
     if FileChanged then
     begin
@@ -1099,6 +1106,9 @@ begin
     tInfoProc(plyLink^[0].GetInfo)(dst,flags or WAT_OPT_CHANGES)
   else if (flags and WAT_OPT_WINAMPAPI)<>0 then
     WinampGetInfo(dword(@dst),flags or WAT_OPT_CHANGES);
+
+  if (plyLink^[0].flags and WAT_OPT_PLAYERINFO)=0 then
+    if dst.wndtext=NIL then dst.wndtext:=DefGetWndText(dst.plwnd);
 end;
 
 function GetInfo(var dst:tSongInfo;flags:cardinal):integer;
@@ -1126,14 +1136,12 @@ begin
   if (plyLink^[0].flags and WAT_OPT_PLAYERINFO)=0 then
     with dst do
     begin
-      if wndtext=NIL then wndtext:=DefGetWndText(plwnd);
       if remote then
         fname:=nil
       else
         fname:=mfile;
       if artist=NIL then artist:=DefGetArtist(plwnd,fname,wndtext);
       if title =NIL then title :=DefGetTitle (plwnd,fname,wndtext);
-      if txtver=NIL then txtver:=DefGetVersionText(dst.plyver);
     end;
   if remote or ((plyLink^[0].flags and WAT_OPT_PLAYERINFO)<>0) then
   begin

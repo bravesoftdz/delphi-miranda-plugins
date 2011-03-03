@@ -641,7 +641,12 @@ begin
     if EAXUsed then
       flags:=BASS_STREAM_STATUS or BASS_SAMPLE_3D or BASS_SAMPLE_MONO
     else
-      flags:=BASS_STREAM_STATUS;
+    begin
+      if ForcedMono<>BST_UNCHECKED then
+        flags:=BASS_STREAM_STATUS or BASS_SAMPLE_MONO
+      else
+        flags:=BASS_STREAM_STATUS;
+    end;
 
     flags:=flags or BASS_UNICODE;
     if RemoteSong then
@@ -659,6 +664,9 @@ begin
     if (chan=0) and EAXUsed then
     begin
       flags:=flags and not (BASS_SAMPLE_3D or BASS_SAMPLE_MONO);
+      if ForcedMono<>BST_UNCHECKED then
+        flags:=flags or BASS_SAMPLE_MONO;
+
       if RemoteSong then
         chan:=BASS_StreamCreateURL({ansi}url,0,flags,@StatusProc,nil)
       else

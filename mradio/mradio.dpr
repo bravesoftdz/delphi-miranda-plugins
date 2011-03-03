@@ -3,7 +3,7 @@
 library MRadio;
 
 uses
-  FastMM4,
+//  FastMM4,
   kol,Windows,messages,commctrl
   ,common,io,wrapper,syswin
   ,Dynamic_Bass,dynbasswma
@@ -174,15 +174,16 @@ begin
   sTimeout:=DBReadWord(0,PluginName,optTimeout,5000);
   BASS_SetConfig(BASS_CONFIG_NET_TIMEOUT,sTimeout);
 
-  doLoop   :=DBReadByte(0,PluginName,optLoop);
-  doShuffle:=DBReadByte(0,PluginName,optShuffle);
-  doContRec:=DBReadByte(0,PluginName,optContRec);
-  PlayFirst:=DBReadByte(0,PluginName,optPlay1st);
-  isEQ_OFF :=DBReadByte(0,PluginName,optEQ_OFF);
-  asOffline:=DBReadByte(0,PluginName,optOffline);
-  AuConnect:=DBReadByte(0,PluginName,optConnect);
-  gVolume  :=DBReadByte(0,PluginName,optVolume,50);
-  NumTries :=DBReadByte(0,PluginName,optNumTries,1);
+  doLoop    :=DBReadByte(0,PluginName,optLoop);
+  doShuffle :=DBReadByte(0,PluginName,optShuffle);
+  doContRec :=DBReadByte(0,PluginName,optContRec);
+  PlayFirst :=DBReadByte(0,PluginName,optPlay1st);
+  isEQ_OFF  :=DBReadByte(0,PluginName,optEQ_OFF);
+  asOffline :=DBReadByte(0,PluginName,optOffline);
+  AuConnect :=DBReadByte(0,PluginName,optConnect);
+  gVolume   :=DBReadByte(0,PluginName,optVolume,50);
+  NumTries  :=DBReadByte(0,PluginName,optNumTries,1);
+  ForcedMono:=DBReadByte(0,PluginName,optForcedMono);
   if NumTries<1 then NumTries:=1;
 
   StatusTmpl:=DBReadUnicode(0,PluginName,optStatusTmpl,'%radio_title%');
@@ -271,6 +272,7 @@ begin
     mGetMem(storagep,MAX_PATH+32);
     CallService(MS_DB_GETPROFILEPATH,MAX_PATH-1,dword(storagep));
     StrCat(storagep,'\mradio.ini');
+
     desc.cbSize:=PROTOCOLDESCRIPTOR_V3_SIZE;//SizeOf(desc);
     desc.szName:=PluginName;
     desc._type :=PROTOTYPE_PROTOCOL;
