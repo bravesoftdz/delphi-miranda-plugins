@@ -38,6 +38,7 @@ const
   optAge        :PAnsiChar = 'Age';
   // 3D sound support
   optEAXType    :PAnsiChar = 'EAXtype';
+  optForcedMono :PAnsiChar = 'ForcedMono';
 
   optGroup      :PAnsiChar = 'Group';
   optBASSPath   :PAnsiChar = 'BASSpath';
@@ -80,6 +81,7 @@ var
   doLoop:dword;
   PlayFirst:dword;
   doShuffle:dword;
+  ForcedMono:dword;
   doContRec:dword;
   asOffline:dword;
   AuConnect:dword;
