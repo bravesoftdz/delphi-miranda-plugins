@@ -523,7 +523,6 @@ begin
   hGCI:=PluginLink^.CreateServiceFunction(MS_WAT_GETCONTACTINFO,@SendRequest);
   contexthook :=PluginLink^.HookEvent(ME_CLIST_PREBUILDCONTACTMENU,@OnContactMenu);
   hAddUserHook:=PluginLink^.HookEvent(ME_DB_CONTACT_ADDED         ,@HookAddUser);
-
 end;
 
 procedure DeInitProc(aSetDisable:boolean);

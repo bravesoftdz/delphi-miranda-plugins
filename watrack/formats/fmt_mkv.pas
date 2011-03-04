@@ -123,7 +123,7 @@ function ReadMKV(var Info:tSongInfo):boolean; cdecl;
 var
   f:THANDLE;
   id,len:integer;
-  ptr:pbyte;
+  ptr:pByte;
   buf:array [0..16383] of byte;
   trktype,scale:integer;
   ls:PAnsiChar;
@@ -211,7 +211,7 @@ begin
       Info.channels:=GetInt(ptr,len)
     else
       inc(ptr,len);
-  until ptr>=(PAnsiChar(@buf)+SizeOf(buf));
+  until pAnsiChar(ptr)>=(PAnsiChar(@buf)+SizeOf(buf));
   Info.total:=trunc(lTotal/(1000000000/scale));
   CloseHandle(f);
 end;

@@ -100,7 +100,7 @@ type
 // The UUID structure below is used to for plugin UUID's and module type definitions
 type
   PMUUID = ^TMUUID;
-  MUUID  = TGUID;
+  MUUID  = System.TGUID;
   TMUUID = MUUID;
 {
   MUUID = record

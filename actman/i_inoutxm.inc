@@ -939,12 +939,12 @@ begin
 // ----- ADVANCED -----
       ACT_ADVANCE: begin
         sub:=AddChild(actnode,ioAdvanced,nil);
-        if lo(condition)<>0 then
+        if lobyte(condition)<>0 then
         begin
           act:=AddChild(sub,ioIf,nil);
-          if (lo(condition) and ADV_COND_NOT)<>0 then
+          if (lobyte(condition) and ADV_COND_NOT)<>0 then
             AddAttrInt(act,ioNot,1);
-          case lo(condition) and not ADV_COND_NOT of
+          case lobyte(condition) and not ADV_COND_NOT of
             ADV_COND_GT: s:='gt';
             ADV_COND_LT: s:='lt';
             ADV_COND_EQ: s:='eq';

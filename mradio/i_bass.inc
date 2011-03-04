@@ -106,7 +106,7 @@ begin
 
   if (not result) and ((custom=nil) or (custom^=#0)) then
   begin
-    if Messagebox(0,Translate('BASS.DLL not found! Choose BASS.dll path manually'),
+    if MessageboxA(0,Translate('BASS.DLL not found! Choose BASS.dll path manually'),
         'mRadio',MB_YESNO)=IDYES then
     begin
       pc := nil;

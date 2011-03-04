@@ -166,6 +166,7 @@ var
   wnd:HWND;
   i:integer;
 begin
+  result:=0;
   wnd:=GetDlgItem(Dialog,IDC_HOOKLIST);
   for i:=ListView_GetItemCount(wnd)-1 downto 0 do
   begin
@@ -357,6 +358,7 @@ end;
 
 function ActListChange(wParam:WPARAM;lParam:LPARAM):integer; cdecl;
 begin
+  result:=0;
   if settings<>0 then
     FillActionList(GetDlgItem(settings,IDC_ACTIONLIST));
 end;

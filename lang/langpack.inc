@@ -349,7 +349,7 @@ function LoadLangPackModule:int;
 var
 	hFind:THANDLE;
 	szSearch: array [0..MAX_PATH-1] of AnsiChar;
-	fd: WIN32_FIND_DATA;
+	fd: TWin32FindData;
 	tmp:PAnsiChar;
 begin
 	bModuleInitialized := TRUE;

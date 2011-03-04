@@ -79,9 +79,9 @@ begin
   case msg of
     WM_COMMAND,WM_CONTEXTMENU: begin
       if msg=WM_CONTEXTMENU then
-        wParam:=Hi(PopUpAction)
+        wParam:=HiByte(PopUpAction)
       else
-        wParam:=Lo(PopUpAction);
+        wParam:=LoByte(PopUpAction);
       si:=pointer(CallService(MS_WAT_RETURNGLOBAL,0,0));
       case wParam of
         1: ShowMusicInfo(si);

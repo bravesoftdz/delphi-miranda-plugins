@@ -36,7 +36,7 @@ function WaitFocusedWndChild(Wnd:HWnd):HWnd;
 
 implementation
 
-uses shellapi,{$IFDEF FPC}jwapsapi{$ELSE}PSAPI{$ENDIF},common,messages;
+uses shellapi,PSAPI,common,messages;
 
 function GetWorkOfflineStatus:integer;
 var
@@ -119,7 +119,7 @@ function ExecuteWait(AppPath:PAnsiChar; CmdLine:PAnsiChar=nil; DfltDirectory:PAn
          Show:DWORD=SW_SHOWNORMAL; TimeOut:DWORD=0; ProcID:PDWORD=nil):dword;
 var
   Flags: DWORD;
-  Startup: {$IFDEF DELPHI10_UP}TStartupInfoA{$ELSE}TStartupInfo{$ENDIF};
+  Startup: {$IFDEF FPC}TStartupInfoA{$ELSE}TStartupInfo{$ENDIF};
 //  Startup: TStartupInfoA;
   ProcInf: TProcessInformation;
   App: array [0..1023] of AnsiChar;

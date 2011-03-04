@@ -2,7 +2,7 @@
 {$include compilers.inc}
 library WATrack;
 uses
-  fastmm4,
+  {$IFNDEF FPC}fastmm4,{$ENDIF}
   m_api,dbsettings,activex,winampapi,
   Windows,messages,commctrl,//uxtheme,
   srv_format,srv_player,wat_api,wrapper,

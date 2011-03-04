@@ -263,7 +263,7 @@ begin
         PlayStatus:=arg;
 
         ConstructMsg(nil,arg);
-        case lo(arg) of
+        case lobyte(arg) of
           RD_STATUS_NOSTATION: begin
             DBDeleteSetting(ActiveContact,strCList,optStatusMsg);
 {            if asOffline<>BST_UNCHECKED then
