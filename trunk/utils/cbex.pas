@@ -9,7 +9,7 @@ function AddCBEx(wnd:HWND;proto:PAnsiChar):HWND;
 
 implementation
 
-uses messages,m_api,kol,common,mirutils;
+uses messages,m_api{,kol},common,mirutils;
 
 function AddCBEx(wnd:HWND;proto:PAnsiChar):HWND;
 var

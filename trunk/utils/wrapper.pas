@@ -130,9 +130,15 @@ begin
     Flags      :=OFN_EXPLORER or OFN_OVERWRITEPROMPT;// or OFN_HIDEREADONLY;
   end;
   if open then
+{$IFNDEF FPC}
     result:=GetOpenFileNameA(NameRec)
   else
     result:=GetSaveFileNameA(NameRec);
+{$ELSE}
+    result:=GetOpenFileNameA(@NameRec)
+  else
+    result:=GetSaveFileNameA(@NameRec);
+{$ENDIF}
 end;
 
 function ShowDlgW(dst:PWideChar;fname:PWideChar=nil;Filter:PWideChar=nil;open:boolean=true):boolean;
@@ -159,9 +165,15 @@ begin
     Flags      :=OFN_EXPLORER or OFN_OVERWRITEPROMPT;// or OFN_HIDEREADONLY;
   end;
   if open then
+{$IFNDEF FPC}
     result:=GetOpenFileNameW(NameRec)
   else
     result:=GetSaveFileNameW(NameRec)
+{$ELSE}
+    result:=GetOpenFileNameW(@NameRec)
+  else
+    result:=GetSaveFileNameW(@NameRec)
+{$ENDIF}
 end;
 
 procedure LV_SetItem(handle:hwnd;str:PAnsiChar;item:integer;subitem:integer=0);
@@ -203,7 +215,7 @@ begin
     with BrowseInfo do
     begin
       hwndOwner     :=Parent;
-      pszDisplayName:=Buffer;
+      pszDisplayName:=@Buffer;
       lpszTitle     :=Caption;
       ulFlags       :=BIF_RETURNONLYFSDIRS;
     end;
@@ -211,7 +223,11 @@ begin
       if CoInitializeEx(nil,COINIT_APARTMENTTHREADED)<>RPC_E_CHANGED_MODE then
         BrowseInfo.ulFlags:=BrowseInfo.ulFlags or BIF_NEWDIALOGSTYLE;
     try
+{$IFNDEF FPC}
       ItemIDList:=ShBrowseForFolderA(BrowseInfo);
+{$ELSE}
+      ItemIDList:=ShBrowseForFolderA(@BrowseInfo);
+{$ENDIF}
       Result:=ItemIDList<>nil;
       if Result then
       begin
@@ -240,7 +256,7 @@ begin
     with BrowseInfo do
     begin
       hwndOwner     :=Parent;
-      pszDisplayName:=Buffer;
+      pszDisplayName:=@Buffer;
       lpszTitle     :=Caption;
       ulFlags       :=BIF_RETURNONLYFSDIRS;
     end;
@@ -248,7 +264,11 @@ begin
       if CoInitializeEx(nil,COINIT_APARTMENTTHREADED)<>RPC_E_CHANGED_MODE then
         BrowseInfo.ulFlags:=BrowseInfo.ulFlags or BIF_NEWDIALOGSTYLE;
     try
+{$IFNDEF FPC}
       ItemIDList:=ShBrowseForFolderW(BrowseInfo);
+{$ELSE}
+      ItemIDList:=ShBrowseForFolderW(@BrowseInfo);
+{$ENDIF}
       Result:=ItemIDList<>nil;
       if Result then
       begin

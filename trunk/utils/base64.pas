@@ -80,9 +80,9 @@ begin
     dst:=nil;
     exit;
   end;
-  ptr:=pbyte(src);
+  pAnsiChar(ptr):=src;
   while ptr^<>0 do inc(ptr);
-  slen:=ptr-src;
+  slen:=PAnsiChar(ptr)-src;
   mGetMem(ptr,(slen*3) div 4);
   dst:=ptr;
   result:=0;
