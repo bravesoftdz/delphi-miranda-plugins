@@ -3,7 +3,7 @@ unit hotkeys;
 
 interface
 
-uses windows;
+uses {$IFDEF FPC}jwawindows,{$ENDIF}windows;
 
 type
   AWKHotKeyProc = function(hotkey:integer):integer;
@@ -233,11 +233,11 @@ begin
     if (GetKeyState(VK_RWIN   ) and $8000)<>0 then key:=key or (MOD_WIN     shl 8);
 //    if (GetKeyState(VK_APPS) and $8000)<>0 then
 //    if (GetKeyState(VK_SLEEP) and $8000)<>0 then
-    key:=key or lo(wParam);
+    key:=key or (wParam and $FF);
     proc:=FindHotkey(key,true);
     if proc<>nil then
     begin
-      if integer(proc)<>-1 then
+      if proc<>pointer(-1) then
         PostMessageA(hiddenwindow,WM_MYMESSAGE,key,dword(proc));
       result:=1;
       exit;
@@ -281,7 +281,7 @@ begin
           if proc<>nil then
           begin
             lastkey:=PKBDLLHOOKSTRUCT(lParam)^.vkCode;
-            if integer(proc)<>-1 then
+            if proc<>pointer(-1) then
               PostMessageA(hiddenwindow,WM_MYMESSAGE,key,dword(proc));
             result:=1;
             exit;
@@ -313,7 +313,7 @@ var
 begin
   if Msg=WM_HOTKEY then
   begin
-    key:=(lParam shr 16)+(Lo(lParam) shl 8);
+    key:=(lParam shr 16)+((lParam and $FF) shl 8);
     result:=dword(FindHotKey(key,false));
     if result<>0 then
     begin
@@ -428,7 +428,7 @@ begin
     if global then
     begin
       atom:=GetAtom(hotkey);
-      if not RegisterHotKey(hiddenwindow,atom,hi(hotkey),lo(hotkey)) then
+      if not RegisterHotKey(hiddenwindow,atom,((hotkey and $FF00) shr 8),(hotkey and $FF)) then
         result:=0;
     end;
   end;

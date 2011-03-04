@@ -115,7 +115,7 @@ end;
 
 function GetFSize(name:PAnsiChar):dword;
 var
-  lRec:WIN32_FIND_DATAA;
+  lRec:TWin32FindDataA;
   h:THANDLE;
 begin
   h:=FindFirstFileA(name,lRec);

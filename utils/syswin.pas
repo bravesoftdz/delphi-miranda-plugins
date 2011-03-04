@@ -36,7 +36,7 @@ function WaitFocusedWndChild(Wnd:HWnd):HWnd;
 
 implementation
 
-uses shellapi,PSAPI,common,messages;
+uses shellapi,{$IFDEF FPC}jwapsapi{$ELSE}PSAPI{$ENDIF},common,messages;
 
 function GetWorkOfflineStatus:integer;
 var

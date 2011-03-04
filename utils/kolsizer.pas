@@ -37,7 +37,7 @@ type
     function  GetFlags(aControl:pControl):cardinal;
   protected
     procedure init;virtual;
-    procedure DoKeyUp( Sender: PControl; var Key: Longint; Shift: DWORD );
+    procedure DoKeyUp( Sender: PControl; var Key: Longint; Shift: DWORD);
     procedure DoChar( Sender: PControl; var Key: KOLChar; Shift: DWORD);
   public
     destructor destroy;virtual;
@@ -103,12 +103,13 @@ function DesignHandlerProc(Sender: PControl; var Msg: TMsg; var Rslt: Integer): 
 begin
   Result:=false;
   case msg.message of
+{
       WM_KEYUP,WM_SYSCHAR,WM_SYSKEYUP,
       WM_CHAR: begin
 //        if loword(msg.wParam)=VK_TAB then
           Messagebox(0,'222','',0);
       end;
-    WM_LBUTTONDOWN: begin
+}    WM_LBUTTONDOWN: begin
       if LocalDesigner.fOwner<>Sender then LocalDesigner.Current:=Sender;
       Result:=true;
       {
@@ -147,12 +148,13 @@ begin
   with Sender^, Data^ do
   begin
     case msg.message of
+{
       WM_KEYUP,WM_SYSCHAR,WM_SYSKEYUP,
       WM_CHAR: begin
 //        if loword(msg.wParam)=VK_TAB then
           Messagebox(0,'111','',0);
       end;
-
+}
       WM_NCHITTEST: begin
         Pt := MakePoint(loword(Msg.lparam), hiword(Msg.lparam));
         Pt := Screen2Client (Pt);

@@ -53,8 +53,6 @@ implementation
 
 uses commctrl,common,dbsettings;
 
-{$include m_newawaysys.inc}
-
 const
   defproto = '- default -';
 
@@ -244,7 +242,11 @@ begin
     item.pszText:=protos^[i].name;
     if withIcons and (i>0) then
       item.iImage:=cli^.pfnIconFromStatusMode(item.pszText,ID_STATUS_ONLINE,0);
+{$IFNDEF FPC}
     newItem:=ListView_InsertItemA(list,item);
+{$ELSE}
+    newItem:=ListView_InsertItem(list,item);
+{$ENDIF}
     if newItem>=0 then
       ListView_SetCheckState(list,newItem,(protos^[i].enabled and psf_enabled)<>0)
   end;
@@ -458,7 +460,7 @@ begin
     result:=CallProtoService(proto,PS_SETSTATUS,status,0)
   else
     result:=-1;
-  if integer(txt)<>-1 then
+  if txt<>PAnsiChar(-1) then
   begin
     if not NASPresents then
       result:=CallProtoService(proto,PS_SETAWAYMSG,abs(status),dword(txt))
@@ -496,12 +498,12 @@ begin
         flags:=flags or CSSF_MASK_STATUS;
         status:=@newstatus;
       end;
-      if integer(title)<>-1 then
+      if title<>PWideChar(-1) then
       begin
         flags:=flags or CSSF_MASK_NAME;
         szName.w:=title;
       end;
-      if integer(title)<>-1 then
+      if txt<>PWideChar(-1) then
       begin
         flags:=flags or CSSF_MASK_MESSAGE;
         szMessage.w:=txt;
