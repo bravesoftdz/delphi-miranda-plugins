@@ -105,7 +105,6 @@ begin
       SetAllContactStat(hList);
       SetHistMask(Dialog);
 
-      mFreeMem(ProtoText);
       SetDlgItemTextW(Dialog,IDC_PROTO_TEXT,ProtoText);
 
       Changed:=0;

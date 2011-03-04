@@ -286,7 +286,7 @@ begin
       p:=Chunk^.txt
     else
     begin
-      p:=@WideChar(Chunk^._type);
+      p:=PWideChar(@Chunk^._type);
     end;
     GetTextExtentPoint32W(dc,p,Chunk^.val,sz);
   end
@@ -349,7 +349,7 @@ begin
     if Chunk^._type=CT_TEXT then
       p:=Chunk^.txt
     else
-      p:=@WideChar(Chunk^._type);
+      p:=PWideChar(@Chunk^._type);
 
     DrawTextW(dc,p,Chunk^.val,rc,
       DT_LEFT or DT_TOP or DT_SINGLELINE or DT_NOPREFIX or DT_EXPANDTABS)

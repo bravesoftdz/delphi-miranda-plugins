@@ -17,7 +17,7 @@ library actman;
 {%File 'i_inoutxm.inc'}
 
 uses
-  FastMM4,
+//  FastMM4,
   m_api,
   Windows,
   messages,

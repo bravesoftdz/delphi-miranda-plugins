@@ -450,7 +450,7 @@ end;
 
 function TranslateString(const sz:string):string;
 begin
-  Result:=string(PAnsiChar(PluginLink^.CallService(MS_LANGPACK_TRANSLATESTRING,0,lparam(sz))));
+  Result:=string(PAnsiChar(PluginLink^.CallService(MS_LANGPACK_TRANSLATESTRING,0,lparam(@sz))));
 end;
 
 function TranslateDialogDefault(hwndDlg: THandle): int;

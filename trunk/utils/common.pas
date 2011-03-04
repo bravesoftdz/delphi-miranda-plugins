@@ -136,7 +136,7 @@ function StrIndex (const aStr, aSubStr: PAnsiChar):integer;
 function StrIndexW(const aStr, aSubStr: PWideChar):integer;
 
 //procedure FillWord(var buf;count:cardinal;value:word); register;
-function CompareMem(P1, P2: Pointer; Length: Integer): Boolean; assembler;
+{$IFNDEF BIT64}function CompareMem(P1, P2: Pointer; Length: Integer): Boolean; assembler;{$ENDIF}
 function Min(a,b:integer):integer;
 function Max(a,b:integer):integer;
 
@@ -783,6 +783,7 @@ asm
      POP     ESI
 end;
 }
+{$IFNDEF BIT64}
 // Delphi 2009 realization
 function CompareMem(P1, P2: Pointer; Length: Integer): Boolean; assembler;
 asm
@@ -847,7 +848,7 @@ asm
    xor   eax, eax
    pop   ebx
 end;
-
+{$ENDIF}
 function Min(a,b:integer):integer;
 begin
   if a>b then

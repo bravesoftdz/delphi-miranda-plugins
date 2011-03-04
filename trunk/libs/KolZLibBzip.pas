@@ -537,8 +537,8 @@ function BZ2_bzBuffToBuffDecompress(dest: Pointer; var destLen: Integer; source:
 
 {** utility routines  *******************************************************}
 
-function adler32; external;
-function compressBound; external;
+function adler32(adler: LongInt; const buf: PChar; len: Integer): LongInt; external;
+function compressBound(sourceLen: LongInt): LongInt; external;
 
 //
 function InflateInit(var stream: TZStreamRec): Integer;

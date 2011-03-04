@@ -78,8 +78,9 @@ const
 
   BTN_RECUP = 202;
   BTN_RECDN = 203;
-  IDI_MAIN  = 102;
-  IDI_ON    = 103;
-  IDI_OFF   = 104;
-  IDI_ADD   = 105;
-  IDI_DEL   = 106;
+
+  IDI_MAIN  = 302;
+  IDI_ON    = 303;
+  IDI_OFF   = 304;
+  IDI_ADD   = 305;
+  IDI_DEL   = 306;

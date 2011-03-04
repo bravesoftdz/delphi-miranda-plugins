@@ -10,7 +10,7 @@ var
   tmp,tmp1:integer;
   tmpb:longbool;
   pcf:TCHOOSEFONT;
-  lf:LOGFONT;
+  lf:LOGFONTW;
 begin
   result:=0;
 
@@ -27,7 +27,7 @@ begin
       TranslateDialogDefault(Dialog);
       with PWATFrameData(FrameCtrl.CustomData).TextBlock^ do
       begin
-        case Lo(Effects) of
+        case LoByte(Effects) of
           effWrap: tmp:=IDC_EFF_WRAP;
           effRoll: tmp:=IDC_EFF_ROLL;
           effPong: tmp:=IDC_EFF_PONG;

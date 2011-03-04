@@ -24,14 +24,14 @@ begin
       CheckDlgButton(Dialog,IDC_SHOWFILE ,PopUpFile);
       CheckDlgButton(Dialog,IDC_REQUEST  ,PopRequest);
 
-      CheckDlgButton(Dialog,IDC_ACTLEFTCLOSE  ,ord(Lo(PopupAction)=0));
-      CheckDlgButton(Dialog,IDC_ACTLEFTINFO   ,ord(Lo(PopupAction)=1));
-      CheckDlgButton(Dialog,IDC_ACTLEFTPLAYER ,ord(Lo(PopupAction)=2));
-      CheckDlgButton(Dialog,IDC_ACTLEFTNEXT   ,ord(Lo(PopupAction)=3));
-      CheckDlgButton(Dialog,IDC_ACTRIGHTCLOSE ,ord(Hi(PopupAction)=0));
-      CheckDlgButton(Dialog,IDC_ACTRIGHTINFO  ,ord(Hi(PopupAction)=1));
-      CheckDlgButton(Dialog,IDC_ACTRIGHTPLAYER,ord(Hi(PopupAction)=2));
-      CheckDlgButton(Dialog,IDC_ACTRIGHTNEXT  ,ord(Hi(PopupAction)=3));
+      CheckDlgButton(Dialog,IDC_ACTLEFTCLOSE  ,ord(LoByte(PopupAction)=0));
+      CheckDlgButton(Dialog,IDC_ACTLEFTINFO   ,ord(LoByte(PopupAction)=1));
+      CheckDlgButton(Dialog,IDC_ACTLEFTPLAYER ,ord(LoByte(PopupAction)=2));
+      CheckDlgButton(Dialog,IDC_ACTLEFTNEXT   ,ord(LoByte(PopupAction)=3));
+      CheckDlgButton(Dialog,IDC_ACTRIGHTCLOSE ,ord(HiByte(PopupAction)=0));
+      CheckDlgButton(Dialog,IDC_ACTRIGHTINFO  ,ord(HiByte(PopupAction)=1));
+      CheckDlgButton(Dialog,IDC_ACTRIGHTPLAYER,ord(HiByte(PopupAction)=2));
+      CheckDlgButton(Dialog,IDC_ACTRIGHTNEXT  ,ord(HiByte(PopupAction)=3));
 
       CheckDlgButton(Dialog,IDC_USEBUTTONS,PopUpButtons);
 

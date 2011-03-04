@@ -451,7 +451,7 @@ begin
   begin
     StrCopy(filename,prefix);
     p:=StrEnd(filename);
-    CallService(MS_DB_GETPROFILENAME,SizeOf(filename)-integer(p-@filename),dword(p));
+    CallService(MS_DB_GETPROFILENAME,SizeOf(filename)-integer(p-pAnsiChar(@filename)),dword(p));
     ChangeExt(filename,ext);
     result:=CheckPath(filename,profilepath,path);
   end

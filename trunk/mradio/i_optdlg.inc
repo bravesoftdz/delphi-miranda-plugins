@@ -420,7 +420,7 @@ begin
 
             IDC_BN_RECPATH: begin
               dst:=nil;
-              if SelectDirectory(nil,dst,Dialog,true) then
+              if SelectDirectory(pWideChar(nil),dst,Dialog,true) then
               begin
                 PluginLink^.CallService(MS_UTILS_PATHTORELATIVEW,dword(dst),dword(@buf));
                 SetDlgItemTextW(Dialog,IDC_ED_RECPATH,pWideChar(@buf));
@@ -649,7 +649,7 @@ begin
 
             IDC_BASSPTHBTN: begin
               dst:=nil;
-              if SelectDirectory(nil,dst,Dialog,true) then
+              if SelectDirectory(pWideChar(nil),dst,Dialog,true) then
               begin
                 PluginLink^.CallService(MS_UTILS_PATHTORELATIVEW,dword(dst),dword(@buf));
                 SetDlgItemTextW(Dialog,IDC_BASSPATH,pWideChar(@buf));

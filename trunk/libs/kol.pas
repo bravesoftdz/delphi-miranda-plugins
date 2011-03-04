@@ -14270,7 +14270,7 @@ function CrackStack_MapInFile( const MapFileName: KOLString; Max_length: Integer
 //......... these declarations are here to stop hints from Delphi5 while compiling MCK:
 function CallTControlCreateWindow( Ctl: PControl ): Boolean;
 function DumpWindowed( c: PControl ): PControl;
-function WndProcAppAsm( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean; forward;
+function WndProcAppAsm( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean; //forward;
 //22{$IFDEF ASM_VERSION}
 const ButtonClass: array[ 0..6 ] of KOLChar = ( 'B','U','T','T','O','N',#0 );
 //22{$ENDIF ASM_VERSION}
@@ -30406,7 +30406,7 @@ begin
     begin
       GetTextExtentPoint32( DC, PKOLChar( CapText ), J, Sz );
       W := Sz.cx;
-      Windows.GetTextExtentPoint32( DC, '_', 1, Sz ); // A/W KOL_ANSI
+      Windows.GetTextExtentPoint32( DC, PKOLChar('_'), 1, Sz ); // A/W KOL_ANSI
       H := Sz.cy - 1;
       Windows.GetTextExtentPoint32( DC, @ CapTxtOrig[ I + 1 ], 1, Sz );
       Windows.MoveToEx( DC, X + W, Y + H, nil );

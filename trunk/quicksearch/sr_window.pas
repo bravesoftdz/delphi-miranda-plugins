@@ -849,7 +849,7 @@ begin
   vars[2]:=SBData[0].online;
   wvsprintfa(buf,fmtstr,@vars);
   dc:=GetDC(StatusBar);
-  DrawTextA(dc,buf,-1,rc,DT_CALCRECT);
+  DrawTextA(dc,PAnsiChar(@buf),-1,rc,DT_CALCRECT);
   ReleaseDC(StatusBar,dc);
   all:=rc.right-rc.left;
   aPartPos[0]:=all;
@@ -948,7 +948,7 @@ begin
   vars[2]:=SBData[0].online;
   wvsprintfw(buf,fmtstr,@vars);
   dc:=GetDC(StatusBar);
-  DrawTextW(dc,buf,-1,rc,DT_CALCRECT);
+  DrawTextW(dc,pWidechar(@buf),-1,rc,DT_CALCRECT);
   ReleaseDC(StatusBar,dc);
   all:=rc.right-rc.left;
   aPartPos[0]:=all;

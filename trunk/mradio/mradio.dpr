@@ -10,8 +10,8 @@ uses
   ,m_api,dbsettings,mirutils,playlist,icobuttons,KOLCCtrls;
 
 {$include mr_rc.inc}
-{$resource mr.res}
-{$resource ver.res}
+{$r mradio.res}
+{$r ver.res}
 
 {$include i_vars.inc}
 

@@ -17,7 +17,7 @@ function  GetResultType(service:PAnsiChar):pAnsiChar;
 
 implementation
 
-uses m_api,common,io,kol,mirutils;
+uses commctrl,m_api,common,io,mirutils;
 
 {$include i_const.inc}
 
@@ -29,8 +29,12 @@ var
   HelpINIFile:PAnsiChar;
 
 procedure DoInitCommonControls(dwICC:DWORD);
+var
+  ICC: TInitCommonControlsEx;
 begin
-  KOL.DoInitCommonControls(dwICC);
+  ICC.dwSize:= Sizeof(ICC);
+  ICC.dwICC := dwICC;
+  InitCommonControlsEx(ICC);
 end;
 
 function GetResultType(service:PAnsiChar):pAnsiChar;

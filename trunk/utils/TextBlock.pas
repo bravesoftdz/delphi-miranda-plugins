@@ -40,7 +40,7 @@ type
 
     TextColor  :TCOLORREF;
     BkColor    :TCOLORREF;
-    TextLF     :TLOGFONT;
+    TextLF     :TLOGFONTW;
 
     // options
     TextEffect :dword;
@@ -82,8 +82,8 @@ type
     function  GetText:pWideChar;
     procedure SetText(value:pWideChar);
 
-    function  GetFontData:TLOGFONT;
-    procedure SetFontData(const value:TLOGFONT);
+    function  GetFontData:TLOGFONTW;
+    procedure SetFontData(const value:TLOGFONTW);
 
   public
     procedure DrawText(DC: HDC; justpaint:boolean);
@@ -96,7 +96,7 @@ type
     property BkColor   :integer index idx_bkcolor  read GetEffect write SetEffect;
     property Font      :integer index idx_font     read GetEffect write SetEffect;
 
-    property FontData :TLOGFONT  read GetFontData write SetFontData;
+    property FontData :TLOGFONTW read GetFontData write SetFontData;
     property BlockText:pWideChar read GetText     write SetText;
   end;
 
@@ -108,14 +108,14 @@ uses messages,common;
 
 {$include tb_chunk.inc}
 
-function tTextBlock.GetFontData:TLOGFONT;
+function tTextBlock.GetFontData:TLOGFONTW;
 begin
   result:=pTextData(CustomData).TextLF;
 end;
 
-procedure tTextBlock.SetFontData(const value:TLOGFONT);
+procedure tTextBlock.SetFontData(const value:TLOGFONTW);
 begin
-  move(value,pTextData(CustomData).TextLF,SizeOf(TLOGFONT));
+  move(value,pTextData(CustomData).TextLF,SizeOf(TLOGFONTW));
 end;
 
 function tTextBlock.GetEffect(idx:integer):integer;
@@ -276,7 +276,7 @@ begin
       MemDC:=CreateCompatibleDC(dc);
       SetTextColor(MemDC,TextColor);
       SelectObject(MemDC,CreateCompatibleBitmap(DC,dst.right,dst.bottom));
-      DeleteObject(SelectObject(MemDC,CreateFontIndirect(D.TextLF)));
+      DeleteObject(SelectObject(MemDC,CreateFontIndirectW(D.TextLF)));
 
       BitBlt(MemDC,dst.left,dst.top,dst.right-dst.left,dst.bottom-dst.top,
              dc,dst.left,dst.top,SRCCOPY);

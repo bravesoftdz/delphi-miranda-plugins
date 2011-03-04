@@ -1,7 +1,7 @@
 {Text}
 
 const
-  TextLF:TLOGFONT = (
+  TextLF:TLOGFONTW = (
     lfHeight        :-10;
     lfWidth         :0;
     lfEscapement    :0;
@@ -14,8 +14,8 @@ const
     lfOutPrecision  :OUT_DEFAULT_PRECIS;
     lfClipPrecision :CLIP_DEFAULT_PRECIS;
     lfQuality       :DEFAULT_QUALITY;
-    lfPitchAndFamily:DEFAULT_PITCH or FF_DONTCARE;
-    lfFaceName      :#0);
+    lfPitchAndFamily:DEFAULT_PITCH or FF_DONTCARE{;
+    lfFaceName      :#0});
 
 const
   opt_FrmTxtClr :PAnsiChar = 'frame/frametextcolor';

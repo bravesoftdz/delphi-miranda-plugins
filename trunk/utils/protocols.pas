@@ -242,11 +242,7 @@ begin
     item.pszText:=protos^[i].name;
     if withIcons and (i>0) then
       item.iImage:=cli^.pfnIconFromStatusMode(item.pszText,ID_STATUS_ONLINE,0);
-{$IFNDEF FPC}
     newItem:=ListView_InsertItemA(list,item);
-{$ELSE}
-    newItem:=ListView_InsertItem(list,item);
-{$ENDIF}
     if newItem>=0 then
       ListView_SetCheckState(list,newItem,(protos^[i].enabled and psf_enabled)<>0)
   end;
