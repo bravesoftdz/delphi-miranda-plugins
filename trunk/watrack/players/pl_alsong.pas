@@ -94,7 +94,23 @@ const
     URL      :'http://www.altools.net/';
     Notes    :nil);
 
+var
+  LocalPlayerLinkA,
+  LocalPlayerLinkV:twPlayer;
+
+procedure InitLink;
+begin
+  LocalPlayerLinkA.Next:=PlayerLink;
+  LocalPlayerLinkA.This:=@plRecA;
+  PlayerLink           :=@LocalPlayerLinkA;
+
+  LocalPlayerLinkV.Next:=PlayerLink;
+  LocalPlayerLinkV.This:=@plRecV;
+  PlayerLink           :=@LocalPlayerLinkV;
+end;
+
 initialization
-  ServicePlayer(WAT_ACT_REGISTER,dword(@plRecA));
-  ServicePlayer(WAT_ACT_REGISTER,dword(@plRecV));
+//  ServicePlayer(WAT_ACT_REGISTER,dword(@plRecA));
+//  ServicePlayer(WAT_ACT_REGISTER,dword(@plRecV));
+  InitLink;
 end.

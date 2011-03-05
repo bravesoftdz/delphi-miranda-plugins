@@ -46,7 +46,29 @@ begin
   result:=true;
 end;
 
+var
+  LocalFormatLinkOFR,
+  LocalFormatLinkOFS:twFormat;
+
+procedure InitLink;
+begin
+  LocalFormatLinkOFR.Next:=FormatLink;
+
+  LocalFormatLinkOFR.this.proc :=@ReadOFR;
+  LocalFormatLinkOFR.this.ext  :='OFR';
+  LocalFormatLinkOFR.this.flags:=0;
+
+  FormatLink:=@LocalFormatLinkOFR;
+
+  LocalFormatLinkOFS.Next:=FormatLink;
+
+  LocalFormatLinkOFS.this.proc :=@ReadOFR;
+  LocalFormatLinkOFS.this.ext  :='OFS';
+  LocalFormatLinkOFS.this.flags:=0;
+
+  FormatLink:=@LocalFormatLinkOFS;
+end;
+
 initialization
-  RegisterFormat('OFR',ReadOFR);
-  RegisterFormat('OFS',ReadOFR);
+  InitLink;
 end.

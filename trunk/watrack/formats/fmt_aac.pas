@@ -74,6 +74,20 @@ begin
   result:=true;
 end;
 
+var
+  LocalFormatLink:twFormat;
+
+procedure InitLink;
+begin
+  LocalFormatLink.Next:=FormatLink;
+
+  LocalFormatLink.this.proc :=@ReadAAC;
+  LocalFormatLink.this.ext  :='AAC';
+  LocalFormatLink.this.flags:=0;
+
+  FormatLink:=@LocalFormatLink;
+end;
+
 initialization
-  RegisterFormat('AAC',ReadAAC);
+  InitLink;
 end.

@@ -71,6 +71,20 @@ begin
   result:=true;
 end;
 
+var
+  LocalFormatLink:twFormat;
+
+procedure InitLink;
+begin
+  LocalFormatLink.Next:=FormatLink;
+
+  LocalFormatLink.this.proc :=@ReadMPC;
+  LocalFormatLink.this.ext  :='MPC';
+  LocalFormatLink.this.flags:=0;
+
+  FormatLink:=@LocalFormatLink;
+end;
+
 initialization
-  RegisterFormat('MPC',ReadMPC);
+  InitLink;
 end.

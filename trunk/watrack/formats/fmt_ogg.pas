@@ -462,11 +462,65 @@ Info.kbps:=trunc(FileSize(f)*8/1000);
   result:=true;
 end;
 
+var
+  LocalFormatLinkOGG,
+  LocalFormatLinkOGA,
+  LocalFormatLinkOGM,
+  LocalFormatLinkSPX,
+  LocalFormatLinkFLA,
+  LocalFormatLinkFLAC:twFormat;
+
+procedure InitLink;
+begin
+  LocalFormatLinkOGG.Next:=FormatLink;
+
+  LocalFormatLinkOGG.this.proc :=@ReadOGG;
+  LocalFormatLinkOGG.this.ext  :='OGG';
+  LocalFormatLinkOGG.this.flags:=0;
+
+  FormatLink:=@LocalFormatLinkOGG;
+
+  LocalFormatLinkOGA.Next:=FormatLink;
+
+  LocalFormatLinkOGA.this.proc :=@ReadOGG;
+  LocalFormatLinkOGA.this.ext  :='OGA';
+  LocalFormatLinkOGA.this.flags:=0;
+
+  FormatLink:=@LocalFormatLinkOGA;
+
+  LocalFormatLinkOGM.Next:=FormatLink;
+
+  LocalFormatLinkOGM.this.proc :=@ReadOGG;
+  LocalFormatLinkOGM.this.ext  :='OGM';
+  LocalFormatLinkOGM.this.flags:=WAT_OPT_VIDEO;
+
+  FormatLink:=@LocalFormatLinkOGM;
+
+  LocalFormatLinkSPX.Next:=FormatLink;
+
+  LocalFormatLinkSPX.this.proc :=@ReadSPX;
+  LocalFormatLinkSPX.this.ext  :='SPX';
+  LocalFormatLinkSPX.this.flags:=0;
+
+  FormatLink:=@LocalFormatLinkSPX;
+
+  LocalFormatLinkFLA.Next:=FormatLink;
+
+  LocalFormatLinkFLA.this.proc :=@ReadfLaC;
+  LocalFormatLinkFLA.this.ext  :='FLA';
+  LocalFormatLinkFLA.this.flags:=0;
+
+  FormatLink:=@LocalFormatLinkFLA;
+
+  LocalFormatLinkFLAC.Next:=FormatLink;
+
+  LocalFormatLinkFLAC.this.proc :=@ReadfLaC;
+  LocalFormatLinkFLAC.this.ext  :='FLAC';
+  LocalFormatLinkFLAC.this.flags:=0;
+
+  FormatLink:=@LocalFormatLinkFLAC;
+end;
+
 initialization
-  RegisterFormat('OGG' ,ReadOGG);
-  RegisterFormat('OGA' ,ReadOGG);
-  RegisterFormat('OGM' ,ReadOGG,WAT_OPT_VIDEO);
-  RegisterFormat('SPX' ,ReadSPX);
-  RegisterFormat('FLA' ,ReadfLaC);
-  RegisterFormat('FLAC',ReadfLaC);
+  InitLink;
 end.

@@ -335,9 +335,48 @@ begin
   CloseHandle(f);
 end;
 
+var
+  LocalFormatLinkM4A,
+  LocalFormatLinkMP4,
+  LocalFormatLinkMOV,
+  LocalFormatLink3GP:twFormat;
+
+procedure InitLink;
+begin
+  LocalFormatLinkM4A.Next:=FormatLink;
+
+  LocalFormatLinkM4A.this.proc :=@ReadM4A;
+  LocalFormatLinkM4A.this.ext  :='M4A';
+  LocalFormatLinkM4A.this.flags:=0;
+
+  FormatLink:=@LocalFormatLinkM4A;
+
+  LocalFormatLinkMP4.Next:=FormatLink;
+
+  LocalFormatLinkMP4.this.proc :=@ReadM4A;
+  LocalFormatLinkMP4.this.ext  :='MP4';
+  LocalFormatLinkMP4.this.flags:=WAT_OPT_VIDEO;
+
+  FormatLink:=@LocalFormatLinkMP4;
+
+  LocalFormatLinkMOV.Next:=FormatLink;
+
+  LocalFormatLinkMOV.this.proc :=@ReadM4A;
+  LocalFormatLinkMOV.this.ext  :='MOV';
+  LocalFormatLinkMOV.this.flags:=WAT_OPT_VIDEO;
+
+  FormatLink:=@LocalFormatLinkMOV;
+
+  LocalFormatLink3GP.Next:=FormatLink;
+
+  LocalFormatLink3GP.this.proc :=@ReadM4A;
+  LocalFormatLink3GP.this.ext  :='3GP';
+  LocalFormatLink3GP.this.flags:=WAT_OPT_VIDEO;
+
+  FormatLink:=@LocalFormatLink3GP;
+
+end;
+
 initialization
-  RegisterFormat('M4A',ReadM4A);
-  RegisterFormat('MP4',ReadM4A,WAT_OPT_VIDEO);
-  RegisterFormat('MOV',ReadM4A,WAT_OPT_VIDEO);
-  RegisterFormat('3GP',ReadM4A,WAT_OPT_VIDEO);
+  InitLink;
 end.

@@ -315,6 +315,20 @@ begin
   mFreeMem(buf);
 end;
 
+var
+  LocalFormatLink:twFormat;
+
+procedure InitLink;
+begin
+  LocalFormatLink.Next:=FormatLink;
+
+  LocalFormatLink.this.proc :=@ReadFLV;
+  LocalFormatLink.this.ext  :='FLV';
+  LocalFormatLink.this.flags:=WAT_OPT_VIDEO;
+
+  FormatLink:=@LocalFormatLink;
+end;
+
 initialization
-  RegisterFormat('FLV',ReadFLV,WAT_OPT_VIDEO);
+  InitLink;
 end.

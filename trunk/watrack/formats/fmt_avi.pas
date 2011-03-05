@@ -267,7 +267,29 @@ begin
   result:=true;
 end;
 
+var
+  LocalFormatLinkAVI,
+  LocalFormatLinkDIVX:twFormat;
+
+procedure InitLink;
+begin
+  LocalFormatLinkAVI.Next:=FormatLink;
+
+  LocalFormatLinkAVI.this.proc :=@ReadAVI;
+  LocalFormatLinkAVI.this.ext  :='AVI';
+  LocalFormatLinkAVI.this.flags:=WAT_OPT_VIDEO;
+
+  FormatLink:=@LocalFormatLinkAVI;
+
+  LocalFormatLinkDIVX.Next:=FormatLink;
+
+  LocalFormatLinkDIVX.this.proc :=@ReadAVI;
+  LocalFormatLinkDIVX.this.ext  :='DIVX';
+  LocalFormatLinkDIVX.this.flags:=WAT_OPT_VIDEO;
+
+  FormatLink:=@LocalFormatLinkDIVX;
+end;
+
 initialization
-  RegisterFormat('AVI' ,ReadAVI,WAT_OPT_VIDEO);
-  RegisterFormat('DIVX',ReadAVI,WAT_OPT_VIDEO);
+  InitLink;
 end.

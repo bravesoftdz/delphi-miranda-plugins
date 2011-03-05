@@ -401,8 +401,38 @@ begin
   CloseHandle(f);
 end;
 
+var
+  LocalFormatLinkWMA,
+  LocalFormatLinkWMV,
+  LocalFormatLinkASF:twFormat;
+
+procedure InitLink;
+begin
+  LocalFormatLinkWMA.Next:=FormatLink;
+
+  LocalFormatLinkWMA.this.proc :=@ReadWMA;
+  LocalFormatLinkWMA.this.ext  :='WMA';
+  LocalFormatLinkWMA.this.flags:=0;
+
+  FormatLink:=@LocalFormatLinkWMA;
+
+  LocalFormatLinkWMV.Next:=FormatLink;
+
+  LocalFormatLinkWMV.this.proc :=@ReadWMA;
+  LocalFormatLinkWMV.this.ext  :='WMV';
+  LocalFormatLinkWMV.this.flags:=WAT_OPT_VIDEO;
+
+  FormatLink:=@LocalFormatLinkWMV;
+
+  LocalFormatLinkASF.Next:=FormatLink;
+
+  LocalFormatLinkASF.this.proc :=@ReadWMA;
+  LocalFormatLinkASF.this.ext  :='ASF';
+  LocalFormatLinkASF.this.flags:=WAT_OPT_VIDEO;
+
+  FormatLink:=@LocalFormatLinkASF;
+end;
+
 initialization
-  RegisterFormat('WMA',ReadWMA);
-  RegisterFormat('WMV',ReadWMA,WAT_OPT_VIDEO);
-  RegisterFormat('ASF',ReadWMA,WAT_OPT_VIDEO);
+  InitLink;
 end.

@@ -46,6 +46,20 @@ begin
   result:=true;
 end;
 
+var
+  LocalFormatLink:twFormat;
+
+procedure InitLink;
+begin
+  LocalFormatLink.Next:=FormatLink;
+
+  LocalFormatLink.this.proc :=@ReadTTA;
+  LocalFormatLink.this.ext  :='TTA';
+  LocalFormatLink.this.flags:=0;
+
+  FormatLink:=@LocalFormatLink;
+end;
+
 initialization
-  RegisterFormat('TTA',ReadTTA);
+  InitLink;
 end.

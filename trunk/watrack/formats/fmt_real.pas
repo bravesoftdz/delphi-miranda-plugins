@@ -309,8 +309,39 @@ begin
   result:=true;
 end;
 
+var
+  LocalFormatLinkRM,
+  LocalFormatLinkRA,
+  LocalFormatLinkRAM:twFormat;
+
+procedure InitLink;
+begin
+  LocalFormatLinkRM.Next:=FormatLink;
+
+  LocalFormatLinkRM.this.proc :=@ReadReal;
+  LocalFormatLinkRM.this.ext  :='RM';
+  LocalFormatLinkRM.this.flags:=WAT_OPT_VIDEO;
+
+  FormatLink:=@LocalFormatLinkRM;
+
+  LocalFormatLinkRA.Next:=FormatLink;
+
+  LocalFormatLinkRA.this.proc :=@ReadReal;
+  LocalFormatLinkRA.this.ext  :='RA';
+  LocalFormatLinkRA.this.flags:=WAT_OPT_VIDEO;
+
+  FormatLink:=@LocalFormatLinkRA;
+
+  LocalFormatLinkRAM.Next:=FormatLink;
+
+  LocalFormatLinkRAM.this.proc :=@ReadReal;
+  LocalFormatLinkRAM.this.ext  :='RAM';
+  LocalFormatLinkRAm.this.flags:=WAT_OPT_VIDEO;
+
+  FormatLink:=@LocalFormatLinkRAM;
+end;
+
 initialization
-  RegisterFormat('RM' ,ReadReal,WAT_OPT_VIDEO);
-  RegisterFormat('RA' ,ReadReal,WAT_OPT_VIDEO);
-  RegisterFormat('RAM',ReadReal,WAT_OPT_VIDEO);
+  InitLink;
+
 end.

@@ -431,8 +431,38 @@ begin
   result:=true;
 end;
 
+var
+  LocalFormatLinkMP3,
+  LocalFormatLinkMPG,
+  LocalFormatLinkMPEG:twFormat;
+
+procedure InitLink;
+begin
+  LocalFormatLinkMP3.Next:=FormatLink;
+
+  LocalFormatLinkMP3.this.proc :=@ReadMP3;
+  LocalFormatLinkMP3.this.ext  :='MP3';
+  LocalFormatLinkMP3.this.flags:=0;
+
+  FormatLink:=@LocalFormatLinkMP3;
+
+  LocalFormatLinkMPG.Next:=FormatLink;
+
+  LocalFormatLinkMPG.this.proc :=@ReadMPG;
+  LocalFormatLinkMPG.this.ext  :='MPG';
+  LocalFormatLinkMPG.this.flags:=WAT_OPT_VIDEO;
+
+  FormatLink:=@LocalFormatLinkMPG;
+
+  LocalFormatLinkMPEG.Next:=FormatLink;
+
+  LocalFormatLinkMPEG.this.proc :=@ReadMPG;
+  LocalFormatLinkMPEG.this.ext  :='MPEG';
+  LocalFormatLinkMPEG.this.flags:=WAT_OPT_VIDEO;
+
+  FormatLink:=@LocalFormatLinkMPEG;
+end;
+
 initialization
-  RegisterFormat('MP3',ReadMP3);
-  RegisterFormat('MPG',ReadMPG,WAT_OPT_VIDEO);
-  RegisterFormat('MPEG',ReadMPG,WAT_OPT_VIDEO);
+  InitLink;
 end.

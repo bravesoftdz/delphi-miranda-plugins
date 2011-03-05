@@ -118,6 +118,20 @@ begin
   result:=true;
 end;
 
+var
+  LocalFormatLink:twFormat;
+
+procedure InitLink;
+begin
+  LocalFormatLink.Next:=FormatLink;
+
+  LocalFormatLink.this.proc :=@ReadAPE;
+  LocalFormatLink.this.ext  :='APE';
+  LocalFormatLink.this.flags:=0;
+
+  FormatLink:=@LocalFormatLink;
+end;
+
 initialization
-  RegisterFormat('APE',ReadAPE);
+  InitLink;
 end.

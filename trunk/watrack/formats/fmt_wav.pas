@@ -118,7 +118,29 @@ begin
   result:=true;
 end;
 
+var
+  LocalFormatLinkWAV,
+  LocalFormatLinkWV:twFormat;
+
+procedure InitLink;
+begin
+  LocalFormatLinkWAV.Next:=FormatLink;
+
+  LocalFormatLinkWAV.this.proc :=@ReadWAV;
+  LocalFormatLinkWAV.this.ext  :='WAV';
+  LocalFormatLinkWAV.this.flags:=0;
+
+  FormatLink:=@LocalFormatLinkWAV;
+
+  LocalFormatLinkWV.Next:=FormatLink;
+
+  LocalFormatLinkWV.this.proc :=@ReadWAV;
+  LocalFormatLinkWV.this.ext  :='WV';
+  LocalFormatLinkWV.this.flags:=0;
+
+  FormatLink:=@LocalFormatLinkWV;
+end;
+
 initialization
-  RegisterFormat('WAV',ReadWAV);
-  RegisterFormat('WV' ,ReadWAV);
+  InitLink;
 end.
