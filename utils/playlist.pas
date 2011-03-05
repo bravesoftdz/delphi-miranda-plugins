@@ -351,9 +351,10 @@ begin
   if (result<>nil) and not isPathAbsolute(result) and (base<>nil) then
   begin
     StrCopyW(StrCopyEW(buf,base),result);
-    mFreeMem(result);
     StrDupW(result,buf);
-  end;
+  end
+  else
+    StrDupW(result,result);
 end;
 
 procedure tPlaylist.SetShuffle(value:boolean);
