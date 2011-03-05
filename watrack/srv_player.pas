@@ -10,6 +10,7 @@ function GetPlayerNote(name:PAnsiChar):pWideChar;
 function SetPlayerIcons(fname:pAnsiChar):integer;
 
 function LoadFromFile(fname:PAnsiChar):integer;
+function ProcessPlayerLink:integer;
 
 function ServicePlayer(wParam:WPARAM;lParam:LPARAM):integer;cdecl;
 function SendCommand  (wParam:WPARAM;lParam:LPARAM;flags:integer):integer;
@@ -43,6 +44,16 @@ procedure CopyFileInfo    (const src:tSongInfo;var dst:tSongInfo);
 procedure CopyChangingInfo(const src:tSongInfo;var dst:tSongInfo);
 procedure CopyTrackInfo   (const src:tSongInfo;var dst:tSongInfo);
 
+type
+  pwPlayer = ^twPlayer;
+  twPlayer = record
+    this:pPlayerCell;
+    next:pwPlayer;
+  end;
+
+const
+  PlayerLink:pwPlayer=nil;
+  
 implementation
 
 uses
@@ -74,6 +85,18 @@ const
   plyLink:pPlyArray=nil;
   PlyNum:integer=0;
   PlyMax:integer=0;
+
+function ProcessPlayerLink:integer;
+var
+  ptr:pwPlayer;
+begin
+  ptr:=PlayerLink;
+  while ptr<>nil do
+  begin
+    ServicePlayer(WAT_ACT_REGISTER,dword(ptr.This));
+    ptr:=ptr^.Next;
+  end;
+end;
 
 function SetPlayerIcons(fname:pAnsiChar):integer;
 var

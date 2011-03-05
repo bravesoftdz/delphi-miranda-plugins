@@ -534,6 +534,8 @@ begin
   if PluginLink^.ServiceExists(MS_TTB_ADDBUTTON)<>0 then
     onloadhook:=pluginlink^.HookEvent(ME_TTB_MODULELOADED,@OnTTBLoaded);
 
+  ProcessFormatLink;
+  ProcessPlayerLink;
   p:=GetAddonFileName(nil,'player','plugins','ini');
   if p<>nil then
   begin

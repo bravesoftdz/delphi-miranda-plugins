@@ -113,7 +113,17 @@ const
     URL      :'http://www.lastfm.com/';
     Notes    :'Works by window title analysing only');
 
-initialization
-  ServicePlayer(WAT_ACT_REGISTER,dword(@plRec));
-end.
+var
+  LocalPlayerLink:twPlayer;
 
+procedure InitLink;
+begin
+  LocalPlayerLink.Next:=PlayerLink;
+  LocalPlayerLink.This:=@plRec;
+  PlayerLink          :=@LocalPlayerLink;
+end;
+
+initialization
+//  ServicePlayer(WAT_ACT_REGISTER,dword(@plRec));
+  InitLink;
+end.

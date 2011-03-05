@@ -321,15 +321,13 @@ begin
   end;
 end;
 
-function DeInitmRadio:integer;cdecl; forward;
-
 const
   plRec:tPlayerCell=(
     Desc     :'mRadio';
     flags    :WAT_OPT_PLAYERINFO or WAT_OPT_SINGLEINST or WAT_OPT_HASURL or WAT_OPT_LAST;
     Icon     :0;
     Init     :nil;
-    DeInit   :@DeInitmRadio;
+    DeInit   :@ClearmRadio;
     Check    :@Check;
     GetStatus:@GetStatus;
     GetName  :nil;
@@ -338,22 +336,21 @@ const
     URL      :'http://miranda.kom.pl/dev/bankrut/';
     Notes    :nil);
 
-function DeInitmRadio:integer;cdecl;
+var
+  LocalPlayerLink:twPlayer;
+
+procedure InitLink;
 begin
-  result:=0;
-{
-  if plRec.Icon<>0 then
-    DestroyIcon(plRec.Icon);
-}
-  ClearmRadio;
+  if plRec.Icon=0 then
+    plRec.Icon:=LoadImage(hInstance,MAKEINTRESOURCE(ICO_MRADIO),IMAGE_ICON,16,16,0);
+
+  LocalPlayerLink.Next:=PlayerLink;
+  LocalPlayerLink.This:=@plRec;
+  PlayerLink          :=@LocalPlayerLink;
 end;
 
 initialization
-  if plRec.Icon=0 then // one time only
-  begin
-    plRec.Icon:=LoadImage(hInstance,MAKEINTRESOURCE(ICO_MRADIO),IMAGE_ICON,16,16,0);
-    ServicePlayer(WAT_ACT_REGISTER,dword(@plRec));
-    if plRec.Icon<>0 then DestroyIcon(plRec.Icon);
-    plRec.Icon:=THANDLE(-1);
-  end;
+  InitLink;
+finalization
+  if plRec.Icon<>0 then DestroyIcon(plRec.Icon);
 end.

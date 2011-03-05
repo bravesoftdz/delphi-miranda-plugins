@@ -80,6 +80,17 @@ const
     URL      :'http://quinnware.com/';
     Notes    :nil);
 
+var
+  LocalPlayerLink:twPlayer;
+
+procedure InitLink;
+begin
+  LocalPlayerLink.Next:=PlayerLink;
+  LocalPlayerLink.This:=@plRec;
+  PlayerLink          :=@LocalPlayerLink;
+end;
+
 initialization
-  ServicePlayer(WAT_ACT_REGISTER,dword(@plRec));
+//  ServicePlayer(WAT_ACT_REGISTER,dword(@plRec));
+  InitLink;
 end.

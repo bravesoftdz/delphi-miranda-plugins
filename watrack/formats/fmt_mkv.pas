@@ -216,6 +216,20 @@ begin
   CloseHandle(f);
 end;
 
+var
+  LocalFormatLink:twFormat;
+
+procedure InitLink;
+begin
+  LocalFormatLink.Next:=FormatLink;
+
+  LocalFormatLink.this.proc :=@ReadMKV;
+  LocalFormatLink.this.ext  :='MKV';
+  LocalFormatLink.this.flags:=WAT_OPT_VIDEO;
+
+  FormatLink:=@LocalFormatLink;
+end;
+
 initialization
-  RegisterFormat('MKV',ReadMKV,WAT_OPT_VIDEO);
+  InitLink;
 end.

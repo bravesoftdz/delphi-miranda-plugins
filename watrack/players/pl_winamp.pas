@@ -148,7 +148,23 @@ const
     URL      :nil;
     Notes    :'All "unknown" players using Winamp API');
 
+var
+  LocalPlayerLink,
+  LocalPlayerLinkC:twPlayer;
+
+procedure InitLink;
+begin
+  LocalPlayerLink.Next:=PlayerLink;
+  LocalPlayerLink.This:=@plRec;
+  PlayerLink          :=@LocalPlayerLink;
+
+  LocalPlayerLinkC.Next:=PlayerLink;
+  LocalPlayerLinkC.This:=@plRecClone;
+  PlayerLink           :=@LocalPlayerLinkC;
+end;
+
 initialization
-  ServicePlayer(WAT_ACT_REGISTER,dword(@plRec));
-  ServicePlayer(WAT_ACT_REGISTER,dword(@plRecClone));
+//  ServicePlayer(WAT_ACT_REGISTER,dword(@plRec));
+//  ServicePlayer(WAT_ACT_REGISTER,dword(@plRecClone));
+  InitLink;
 end.

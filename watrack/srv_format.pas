@@ -7,6 +7,7 @@ uses windows,wat_api;
 
 procedure DefFillFormatList (hwndList:hwnd);
 procedure DefCheckFormatList(hwndList:hwnd);
+function ProcessFormatLink:integer;
 
 function GetFileFormatInfo(var dst:tSongInfo):integer;
 function CheckExt(fname:pWideChar):integer;
@@ -23,6 +24,16 @@ type
 
 function EnumFormats(param:MusEnumProc;lParam:integer):bool;
 
+type
+  pwFormat = ^twFormat;
+  twFormat = record
+    this:tMusicFormat;
+    next:pwFormat;
+  end;
+
+const
+  FormatLink:pwFormat=nil;
+  
 implementation
 
 uses
@@ -39,6 +50,18 @@ const
   fmtLink:pFmtArray=nil;
   FmtNum:integer=0;
   FmtMax:integer=0;
+
+function ProcessFormatLink:integer;
+var
+  ptr:pwFormat;
+begin
+  ptr:=FormatLink;
+  while ptr<>nil do
+  begin
+    RegisterFormat(@ptr.this.ext,ptr.this.proc);
+    ptr:=ptr^.Next;
+  end;
+end;
 
 function EnumFormats(param:MusEnumProc;lParam:integer):bool;
 var

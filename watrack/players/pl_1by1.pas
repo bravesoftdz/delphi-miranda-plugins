@@ -68,6 +68,17 @@ const
               '"Show : instead of '#39' as minute char" in player settings "Display" tab.'
 );
 
+var
+  LocalPlayerLink:twPlayer;
+
+procedure InitLink;
+begin
+  LocalPlayerLink.Next:=PlayerLink;
+  LocalPlayerLink.This:=@plRec;
+  PlayerLink          :=@LocalPlayerLink;
+end;
+
 initialization
-  ServicePlayer(WAT_ACT_REGISTER,dword(@plRec));
+//  ServicePlayer(WAT_ACT_REGISTER,dword(@plRec));
+  InitLink;
 end.
