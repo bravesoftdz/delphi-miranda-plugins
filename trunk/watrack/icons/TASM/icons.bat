@@ -1,8 +1,9 @@
 @echo off
-brcc32 icons.rc -i%1
-tasm32 watrack_buttons.asm
-tlink32 -Tpd watrack_buttons.obj,watrack_buttons.dll,,,,icons.res
+if /i '%1' == 'buttons' (set iconres=icons) else set iconres=iconspl
+brcc32 %iconres%.rc -i%2 -foicons.res
+tasm32 watrack.asm
+tlink32 -Tpd watrack.obj,watrack_%1.dll,,,,icons.res
 del *.map
 del *.obj
 del *.res
-move watrack_buttons.dll ..\..\..\bin
+move watrack_%1.dll ..\..\..\bin
