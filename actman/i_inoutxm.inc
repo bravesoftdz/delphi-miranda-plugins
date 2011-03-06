@@ -35,7 +35,7 @@ const
   ioObject       :PWideChar = 'object';
   ioOper         :PWideChar = 'oper';
   ioMessage      :PWideChar = 'message';
-  ioDest         :PWideChar = 'dest';
+//  ioDest         :PWideChar = 'dest';
   ioEnc          :PWideChar = 'enc';
   ioValue        :PWideChar = 'value';
   ioService      :PWideChar = 'service';
@@ -71,8 +71,8 @@ const
   ioDword        :PWideChar = 'dword';
   ioAnsi         :PWideChar = 'ansi';
   ioUnicode      :PWideChar = 'unicode';
-  ioWStruct      :PWideChar = 'wordstruct';
-  ioBStruct      :PWideChar = 'bytestruct';
+//  ioWStruct      :PWideChar = 'wordstruct';
+//  ioBStruct      :PWideChar = 'bytestruct';
   ioHex          :PWideChar = 'hex';
   ioInt          :PWideChar = 'int';
   ioSigned       :PWideChar = 'signed';
@@ -88,7 +88,7 @@ const
   ioBreak        :PWideChar = 'break';
   ioJump         :PWideChar = 'jump';
   ioNop          :PWideChar = 'nop';
-  ioArray        :PWideChar = 'array';
+//  ioArray        :PWideChar = 'array';
   ioScript       :PWideChar = 'script';
   ioWrite        :PWideChar = 'write';
   ioRead         :PWideChar = 'read';

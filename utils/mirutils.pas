@@ -557,6 +557,7 @@ var
   pw:pWideChar;
 begin
   result:=0;
+  uid:=nil;
   if not is_chat then
   begin
     uid:=pAnsiChar(CallProtoService(proto,PS_GETCAPS,PFLAG_UNIQUEIDSETTING,0));

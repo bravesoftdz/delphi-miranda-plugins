@@ -850,6 +850,9 @@ begin
                   b :=true;
                   b1:=true;
                 end;
+              else
+                b :=false;
+                b1:=false;
               end;
               EnableWindow(GetDlgItem(Dialog,IDC_DATA_EDIT),b);
               EnableWindow(GetDlgItem(Dialog,IDC_DATA_VARS),b);

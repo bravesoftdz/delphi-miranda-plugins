@@ -648,6 +648,7 @@ begin
     pp:=p;
     while (p^<>#0) and (p^<>')') do
       inc(p);
+    ls[0]:=#0;
     if p^<>#0 then // correct syntax
     begin
       lp:=ls;
@@ -781,7 +782,9 @@ begin
       wnd:=WaitFocusedWndChild(GetForegroundWindow){GetFocus};
       if wnd<>0 then
         hContact:=WndToContact(wnd);
-    end;
+    end
+    else
+      wnd:=0;
 
     if hContact=0 then
     begin
@@ -802,7 +805,9 @@ begin
       StrReplaceW(w,'^h',IntToHex(buf,StrToInt(last)));  // ^h
       StrReplaceW(w,'^t',#9);   // ^t
       StrReplaceW(w,'^e',nil);  // ^e
-    end;
+    end
+    else
+      autosend:=false;
 
     if (flags2 and ACF2_TXT_TEXT)<>0 then
     begin
@@ -837,7 +842,9 @@ begin
           lstr:=w;
           llen:=StrLenW(lstr)*SizeOf(WideChar);
         end;
-      end;
+      end
+      else
+        llen:=0;
 
       fexist:=FileExists(tmp);
       if fexist and ((flags and ACF_FAPPEND)<>0) then
