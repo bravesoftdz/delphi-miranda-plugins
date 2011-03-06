@@ -398,6 +398,7 @@ end;
 procedure TWATFrame.CheckControls;
 var
   D:PWATFrameData;
+  psi:pSongInfo;
 begin
   D:=CustomData;
 
@@ -407,7 +408,10 @@ begin
     begin
       RegisterButtonIcons;
       D.Trackbar:=MakeNewTrackbar(@self);
-      TrackbarSetRange(D.Trackbar,D.UpdInterval);
+      // for case when TB creating after track start (fastest way)
+      // can use (CallService(MS_WAT_GETMUSICINFO,WAT_INF_CHANGES,dword(@psi))<>WAT_PLS_NOTFOUND)
+      psi:=pointer(CallService(MS_WAT_RETURNGLOBAL,WAT_INF_UNICODE,1));
+      TrackbarSetRange(D.Trackbar,D.UpdInterval,psi^.total);
     end;
   end
   else if D.Trackbar<>nil then

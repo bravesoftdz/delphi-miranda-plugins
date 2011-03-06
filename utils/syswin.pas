@@ -538,15 +538,13 @@ const
 
 procedure ArSwitch(idx:integer);
 var
-  j:integer;
   h:pWideChar;
 begin
 //clear old
-  j:=0;
-  while j<oldcnt do
+  while oldcnt>0 do
   begin
-    FreeMem(hold[j]);
-    inc(j);
+    dec(oldcnt);
+    FreeMem(hold[oldcnt]);
   end;
 //copy new to old
   move(har,hold,SizeOf(har));
@@ -731,4 +729,16 @@ begin
   end
 end;
 
+procedure ClearHandles;
+begin
+  while oldcnt>0 do
+  begin
+    dec(oldcnt);
+    FreeMem(hold[oldcnt]);
+  end;
+end;
+
+initialization
+finalization
+  ClearHandles;
 end.

@@ -1,0 +1,30 @@
+#Adapt the paths to point to your own FPC directory
+
+-Fuc:\FPC\/units/$FPCTARGET/
+-Fuc:\FPC\/units/$FPCTARGET/*
+-Fuc:\FPC\/units/$FPCTARGET/rtl
+-Fuc:\FPC\kol
+
+ # For a release compile with optimizes and strip debuginfo
+ #IFDEF RELEASE
+ -Og1p2
+ -Xs
+ #KOL
+ -Mdelphi
+ -CX
+ -Sg
+
+ #WRITE Compiling Release Version
+ #ENDIF
+
+ # For a debug version compile with debuginfo and all codegeneration checks on
+
+ #IFDEF DEBUG
+ -gcl
+ -Crtoi
+ -Sg
+ #KOL
+ -Sa
+ -Mdelphi
+ #WRITE Compiling Debug Version
+ #ENDIF

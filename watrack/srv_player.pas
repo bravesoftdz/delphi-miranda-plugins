@@ -824,7 +824,9 @@ begin
   begin
     mGetMem(result,10*SizeOf(WideChar));
     IntToHex(result,ver);
-  end;
+  end
+  else
+    result:=nil;
 end;
 
 function DefGetWndText(wnd:HWND):pWideChar;
@@ -1026,11 +1028,11 @@ begin
 
       if plyLink^[0].GetInfo<>nil then
         tInfoProc(plyLink^[0].GetInfo)(dst,flags or WAT_OPT_PLAYERDATA)
-      else if (flags and WAT_OPT_WINAMPAPI)<>0 then
+      else if (plyLink^[0].flags and WAT_OPT_WINAMPAPI)<>0 then
         WinampGetInfo(dword(@dst),flags or WAT_OPT_PLAYERDATA);
       
      if (plyLink^[0].flags and WAT_OPT_PLAYERINFO)=0 then
-      if dst.txtver=NIL then dst.txtver:=DefGetVersionText(dst.plyver);
+       if dst.txtver=NIL then dst.txtver:=DefGetVersionText(dst.plyver);
 
       result:=WAT_RES_NEWPLAYER;
     end
@@ -1127,7 +1129,7 @@ begin
 
   if plyLink^[0].GetInfo<>nil then
     tInfoProc(plyLink^[0].GetInfo)(dst,flags or WAT_OPT_CHANGES)
-  else if (flags and WAT_OPT_WINAMPAPI)<>0 then
+  else if (plyLink^[0].flags and WAT_OPT_WINAMPAPI)<>0 then
     WinampGetInfo(dword(@dst),flags or WAT_OPT_CHANGES);
 
   if (plyLink^[0].flags and WAT_OPT_PLAYERINFO)=0 then
@@ -1151,7 +1153,7 @@ begin
   // info from player
   if plyLink^[0].GetInfo<>nil then
     tInfoProc(plyLink^[0].GetInfo)(dst,flags and not WAT_OPT_CHANGES)
-  else if (flags and WAT_OPT_WINAMPAPI)<>0 then
+  else if (plyLink^[0].flags and WAT_OPT_WINAMPAPI)<>0 then
     WinampGetInfo(dword(@dst),flags and not WAT_OPT_CHANGES);
   // info from file
   GetFileFormatInfo(dst);
