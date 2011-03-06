@@ -82,7 +82,12 @@ begin
       if (UseStatus<>BST_UNCHECKED) or (UseExtStatus<>BST_UNCHECKED) then
       begin
         status:=CallProtoService(proto,PS_GETSTATUS,0,0);
-        todo:=(SimpleMode<>BST_UNCHECKED) or IsOurStatus(mask,status);
+        todo  :=(SimpleMode<>BST_UNCHECKED) or IsOurStatus(mask,status);
+      end
+      else
+      begin
+        status:=ID_STATUS_ONLINE;
+        todo  :=true;
       end;
 
       if (UseListeningTo<>BST_UNCHECKED) and
