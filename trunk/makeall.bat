@@ -18,7 +18,14 @@ echo.
 echo -----------------------------------------
 echo. Start to compile WATrack frame icons
 cd .\watrack\icons\
-call make.bat %1 %2 %3 %4 %5 %6 %7 %8 %9
+call make-buttons.bat %1 %2 %3 %4 %5 %6 %7 %8 %9
+cd ..\..\
+
+echo.
+echo -----------------------------------------
+echo. Start to compile WATrack player icons
+cd .\watrack\icons\
+call make-players.bat %1 %2 %3 %4 %5 %6 %7 %8 %9
 cd ..\..\
 
 echo.
