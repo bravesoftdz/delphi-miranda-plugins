@@ -1,83 +1,61 @@
 LANGUAGE 0,0
-// Winamp clone
-WANY     ICON "wany.ico"
-// 1BY1
-1BY1     ICON "1by1.ico"
-// ALShow
-ALSHOW   ICON "alshow.ico"
-// ALSong
-ALSONG   ICON "alsong.ico"
-// Apollo
-APOLLO   ICON "apollo.ico"
-// AudioPlayer
-AUDIO    ICON "audio.ico"
-// BSPlayer
-BS       ICON "bs.ico"
-// Core Media Player
-CMP      ICON "cmp.ico"
-// Creative Music Source
-CMS      ICON "cms.ico"
-// Cowon JetAudio
-COWON    ICON "cowon.ico"
-// FLVPlayer
-FLV      ICON "flv.ico"
-// Foobar
-FOOBAR   ICON "foobar.ico"
-//GOMPlayer
-GOM      ICON "gom.ico"
-// Helium
-HELIUM   ICON "helium.ico"
-// iTunes
-ITUNES   ICON "itunes.ico"
-// JRiver Media Center
-JRMC     ICON "jrmc.ico"
-// LightAlloy
-LA       ICON "la.ico"
-// Last.fm Player
-LFM      ICON "lfm.ico"
-// MusicCube One
-MCONE    ICON "mcone.ico"
-// MusikCube
-MCUBE    ICON "mcube.ico"
-// Media Commander Express
-MCX      ICON "mcx.ico"
-// Music Match Jukebox
-MMATCH   ICON "mmatch.ico"
-// Media Monkey
-MMONKEY  ICON "mmonkey.ico"
-// Media Player Classic
-MPC      ICON "mpc.ico"
-// MPlayer
-MPLAYER  ICON "mplayer.ico"
-// MRadio
-MRADIO   ICON "mradio.ico"
-// PlayNow
-PLAY     ICON "play.ico"
-// Pluton
-PLUTON   ICON "pluton.ico"
-// CyberLink PowerDVD
-POWERDVD ICON "powerdvd.ico"
-// Quintessential Player
-QCD      ICON "qcd.ico"
-// Quicktime Player
-QT       ICON "qt.ico"
-// Real Player Gold
-REAL     ICON "real.ico"
-// SAPS
-SAPS     ICON "saps.ico"
-// SongBird
-SONGBIRD ICON "songbird.ico"
-// VideoLAN media player
-VLC      ICON "vlc.ico"
-// ViPlay
-VP3      ICON "vp3.ico"
-// WiFiRadio
-WIFI     ICON "wifi.ico"
-// Winamp
-WINAMP   ICON "winamp.ico"
-// Windows Media Player
-WMP      ICON "wmp.ico"
-// XM Player
-XM       ICON "xm.ico"
-// Zoom Player
-ZOOM     ICON "zoom.ico"
+
+Player_1BY1                    ICON "1by1.ico"
+Player_AIMP                    ICON "aimp.ico"
+Player_ALSHOW                  ICON "alshow.ico"
+Player_ALSONG                  ICON "alsong.ico"
+Player_APOLLO                  ICON "apollo.ico"
+Player_ASHAMPOO_MEDIA_PLAYER   ICON "Ashampoo Media Player.ico"
+Player_AUDIOPLAYER             ICON "audio.ico"
+Player_BEHOLDTV                ICON "BeholdTV.ico"
+Player_BILLY                   ICON "Billy.ico"
+Player_BSPLAYER                ICON "bsplayer.ico"
+Player_CORE_MEDIA_PLAYER       ICON "Core Media Player.ico"
+Player_COWON_JETAUDIO          ICON "JetAudio.ico"
+Player_CREATIVE_MEDIA_SOURCE   ICON "cms.ico"
+Player_CRYSTAL_PLAYER          ICON "Crystal Player.ico"
+Player_CYBERLINK_POWERDVD      ICON "Cyberlink PowerDVD.ico"
+Player_EVIL_PLAYER             ICON "Evil Player.ico"
+Player_FLVPLAYER               ICON "flv.ico"
+Player_FOOBAR2000              ICON "foobar2000.ico"
+Player_GOMPLAYER               ICON "GOMPlayer.ico"
+Player_HELIUM_MUSIC_MANAGER    ICON "Helium Music Manager.ico"
+Player_ITUNES                  ICON "iTunes.ico"
+Player_J_RIVER_MEDIA_CENTER    ICON "J.River Media Center.ico"
+Player_KMPLAYER                ICON "KMPlayer.ico"
+Player_LAST_FM                 ICON "lastfm.ico"
+Player_LIGHTALLOY              ICON "LA.ico"
+Player_MEDIA_COMMANDER_EXPRESS ICON "mcx.ico"
+Player_MEDIAMONKEY             ICON "MediaMonkey.ico"
+Player_MOREAMP                 ICON "MoreAmp.ico"
+Player_MPC                     ICON "MPC.ico"
+Player_MPLAYER                 ICON "MPlayer.ico"
+Player_MUSICCUBE_ONE           ICON "mcone.ico"
+Player_MUSICMATCH_JUKEBOX      ICON "mmatch.ico"
+Player_MUSIKCUBE               ICON "MusikCube.ico"
+Player_PLUTON                  ICON "pluton.ico"
+Player_QCD                     ICON "QCDPlayer.ico"
+Player_QUICKTIME_PLAYER        ICON "QuickTime Player.ico"
+Player_RADLIGHT                ICON "RadLight.ico"
+Player_REAL_PLAYER             ICON "Real Player.ico"
+Player_SAPS                    ICON "saps.ico"
+Player_SONGBIRD                ICON "SongBird.ico"
+Player_SPIDER_PLAYER           ICON "Spider Player.ico"
+Player_ULTRA_PLAYER            ICON "Ultra player.ico"
+Player_VIDEOLAN_PLAYER         ICON "VLC.ico"
+Player_VIPLAY                  ICON "vp3.ico"
+Player_VUPLAYER                ICON "VUPlayer.ico"
+Player_WIFIRADIO_PLAYER        ICON "wifi.ico"
+Player_WINAMP                  ICON "winamp.ico"
+Player_WINAMP_CLONE            ICON "wany.ico"
+Player_WINDVD                  ICON "WinDVD.ico"
+Player_WMP                     ICON "WMP 9.ico"
+Player_XMPLAY                  ICON "XMPlay.ico"
+Player_ZOOM                    ICON "Zoom Player.ico"
+
+/*
+Player_      ICON ""
+Player_      ICON ""
+Player_      ICON ""
+Player_      ICON ""
+*/
