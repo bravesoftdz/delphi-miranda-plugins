@@ -106,7 +106,7 @@ begin
   begin
     D.TextBlock.Top   :=awkTextPad;
     D.TextBlock.Height:=h-D.TextBlock.Top;
-    D.Trackbar.Anchor(true,true,true,true);
+    D.TextBlock.Anchor(true,true,true,true);
   end;
 end;
 

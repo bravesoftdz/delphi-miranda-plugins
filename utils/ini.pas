@@ -680,8 +680,8 @@ begin
         ces.szModule   :=SName;
         ces.ofsSettings:=0;
         PluginLink^.CallService(MS_DB_CONTACT_ENUMSETTINGS,0,dword(@ces));
-        mGetMem(dst,p.ptr-@buf+1);
-        move(buf,PAnsiChar(dst)^,p.ptr-@buf+1);
+        mGetMem(dst,p.ptr-PAnsiChar(@buf)+1);
+        move(buf,PAnsiChar(dst)^,p.ptr-PAnsiChar(@buf)+1);
       end;
     end;
 end;
@@ -826,7 +826,7 @@ begin
       ces.szModule   :=SName;
       ces.ofsSettings:=0;
       PluginLink^.CallService(MS_DB_CONTACT_ENUMSETTINGS,0,dword(@ces));
-      i:=p.ptr-@buf+1;
+      i:=p.ptr-PAnsiChar(@buf)+1;
     end;
     mGetMem(dst,i);
     move(buf,dst^,i);

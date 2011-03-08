@@ -130,9 +130,9 @@ begin
     Flags      :=OFN_EXPLORER or OFN_OVERWRITEPROMPT;// or OFN_HIDEREADONLY;
   end;
   if open then
-    result:=GetOpenFileNameA(NameRec)
+    result:=GetOpenFileNameA({$IFDEF FPC}@{$ENDIF}NameRec)
   else
-    result:=GetSaveFileNameA(NameRec);
+    result:=GetSaveFileNameA({$IFDEF FPC}@{$ENDIF}NameRec);
 end;
 
 function ShowDlgW(dst:PWideChar;fname:PWideChar=nil;Filter:PWideChar=nil;open:boolean=true):boolean;
@@ -159,9 +159,9 @@ begin
     Flags      :=OFN_EXPLORER or OFN_OVERWRITEPROMPT;// or OFN_HIDEREADONLY;
   end;
   if open then
-    result:=GetOpenFileNameW(NameRec)
+    result:=GetOpenFileNameW({$IFDEF FPC}@{$ENDIF}NameRec)
   else
-    result:=GetSaveFileNameW(NameRec)
+    result:=GetSaveFileNameW({$IFDEF FPC}@{$ENDIF}NameRec)
 end;
 
 procedure LV_SetItem(handle:hwnd;str:PAnsiChar;item:integer;subitem:integer=0);
@@ -211,7 +211,7 @@ begin
       if CoInitializeEx(nil,COINIT_APARTMENTTHREADED)<>RPC_E_CHANGED_MODE then
         BrowseInfo.ulFlags:=BrowseInfo.ulFlags or BIF_NEWDIALOGSTYLE;
     try
-      ItemIDList:=ShBrowseForFolderA(BrowseInfo);
+      ItemIDList:=ShBrowseForFolderA({$IFDEF FPC}@{$ENDIF}BrowseInfo);
       Result:=ItemIDList<>nil;
       if Result then
       begin
@@ -248,7 +248,7 @@ begin
       if CoInitializeEx(nil,COINIT_APARTMENTTHREADED)<>RPC_E_CHANGED_MODE then
         BrowseInfo.ulFlags:=BrowseInfo.ulFlags or BIF_NEWDIALOGSTYLE;
     try
-      ItemIDList:=ShBrowseForFolderW(BrowseInfo);
+      ItemIDList:=ShBrowseForFolderW({$IFDEF FPC}@{$ENDIF}BrowseInfo);
       Result:=ItemIDList<>nil;
       if Result then
       begin
