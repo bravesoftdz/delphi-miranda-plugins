@@ -304,7 +304,7 @@ var
   status:integer;
 begin
   if proto=0{SimpleMode<>BST_UNCHECKED} then
-    r:=pWideChar(TmplType)
+    r:=GetTemplateStr(TmplType,0,0,0)//pWideChar(TmplType)
   else
   begin
     status:=GetProtoStatusNum(proto);

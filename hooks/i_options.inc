@@ -160,7 +160,8 @@ begin
 
   with xmlparser do
   begin
-    if GetFSize(fname)<>0 then
+    i:=GetFSize(fname);
+    if i<>0 then
     begin
       mGetMem (res ,i+SizeOf(WideChar));
       FillChar(res^,i+SizeOf(WideChar),0);

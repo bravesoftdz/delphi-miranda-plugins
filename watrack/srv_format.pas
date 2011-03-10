@@ -55,10 +55,12 @@ function ProcessFormatLink:integer;
 var
   ptr:pwFormat;
 begin
+  result:=0;
   ptr:=FormatLink;
   while ptr<>nil do
   begin
     RegisterFormat(@ptr.this.ext,ptr.this.proc);
+    inc(result);
     ptr:=ptr^.Next;
   end;
 end;

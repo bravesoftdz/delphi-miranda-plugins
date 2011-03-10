@@ -3,7 +3,7 @@ unit SysWin;
 
 interface
 
-uses windows;
+uses {$IFDEF FPC}jwawindows{$ELSE}windows{$ENDIF};
 
 type
   FFWFilterProc = function(fname:pWideChar):boolean;
@@ -36,7 +36,7 @@ function WaitFocusedWndChild(Wnd:HWnd):HWnd;
 
 implementation
 
-uses shellapi,PSAPI,common,messages;
+uses shellapi,{$IFDEF FPC}jwapsapi{$ELSE}PSAPI{$ENDIF},common,messages;
 
 function GetWorkOfflineStatus:integer;
 var
@@ -60,7 +60,11 @@ function ExecuteWaitW(AppPath:pWideChar; CmdLine:pWideChar=nil; DfltDirectory:PW
          Show:DWORD=SW_SHOWNORMAL; TimeOut:DWORD=0; ProcID:PDWORD=nil):dword;
 var
   Flags: DWORD;
+  {$IFDEF FPC}
+  Startup: StartupInfoW;
+  {$ELSE}
   Startup: {$IFDEF DELPHI10_UP}TStartupInfoW{$ELSE}TStartupInfo{$ENDIF};
+  {$ENDIF}
   ProcInf: TProcessInformation;
   App: array [0..1023] of widechar;
   p:PWideChar;
@@ -119,7 +123,7 @@ function ExecuteWait(AppPath:PAnsiChar; CmdLine:PAnsiChar=nil; DfltDirectory:PAn
          Show:DWORD=SW_SHOWNORMAL; TimeOut:DWORD=0; ProcID:PDWORD=nil):dword;
 var
   Flags: DWORD;
-  Startup: {$IFDEF FPC}TStartupInfoA{$ELSE}TStartupInfo{$ENDIF};
+  Startup: {$IFDEF FPC}StartupInfoA{$ELSE}TStartupInfo{$ENDIF};
 //  Startup: TStartupInfoA;
   ProcInf: TProcessInformation;
   App: array [0..1023] of AnsiChar;
@@ -257,7 +261,7 @@ procedure ProcessMessages;
 var
   Unicode: Boolean;
   MsgExists: Boolean;
-  Msg:TMsg;
+  Msg:tMsg;
 begin
   repeat
     if PeekMessageA(Msg,0,0,0,PM_NOREMOVE) then
@@ -271,11 +275,11 @@ begin
 
       if Msg.Message<>WM_QUIT then
       begin
-        TranslateMessage(Msg);
+        TranslateMessage({$IFDEF FPC}@{$ENDIF}Msg);
         if Unicode then
-          DispatchMessageW(Msg)
+          DispatchMessageW({$IFDEF FPC}@{$ENDIF}Msg)
         else
-          DispatchMessageA(Msg);
+          DispatchMessageA({$IFDEF FPC}@{$ENDIF}Msg);
       end;
     end
     else

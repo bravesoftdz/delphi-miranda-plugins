@@ -3,6 +3,8 @@
 {$i i_hconst.inc}
 
 const
+  HWND_MESSAGE = HWND(-3);
+const
   ACF_ASSIGNED = $80000000;  // hook assigned
   ACF_DISABLED = $10000000;  // hook disabled
 const

@@ -24,7 +24,7 @@ end;
 
 procedure LoadOpt;
 begin
-  SimpleMode    :=DBReadByte(0,PluginShort,opt_SimplMode  ,BST_UNCHECKED);
+  SimpleMode    :=DBReadByte(0,PluginShort,opt_SimplMode  ,BST_CHECKED);
   UseStatus     :=DBReadByte(0,PluginShort,opt_UseStatus  ,BST_CHECKED);
   UseExtStatus  :=DBReadByte(0,PluginShort,opt_UseExtStat ,BST_CHECKED);
   UseMessages   :=DBReadByte(0,PluginShort,opt_UseMsgs    ,BST_CHECKED);

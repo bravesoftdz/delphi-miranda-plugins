@@ -439,7 +439,7 @@ type
   OptParam = record
     Handle :THANDLE;
     Setting:integer;
-    Value  :integer;
+    Value  :int_ptr;
   end;
 
 const

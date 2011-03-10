@@ -1,8 +1,6 @@
 {}
 var
   settings:HWND = 0;
-  DupHookList:pHookList = nil;
-  DupMaxHooks:integer = 0;
   OldTableProc:pointer;
 
 const

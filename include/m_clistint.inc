@@ -357,7 +357,7 @@ type
     pfnTrayIconSetToBase           : procedure (szPreferredProto:PAnsiChar); cdecl;
     pfnTrayIconIconsChanged        : procedure ; cdecl;
     pfnTrayIconPauseAutoHide       : function (wParam:WPARAM; lParam:LPARAM):int; cdecl;
-    pfnTrayIconProcessMessage      : function (wParam:WPARAM; lParam:LPARAM):pint; cdecl;
+    pfnTrayIconProcessMessage      : function (wParam:WPARAM; lParam:LPARAM):int_ptr; cdecl;
     pfnCListTrayNotify             : function (_para1:PMIRANDASYSTRAYNOTIFY):int; cdecl;
 
   (* clui.c *)
@@ -438,7 +438,7 @@ type
     trayIcon          : PtrayIconInfo_t;
     trayIconCount     : int;
     shellVersion      : int;
-    cycleTimerId      : int;
+    cycleTimerId      : uint_ptr;
     cycleStep         : int;
     szTip             : TChar;
     bTrayMenuOnScreen : BOOL;
@@ -462,7 +462,7 @@ type
     pfnLockTray   : procedure ; cdecl;
     pfnUnlockTray : procedure ; cdecl;
 
-    pfnTrayCycleTimerProc : procedure(hwnd:HWND;message:uint;idEvent:pint;dwTime:DWORD); stdcall;
+    pfnTrayCycleTimerProc : procedure(hwnd:HWND;message:uint;idEvent:uint_ptr;dwTime:DWORD); stdcall;
 
   (*************************************************************************************
   * version 6 additions (0.8.0.x) - accounts

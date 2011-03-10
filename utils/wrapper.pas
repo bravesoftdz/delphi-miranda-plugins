@@ -87,7 +87,7 @@ begin
     if a>1 then
     begin
       mGetMem(PAnsiChar(result),a);
-      SendMessageA(wnd,WM_GETTEXT,a,longint(result));
+      SendMessageA(wnd,WM_GETTEXT,a,lparam(result));
     end;
   end
   else
@@ -96,7 +96,7 @@ begin
     if a>1 then
     begin
       mGetMem(pWideChar(result),a*SizeOf(WideChar));
-      SendMessageW(wnd,WM_GETTEXT,a,longint(result));
+      SendMessageW(wnd,WM_GETTEXT,a,lparam(result));
     end;
   end;
 end;
@@ -173,7 +173,7 @@ begin
   li.pszText :=str;
   li.iItem   :=item;
   li.iSubItem:=subitem;
-  SendMessageA(handle,LVM_SETITEMA,0,integer(@li));
+  SendMessageA(handle,LVM_SETITEMA,0,lparam(@li));
 end;
 
 procedure LV_SetItemW(handle:hwnd;str:PWideChar;item:integer;subitem:integer=0);
@@ -185,7 +185,7 @@ begin
   li.pszText :=str;
   li.iItem   :=item;
   li.iSubItem:=subitem;
-  SendMessageW(handle,LVM_SETITEMW,0,integer(@li));
+  SendMessageW(handle,LVM_SETITEMW,0,lparam(@li));
 end;
 
 function SelectDirectory(Caption:PAnsiChar;var Directory:PAnsiChar;
@@ -280,7 +280,7 @@ begin
   li.iItem   :=item;
   li.mask    :=LVIF_PARAM;
   li.iSubItem:=0;
-  SendMessageW(list,LVM_GETITEMW,0,dword(@li));
+  SendMessageW(list,LVM_GETITEMW,0,lparam(@li));
   result:=li.lParam;
 end;
 
@@ -301,7 +301,7 @@ begin
   li.mask    :=LVIF_PARAM;
   li.lParam  :=lParam;
   li.iSubItem:=0;
-  SendMessageW(list,LVM_SETITEMW,0,dword(@li));
+  SendMessageW(list,LVM_SETITEMW,0,windows.lparam(@li));
   result:=lParam;
 end;
 
@@ -311,7 +311,7 @@ var
 begin
   HTI.pt.x := Pt.X;
   HTI.pt.y := Pt.Y;
-  SendMessage(wnd,LVM_SUBITEMHITTEST,0,Integer(@HTI));
+  SendMessage(wnd,LVM_SUBITEMHITTEST,0,lparam(@HTI));
   Result :=HTI.iItem;
   if @SubItem<>nil then
     SubItem:=HTI.iSubItem;
@@ -323,7 +323,7 @@ var
 begin
   HTI.pt.x := x;
   HTI.pt.y := y;
-  SendMessage(wnd,LVM_SUBITEMHITTEST,0,Integer(@HTI));
+  SendMessage(wnd,LVM_SUBITEMHITTEST,0,lparam(@HTI));
   Result :=HTI.iItem;
   if @SubItem<>nil then
     SubItem:=HTI.iSubItem;
@@ -359,7 +359,7 @@ begin
 
   if item<0 then
     item:=SendMessage(list,LVM_GETNEXTITEM,-1,LVNI_FOCUSED);
-  SendMessageW(list,LVM_SORTITEMSEX,dword(item)+(dword(item+direction) shl 16),dword(@LV_Compare));
+  SendMessageW(list,LVM_SORTITEMSEX,wparam(item)+(wparam(item+direction) shl 16),lparam(@LV_Compare));
   result:=item+direction;
 end;
 
@@ -436,9 +436,9 @@ function CB_AddStrData(cb:HWND;astr:pAnsiChar;data:integer=0;idx:integer=-1):HWN
 begin
   result:=cb;
   if idx<0 then
-    idx:=SendMessage(cb,CB_ADDSTRING,0,dword(astr))
+    idx:=SendMessage(cb,CB_ADDSTRING,0,lparam(astr))
   else
-    idx:=SendMessage(cb,CB_INSERTSTRING,idx,dword(astr));
+    idx:=SendMessage(cb,CB_INSERTSTRING,idx,lparam(astr));
   SendMessage(cb,CB_SETITEMDATA,idx,data);
 end;
 
@@ -446,9 +446,9 @@ function CB_AddStrDataW(cb:HWND;astr:pWideChar;data:integer=0;idx:integer=-1):HW
 begin
   result:=cb;
   if idx<0 then
-    idx:=SendMessageW(cb,CB_ADDSTRING,0,dword(astr))
+    idx:=SendMessageW(cb,CB_ADDSTRING,0,lparam(astr))
   else
-    idx:=SendMessageW(cb,CB_INSERTSTRING,idx,dword(astr));
+    idx:=SendMessageW(cb,CB_INSERTSTRING,idx,lparam(astr));
   SendMessage(cb,CB_SETITEMDATA,idx,data);
 end;
 

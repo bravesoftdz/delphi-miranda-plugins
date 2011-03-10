@@ -9,7 +9,7 @@ function AddCBEx(wnd:HWND;proto:PAnsiChar):HWND;
 
 implementation
 
-uses messages,m_api{,kol},common,mirutils;
+uses messages,m_api,common,mirutils;
 
 function AddCBEx(wnd:HWND;proto:PAnsiChar):HWND;
 var
@@ -39,7 +39,7 @@ begin
   ics.flags   :=CSSF_STATUSES_COUNT;
   ics.szName.w:=@b;
   ics.wParam  :=@total;
-  CallService(buf1,0,dword(@ics));
+  CallService(buf1,0,lParam(@ics));
   ics.flags :=CSSF_DEFAULT_NAME or CSSF_MASK_NAME or CSSF_UNICODE;
 
   while cnt<=total do
@@ -55,13 +55,13 @@ begin
       if icon=0 then break;
       if ImageList_AddIcon(il,icon)=-1 then break;
       ics.wParam:=@cnt;
-      CallService(buf1,0,dword(@ics));
+      CallService(buf1,0,lparam(@ics));
       cbei.pszText:=TranslateW(@b);
     end;
     cbei.iItem         :=cnt;
     cbei.iImage        :=cnt;
     cbei.iSelectedImage:=cnt;
-    if SendMessageW(wnd,CBEM_INSERTITEMW,0,dword(@cbei))=-1 then break;
+    if SendMessageW(wnd,CBEM_INSERTITEMW,0,lparam(@cbei))=-1 then break;
     inc(cnt);
 //    DestroyIcon(icon);
   end;

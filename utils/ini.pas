@@ -393,7 +393,7 @@ begin
         mGetMem(INIBuffer,32768);
         INIBuffer[0]:=#10;
         SHandle:=Reset(SName);
-        if dword(SHandle)=INVALID_HANDLE_VALUE then
+        if thandle(SHandle)=INVALID_HANDLE_VALUE then
           INIBuffer[1]:=#0
         else
         begin
@@ -676,10 +676,10 @@ begin
         p.handle:=aHandle;
         FillChar(buf,SizeOf(buf),0);
         ces.pfnEnumProc:=@EnumSettingsProc;
-        ces.lParam     :=dword(@p);
+        ces.lParam     :=lparam(@p);
         ces.szModule   :=SName;
         ces.ofsSettings:=0;
-        PluginLink^.CallService(MS_DB_CONTACT_ENUMSETTINGS,0,dword(@ces));
+        PluginLink^.CallService(MS_DB_CONTACT_ENUMSETTINGS,0,lparam(@ces));
         mGetMem(dst,p.ptr-PAnsiChar(@buf)+1);
         move(buf,PAnsiChar(dst)^,p.ptr-PAnsiChar(@buf)+1);
       end;
@@ -708,7 +708,7 @@ end;
       StrCopy(Section+ParOffset,szSetting);
       db.szSetting:=Section;
     end;
-    PluginLink^.CallService(MS_DB_CONTACT_DELETESETTING,0,dword(@db));
+    PluginLink^.CallService(MS_DB_CONTACT_DELETESETTING,0,tlparam(@db));
     result:=0;
   end;
 
@@ -726,7 +726,7 @@ begin
       ces.lParam     :=aHandle;
       ces.szModule   :=SName;
       ces.ofsSettings:=0;
-      PluginLink^.CallService(MS_DB_CONTACT_ENUMSETTINGS,0,dword(@ces));
+      PluginLink^.CallService(MS_DB_CONTACT_ENUMSETTINGS,0,lparam(@ces));
     end;
 end;
 
@@ -822,10 +822,10 @@ begin
       FillChar(buf,SizeOf(buf),0);
 
       ces.pfnEnumProc:=@EnumSettingsProc;
-      ces.lParam     :=dword(@p);
+      ces.lParam     :=lparam(@p);
       ces.szModule   :=SName;
       ces.ofsSettings:=0;
-      PluginLink^.CallService(MS_DB_CONTACT_ENUMSETTINGS,0,dword(@ces));
+      PluginLink^.CallService(MS_DB_CONTACT_ENUMSETTINGS,0,lparam(@ces));
       i:=p.ptr-PAnsiChar(@buf)+1;
     end;
     mGetMem(dst,i);
@@ -849,7 +849,7 @@ begin
       StrCopy(Section+ParOffset,param);
       db.szModule :=SName;
       db.szSetting:=Section;
-      PluginLink^.CallService(MS_DB_CONTACT_DELETESETTING,0,dword(@db));
+      PluginLink^.CallService(MS_DB_CONTACT_DELETESETTING,0,lparam(@db));
     end;
   end;
 end;

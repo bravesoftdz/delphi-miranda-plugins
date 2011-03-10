@@ -33,7 +33,9 @@ function DBWriteUnicode(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;
 
 function DBFreeVariant(dbv:PDBVARIANT):integer;
 function DBDeleteSetting(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar):Integer;
+
 function DBDeleteGroup(hContact:THANDLE;szModule:PAnsiChar):integer;
+
 function DBDeleteModule(szModule:PAnsiChar):integer; // 0.8.0+
 
 function DBGetSettingType(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar):integer;
@@ -347,6 +349,7 @@ begin
   FreeMem(p);
 end;
 }
+
 type
   ppchar = ^pAnsiChar;
 
@@ -375,16 +378,16 @@ begin
   num:=0;
 
   ces.pfnEnumProc:=@EnumSettingsProcCalc;
-  ces.lParam     :=integer(@num);
+  ces.lParam     :=lParam(@num);
   ces.ofsSettings:=0;
-  PluginLink^.CallService(MS_DB_CONTACT_ENUMSETTINGS,hContact,dword(@ces));
+  PluginLink^.CallService(MS_DB_CONTACT_ENUMSETTINGS,hContact,lparam(@ces));
 
   GetMem(p,num+1);
   ptr:=p;
   ces.pfnEnumProc:=@EnumSettingsProc;
-  ces.lParam     :=integer(@ptr);
+  ces.lParam     :=lparam(@ptr);
   ces.ofsSettings:=0;
-  result:=PluginLink^.CallService(MS_DB_CONTACT_ENUMSETTINGS,hContact,dword(@ces));
+  result:=PluginLink^.CallService(MS_DB_CONTACT_ENUMSETTINGS,hContact,lparam(@ces));
   ptr^:=#0;
 
   cgs.szModule:=szModule;
@@ -402,7 +405,7 @@ end;
 function DBDeleteModule(szModule:PAnsiChar):integer; // 0.8.0+
 begin
   result:=0;
-  PluginLink^.CallService(MS_DB_MODULE_DELETE,0,dword(szModule));
+  PluginLink^.CallService(MS_DB_MODULE_DELETE,0,lParam(szModule));
 end;
 
 function DBGetSettingType(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar):integer;

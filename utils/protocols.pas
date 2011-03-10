@@ -4,21 +4,21 @@ interface
 
 uses windows,m_api;
 
-function FindProto(proto:PAnsiChar):integer;
+function FindProto(proto:PAnsiChar):uint_ptr;
 
 function GetStatusNum(status:integer):integer;
 function GetNumProto:cardinal;
 
-function  GetProtoSetting(ProtoNum:cardinal;param:boolean=false):dword;
-procedure SetProtoSetting(ProtoNum:cardinal;mask:dword;param:boolean=false);
+function  GetProtoSetting(ProtoNum:uint_ptr;param:boolean=false):dword;
+procedure SetProtoSetting(ProtoNum:uint_ptr;mask:dword;param:boolean=false);
 
-function IsTunesSupported  (ProtoNum:cardinal):bool;
-function IsXStatusSupported(ProtoNum:cardinal):bool;
-function IsChatSupported   (ProtoNum:cardinal):bool;
+function IsTunesSupported  (ProtoNum:uint_ptr):bool;
+function IsXStatusSupported(ProtoNum:uint_ptr):bool;
+function IsChatSupported   (ProtoNum:uint_ptr):bool;
 
-function GetProtoStatus   (ProtoNum:cardinal):integer;
-function GetProtoStatusNum(ProtoNum:cardinal):integer;
-function GetProtoName     (ProtoNum:cardinal):PAnsiChar;
+function GetProtoStatus   (ProtoNum:uint_ptr):integer;
+function GetProtoStatusNum(ProtoNum:uint_ptr):integer;
+function GetProtoName     (ProtoNum:uint_ptr):PAnsiChar;
 
 procedure FillProtoList  (list:hwnd;withIcons:bool=false);
 procedure CheckProtoList (list:hwnd);
@@ -91,10 +91,15 @@ var
   NumProto:cardinal;
   NASPresents:bool;
 
-function FindProto(proto:PAnsiChar):integer;
+function FindProto(proto:PAnsiChar):uint_ptr;
 var
   i:integer;
 begin
+  if uint_ptr(proto)<=100 then
+  begin
+    result:=uint_ptr(proto);
+    exit;
+  end;
   for i:=1 to NumProto do
   begin
     if StrCmp(proto,protos^[i].name)=0 then
@@ -106,40 +111,36 @@ begin
   result:=0;
 end;
 
-function IsTunesSupported(ProtoNum:cardinal):bool;
+function IsTunesSupported(ProtoNum:uint_ptr):bool;
 begin
-  if ProtoNum>100 then
-    ProtoNum:=FindProto(PAnsiChar(ProtoNum));
+  ProtoNum:=FindProto(PAnsiChar(ProtoNum));
   if (ProtoNum<=NumProto) and ((protos^[ProtoNum].status and psf_tunes)<>0) then
     result:=true
   else
     result:=false;
 end;
 
-function IsXStatusSupported(ProtoNum:cardinal):bool;
+function IsXStatusSupported(ProtoNum:uint_ptr):bool;
 begin
-  if ProtoNum>100 then
-    ProtoNum:=FindProto(PAnsiChar(ProtoNum));
+  ProtoNum:=FindProto(PAnsiChar(ProtoNum));
   if (ProtoNum<=NumProto) and ((protos^[ProtoNum].status and psf_icq)<>0) then
     result:=true
   else
     result:=false;
 end;
 
-function IsChatSupported(ProtoNum:cardinal):bool;
+function IsChatSupported(ProtoNum:uint_ptr):bool;
 begin
-  if ProtoNum>100 then
-    ProtoNum:=FindProto(PAnsiChar(ProtoNum));
+  ProtoNum:=FindProto(PAnsiChar(ProtoNum));
   if (ProtoNum<=NumProto) and ((protos^[ProtoNum].status and psf_chat)<>0) then
     result:=true
   else
     result:=false;
 end;
 
-function GetProtoSetting(ProtoNum:cardinal;param:boolean=false):dword;
+function GetProtoSetting(ProtoNum:uint_ptr;param:boolean=false):dword;
 begin
-  if ProtoNum>100 then
-    ProtoNum:=FindProto(PAnsiChar(ProtoNum));
+  ProtoNum:=FindProto(PAnsiChar(ProtoNum));
   if ProtoNum<=NumProto then
   begin
     if param then
@@ -151,10 +152,9 @@ begin
     result:=0;
 end;
 
-procedure SetProtoSetting(ProtoNum:cardinal;mask:dword;param:boolean=false);
+procedure SetProtoSetting(ProtoNum:uint_ptr;mask:dword;param:boolean=false);
 begin
-  if ProtoNum>100 then
-    ProtoNum:=FindProto(PAnsiChar(ProtoNum));
+  ProtoNum:=FindProto(PAnsiChar(ProtoNum));
   if ProtoNum<=NumProto then
   begin
     if param then
@@ -177,17 +177,15 @@ begin
   result:=0; //-1
 end;
 
-function GetProtoStatus(ProtoNum:cardinal):integer;
+function GetProtoStatus(ProtoNum:uint_ptr):integer;
 begin
-  if ProtoNum>100 then
-    ProtoNum:=FindProto(PAnsiChar(ProtoNum));
+  ProtoNum:=FindProto(PAnsiChar(ProtoNum));
   result:=CallProtoService(protos^[ProtoNum].name,PS_GETSTATUS,0,0);
 end;
 
-function GetProtoStatusNum(ProtoNum:cardinal):integer;
+function GetProtoStatusNum(ProtoNum:uint_ptr):integer;
 begin
-  if ProtoNum>100 then
-    ProtoNum:=FindProto(PAnsiChar(ProtoNum));
+  ProtoNum:=FindProto(PAnsiChar(ProtoNum));
   result:=GetStatusNum(GetProtoStatus(ProtoNum));
 end;
 
@@ -196,7 +194,7 @@ begin
   result:=NumProto;
 end;
 
-function GetProtoName(ProtoNum:cardinal):PAnsiChar;
+function GetProtoName(ProtoNum:uint_ptr):PAnsiChar;
 begin
   if ProtoNum<=NumProto then
     result:=protos^[ProtoNum].name
@@ -215,7 +213,7 @@ begin
   ListView_SetExtendedListViewStyle(list, LVS_EX_CHECKBOXES);
   if withIcons then
   begin
-    dword(cli):=CallService(MS_CLIST_RETRIEVE_INTERFACE,0,0);
+    cli:=PCLIST_INTERFACE(CallService(MS_CLIST_RETRIEVE_INTERFACE,0,0));
     SetWindowLongW(list,GWL_STYLE,
         GetWindowLongW(list,GWL_STYLE) or LVS_SHAREIMAGELISTS);
     ListView_SetImageList(list,
@@ -242,7 +240,7 @@ begin
     item.pszText:=protos^[i].name;
     if withIcons and (i>0) then
       item.iImage:=cli^.pfnIconFromStatusMode(item.pszText,ID_STATUS_ONLINE,0);
-    newItem:=SendMessageA(list,LVM_INSERTITEMA,0,cardinal(@item));
+    newItem:=SendMessageA(list,LVM_INSERTITEMA,0,lParam(@item));
     if newItem>=0 then
       ListView_SetCheckState(list,newItem,(protos^[i].enabled and psf_enabled)<>0)
   end;
@@ -283,7 +281,7 @@ procedure FillStatusList(proto:cardinal;list:hwnd;withIcons:bool=false);
     else
       item.mask   :=LVIF_TEXT+LVIF_PARAM;
     item.pszText:=TranslateW(StatNames[num]);
-    newItem:=SendMessageW(list,LVM_INSERTITEMW,0,dword(@item));
+    newItem:=SendMessageW(list,LVM_INSERTITEMW,0,lparam(@item));
     if newItem>=0 then
       ListView_SetCheckState(list,newItem,enabled);
   end;
@@ -300,7 +298,7 @@ begin
   ListView_SetExtendedListViewStyle(list, LVS_EX_CHECKBOXES);
   if withIcons then
   begin
-    dword(cli):=CallService(MS_CLIST_RETRIEVE_INTERFACE,0,0);
+    cli:=PCLIST_INTERFACE(CallService(MS_CLIST_RETRIEVE_INTERFACE,0,0));
     SetWindowLongW(list,GWL_STYLE,
         GetWindowLongW(list,GWL_STYLE) or LVS_SHAREIMAGELISTS);
     ListView_SetImageList(list,
@@ -382,7 +380,7 @@ var
   flag:integer;
   p:pAnsichar;
 begin
-  CallService(MS_PROTO_ENUMPROTOCOLS,integer(@protoCount),dword(@proto));
+  CallService(MS_PROTO_ENUMPROTOCOLS,wparam(@protoCount),lparam(@proto));
   mGetMem(protos,(protoCount+1)*SizeOf(tMyProto)); // 0 - default
   NumProto:=0;
   with protos^[0] do
@@ -459,7 +457,7 @@ begin
   if txt<>PAnsiChar(-1) then
   begin
     if not NASPresents then
-      result:=CallProtoService(proto,PS_SETAWAYMSG,abs(status),dword(txt))
+      result:=CallProtoService(proto,PS_SETAWAYMSG,abs(status),lparam(txt))
     else
     begin
   {
@@ -483,7 +481,7 @@ var
   ics:TICQ_CUSTOM_STATUS;
 begin
   result:=0;
-  if IsXStatusSupported(dword(proto)) then
+  if IsXStatusSupported(uint_ptr(proto)) then
   begin
     with ics do
     begin
@@ -505,7 +503,7 @@ begin
         szMessage.w:=txt;
       end;
     end;
-    result:=CallProtoService(proto,PS_ICQ_SETCUSTOMSTATUSEX,0,dword(@ics));
+    result:=CallProtoService(proto,PS_ICQ_SETCUSTOMSTATUSEX,0,lparam(@ics));
   end;
 end;
 
@@ -519,7 +517,7 @@ var
 //  i,j:integer;
 begin
   result:=0;
-  if IsXStatusSupported(dword(proto)) then
+  if IsXStatusSupported(uint_ptr(proto)) then
   begin
 {
     with ics do
