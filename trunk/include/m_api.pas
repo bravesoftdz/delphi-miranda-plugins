@@ -44,13 +44,19 @@ type
 
 // C translations
 type
+{$IFNDEF FPC}
   size_t   = integer;
+  int_ptr  = integer;
+  uint_ptr = cardinal;
+{$ENDIF}
   time_t   = DWORD;
   int      = Integer;
-  uint     = Cardinal;
-  pint     = ^int;
-  WPARAM   = Integer;
-  LPARAM   = Integer;
+//  uint     = Cardinal;
+//  pint     = ^int;
+//  WPARAM   = Integer;
+//  LPARAM   = Integer;
+  TLPARAM = LPARAM;
+  TWPARAM = WPARAM;
 
 // My definitions
   TWNDPROC = function (Dialog:HWnd; hMessage, wParam:WPARAM;lParam:LPARAM):integer; cdecl;
@@ -71,7 +77,11 @@ const
 {-- start newpluginapi --}
 const
   MAXMODULELABELLENGTH = 64;
+  {$IFDEF BIT64}
+  CALLSERVICE_NOTFOUND = $8000000000000000;
+  {$ELSE}
   CALLSERVICE_NOTFOUND = $80000000;
+  {$ENDIF}
 
 const
   UNICODE_AWARE = 1;
@@ -137,10 +147,10 @@ type
   TMIRANDAHOOKPARAM       = function(wParam: WPARAM; lParam,lParam1: LPARAM): int; cdecl;
   TMIRANDAHOOKOBJ         = function(ptr:pointer;wParam:WPARAM;lParam:LPARAM): int; cdecl;
   TMIRANDAHOOKOBJPARAM    = function(ptr:pointer;wParam:WPARAM;lParam,lParam1: LPARAM): int; cdecl;
-  TMIRANDASERVICE         = function(wParam: WPARAM; lParam: LPARAM): int; cdecl;
-  TMIRANDASERVICEPARAM    = function(wParam:WPARAM;lParam,lParam1:LPARAM):int; cdecl;
-  TMIRANDASERVICEOBJ      = function(ptr:pointer;wParam,lParam:LPARAM):int; cdecl;
-  TMIRANDASERVICEOBJPARAM = function(ptr:pointer;wParam:WPARAM;lParam,lParam1:LPARAM):int; cdecl;
+  TMIRANDASERVICE         = function(wParam: WPARAM; lParam: LPARAM): int_ptr; cdecl;
+  TMIRANDASERVICEPARAM    = function(wParam:WPARAM;lParam,lParam1:LPARAM):int_ptr; cdecl;
+  TMIRANDASERVICEOBJ      = function(ptr:pointer;wParam,lParam:LPARAM):int_ptr; cdecl;
+  TMIRANDASERVICEOBJPARAM = function(ptr:pointer;wParam:WPARAM;lParam,lParam1:LPARAM):int_ptr; cdecl;
 
   //see modules.h tor what all this stuff is
 
@@ -153,15 +163,15 @@ type
   TCreateServiceFunction          = function(const AnsiChar: PAnsiChar; MIRANDASERVICE: TMIRANDASERVICE): THandle; cdecl;
   TCreateTransientServiceFunction = function(const AnsiChar: PAnsiChar; MIRANDASERVICE: TMIRANDASERVICE): THandle; cdecl;
   TDestroyServiceFunction         = function(Handle: THandle): int; cdecl;
-  TCallService                    = function(const AnsiChar: PAnsiChar; wParam: WPARAM; lParam: LPARAM): int; cdecl;
+  TCallService                    = function(const AnsiChar: PAnsiChar; wParam: WPARAM; lParam: LPARAM): int_ptr; cdecl;
   TServiceExists                  = function(const AnsiChar: PAnsiChar): int; cdecl;
-  TCallServiceSync                = function(const AnsiChar: PAnsiChar;wParam: WPARAM; lParam: LPARAM):int; cdecl;    //v0.3.3+
+  TCallServiceSync                = function(const AnsiChar: PAnsiChar;wParam: WPARAM; lParam: LPARAM): int_ptr; cdecl;    //v0.3.3+
   TCallFunctionAsync              = function(ptr1,ptr2:pointer):int; cdecl; {stdcall;}  //v0.3.4+
   TSetHookDefaultForHookableEvent = function(Handle:THandle;MIRANDAHOOK: TMIRANDAHOOK):int; cdecl;// v0.3.4 (2004/09/15)
   TCreateServiceFunctionParam     = function(const AnsiChar:PAnsiChar; MIRANDASERVICEPARAM:TMIRANDASERVICEPARAM): THandle; cdecl;
   TNotifyEventHooksDirect         = function(Handle:THANDLE;wParam:WPARAM;lParam:LPARAM):int; cdecl; // v0.7+
-  TCallProtoService               = function(const str1:PAnsiChar;const str2:PAnsiChar;wParam:WPARAM;lParam:LPARAM):int; cdecl; //v0.8+
-  TCallContactService             = function(Handle:THANDLE;const str:PAnsiChar;wParam:WPARAM;lParam:LPARAM):int; cdecl; // v0.8+
+  TCallProtoService               = function(const str1:PAnsiChar;const str2:PAnsiChar;wParam:WPARAM;lParam:LPARAM):int_ptr; cdecl; //v0.8+
+  TCallContactService             = function(Handle:THANDLE;const str:PAnsiChar;wParam:WPARAM;lParam:LPARAM):int_ptr; cdecl; // v0.8+
   THookEventParam                 = function(const str:PAnsiChar;mhp:TMIRANDAHOOKPARAM;lParam:LPARAM):THANDLE; cdecl;
   THookEventObj                   = function(const str:PAnsiChar;mho:TMIRANDAHOOKOBJ;ptr:pointer):THANDLE; cdecl;
   THookEventObjParam              = function(const str:PAnsiChar;mhop:TMIRANDAHOOKOBJPARAM;ptr:pointer;lParam:LPARAM):THANDLE; cdecl;
@@ -351,7 +361,7 @@ implementation
 
 procedure InitMMI;
 begin
-  PluginLink^.CallService(MS_SYSTEM_GET_MMI,0,Integer(@mmi));
+  PluginLink^.CallService(MS_SYSTEM_GET_MMI,0,lParam(@mmi));
 end;
 
 end.

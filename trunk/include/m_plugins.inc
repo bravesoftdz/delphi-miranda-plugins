@@ -80,7 +80,7 @@ const
     wParam : 0
     lParam : 0
     Affect : Gets an array of modules that the plugins report they want to replace
-    Returns: Returns a pointer to an array of ints, with elements 1 or 0,
+    Returns: Returns a pointer to an array of int_ptr, with elements 1 or 0,
              indexed by the DEFMOD_* constants, 1 is to mark that the default
              module shouldn't be loaded, see notes
     Notes  : this is primarily for use by the core's module initialiser,

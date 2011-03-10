@@ -136,7 +136,7 @@ function StrIndex (const aStr, aSubStr: PAnsiChar):integer;
 function StrIndexW(const aStr, aSubStr: PWideChar):integer;
 
 //procedure FillWord(var buf;count:cardinal;value:word); register;
-{$IFNDEF BIT64}function CompareMem(P1, P2: Pointer; Length: Integer): Boolean; assembler;{$ENDIF}
+function CompareMem(P1, P2: Pointer; Length: Integer): Boolean;
 function Min(a,b:integer):integer;
 function Max(a,b:integer):integer;
 
@@ -848,7 +848,13 @@ asm
    xor   eax, eax
    pop   ebx
 end;
+{$ELSE}
+function CompareMem(P1, P2: Pointer; Length: Integer): Boolean;
+begin
+  result:=CompareByte(P1,P2,Length)=0;
+end; 
 {$ENDIF}
+
 function Min(a,b:integer):integer;
 begin
   if a>b then

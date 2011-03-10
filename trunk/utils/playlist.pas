@@ -169,7 +169,7 @@ var
 begin
   f:=Reset(fName);
 
-  if dword(f)<>INVALID_HANDLE_VALUE then
+  if f<>THANDLE(INVALID_HANDLE_VALUE) then
   begin
     i:=integer(FileSize(f));
     if i=-1 then

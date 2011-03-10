@@ -3,7 +3,7 @@ unit hotkeys;
 
 interface
 
-uses {$IFDEF FPC}jwawindows,{$ENDIF}windows;
+uses windows;
 
 type
   AWKHotKeyProc = function(hotkey:integer):integer;
@@ -21,6 +21,9 @@ implementation
 
 uses messages;
 
+const
+  HWND_MESSAGE = HWND(-3);
+  
 var
   CurThread:THANDLE;
 
@@ -233,7 +236,7 @@ begin
     if (GetKeyState(VK_RWIN   ) and $8000)<>0 then key:=key or (MOD_WIN     shl 8);
 //    if (GetKeyState(VK_APPS) and $8000)<>0 then
 //    if (GetKeyState(VK_SLEEP) and $8000)<>0 then
-    key:=key or (wParam and $FF);
+    key:=key or (cardinal(wParam) and $FF);
     proc:=FindHotkey(key,true);
     if proc<>nil then
     begin

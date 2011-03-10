@@ -113,15 +113,18 @@ begin
           lti.szLength.W:=IntToStr(buf,si.total);
           lti.szPlayer.W:=si.player;
           lti.dwFlags   :=LTI_UNICODE;
-          
+
           CallProtoService(proto,PS_SET_LISTENINGTO,0,dword(@lti));
         end;
       end;
-      
+
       if UseStatus<>BST_UNCHECKED then
         if todo then
         begin
-          txt:=GetMacros(tmpl_stext,j,lParam);
+          if SimpleMode<>BST_UNCHECKED then
+            txt:=GetMacros(tmpl_stext,0,0)
+          else
+            txt:=GetMacros(tmpl_stext,j,lParam);
           if integer(txt)<>-2 then
           begin
             if (txt=nil) or (txt^=#0) then
@@ -153,11 +156,14 @@ begin
                   SetXStatus(proto,oldstatus,pWideChar(-1),pWideChar(-1));
                 end;
               end;
-            
+
             end
             else
             begin
-              txt:=GetMacros(tmpl_xtext,j,lParam);
+              if SimpleMode<>BST_UNCHECKED then
+                txt:=GetMacros(tmpl_xtext,0,0)
+              else
+                txt:=GetMacros(tmpl_xtext,j,lParam);
               if integer(txt)<>-2 then // status template presents
               begin
                 // XStatus for audio/video
@@ -199,7 +205,10 @@ begin
                 if ClearXStat<>BST_UNCHECKED then
                   SetXStatus(proto,0);
 
-                title:=GetMacros(tmpl_xtitle,j,lParam);
+                if SimpleMode<>BST_UNCHECKED then
+                  title:=GetMacros(tmpl_xtitle,0,0)
+                else
+                  title:=GetMacros(tmpl_xtitle,j,lParam);
                 SetXStatus(proto,xstat,txt,title);
                 mFreeMem(title);
                 mFreeMem(txt);

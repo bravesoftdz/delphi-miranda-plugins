@@ -70,13 +70,13 @@ end;
 {$ifdef M_SYSTEM}
   {$ifdef M_API_UNIT}
 
-function CallService(const szService: PAnsiChar; wParam: WPARAM; lParam: LPARAM): int;
+function CallService(const szService: PAnsiChar; wParam: WPARAM; lParam: LPARAM): int_ptr;
 function HookEvent(const szHook: PAnsiChar; hook_proc: TMIRANDAHOOK): int;
 function CreateServiceFunction(const szName: PAnsiChar; const MirandaService: TMIRANDASERVICE): int;
 
   {$else}
 
-function CallService(const szService: PAnsiChar; wParam: WPARAM; lParam: lParam): int;
+function CallService(const szService: PAnsiChar; wParam: WPARAM; lParam: lParam): int_ptr;
 begin
   Result := PluginLink^.CallService(szService, wParam, lParam);
 end;
@@ -359,7 +359,7 @@ begin
   msg.message := message;
   msg.wParam  := wParam;
   msg.lParam  := lParam;
-  Result := PluginLink^.CallService(MS_UTILS_BROADCASTTOWINDOWLIST, hList, Integer(@Msg));
+  Result := PluginLink^.CallService(MS_UTILS_BROADCASTTOWINDOWLIST, hList, tLparam(@Msg));
 end;
 
 function Utils_SaveWindowPosition(hWnd: THandle; hContact: THandle; const szModule, szNamePrefix: PAnsiChar): int;
@@ -471,12 +471,12 @@ end;
 {$ifdef M_PROTOCOLS}
   {$ifdef M_API_UNIT}
 
-function CallContactService(hContact: THandle; const szProtoService: PAnsiChar; wParam: WPARAM; lParam: LPARAM): int;
-function CallProtoService(const szModule, szService: PAnsiChar; wParam: WPARAM; lParam: LPARAM): int;
+function CallContactService(hContact: THandle; const szProtoService: PAnsiChar; wParam: WPARAM; lParam: LPARAM): int_ptr;
+function CallProtoService(const szModule, szService: PAnsiChar; wParam: WPARAM; lParam: LPARAM): int_ptr;
 
   {$else}
 
-function CallContactService(hContact: THandle; const szProtoService: PAnsiChar; wParam: WPARAM; lParam: LPARAM): int;
+function CallContactService(hContact: THandle; const szProtoService: PAnsiChar; wParam: WPARAM; lParam: LPARAM): int_ptr;
 var
   css: TCCSDATA;
 begin
@@ -484,10 +484,10 @@ begin
   css.szProtoService := szProtoService;
   css.wParam         := wParam;
   css.lParam         := lParam;
-  Result := PluginLink^.CallService(MS_PROTO_CALLCONTACTSERVICE, 0, Integer(@css));
+  Result := PluginLink^.CallService(MS_PROTO_CALLCONTACTSERVICE, 0, tlParam(@css));
 end;
 
-function CallProtoService(const szModule, szService: PAnsiChar; wParam: WPARAM; lParam: LPARAM): int;
+function CallProtoService(const szModule, szService: PAnsiChar; wParam: WPARAM; lParam: LPARAM): int_ptr;
 var
   szStr: array[0..MAXMODULELABELLENGTH*2] of AnsiChar;
 begin
@@ -502,12 +502,12 @@ end;
 {$ifdef M_PROTOMOD}
   {$ifdef M_API_UNIT}
 
-function ProtoBroadcastAck(const szModule: PAnsiChar; hContact: THandle; type_: int; result_: int; hProcess: THandle; lParam: LPARAM): int;
-function CreateProtoServiceFunction(const szModule, szService: PAnsiChar; serviceProc: TMIRANDASERVICE): int;
+function ProtoBroadcastAck(const szModule: PAnsiChar; hContact: THandle; type_: int; result_: int; hProcess: THandle; lParam: LPARAM): int_ptr;
+function CreateProtoServiceFunction(const szModule, szService: PAnsiChar; serviceProc: TMIRANDASERVICE): int_ptr;
 
   {$else}
 
-function ProtoBroadcastAck(const szModule: PAnsiChar; hContact: THandle; type_: int; result_: int; hProcess: THandle; lParam: LPARAM): int;
+function ProtoBroadcastAck(const szModule: PAnsiChar; hContact: THandle; type_: int; result_: int; hProcess: THandle; lParam: LPARAM): int_ptr;
 var
   ack: TACKDATA;
 begin
@@ -518,10 +518,10 @@ begin
   ack._result  := result_;
   ack.hProcess := hProcess;
   ack.lParam   := lParam;
-  Result := PluginLink^.CallService(MS_PROTO_BROADCASTACK, 0, Integer(@ack));
+  Result := PluginLink^.CallService(MS_PROTO_BROADCASTACK, 0, tlParam(@ack));
 end;
 
-function CreateProtoServiceFunction(const szModule, szService: PAnsiChar; serviceProc: TMIRANDASERVICE): int;
+function CreateProtoServiceFunction(const szModule, szService: PAnsiChar; serviceProc: TMIRANDASERVICE): int_ptr;
 var
   szStr: array[0..MAXMODULELABELLENGTH*2] of AnsiChar;
 begin

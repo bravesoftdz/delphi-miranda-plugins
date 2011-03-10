@@ -127,7 +127,7 @@ begin
   mFreeMem(pc);
 end;
 
-function GetFileName(wnd:HWND;flags:integer):pWideChar;
+function GetFileName(wnd:HWND;flags:integer):pWideChar; cdecl;
 begin
   if IsMod=0 then
     result:=DBReadUnicode(CurrentStation,playername,'StationURL',nil)
@@ -330,7 +330,7 @@ const
     DeInit   :@ClearmRadio;
     Check    :@Check;
     GetStatus:@GetStatus;
-    GetName  :nil;
+    GetName  :@GetFileName;
     GetInfo  :@GetInfo;
     Command  :@Command;
     URL      :'http://miranda.kom.pl/dev/bankrut/';

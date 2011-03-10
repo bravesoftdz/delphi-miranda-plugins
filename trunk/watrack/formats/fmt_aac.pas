@@ -63,7 +63,7 @@ begin
   Info.khz:=44;
   Info.kbps:=128;
   Info.channels:=2;
-  if (lo(sign)=$FF) and ((hi(sign) and $F6)=$F0) then
+  if (lobyte(sign)=$FF) and ((hibyte(sign) and $F6)=$F0) then
     ReadADTSheader(Info,sign)
   else if sign=$46494441 then // 'ADIF'
     ReadADIFheader(f,Info);

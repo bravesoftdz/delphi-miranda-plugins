@@ -9,7 +9,7 @@ procedure DestroyFrame;
 
 implementation
 
-uses commctrl,Messages,m_api,common,wrapper,mirutils,dbsettings;
+uses Messages,m_api,common,wrapper,mirutils,dbsettings;
 
 {$include resource.inc}
 
@@ -26,6 +26,8 @@ const
   query:PAnsiChar = 'http://ajax.googleapis.com/ajax/services/language/translate';
   qstart:PAnsiChar = 'v=1.0&langpair=';
   rest:PWideChar = '"translatedText":"';
+const
+  speakquery:PAnsiChar='http://translate.google.com/translate_tts?tl=';
 
 type
   tLang = record
@@ -155,6 +157,28 @@ begin
   result:=dst;
 end;
 
+function MakeMP3(src:pWideChar;Lang:pAnsiChar):pWideChar;
+var
+  buf,pc:pAnsiChar;
+  tmpstr:pAnsiChar;
+begin
+  result:=nil;
+//!!!  WideToUTF8(src,tmpstr);
+  WideToAnsi(src,tmpstr);
+  mGetMem(buf,StrLen(speakquery)+StrLen(tmpstr)*3+16);
+  pc:=StrCopyE(StrCopyE(buf,speakquery),Lang);
+  pc^:='&'; inc(pc);
+  pc^:='q'; inc(pc);
+  pc^:='='; inc(pc);
+  Encode(pc,tmpstr);
+  //!! return now: content-Length=0
+  if GetFile(buf,pAnsiChar('c:\test.mp3'),hNetLib) then
+  ;
+
+  mFreeMem(tmpstr);
+  mFreeMem(buf);
+end;
+
 function GetTranslatedText(src:pWideChar;tFrom,tTo:PAnsiChar):pWideChar;
 var
   langstr:array [0..15] of AnsiChar;
@@ -219,6 +243,7 @@ begin
   if pc<>nil then
   begin
     result:=ProcessResult(pc);
+//    MakeMP3(result,tTo);
     mFreeMem(pc);
   end;
 end;

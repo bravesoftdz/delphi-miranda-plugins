@@ -91,10 +91,12 @@ var
   ptr:pwPlayer;
 begin
   ptr:=PlayerLink;
+  result:=0;
   while ptr<>nil do
   begin
     ServicePlayer(WAT_ACT_REGISTER,dword(ptr.This));
     ptr:=ptr^.Next;
+    inc(result);
   end;
 end;
 
@@ -1057,7 +1059,7 @@ begin
   else
     fname:=nil;
 
-  if fname=nil then
+  if (fname=nil) and (dst.plwnd<>0) then
   begin
    tmp:=0;
    if (flags and WAT_OPT_MULTITHREAD)<>0 then tmp:=tmp or gffdMultiThread;
@@ -1094,7 +1096,7 @@ begin
 
     // if not proper ext (we don't working with it)
     //!!!! check for remotes
-    if CheckExt(fname)=WAT_RES_NOTFOUND then
+    if (not remote) and (CheckExt(fname)=WAT_RES_NOTFOUND) then
     begin
       mFreeMem(fname);
       result:=WAT_RES_NOTFOUND;

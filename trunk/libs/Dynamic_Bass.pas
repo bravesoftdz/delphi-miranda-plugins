@@ -708,8 +708,13 @@ type
 
 const
   // special STREAMPROCs
+  {$IFNDEF FPC}
   STREAMPROC_DUMMY : STREAMPROC = STREAMPROC(0);  // "dummy" stream
   STREAMPROC_PUSH  : STREAMPROC = STREAMPROC(-1); // push stream
+  {$ELSE}
+  STREAMPROC_DUMMY : pointer = pointer(0);  // "dummy" stream
+  STREAMPROC_PUSH  : pointer = pointer(-1); // push stream
+  {$ENDIF}
 
 type
 

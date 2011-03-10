@@ -67,7 +67,7 @@ function LoadImageURL(url:pAnsiChar;size:integer=0):HBITMAP;
 
 implementation
 
-uses dbsettings,common,io,syswin,freeimage,kol;
+uses dbsettings,common,io,freeimage,syswin,kol;
 
 function ConvertFileName(src:pWideChar;dst:pWideChar;hContact:THANDLE=0):pWideChar; overload;
 var
@@ -84,7 +84,7 @@ begin
     end
     else
       pc:=nil;
-    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTEW,dword(src),dword(dst));
+    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTEW,wparam(src),lparam(dst));
     mFreeMem(pc);
   end;
 end;
@@ -114,7 +114,7 @@ begin
     end
     else
       pc:=nil;
-    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,dword(src),dword(dst));
+    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,wparam(src),lparam(dst));
     mFreeMem(pc);
   end;
 end;
@@ -166,7 +166,7 @@ begin
   begin
     FillChar(dat,SizeOf(TREPLACEVARSDATA),0);
     dat.cbSize :=SizeOf(TREPLACEVARSDATA);
-    pc:=pAnsiChar(PluginLink^.CallService(MS_UTILS_REPLACEVARS,dword(astr),dword(@dat)));
+    pc:=pAnsiChar(PluginLink^.CallService(MS_UTILS_REPLACEVARS,wparam(astr),lparam(@dat)));
     astr:=pc;
   end
   else
@@ -182,9 +182,9 @@ begin
       szExtraText.a:=extra;
       hContact     :=aContact;
     end;
-    tmp:=pointer(CallService(MS_VARS_FORMATSTRING,dword(@tfi),0));
+    tmp:=pointer(CallService(MS_VARS_FORMATSTRING,wparam(@tfi),0));
     StrDup(result,tmp);
-    PluginLink^.CallService(MS_VARS_FREEMEMORY,int(tmp),0);
+    PluginLink^.CallService(MS_VARS_FREEMEMORY,wparam(tmp),0);
   end
   else
   begin
@@ -204,7 +204,7 @@ begin
     FillChar(dat,SizeOf(TREPLACEVARSDATA),0);
     dat.cbSize :=SizeOf(TREPLACEVARSDATA);
     dat.dwflags:=RVF_UNICODE;
-    pc:=pWideChar(PluginLink^.CallService(MS_UTILS_REPLACEVARS,dword(astr),dword(@dat)));
+    pc:=pWideChar(PluginLink^.CallService(MS_UTILS_REPLACEVARS,wparam(astr),lparam(@dat)));
     astr:=pc;
   end
   else
@@ -221,9 +221,9 @@ begin
       szExtraText.w:=extra;
       hContact     :=aContact;
     end;
-    tmp:=pointer(CallService(MS_VARS_FORMATSTRING,dword(@tfi),0));
+    tmp:=pointer(CallService(MS_VARS_FORMATSTRING,wparam(@tfi),0));
     StrDupW(result,tmp);
-    PluginLink^.CallService(MS_VARS_FREEMEMORY,int(tmp),0);
+    PluginLink^.CallService(MS_VARS_FREEMEMORY,wparam(tmp),0);
   end
   else
   begin
@@ -249,7 +249,7 @@ begin
       hwndCtrl:=GetDlgItem(dlg,id);
     end;
   end;
-  result:=PluginLink^.CallService(MS_VARS_SHOWHELPEX,dlg,dword(@vhi));
+  result:=PluginLink^.CallService(MS_VARS_SHOWHELPEX,dlg,lparam(@vhi));
 end;
 
 function DetectHKManager:dword;
@@ -285,7 +285,7 @@ begin
     StrCopyW(ppdu.lpwzContactName,text,MAX_CONTACTNAME-1);
     ppdu.lpwzText[0]:=' ';
   end;
-  PluginLink^.CallService(MS_POPUP_ADDPOPUPW,DWORD(@ppdu),APF_NO_HISTORY);
+  PluginLink^.CallService(MS_POPUP_ADDPOPUPW,wparam(@ppdu),APF_NO_HISTORY);
 end;
 
 function TranslateA2W(sz:PAnsiChar):PWideChar;
@@ -325,6 +325,22 @@ begin
     result:=-1;
 end;
 
+function SetCListSelContact(hContact:THANDLE):THANDLE;
+var
+  wnd:HWND;
+begin
+  wnd:=CallService(MS_CLUI_GETHWNDTREE,0,0);
+  result:=hContact;
+//  hContact:=SendMessage(wnd,CLM_FINDCONTACT  ,hContact,0);
+  SendMessage(wnd,CLM_SELECTITEM   ,hContact,0);
+//  SendMessage(wnd,CLM_ENSUREVISIBLE,hContact,0);
+end;
+
+function GetCListSelContact:THANDLE;
+begin
+  result:=SendMessageW(CallService(MS_CLUI_GETHWNDTREE,0,0),CLM_GETSELECTION,0,0);
+end;
+
 function WndToContact(wnd:hwnd):integer; overload;
 var
   hContact:integer;
@@ -342,7 +358,7 @@ begin
   while hContact<>0 do
   begin
     mwid.hContact:=hContact;
-    if PluginLink^.CallService(MS_MSG_GETWINDOWDATA,dword(@mwid),dword(@mwod))=0 then
+    if PluginLink^.CallService(MS_MSG_GETWINDOWDATA,wparam(@mwid),lparam(@mwod))=0 then
     begin
       if {((mwod.uState and MSG_WINDOW_STATE_FOCUS)<>0) and} (mwod.hwndWindow=wnd) then
       begin
@@ -353,22 +369,6 @@ begin
     hContact:=PluginLink^.CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
   end;
   result:=0;
-end;
-
-function SetCListSelContact(hContact:THANDLE):THANDLE;
-var
-  wnd:HWND;
-begin
-  wnd:=CallService(MS_CLUI_GETHWNDTREE,0,0);
-  result:=hContact;
-//  hContact:=SendMessage(wnd,CLM_FINDCONTACT  ,hContact,0);
-  SendMessage(wnd,CLM_SELECTITEM   ,hContact,0);
-//  SendMessage(wnd,CLM_ENSUREVISIBLE,hContact,0);
-end;
-
-function GetCListSelContact:THANDLE;
-begin
-  result:=SendMessageW(CallService(MS_CLUI_GETHWNDTREE,0,0),CLM_GETSELECTION,0,0);
 end;
 
 function WndToContact:integer; overload;
@@ -410,11 +410,11 @@ begin
     buf[0]:=#0;
   StrCat(buf,filename);
   f:=Reset(buf);
-  if dword(f)=INVALID_HANDLE_VALUE then
+  if f=THANDLE(INVALID_HANDLE_VALUE) then
   begin
     if path<>nil then
     begin
-      CallService(MS_UTILS_PATHTOABSOLUTE,dword(path),dword(@buf));
+      CallService(MS_UTILS_PATHTOABSOLUTE,wparam(path),lparam(@buf));
       p:=StrEnd(buf);
       if p^<>'\' then
       begin
@@ -430,7 +430,7 @@ begin
     StrCat(buf,filename); //path\prefix+name
     f:=Reset(buf);
   end;
-  if dword(f)<>INVALID_HANDLE_VALUE then
+  if f<>THANDLE(INVALID_HANDLE_VALUE) then
   begin
     CloseHandle(f);
     StrDup(result,buf);
@@ -443,7 +443,7 @@ var
   altfilename,filename:array [0..127] of AnsiChar;
   p:PAnsiChar;
 begin
-  CallService(MS_DB_GETPROFILEPATH,300,dword(@profilepath));
+  CallService(MS_DB_GETPROFILEPATH,300,lparam(@profilepath));
   p:=StrEnd(profilepath);
   p^:='\'; inc(p);
   p^:=#0;
@@ -451,7 +451,7 @@ begin
   begin
     StrCopy(filename,prefix);
     p:=StrEnd(filename);
-    CallService(MS_DB_GETPROFILENAME,SizeOf(filename)-integer(p-pAnsiChar(@filename)),dword(p));
+    CallService(MS_DB_GETPROFILENAME,SizeOf(filename)-integer(p-pAnsiChar(@filename)),lparam(p));
     ChangeExt(filename,ext);
     result:=CheckPath(filename,profilepath,path);
   end
@@ -522,7 +522,7 @@ begin
   gce.dwFlags :=GCEF_ADDTOLOG+GC_UNICODE;
   gce.time    :=GetCurrentTime;
   
-  PluginLink^.CallServiceSync(MS_GC_EVENT,0,dword(@gce));
+  PluginLink^.CallServiceSync(MS_GC_EVENT,0,lparam(@gce));
 end;
 
 procedure SendToChat(hContact:THANDLE;pszText:PWideChar);
@@ -532,14 +532,14 @@ var
   i,cnt:integer;
 begin
   pszModule:=PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,hContact,0));
-  cnt:=CallService(MS_GC_GETSESSIONCOUNT,0,dword(pszModule));
+  cnt:=CallService(MS_GC_GETSESSIONCOUNT,0,lparam(pszModule));
   i:=0;
   gci.pszModule:=pszModule;
   while i<cnt do
   begin
     gci.iItem:=i;
     gci.Flags:=GCI_BYINDEX+GCI_HCONTACT+GCI_ID;
-    CallService(MS_GC_GETINFO,0,dword(@gci));
+    CallService(MS_GC_GETINFO,0,lparam(@gci));
     if gci.hContact=hContact then
     begin
       SendChatText(gci.pszID.w,pszModule,pszText);
@@ -622,13 +622,13 @@ begin
   dbcgs.szModule :='Protocol';
   dbcgs.szSetting:='p';
 
-  if PluginLink^.CallService(MS_DB_CONTACT_GETSETTINGSTATIC,hContact,dword(@dbcgs))=0 then
+  if PluginLink^.CallService(MS_DB_CONTACT_GETSETTINGSTATIC,hContact,lparam(@dbcgs))=0 then
   begin
     result:=0;
 
     if PluginLink^.ServiceExists(MS_PROTO_GETACCOUNT)<>0 then
     begin
-      p:=PPROTOACCOUNT(CallService(MS_PROTO_GETACCOUNT,0,dword(dbv.szVal.a)));
+      p:=PPROTOACCOUNT(CallService(MS_PROTO_GETACCOUNT,0,lparam(dbv.szVal.a)));
       if p=nil then
         result:=-2 // deleted
       else if (p^.bIsEnabled=0) or p^.bDynDisabled then
@@ -636,7 +636,7 @@ begin
     end
     else
     begin
-      if CallService(MS_PROTO_ISPROTOCOLLOADED,0,dword(dbv.szVal.a))=0 then
+      if CallService(MS_PROTO_ISPROTOCOLLOADED,0,lparam(dbv.szVal.a))=0 then
         result:=-1;
     end;
 
@@ -869,12 +869,12 @@ begin
     nlu.cbSize          :=SizeOf(nlu);
     nlu.flags           :=NUF_HTTPCONNS or NUF_NOHTTPSOPTION or NUF_OUTGOING or NUF_NOOPTIONS;
     nlu.szSettingsModule:='dummy';
-    hTmpNetlib:=CallService(MS_NETLIB_REGISTERUSER,0,dword(@nlu));
+    hTmpNetlib:=CallService(MS_NETLIB_REGISTERUSER,0,lparam(@nlu));
   end
   else
     hTmpNetLib:=hNetLib;
 
-  resp:=pointer(CallService(MS_NETLIB_HTTPTRANSACTION,hTmpNetLib,dword(@req)));
+  resp:=pointer(CallService(MS_NETLIB_HTTPTRANSACTION,hTmpNetLib,lparam(@req)));
 
   if resp<>nil then
   begin
@@ -885,7 +885,7 @@ begin
     else
     begin
     end;
-    CallService(MS_NETLIB_FREEHTTPREQUESTSTRUCT,0,dword(resp));
+    CallService(MS_NETLIB_FREEHTTPREQUESTSTRUCT,0,lparam(resp));
   end;
 
   if (hNetLib=0) and (nlu.cbSize<>0) then
@@ -925,17 +925,17 @@ begin
     nlu.cbSize          :=SizeOf(nlu);
     nlu.flags           :=NUF_HTTPCONNS or NUF_NOHTTPSOPTION or NUF_OUTGOING or NUF_NOOPTIONS;
     nlu.szSettingsModule:='dummy';
-    hNetlib:=CallService(MS_NETLIB_REGISTERUSER,0,dword(@nlu));
+    hNetlib:=CallService(MS_NETLIB_REGISTERUSER,0,lparam(@nlu));
   end;
 
-  resp:=pointer(CallService(MS_NETLIB_HTTPTRANSACTION,hNetlib,dword(@req)));
+  resp:=pointer(CallService(MS_NETLIB_HTTPTRANSACTION,hNetlib,lparam(@req)));
 
   if resp<>nil then
   begin
     if resp^.resultCode=200 then
     begin
       hSaveFile:=Rewrite(save_file);
-      if dword(hSaveFile)<>INVALID_HANDLE_VALUE then
+      if hSaveFile<>THANDLE(INVALID_HANDLE_VALUE) then
       begin
         BlockWrite(hSaveFile,resp^.pData^,resp^.dataLength);
         CloseHandle(hSaveFile);
@@ -965,7 +965,7 @@ begin
       NLog(ts);
 }
     end;
-    CallService(MS_NETLIB_FREEHTTPREQUESTSTRUCT,0,dword(resp));
+    CallService(MS_NETLIB_FREEHTTPREQUESTSTRUCT,0,lparam(resp));
 
     if nlu.cbSize<>0 then
       CallService(MS_NETLIB_CLOSEHANDLE,hNetLib,0);
@@ -990,7 +990,7 @@ var
 begin
   result:=nil;
   nlus.cbSize:=SizeOf(nlus);
-  if CallService(MS_NETLIB_GETUSERSETTINGS,hNetLib,dword(@nlus))<>0 then
+  if CallService(MS_NETLIB_GETUSERSETTINGS,hNetLib,lparam(@nlus))<>0 then
   begin
     if nlus.useProxy<>0 then
     begin
@@ -1053,9 +1053,9 @@ begin
   nlu.cbSize          :=SizeOf(nlu);
   nlu.flags           :=NUF_HTTPCONNS or NUF_NOHTTPSOPTION or NUF_OUTGOING or NUF_NOOPTIONS;
   nlu.szSettingsModule:='dummy';
-  hNetlib:=CallService(MS_NETLIB_REGISTERUSER,0,dword(@nlu));
+  hNetlib:=CallService(MS_NETLIB_REGISTERUSER,0,lparam(@nlu));
 
-  resp:=pointer(CallService(MS_NETLIB_HTTPTRANSACTION,hNetlib,dword(@req)));
+  resp:=pointer(CallService(MS_NETLIB_HTTPTRANSACTION,hNetlib,lparam(@req)));
 
   if resp<>nil then
   begin
@@ -1065,11 +1065,11 @@ begin
       im.pBuf :=resp.pData;
       im.flags:=size shl 16;
       im.fif  :=FIF_JPEG;
-      result  :=CallService(MS_IMG_LOADFROMMEM,dword(@im),0);
+      result  :=CallService(MS_IMG_LOADFROMMEM,wparam(@im),0);
 //      if result<>0 then
 //        DeleteObject(SendMessage(wnd,STM_SETIMAGE,IMAGE_BITMAP,result)); //!!
     end;
-    CallService(MS_NETLIB_FREEHTTPREQUESTSTRUCT,0,dword(resp));
+    CallService(MS_NETLIB_FREEHTTPREQUESTSTRUCT,0,lparam(resp));
   end;
   CallService(MS_NETLIB_CLOSEHANDLE,hNetLib,0);
 end;
@@ -1088,7 +1088,7 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,resname,IMAGE_ICON,16,16,0);
   sid.pszName        :=ilname;
   sid.szDescription.a:=descr;
-  result:=PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+  result:=PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 end;
 
