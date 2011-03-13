@@ -39,3 +39,12 @@ KOLCCtrls.pas        +
 kolcomobj.pas        +
 kolmath.pas          +
 KolZLibBzip.pas      +
+===============================================
+projects
+-----------------------------------------------
+ActMan               +
+Hooks                +          +       +
+mradio               +
+quicksearch          +
+translate            +          +       +
+watrack              +

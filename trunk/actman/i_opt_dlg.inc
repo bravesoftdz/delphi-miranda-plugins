@@ -51,7 +51,7 @@ const
 
 function SetIcon(btn:HWND;name:PAnsiChar):HICON;
 begin
-  result:=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(name));
+  result:=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(name));
   SendMessage(btn,BM_SETIMAGE,IMAGE_ICON,result);
 end;
 
@@ -66,7 +66,7 @@ var
     sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(id),IMAGE_ICON,16,16,0);
     sid.pszName        :=name;
     sid.szDescription.w:=FastAnsiToWideBuf(descr,buf);
-    PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+    PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
     DestroyIcon(sid.hDefaultIcon);
   end;
 
@@ -144,10 +144,10 @@ begin
       for i:=0 to j-1 do
       begin
         li.iItem:=i;
-        SendMessageW(wnd,LVM_GETITEMW,0,dword(@li)); // GetLParam(wnd,i);
+        SendMessageW(wnd,LVM_GETITEMW,0,lparam(@li)); // GetLParam(wnd,i);
         move(NewGroupList^[li.lParam],GroupList^[i],SizeOf(THKRecord));
         li.lParam:=i;
-        SendMessageW(wnd,LVM_SETITEMW,0,dword(@li));
+        SendMessageW(wnd,LVM_SETITEMW,0,lparam(@li));
       end;
     end
     else
@@ -181,7 +181,7 @@ var
 begin
   SendMessageW(wnd,CB_SETITEMDATA,
       SendMessageW(wnd,CB_ADDSTRING,0,
-          dword(TranslateW(FastAnsiToWideBuf(str,buf)))),
+          lparam(TranslateW(FastAnsiToWideBuf(str,buf)))),
       num);
 {
   SendMessageW(wnd,CB_INSERTSTRING,num,
@@ -208,7 +208,7 @@ begin
   odp.szTab.a    :='Actions';
   odp.pfnDlgProc :=@DlgProcOpt2;
   odp.pszTemplate:=PAnsiChar(IDD_ACTION);
-  PluginLink^.CallService(MS_OPT_ADDPAGE,wParam,dword(@odp));
+  PluginLink^.CallService(MS_OPT_ADDPAGE,wParam,tlparam(@odp));
   DoInitCommonControls(ICC_USEREX_CLASSES);
   StrCopyW(xmlfilename,'c:\export.xml');
 end;

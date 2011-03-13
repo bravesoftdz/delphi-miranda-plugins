@@ -5,7 +5,7 @@ library MRadio;
 uses
 //  FastMM4,
   kol,Windows,messages,commctrl
-  ,common,io,wrapper,syswin
+  ,common,io,swrapper,wrapper,syswin
   ,Dynamic_Bass,dynbasswma
   ,m_api,dbsettings,mirutils,playlist,icobuttons,KOLCCtrls;
 

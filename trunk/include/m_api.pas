@@ -20,6 +20,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 }
 {$A+,H+}
+{$IFDEF WIN64}{$A8}{$ENDIF}
 unit m_api;
 
 interface
@@ -50,7 +51,7 @@ type
   uint_ptr = cardinal;
 {$ENDIF}
   time_t   = DWORD;
-  int      = Integer;
+  int      = integer;
 //  uint     = Cardinal;
 //  pint     = ^int;
 //  WPARAM   = Integer;
@@ -77,7 +78,7 @@ const
 {-- start newpluginapi --}
 const
   MAXMODULELABELLENGTH = 64;
-  {$IFDEF BIT64}
+  {$IFDEF WIN64}
   CALLSERVICE_NOTFOUND = $8000000000000000;
   {$ELSE}
   CALLSERVICE_NOTFOUND = $80000000;

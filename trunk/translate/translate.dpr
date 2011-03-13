@@ -1,10 +1,11 @@
 {$IMAGEBASE $13500000}
+//{$IFDEF WIN64}{$A8}{$ENDIF}
 library Translate;
 
 {$R frm.res}
 
 uses
-  {FastMM4,} m_api, Windows, tr_frame;
+  Windows, m_api, tr_frame;
 
 const
   PluginInfo:TPLUGININFOEX=(
@@ -74,5 +75,4 @@ exports
   MirandaPluginInfo,
   MirandaPluginInterfaces,MirandaPluginInfoEx;
 
-begin
 end.

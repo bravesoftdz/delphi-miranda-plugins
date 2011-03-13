@@ -7,7 +7,7 @@ implementation
 
 uses
   windows,messages,commctrl,
-  common,m_api,mirutils,dbsettings,wrapper,
+  common,m_api,mirutils,dbsettings,swrapper,
   global,wat_api;
 
 {$include i_proto_rc.inc}

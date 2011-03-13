@@ -1,0 +1,12 @@
+predefined
+----------
+FPC (FPC)
+WIN32 (Delphi,FPC)
+WIN (FPC)
+WIN64 (FPC)
+
+3rd side
+--------
+NOT_USE_RICHEDIT (KOL)
+KOL_MCK (KOL)
+PAS_VERSION (KOL)

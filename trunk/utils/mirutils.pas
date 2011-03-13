@@ -31,7 +31,9 @@ function  IsMirandaUser(hContact:THANDLE):integer; // >0=Miranda; 0=Not miranda;
 procedure ShowContactDialog(hContact:THANDLE;DblClk:boolean=true;anystatus:boolean=true);
 function  FindContactHandle(proto:pAnsiChar;const dbv:TDBVARIANT;is_chat:boolean=false):THANDLE;
 function  WndToContact(wnd:hwnd):integer; overload;
+{$IFNDEF FPC}
 function  WndToContact:integer; overload;
+{$ENDIF}
 function  GetContactStatus(hContact:THANDLE):integer;
 // -2 - deleted account, -1 - disabled account, 0 - hidden
 // 1 - metacontact, 2 - submetacontact, positive - active
@@ -40,9 +42,10 @@ function  IsContactActive(hContact:THANDLE):integer; overload;
 
 function CreateGroupW(name:pWideChar;hContact:THANDLE):integer;
 function CreateGroup (name:pAnsiChar;hContact:THANDLE):integer;
+{$IFNDEF FPC}
 function MakeGroupMenu(idxfrom:integer=100):HMENU;
 function GetNewGroupName(parent:HWND):pWideChar;
-
+{$ENDIF}
 const
   HKMT_CORE       = 1;
   HKMT_HOTKEYPLUS = 2;
@@ -67,7 +70,7 @@ function LoadImageURL(url:pAnsiChar;size:integer=0):HBITMAP;
 
 implementation
 
-uses dbsettings,common,io,freeimage,syswin,kol;
+uses dbsettings,common,io,freeimage{$IFNDEF FPC},syswin,kol{$ENDIF};
 
 function ConvertFileName(src:pWideChar;dst:pWideChar;hContact:THANDLE=0):pWideChar; overload;
 var
@@ -318,7 +321,7 @@ begin
   sz:=DBReadString(hContact,sz,'MirVer');
   if sz<>nil then
   begin
-    result:=integer(StrPos(sz,'Miranda'));
+    result:=int_ptr(StrPos(sz,'Miranda'));
     mFreeMem(sz);
   end
   else
@@ -370,7 +373,7 @@ begin
   end;
   result:=0;
 end;
-
+{$IFNDEF FPC}
 function WndToContact:integer; overload;
 var
   wnd:HWND;
@@ -385,7 +388,7 @@ begin
   if result=0 then
     result:=GetCListSelContact;
 end;
-
+{$ENDIF}
 function GetContactStatus(hContact:THANDLE):integer;
 var
   szProto:PAnsiChar;
@@ -561,7 +564,7 @@ begin
   if not is_chat then
   begin
     uid:=pAnsiChar(CallProtoService(proto,PS_GETCAPS,PFLAG_UNIQUEIDSETTING,0));
-    if dword(uid)=CALLSERVICE_NOTFOUND then exit;
+    if uid=pAnsiChar(CALLSERVICE_NOTFOUND) then exit;
   end;
 
   hContact:=CallService(MS_DB_CONTACT_FINDFIRST,0,0);
@@ -787,6 +790,7 @@ begin
   result:=1;
 end;
 
+{$IFNDEF FPC}
 function MakeGroupMenu(idxfrom:integer=100):HMENU;
 var
   sl:PWStrList;
@@ -834,6 +838,7 @@ begin
   end;
   DestroyMenu(mmenu);
 end;
+{$ENDIF}
 
 function SendRequest(url:PAnsiChar;rtype:int;args:pAnsiChar=nil;hNetLib:THANDLE=0):pAnsiChar;
 var
@@ -847,7 +852,7 @@ begin
   result:=nil;
 
   FillChar(req,SizeOf(req),0);
-  req.cbSize     :=NETLIBHTTPREQUEST_V1_SIZE;//SizeOf(req);
+  req.cbSize     :=SizeOf(req);//NETLIBHTTPREQUEST_V1_SIZE;//SizeOf(req);
   req.requestType:=rtype;
   req.szUrl      :=url;
   req.flags      :=NLHRF_NODUMP or NLHRF_HTTP11;

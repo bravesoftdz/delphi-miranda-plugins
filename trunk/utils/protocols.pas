@@ -214,8 +214,8 @@ begin
   if withIcons then
   begin
     cli:=PCLIST_INTERFACE(CallService(MS_CLIST_RETRIEVE_INTERFACE,0,0));
-    SetWindowLongW(list,GWL_STYLE,
-        GetWindowLongW(list,GWL_STYLE) or LVS_SHAREIMAGELISTS);
+    SetWindowLongPtrW(list,GWL_STYLE,
+        GetWindowLongPtrW(list,GWL_STYLE) or LVS_SHAREIMAGELISTS);
     ListView_SetImageList(list,
       CallService(MS_CLIST_GETICONSIMAGELIST,0,0),LVSIL_SMALL);
     lvc.mask:=LVCF_FMT+LVCF_IMAGE
@@ -299,8 +299,8 @@ begin
   if withIcons then
   begin
     cli:=PCLIST_INTERFACE(CallService(MS_CLIST_RETRIEVE_INTERFACE,0,0));
-    SetWindowLongW(list,GWL_STYLE,
-        GetWindowLongW(list,GWL_STYLE) or LVS_SHAREIMAGELISTS);
+    SetWindowLongPtrW(list,GWL_STYLE,
+        GetWindowLongPtrW(list,GWL_STYLE) or LVS_SHAREIMAGELISTS);
     ListView_SetImageList(list,
       CallService(MS_CLIST_GETICONSIMAGELIST,0,0),LVSIL_SMALL);
     lvc.mask:=LVCF_FMT+LVCF_IMAGE
@@ -308,8 +308,8 @@ begin
   else
   begin
     cli:=nil;
-    SetWindowLongW(list,GWL_STYLE,
-        GetWindowLongW(list,GWL_STYLE) and not LVS_SHAREIMAGELISTS);
+    SetWindowLongPtrW(list,GWL_STYLE,
+        GetWindowLongPtrW(list,GWL_STYLE) and not LVS_SHAREIMAGELISTS);
 //    ListView_SetImageList(list,0,LVSIL_SMALL);
     lvc.mask:=LVCF_FMT;
   end;

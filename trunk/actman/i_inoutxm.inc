@@ -102,7 +102,7 @@ const
   imp_noall  = 4;
   imp_append = 5;
 
-function ReadStruct(act:HXML):integer;
+function ReadStruct(act:HXML):int_ptr;
 var
   child,i:integer;
   tmp:pWideChar;
@@ -111,7 +111,7 @@ var
 begin
   mGetMem (tmp ,32768);
   FillChar(tmp^,32768,0);
-  result:=integer(tmp);
+  result:=int_ptr(tmp);
   with xmlparser do
   begin
     child:=0;
@@ -154,7 +154,7 @@ begin
   end;
 end;
 
-function ReadParam(act:HXML; var param:integer;isvar:boolean):dword;
+function ReadParam(act:HXML; var param:int_ptr;isvar:boolean):dword;
 var
   tmp:pWideChar;
 begin
@@ -554,7 +554,7 @@ begin
   CloseHandle(f);
 
   xmlparser.cbSize:=XML_API_SIZEOF_V1;//SizeOf(XML_API_W);
-  CallService(MS_SYSTEM_GET_XI,0,dword(@xmlparser));
+  CallService(MS_SYSTEM_GET_XI,0,lparam(@xmlparser));
   with xmlparser do
   begin
     root:=parseString(ChangeUnicode(res),@i,nil);
@@ -682,7 +682,7 @@ begin
   mFreeMem(pc);
 end;
 
-procedure WriteParam(node:HXML;flags,param:integer;flags2:integer);
+procedure WriteParam(node:HXML;flags,param:int_ptr;flags2:integer);
 var
   s:pWideChar;
   tmp:pWideChar;
@@ -1076,7 +1076,7 @@ var
   act:integer;
 begin
   xmlparser.cbSize:=XML_API_SIZEOF_V1;//SizeOf(XML_API_W);
-  CallService(MS_SYSTEM_GET_XI,0,dword(@xmlparser));
+  CallService(MS_SYSTEM_GET_XI,0,lparam(@xmlparser));
   root:=0;
   with xmlparser do
   begin

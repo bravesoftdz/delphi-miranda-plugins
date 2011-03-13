@@ -6,14 +6,14 @@ uses windows;
 {$include resource.inc}
 
 procedure OptChangeColumns(code:integer;column,data:integer);
-function DlgProcOptions(Dialog: HWnd; hMessage, wParam, lParam: DWord): integer; stdcall;
+function DlgProcOptions(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
 
 const
   maindlg:HWND = 0;
 
 implementation
 
-uses messages,commctrl,sr_global,m_api,common,mirutils,wrapper,sr_window;
+uses messages,commctrl,sr_global,m_api,common,mirutils,swrapper,wrapper,sr_window;
 
 var
   OldListProc:pointer;
@@ -765,7 +765,7 @@ begin
   end;
 end;
 
-function NewListProc(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function NewListProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
 begin
   result:=0;
   if hMessage=WM_KEYDOWN then
@@ -798,7 +798,7 @@ begin
   result:=CallWindowProc(OldListProc,dialog,hMessage,wParam,lParam);
 end;
 
-function DlgProcOptions(Dialog: HWnd; hMessage, wParam, lParam: DWord): integer; stdcall;
+function DlgProcOptions(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM): integer; stdcall;
 const
   InitDlg:bool = true;
   hook:THANDLE = 0;
@@ -966,9 +966,9 @@ begin
       result:=1;
 
       if IsAnsi then
-        OldListProc:=pointer(SetWindowLongA(listhwnd,GWL_WNDPROC,integer(@NewListProc)))
+        OldListProc:=pointer(SetWindowLongPtrA(listhwnd,GWL_WNDPROC,integer(@NewListProc)))
        else
-        OldListProc:=pointer(SetWindowLongW(listhwnd,GWL_WNDPROC,integer(@NewListProc)));
+        OldListProc:=pointer(SetWindowLongPtrW(listhwnd,GWL_WNDPROC,integer(@NewListProc)));
 
       InitDlg:=false;
     end;

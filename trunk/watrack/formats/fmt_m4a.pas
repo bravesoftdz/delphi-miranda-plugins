@@ -9,7 +9,7 @@ function ReadM4A(var Info:tSongInfo):boolean; cdecl;
 
 implementation
 
-uses windows,common,io,srv_format,KolZlibBzip;
+uses windows,common,io,srv_format,{$IFDEF FPC}Zlib{$ELSE}KolZlibBzip{$ENDIF};
 
 type
   mp4Atom = record
@@ -53,7 +53,7 @@ type
     version       :byte;
     flags         :array [0..2] of byte;
     NumEntries    :dword;
-    SampleDescSize:dword; //$56
+    SampleDescSize:dword; // $56
     DataFormat    :dword;
     reserved      :array [0..5] of byte;
     RefIndex      :word;

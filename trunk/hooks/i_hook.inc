@@ -110,7 +110,7 @@ begin
   end;
 end;
 
-function HookWndProc(Dialog:HWnd; hMessage,wParam,lParam:dword):integer; stdcall;
+function HookWndProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
 var
   p:pHookRec;
   ap:TAct_Param;
@@ -125,7 +125,7 @@ begin
         ap.id    :=p^.action;
         ap.wParam:=wParam;
         ap.lParam:=lParam;
-        result:=CallService(MS_ACT_RUNPARAMS,0,dword(@ap));
+        result:=CallService(MS_ACT_RUNPARAMS,0,TLPARAM(@ap));
       end;
     end;
   else
@@ -174,7 +174,7 @@ begin
 
   MessageWindow:=CreateWindowEx(0,'STATIC',nil,0,1,1,1,1,dword(HWND_MESSAGE),0,hInstance,nil);
   if MessageWindow<>0 then
-    SetWindowLong(MessageWindow,GWL_WNDPROC,dword(@HookWndProc));
+    SetWindowLong(MessageWindow,GWL_WNDPROC,LONG_PTR(@HookWndProc));
 
   if LoadHooks=0 then
   begin

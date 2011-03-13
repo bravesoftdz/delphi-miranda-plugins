@@ -133,7 +133,7 @@ begin
     p:=@fmtLink^[i];
     item.pszText:=@p^.ext;
     item.lParam := p^.flags;
-    newItem:=SendMessage(hwndList,LVM_INSERTITEM,0,dword(@item));
+    newItem:=SendMessage(hwndList,LVM_INSERTITEM,0,LPARAM(@item));
     if newItem>=0 then
     begin
       if (p^.flags and WAT_OPT_DISABLED)=0 then
@@ -159,7 +159,7 @@ begin
   for i:=0 to k do
   begin
     item.iItem:=i;
-    SendMessage(hwndList,LVM_GETITEM,0,dword(@item));
+    SendMessage(hwndList,LVM_GETITEM,0,LPARAM(@item));
     j:=FindFormat(item.pszText);
     if j<>WAT_RES_NOTFOUND then // always?
     begin
@@ -324,7 +324,7 @@ begin
           inc(FmtNum);
         end
         else
-          result:=integer(@fmtLink^[p].proc);
+          result:=int_ptr(@fmtLink^[p].proc);
         move(pMusicFormat(lParam)^,fmtLink^[p],SizeOf(tMusicFormat));// fill
       end;
     end;
@@ -371,7 +371,7 @@ begin
   StrCopy (tmp.ext,ext,7);
   tmp.proc:=proc;
   tmp.flags:=flags;
-  ServiceFormat(WAT_ACT_REGISTER,dword(@tmp));
+  ServiceFormat(WAT_ACT_REGISTER,LPARAM(@tmp));
 end;
 
 procedure ClearFormats;

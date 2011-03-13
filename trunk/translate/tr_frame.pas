@@ -9,7 +9,7 @@ procedure DestroyFrame;
 
 implementation
 
-uses Messages,m_api,common,wrapper,mirutils,dbsettings;
+uses Messages,m_api,common,swrapper,mirutils,dbsettings;
 
 {$include resource.inc}
 
@@ -52,7 +52,6 @@ const
   FrameWnd:HWND = 0;
   FrameId:integer = -1;
   OldEditProc:pointer=nil;
-  pattern:pWideChar=nil;
 const
   frm_back:pAnsiChar = 'Frame background';
 var
@@ -302,7 +301,7 @@ begin
     result:=-1;
 end;
 
-function NewEditProc(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function NewEditProc(Dialog:HWnd; hMessage:uint;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 begin
   result:=0;
   case hMessage of
@@ -338,7 +337,7 @@ begin
   end;
 end;
 
-function TRFrameProc(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function TRFrameProc(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
   urd:TUTILRESIZEDIALOG;
   rc:TRECT;
@@ -355,8 +354,8 @@ begin
     end;
 
     WM_INITDIALOG: begin
-      OldEditProc:=pointer(SetWindowLongA(GetDlgItem(dialog,IDC_FRAME_EDIT),
-         GWL_WNDPROC,integer(@NewEditProc)));
+      OldEditProc:=pointer(SetWindowLongPtrA(GetDlgItem(dialog,IDC_FRAME_EDIT),
+         GWL_WNDPROC,LONG_PTR(@NewEditProc)));
 
       EnableWindow(GetDlgItem(Dialog,IDC_FRAME_START),false);
     end;
@@ -369,7 +368,7 @@ begin
       urd.lpTemplate:=MAKEINTRESOURCEA(IDD_FRAME);
       urd.lParam    :=0;
       urd.pfnResizer:=@QSDlgResizer;
-      CallService(MS_UTILS_RESIZEDIALOG,0,dword(@urd));
+      CallService(MS_UTILS_RESIZEDIALOG,0,TLPARAM(@urd));
     end;
 
     WM_ERASEBKGND: begin
@@ -429,7 +428,7 @@ begin
                 begin
                   if PluginLink^.ServiceExists(MS_POPUP_SHOWMESSAGE)<>0 then
                     CallService(MS_POPUP_SHOWMESSAGE,
-                        integer(Translate('Translate: something wrong!')),SM_WARNING)
+                        TLPARAM(Translate('Translate: something wrong!')),SM_WARNING)
                   else
                     MessageBoxW(0,TranslateW('Translate: something wrong!'),'ERROR',MB_ICONERROR)
                 end
@@ -457,7 +456,7 @@ begin
   end;
 end;
 
-function SrvGetTranslatedText(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function SrvGetTranslatedText(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
   tfrom,tto:array [0..3] of AnsiChar;
 begin
@@ -465,7 +464,7 @@ begin
   pword(@tto  )^:=lParam shr 16;
   tfrom[2]:=#0;
   tto  [2]:=#0;
-  result:=dword(GetTranslatedText(pWideChar(wParam),tfrom,tto));
+  result:=int_ptr(GetTranslatedText(pWideChar(wParam),tfrom,tto));
 end;
 
 function ColorReload(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -476,7 +475,7 @@ begin
   cid.cbSize:=SizeOf(cid);
   StrCopy(cid.group,MainTitle);
   StrCopy(cid.name ,frm_back);
-  frm_bkg:=CallService(MS_COLOUR_GETA,dword(@cid),0);
+  frm_bkg:=CallService(MS_COLOUR_GETA,TWPARAM(@cid),0);
   DeleteObject(hbr);
   hbr:=CreateSolidBrush(frm_bkg);
 
@@ -515,7 +514,7 @@ begin
       TBName.w:=MainTitle;
     end;
 
-    FrameId:=CallService(MS_CLIST_FRAMES_ADDFRAME,dword(@Frame),0);
+    FrameId:=CallService(MS_CLIST_FRAMES_ADDFRAME,WPARAM(@Frame),0);
     if FrameId>=0 then
     begin
       LoadSettings;
@@ -530,7 +529,7 @@ begin
       StrCopy(cid.setting,'frame_back');
       cid.defcolour:=COLOR_3DFACE;
       cid.order    :=0;
-      CallService(MS_COLOUR_REGISTERA,dword(@cid),0);
+      CallService(MS_COLOUR_REGISTERA,WPARAM(@cid),0);
 
       colorhook:=PluginLink^.HookEvent(ME_COLOUR_RELOAD,@ColorReload);
       ColorReload(0,0);
@@ -543,7 +542,7 @@ begin
       nlu.cbSize             :=SizeOf(nlu);
       nlu.flags              :=NUF_HTTPCONNS or NUF_NOHTTPSOPTION or NUF_OUTGOING;
       nlu.szSettingsModule   :='Google Translate Frame';
-      hNetlib:=CallService(MS_NETLIB_REGISTERUSER,0,dword(@nlu));
+      hNetlib:=CallService(MS_NETLIB_REGISTERUSER,0,LPARAM(@nlu));
 
     end;
   end;
@@ -551,6 +550,8 @@ end;
 
 procedure DestroyFrame;
 begin
+  if colorhook<>0 then PluginLink^.UnhookEvent(colorhook);
+  colorhook:=0;
   if FrameId>=0 then
   begin
     PluginLink^.DestroyServiceFunction(srv);
