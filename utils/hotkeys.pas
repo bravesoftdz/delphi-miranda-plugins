@@ -198,7 +198,7 @@ begin
               begin
                 if (flags and hkMessage)<>0 then
                 begin
-                  PostMessage(handle,dword(@proc),keycode,0);
+                  PostMessage(handle,wparam(@proc),keycode,0);
                   result:=pointer(-1);
                 end
                 else
@@ -220,7 +220,7 @@ begin
   result:=nil;
 end;
 
-function wmKeyboard_hook(code:integer;wParam:integer;lParam:longint):longint; stdcall;
+function wmKeyboard_hook(code:integer;wParam:WPARAM;lParam:LPARAM):longint; stdcall;
 var
   key:dword;
   proc:pointer;
@@ -241,7 +241,7 @@ begin
     if proc<>nil then
     begin
       if proc<>pointer(-1) then
-        PostMessageA(hiddenwindow,WM_MYMESSAGE,key,dword(proc));
+        PostMessageA(hiddenwindow,WM_MYMESSAGE,key,windows.lparam(proc));
       result:=1;
       exit;
     end;
@@ -249,7 +249,7 @@ begin
   result:=CallNextHookEx(KbHook,code,wParam,lParam);
 end;
 
-function wmKeyboardLL_hook(code:integer;wParam:integer;lParam:integer):integer; stdcall;
+function wmKeyboardLL_hook(code:integer;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
 const
   lastkey:dword=0;
 var
@@ -285,7 +285,7 @@ begin
           begin
             lastkey:=PKBDLLHOOKSTRUCT(lParam)^.vkCode;
             if proc<>pointer(-1) then
-              PostMessageA(hiddenwindow,WM_MYMESSAGE,key,dword(proc));
+              PostMessageA(hiddenwindow,WM_MYMESSAGE,key,windows.lparam(proc));
             result:=1;
             exit;
           end;
@@ -310,14 +310,14 @@ begin
   result:=CallNextHookEx(KbHook,code,wParam,lParam);
 end;
 
-function HiddenWindProc(wnd:HWnd; msg,wParam,lParam:integer):integer; stdcall;
+function HiddenWindProc(wnd:HWnd;msg:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
 var
   key:dword;
 begin
   if Msg=WM_HOTKEY then
   begin
     key:=(lParam shr 16)+((lParam and $FF) shl 8);
-    result:=dword(FindHotKey(key,false));
+    result:=integer(FindHotKey(key,false));
     if result<>0 then
     begin
       result:=AWKHotKeyProc(result)(HotkeyHookToDlg(key));
@@ -351,7 +351,7 @@ begin
        1,1,1,1,dword(HWND_MESSAGE),0,hInstance,nil);
     if wnd<>0 then
     begin
-      SetWindowLongA(wnd,GWL_WNDPROC,dword(@HiddenWindProc));
+      SetWindowLongPtrA(wnd,GWL_WNDPROC,LONG_PTR(@HiddenWindProc));
       hiddenwindow:=wnd;
     end
   end
@@ -472,7 +472,7 @@ begin
   else
   begin
     HKRecs^[result].flags:=HKRecs^[result].flags or hkMessage;
-    HKRecs^[result].proc :=pointer(msg);
+    HKRecs^[result].proc:=pointer(msg);
   end;
 end;
 

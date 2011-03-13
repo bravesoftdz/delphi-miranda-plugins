@@ -34,7 +34,7 @@ const
 const
   bspwnd:HWND = 0;
 
-function HiddenWindProc(wnd:HWnd; msg,wParam,lParam:integer):integer; stdcall;
+function HiddenWindProc(wnd:HWnd; msg:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
 begin
   result:=DefWindowProc(wnd,msg,wparam,lparam);
 end;
@@ -60,7 +60,7 @@ begin
   begin
     bspwnd:=CreateWindowEx(0,'STATIC',nil,0,1,1,1,1,dword(HWND_MESSAGE),0,hInstance,nil);
     if bspwnd<>0 then
-      setwindowlong(bspwnd,GWL_WNDPROC,dword(@HiddenWindProc));
+      setwindowlongPtr(bspwnd,GWL_WNDPROC,dword(@HiddenWindProc));
   end;
 end;
 

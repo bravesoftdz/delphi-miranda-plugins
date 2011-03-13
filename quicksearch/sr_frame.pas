@@ -9,7 +9,7 @@ procedure DestroyFrame;
 
 implementation
 
-uses commctrl,Messages,m_api,common,wrapper,mirutils,sr_global;
+uses commctrl,Messages,m_api,common,swrapper,mirutils,sr_global;
 
 {$include resource.inc}
 
@@ -135,7 +135,7 @@ begin
     SetCListSelContact(result);
 end;
 
-function NewEditProc(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function NewEditProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
 begin
 //  result:=0;
   case hMessage of
@@ -173,7 +173,7 @@ begin
   end;
 end;
 
-function QSFrameProc(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function QSFrameProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
 var
   urd:TUTILRESIZEDIALOG;
   tmp:THANDLE;
@@ -188,7 +188,7 @@ begin
     end;
 
     WM_INITDIALOG: begin
-      OldEditProc:=pointer(SetWindowLongA(GetDlgItem(dialog,IDC_FRAME_EDIT),
+      OldEditProc:=pointer(SetWindowLongPtrA(GetDlgItem(dialog,IDC_FRAME_EDIT),
          GWL_WNDPROC,integer(@NewEditProc)));
 
       if IsAnsi then

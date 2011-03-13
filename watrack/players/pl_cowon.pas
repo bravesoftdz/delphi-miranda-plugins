@@ -5,7 +5,7 @@ unit pl_cowon;
 interface
 
 implementation
-uses windows,winampapi,wrapper,messages,common,srv_player,wat_api;
+uses windows,winampapi,swrapper,messages,common,srv_player,wat_api;
 
 const
   HOSTWND_CLASS	= 'TLB_JETAUDIO';
@@ -67,7 +67,7 @@ const
   hostwnd :HWND = 0;
   tmpstr  :pWideChar=nil;
 
-function HiddenWindProc(wnd:HWnd; msg,wParam,lParam:integer):integer; stdcall;
+function HiddenWindProc(wnd:HWnd; msg:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
 var
   cds:PCOPYDATASTRUCT;
 begin
@@ -90,7 +90,7 @@ function Init:integer;cdecl;
 begin
   hostwnd:=CreateWindowExW(0,'STATIC',nil,0,1,1,1,1,dword(HWND_MESSAGE),0,hInstance,nil);
   if hostwnd<>0 then
-    SetWindowLongW(hostwnd,GWL_WNDPROC,dword(@HiddenWindProc));
+    SetWindowLongPtrW(hostwnd,GWL_WNDPROC,dword(@HiddenWindProc));
 	result:=hostwnd;
 end;
 

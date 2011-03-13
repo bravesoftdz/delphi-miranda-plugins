@@ -5,7 +5,7 @@ unit pl_VLC;
 interface
 
 implementation
-uses windows,common,srv_player,wat_api,syswin,wrapper
+uses windows,common,srv_player,wat_api,syswinexe,swrapper
   {$IFDEF DELPHI7_UP}
   ,variants
   {$ENDIF}

@@ -5,7 +5,7 @@ uses
   {$IFNDEF FPC}fastmm4,{$ENDIF}
   m_api,dbsettings,activex,winampapi,
   Windows,messages,commctrl,//uxtheme,
-  srv_format,srv_player,wat_api,wrapper,
+  srv_format,srv_player,wat_api,swrapper,wrapper,
   common,syswin,HlpDlg,mirutils
   ,global,waticons,io,macros
   ,lastfm    in 'lastfm\lastfm.pas'

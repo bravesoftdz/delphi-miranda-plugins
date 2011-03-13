@@ -5,7 +5,7 @@ unit pl_Pluton;
 interface
 
 implementation
-uses windows,syswin,wrapper,common,srv_player,wat_api;
+uses windows,syswinexe,swrapper,common,srv_player,wat_api;
 
 const
   PlutonExe   = 'PLUTON.EXE';

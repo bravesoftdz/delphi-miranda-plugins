@@ -267,8 +267,8 @@ end;
 function Netlib_CloseHandle(Handle: THandle): int;
 function Netlib_GetBase64DecodedBufferSize(const cchEncoded: int): int;
 function Netlib_GetBase64EncodedBufferSize(const cbDecoded: int): int;
-function Netlib_Send(hConn: THandle; const buf: PAnsiChar; len: int; flags: int): int;
-function Netlib_Recv(hConn: THandle; const buf: PAnsiChar; len: int; flags: int): int;
+function Netlib_Send(hConn: THandle; const buf: PAnsiChar; len: int; flags: int): int_ptr;
+function Netlib_Recv(hConn: THandle; const buf: PAnsiChar; len: int; flags: int): int_ptr;
 procedure Netlib_Log(hNetLib: THandle; const sz: PAnsiChar);
 
   {$else}
@@ -288,7 +288,7 @@ begin
   Result := (cbDecoded * 4+11) div 12*4+1;
 end;
 
-function Netlib_Send(hConn: THandle; const buf: PAnsiChar; len: int; flags: int): int;
+function Netlib_Send(hConn: THandle; const buf: PAnsiChar; len: int; flags: int): int_ptr;
 var
   nlb: TNETLIBBUFFER;
 begin
@@ -298,7 +298,7 @@ begin
   Result := PluginLink^.CallService(MS_NETLIB_SEND, wParam(hConn), lParam(@nlb));
 end;
 
-function Netlib_Recv(hConn: THandle; const buf: PAnsiChar; len: int; flags: int): int;
+function Netlib_Recv(hConn: THandle; const buf: PAnsiChar; len: int; flags: int): int_ptr;
 var
   nlb: TNETLIBBUFFER;
 begin

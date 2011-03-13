@@ -95,7 +95,7 @@ begin
         li.pszText:=NoDescription
       else
         li.pszText:=descr;
-      li.iItem    :=SendMessageW(list,LVM_INSERTITEMW,0,dword(@li));
+      li.iItem    :=SendMessageW(list,LVM_INSERTITEMW,0,lparam(@li));
       if li.iItem>0 then
         dec(li.iItem);
       ListView_SetItemState(list,li.iItem,LVIS_FOCUSED or LVIS_SELECTED,
@@ -121,13 +121,13 @@ begin
   cbei.mask:=CBEIF_IMAGE or CBEIF_SELECTEDIMAGE or CBEIF_TEXT; //!!
   for i:=0 to ACT_MAXTYPE-1 do
   begin
-    ImageList_AddIcon(il,PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(ActIds[i].icon)));
+    ImageList_AddIcon(il,PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(ActIds[i].icon)));
 
     cbei.pszText       :=TranslateW(FastAnsiToWideBuf(ActIds[i].text,buf));
     cbei.iItem         :=i;
     cbei.iImage        :=i;
     cbei.iSelectedImage:=i;
-    if SendMessageW(list,CBEM_INSERTITEMW,0,dword(@cbei))=-1 then break;
+    if SendMessageW(list,CBEM_INSERTITEMW,0,lparam(@cbei))=-1 then break;
   end;
   ImageList_Destroy(SendMessage(list,CBEM_SETIMAGELIST,0,il));
   SendMessage(list,CB_SETCURSEL,0,0);
@@ -154,8 +154,8 @@ begin
   while i<act do
   begin
     li.iItem:=i;
-    SendMessageW(list,LVM_GETITEMW,0,dword(@li));
-    SendMessageW(wnd,CB_ADDSTRING,0,dword(PWideChar(@arr)));
+    SendMessageW(list,LVM_GETITEMW,0,lparam(@li));
+    SendMessageW(wnd,CB_ADDSTRING,0,lparam(PWideChar(@arr)));
     inc(i);
   end;
   SendMessage(wnd,CB_SETCURSEL,0,0);
@@ -173,20 +173,20 @@ begin
 
   SendMessage(wnd,CB_RESETCONTENT,0,0);
   SendMessage(wnd,CB_SETITEMDATA,
-    SendMessageW(wnd,CB_ADDSTRING,0,dword(TranslateW(NoChainText))),0);
+    SendMessageW(wnd,CB_ADDSTRING,0,lparam(TranslateW(NoChainText))),0);
   for i:=0 to NewMaxGroups-1 do
   begin
     if (NewGroupList^[i].flags and (ACF_ASSIGNED or ACF_VOLATILE))=ACF_ASSIGNED then
     begin
       SendMessage(wnd,CB_SETITEMDATA,
-        SendMessageW(wnd,CB_ADDSTRING,0,dword(NewGroupList^[i].descr)),
+        SendMessageW(wnd,CB_ADDSTRING,0,lparam(NewGroupList^[i].descr)),
         NewGroupList^[i].id);
     end;
   end;
 end;
 
 // action group table procedure (key hook)
-function NewGroupTableProc(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function NewGroupTableProc(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
   i:integer;
 begin
@@ -232,7 +232,7 @@ begin
 end;
 
 // action (chain) table procedure (key hook)
-function NewActTableProc(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function NewActTableProc(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
   i:integer;
 begin
@@ -298,96 +298,96 @@ begin
   ti.lpszText:=TranslateW('Help');
   SendMessage(ti.uId,BM_SETIMAGE,IMAGE_ICON,
       CallService(MS_SKIN_LOADICON,SKINICON_OTHER_HELP,0));
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   
   ti.uId     :=GetDlgItem(Dialog,IDC_ACTION_NEW);
   ti.lpszText:=TranslateW('New');
   SetIcon(ti.uId,ACI_NEW);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_NEW);
   SetIcon(ti.uId,ACI_NEW);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_ACTION_UP);
   ti.lpszText:=TranslateW('Up');
   SetIcon(ti.uId,ACI_UP);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_UP);
   SetIcon(ti.uId,ACI_UP);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_ACTION_DOWN);
   ti.lpszText:=TranslateW('Down');
   SetIcon(ti.uId,ACI_DOWN);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_DOWN);
   SetIcon(ti.uId,ACI_DOWN);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_ACTION_DELETE);
   ti.lpszText:=TranslateW('Delete');
   SetIcon(ti.uId,ACI_DELETE);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_DELETE);
   SetIcon(ti.uId,ACI_DELETE);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_RELOAD);
   ti.lpszText:=TranslateW('Reload');
   SetIcon(ti.uId,ACI_RELOAD);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_TEST);
   ti.lpszText:=TranslateW('Test');
   SetIcon(ti.uId,ACI_TEST);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
 
   ti.uId     :=GetDlgItem(Dialog,IDC_CNT_APPLY);
   ti.lpszText:=TranslateW('Apply format');
   SetIcon(ti.uId,ACI_FORMAT);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
 
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_IMPORT);
   ti.lpszText:=TranslateW('Import');
   SetIcon(ti.uId,ACI_IMPORT);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_EXPORT);
   ti.lpszText:=TranslateW('Export');
   SetIcon(ti.uId,ACI_EXPORT);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
 
   ti.lpszText:=TranslateW('Use Variables');
   ti.uId:=GetDlgItem(Dialog,IDC_SRV_WPAR);
   SetIcon(ti.uId,ACI_VAR_UNCHECKED);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_SRV_LPAR);
   SetIcon(ti.uId,ACI_VAR_UNCHECKED);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_SRV_SRVC);
   SetIcon(ti.uId,ACI_VAR_UNCHECKED);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_PRG_PRG);
   SetIcon(ti.uId,ACI_VAR_UNCHECKED);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_PRG_ARG);
   SetIcon(ti.uId,ACI_VAR_UNCHECKED);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_TXT_FILE);
   SetIcon(ti.uId,ACI_VAR_UNCHECKED);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_TXT_TEXT);
   SetIcon(ti.uId,ACI_VAR_UNCHECKED);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_RW_MVAR);
   SetIcon(ti.uId,ACI_VAR_UNCHECKED);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_RW_SVAR);
   SetIcon(ti.uId,ACI_VAR_UNCHECKED);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_RW_TVAR);
   SetIcon(ti.uId,ACI_VAR_UNCHECKED);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_MSG_TTL);
   SetIcon(ti.uId,ACI_VAR_UNCHECKED);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_MSG_TXT);
   SetIcon(ti.uId,ACI_VAR_UNCHECKED);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
 
 end;
 
@@ -402,12 +402,12 @@ begin
   li.StateMask :=dword(-1);
   li.pszText   :=@buf;
   li.cchTextMax:=127;
-  SendMessageW(list,LVM_GETITEMW,0,dword(@li));
+  SendMessageW(list,LVM_GETITEMW,0,lparam(@li));
   SendMessageW(list,LVM_DELETEITEM,li.iItem,0);
   inc(li.iItem,incr);
 
-  SendMessageW(list,LVM_INSERTITEMW,0,dword(@li));
-  SendMessageW(list,LVM_SETITEMSTATE,li.iItem,dword(@li));
+  SendMessageW(list,LVM_INSERTITEMW,0,lparam(@li));
+  SendMessageW(list,LVM_SETITEMSTATE,li.iItem,lparam(@li));
   result:=li.iItem;
 end;
 
@@ -453,7 +453,7 @@ begin
   end;
 end;
 
-function DlgProcOpt2(Dialog:HWnd; hMessage,wParam,lParam:dword):integer; stdcall;
+function DlgProcOpt2(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 
   {$include i_visual.inc}
 
@@ -470,7 +470,7 @@ function DlgProcOpt2(Dialog:HWnd; hMessage,wParam,lParam:dword):integer; stdcall
           cbSize:=SizeOf(vhi);
           flags:=VHF_NOINPUTDLG;
         end;
-        PluginLink^.CallService(MS_VARS_SHOWHELPEX,Dialog,dword(@vhi));
+        PluginLink^.CallService(MS_VARS_SHOWHELPEX,Dialog,tlparam(@vhi));
       end;
       hlpAdvVariables: begin
         FillChar(vhi,SizeOf(vhi),0);
@@ -481,7 +481,7 @@ function DlgProcOpt2(Dialog:HWnd; hMessage,wParam,lParam:dword):integer; stdcall
           hwndCtrl     :=GetDlgItem(Dialog,IDC_ADV_VARS);
           szSubjectDesc:='test your variables';
         end;
-        PluginLink^.CallService(MS_VARS_SHOWHELPEX,Dialog,dword(@vhi));
+        PluginLink^.CallService(MS_VARS_SHOWHELPEX,Dialog,tlparam(@vhi));
       end;
       hlpContact: begin
 {
@@ -496,7 +496,7 @@ function DlgProcOpt2(Dialog:HWnd; hMessage,wParam,lParam:dword):integer; stdcall
            Dialog,@ServiceHelpDlg);
 
         buf:=GetDlgText(Dialog,IDC_EDIT_SERVICE,true);
-        SendMessage(helpwindow,WM_UPDATEHELP,0,dword(buf));
+        SendMessage(helpwindow,WM_UPDATEHELP,0,tlparam(buf));
         mFreeMem(buf);
       end;
       hlpProgram: begin
@@ -642,7 +642,7 @@ function DlgProcOpt2(Dialog:HWnd; hMessage,wParam,lParam:dword):integer; stdcall
       li.iSubItem:=0;
       // getting SubAction number
       li.mask:=LVIF_PARAM;
-      SendMessage(wnd,LVM_GETITEM,0,dword(@li));
+      SendMessage(wnd,LVM_GETITEM,0,tlparam(@li));
 
       // changing to default name
       if str=nil then
@@ -668,7 +668,7 @@ function DlgProcOpt2(Dialog:HWnd; hMessage,wParam,lParam:dword):integer; stdcall
 // screen
       li.mask   :=LVIF_TEXT;
       li.pszText:=str1;
-      SendMessageW(wnd,LVM_SETITEMW,0,dword(@li));
+      SendMessageW(wnd,LVM_SETITEMW,0,tlparam(@li));
     end;
   end;
 
@@ -708,7 +708,7 @@ function DlgProcOpt2(Dialog:HWnd; hMessage,wParam,lParam:dword):integer; stdcall
       li.pszText:=p;
       li.iItem  :=idx;
       li.lParam :=i;
-      SendMessageW(wnd,LVM_INSERTITEMW,0,integer(@li));
+      SendMessageW(wnd,LVM_INSERTITEMW,0,tlparam(@li));
       ListView_SetCheckState(wnd,idx,(NewActionList^[i].flags and ACF_DISABLED)=0);
 
       i:=NewActionList^[i].next;
@@ -762,7 +762,7 @@ function DlgProcOpt2(Dialog:HWnd; hMessage,wParam,lParam:dword):integer; stdcall
         li.iSubItem  :=0;
         li.pszText   :=@arr;
         li.cchTextMax:=SizeOf(arr) div SizeOf(WideChar);
-        SendDlgItemMessageW(Dialog,IDC_ACTION_LIST,LVM_GETITEMW,0,dword(@li));
+        SendDlgItemMessageW(Dialog,IDC_ACTION_LIST,LVM_GETITEMW,0,tlparam(@li));
         StrDupW(descr,arr);
       end;
 
@@ -1148,7 +1148,7 @@ function DlgProcOpt2(Dialog:HWnd; hMessage,wParam,lParam:dword):integer; stdcall
       li.iItem   :=next;
       li.iSubItem:=0;
       li.mask    :=LVIF_PARAM;
-      SendMessage(wnd,LVM_GETITEM,0,dword(@li));
+      SendMessage(wnd,LVM_GETITEM,0,tlparam(@li));
     end
     else
     begin
@@ -1209,7 +1209,7 @@ function DlgProcOpt2(Dialog:HWnd; hMessage,wParam,lParam:dword):integer; stdcall
           lvi.pszText:=NoDescription
         else
           lvi.pszText:=CurGroup^.descr;
-        SendMessageW(list,LVM_INSERTITEMW,0,dword(@lvi));
+        SendMessageW(list,LVM_INSERTITEMW,0,tlparam(@lvi));
         inc(result);
       end;
       inc(CurGroup);
@@ -1249,7 +1249,7 @@ function DlgProcOpt2(Dialog:HWnd; hMessage,wParam,lParam:dword):integer; stdcall
     wnd:=GetDlgItem(Dialog,IDC_ADV_OPER);
     EnableWindow(wnd,show);
     EnableWindow(GetDlgItem(Dialog,IDC_ADV_VAL1),
-       show and (CB_GetData(wnd)<>cardinal(aeNot)));//(SendMessage(wnd,CB_GETCURSEL,0,0)<>0));
+       show and (CB_GetData(wnd)<>lresult(aeNot)));//(SendMessage(wnd,CB_GETCURSEL,0,0)<>0));
   end;
 
   procedure SetMBRadioIcon(h:THANDLE;id:dword;icon:dword);
@@ -1286,7 +1286,7 @@ function DlgProcOpt2(Dialog:HWnd; hMessage,wParam,lParam:dword):integer; stdcall
 
 var
   wnd,wnd1,wnd2:HWND;
-  i,j:integer;
+  i,j:int_ptr;
   pw:pWideChar;
   li:LV_ITEMW;
   lv:LV_COLUMNW;
@@ -1315,7 +1315,7 @@ begin
       zeromemory(@lv,sizeof(lv));
       lv.mask:=LVCF_WIDTH;
       lv.cx  :=110;
-      SendMessageW(wnd,LVM_INSERTCOLUMNW ,0,integer(@lv));
+      SendMessageW(wnd,LVM_INSERTCOLUMNW ,0,tlparam(@lv));
       SendMessageW(wnd,LVM_SETCOLUMNWIDTH,0,LVSCW_AUTOSIZE_USEHEADER);
       MakeResultTypeList(IDC_SRV_RESULT);
       MakeParamTypeList (IDC_FLAG_WPAR);
@@ -1346,16 +1346,16 @@ begin
       end;
       
       helpwindow:=0;
-      OldActTableProc  :=pointer(SetWindowLong(wnd,GWL_WNDPROC,integer(@NewActTableProc)));
-      OldGroupTableProc:=pointer(SetWindowLong(GetDlgItem(Dialog,IDC_ACTION_GROUP),
-            GWL_WNDPROC,integer(@NewGroupTableProc)));
+      OldActTableProc  :=pointer(SetWindowLongPtr(wnd,GWL_WNDPROC,int_ptr(@NewActTableProc)));
+      OldGroupTableProc:=pointer(SetWindowLongPtr(GetDlgItem(Dialog,IDC_ACTION_GROUP),
+            GWL_WNDPROC,int_ptr(@NewGroupTableProc)));
 
       // fill group list
       wnd:=GetDlgItem(Dialog,IDC_ACTION_GROUP);
       SendMessage(wnd,LVM_SETUNICODEFORMAT,1,0);
       lv.mask:=LVCF_WIDTH;
       lv.cx  :=110;
-      SendMessageW(wnd,LVM_INSERTCOLUMNW,0,dword(@lv));
+      SendMessageW(wnd,LVM_INSERTCOLUMNW,0,tlparam(@lv));
       FillGroupList{(Dialog)};
       FillChainList(Dialog);
 
@@ -1408,7 +1408,7 @@ begin
             
             IDC_ADV_OPER: begin
               EnableWindow(GetDlgItem(Dialog,IDC_ADV_VAL1),
-                (CB_GetData(lParam)<>cardinal(aeNot)));
+                (CB_GetData(lParam)<>lresult(aeNot)));
 //                SendMessage(lParam,CB_GETCURSEL,0,0)<>0);
             end;
 
@@ -1498,7 +1498,7 @@ begin
                   flag:=flag or ES_NUMBER
                 else
                   flag:=flag and not ES_NUMBER;
-                SetWindowLong(wnd,GWL_STYLE,flag);
+                SetWindowLongPtr(wnd,GWL_STYLE,flag);
 }
                 end;
               end;
@@ -1602,7 +1602,7 @@ begin
                   if MessageBoxW(Dialog,TranslateW('Append data to file'),
                      PluginName,MB_YESNO+MB_ICONWARNING)=IDYES then
                     i:=i or ACIO_APPEND;
-                ActInOut(i,dword(@xmlfilename));
+                ActInOut(i,uint_ptr(@xmlfilename));
 //                Export({GetLParam(GetDlgItem(Dialog,IDC_ACTION_GROUP)),}xmlfilename,i);
                 for i:=0 to MaxGroups-1 do
                   with GroupList[i] do
@@ -1616,7 +1616,7 @@ begin
               if ShowDlgW(xmlfilename,xmlfilename,inoutfilter) then
               begin
 //                if Import(xmlfilename) then
-                if ActInOut(0,dword(@xmlfilename))<>0 then
+                if ActInOut(0,uint_ptr(@xmlfilename))<>0 then
                 begin
                   ChMask:=ChMask or ACTM_NEW;
                   SendMessage(Dialog,WM_COMMAND,IDC_GROUP_RELOAD+(BN_CLICKED shl 16),
@@ -1659,7 +1659,7 @@ begin
               li.mask    :=LVIF_PARAM;
               li.iSubItem:=0;
               li.iItem   :=0;
-              SendMessageW(wnd,LVM_GETITEMW,0,dword(@li));
+              SendMessageW(wnd,LVM_GETITEMW,0,tlparam(@li));
               j:=SendMessage(wnd,LVM_GETNEXTITEM,-1,LVNI_FOCUSED);
 
               ActionStarterWait(li.lParam);
@@ -1766,7 +1766,7 @@ begin
               li.iItem   :=i+1;
               li.iSubItem:=0;
               li.lParam  :=NewAction(NewActionList,NewMaxActions);
-              SendMessageW(wnd,LVM_INSERTITEMW,0,dword(@li));
+              SendMessageW(wnd,LVM_INSERTITEMW,0,tlparam(@li));
               ListView_SetCheckState(wnd,li.iItem,true);
               if li.iItem=0 then
               begin
@@ -2046,7 +2046,7 @@ begin
                 item.mask:=LVIF_TEXT;
                 if pWideChar(item.pszText)^=#0 then
                   pWideChar(item.pszText):=NoDescription;
-                SendMessageW(hdr.hWndFrom,LVM_SETITEMW,0,dword(@item));
+                SendMessageW(hdr.hWndFrom,LVM_SETITEMW,0,tlparam(@item));
 
                 with NewGroupList^[item.lParam] do
                 begin

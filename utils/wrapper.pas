@@ -4,22 +4,16 @@ unit wrapper;
 interface
 uses windows;
 
-function GetScreenRect():TRect;
-procedure SnapToScreen(var rc:TRect;dx:integer=0;dy:integer=0{;
-          minw:integer=240;minh:integer=100});
-
-function  LV_GetLParam  (list:HWND;item:integer=-1):integer;
-function  LV_SetLParam  (list:HWND;lParam:dword;item:integer=-1):integer;
+function  LV_GetLParam  (list:HWND;item:integer=-1):lresult;
+function  LV_SetLParam  (list:HWND;lParam:LPARAM;item:integer=-1):lresult;
 function  LV_ItemAtPos(wnd:HWND;Pt:TPOINT;var SubItem:dword):Integer; overload;
 function  LV_ItemAtPos(wnd:HWND;x,y:integer;var SubItem:dword):Integer; overload;
 procedure LV_SetItem (handle:hwnd;str:PAnsiChar;item:integer;subitem:integer=0);
 procedure LV_SetItemW(handle:hwnd;str:PWideChar;item:integer;subitem:integer=0);
 function  LV_MoveItem(list:hwnd;direction:integer;item:integer=-1):integer;
-function  LV_GetColumnCount(list:HWND):integer;
+function  LV_GetColumnCount(list:HWND):lresult;
 function  LV_CheckDirection(list:HWND):integer; // bit 0 - can move up, bit 1 - down
 
-function GetDlgText(Dialog:HWND;idc:integer;getAnsi:boolean=false):pointer; overload;
-function GetDlgText(wnd:HWND;getAnsi:boolean=false):pointer; overload;
 function ShowDlg (dst:PAnsiChar;fname:PAnsiChar=nil;Filter:PAnsiChar=nil;open:boolean=true):boolean;
 function ShowDlgW(dst:PWideChar;fname:PWideChar=nil;Filter:PWideChar=nil;open:boolean=true):boolean;
 
@@ -28,20 +22,9 @@ function SelectDirectory(Caption:PAnsiChar;var Directory:PAnsiChar;
 function SelectDirectory(Caption:PWideChar;var Directory:PWideChar;
          Parent:HWND=0;newstyle:bool=false):Boolean; overload;
 
-function CB_SelectData(cb:HWND;data:dword):integer; overload;
-function CB_SelectData(Dialog:HWND;id:cardinal;data:dword):integer; overload;
-function CB_GetData   (cb:HWND;idx:integer=-1):dword;
-function CB_AddStrData (cb:HWND;astr:pAnsiChar;data:integer=0;idx:integer=-1):HWND;
-function CB_AddStrDataW(cb:HWND;astr:pWideChar;data:integer=0;idx:integer=-1):HWND;
-
-function StringToGUID(const astr:PAnsiChar):TGUID; overload;
-function StringToGUID(const astr:PWideChar):TGUID; overload;
-
 implementation
 uses messages,common,shlobj,activex,commctrl,commdlg;
 
-const
-  EmptyGUID:TGUID = '{00000000-0000-0000-0000-000000000000}';
 {.$IFNDEF DELPHI10_UP}
 const
   LVM_SORTITEMSEX = LVM_FIRST + 81;
@@ -49,62 +32,7 @@ const
 {$IFNDEF DELPHI7_UP}
 const
   BIF_NEWDIALOGSTYLE = $0040;
-const
-  SM_XVIRTUALSCREEN  = 76;
-  SM_YVIRTUALSCREEN  = 77;
-  SM_CXVIRTUALSCREEN = 78;
-  SM_CYVIRTUALSCREEN = 79;
 {$ENDIF}
-
-function GetScreenRect():TRect;
-begin
-  result.left  := GetSystemMetrics( SM_XVIRTUALSCREEN  );
-  result.top   := GetSystemMetrics( SM_YVIRTUALSCREEN  );
-  result.right := GetSystemMetrics( SM_CXVIRTUALSCREEN ) + result.left;
-  result.bottom:= GetSystemMetrics( SM_CYVIRTUALSCREEN ) + result.top;
-end;
-
-procedure SnapToScreen(var rc:TRect;dx:integer=0;dy:integer=0{;
-          minw:integer=240;minh:integer=100});
-var
-  rect:TRect;
-begin
-  rect:=GetScreenRect;
-  if rc.right >rect.right  then rc.right :=rect.right -dx;
-  if rc.bottom>rect.bottom then rc.bottom:=rect.bottom-dy;
-  if rc.left  <rect.left   then rc.left  :=rect.left;
-  if rc.top   <rect.top    then rc.top   :=rect.top;
-end;
-
-function GetDlgText(wnd:HWND;getAnsi:boolean=false):pointer;
-var
-  a:cardinal;
-begin
-  result:=nil;
-  if getAnsi then
-  begin
-    a:=SendMessageA(wnd,WM_GETTEXTLENGTH,0,0)+1;
-    if a>1 then
-    begin
-      mGetMem(PAnsiChar(result),a);
-      SendMessageA(wnd,WM_GETTEXT,a,lparam(result));
-    end;
-  end
-  else
-  begin
-    a:=SendMessageW(wnd,WM_GETTEXTLENGTH,0,0)+1;
-    if a>1 then
-    begin
-      mGetMem(pWideChar(result),a*SizeOf(WideChar));
-      SendMessageW(wnd,WM_GETTEXT,a,lparam(result));
-    end;
-  end;
-end;
-
-function GetDlgText(Dialog:HWND;idc:integer;getAnsi:boolean=false):pointer;
-begin
-  result:=GetDlgText(GetDlgItem(Dialog,idc),getAnsi);
-end;
 
 function ShowDlg(dst:PAnsiChar;fname:PAnsiChar=nil;Filter:PAnsiChar=nil;open:boolean=true):boolean;
 var
@@ -162,30 +90,6 @@ begin
     result:=GetOpenFileNameW({$IFDEF FPC}@{$ENDIF}NameRec)
   else
     result:=GetSaveFileNameW({$IFDEF FPC}@{$ENDIF}NameRec)
-end;
-
-procedure LV_SetItem(handle:hwnd;str:PAnsiChar;item:integer;subitem:integer=0);
-var
-  li:LV_ITEMA;
-begin
-//  zeromemory(@li,sizeof(li));
-  li.mask    :=LVIF_TEXT;
-  li.pszText :=str;
-  li.iItem   :=item;
-  li.iSubItem:=subitem;
-  SendMessageA(handle,LVM_SETITEMA,0,lparam(@li));
-end;
-
-procedure LV_SetItemW(handle:hwnd;str:PWideChar;item:integer;subitem:integer=0);
-var
-  li:LV_ITEMW;
-begin
-//  zeromemory(@li,sizeof(li));
-  li.mask    :=LVIF_TEXT;
-  li.pszText :=str;
-  li.iItem   :=item;
-  li.iSubItem:=subitem;
-  SendMessageW(handle,LVM_SETITEMW,0,lparam(@li));
 end;
 
 function SelectDirectory(Caption:PAnsiChar;var Directory:PAnsiChar;
@@ -264,7 +168,31 @@ end;
 
 //----- ListView functions -----
 
-function LV_GetLParam(list:HWND;item:integer=-1):integer;
+procedure LV_SetItem(handle:hwnd;str:PAnsiChar;item:integer;subitem:integer=0);
+var
+  li:LV_ITEMA;
+begin
+//  zeromemory(@li,sizeof(li));
+  li.mask    :=LVIF_TEXT;
+  li.pszText :=str;
+  li.iItem   :=item;
+  li.iSubItem:=subitem;
+  SendMessageA(handle,LVM_SETITEMA,0,lparam(@li));
+end;
+
+procedure LV_SetItemW(handle:hwnd;str:PWideChar;item:integer;subitem:integer=0);
+var
+  li:LV_ITEMW;
+begin
+//  zeromemory(@li,sizeof(li));
+  li.mask    :=LVIF_TEXT;
+  li.pszText :=str;
+  li.iItem   :=item;
+  li.iSubItem:=subitem;
+  SendMessageW(handle,LVM_SETITEMW,0,lparam(@li));
+end;
+
+function LV_GetLParam(list:HWND;item:integer=-1):lresult;
 var
   li:LV_ITEMW;
 begin
@@ -284,7 +212,7 @@ begin
   result:=li.lParam;
 end;
 
-function LV_SetLParam(list:HWND;lParam:dword;item:integer=-1):integer;
+function LV_SetLParam(list:HWND;lParam:LPARAM;item:integer=-1):lresult;
 var
   li:LV_ITEMW;
 begin
@@ -363,7 +291,7 @@ begin
   result:=item+direction;
 end;
 
-function LV_GetColumnCount(list:HWND):integer;
+function LV_GetColumnCount(list:HWND):lresult;
 begin
   result:=SendMessage(SendMessage(list,LVM_GETHEADER,0,0),HDM_GETITEMCOUNT,0,0);
 end;
@@ -400,92 +328,6 @@ begin
   end;
   if (last>=0) and (last<cnt) then
     result:=result or 2;
-end;
-
-//----- Combobox functions -----
-
-function CB_SelectData(cb:HWND;data:dword):integer; overload;
-var
-  i:integer;
-begin
-  result:=0;
-  for i:=0 to SendMessage(cb,CB_GETCOUNT,0,0)-1 do
-  begin
-    if data=dword(SendMessage(cb,CB_GETITEMDATA,i,0)) then
-    begin
-      result:=i;
-      break;
-    end;
-  end;
-  result:=SendMessage(cb,CB_SETCURSEL,result,0);
-end;
-
-function CB_SelectData(Dialog:HWND;id:cardinal;data:dword):integer; overload;
-begin
-  result:=CB_SelectData(GetDlgItem(Dialog,id),data);
-end;
-
-function CB_GetData(cb:HWND;idx:integer=-1):dword;
-begin
-  if idx<0 then
-    idx:=SendMessage(cb,CB_GETCURSEL,0,0);
-  result:=SendMessage(cb,CB_GETITEMDATA,idx,0);
-end;
-
-function CB_AddStrData(cb:HWND;astr:pAnsiChar;data:integer=0;idx:integer=-1):HWND;
-begin
-  result:=cb;
-  if idx<0 then
-    idx:=SendMessage(cb,CB_ADDSTRING,0,lparam(astr))
-  else
-    idx:=SendMessage(cb,CB_INSERTSTRING,idx,lparam(astr));
-  SendMessage(cb,CB_SETITEMDATA,idx,data);
-end;
-
-function CB_AddStrDataW(cb:HWND;astr:pWideChar;data:integer=0;idx:integer=-1):HWND;
-begin
-  result:=cb;
-  if idx<0 then
-    idx:=SendMessageW(cb,CB_ADDSTRING,0,lparam(astr))
-  else
-    idx:=SendMessageW(cb,CB_INSERTSTRING,idx,lparam(astr));
-  SendMessage(cb,CB_SETITEMDATA,idx,data);
-end;
-
-function StringToGUID(const astr:PAnsiChar):TGUID;
-var
-  i:integer;
-begin
-  result:=EmptyGUID;
-  if StrLen(astr)<>38 then exit;
-  result.D1:=HexToInt(PAnsiChar(@astr[01]),8);
-  result.D2:=HexToInt(PAnsiChar(@astr[10]),4);
-  result.D3:=HexToInt(PAnsiChar(@astr[15]),4);
-
-  result.D4[0]:=HexToInt(PAnsiChar(@astr[20]),2);
-  result.D4[1]:=HexToInt(PAnsiChar(@astr[22]),2);
-  for i:=2 to 7 do
-  begin
-    result.D4[i]:=HexToInt(PAnsiChar(@astr[21+i*2]),2);
-  end;
-end;
-
-function StringToGUID(const astr:PWideChar):TGUID;
-var
-  i:integer;
-begin
-  result:=EmptyGUID;
-  if StrLenW(astr)<>38 then exit;
-  result.D1:=HexToInt(pWideChar(@astr[01]),8);
-  result.D2:=HexToInt(pWideChar(@astr[10]),4);
-  result.D3:=HexToInt(pWideChar(@astr[15]),4);
-
-  result.D4[0]:=HexToInt(pWideChar(@astr[20]),2);
-  result.D4[1]:=HexToInt(pWideChar(@astr[22]),2);
-  for i:=2 to 7 do
-  begin
-    result.D4[i]:=HexToInt(pWideChar(@astr[21+i*2]),2);
-  end;
 end;
 
 end.

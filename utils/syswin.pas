@@ -3,7 +3,7 @@ unit SysWin;
 
 interface
 
-uses {$IFDEF FPC}jwawindows{$ELSE}windows{$ENDIF};
+uses windows;
 
 type
   FFWFilterProc = function(fname:pWideChar):boolean;
@@ -16,54 +16,35 @@ const
 
 function GetWorkOfflineStatus:integer;
 
-function ExecuteWaitW(AppPath:pWideChar; CmdLine:pWideChar=nil; DfltDirectory:PWideChar=nil;
-         Show:DWORD=SW_SHOWNORMAL; TimeOut:DWORD=0; ProcID:PDWORD=nil):dword;
-function ExecuteWait(AppPath:PAnsiChar; CmdLine:PAnsiChar=nil; DfltDirectory:PAnsiChar=nil;
-         Show:DWORD=SW_SHOWNORMAL; TimeOut:DWORD=0; ProcID:PDWORD=nil):dword;
-
 function SendString(wnd:HWND;astr:PWideChar):integer; overload;
 function SendString(wnd:HWND;astr:PAnsiChar):integer; overload;
 procedure ProcessMessages;
 function GetFocusedChild(wnd:HWND):HWND;
 function GetAssoc(key:PAnsiChar):PAnsiChar;
-function GetEXEbyWnd(w:HWND; var dst:pWideChar):pWideChar; overload;
-function GetEXEbyWnd(w:HWND; var dst:PAnsiChar):PAnsiChar; overload;
-function IsExeRunning(exename:PWideChar):boolean; {hwnd}
 function GetFileFromWnd(wnd:HWND;Filter:FFWFilterProc;
          flags:dword=gffdMultiThread+gffdOld;timeout:cardinal=ThreadTimeout):pWideChar;
 
 function WaitFocusedWndChild(Wnd:HWnd):HWnd;
 
+function ExecuteWaitW(AppPath:pWideChar; CmdLine:pWideChar=nil; DfltDirectory:PWideChar=nil;
+         Show:DWORD=SW_SHOWNORMAL; TimeOut:DWORD=0; ProcID:PDWORD=nil):dword;
+function ExecuteWait(AppPath:PAnsiChar; CmdLine:PAnsiChar=nil; DfltDirectory:PAnsiChar=nil;
+         Show:DWORD=SW_SHOWNORMAL; TimeOut:DWORD=0; ProcID:PDWORD=nil):dword;
+
 implementation
 
-uses shellapi,{$IFDEF FPC}jwapsapi{$ELSE}PSAPI{$ENDIF},common,messages;
-
-function GetWorkOfflineStatus:integer;
-var
-  lKey:HKEY;
-  len,typ:dword;
-begin
-  result:=0;
-  if RegOpenKeyEx(HKEY_CURRENT_USER,
-    'Software\Microsoft\Windows\CurrentVersion\Internet Settings',0,
-     KEY_READ,lKey)=ERROR_SUCCESS then
-  begin
-    len:=4;
-    typ:=REG_DWORD;
-    if RegQueryValueEx(lKey,'GlobalUserOffline',NIL,@typ,@result,@len)=ERROR_SUCCESS then
-    ;
-    RegCloseKey(lKey);
-  end;
-end;
+uses
+  {$IFNDEF FPC}shellapi,{$ENDIF}
+  common,messages;
 
 function ExecuteWaitW(AppPath:pWideChar; CmdLine:pWideChar=nil; DfltDirectory:PWideChar=nil;
          Show:DWORD=SW_SHOWNORMAL; TimeOut:DWORD=0; ProcID:PDWORD=nil):dword;
 var
   Flags: DWORD;
   {$IFDEF FPC}
-  Startup: StartupInfoW;
+  Startup: StartupInfo;
   {$ELSE}
-  Startup: {$IFDEF DELPHI10_UP}TStartupInfoW{$ELSE}TStartupInfo{$ENDIF};
+  Startup: StartupInfoW;
   {$ENDIF}
   ProcInf: TProcessInformation;
   App: array [0..1023] of widechar;
@@ -123,8 +104,11 @@ function ExecuteWait(AppPath:PAnsiChar; CmdLine:PAnsiChar=nil; DfltDirectory:PAn
          Show:DWORD=SW_SHOWNORMAL; TimeOut:DWORD=0; ProcID:PDWORD=nil):dword;
 var
   Flags: DWORD;
-  Startup: {$IFDEF FPC}StartupInfoA{$ELSE}TStartupInfo{$ENDIF};
-//  Startup: TStartupInfoA;
+  {$IFDEF FPC}
+  Startup: StartupInfo;
+  {$ELSE}
+  Startup: StartupInfoA;
+  {$ENDIF}
   ProcInf: TProcessInformation;
   App: array [0..1023] of AnsiChar;
   p:PAnsiChar;
@@ -176,6 +160,24 @@ begin
       CloseHandle(ProcInf.hProcess);
     end;
     CloseHandle(ProcInf.hThread);
+  end;
+end;
+
+function GetWorkOfflineStatus:integer;
+var
+  lKey:HKEY;
+  len,typ:dword;
+begin
+  result:=0;
+  if RegOpenKeyEx(HKEY_CURRENT_USER,
+    'Software\Microsoft\Windows\CurrentVersion\Internet Settings',0,
+     KEY_READ,lKey)=ERROR_SUCCESS then
+  begin
+    len:=4;
+    typ:=REG_DWORD;
+    if RegQueryValueEx(lKey,'GlobalUserOffline',NIL,@typ,@result,@len)=ERROR_SUCCESS then
+    ;
+    RegCloseKey(lKey);
   end;
 end;
 
@@ -402,7 +404,7 @@ begin
   pi:=buf;
   result:=0;
   repeat
-    pi:=pointer(cardinal(pi)+pi^.dwOffset); //first - Idle process
+    pAnsiChar(pi):=pAnsiChar(pi)+pi^.dwOffset; //first - Idle process
     if pi^.dwProcessID=pid then
     begin
       result:=pi^.dwHandleCount;
@@ -412,77 +414,6 @@ begin
       break;
   until false;
   mFreeMem(buf);
-end;
-
-function GetEXEbyWnd(w:HWND; var dst:pWideChar):pWideChar;
-var
-  hProcess:THANDLE;
-  ProcID:DWORD;
-  ModuleName: array [0..300] of WideChar;
-begin
-  dst:=nil;
-  GetWindowThreadProcessId(w,@ProcID);
-  if ProcID<>0 then
-  begin
-    hProcess:=OpenProcess(PROCESS_QUERY_INFORMATION or PROCESS_VM_READ,False,ProcID);
-    if hProcess<>0 then
-    begin
-      ModuleName[0]:=#0;
-      GetModuleFilenameExW(hProcess,0,ModuleName,SizeOf(ModuleName));
-      StrDupW(dst,ModuleName);
-      CloseHandle(hProcess);
-    end;
-  end;
-  result:=dst;
-end;
-
-function GetEXEbyWnd(w:HWND; var dst:PAnsiChar):PAnsiChar;
-var
-  hProcess:THANDLE;
-  ProcID:DWORD;
-  ModuleName: array [0..300] of AnsiChar;
-begin
-  dst:=nil;
-  GetWindowThreadProcessId(w,@ProcID);
-  if ProcID<>0 then
-  begin
-    hProcess:=OpenProcess(PROCESS_QUERY_INFORMATION or PROCESS_VM_READ,False,ProcID);
-    if hProcess<>0 then
-    begin
-      ModuleName[0]:=#0;
-      GetModuleFilenameExA(hProcess,0,ModuleName,SizeOf(ModuleName));
-      StrDup(dst,ModuleName);
-      CloseHandle(hProcess);
-    end;
-  end;
-  result:=dst;
-end;
-
-function IsExeRunning(exename:PWideChar):boolean;{hwnd}
-const
-  nCount = 4096;
-var
-  Processes:array [0..nCount-1] of dword;
-  nProcess:dword;
-  hProcess:THANDLE;
-  ModuleName: array [0..300] of WideChar;
-  i:integer;
-begin
-  result:=false;
-  EnumProcesses(pointer(@Processes),nCount*SizeOf(DWORD),nProcess);
-  nProcess:=(nProcess div 4)-1;
-  for i:=2 to nProcess do //skip Idle & System
-  begin
-    hProcess:=OpenProcess(PROCESS_QUERY_INFORMATION or PROCESS_VM_READ,
-      False,Processes[i]);
-    if hProcess<>0 then
-    begin
-      GetModuleFilenameExW(hProcess,0,ModuleName,SizeOf(ModuleName));
-      result:=lstrcmpiw(extractw(ModuleName,true),exename)=0;
-      CloseHandle(hProcess);
-      if result then exit;
-    end;
-  end;
 end;
 
 function TranslatePath(fn:PWideChar):PWideChar;
@@ -666,7 +597,7 @@ begin
   end
   else
   begin
-    hThread:=BeginThread(nil,0,@GetName,@rec,0,pdword(nil)^);
+    hThread:=BeginThread(nil,0,@GetName,@rec,0,{$IFNDEF WIN64}pdword{$ELSE}pqword{$ENDIF}(nil)^);
     if WaitForSingleObject(hThread,timeout)=WAIT_TIMEOUT then
     begin
       TerminateThread(hThread,0);

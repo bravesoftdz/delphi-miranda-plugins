@@ -53,7 +53,7 @@ begin
         else
         begin
           uid:=pAnsiChar(CallProtoService(acc,PS_GETCAPS,PFLAG_UNIQUEIDSETTING,0));
-          if dword(uid)<>CALLSERVICE_NOTFOUND then
+          if uint_ptr(uid)<>CALLSERVICE_NOTFOUND then
           begin
             if DBReadSetting(hContact,acc,uid,@ldbv)=0 then
             begin
@@ -78,7 +78,7 @@ begin
       end;
 
       SendMessage(list,CB_SETITEMDATA,
-          SendMessageW(list,CB_ADDSTRING,0,dword(@buf)),
+          SendMessageW(list,CB_ADDSTRING,0,tlparam(@buf)),
           hContact);
     end;
     hContact:=CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);

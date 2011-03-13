@@ -20,8 +20,8 @@ const
 const
   BufferSize = 8192;
 
-function DBRW(act:pHKAction;hcontact:dword;avalue:dword;
-              last,restype:dword):dword;
+function DBRW(act:pHKAction;hcontact:dword;avalue:uint_ptr;
+              last,restype:uint_ptr):uint_ptr;
 var
   buf ,buf1 :array [0..127] of AnsiChar;
   sbuf:array [0..127] of AnsiChar;
@@ -35,7 +35,7 @@ begin
   with act^ do
   begin
     if restype=rtWide then
-      FastWideToAnsiBuf(pWideChar(last),sbuf)
+      FastWideToAnsiBuf(pWideChar(last),@sbuf)
     else
       IntToStr(sbuf,last);
 
@@ -102,7 +102,7 @@ begin
       else if (flags and ACF_DBWORD )=ACF_DBWORD then result:=DBReadWord(hContact,buf,setting,avalue)
       else if (flags and ACF_DBUTEXT)=ACF_DBUTEXT then
       begin
-        result:=dword(DBReadUnicode(hContact,buf,buf1,pWideChar(avalue)));
+        result:=uint_ptr(DBReadUnicode(hContact,buf,buf1,pWideChar(avalue)));
         if (flags2 and ACF2_RW_TVAR)<>0 then
           mFreeMem(avalue);
       end
@@ -238,19 +238,19 @@ begin
   mFreeMem(lpath);
 end;
 
-function MakeStructure(txt:dword;aparam,alast:integer;
-         var code,alen,ofs:integer; restype:integer=rtInt):integer; forward;
+function MakeStructure(txt:dword;aparam,alast:uint_ptr;
+         var code,alen,ofs:integer; restype:integer=rtInt):int_ptr; forward;
 procedure FreeStructure(var struct;descr:pWideChar); forward;
 
-function RunService(act:pHKAction;LastResult,Param:dword;var restype:dword):dword;
+function RunService(act:pHKAction;LastResult,Param:dword;var restype:dword):uint_ptr;
 var
-  res:integer;
+  res,ofs:int_ptr;
   buf:array [0..255] of AnsiChar;
   cc:integer;
   lservice:pAnsiChar;
-  lwparam,llparam:dword;
+  lwparam,llparam:uint_ptr;
   tmp1,tmp2:pWideChar;
-  code,len,ofs:integer;
+  code,len:integer;
 begin
   result:=dword(-1);
 
@@ -303,9 +303,9 @@ begin
         if (flags and ACF_WPARNUM)=0 then
         begin
           if (flags and ACF_WUNICODE)=0 then
-            pAnsiChar(lwparam):=ParseVarString(pAnsiChar(lwparam),Param)
+            lwparam:=uint_ptr(ParseVarString(pAnsiChar(lwparam),Param))
           else
-            pWideChar(lwparam):=ParseVarString(pWideChar(lwparam),Param)
+            lwparam:=uint_ptr(ParseVarString(pWideChar(lwparam),Param))
         end
         else
         begin
@@ -338,9 +338,9 @@ begin
         if (flags  and ACF_LPARNUM)=0 then
         begin
           if (flags and ACF_LUNICODE)=0 then
-            pAnsiChar(llparam):=ParseVarString(pAnsiChar(llparam),Param)
+            llparam:=uint_ptr(ParseVarString(pAnsiChar(llparam),Param))
           else
-            pWideChar(llparam):=ParseVarString(pWideChar(llparam),Param)
+            llparam:=uint_ptr(ParseVarString(pWideChar(llparam),Param))
         end
         else
         begin
@@ -512,7 +512,7 @@ begin
           end
           else
             IntToStr(pWideChar(@buf),result);
-          res:=integer(@buf);
+          res:=int_ptr(@buf);
         end
         else
           res:=result;
@@ -747,7 +747,7 @@ begin
   end;
 end;
 
-function InsertText(act:pHKAction;param:dword;last:pWideChar):dword;
+function InsertText(act:pHKAction;param:dword;last:pWideChar):uint_ptr;
 var
   tmp:PWideChar;
   blob,p:PAnsiChar;
@@ -764,7 +764,7 @@ var
   buf:array [0..31] of WideChar;
   b,b1:array [0..MAX_PATH] of AnsiChar;
 begin
-  result:=dword(last);
+  result:=uint_ptr(last);
   with act^ do
   begin
     if (flags and ACF_CLIPBRD)<>0 then
@@ -772,7 +772,7 @@ begin
       if (flags and ACF_COPYTO)<>0 then
         CopyToClipboard(last,false)
       else
-        result:=dword(PasteFromClipboard(false));
+        result:=uint_ptr(PasteFromClipboard(false));
       exit;
     end;
 
@@ -926,7 +926,7 @@ begin
         mFreeMem(tmp);
     end;
 
-    result:=dword(w);
+    result:=uint_ptr(w);
 
     if (flags and ACF_FILE)=0 then
     begin
@@ -940,7 +940,7 @@ begin
           i:=WideToCombo(w,blob,cp);
   //          if CallContactService(hContact,PSS_MESSAGEW,0,dword(blob))=
   //             ACKRESULT_FAILED then
-          CallContactService(hContact,PSS_MESSAGE,PREF_UNICODE,dword(blob));
+          CallContactService(hContact,PSS_MESSAGE,PREF_UNICODE,tlparam(blob));
           dbei.cbSize   :=sizeof(dbei);
           dbei.cbBlob   :=i;
           dbei.pBlob    :=pByte(blob);
@@ -948,7 +948,7 @@ begin
           dbei.timestamp:=GetCurrentTime;
           dbei.szModule :=p;
           dbei.flags    :=DBEF_SENT;
-          CallService(MS_DB_EVENT_ADD,hContact,dword(@dbei));
+          CallService(MS_DB_EVENT_ADD,hContact,tlparam(@dbei));
           mFreeMem(blob);
         end
         else
@@ -958,7 +958,7 @@ begin
       begin
         GetWindowThreadProcessId(GetForegroundWindow,@i);
         if (i=GetCurrentProcessId) and (wnd<>0) then
-          SendMessageW(wnd,EM_REPLACESEL,1,dword(w))
+          SendMessageW(wnd,EM_REPLACESEL,1,tlparam(w))
         else
           SendString(0,w);
       end;

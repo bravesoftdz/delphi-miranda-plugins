@@ -109,7 +109,7 @@ begin
   end;
 end;
 
-procedure SaveNumValue(setting:pAnsiChar;value:dword;isvar:boolean);
+procedure SaveNumValue(setting:pAnsiChar;value:uint_ptr;isvar:boolean);
 begin
   if isvar then
     DBWriteUnicode(0,opt_actions,setting,pWideChar(value))
@@ -294,7 +294,7 @@ begin
   DBWriteWord(0,opt_actions,opt_numacts,Actions-1);
 end;
 
-function LoadNumValue(setting:pAnsiChar;isvar:boolean):dword;
+function LoadNumValue(setting:pAnsiChar;isvar:boolean):uint_ptr;
 begin
   if isvar then
     pWideChar(result):=DBReadUnicode(0,opt_actions,setting,nil)

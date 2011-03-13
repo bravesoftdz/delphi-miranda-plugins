@@ -100,10 +100,10 @@ begin
   BlockRead(f,res^,i);
   CloseHandle(f);
 
-  cnt:=CallService(MS_ACT_GETLIST,0,dword(@ptr1));
+  cnt:=CallService(MS_ACT_GETLIST,0,LPARAM(@ptr1));
 
   xmlparser.cbSize:=SizeOf(XML_API_W);
-  CallService(MS_SYSTEM_GET_XI,0,dword(@xmlparser));
+  CallService(MS_SYSTEM_GET_XI,0,LPARAM(@xmlparser));
   with xmlparser do
   begin
     root:=parseString(ChangeUnicode(res),@i,nil);
@@ -140,7 +140,7 @@ begin
     until false;
   end;
   mFreeMem(res);
-  CallService(MS_ACT_FREELIST,0,dword(ptr1));
+  CallService(MS_ACT_FREELIST,0,LPARAM(ptr1));
 end;
 
 procedure Export(fname:pWideChar;aflags:dword);
@@ -154,9 +154,9 @@ var
   f:THANDLE;
 begin
   xmlparser.cbSize:=SizeOf(XML_API_W);
-  CallService(MS_SYSTEM_GET_XI,0,dword(@xmlparser));
+  CallService(MS_SYSTEM_GET_XI,0,LPARAM(@xmlparser));
 
-  cnt:=CallService(MS_ACT_GETLIST,0,dword(@ptr1));
+  cnt:=CallService(MS_ACT_GETLIST,0,LPARAM(@ptr1));
 
   with xmlparser do
   begin
@@ -201,7 +201,7 @@ begin
       end;
     end;
   end;
-  CallService(MS_ACT_FREELIST,0,dword(ptr1));
+  CallService(MS_ACT_FREELIST,0,LPARAM(ptr1));
 end;
 
 function InOut(wParam:WPARAM;lParam:LPARAM):int; cdecl;

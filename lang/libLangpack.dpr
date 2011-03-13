@@ -1,7 +1,7 @@
 library libLangpack;
 
 uses
-  m_api, Windows, common,io, KOL, wrapper;
+  Windows, m_api, common,io, KOL, wrapper;
 
 const
   PluginInfo:TPLUGININFOEX=(

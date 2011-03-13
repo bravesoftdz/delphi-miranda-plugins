@@ -268,10 +268,10 @@ begin
     result:=nil;
 end;
 
-function DoAction(action:dword;aparam:dword;var last:dword;restype:dword):dword;
+function DoAction(action:dword;aparam:dword;var last:uint_ptr;restype:dword):dword;
 var
   tmpact,act,act_org:pHKAction;
-  val,prelast:dword;
+  val,prelast:uint_ptr;
   b:boolean;
   i:integer;
   lcontact:dword;
@@ -330,7 +330,7 @@ begin
 
             ACT_PROGRAM: begin
               if restype=rtInt then
-                last:=dword(IntToStr(buf,last));
+                last:=uint_ptr(IntToStr(buf,last));
 
               last:=RunProgram(act,aparam,pWideChar(last));
 
@@ -339,7 +339,7 @@ begin
 
             ACT_TEXT: begin
               if restype=rtInt then
-                last:=dword(IntToStr(buf,last));
+                last:=uint_ptr(IntToStr(buf,last));
 
               last:=InsertText(act,aparam,pWideChar(last));
 
@@ -390,7 +390,7 @@ begin
                       else
                         lContact:=0;
                       if restype=rtInt then
-                       last:=dword(IntToStr(buf,last));
+                       last:=uint_ptr(IntToStr(buf,last));
 
                       pWideChar(last):=ParseVarString(varval,lcontact,pWideChar(last));
 
@@ -464,7 +464,7 @@ begin
                 if (flags and ACF_DBUTEXT)<>0 then
                 begin
                   if restype=rtInt then
-                    val:=dword(IntToStr(buf,val));
+                    val:=uint_ptr(IntToStr(buf,val));
                 end
                 else
                 begin

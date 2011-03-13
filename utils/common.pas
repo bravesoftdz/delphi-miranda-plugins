@@ -783,7 +783,7 @@ asm
      POP     ESI
 end;
 }
-{$IFNDEF BIT64}
+{$IFNDEF WIN64}
 // Delphi 2009 realization
 function CompareMem(P1, P2: Pointer; Length: Integer): Boolean; assembler;
 asm

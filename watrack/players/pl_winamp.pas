@@ -6,7 +6,7 @@ interface
 
 implementation
 
-uses winampapi,windows,common,messages,syswin,srv_player,wat_api;
+uses winampapi,windows,common,messages,syswinexe,srv_player,wat_api;
 
 {
 #define IPC_GETPLAYLISTTITLE 212

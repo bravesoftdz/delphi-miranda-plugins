@@ -58,7 +58,7 @@ implementation
 
 uses
   shellapi,CommCtrl
-  ,appcmdapi,io,syswin,wrapper,srv_format,winampapi;
+  ,appcmdapi,io,syswinexe,syswin,swrapper,srv_format,winampapi;
 
 type
   pPlyArray = ^tPlyArray;
@@ -281,7 +281,7 @@ begin
     item.iImage:=ImageList_AddIcon(il,plyLink^[i].Icon);
     item.iItem:=i;
     item.pszText:=plyLink^[i].Desc;
-    newItem:=ListView_InsertItemA(hwndList,item);
+    newItem:=SendMessageA(hwndList,LVM_INSERTITEMA,0,lparam(@item));
     if newItem>=0 then
     begin
       if (plyLink^[i].flags and WAT_OPT_DISABLED)=0 then
@@ -308,7 +308,7 @@ begin
   for i:=0 to k do
   begin
     item.iItem:=i;
-    ListView_GetItemA(hwndList,item);
+    SendMessageA(hwndList,LVM_GETITEMA,0,lparam(@item));
     j:=FindPlayer(item.pszText);
     if j<>WAT_RES_NOTFOUND then
     begin

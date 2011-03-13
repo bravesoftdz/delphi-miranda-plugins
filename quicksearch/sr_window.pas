@@ -20,8 +20,8 @@ const
 
 implementation
 
-uses kol,messages,commctrl,sr_global,m_api,common,dbsettings,mirutils,wrapper,
-    sr_optdialog;
+uses kol,messages,commctrl,sr_global,m_api,common,dbsettings,mirutils,
+    swrapper,wrapper,sr_optdialog;
 
 const
   strCListDel:PAnsiChar='CList/DeleteContactCommand';
@@ -1832,7 +1832,7 @@ end;
 var
   HintWnd:HWND;
 
-function NewLVProc(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function NewLVProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
 const
   OldHItem   :integer=0;
   OldHSubItem:integer=0;
@@ -2337,7 +2337,7 @@ begin
   end;
 end;
 
-function NewLVHProc(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function NewLVHProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
 begin
   case hMessage of
 
@@ -2527,7 +2527,7 @@ begin
   end;
 end;
 
-function NewEditProc(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function NewEditProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
 var
   count,current,next,perpage:integer;
   li:LV_ITEM;
@@ -2906,7 +2906,7 @@ begin
   ListView_SetItemCount(grid,HIGH(FlagBuf)+1);
 end;
 
-function QSMainWndProc(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function QSMainWndProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
 var
   tmp:cardinal;
   w,h:cardinal;
@@ -3009,7 +3009,7 @@ begin
           tmp:=tmp or WS_EX_TOOLWINDOW
         else
           tmp:=tmp and not WS_EX_TOOLWINDOW;
-        SetWindowLongA(dialog,GWL_EXSTYLE,tmp);
+        SetWindowLongPtrA(dialog,GWL_EXSTYLE,tmp);
       end
       else
       begin
@@ -3018,7 +3018,7 @@ begin
           tmp:=tmp or WS_EX_TOOLWINDOW
         else
           tmp:=tmp and not WS_EX_TOOLWINDOW;
-        SetWindowLongW(dialog,GWL_EXSTYLE,tmp);
+        SetWindowLongPtrW(dialog,GWL_EXSTYLE,tmp);
       end;
 
       SendMessage(dialog,WM_SETICON,ICON_SMALL,//LoadIcon(hInstance,PAnsiChar(IDI_QS))
@@ -3035,22 +3035,22 @@ begin
 
       if IsAnsi then
       begin
-        OldLVProc  :=pointer(SetWindowLongA(grid,GWL_WNDPROC,integer(@NewLVProc)));
-        OldEditProc:=pointer(SetWindowLongA(GetDlgItem(dialog,IDC_E_SEARCHTEXT),
+        OldLVProc  :=pointer(SetWindowLongPtrA(grid,GWL_WNDPROC,integer(@NewLVProc)));
+        OldEditProc:=pointer(SetWindowLongPtrA(GetDlgItem(dialog,IDC_E_SEARCHTEXT),
            GWL_WNDPROC,integer(@NewEditProc)));
 
-        oldproc:=pointer(SetWindowLongA(
+        oldproc:=pointer(SetWindowLongPtrA(
             SendMessage(grid,LVM_GETHEADER,0,0),
             GWL_WNDPROC,integer(@NewLVHProc)));
 
       end
       else
       begin
-        OldLVProc  :=pointer(SetWindowLongW(grid,GWL_WNDPROC,integer(@NewLVProc)));
-        OldEditProc:=pointer(SetWindowLongW(GetDlgItem(dialog,IDC_E_SEARCHTEXT),
+        OldLVProc  :=pointer(SetWindowLongPtrW(grid,GWL_WNDPROC,integer(@NewLVProc)));
+        OldEditProc:=pointer(SetWindowLongPtrW(GetDlgItem(dialog,IDC_E_SEARCHTEXT),
            GWL_WNDPROC,integer(@NewEditProc)));
 
-        oldproc:=pointer(SetWindowLongW(
+        oldproc:=pointer(SetWindowLongPtrW(
             SendMessage(grid,LVM_GETHEADER,0,0),
             GWL_WNDPROC,integer(@NewLVHProc)));
 
@@ -3148,7 +3148,7 @@ begin
     end;
 
     WM_CONTEXTMENU: begin
-      if wParam=GetDlgItem(dialog,IDC_LIST) then
+      if wParam=tWPARAM(GetDlgItem(dialog,IDC_LIST)) then
       begin
         w:=ListView_GetSelectedCount(grid);
         if w>1 then
@@ -3283,9 +3283,9 @@ begin
           if PNMHdr(lParam)^.hwndFrom=grid then
           begin
             if IsAnsi then
-              SetWindowLongA(dialog,DWL_MSGRESULT,ProcessCustomDraw(lParam))
+              SetWindowLongPtrA(dialog,DWL_MSGRESULT,ProcessCustomDraw(lParam))
             else
-              SetWindowLongW(dialog,DWL_MSGRESULT,ProcessCustomDraw(lParam));
+              SetWindowLongPtrW(dialog,DWL_MSGRESULT,ProcessCustomDraw(lParam));
             result:=1;
           end;
         end;

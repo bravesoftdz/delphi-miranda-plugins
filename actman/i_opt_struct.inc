@@ -153,8 +153,8 @@ begin
   end;
 end;
 
-function MakeStructure(txt:dword;aparam,alast:integer;
-         var code,alen,ofs:integer; restype:integer=rtInt):integer;
+function MakeStructure(txt:uint_ptr;aparam,alast:uint_ptr;
+         var code,alen,ofs:integer; restype:integer=rtInt):int_ptr;
 var
   i,summ,len:integer;
   value,lsrc:pWideChar;
@@ -248,7 +248,7 @@ begin
           mGetMem (lsrc ,len+2);
           FillChar(lsrc^,len+2,0);
           TranslateBlob(pByte(lsrc),value,false);
-          pDWord(res)^:=dword(lsrc);
+          pdword(res)^:=uint_ptr(lsrc);
         end;
         len:=4;
       end;
@@ -313,22 +313,22 @@ begin
   ti.uId     :=GetDlgItem(Dialog,IDC_DATA_NEW);
   ti.lpszText:=TranslateW('New');
   SetIcon(ti.uId,ACI_NEW);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_DATA_UP);
   ti.lpszText:=TranslateW('Up');
   SetIcon(ti.uId,ACI_UP);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_DATA_DOWN);
   ti.lpszText:=TranslateW('Down');
   SetIcon(ti.uId,ACI_DOWN);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_DATA_DELETE);
   ti.lpszText:=TranslateW('Delete');
   SetIcon(ti.uId,ACI_DELETE);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
 end;
 
-function NewLVProc(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function NewLVProc(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 begin
   result:=0;
   case hMessage of
@@ -376,14 +376,14 @@ begin
 
   zeromemory(@lv,sizeof(lv));
   lv.mask:=LVCF_WIDTH;
-  lv.cx  :=62; SendMessageW(list,LVM_INSERTCOLUMNW,col_type,integer(@lv)); // type
-  lv.cx  :=32; SendMessageW(list,LVM_INSERTCOLUMNW,col_len ,integer(@lv)); // length
-  lv.cx  :=20; SendMessageW(list,LVM_INSERTCOLUMNW,col_flag,integer(@lv)); // variables flag
-  lv.cx  :=72; SendMessageW(list,LVM_INSERTCOLUMNW,col_data,integer(@lv)); // value
+  lv.cx  :=62; SendMessageW(list,LVM_INSERTCOLUMNW,col_type,lparam(@lv)); // type
+  lv.cx  :=32; SendMessageW(list,LVM_INSERTCOLUMNW,col_len ,lparam(@lv)); // length
+  lv.cx  :=20; SendMessageW(list,LVM_INSERTCOLUMNW,col_flag,lparam(@lv)); // variables flag
+  lv.cx  :=72; SendMessageW(list,LVM_INSERTCOLUMNW,col_data,lparam(@lv)); // value
 
   SendMessageW(list,LVM_SETCOLUMNWIDTH,col_data,LVSCW_AUTOSIZE_USEHEADER);
 
-  OldLVProc:=pointer(SetWindowLong(list,GWL_WNDPROC,integer(@NewLVProc)));
+  OldLVProc:=pointer(SetWindowLongPtr(list,GWL_WNDPROC,int_ptr(@NewLVProc)));
   result:=list;
 end;
 
@@ -408,7 +408,7 @@ begin
   li.mask    :=0;//LVIF_PARAM;
   li.iItem   :=SendMessage(list,LVM_GETNEXTITEM,-1,LVNI_FOCUSED)+1;
   li.iSubItem:=0;
-  result:=SendMessageW(list,LVM_INSERTITEMW,0,dword(@li));
+  result:=SendMessageW(list,LVM_INSERTITEMW,0,lparam(@li));
 end;
 
 procedure FillLVLine(list:HWND;item:integer;txt:pWideChar);
@@ -453,7 +453,7 @@ begin
     begin
       li.iSubItem:=col_flag;
       li.pszText :='*';
-      SendMessageW(list,LVM_SETITEMW,0,dword(@li));
+      SendMessageW(list,LVM_SETITEMW,0,lparam(@li));
     end;
     case StructElems[i].typ of
       SST_LAST,SST_PARAM: ;
@@ -462,7 +462,7 @@ begin
         begin
           li.iSubItem:=col_data;
           li.pszText :=pc+1;
-          SendMessageW(list,LVM_SETITEMW,0,dword(@li));
+          SendMessageW(list,LVM_SETITEMW,0,lparam(@li));
         end;
       end;
       SST_BARR,SST_WARR,SST_BPTR,SST_WPTR: begin
@@ -471,14 +471,14 @@ begin
         StrCopyW(tmp1,txt,pc-txt);
         li.iSubItem:=col_len;
         li.pszText :=tmp1;
-        SendMessageW(list,LVM_SETITEMW,0,dword(@li));
+        SendMessageW(list,LVM_SETITEMW,0,lparam(@li));
 
         j:=StrToInt(tmp1);
         if (pc<>txt) and (pc<>nil) then
         begin
           li.iSubItem:=col_data;
           li.pszText :=pc+1;
-          SendMessageW(list,LVM_SETITEMW,0,dword(@li));
+          SendMessageW(list,LVM_SETITEMW,0,lparam(@li));
         end;
       end;
     end;
@@ -487,7 +487,7 @@ begin
     li.pszText :=@tmp;
     li.iSubItem:=col_type;
     li.lParam  :=i;
-    SendMessageW(list,LVM_SETITEMW,0,dword(@li));
+    SendMessageW(list,LVM_SETITEMW,0,lparam(@li));
   end;
 
   ListView_SetItemState(list,item,LVIS_FOCUSED or LVIS_SELECTED,
@@ -526,7 +526,7 @@ begin
   li.iSubItem  :=col_flag;
   li.cchTextMax:=32;
   li.pszText   :=@buf[1];
-  if SendMessage(list,LVM_GETITEMTEXTW,item,dword(@li))>0 then
+  if SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li))>0 then
   begin
     dec(ofs);
     buf[ofs]:=char_script;
@@ -537,7 +537,7 @@ begin
   li.iSubItem  :=col_type;
   li.pszText   :=@buf[2];
   li.stateMask :=LVIS_STATEIMAGEMASK;
-  SendMessageW(list,LVM_GETITEMW,item,dword(@li));
+  SendMessageW(list,LVM_GETITEMW,item,lparam(@li));
   result:=loword(li.lParam);
   if (li.state shr 12)>1 then // "return" value
   begin
@@ -555,7 +555,7 @@ begin
       li.iSubItem  :=col_data;
       li.cchTextMax:=32;
       li.pszText   :=@buf;
-      if SendMessage(list,LVM_GETITEMTEXTW,item,dword(@li))>0 then
+      if SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li))>0 then
       begin
         dst^:=' '; inc(dst);
         StrCopyW(dst,buf);
@@ -569,7 +569,7 @@ begin
       li.iSubItem  :=col_len;
       li.cchTextMax:=32;
       li.pszText   :=dst;
-      if SendMessage(list,LVM_GETITEMTEXTW,item,dword(@li))=0 then
+      if SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li))=0 then
         IntToStr(dst,ofs);
 
       if ofs>0 then
@@ -579,7 +579,7 @@ begin
         li.iSubItem  :=col_data;
         li.cchTextMax:=ofs+1;
         li.pszText   :=dst;
-        SendMessage(list,LVM_GETITEMTEXTW,item,dword(@li));
+        SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li));
       end;
     end;
   end;
@@ -640,7 +640,7 @@ begin
   begin
     if i<>item then
     begin
-      SendMessageW(wnd,LVM_SETITEMSTATE,i,dword(@li));
+      SendMessageW(wnd,LVM_SETITEMSTATE,i,lparam(@li));
 {
       li.iItem:=i;
       SendMessageW(list,LVM_GETITEMSTATE,i,dword(@li));
@@ -696,13 +696,13 @@ begin
   if b then
   begin
     li.iSubItem:=col_flag;
-    if SendMessage(list,LVM_GETITEMTEXTW,item,dword(@li))>0 then
+    if SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li))>0 then
       CheckDlgButton(Dialog,IDC_DATA_VARS,BST_CHECKED)
     else
       CheckDlgButton(Dialog,IDC_DATA_VARS,BST_UNCHECKED);
     
     li.iSubItem:=col_data;
-    SendMessage(list,LVM_GETITEMTEXTW,item,dword(@li));
+    SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li));
   end
   else
     p[0]:=#0;
@@ -711,7 +711,7 @@ begin
   if b1 then
   begin
     li.iSubItem:=col_len;
-    SendMessage(list,LVM_GETITEMTEXTW,item,dword(@li));
+    SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li));
   end
   else
     p[0]:=#0;
@@ -749,7 +749,7 @@ begin
     end;
     SST_BARR,SST_WARR,SST_BPTR,SST_WPTR: begin
 
-      SendDlgItemMessageW(Dialog,IDC_DATA_LEN,WM_GETTEXT,15,dword(@buf));
+      SendDlgItemMessageW(Dialog,IDC_DATA_LEN,WM_GETTEXT,15,lparam(@buf));
       LV_SetItemW(list,buf,item,col_len);
 
       tmp:=GetDlgText(Dialog,IDC_DATA_EDIT);
@@ -764,7 +764,7 @@ begin
   LV_SetLParam(list,i,item);
 end;
 
-function StructEdit(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function StructEdit(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
   wnd:HWND;
   i:integer;
@@ -806,7 +806,7 @@ begin
       urd.lpTemplate:=MAKEINTRESOURCEA(IDD_STRUCTURE);
       urd.lParam    :=0;
       urd.pfnResizer:=@FindAddDlgResizer;
-      CallService(MS_UTILS_RESIZEDIALOG,0,dword(@urd));
+      CallService(MS_UTILS_RESIZEDIALOG,0,tlparam(@urd));
       InvalidateRect(GetDlgItem(Dialog,IDC_DATA_HELP),nil,true);
     end;
 {
@@ -876,7 +876,7 @@ begin
                 li.iSubItem :=0;
                 li.StateMask:=LVIS_FOCUSED+LVIS_SELECTED;
                 li.State    :=LVIS_FOCUSED+LVIS_SELECTED;
-                SendMessageW(wnd,LVM_SETITEMW,0,dword(@li));
+                SendMessageW(wnd,LVM_SETITEMW,0,tlparam(@li));
               end;
               CheckList(Dialog);
             end;
@@ -920,7 +920,7 @@ begin
             end;
 
             IDOK: begin // save result
-              EndDialog(Dialog,dword(SaveStructure(GetDlgItem(Dialog,IDC_DATA_FULL))));
+              EndDialog(Dialog,int_ptr(SaveStructure(GetDlgItem(Dialog,IDC_DATA_FULL))));
             end;
             IDCANCEL: begin // clear result / restore old value
               EndDialog(Dialog,0);

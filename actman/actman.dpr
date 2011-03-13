@@ -24,6 +24,7 @@ uses
   commctrl,
   shellapi,
   common,
+  swrapper,
   wrapper,
   io,
   dbsettings,
@@ -92,7 +93,7 @@ end;
 {$include i_const.inc}
 {$include i_vars.inc}
 
-function ActInOut(wParam:WPARAM;lParam:LPARAM):int; cdecl; forward;
+function ActInOut(wParam:WPARAM;lParam:LPARAM):int_ptr; cdecl; forward;
 
 {$include i_action.inc}
 {$include i_actlow.inc}
@@ -101,13 +102,13 @@ function ActInOut(wParam:WPARAM;lParam:LPARAM):int; cdecl; forward;
 {$include i_opt_dlg.inc}
 {$include i_inoutxm.inc}
 
-function ActFreeList(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function ActFreeList(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 begin
   result:=0;
   mFreeMem(PAnsiChar(lParam));
 end;
 
-function ActGetList(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function ActGetList(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
   pc:^tChain;
   p:PHKRecord;
@@ -124,7 +125,7 @@ begin
   if cnt>0 then
   begin
     mGetMem(pc,cnt*SizeOf(tChain)+4);
-    pdword(lParam)^:=dword(pc);
+    pdword(lParam)^:=uint_ptr(pc);
     pdword(pc)^:=SizeOf(TChain);
     inc(PByte(pc),4);
 
@@ -143,7 +144,7 @@ begin
   end
 end;
 
-function ActRun(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function ActRun(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
   i:integer;
   p:PHKRecord;
@@ -163,7 +164,7 @@ begin
     result:=ActionStarter(result,lParam,p^.id);
 end;
 
-function ActRunGroup(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function ActRunGroup(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
   i:integer;
   p:PHKRecord;
@@ -183,7 +184,7 @@ begin
     result:=ActionStarter(result,lParam,p^.id);
 end;
 
-function ActRunParam(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function ActRunParam(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
   i:integer;
   p:PHKRecord;
@@ -278,7 +279,7 @@ begin
       cpbVersion          :=StrLen(pbVersion);
       szBetaChangelogURL  :=BetaChangelogURL;
     end;
-    PluginLink^.CallService(MS_UPDATE_REGISTER,0,dword(@upd));
+    PluginLink^.CallService(MS_UPDATE_REGISTER,0,tlparam(@upd));
   end;
 //  CallService('DBEditorpp/RegisterSingleModule',dword(PluginShort),0);
 end;

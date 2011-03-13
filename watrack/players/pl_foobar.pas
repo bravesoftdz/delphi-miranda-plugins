@@ -6,7 +6,7 @@ interface
 
 implementation
 uses {$IFDEF KOL_MCK}err,{$ENDIF}
-   windows,common,syswin,srv_player,messages,wrapper,wat_api,winampapi
+   windows,common,syswinexe,srv_player,messages,swrapper,wat_api,winampapi
   {$IFDEF DELPHI7_UP}
   ,variants
   {$ENDIF}

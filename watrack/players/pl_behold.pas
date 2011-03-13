@@ -6,7 +6,7 @@ interface
 
 implementation
 
-uses windows,messages,common,wrapper,srv_player,wat_api;
+uses windows,messages,common,swrapper,srv_player,wat_api;
 
 const
   WM_BHCMD            = WM_USER+200;

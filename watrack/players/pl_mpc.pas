@@ -5,7 +5,7 @@ unit pl_MPC;
 interface
 
 implementation
-uses windows,common,wrapper,srv_player,wat_api;
+uses windows,common,swrapper,srv_player,wat_api;
 
 const
   MPCClass98 = 'MediaPlayerClassicA';

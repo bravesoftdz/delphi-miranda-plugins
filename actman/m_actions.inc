@@ -171,7 +171,7 @@ type
         tfile :pWideChar);
       ACT_ADVANCE:
         (condition:dword;
-        value     :dword;
+        value     :uint_ptr;
         action    :dword;
         operval   :pWideChar;
         oper      :dword;
@@ -184,7 +184,7 @@ type
         (dbcontact:cardinal;
         dbmodule  :PAnsiChar;
         dbsetting :PAnsiChar;
-        dbvalue   :dword);
+        dbvalue   :uint_ptr);
       ACT_MESSAGE:
         (boxopts:dword;
         msgtitle:pWideChar;

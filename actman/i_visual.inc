@@ -9,10 +9,10 @@
     begin
       buf[0]:='$';
       IntToHex(PWideChar(@buf[1]),value);
-      SendMessageW(wnd,WM_SETTEXT,0,dword(@buf));
+      SendMessageW(wnd,WM_SETTEXT,0,tlparam(@buf));
     end
     else
-      SendMessageW(wnd,WM_SETTEXT,0,dword(IntToStr(buf,value)));
+      SendMessageW(wnd,WM_SETTEXT,0,tlparam(IntToStr(buf,value)));
   end;
 
   procedure SHControl(ctrl,mode:dword);
@@ -333,7 +333,7 @@
 //    bufw:array [0..MaxDescrLen] of WideChar;
   begin
     wnd:=GetDlgItem(Dialog,IDC_EDIT_SERVICE);
-    SendMessageA(wnd,CB_GETLBTEXT,SendMessage(wnd,CB_GETCURSEL,0,0),dword(@buf));
+    SendMessageA(wnd,CB_GETLBTEXT,SendMessage(wnd,CB_GETCURSEL,0,0),tlparam(@buf));
 
     pc:=FillParams(buf,GetDlgItem(Dialog,IDC_EDIT_WPAR),'wparam');
     if pc<>nil then
@@ -391,7 +391,7 @@
     CB_SelectData(Dialog,IDC_SRV_RESULT,i);
 
     if helpwindow<>0 then
-      SendMessage(helpwindow,WM_UPDATEHELP,0,dword(@buf));
+      SendMessage(helpwindow,WM_UPDATEHELP,0,tlparam(@buf));
 
   end;
 
@@ -703,7 +703,7 @@
         end;
 
         ACT_SERVICE: begin
-          if SendDlgItemMessageA(Dialog,IDC_EDIT_SERVICE,CB_SELECTSTRING,-1,dword(service))<>CB_ERR then
+          if SendDlgItemMessageA(Dialog,IDC_EDIT_SERVICE,CB_SELECTSTRING,-1,tlparam(service))<>CB_ERR then
             ReloadService
           else
             SetDlgItemTextA(Dialog,IDC_EDIT_SERVICE,service);
@@ -957,7 +957,7 @@
           case action and ADV_ACT_POST of
             ADV_ACT_BREAK: ButtonOn(IDC_FLAG_BREAK);
             ADV_ACT_JUMP : begin
-              SendDlgItemMessageW(Dialog,IDC_ADV_VAL2,CB_SELECTSTRING,-1,dword(operval));
+              SendDlgItemMessageW(Dialog,IDC_ADV_VAL2,CB_SELECTSTRING,-1,tlparam(operval));
               ButtonOn(IDC_FLAG_JUMP);
               bb:=true;
             end;
@@ -970,11 +970,9 @@
         ACT_CHAIN: begin
 //          FillChainList(Dialog);
           if (flags and ACF_BYNAME)<>0 then
-            SendDlgItemMessageW(Dialog,IDC_GROUP_LIST,CB_SELECTSTRING,-1,
-              dword(actname))
+            SendDlgItemMessageW(Dialog,IDC_GROUP_LIST,CB_SELECTSTRING,-1,tlparam(actname))
           else
-            SendDlgItemMessageW(Dialog,IDC_GROUP_LIST,CB_SELECTSTRING,-1,
-              dword(GetGroupName(id)));
+            SendDlgItemMessageW(Dialog,IDC_GROUP_LIST,CB_SELECTSTRING,-1,tlparam(GetGroupName(id)));
         end;
 
         ACT_RW: begin
