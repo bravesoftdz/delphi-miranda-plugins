@@ -88,7 +88,7 @@ begin
     if ltmp then
     begin
       WinampWindow:=0;
-      EnumThreadWindows(GetWindowThreadProcessId(lwnd,nil),@proc,dword(@lwnd));
+      EnumThreadWindows(GetWindowThreadProcessId(lwnd,nil),@proc,int_ptr(@lwnd));
       break;
     end;
   until false;
@@ -371,7 +371,7 @@ end;
 procedure SetVolume(const v:variant;value:cardinal);
 begin
   try
-    v.Playback.Settings.Volume:=((loword(value)*100) shr 4)-100;
+    v.Playback.Settings.Volume:=integer(((loword(value)*100) shr 4)-100);
   except
   end;
 end;
@@ -450,7 +450,7 @@ begin
       SongInfo.winampwnd:=WinampWindow;
       if SongInfo.winampwnd<>0 then
       begin
-        result:=WinampGetInfo(integer(@SongInfo),flags);
+        result:=WinampGetInfo(int_ptr(@SongInfo),flags);
       end;
     end;
     v:=Null;
@@ -459,7 +459,7 @@ begin
   end;
 end;
 
-function Command(wnd:HWND;cmd:integer;value:integer):integer;cdecl;
+function Command(wnd:HWND;cmd:integer;value:int_ptr):integer;cdecl;
 //var
 //  c:integer;
 var

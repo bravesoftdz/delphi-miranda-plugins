@@ -297,7 +297,7 @@ end;
 function LoadNumValue(setting:pAnsiChar;isvar:boolean):uint_ptr;
 begin
   if isvar then
-    pWideChar(result):=DBReadUnicode(0,opt_actions,setting,nil)
+    result:=uint_ptr(DBReadUnicode(0,opt_actions,setting,nil))
   else
     result:=DBReadDWord(0,opt_actions,setting);
 end;
@@ -358,11 +358,11 @@ begin
                act^.wparam:=LoadNumValue(section,(act^.flags2 and ACF2_SRV_WPAR)<>0)
 //              act^.wparam:=DBReadDWord(0,opt_actions,section,0)
             else if (act^.flags and ACF_WSTRUCT)<>0 then
-              PWideChar(act^.wparam):=DBReadUnicode(0,opt_actions,section,nil)
+              act^.wparam:=wparam(DBReadUnicode(0,opt_actions,section,nil))
             else if (act^.flags and ACF_WUNICODE)<>0 then
-              PWideChar(act^.wparam):=DBReadUnicode(0,opt_actions,section,nil)
+              act^.wparam:=wparam(DBReadUnicode(0,opt_actions,section,nil))
             else
-              PAnsiChar(act^.wparam):=DBReadString(0,opt_actions,section,nil);
+              act^.wparam:=wparam(DBReadString (0,opt_actions,section,nil));
           end;
 
           if (act^.flags and (ACF_LCURRENT or ACF_LRESULT or ACF_LPARAM))=0 then
@@ -372,11 +372,11 @@ begin
                act^.lparam:=LoadNumValue(section,(act^.flags2 and ACF2_SRV_LPAR)<>0)
 //              act^.lparam:=DBReadDWord(0,opt_actions,section,0)
             else if (act^.flags and ACF_LSTRUCT)<>0 then
-              PWideChar(act^.lparam):=DBReadUnicode(0,opt_actions,section,nil)
+              act^.lparam:=lparam(DBReadUnicode(0,opt_actions,section,nil))
             else if (act^.flags and ACF_LUNICODE)<>0 then
-              PWideChar(act^.lparam):=DBReadUnicode(0,opt_actions,section,nil)
+              act^.lparam:=lparam(DBReadUnicode(0,opt_actions,section,nil))
             else
-              PAnsiChar(act^.lparam):=DBReadString(0,opt_actions,section,nil);
+              act^.lparam:=lparam(DBReadString(0,opt_actions,section,nil));
           end;
 
         end;
@@ -423,7 +423,7 @@ begin
           if (act^.flags and ACF_DBUTEXT)=0 then
             act^.dbvalue:=LoadNumValue(section,(act^.flags2 and ACF2_RW_TVAR)<>0)
           else
-            pWideChar(act^.dbvalue):=DBReadUnicode(0,opt_actions,section);
+            act^.dbvalue:=uint_ptr(DBReadUnicode(0,opt_actions,section));
         end;
 
         ACT_MESSAGE: begin

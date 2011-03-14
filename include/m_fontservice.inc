@@ -62,12 +62,6 @@ type
   TFontSettingsW = TFontSettingsW_tag;
   PFontSettingsW = ^TFontSettingsW;
 
-const
-  FontID_SIZEOF_V2  = 372;
-  FontID_SIZEOF_V2A = 372;
-  FontID_SIZEOF_V2U = 660;
-  FontIDW_SIZEOF_V2 = 660;
-
 type
 // a font identifier structire - used for registering a font,
 // and getting one out again
@@ -117,6 +111,20 @@ type
   TFontIDW = TFontIDW_tag;
   PFontIDW = ^TFontIDW;
 
+const
+  {$IFNDEF WIN64}
+  FontID_SIZEOF_V2  = 372;
+  FontID_SIZEOF_V2A = 372;
+  FontID_SIZEOF_V2U = 660;
+  FontIDW_SIZEOF_V2 = 660;
+  {$ELSE}
+  FontID_SIZEOF_V2  = SizeOf(TFontID);
+  FontID_SIZEOF_V2A = SizeOf(TFontID);
+  FontID_SIZEOF_V2U = SizeOf(TFontIDW);
+  FontIDW_SIZEOF_V2 = SizeOf(TFontIDW);
+  {$ENDIF}
+
+type
   PColourID_tag = ^TColourID_tag;
   TColourID_tag = record
     cbSize          : int;

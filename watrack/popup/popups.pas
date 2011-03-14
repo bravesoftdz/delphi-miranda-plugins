@@ -32,36 +32,36 @@ procedure ShowMusicInfo(si:pSongInfo);
 var
   Tmpl:array [0..255] of WideChar;
   buf:pWideChar;
-  lvars:array [0..15] of integer;
+  lvars:array [0..15] of uint_ptr;
   s:array [0..31] of WideChar;
   p:PWideChar;
 begin
   mGetMem(buf,16384);
   with si^ do
   begin
-    lvars[0]:=dword(artist);
-    lvars[1]:=dword(title);
-    lvars[2]:=dword(album);
-    lvars[3]:=dword(genre);
-    lvars[4]:=dword(comment);
-    lvars[5]:=dword(year);
+    lvars[0]:=uint_ptr(artist);
+    lvars[1]:=uint_ptr(title);
+    lvars[2]:=uint_ptr(album);
+    lvars[3]:=uint_ptr(genre);
+    lvars[4]:=uint_ptr(comment);
+    lvars[5]:=uint_ptr(year);
     lvars[6]:=track;
     lvars[7]:=kbps;
     if vbr>0 then
       p:='VBR'
     else
       p:='CBR';
-    lvars[8]:=dword(p);
+    lvars[8]:=uint_ptr(p);
     lvars[9]:=khz;
     lvars[10]:=channels;
-    lvars[11]:=dword(IntToTime(s,total));
-    lvars[12]:=dword(player);
-    lvars[13]:=dword(txtver);
+    lvars[11]:=uint_ptr(IntToTime(s,total));
+    lvars[12]:=uint_ptr(player);
+    lvars[13]:=uint_ptr(txtver);
   end;
   StrCopyW(Tmpl,MainTmpl);
   if PopUpFile=BST_CHECKED then
   begin
-    lvars[14]:=dword(si^.mfile);
+    lvars[14]:=uint_ptr(si^.mfile);
     lvars[15]:=si^.fsize;
     StrCatW(Tmpl,AddTmpl);
   end;
@@ -126,7 +126,7 @@ var
 begin
   if PopUpButtons<>BST_UNCHECKED then
   begin
-    mGetMem(actions,SizeOf(actions^));
+    mGetMem(actions,SizeOf(anacts));
     result:=PPOPUPACTION(actions);
     FillChar(actions^,SizeOf(actions^),0);
     MakeAction(actions[0],WAT_CTRL_PREV);
@@ -156,9 +156,9 @@ begin
   result:=0;
   line:=CallService(MS_POPUP_ISSECONDLINESHOWN,0,0)<>0;
 
-  descr:=PWideChar(PluginLink^.CallService(MS_WAT_REPLACETEXT,0,dword(PopText)));
+  descr:=PWideChar(PluginLink^.CallService(MS_WAT_REPLACETEXT,0,lparam(PopText)));
   if line then
-    title:=PWideChar(PluginLink^.CallService(MS_WAT_REPLACETEXT,0,dword(PopTitle)))
+    title:=PWideChar(PluginLink^.CallService(MS_WAT_REPLACETEXT,0,lparam(PopTitle)))
   else
     title:=nil;
 
@@ -225,19 +225,19 @@ begin
         if si.cover<>nil then
         begin
           if isFreeImagePresent then
-            hbmAvatar:=CallService(MS_IMG_LOAD,dword(si.cover),IMGL_WCHAR)
+            hbmAvatar:=CallService(MS_IMG_LOAD,wparam(si.cover),IMGL_WCHAR)
           else
             hbmAvatar:=0;
           if hbmAvatar=0 then
           begin
             WideToAnsi(si.cover,tmp);
-            hbmAvatar:=CallService(MS_UTILS_LOADBITMAP,0,dword(tmp));
+            hbmAvatar:=CallService(MS_UTILS_LOADBITMAP,0,lparam(tmp));
             mFreeMem(tmp);
           end;
         end;
         PluginData:=pointer(hbmAvatar);
       end;
-      PluginLink^.CallService(MS_POPUP_ADDPOPUP2,DWORD(ppd2),flag);
+      PluginLink^.CallService(MS_POPUP_ADDPOPUP2,wparam(ppd2),flag);
       mFreeMem(ppd2);
     end
     else
@@ -280,7 +280,7 @@ begin
           lpActions  :=ActionList;
         end;
       end;
-      PluginLink^.CallService(MS_POPUP_ADDPOPUPW,DWORD(ppdu),flag);
+      PluginLink^.CallService(MS_POPUP_ADDPOPUPW,wparam(ppdu),flag);
       mFreeMem(ppdu);
     end;
     mFreeMem(title);
@@ -290,7 +290,7 @@ end;
 
 procedure ShowPopup(si:pSongInfo);
 var
-  res:dword;
+  res:uint_ptr;
 begin
   CloseHandle(BeginThread(nil,0,@ThShowPopup,si,0,res));
 end;
@@ -304,7 +304,7 @@ begin
   result:=0;
   if DisablePlugin<>dsEnabled then
     exit;
-  if PluginLink^.CallService(MS_WAT_GETMUSICINFO,0,dword(@si))=WAT_PLS_NORMAL then
+  if PluginLink^.CallService(MS_WAT_GETMUSICINFO,0,tlparam(@si))=WAT_PLS_NORMAL then
   begin
     if PopupPresent then
       ShowPopUp(si)
@@ -329,7 +329,7 @@ begin
     lParam          :=0;
     DefHotKey:=((HOTKEYF_ALT or HOTKEYF_CONTROL) shl 8) or VK_F7 or HKF_MIRANDA_LOCAL;
   end;
-  CallService(MS_HOTKEY_REGISTER,0,dword(@hkrec));
+  CallService(MS_HOTKEY_REGISTER,0,lparam(@hkrec));
 end;
 
 {$include pop_dlg.inc}
@@ -360,7 +360,7 @@ begin
       FillChar(mi,sizeof(mi),0);
       mi.cbSize:=sizeof(mi);
       mi.flags :=CMIM_FLAGS+flag;
-      CallService(MS_CLIST_MODIFYMENUITEM,hMenuInfo,dword(@mi));
+      CallService(MS_CLIST_MODIFYMENUITEM,hMenuInfo,tlparam(@mi));
     end;
   end;
 end;
@@ -373,13 +373,13 @@ begin
   FillChar(mi,SizeOf(mi),0);
   mi.cbSize:=sizeof(mi);
   mi.flags :=CMIM_ICON;
-  mi.hIcon :=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnInfo));
-  CallService(MS_CLIST_MODIFYMENUITEM,hMenuInfo,dword(@mi));
+  mi.hIcon :=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnInfo));
+  CallService(MS_CLIST_MODIFYMENUITEM,hMenuInfo,tlparam(@mi));
   if ActionList<>nil then
   begin
     mFreeMem(ActionList);
     ActionList:=MakeActions;
-    CallService(MS_POPUP_REGISTERACTIONS,dword(ActionList),7);
+    CallService(MS_POPUP_REGISTERACTIONS,twparam(ActionList),7);
   end;
 end;
 
@@ -397,7 +397,7 @@ begin
   odp.szGroup.a  :='PopUps';
   odp.pszTemplate:=DLGPOPUP;
   odp.pfnDlgProc :=@DlgPopUpOpt;
-  PluginLink^.CallService(MS_OPT_ADDPAGE,wParam,dword(@odp));
+  PluginLink^.CallService(MS_OPT_ADDPAGE,wParam,tlparam(@odp));
   result:=0;
 end;
 
@@ -431,18 +431,18 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(BTN_INFO),IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoBtnInfo;
   sid.szDescription.a:='Music Info';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
   sic:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
 
   FillChar(mi,SizeOf(mi),0);
   mi.cbSize       :=SizeOf(mi);
   mi.szPopupName.a:=PluginShort;
-  mi.hIcon        :=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnInfo));
+  mi.hIcon        :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnInfo));
   mi.szName.a     :='Music Info';
   mi.pszService   :=MS_WAT_SHOWMUSICINFO;
   mi.popupPosition:=MenuInfoPos;
-  hMenuInfo       :=PluginLink^.CallService(MS_CLIST_ADDMAINMENUITEM,0,dword(@mi));
+  hMenuInfo       :=PluginLink^.CallService(MS_CLIST_ADDMAINMENUITEM,0,lparam(@mi));
 
   if PluginLink^.ServiceExists(MS_POPUP_ADDPOPUPW)<>0 then
   begin
@@ -460,7 +460,7 @@ begin
       begin
         ActionList:=MakeActions;
         if ActionList<>nil then
-          CallService(MS_POPUP_REGISTERACTIONS,dword(ActionList),7);
+          CallService(MS_POPUP_REGISTERACTIONS,wparam(ActionList),7);
       end;
     end;
   end
@@ -475,12 +475,12 @@ begin
   FillChar(ttb,SizeOf(ttb),0);
   ttb.cbSize :=SizeOf(ttb);
   ttb.dwFlags:=TTBBF_VISIBLE{ or TTBBF_SHOWTOOLTIP};
-  ttb.hIconUp       :=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnInfo));
+  ttb.hIconUp       :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnInfo));
   ttb.hIconDn       :=ttb.hIconUp;
   ttb.pszServiceUp  :=MS_WAT_SHOWMUSICINFO;
   ttb.pszServiceDown:=MS_WAT_SHOWMUSICINFO;
   ttb.name          :='Music Info';
-  ttbInfo:=CallService(MS_TTB_ADDBUTTON,integer(@ttb),0);
+  ttbInfo:=CallService(MS_TTB_ADDBUTTON,wparam(@ttb),0);
 end;
 
 procedure DeInitProc(aSetDisable:boolean);

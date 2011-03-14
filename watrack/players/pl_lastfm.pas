@@ -45,7 +45,7 @@ var
   ps:array [0..255] of WideChar;
   p:pWideChar;
 begin
-  SendMessageW(wnd,WM_GETTEXT,255,dword(@ps));
+  SendMessageW(wnd,WM_GETTEXT,255,lparam(@ps));
   p:=StrPosW(ps,' | ');
   if p<>nil then
   begin

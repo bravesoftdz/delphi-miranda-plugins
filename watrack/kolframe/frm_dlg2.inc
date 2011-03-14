@@ -104,7 +104,7 @@ begin
     end;
 
     WM_NOTIFY: begin
-      if PNMHdr(lParam)^.code=PSN_APPLY then
+      if integer(PNMHdr(lParam)^.code)=PSN_APPLY then
       begin
 //        redraw:=false;
         with PWATFrameData(FrameCtrl.CustomData).TextBlock^ do

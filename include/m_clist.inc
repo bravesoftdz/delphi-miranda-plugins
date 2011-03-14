@@ -34,7 +34,7 @@ const
   MS_CLIST_GETSTATUSMODE:PAnsiChar = 'CList/GetStatusMode';
 
   GSMDF_PREFIXONLINE = 1; // prefix "Online :" for online submodes, e.g. 'away'
-  GCMDF_UNICODE      = 2; // will return TCHAR* instead of AnsiChar*
+  GSMDF_UNICODE      = 2; // will return TCHAR* instead of AnsiChar*
   GSMDF_UNTRANSLATED = 4;
 
   {
@@ -161,7 +161,7 @@ type
   TCLISTDOUBLECLICKACTION = record
     cbSize         : int;
     pszContactOwner: PAnsiChar; // name of the protocol owning the contact or NULL(0) for all
-    flags          : DWORD; // CMIF_NOT flags above
+    flags          : DWORD;     // CMIF_NOT flags above
     pszService     : PAnsiChar; // service to call on double click, is called with wParam=hContact, lParam=0
   end;
 
@@ -221,7 +221,7 @@ type
   TCLISTEVENT = record
     cbSize    : int;     // size in bytes
     hContact  : THANDLE; // handle to the contact to put the icon by
-    hIcon     : THANDLE; // icon to flash!
+    hIcon     : HICON;   // icon to flash!
     flags     : DWORD;
     hDBEvent  : THANDLE; // caller defined, but should be unique for hContact
                          // or pszProtocol:PAnsiChar
@@ -473,8 +473,8 @@ const
 type
   CLISTGROUPCHANGE = record
     cbSize    :int;   //size in bytes of this structure
-    pszOldName:PAnsiChar; //old group name
-    pszNewName:PAnsiChar; //new group name
+    pszOldName:TChar; //old group name
+    pszNewName:TChar; //new group name
   end;
 const
   ME_CLIST_GROUPCHANGE:PAnsiChar = 'CList/GroupChange';
@@ -655,12 +655,12 @@ const
 type
   PMIRANDASYSTRAYNOTIFY = ^TMIRANDASYSTRAYNOTIFY;
   TMIRANDASYSTRAYNOTIFY = record
-    cbSize     :int;   // sizeof(MIRANDASYSTRAY)
+    cbSize     :int;       // sizeof(MIRANDASYSTRAY)
     szProto    :PAnsiChar; // protocol to show under (may have no effect)
-    szInfoTitle:PAnsiChar; // only 64chars of it will be used, TCHAR if NIIF_INTERN_UNICODE is specified
-    szInfo     :PAnsiChar; // only 256chars of it will be used, TCHAR if NIIF_INTERN_UNICODE is specified
-    dwInfoFlags:dword; // see NIIF_* stuff
-    uTimeout   :dword; // how long to show the tip for
+    szInfoTitle:TChar;     // only 64chars of it will be used, TCHAR if NIIF_INTERN_UNICODE is specified
+    szInfo     :TChar;     // only 256chars of it will be used, TCHAR if NIIF_INTERN_UNICODE is specified
+    dwInfoFlags:dword;     // see NIIF_* stuff
+    uTimeout   :uint;      // how long to show the tip for
   end;
 
 const

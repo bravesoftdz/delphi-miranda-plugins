@@ -61,8 +61,8 @@ type
     hwndWindow: HWND;    // top level window for the contact
     szModule  : PAnsiChar;   // used to get plugin type (which means you could use
                          // local if needed)
-    uType     : dword;   // see event types above
-    uFlags    : dword;   // used to indicate message direction for all event
+    uType     : uint;   // see event types above
+    uFlags    : uint;   // used to indicate message direction for all event
                          // types except custom
     local     : pointer; // used to store pointer to custom data
     hwndInput : HWND;    // input area window for the contact (or NULL if there is none)
@@ -152,12 +152,12 @@ const
 
 type
   StatusIconData = record
-    cbSize       :integer;
-    szModule     :PAnsiChar;    // used in combo with the dwId below to create a unique identifier
+    cbSize       :int;
+    szModule     :PAnsiChar; // used in combo with the dwId below to create a unique identifier
     dwId         :DWORD;
     hIcon,
-    hIconDisabled:HICON;    // hIconDisabled is optional - if null, will use hIcon in the disabled state
-    flags        :integer;  // one of MBF_* above
+    hIconDisabled:HICON;     // hIconDisabled is optional - if null, will use hIcon in the disabled state
+    flags        :int;       // one of MBF_* above
     szTooltip    :PAnsiChar;
   end;
 
@@ -167,11 +167,11 @@ const
 
 type
   StatusIconClickData = record
-    cbSize       :integer;
-    clickLocation:TPOINT;  // click location, in screen coordinates
+    cbSize       :int;
+    clickLocation:TPOINT;    // click location, in screen coordinates
     szModule     :PAnsiChar;
     dwId         :DWORD;
-    flags        :integer;  // one of MBCF_* above
+    flags        :int;       // one of MBCF_* above
   end;
 
 const

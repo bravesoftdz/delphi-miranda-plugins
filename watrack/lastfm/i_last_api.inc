@@ -82,7 +82,7 @@ begin
       else if StrCmp(res,'BADAUTH' )=0 then StrCopy(tmp,Translate('Bad Auth. Check login and password'))
       else if StrCmp(res,'BADTIME' )=0 then StrCopy(tmp,Translate('Bad TimeStamp'))
       else if StrCmp(res,'FAILED',6)=0 then StrCopy(tmp,res+7);
-      CallService(MS_POPUP_SHOWMESSAGE,dword(@request),SM_ERROR);
+      CallService(MS_POPUP_SHOWMESSAGE,wparam(@request),SM_ERROR);
     end;
     mFreeMem(res);
   end;
@@ -119,7 +119,7 @@ begin
   begin
     si:=pointer(CallService(MS_WAT_RETURNGLOBAL,WAT_INF_UTF8,0));
 
-    pc:=args;
+    pc:=@args;
     pc:=StrCopyE(pc,'s='); pc:=StrCopyE(pc,session_id); //'?s='
     pc:=StrCopyE(pc,'&a=');
     if si^.artist=nil then pc:=StrCopyE(pc,'Unknown')
@@ -158,7 +158,7 @@ begin
     si:=pointer(CallService(MS_WAT_RETURNGLOBAL,WAT_INF_UTF8,0));
     IntToStr(timestamp,GetCurrentTime);
 
-    pc:=args;
+    pc:=@args;
     pc:=StrCopyE(pc,'s='  ); pc:=StrCopyE(pc,session_id);
     pc:=StrCopyE(pc,'&a[0]=');
     if si^.artist=nil then pc:=StrCopyE(pc,'Unknown')
@@ -195,7 +195,7 @@ begin
       else if StrCmp(res,'FAILED',6)=0 then
       begin
         StrCopy(StrCopyE(args,Translate('Last.fm error: ')),res+7);
-        CallService(MS_POPUP_SHOWMESSAGE,dword(@args),SM_NOTIFY);
+        CallService(MS_POPUP_SHOWMESSAGE,wparam(@args),SM_NOTIFY);
         result:=0;
       end;
       mFreeMem(res);
@@ -303,7 +303,7 @@ begin
     UTF8ToWide(res,pcw);
     mFreeMem(res);
     xmlparser.cbSize:=XML_API_SIZEOF_V1;
-    CallService(MS_SYSTEM_GET_XI,0,dword(@xmlparser));
+    CallService(MS_SYSTEM_GET_XI,0,lparam(@xmlparser));
     with xmlparser do
     begin
       i:=StrLenW(pcw)*SizeOf(WideChar);
@@ -427,7 +427,7 @@ begin
     UTF8ToWide(res,pcw);
     mFreeMem(res);
     xmlparser.cbSize:=XML_API_SIZEOF_V1;
-    CallService(MS_SYSTEM_GET_XI,0,dword(@xmlparser));
+    CallService(MS_SYSTEM_GET_XI,0,lparam(@xmlparser));
     with xmlparser do
     begin
       i:=StrLenW(pcw)*SizeOf(WideChar);
@@ -536,7 +536,7 @@ begin
     UTF8ToWide(res,pcw);
     mFreeMem(res);
     xmlparser.cbSize:=XML_API_SIZEOF_V1;
-    CallService(MS_SYSTEM_GET_XI,0,dword(@xmlparser));
+    CallService(MS_SYSTEM_GET_XI,0,lparam(@xmlparser));
     with xmlparser do
     begin
       i:=StrLenW(pcw)*SizeOf(WideChar);

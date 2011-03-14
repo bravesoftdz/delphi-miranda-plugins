@@ -514,7 +514,7 @@ begin
     end;
 
     WM_NOTIFY: begin
-      if PNMHdr(lParam)^.code=PSN_APPLY then
+      if integer(PNMHdr(lParam)^.code)=PSN_APPLY then
       begin
 
         doShuffle:=IsDlgButtonChecked(Dialog,IDC_SHUFFLE);
@@ -757,7 +757,7 @@ begin
     end;
 
     WM_NOTIFY: begin
-      if PNMHdr(lParam)^.code=PSN_APPLY then
+      if integer(PNMHdr(lParam)^.code)=PSN_APPLY then
       begin
         SavePresets;
 

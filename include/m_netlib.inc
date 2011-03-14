@@ -28,7 +28,7 @@ const
   // for TNETLIBUSER.flags
   NUF_INCOMING      = $01; // bind incoming ports
   NUF_OUTGOING      = $02; // makes outgoing plain connections
-  NUF_HTTPGATEWAY   = $04; //can use HTTP gateway for plain sockets.
+  NUF_HTTPGATEWAY   = $04; // can use HTTP gateway for plain sockets.
                            // ???HttpGateway* are valid, enables the HTTP
                            // proxy option, displayed in options
   NUF_NOOPTIONS     = $08; // don't show this as an entry for custom settings to
@@ -52,9 +52,6 @@ const
   PROXYTYPE_HTTPS  = 4;
   PROXYTYPE_IE     = 5;
 
-  NETLIBBIND_SIZEOF_V1 = 16; // sizeof(NETLIBBIND) prior to 0.3.4+ (2004/08/05)
-  NETLIBBIND_SIZEOF_V2 = 20; // sizeof(NETLIBBIND) prior to 0.6+ (2006/07/03)
-
   // for TNETLIBOPENCONNECTION.flags
 
   { this connection will be useed for HTTP communications,
@@ -69,9 +66,6 @@ const
   NLOCF_UDP           = $0008; // this connection is UDP
   NLOCF_SSL           = $0010; // this connection is SSL
   NLOCF_HTTPGATEWAY   = $0020; // this connection is HTTP Gateway
-
-  NETLIBOPENCONNECTION_V1_SIZE = 16;
-  // old sizeof() is 14 bytes, but there is padding of 2 bytes
 
   // for TNETLIBHTTPPROXYINFO.flags
 
@@ -137,13 +131,64 @@ const
 
   FD_SETSIZE = 65;
 
-  NETLIBHTTPREQUEST_V1_SIZE = 44;
+type
+  twaitcallback = function(timeout:dword):integer; cdecl;
+
+  PNETLIBOPENCONNECTION = ^TNETLIBOPENCONNECTION;
+  TNETLIBOPENCONNECTION = record
+    cbSize : int;
+    szHost : PAnsiChar; // can be an IP in string form
+    wPort  : Word;
+    flags  : DWORD; // see NLOCF_* flags
+    timeout: uint;
+    // optional, called in the context of the thread that issued the attempt,
+    // if it returns 0 the connection attempt is stopped, the remaining
+    // timeout value can also be adjusted
+    waitcallback:twaitcallback;
+  end;
+
+const
+  {$IFNDEF WIN64}
+  NETLIBOPENCONNECTION_V1_SIZE = 16;
+  {$ELSE}
+  NETLIBOPENCONNECTION_V1_SIZE = SIZEOF(TNETLIBOPENCONNECTION);
+  {$ENDIF}
+  // old sizeof() is 14 bytes, but there is padding of 2 bytes
 
 type
-    { forward typed pointers to records }
-  PNETLIBOPENCONNECTION = ^TNETLIBOPENCONNECTION;
+  PNETLIBHTTPHEADER = ^TNETLIBHTTPHEADER;
+  TNETLIBHTTPHEADER = record
+    szName : PAnsiChar;
+    szValue: PAnsiChar;
+  end;
+  ANETLIBHTTPHEADER = array [0..1000] of TNETLIBHTTPHEADER;
+
   PNETLIBHTTPREQUEST    = ^TNETLIBHTTPREQUEST;
 
+  TNETLIBHTTPREQUEST = record
+    cbSize       :int;
+    requestType  :int;                // REQUEST_* constant
+    flags        :DWORD;
+    szUrl        :PAnsiChar;
+    { doesn't contain Content-Length, it'll be added automatically }
+    headers      :^ANETLIBHTTPHEADER; // pointer to an array of em?
+    headersCount :int;                // yes they do
+    pData        :PAnsiChar;          // data to be sent on POST request
+    dataLength   :int;                // must be 0 for REQUEST_GET/REQUEST_CONNECT
+    resultCode   :int;
+    szResultDescr:PAnsiChar;
+    nlc          :THANDLE;
+    timeout      :int;                // Mirver 9.0+
+  end;
+
+const
+  {$IFNDEF WIN64}
+  NETLIBHTTPREQUEST_V1_SIZE = 44;
+  {$ELSE}
+  NETLIBHTTPREQUEST_V1_SIZE = SIZEOF(TNETLIBHTTPREQUEST);
+  {$ENDIF}
+
+type
   { This function pointer is to the CRT realloc() used by Miranda -- it allows reallocation of memory passed
   to us (not that we could EVER share the same CRT) but to allow DLLs in general to reallocate memory }
   TNetlibRealloc = function(Mem: Pointer; size_t: int): Pointer; cdecl;
@@ -158,12 +203,12 @@ type
     szSettingsModule: PAnsiChar;  // used for DB settings and log, 'NL' stuff
     szDescriptiveName: TChar; // shows a descriptive name for which different proxy settings can be defined
     flags: DWORD;             // see NUF_* constants above
-    szHttpGatewayHello: PAnsiChar;
-    szHttpGatewayUserAgent: PAnsiChar; // can be NULL(0) to send no User-Agent: also used by HTTPS proxies
-    pfnHttpGatewayInit: TNetlibHTTPGatewayInitProc;
-    pfnHttpGatewayBegin: TNetlibHTTPGatewayBeginProc; // can be NULL(0) if no begin is required
-    pfnHttpGatewayWrapSend: TNetlibHTTPGatewayWrapSendProc; // can be NULL(0) if no wrapping is required
-    pfnHttpGatewayUnwrapRecv: TNetlibHTTPGatewayUnwrapRecvProc; // can be NULL(0) "      "
+    szHttpGatewayHello    :PAnsiChar;
+    szHttpGatewayUserAgent:PAnsiChar; // can be NULL(0) to send no User-Agent: also used by HTTPS proxies
+    pfnHttpGatewayInit      :TNetlibHTTPGatewayInitProc;
+    pfnHttpGatewayBegin     :TNetlibHTTPGatewayBeginProc; // can be NULL(0) if no begin is required
+    pfnHttpGatewayWrapSend  :TNetlibHTTPGatewayWrapSendProc; // can be NULL(0) if no wrapping is required
+    pfnHttpGatewayUnwrapRecv:TNetlibHTTPGatewayUnwrapRecvProc; // can be NULL(0) "      "
     minIncomingPorts: int; // only if NUF_INCOMING, will be used for validation of user input
   end;
 
@@ -210,26 +255,22 @@ type
     //function to call when there's a new connection. Params are: the
     //new connection, IP of remote machine (host byte order)
     dwInternalIP:DWORD;    //set on return, host byte order
-    wPort       :DWORD;    //set on return, host byte order
+    wPort       :WORD;     //set on return, host byte order
     pExtra      :^pointer; //argument is sent to callback, added during 0.3.4+
     dwExternalIP:DWORD;    //set on return, host byte order
     wExPort     :word;     //set on return, host byte order
   end;
 
-  twaitcallback = function(timeout:dword):integer; cdecl;
-  { Pointered type is above }
-  TNETLIBOPENCONNECTION = record
-    cbSize : int;
-    szHost : PAnsiChar; // can be an IP in string form
-    wPort  : Word;
-    flags  : DWORD; // see NLOCF_* flags
-    timeout: Cardinal;
-    // optional, called in the context of the thread that issued the attempt,
-    // if it returns 0 the connection attempt is stopped, the remaining
-    // timeout value can also be adjusted
-    waitcallback:twaitcallback;
-  end;
+const
+  {$IFNDEF WIN64}
+  NETLIBBIND_SIZEOF_V1 = 16; // sizeof(NETLIBBIND) prior to 0.3.4+ (2004/08/05)
+  NETLIBBIND_SIZEOF_V2 = 20; // sizeof(NETLIBBIND) prior to 0.6+ (2006/07/03)
+  {$ELSE}
+  NETLIBBIND_SIZEOF_V1 = SizeOF(TNETLIBBIND);
+  NETLIBBIND_SIZEOF_V2 = SizeOF(TNETLIBBIND);
+  {$ENDIF}
 
+type
   PNETLIBHTTPPROXYINFO = ^TNETLIBHTTPPROXYINFO;
   TNETLIBHTTPPROXYINFO = record
     cbSize           : int;
@@ -249,32 +290,7 @@ type
     cbDecoded : int;
   end;
 
-  PNETLIBHTTPHEADER = ^TNETLIBHTTPHEADER;
-  TNETLIBHTTPHEADER = record
-    szName : PAnsiChar;
-    szValue: PAnsiChar;
-  end;
-  ANETLIBHTTPHEADER = array [0..1000] of TNETLIBHTTPHEADER;
-
-  { PNETLIBHTTPREQUEST = ^TNETLIBHTTPREQUEST, defined above because this is
-  forward referenced from there }
-
-  TNETLIBHTTPREQUEST = record
-    cbSize       :int;
-    requestType  :int;                // REQUEST_* constant
-    flags        :DWORD;
-    szUrl        :PAnsiChar;
-    { doesn't contain Content-Length, it'll be added automatically }
-    headers      :^ANETLIBHTTPHEADER; // pointer to an array of em?
-    headersCount :int;                // yes they do
-    pData        :PAnsiChar;          // data to be sent on POST request
-    dataLength   :int;                // must be 0 for REQUEST_GET/REQUEST_CONNECT
-    resultCode   :int;
-    szResultDescr:PAnsiChar;
-    nlc          :THANDLE;
-    timeout      :int;                // Mirver 9.0+
-  end;
-
+type
   PNETLIBBUFFER = ^TNETLIBBUFFER;
   TNETLIBBUFFER = record
     buf  : PAnsiChar;
@@ -786,7 +802,7 @@ type
     cbSize        :size_t;
     szProviderName:TChar;
     szPrincipal   :TChar;
-    flags         :dword;
+    flags         :uint;
   end;
 
 const
@@ -804,7 +820,7 @@ type
     szChallenge:PAnsiChar;
     userName   :PAnsiChar;
     password   :PAnsiChar;
-    complete   :int;
+//    complete   :int; // not present in last versions
   end;
 
 type
@@ -813,8 +829,8 @@ type
     szChallenge:PAnsiChar;
     szUserName :TChar;
     szPassword :TChar;
-    complete   :dword;
-    flags      :dword;
+    complete   :uint;
+    flags      :uint;
   end;
 
 const

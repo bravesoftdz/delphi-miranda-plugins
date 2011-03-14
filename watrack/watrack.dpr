@@ -16,7 +16,7 @@ uses
   ,tmpl      in 'status\tmpl.pas'
   ,templates in 'templates\templates.pas'
 
-  ,kolframe  in 'kolframe\kolframe.pas'
+//  ,kolframe  in 'kolframe\kolframe.pas'
 
   {$include lst_players.inc}
   {$include lst_formats.inc}
@@ -80,7 +80,7 @@ end;
 {$include i_opt_dlg.inc}
 {$include i_cover.inc}
 
-function ReturnInfo(enc:integer;cp:integer=CP_ACP):pointer;
+function ReturnInfo(enc:WPARAM;cp:LPARAM=CP_ACP):pointer;
 begin
   if enc<>WAT_INF_UNICODE then
   begin
@@ -128,12 +128,12 @@ begin
     result:=@SongInfo;
 end;
 
-function WATReturnGlobal(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function WATReturnGlobal(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 begin
   if wParam=0 then wParam:=WAT_INF_UNICODE;
   if lParam=0 then lParam:=MirandaCP;
 
-  result:=int(ReturnInfo(wParam,lParam));
+  result:=int_ptr(ReturnInfo(wParam,lParam));
 end;
 
 function WATGetFileInfo(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -219,7 +219,7 @@ begin
   if result=WAT_RES_NEWPLAYER then
   begin
     newplayer:=true;
-    PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_NEWPLAYER,dword(@WorkSI));
+    PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_NEWPLAYER,tlparam(@WorkSI));
     result:=WAT_RES_OK;
   end
   else // !!!! (need to add) must remember about same player, another instance
@@ -363,7 +363,7 @@ begin
             result:=WAT_RES_NEWFILE;
 
           if result=WAT_RES_NEWFILE then
-            PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_NEWTRACK,dword(@SongInfo));
+            PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_NEWTRACK,tlparam(@SongInfo));
         end
         else // just changing infos
         begin
@@ -515,10 +515,10 @@ begin
       cpbVersion          :=StrLen(pbVersion);
       szBetaChangelogURL  :=BetaChangelogURL;
     end;
-    PluginLink^.CallService(MS_UPDATE_REGISTER,0,dword(@upd));
+    PluginLink^.CallService(MS_UPDATE_REGISTER,0,tlparam(@upd));
   end;
 
-  CallService('DBEditorpp/RegisterSingleModule',dword(PluginShort),0);
+  CallService('DBEditorpp/RegisterSingleModule',twparam(PluginShort),0);
 
   hTimer:=0;
 
@@ -554,8 +554,8 @@ begin
   if hEvent<>0 then
   begin
     p:='WAT_INIT';
-    hWATI:=CreateServiceFunction(p,WaitAllModules);
-    CallService(MS_SYSTEM_WAITONHANDLE,hEvent,integer(p));
+    hWATI:=CreateServiceFunction(p,@WaitAllModules);
+    CallService(MS_SYSTEM_WAITONHANDLE,hEvent,tlparam(p));
   end;
 
   loadopt;
@@ -588,12 +588,8 @@ begin
   PluginLink^.DestroyServiceFunction(hWATI);
   PluginLink^.DestroyServiceFunction(hWC);
 
-//  PluginLink^.DestroyServiceFunction(hTMPL);
-
   PluginLink^.DestroyServiceFunction(hFMT);
   PluginLink^.DestroyServiceFunction(hPLR);
-
-  PluginLink^.DestroyServiceFunction(hINS);
 end;
 
 function PreShutdown(wParam:WPARAM;lParam:LPARAM):int;cdecl;

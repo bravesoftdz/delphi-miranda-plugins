@@ -125,7 +125,7 @@ begin
             txt:=GetMacros(tmpl_stext,0,0)
           else
             txt:=GetMacros(tmpl_stext,j,lParam);
-          if integer(txt)<>-2 then
+          if uint_ptr(txt)<>uint_ptr(-2) then
           begin
             if (txt=nil) or (txt^=#0) then
               ls:=nil
@@ -164,7 +164,7 @@ begin
                 txt:=GetMacros(tmpl_xtext,0,0)
               else
                 txt:=GetMacros(tmpl_xtext,j,lParam);
-              if integer(txt)<>-2 then // status template presents
+              if uint_ptr(txt)<>uint_ptr(-2) then // status template presents
               begin
                 // XStatus for audio/video
                 if SimpleMode<>BST_UNCHECKED then

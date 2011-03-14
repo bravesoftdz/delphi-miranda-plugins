@@ -1,6 +1,6 @@
 {special tab: parts settings}
 
-function DlgProcOptions0(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function DlgProcOptions0(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):LRESULT; stdcall;
 var
   i:integer;
   ptr:pwModule;
@@ -44,7 +44,7 @@ begin
     end;
 
     WM_NOTIFY: begin
-      if PNMHdr(lParam)^.code=PSN_APPLY then
+      if integer(PNMHdr(lParam)^.code)=PSN_APPLY then
       begin
         ptr:=ModuleLink;
         while ptr<>nil do

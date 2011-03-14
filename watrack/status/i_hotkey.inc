@@ -37,7 +37,7 @@ begin
       else
         i:=FindProto(p);
       s:=GetMacros(tt,i,LastStatus);
-      if (s<>nil) and (integer(s)<>-2) then
+      if (s<>nil) and (uint_ptr(s)<>uint_ptr(-2)) then
       begin
         if StrScanW(s,'{')<>nil then
           SendRTF(CurWin,s,isUnicode,UserCP)

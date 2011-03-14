@@ -59,7 +59,7 @@ procedure RegisterIcons;
 var
   sid:TSKINICONDESC;
 
-  procedure RegisterIcon(id:dword;name:PAnsiChar;descr:PAnsiChar);
+  procedure RegisterIcon(id:uint_ptr;name:PAnsiChar;descr:PAnsiChar);
   var
     buf:array [0..63] of WideChar;
   begin
@@ -191,6 +191,15 @@ end;
 
 {$include i_opt_struct.inc}
 {$include i_opt_dlg2.inc}
+
+procedure DoInitCommonControls(dwICC:DWORD);
+var
+  ICC: TInitCommonControlsEx;
+begin
+  ICC.dwSize:= Sizeof(ICC);
+  ICC.dwICC := dwICC;
+  InitCommonControlsEx(ICC);
+end;
 
 function OnOptInitialise(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var

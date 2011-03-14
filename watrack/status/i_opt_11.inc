@@ -141,6 +141,7 @@ begin
   wnd:=GetDlgItem(Dialog,IDC_PROTOLIST);
   SendMessage(wnd,CB_SETCURSEL,0,0);
 
+//  SendMessageA(wnd,LVM_GETITEMTEXTA,);
   ListView_GetItemTextA(wnd,CurProto,0,buf,SizeOf(buf));
   StrCat(buf,PS_ICQ_GETCUSTOMSTATUSICON);
   endis:=PluginLink^.ServiceExists(buf)<>0;
@@ -427,7 +428,8 @@ begin
           begin
             Item.iItem:=PNMLISTVIEW(lParam)^.iItem;
             Item.mask:=LVIF_PARAM;
-            ListView_GetItemA(PNMLISTVIEW(lParam)^.hdr.hwndFrom,Item);
+            SendMessageA(PNMLISTVIEW(lParam)^.hdr.hwndFrom,LVM_GETITEMA,0,tlparam(@item));
+//            ListView_GetItemA(PNMLISTVIEW(lParam)^.hdr.hwndFrom,Item);
             CurStatus:=GetStatusNum(Item.lParam);
             RedrawFields(Dialog);
           end;
@@ -442,7 +444,7 @@ begin
         end;
       end
 
-      else if PNMHdr(lParam)^.code=PSN_APPLY then
+      else if integer(PNMHdr(lParam)^.code)=PSN_APPLY then
       begin
         if (Changed and DLGED_PROT)<>0 then
         begin

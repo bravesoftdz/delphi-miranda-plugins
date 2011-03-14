@@ -13,7 +13,7 @@ begin
   if lfm_password<>nil then
   begin
     StrCopy(tmppass,lfm_password);
-    CallService(MS_DB_CRYPT_ENCODESTRING,StrLen(tmppass)+1,dword(@tmppass));
+    CallService(MS_DB_CRYPT_ENCODESTRING,StrLen(tmppass)+1,lparam(@tmppass));
   end;
   DBWriteString(0,PluginShort,optPassword,tmppass);
   DBWriteString(0,PluginShort,optLogin   ,lfm_login);
@@ -30,10 +30,10 @@ begin
   mFreeMem(lfm_login   ); lfm_login   :=DBReadString(0,PluginShort,optLogin);
   mFreeMem(lfm_password); lfm_password:=DBReadString(0,PluginShort,optPassword);
   if lfm_password<>nil then
-    CallService(MS_DB_CRYPT_DECODESTRING,StrLen(lfm_password)+1,dword(lfm_password));
+    CallService(MS_DB_CRYPT_DECODESTRING,StrLen(lfm_password)+1,lparam(lfm_password));
   if (lfm_login=nil) or (lfm_password=nil) then
     CallService(MS_POPUP_SHOWMESSAGE,
-      dword(Translate('Don''t forget to enter Login and Password to use Last.fm service')),
+      wparam(Translate('Don''t forget to enter Login and Password to use Last.fm service')),
       SM_WARNING);
 end;
 

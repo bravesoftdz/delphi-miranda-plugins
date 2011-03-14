@@ -70,7 +70,7 @@ begin
   begin
     tmpwnd:=SendMessage(wnd,WM_APOLLO_COMMAND,APOLLO_GETCURRENTLYPLAYEDFILENAME,0);
     ps[0]:=#0;
-    SendMessageA(tmpwnd,WM_GETTEXT,255,dword(@ps));
+    SendMessageA(tmpwnd,WM_GETTEXT,255,lparam(@ps));
     if ps[0]<>#0 then
     begin
       mGetMem(result,(StrLen(ps)+1)*SizeOf(WideChar));
@@ -87,7 +87,7 @@ var
   ps:array [0..255] of AnsiChar;
 begin
   tmpwnd:=SendMessage(wnd,WM_APOLLO_COMMAND,APOLLO_GETCURRENTLYPLAYEDTITLE,0);
-  SendMessageA(tmpwnd,WM_GETTEXT,255,dword(@ps));
+  SendMessageA(tmpwnd,WM_GETTEXT,255,lparam(@ps));
   mGetMem(result,(StrLen(ps)+1)*SizeOf(WideChar));
   ANSItoWide(ps,result);
 end;
@@ -101,7 +101,7 @@ begin
     cds.dwData:=APOLLO_OPENFILE;
     WideToANSI(fname,PAnsiChar(cds.lpData));
     cds.cbData:=StrLen(PAnsiChar(cds.lpData))+1;
-    SendMessage(wnd,WM_COPYDATA,0,dword(@cds));
+    SendMessage(wnd,WM_COPYDATA,0,lparam(@cds));
     mFreeMem(cds.lpData);
   end;
   result:=SendMessage(wnd,WM_APOLLO_COMMAND,APOLLO_PLAY,0);
@@ -173,7 +173,7 @@ var
 begin
   num   :=SendMessage(wnd,WM_APOLLO_COMMAND,APOLLO_GETPLAYLISTPOSITION,0);
   tmpwnd:=SendMessage(wnd,WM_APOLLO_COMMAND,APOLLO_GETPLAYLISTTITLE   ,num);
-  SendMessageA(tmpwnd,WM_GETTEXT,255,dword(@ps));
+  SendMessageA(tmpwnd,WM_GETTEXT,255,lparam(@ps));
   mGetMem(result,(StrLen(ps)+1)*SizeOf(WideChar));
   ANSItoWide(ps,result);
 end;
@@ -195,7 +195,7 @@ begin
   end;
 
   if SongInfo.winampwnd<>0 then
-    result:=WinampGetInfo(integer(@SongInfo),flags);
+    result:=WinampGetInfo(int_ptr(@SongInfo),flags);
 
   if (flags and WAT_OPT_CHANGES)<>0 then
   begin
@@ -216,7 +216,7 @@ begin
   end;
 end;
 
-function Command(wnd:HWND;cmd:integer;value:integer):integer;cdecl;
+function Command(wnd:HWND;cmd:integer;value:int_ptr):integer;cdecl;
 begin
   case cmd of
     WAT_CTRL_PREV : result:=Prev(wnd);

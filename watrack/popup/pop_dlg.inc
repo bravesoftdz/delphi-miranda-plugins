@@ -4,7 +4,7 @@
 const
   DLGPOPUP = 'POPUP';
 
-function DlgPopUpOpt(Dialog:HWnd; hMessage,wParam,lParam:DWord):Boolean; stdcall;
+function DlgPopUpOpt(Dialog:HWnd;hMessage:Uint;wParam:WPARAM;lParam:LPARAM):LRESULT; stdcall;
 const
   dlginit:boolean=false;
 var
@@ -12,7 +12,7 @@ var
   ppd:PPOPUPDATAW;
   fore,back:HWND;
 begin
-  result:=false;
+  result:=0;
   case hMessage of
     WM_INITDIALOG: begin
       TranslateDialogDefault(Dialog);
@@ -98,7 +98,7 @@ begin
               ppd^.colorBack:=SendMessage(back,CPM_GETCOLOUR,0,0);
               ppd^.colorText:=SendMessage(fore,CPM_GETCOLOUR,0,0);
             end;
-            PluginLink^.CallService(MS_POPUP_ADDPOPUPW,DWORD(ppd),0);
+            PluginLink^.CallService(MS_POPUP_ADDPOPUPW,twparam(ppd),0);
             mFreeMem(ppd);
           end;
           IDC_DELAYCUST:
@@ -116,13 +116,13 @@ begin
         end;
       end;
       SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
-      result:=false;
+      result:=0;
     end;
 
     WM_NOTIFY: begin
       if dlginit then
       begin
-        if PNMHdr(lParam)^.code=PSN_APPLY then
+        if integer(PNMHdr(lParam)^.code)=PSN_APPLY then
         begin
 
           mFreeMem(PopTitle);

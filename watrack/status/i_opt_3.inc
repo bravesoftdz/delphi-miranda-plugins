@@ -78,22 +78,23 @@ begin
     WM_NOTIFY: begin
       if dlginit then
       begin
-        if PNMHdr(lParam)^.code=LVN_ITEMCHANGED then
-        begin
-          SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
-        end;
-        if PNMHdr(lParam)^.code=PSN_APPLY then
-        begin
-          SimpleMode    :=IsDlgButtonChecked(Dialog,IDC_SIMPLEMODE);
-          XIndepended   :=IsDlgButtonChecked(Dialog,IDC_INDEPENDED);
-          UseMessages   :=IsDlgButtonChecked(Dialog,IDC_USEMSGS);
-          UseStatus     :=IsDlgButtonChecked(Dialog,IDC_USESTATUS);
-          UseExtStatus  :=IsDlgButtonChecked(Dialog,IDC_EXTSTATUS);
-          KeepStatus    :=IsDlgButtonChecked(Dialog,IDC_KEEPSTATUS);
-          ClearXStat    :=IsDlgButtonChecked(Dialog,IDC_CLEARXSTAT);
-          UseListeningTo:=IsDlgButtonChecked(Dialog,IDC_LISTENINGTO);
-          XStatusSet :=CB_GetData(GetDlgItem(Dialog,IDC_SETXSTATUS));
-          SaveOpt;
+        case integer(PNMHdr(lParam)^.code) of
+          LVN_ITEMCHANGED: begin
+            SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
+          end;
+
+          PSN_APPLY: begin
+            SimpleMode    :=IsDlgButtonChecked(Dialog,IDC_SIMPLEMODE);
+            XIndepended   :=IsDlgButtonChecked(Dialog,IDC_INDEPENDED);
+            UseMessages   :=IsDlgButtonChecked(Dialog,IDC_USEMSGS);
+            UseStatus     :=IsDlgButtonChecked(Dialog,IDC_USESTATUS);
+            UseExtStatus  :=IsDlgButtonChecked(Dialog,IDC_EXTSTATUS);
+            KeepStatus    :=IsDlgButtonChecked(Dialog,IDC_KEEPSTATUS);
+            ClearXStat    :=IsDlgButtonChecked(Dialog,IDC_CLEARXSTAT);
+            UseListeningTo:=IsDlgButtonChecked(Dialog,IDC_LISTENINGTO);
+            XStatusSet :=CB_GetData(GetDlgItem(Dialog,IDC_SETXSTATUS));
+            SaveOpt;
+          end;
         end;
       end;
     end;

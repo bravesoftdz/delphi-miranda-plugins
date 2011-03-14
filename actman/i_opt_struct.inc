@@ -154,11 +154,11 @@ begin
 end;
 
 function MakeStructure(txt:uint_ptr;aparam,alast:uint_ptr;
-         var code,alen,ofs:integer; restype:integer=rtInt):int_ptr;
+         var code,alen:integer;var ofs:int_ptr; restype:integer=rtInt):int_ptr;
 var
   i,summ,len:integer;
   value,lsrc:pWideChar;
-  res:integer;
+  res:int_ptr;
   ppc,p,pc:pWideChar;
   buf:array [0..31] of WideChar;
   pLast: pWideChar;
@@ -236,7 +236,7 @@ begin
           mGetMem (lsrc ,len+1);
           FillChar(lsrc^,len+1,0);
           TranslateBlob(pByte(lsrc),value,true);
-          pDWord(res)^:=dword(lsrc);
+          pDWord(res)^:=uint_ptr(lsrc);
         end;
         len:=4;
       end;
@@ -944,12 +944,12 @@ begin
     end;
 
     WM_NOTIFY: begin
-      if PNMHdr(lParam)^.code=PSN_APPLY then
+      if integer(PNMHdr(lParam)^.code)=PSN_APPLY then
       begin
       end
       else if wParam=IDC_DATA_FULL then
       begin
-        case PNMHdr(lParam)^.code of
+        case integer(PNMHdr(lParam)^.code) of
           LVN_ITEMCHANGED: begin
             i:=(PNMLISTVIEW(lParam)^.uOldState and LVNI_FOCUSED)-
                (PNMLISTVIEW(lParam)^.uNewState and LVNI_FOCUSED);

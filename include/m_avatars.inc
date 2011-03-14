@@ -74,8 +74,8 @@ type
     hContact    : THANDLE;  // contacts handle, 0, if it is a protocol avatar
     hbmPic      : HBITMAP;  // bitmap handle of the picture itself
     dwFlags     : DWORD;    // see above for flag values
-    bmHeight    : integer;  // bitmap dimensions
-    bmWidth     : integer;
+    bmHeight    : long;     // bitmap dimensions
+    bmWidth     : long;
     t_lastAccess: DWORD;    // last access time (currently unused, but plugins should still
                             // use it whenever they access the avatar. may be
                             // used in the future to implement cache expiration
@@ -129,7 +129,7 @@ type
     alpha     : byte;      // alpha value for semi-transparent avatars (valid
                            // values form 1 to 255, if it is set to 0 the
                            // avatar won't be transparent.
-    szProto   : PAnsiChar;     // only used when AVDRQ_PROTOPICT is set
+    szProto   : PAnsiChar; // only used when AVDRQ_PROTOPICT is set
   end;
 
 const

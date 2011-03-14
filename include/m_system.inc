@@ -141,19 +141,19 @@ const
 type
   PMM_INTERFACE = ^TMM_INTERFACE;
   TMM_INTERFACE = record
-    cbSize :integer;
-    malloc :function  (para1:integer):pointer;cdecl;
-    realloc:function  (para1:pointer; para2:integer):pointer;cdecl;
+    cbSize :size_t;
+    malloc :function  (para1:size_t):pointer;cdecl;
+    realloc:function  (para1:pointer; para2:size_t):pointer;cdecl;
     free   :procedure (para1:pointer);cdecl;
 // if MIRANDA_VER >= 0x0600
-    calloc :function  (para1:integer):pointer;cdecl;
+    calloc :function  (para1:size_t):pointer;cdecl;
     strdup :function  (const src:PAnsiChar):PAnsiChar;cdecl;
     wstrdup:function  (const src:PWideChar):PWideChar;cdecl;
 // if MIRANDA_VER >= 0x0700
     mir_snprintf  :function(buffer:PAnsiChar;count:size_t;fmt:PAnsiChar{, ...}):int; cdecl;
-    mir_sntprintf :function(buffer:TChar;count:size_t;fmt:TChar{, ...}):int; cdecl;
+    mir_sntprintf :function(buffer:TChar    ;count:size_t;fmt:TChar{, ...}):int; cdecl;
     mir_vsnprintf :function(buffer:PAnsiChar;count:size_t;fmt:PAnsiChar;va:va_list):int; cdecl;
-    mir_vsntprintf:function(buffer:TChar;count:size_t;fmt:TChar;va:va_list):int; cdecl;
+    mir_vsntprintf:function(buffer:TChar    ;count:size_t;fmt:TChar    ;va:va_list):int; cdecl;
 
     mir_a2u_cp:function(src:PAnsiChar;codepage:int):pWideChar; cdecl;
     mir_a2u   :function(src:PAnsiChar):pWideChar; cdecl;
@@ -168,9 +168,6 @@ const
     If the sortFunc member of the list gets assigned, the list becomes sorted
     wParam=0, lParam = (LPARAM)LIST_INTERFACE*
   }
-  LIST_INTERFACE_V1_SIZE = sizeof(size_t)+ 7*sizeof(pointer);
-  LIST_INTERFACE_V2_SIZE = sizeof(size_t)+ 9*sizeof(pointer);
-  LIST_INTERFACE_V3_SIZE = sizeof(size_t)+11*sizeof(pointer);
 
 type
   TFSortFunc = function (para1:pointer; para2:pointer):longint;cdecl;
@@ -194,13 +191,13 @@ type
   PLIST_INTERFACE = ^TLIST_INTERFACE;
   TLIST_INTERFACE = record
     cbSize        :int;
-    List_Create   :function (para1:longint; para2:longint):PSortedList;cdecl;
+    List_Create   :function (para1:int; para2:int):PSortedList;cdecl;
     List_Destroy  :procedure(para1:PSortedList);cdecl;
     List_Find     :function (para1:PSortedList; para2:pointer):pointer;cdecl;
-    List_GetIndex :function (para1:PSortedList; para2:pointer; para3:Plongint):longint;cdecl;
-    List_Insert   :function (para1:PSortedList; para2:pointer; para3:longint):longint;cdecl;
-    List_Remove   :function (para1:PSortedList; para2:longint):longint;cdecl;
-    List_IndexOf  :function (para1:PSortedList; para2:pointer):longint;cdecl;
+    List_GetIndex :function (para1:PSortedList; para2:pointer; para3:Pint):int;cdecl;
+    List_Insert   :function (para1:PSortedList; para2:pointer; para3:int):int;cdecl;
+    List_Remove   :function (para1:PSortedList; para2:int):int;cdecl;
+    List_IndexOf  :function (para1:PSortedList; para2:pointer):int;cdecl;
 // if MIRANDA_VER >= 0x0600
     List_InsertPtr:function (list:PSortedList; p:pointer):int;cdecl;
     List_RemovePtr:function (list:PSortedList; p:pointer):int;cdecl;
@@ -211,6 +208,17 @@ type
   end;
 
 const
+  {$IFNDEF WIN64}
+  LIST_INTERFACE_V1_SIZE = sizeof(size_t)+ 7*sizeof(pointer);
+  LIST_INTERFACE_V2_SIZE = sizeof(size_t)+ 9*sizeof(pointer);
+  LIST_INTERFACE_V3_SIZE = sizeof(size_t)+11*sizeof(pointer);
+  {$ELSE}
+  LIST_INTERFACE_V1_SIZE = sizeof(TLIST_INTERFACE);
+  LIST_INTERFACE_V2_SIZE = sizeof(TLIST_INTERFACE);
+  LIST_INTERFACE_V3_SIZE = sizeof(TLIST_INTERFACE);
+  {$ENDIF}
+
+const
   MS_SYSTEM_GET_LI:PAnsiChar = 'Miranda/System/GetLI';
 
 {
@@ -219,9 +227,6 @@ const
   Contains functions for utf8-strings encoding & decoding
 }
 
-const
-  UTF8_INTERFACE_SIZEOF_V1 = (sizeof(size_t)+5*sizeof(dword));// 24;
-  UTF8_INTERFACE_SIZEOF_V2 = (sizeof(size_t)+6*sizeof(dword));
 type
   pPWideChar = ^PWideChar;
   UTF8_INTERFACE = record
@@ -252,6 +257,15 @@ type
 // MIRANDA_VER >= 0x0900
 		utf8_lenW    :function(const src:pWideChar):int; cdecl;
   end;
+
+const
+  {$IFNDEF WIN64}
+  UTF8_INTERFACE_SIZEOF_V1 = (sizeof(size_t)+5*sizeof(dword));// 24;
+  UTF8_INTERFACE_SIZEOF_V2 = (sizeof(size_t)+6*sizeof(dword));
+  {$ELSE}
+  UTF8_INTERFACE_SIZEOF_V1 = sizeof(UTF8_INTERFACE);
+  UTF8_INTERFACE_SIZEOF_V2 = sizeof(UTF8_INTERFACE);
+  {$ENDIF}
 
 const
   MS_SYSTEM_GET_UTFI:PAnsiChar = 'Miranda/System/GetUTFI';
@@ -371,7 +385,7 @@ type
     pFunc     :pThreadFuncEx;
     iStackSize:int;
     arg       :pointer;
-    threadID  :^dword;
+    threadID  :^uint;
   end;
 
 const

@@ -93,27 +93,31 @@ const MIID_VARIABLES:MUUID = '{630756DE-3681-440B-991E-77A4742DA595}';
   Note: The returned pointer needs to be freed using MS_VARS_FREEMEMORY.
 }
 
-const
-  FORMATINFOV2_SIZE = 28;
-
 type
   TFORMATINFO = record
-    cbSize     :integer;     // Set this to sizeof(FORMATINFO).
-    flags      :integer;     // Flags to use (see FIF_* below).
+    cbSize     :int;         // Set this to sizeof(FORMATINFO).
+    flags      :int;         // Flags to use (see FIF_* below).
     szFormat   :TCHAR;       // Text in which the tokens will be replaced (can't be NULL).
     szExtraText:TCHAR;       // Extra, context-specific string (can be NULL) ->
                              // The field "extratext" will be replaced by this
                              // string. (Previously szSource).
     hContact   :THANDLE;     // Handle to contact (can be NULL) -> The field "subject"
                              // represents this contact.
-    pCount     :integer;     // (output) Number of succesful parsed tokens, needs to
+    pCount     :int;         // (output) Number of succesful parsed tokens, needs to
                              // be set to 0 before the call
-    eCount     :integer;     // (output) Number of failed tokens, needs to be set to
+    eCount     :int;         // (output) Number of failed tokens, needs to be set to
                              // 0 before the call
     szaTemporaryVars:^TChar; // Temporary variables valid only in the duration of the format call
                              // By pos: [i] is var name, [i + 1] is var value
     cbTemporaryVarsSize:int; // Number of elements in szaTemporaryVars array
   end;
+
+const
+  {$IFNDEF WIN64}
+  FORMATINFOV2_SIZE = 28;
+  {$ELSE}
+  FORMATINFOV2_SIZE = SIZEOF(TFORMATINFO);
+  {$ENDIF}
 
 const
 // Possible flags:
@@ -148,14 +152,14 @@ const
 type
   PARGUMENTSINFO = ^TARGUMENTSINFO;
   TARGUMENTSINFO = record
-    cbSize:integer;     // You need to check if this is >=sizeof(ARGUMENTSINFO) 
-                        // (already filled in).
+    cbSize:int;          // You need to check if this is >=sizeof(ARGUMENTSINFO) 
+                         // (already filled in).
     fi    :^TFORMATINFO; // Arguments passed to MS_VARS_FORMATSTRING.
-    argc  :cardinal;    // Number of elements in the argv array.
-    argv  :^TCHAR;      // Argv[0] will be the token name, the following elements 
-                        // are the additional arguments.
-    flags :integer;     // (output) You can set flags here (initially 0), use the 
-                        // AIF_* flags (see below).
+    argc  :uint;         // Number of elements in the argv array.
+    argv  :^TCHAR;       // Argv[0] will be the token name, the following elements 
+                         // are the additional arguments.
+    flags :int;          // (output) You can set flags here (initially 0), use the 
+                         // AIF_* flags (see below).
   end;
 
 // Available flags for ARGUMENTSINFO:
@@ -179,7 +183,7 @@ typedef void (*VARCLEANUPFUNCW)(WCHAR *wszReturn);
 }
 type
   TTOKENREGISTER = record
-    cbSize:integer;      // Set this to sizeof(TOKENREGISTER).
+    cbSize:int;          // Set this to sizeof(TOKENREGISTER).
     szTokenString:TCHAR; // Name of the new token to be created, without %, 
                          // ?, ! etc. signs (can't be NULL).
     szService:PAnsiChar; // Name of a service that is used to request the 
@@ -199,11 +203,11 @@ type
                      // (Example: "miranda\tPath to the Miranda-IM 
                      // executable").
                      // Note: subject and description are translated by Variables.
-    memType:integer; // Describes which method Varibale's plugin needs to use to 
+    memType:int;     // Describes which method Varibale's plugin needs to use to 
                      // free the returned buffer, use one of the VR_MEM_* values 
                      // (see below). Only valid if the flag VRF_FREEMEM is set, 
                      // use TR_MEM_OWNER otherwise).
-    flags  :integer; // Flags to use (see below), one of TRF_* (see below).
+    flags  :int;     // Flags to use (see below), one of TRF_* (see below).
   end;
 
 const
@@ -310,7 +314,7 @@ const
 
 type
   TVARHELPINFO = record
-    cbSize:integer; // Set to sizeof(VARHELPINFO).
+    cbSize:int;      // Set to sizeof(VARHELPINFO).
     fi:^TFORMATINFO; // Used for both input and output. If this pointer is not 
                    // NULL, the information is used as the initial values for 
                    // the dialog.
@@ -326,7 +330,7 @@ type
     szExtraTextDesc:PAnsiChar; // The description of the %extratext% token will be 
                            // set to this text, if not NULL. This is translated 
                            // automatically.
-    flags:integer;  // Flags, see below.
+    flags:int;  // Flags, see below.
   end;
 
 
@@ -455,7 +459,7 @@ const
 
 type
   TCONTACTSINFO = record
-    cbSize   :integer;  // Set this to sizeof(CONTACTSINFO).
+    cbSize   :int;      // Set this to sizeof(CONTACTSINFO).
     szContact:TCHAR;    // String to search for, e.g. last name (can't be NULL).
     hContacts:^THANDLE; // (output) Array of contacts found.
     flags    :DWORD;    // Contact details that will be matched with the search

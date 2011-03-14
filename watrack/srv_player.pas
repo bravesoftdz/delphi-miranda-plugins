@@ -12,7 +12,7 @@ function SetPlayerIcons(fname:pAnsiChar):integer;
 function LoadFromFile(fname:PAnsiChar):integer;
 function ProcessPlayerLink:integer;
 
-function ServicePlayer(wParam:WPARAM;lParam:LPARAM):integer;cdecl;
+function ServicePlayer(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 function SendCommand  (wParam:WPARAM;lParam:LPARAM;flags:integer):integer;
 
 procedure ClearPlayers;
@@ -94,7 +94,7 @@ begin
   result:=0;
   while ptr<>nil do
   begin
-    ServicePlayer(WAT_ACT_REGISTER,dword(ptr.This));
+    ServicePlayer(WAT_ACT_REGISTER,lparam(ptr.This));
     ptr:=ptr^.Next;
     inc(result);
   end;
@@ -336,7 +336,7 @@ begin
   FreeMem(tmpl);
 end;
 
-function ServicePlayer(wParam:WPARAM;lParam:LPARAM):integer;cdecl;
+function ServicePlayer(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
   p:integer;
   i:integer;
@@ -416,7 +416,7 @@ begin
         else // existing player
         begin
           if (plyLink^[p].flags and WAT_OPT_TEMPLATE)=0 then
-            result:=integer(plyLink^[p].Check)
+            result:=int_ptr(plyLink^[p].Check)
           else
           begin // remove any info from templates
             result:=WAT_RES_OK;
@@ -558,7 +558,7 @@ begin
     if notesbuf[0]<>#0 then
       UTF8ToWide(@notesbuf,rec.Notes);
 
-    ServicePlayer(WAT_ACT_REGISTER,dword(@rec));
+    ServicePlayer(WAT_ACT_REGISTER,lparam(@rec));
 
     inc(NumPlayers);
     while ptr^<>#0 do inc(ptr);
@@ -1031,7 +1031,7 @@ begin
       if plyLink^[0].GetInfo<>nil then
         tInfoProc(plyLink^[0].GetInfo)(dst,flags or WAT_OPT_PLAYERDATA)
       else if (plyLink^[0].flags and WAT_OPT_WINAMPAPI)<>0 then
-        WinampGetInfo(dword(@dst),flags or WAT_OPT_PLAYERDATA);
+        WinampGetInfo(wparam(@dst),flags or WAT_OPT_PLAYERDATA);
       
      if (plyLink^[0].flags and WAT_OPT_PLAYERINFO)=0 then
        if dst.txtver=NIL then dst.txtver:=DefGetVersionText(dst.plyver);
@@ -1132,7 +1132,7 @@ begin
   if plyLink^[0].GetInfo<>nil then
     tInfoProc(plyLink^[0].GetInfo)(dst,flags or WAT_OPT_CHANGES)
   else if (plyLink^[0].flags and WAT_OPT_WINAMPAPI)<>0 then
-    WinampGetInfo(dword(@dst),flags or WAT_OPT_CHANGES);
+    WinampGetInfo(wparam(@dst),flags or WAT_OPT_CHANGES);
 
   if (plyLink^[0].flags and WAT_OPT_PLAYERINFO)=0 then
     if dst.wndtext=NIL then dst.wndtext:=DefGetWndText(dst.plwnd);
@@ -1156,7 +1156,7 @@ begin
   if plyLink^[0].GetInfo<>nil then
     tInfoProc(plyLink^[0].GetInfo)(dst,flags and not WAT_OPT_CHANGES)
   else if (plyLink^[0].flags and WAT_OPT_WINAMPAPI)<>0 then
-    WinampGetInfo(dword(@dst),flags and not WAT_OPT_CHANGES);
+    WinampGetInfo(wparam(@dst),flags and not WAT_OPT_CHANGES);
   // info from file
   GetFileFormatInfo(dst);
 

@@ -47,7 +47,7 @@ begin
     cds.dwData:=LAC_FILE_OPEN;
     WideToANSI(fname,PAnsiChar(cds.lpData));
     cds.cbData:=StrLen(PAnsiChar(cds.lpData))+1;
-    SendMessage(wnd,WM_COPYDATA,0,dword(@cds));
+    SendMessage(wnd,WM_COPYDATA,0,lparam(@cds));
     mFreeMem(cds.lpData);
   end;
   result:=SendMessage(wnd,WM_LACMD,LAC_PLAYLIST_PLAY,0) // LAC_PLAYLIST_PLAY
@@ -95,7 +95,7 @@ begin
   end;
 end;
 
-function Command(wnd:HWND;cmd:integer;value:integer):integer;cdecl;
+function Command(wnd:HWND;cmd:integer;value:int_ptr):integer;cdecl;
 begin
   case cmd of
     WAT_CTRL_PREV : result:=Prev (wnd);

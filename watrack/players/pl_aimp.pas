@@ -234,7 +234,7 @@ begin
   end;
 
   if SongInfo.winampwnd<>0 then
-    WinampGetInfo(integer(@SongInfo),flags);
+    WinampGetInfo(int_ptr(@SongInfo),flags);
     
   if (flags and WAT_OPT_CHANGES)=0 then
   begin

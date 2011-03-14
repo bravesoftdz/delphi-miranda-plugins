@@ -3,11 +3,8 @@ var
   SongInfoA:tSongInfoA;
   SongInfo :tSongInfo;
   WorkSI   :tSongInfo;
-const
-  LastStatus:integer = WAT_PLS_NOTFOUND;
 var
   hEvent:THANDLE;
-  hINS,
   hGFI,
   hWI,
   hGMI,
@@ -38,5 +35,3 @@ var
   mmkeyemu: dword;
   mTimer:dword;
   TimeoutForThread:cardinal;
-var
-  HiddenOption:dword;

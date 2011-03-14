@@ -2247,7 +2247,7 @@ end;
     end;
 
     WM_NOTIFY: begin
-      if (PNMHdr(lParam)^.code=HDN_ENDDRAG) then
+      if integer(PNMHdr(lParam)^.code)=HDN_ENDDRAG then
       begin
         ShiftColumns(PHDNotify(lParam)^.Item,PHDNotify(lParam)^.pitem^.iOrder);
       end;
@@ -3275,7 +3275,7 @@ begin
     end;
 
     WM_NOTIFY: begin
-      case PNMHdr(lParam)^.code of
+      case integer(PNMHdr(lParam)^.code) of
         LVN_COLUMNCLICK: begin
           ColumnClick(PNMListView(lParam)^.hdr.hwndFrom,PNMListView(lParam)^.iSubItem);
         end;

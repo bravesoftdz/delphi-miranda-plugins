@@ -124,8 +124,8 @@ const
 type
   lpGroupMenuParam = ^GroupMenuParam;
   GroupMenuParam = record
-    wParam:integer;
-    lParam:integer;
+    wParam:int;
+    lParam:int;
   end;
 
 const
@@ -239,9 +239,9 @@ const
 type
   PMO_MenuItem = ^TMO_MenuItem;
   TMO_MenuItem = record
-    cbSize   :integer;
+    cbSize   :int;
     szName   :TCHAR;
-    position :integer;
+    position :int;
     root     :HGENMENU;
     flags    :integer;
     hIcon    :HICON;   // or hIcolibItem:THANDLE;
@@ -288,7 +288,7 @@ type
 type
   lpListParam = ^ListParam;
   ListParam = record
-    rootlevel       :integer;
+    rootlevel       :int;
     MenuObjectHandle:THANDLE;
     wParam          :WPARAM;
     lParam          :LPARAM;
@@ -299,7 +299,7 @@ type
   lpProcessCommandParam = ^ProcessCommandParam;
   ProcessCommandParam = record
     menu  :HMENU;
-    ident :integer;
+    ident :int;
     lParam:LPARAM;
   end;
 
@@ -438,7 +438,7 @@ type
   lpOptParam = ^OptParam;
   OptParam = record
     Handle :THANDLE;
-    Setting:integer;
+    Setting:int;
     Value  :int_ptr;
   end;
 

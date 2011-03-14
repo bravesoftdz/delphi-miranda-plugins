@@ -47,14 +47,14 @@ end;
 function GetElapsedTime(wnd:HWND):integer;
 begin
   result:=0;
-  if EnumChildWindows(wnd,@chwnd,dword(@result)) then
+  if EnumChildWindows(wnd,@chwnd,int_ptr(@result)) then
     result:=0;
 end;
 
 function GetTotalTime(wnd:HWND):integer;
 begin
   result:=1;
-  if EnumChildWindows(wnd,@chwnd,dword(@result)) then
+  if EnumChildWindows(wnd,@chwnd,int_ptr(@result)) then
     result:=0;
 end;
 

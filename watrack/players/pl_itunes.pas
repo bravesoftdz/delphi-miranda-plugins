@@ -271,7 +271,7 @@ end;
 procedure SetVolume(const v:variant;value:cardinal);
 begin
   try
-    v.SoundVolume:=(value*100) shr 4;
+    v.SoundVolume:=integer((value*100) shr 4);
   except
   end;
 end;
@@ -339,7 +339,7 @@ begin
   end;
 end;
 
-function Command(wnd:HWND;cmd:integer;value:integer):integer;cdecl;
+function Command(wnd:HWND;cmd:integer;value:int_ptr):integer;cdecl;
 var
   v:Variant;
 begin

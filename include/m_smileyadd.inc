@@ -29,7 +29,7 @@ const
 type
   PSMADD_RICHEDIT3 = ^TSMADD_RICHEDIT3;
   TSMADD_RICHEDIT3 = record
-    cbSize             :int;        // size of the structure
+    cbSize             :uint;       // size of the structure
     hwndRichEditControl:HWND;       // handle to the rich edit control
     rangeToReplace     :PCHARRANGE; // same meaning as for normal Richedit use (NULL = replaceall)
     Protocolname       :PAnsiChar;      // protocol to use... if you have defined a
@@ -38,7 +38,7 @@ type
        // Or, use "Standard" for standard smiley set. Or "ICQ", "MSN"
        // if you prefer those icons.
        // If not found or NULL, "Standard" will be used
-    flags              :dword;   // Flags (SAFLRE_*) that define the behaivior
+    flags              :uint;    // Flags (SAFLRE_*) that define the behaivior
     disableRedraw      :BOOL;    // Parameter have been depricated, have no effect on operation
     hContact           :THANDLE; // Contact handle
   end;
@@ -55,8 +55,8 @@ const
 type
   PSMADD_SHOWSEL3 = ^TSMADD_SHOWSEL3;
   TSMADD_SHOWSEL3 = record
-    cbSize       : int;     // size of the structure
-    Protocolname : PAnsiChar;   // protocol to use... if you have defined a protocol,
+    cbSize       : uint;      // size of the structure
+    Protocolname : PAnsiChar; // protocol to use... if you have defined a protocol,
       // you can use your own protocol name. Smiley add will automatically
       // select the smileypack that is defined for your protocol.
       // Or, use "Standard" for standard smiley set. Or "ICQ", "MSN"
@@ -68,7 +68,7 @@ type
                             // the window 0, 1, 2, 3
     hwndTarget   : HWND;    // Window, where to send the message when smiley
                             // is selected.
-    targetMessage: DWORD;   // Target message, to be sent.
+    targetMessage: uint;    // Target message, to be sent.
     targetWParam : LPARAM;  // Target WParam to be sent (LParam will be PAnsiChar to
                             // select smiley) see the example file.
     hwndParent   : HWND;    // Parent window for smiley dialog
@@ -117,18 +117,18 @@ const
 type
   PSMADD_BATCHPARSE2 = ^TSMADD_BATCHPARSE2;
   TSMADD_BATCHPARSE2 = record
-    cbSize      :int;     // size of the structure
-    Protocolname:PAnsiChar;   // protocol to use... if you have defined a protocol, u can
+    cbSize      :uint;      // size of the structure
+    Protocolname:PAnsiChar; // protocol to use... if you have defined a protocol, u can
                           // use your own protocol name. Smiley add wil automatically
                           // select the smileypack that is defined for your protocol.
                           // Or, use "Standard" for standard smiley set. Or "ICQ", "MSN"
                           // if you prefer those icons.
                           // If not found or NULL: "Standard" will be used
     str         :TChar;   // String to parse
-    flag        :dword;   // One of the SAFL_ flags specifies parsing requirements
+    flag        :uint;    // One of the SAFL_ flags specifies parsing requirements
                           // This parameter should be filled by the user
-    numSmileys  :dword;   // Number of Smileys found, this parameter filled by SmileyAdd
-    oflag       :dword;   // One of the SAFL_ flags specifies content of the parse results
+    numSmileys  :uint;    // Number of Smileys found, this parameter filled by SmileyAdd
+    oflag       :uint;    // One of the SAFL_ flags specifies content of the parse results
                           // this parameter filled by SmileyAdd
     hContact    :THANDLE; // Contact handle
   end;
@@ -136,12 +136,12 @@ type
 type
   PSMADD_BATCHPARSERES = ^TSMADD_BATCHPARSERES;
   TSMADD_BATCHPARSERES = record
-    startChar:dword; // Starting smiley character
-                     // Because of iterative nature of the API caller should
-                     // set this parameter to correct value
-    size     :dword; // Number of characters in smiley (0 if not found)
-                     // Because of iterative nature of the API caller should
-                     // set this parameter to correct value
+    startChar:uint; // Starting smiley character
+                    // Because of iterative nature of the API caller should
+                    // set this parameter to correct value
+    size     :uint; // Number of characters in smiley (0 if not found)
+                    // Because of iterative nature of the API caller should
+                    // set this parameter to correct value
     case boolean of
       false: (filepath:TChar);
       true:  (hIcon:HICON); // User responsible for destroying icon handle
@@ -163,7 +163,7 @@ const
 type
   PSMADD_REGCAT = ^TSMADD_REGCAT;
   TSMADD_REGCAT = record
-    cbSize  :int;   // size of the structure
+    cbSize  :uint;      // size of the structure
     name    :PAnsiChar; // smiley category name for reference
     dispname:PAnsiChar; // smiley category name for display
   end;
@@ -236,6 +236,7 @@ const
 
 type
   SMADD_CONT = record
+    cbSize  :uint;
     hContact:THANDLE;
     _type   :int;     // 0 - directory, 1 - file;
     path    :TChar;   // smiley category name for reference

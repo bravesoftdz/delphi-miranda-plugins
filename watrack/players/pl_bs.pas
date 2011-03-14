@@ -8,6 +8,8 @@ implementation
 uses windows,messages,common,srv_player,wat_api;
 
 const
+  HWND_MESSAGE = HWND(-3);
+const
   BSPlayerClass = 'BSPlayer';
 const
   WM_BSP_CMD = WM_USER+2;
@@ -60,7 +62,7 @@ begin
   begin
     bspwnd:=CreateWindowEx(0,'STATIC',nil,0,1,1,1,1,dword(HWND_MESSAGE),0,hInstance,nil);
     if bspwnd<>0 then
-      setwindowlongPtr(bspwnd,GWL_WNDPROC,dword(@HiddenWindProc));
+      setwindowlongPtr(bspwnd,GWL_WNDPROC,int_ptr(@HiddenWindProc));
   end;
 end;
 
@@ -107,7 +109,7 @@ begin
   cds.dwData:=BSP_GetFileName;
   cds.lpData:=@adr;
   cds.cbData:=4;
-  SendMessage(wnd,WM_COPYDATA,bspwnd,dword(@cds));
+  SendMessage(wnd,WM_COPYDATA,bspwnd,lparam(@cds));
 
   ANSItoWide(buf,result);
 end;
@@ -121,7 +123,7 @@ begin
     cds.dwData:=BSP_OpenFile;
     WideToANSI(fname,PAnsiChar(cds.lpData));
     cds.cbData:=StrLen(PAnsiChar(cds.lpData))+1;
-    SendMessage(wnd,WM_COPYDATA,0{!!!},dword(@cds));
+    SendMessage(wnd,WM_COPYDATA,0{!!!},lparam(@cds));
     mFreeMem(cds.lpData);
   end;
   result:=SendMessage(wnd,WM_BSP_CMD,BSP_Play,0);
@@ -203,7 +205,7 @@ begin
   end;
 end;
 
-function Command(wnd:HWND;cmd:integer;value:integer):integer;cdecl;
+function Command(wnd:HWND;cmd:integer;value:int_ptr):integer;cdecl;
 begin
   case cmd of
     WAT_CTRL_PREV : result:=Prev (wnd);

@@ -18,7 +18,7 @@ type
 const
   MS_INSERTANISMILEY :PAnsiChar = 'mAnimator/InsertSmiley';
 (*
-    function InsertAnimatedSmiley(wnd:HWND;filename:TChar;Back:TCOLORREF;height:integer);
+    function InsertAnimatedSmiley(wnd:HWND;filename:TChar;Back:TCOLORREF;height:int):bool;
     const
       bServiceExists:int=-1
     var
