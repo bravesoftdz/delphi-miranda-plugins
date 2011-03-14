@@ -113,7 +113,7 @@ begin
   end
   else
   begin
-    integer(result):=WAT_RES_NOTFOUND;
+    result:=HWND(WAT_RES_NOTFOUND);
     ClearmRadio;
   end;
 end;
@@ -290,7 +290,7 @@ begin
         begin
           if isChanging then
           begin
-            CallService(MS_WAT_GETFILEINFO,0,dword(@SongInfo));
+            CallService(MS_WAT_GETFILEINFO,0,lparam(@SongInfo));
             fsize:=GetFSize(mfile);
             mFreeMem(prevfile);
             StrDupW(prevfile,mfile);

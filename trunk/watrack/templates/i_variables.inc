@@ -1,5 +1,5 @@
 {Variables support}
-function GetField(ai:PARGUMENTSINFO):int; cdecl;
+function GetField(ai:PARGUMENTSINFO):int_ptr; cdecl;
 var
   i,j:integer;
   res,ws:pWideChar;
@@ -142,7 +142,7 @@ begin
   end
   else
     res[0]:=#0;
-  result:=int(res);
+  result:=int_ptr(res);
 end;
 
 function FreeField(szReturn:PAnsiChar):int; cdecl;
@@ -180,6 +180,6 @@ begin
       rt.szTokenString.w:=p.name;
     if p.help<>nil then
       StrCopy(s+j,p.help);
-    CallService(MS_VARS_REGISTERTOKEN,0,dword(@rt));
+    CallService(MS_VARS_REGISTERTOKEN,0,lparam(@rt));
   end;
 end;

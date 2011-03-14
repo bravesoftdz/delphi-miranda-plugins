@@ -560,7 +560,7 @@ type
 
 function ThDoAction(arg:pActStartData):dword; //stdcall;
 var
-  ltmp:dword;
+  ltmp:uint_ptr;
 begin
   ltmp:=arg^.last;
   if arg^.groupid<>0 then
@@ -586,7 +586,7 @@ end;
 function ActionStarterWait(action:dword;aparam:dword=0;groupid:dword=0;alast:dword=0):integer;
 var
   tmp:pActStartData;
-  res:cardinal;
+  res:uint_ptr;
 begin
   mGetMem(tmp,SizeOf(tActStartData));
   tmp^.action :=action;
@@ -603,7 +603,7 @@ end;
 function ActionStarter(action:dword;aparam:dword=0;groupid:dword=0;alast:dword=0):integer;
 var
   tmp:pActStartData;
-  res:cardinal;
+  res:uint_ptr;
 begin
   result:=0;
   mGetMem(tmp,SizeOf(tActStartData));

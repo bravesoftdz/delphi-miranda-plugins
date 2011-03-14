@@ -14,8 +14,8 @@ begin
   if DisablePlugin<>dsPermanent then
     ttb.dwFlags:=ttb.dwFlags or TTBBF_PUSHED;
 
-  ttb.hIconDn       :=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnEnable));
-  ttb.hIconUp       :=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnDisable));
+  ttb.hIconDn       :=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnEnable));
+  ttb.hIconUp       :=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnDisable));
   ttb.wParamUp      :=1;
 //  ttb.wParamDown    :=0;
   ttb.pszServiceUp  :=MS_WAT_PLUGINSTATUS;
@@ -23,9 +23,9 @@ begin
   ttb.name          :='WATrack status';
 //  ttb.tooltipDn:='Disable Plugin';
 //  ttb.tooltipUp:='Enable Plugin';
-  ttbState:=CallService(MS_TTB_ADDBUTTON,integer(@ttb),0);
+  ttbState:=CallService(MS_TTB_ADDBUTTON,twparam(@ttb),0);
   CallService(MS_TTB_SETBUTTONOPTIONS,(ttbState shl 16)+TTBO_TIPNAME,
-      dword(Translate('Disable Plugin')));
+      tlparam(Translate('Disable Plugin')));
   result:=0;
 end;
 
@@ -37,11 +37,11 @@ begin
   mi.cbSize       :=sizeof(mi);
   mi.szPopupName.a:=PluginShort;
 
-  mi.hIcon        :=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnEnable));
+  mi.hIcon        :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnEnable));
   mi.szName.a     :='Disable Plugin';
   mi.pszService   :=MS_WAT_PLUGINSTATUS;
   mi.popupPosition:=MenuDisablePos;
-  hMenuDisable:=PluginLink^.CallService(MS_CLIST_ADDMAINMENUITEM,0,dword(@mi));
+  hMenuDisable:=PluginLink^.CallService(MS_CLIST_ADDMAINMENUITEM,0,lparam(@mi));
 end;
 
 procedure ChangeMenuIcons(f1:cardinal);
@@ -54,15 +54,15 @@ begin
   mi.flags :=CMIM_NAME+CMIM_FLAGS+CMIM_ICON+f1;
   if f1<>0 then
   begin
-    mi.hIcon   :=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnDisable));
+    mi.hIcon   :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnDisable));
     mi.szName.a:='Enable Plugin';
   end
   else
   begin
-    mi.hIcon   :=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnEnable));
+    mi.hIcon   :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnEnable));
     mi.szName.a:='Disable Plugin';
   end;
-  CallService(MS_CLIST_MODIFYMENUITEM,hMenuDisable,dword(@mi));
+  CallService(MS_CLIST_MODIFYMENUITEM,hMenuDisable,lparam(@mi));
 
   if PluginLink^.ServiceExists(MS_TTB_SETBUTTONSTATE)<>0 then
   begin
@@ -77,7 +77,7 @@ begin
       CallService(MS_TTB_SETBUTTONSTATE,ttbState,TTBST_PUSHED);
     end;
     CallService(MS_TTB_SETBUTTONOPTIONS,(ttbState shl 16)+TTBO_TIPNAME,
-        dword(Translate(p)));
+        lparam(Translate(p)));
   end;
 end;
 
@@ -91,8 +91,8 @@ begin
   mi.cbSize:=sizeof(mi);
   mi.flags :=CMIM_ICON;
 
-  mi.hIcon:=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnEnable));
-  PluginLink^.CallService(MS_CLIST_MODIFYMENUITEM,hMenuDisable,dword(@mi));
+  mi.hIcon:=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnEnable));
+  PluginLink^.CallService(MS_CLIST_MODIFYMENUITEM,hMenuDisable,tlparam(@mi));
 
 {// toptoolbar
   if PluginLink^.ServiceExists(MS_TTB_GETBUTTONOPTIONS)<>0 then

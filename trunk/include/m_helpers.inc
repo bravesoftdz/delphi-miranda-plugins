@@ -321,18 +321,18 @@ end;
 
   {$ifdef M_API_UNIT}
 
-function WindowList_Add(hList: THandle; hWnd: HWND; hContact: THandle): int;
-function WindowList_Remove(hList: THandle; hWnd: THandle): int;
-function WindowList_Find(hList: THandle; hContact: THandle): int;
-function WindowList_Broadcast(hList: THandle; message: int; wParam: WPARAM; lParam: LPARAM): int;
-function Utils_SaveWindowPosition(hWnd: THandle; hContact: THandle; const szModule, szNamePrefix: PAnsiChar): int;
-function Utils_RestoreWindowPosition(hWnd: THandle; hContact: THandle; Flags: int; const szModule, szNamePrefix: PAnsiChar): int;
+function WindowList_Add(hList: THandle; hWnd: HWND; hContact: THandle): int_ptr;
+function WindowList_Remove(hList: THandle; hWnd: THandle): int_ptr;
+function WindowList_Find(hList: THandle; hContact: THandle): int_ptr;
+function WindowList_Broadcast(hList: THandle; message: int; wParam: WPARAM; lParam: LPARAM): int_ptr;
+function Utils_SaveWindowPosition(hWnd: THandle; hContact: THandle; const szModule, szNamePrefix: PAnsiChar): int_ptr;
+function Utils_RestoreWindowPosition(hWnd: THandle; hContact: THandle; Flags: int; const szModule, szNamePrefix: PAnsiChar): int_ptr;
 function mir_a2u(src:PAnsiChar):pWideChar;
 function mir_u2a(src:PWideChar):PAnsiChar;
 
   {$else}
 
-function WindowList_Add(hList: THandle; hWnd: hWnd; hContact: THandle): int;
+function WindowList_Add(hList: THandle; hWnd: hWnd; hContact: THandle): int_ptr;
 var
   wle: TWINDOWLISTENTRY;
 begin
@@ -342,17 +342,17 @@ begin
   Result := PluginLink^.CallService(MS_UTILS_ADDTOWINDOWLIST, 0, lParam(@wle));
 end;
 
-function WindowList_Remove(hList: THandle; hWnd: THandle): int;
+function WindowList_Remove(hList: THandle; hWnd: THandle): int_ptr;
 begin
   Result := PluginLink^.CallService(MS_UTILS_REMOVEFROMWINDOWLIST, hList, hWnd);
 end;
 
-function WindowList_Find(hList: THandle; hContact: THandle): int;
+function WindowList_Find(hList: THandle; hContact: THandle): int_ptr;
 begin
   Result := PluginLink^.CallService(MS_UTILS_FINDWINDOWINLIST, hList, hContact);
 end;
 
-function WindowList_Broadcast(hList: THandle; message: int; wParam: WPARAM; lParam: LPARAM): int;
+function WindowList_Broadcast(hList: THandle; message: int; wParam: WPARAM; lParam: LPARAM): int_ptr;
 var
   msg: TMSG;
 begin
@@ -362,7 +362,7 @@ begin
   Result := PluginLink^.CallService(MS_UTILS_BROADCASTTOWINDOWLIST, hList, tLparam(@Msg));
 end;
 
-function Utils_SaveWindowPosition(hWnd: THandle; hContact: THandle; const szModule, szNamePrefix: PAnsiChar): int;
+function Utils_SaveWindowPosition(hWnd: THandle; hContact: THandle; const szModule, szNamePrefix: PAnsiChar): int_ptr;
 var
   swp: TSAVEWINDOWPOS;
 begin
@@ -373,7 +373,7 @@ begin
   Result := PluginLink^.CallService(MS_UTILS_SAVEWINDOWPOSITION, 0, lParam(@swp));
 end;
 
-function Utils_RestoreWindowPosition(hWnd: THandle; hContact: THandle; Flags: int; const szModule, szNamePrefix: PAnsiChar): int;
+function Utils_RestoreWindowPosition(hWnd: THandle; hContact: THandle; Flags: int; const szModule, szNamePrefix: PAnsiChar): int_ptr;
 var
   swp: TSAVEWINDOWPOS;
 begin
@@ -402,7 +402,7 @@ end;
 
 function mir_u2a(src:PWideChar):PAnsiChar;
 var
-  codepage:int;
+  codepage:int_ptr;
   cbLen:int;
 begin
   codepage:=PluginLink^.CallService('LangPack/GetCodePage',0,0 );
@@ -426,7 +426,7 @@ end;
 function Translate(sz: PAnsiChar): PAnsiChar;
 function Translatew(sz: PWideChar): PWideChar;
 function TranslateString(const sz: string): string;
-function TranslateDialogDefault(hwndDlg: THandle): int;
+function TranslateDialogDefault(hwndDlg: THandle): int_ptr;
 
   {$else}
 
@@ -453,7 +453,7 @@ begin
   Result:=string(PAnsiChar(PluginLink^.CallService(MS_LANGPACK_TRANSLATESTRING,0,lparam(@sz))));
 end;
 
-function TranslateDialogDefault(hwndDlg: THandle): int;
+function TranslateDialogDefault(hwndDlg: THandle): int_ptr;
 var
   lptd: TLANGPACKTRANSLATEDIALOG;
 begin
@@ -540,8 +540,8 @@ end;
 
 function LoadSkinnedIcon(id: int): THandle;
 function LoadSkinnedProtoIcon(const szProto: PAnsiChar; status: int): THandle;
-function SkinAddNewSound(const name, description, defaultFile: PAnsiChar): int;
-function SkinPlaySound (const name: PAnsiChar): int;
+function SkinAddNewSound(const name, description, defaultFile: PAnsiChar): int_ptr;
+function SkinPlaySound (const name: PAnsiChar): int_ptr;
 
   {$else}
 
@@ -555,7 +555,7 @@ begin
   Result := PluginLink^.CallService(MS_SKIN_LOADPROTOICON, wParam(szProto), status);
 end;
 
-function SkinAddNewSound(const name, description, defaultFile: PAnsiChar): int;
+function SkinAddNewSound(const name, description, defaultFile: PAnsiChar): int_ptr;
 var
   ssd: TSKINSOUNDDESC;
 begin
@@ -566,7 +566,7 @@ begin
   Result := PluginLink^.CallService(MS_SKIN_ADDNEWSOUND, 0, lParam(@ssd));
 end;
 
-function SkinPlaySound (const name: PAnsiChar): int;
+function SkinPlaySound (const name: PAnsiChar): int_ptr;
 begin
   Result := PluginLink^.CallService(MS_SKIN_PLAYSOUND, 0, lParam(name));
 end;

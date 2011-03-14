@@ -11,13 +11,12 @@ const
 function  FillParams(service:PAnsiChar;wnd:hwnd;paramname:PAnsiChar):pAnsiChar;
 procedure FillServiceList(list:hwnd);
 function  InitHelpFile:bool;
-function  ServiceHelpDlg(Dialog:HWnd;hMessage,wParam,lParam:DWord):integer; stdcall;
-procedure DoInitCommonControls(dwICC:DWORD);
+function ServiceHelpDlg(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):LRESULT; stdcall;
 function  GetResultType(service:PAnsiChar):pAnsiChar;
 
 implementation
 
-uses commctrl,m_api,common,io,mirutils;
+uses m_api,common,io,mirutils;
 
 {$include i_const.inc}
 
@@ -27,15 +26,6 @@ const
   BufSize = 2048;
 var
   HelpINIFile:PAnsiChar;
-
-procedure DoInitCommonControls(dwICC:DWORD);
-var
-  ICC: TInitCommonControlsEx;
-begin
-  ICC.dwSize:= Sizeof(ICC);
-  ICC.dwICC := dwICC;
-  InitCommonControlsEx(ICC);
-end;
 
 function GetResultType(service:PAnsiChar):pAnsiChar;
 var
@@ -82,15 +72,15 @@ begin
           bufw[j]:=' '; bufw[j+1]:='-'; bufw[j+2]:=' '; inc(j,3);
           FastANSItoWideBuf(pp+1,tmp);
           StrCopyW(bufw+j,TranslateW(tmp));
-          SendMessageW(wnd,CB_ADDSTRING,0,dword(@bufw));
+          SendMessageW(wnd,CB_ADDSTRING,0,lparam(@bufw));
         end
         else
-          SendMessageA(wnd,CB_ADDSTRING,0,dword(p));
+          SendMessageA(wnd,CB_ADDSTRING,0,lparam(p));
       end
       else
       begin
         FastANSItoWideBuf(p,tmp);
-        SendMessageW(wnd,CB_ADDSTRING,0,dword(TranslateW(tmp)));
+        SendMessageW(wnd,CB_ADDSTRING,0,lparam(TranslateW(tmp)));
         if (p=@buf) and (lstrcmpia(p,'structure')=0) then
           break;
       end;
@@ -114,14 +104,14 @@ begin
     p:=@buf;
     while p^<>#0 do
     begin
-      SendMessageA(list,CB_ADDSTRING,0,dword(p));
+      SendMessageA(list,CB_ADDSTRING,0,lparam(p));
       while p^<>#0 do inc(p); inc(p);
     end;
     SendMessage(list,CB_SETCURSEL,-1,0);
   end;
 end;
 
-function ServiceHelpDlg(Dialog:HWnd;hMessage,wParam,lParam:DWord):integer; stdcall;
+function ServiceHelpDlg(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):LRESULT; stdcall;
 var
   buf,p:PAnsiChar;
   tmp:PWideChar;
@@ -129,10 +119,12 @@ begin
   result:=0;
   case hMessage of
     WM_CLOSE: DestroyWindow(Dialog);
+
     WM_INITDIALOG: begin
       TranslateDialogDefault(Dialog);
       result:=1;
     end;
+
     WM_COMMAND: begin
       if (wParam shr 16)=BN_CLICKED then
       begin
@@ -141,6 +133,7 @@ begin
         end;
       end;
     end;
+
     WM_UPDATEHELP: begin
       if (HelpINIFile<>nil) and (lParam<>0) then
       begin

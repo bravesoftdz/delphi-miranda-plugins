@@ -3,7 +3,7 @@ unit question;
 interface
 uses windows,messages;
 
-function QuestionDlg(Dialog:HWnd;hMessage,wParam,lParam:DWord):integer; stdcall;
+function QuestionDlg(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):LRESULT; stdcall;
 
 implementation
 
@@ -18,7 +18,7 @@ const
   imp_noall  = 4;
   imp_append = 5;
 
-function QuestionDlg(Dialog:HWnd;hMessage,wParam,lParam:DWord):integer; stdcall;
+function QuestionDlg(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):LRESULT; stdcall;
 var
   i:integer;
 begin

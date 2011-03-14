@@ -44,7 +44,7 @@ begin
     if cpTable[i].cpId=cp then
     begin
       iIndex:=SendMessageW(hCpCombo,CB_ADDSTRING,0,
-        dword(TranslateW(FastAnsiToWideBuf(cpTable[i].cpName,buf))));
+        lparam(TranslateW(FastAnsiToWideBuf(cpTable[i].cpName,buf))));
       SendMessage(hCpCombo,CB_SETITEMDATA,iIndex,cpTable[i].cpId);
       break;
     end;
@@ -52,7 +52,7 @@ begin
   end;
 end;
 
-function DlgProcOptions1(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function DlgProcOptions1(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 const
   btnChkPlayer:bool=false;
   btnChkFormat:integer=0;
@@ -119,7 +119,7 @@ begin
       hCpCombo:=GetDlgItem(Dialog,IDC_CODEPAGE);
       EnumSystemCodePages(@FillCpCombo,CP_INSTALLED);
       SendDlgItemMessageW(Dialog,IDC_CODEPAGE,CB_INSERTSTRING,0,
-        dword(TranslateW('System default codepage')));
+        tlparam(TranslateW('System default codepage')));
 
       CB_SelectData(Dialog,IDC_CODEPAGE,UserCP);
 
@@ -213,42 +213,43 @@ begin
     end;
 
     WM_NOTIFY: begin
-      if PNMHdr(lParam)^.code=LVN_ITEMCHANGED then
-      begin
-        SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
-      end
-      else if PNMHdr(lParam)^.code=PSN_APPLY then
-      begin
-        UserCP:=CB_GetData(GetDlgItem(Dialog,IDC_CODEPAGE));
-        i:=GetDlgItemInt(Dialog,IDC_TIMER,tmp,false);
-        if i<500 then
-          i:=i*1000;
-        if i<>mTimer then
-        begin
-          mTimer:=i;
-          StopTimer;
-          StartTimer;
+      case integer(PNMHdr(lParam)^.code) of
+        LVN_ITEMCHANGED: begin
+          SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
         end;
 
-        TimeoutForThread:=GetDlgItemInt(Dialog,IDC_TIMEOUT,tmp,false);
-        if TimeoutForThread>=100 then
-          TimeoutForThread:=SysWin.ThreadTimeout;
+        PSN_APPLY: begin
+          UserCP:=CB_GetData(GetDlgItem(Dialog,IDC_CODEPAGE));
+          i:=GetDlgItemInt(Dialog,IDC_TIMER,tmp,false);
+          if i<500 then
+            i:=i*1000;
+          if i<>mTimer then
+          begin
+            mTimer:=i;
+            StopTimer;
+            StartTimer;
+          end;
 
-        CheckTime :=IsDlgButtonChecked(Dialog,IDC_CHECKTIME);
-        UseImplant:=IsDlgButtonChecked(Dialog,IDC_IMPLANTANT);
-        MTHCheck  :=IsDlgButtonChecked(Dialog,IDC_MTHCHECK);
-        KeepOld   :=IsDlgButtonChecked(Dialog,IDC_KEEPOLD);
-        mmkeyemu  :=IsDlgButtonChecked(Dialog,IDC_APPCOMMAND);
-        CheckAll  :=IsDlgButtonChecked(Dialog,IDC_CHECKALL);
+          TimeoutForThread:=GetDlgItemInt(Dialog,IDC_TIMEOUT,tmp,false);
+          if TimeoutForThread>=100 then
+            TimeoutForThread:=SysWin.ThreadTimeout;
 
-        mFreeMem(CoverPaths);
-        CoverPaths:=GetDlgText(Dialog,IDC_COVERFN);
+          CheckTime :=IsDlgButtonChecked(Dialog,IDC_CHECKTIME);
+          UseImplant:=IsDlgButtonChecked(Dialog,IDC_IMPLANTANT);
+          MTHCheck  :=IsDlgButtonChecked(Dialog,IDC_MTHCHECK);
+          KeepOld   :=IsDlgButtonChecked(Dialog,IDC_KEEPOLD);
+          mmkeyemu  :=IsDlgButtonChecked(Dialog,IDC_APPCOMMAND);
+          CheckAll  :=IsDlgButtonChecked(Dialog,IDC_CHECKALL);
 
-        DefCheckPlayerList(GetDlgItem(Dialog,IDC_PLAYERLIST));
-        DefCheckFormatList(GetDlgItem(Dialog,IDC_FORMATLIST));
-        saveopt;
+          mFreeMem(CoverPaths);
+          CoverPaths:=GetDlgText(Dialog,IDC_COVERFN);
 
-        result:=1;
+          DefCheckPlayerList(GetDlgItem(Dialog,IDC_PLAYERLIST));
+          DefCheckFormatList(GetDlgItem(Dialog,IDC_FORMATLIST));
+          saveopt;
+
+          result:=1;
+        end;
       end;
     end;
   else

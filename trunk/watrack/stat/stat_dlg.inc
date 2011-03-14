@@ -178,7 +178,7 @@ begin
     end;
 
     WM_NOTIFY: begin
-      if (PNMHdr(lParam)^.code=PSN_APPLY) and changed then
+      if (integer(PNMHdr(lParam)^.code)=PSN_APPLY) and changed then
       begin
         GetDlgItemTextA(Dialog,IDC_STATNAME,buf,511);
         mFreeMem(StatName);

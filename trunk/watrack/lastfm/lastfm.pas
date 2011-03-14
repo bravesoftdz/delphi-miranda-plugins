@@ -67,7 +67,7 @@ const
 
 procedure TimerProc(wnd:HWND;uMsg:cardinal;idEvent:cardinal;dwTime:dword); stdcall;
 var
-  res:dword;
+  res:uint_ptr;
 begin
   if hTimer<>0 then
   begin

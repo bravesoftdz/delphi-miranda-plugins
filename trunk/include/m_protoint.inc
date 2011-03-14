@@ -65,7 +65,7 @@ type
     FileDeny  :function(intf:PPROTO_INTERFACE;hContact:THANDLE;hTransfer:THANDLE; var szReason:PROTOCHAR):int; cdecl;
     FileResume:function(intf:PPROTO_INTERFACE;hTransfer:THANDLE;var action:Integer; var szFilename:PROTOCHAR):int; cdecl;
 
-    GetCaps:function(intf:PPROTO_INTERFACE;_type:int):dword; cdecl;
+    GetCaps:function(intf:PPROTO_INTERFACE;_type:int):dword_ptr; cdecl;
     GetIcon:function(intf:PPROTO_INTERFACE;iconIndex:int):HICON; cdecl;
     GetInfo:function(intf:PPROTO_INTERFACE;hContact:THANDLE;infoType:int):int; cdecl;
 

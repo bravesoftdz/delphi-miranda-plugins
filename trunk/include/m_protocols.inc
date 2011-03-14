@@ -121,37 +121,37 @@ type
 type
   PPROTOFILETRANSFERSTATUS_V1 = ^TPROTOFILETRANSFERSTATUS_V1;
   TPROTOFILETRANSFERSTATUS_V1 = record
-    cbSize             : int;
+    cbSize             : size_t;
     hContact           : THANDLE;
     sending            : int;     // 1 if sending, 0 if receiving
     files              : ^PAnsiChar;
     totalFiles         : int;
     currentFileNumber  : int;
-    totalBytes         : dword;
-    totalProgress      : dword;
+    totalBytes         : ulong;
+    totalProgress      : ulong;
     workingDir         : PAnsiChar;
     currentFile        : PAnsiChar;
-    currentFileSize    : dword;
-    currentFileProgress: dword;
-    currentFileTime    : dword;   // as seconds since 1970
+    currentFileSize    : ulong;
+    currentFileProgress: ulong;
+    currentFileTime    : ulong;   // as seconds since 1970
   end;
 
   // especially for Miranda 9.0+
   PPROTOFILETRANSFERSTATUS = ^TPROTOFILETRANSFERSTATUS;
   TPROTOFILETRANSFERSTATUS = record
-    cbSize             : int;
+    cbSize             : size_t;
     hContact           : THANDLE;
     flags              : dword;     // one of PFTS_* constants
     files              : ^TCHAR;
     totalFiles         : int;
     currentFileNumber  : int;
-    totalBytes         : int64;
-    totalProgress      : int64;
+    totalBytes         : uint64;
+    totalProgress      : uint64;
     workingDir         : TCHAR;
     currentFile        : TCHAR;
-    currentFileSize    : int64;
-    currentFileProgress: int64;
-    currentFileTime    : int64;   // as seconds since 1970
+    currentFileSize    : uint64;
+    currentFileProgress: uint64;
+    currentFileTime    : uint64;   // as seconds since 1970
   end;
 
 { Enumerate the currently running protocols
@@ -174,9 +174,6 @@ type
   they can be encryption and loads of other things, too.
   And yes, before you ask, that is triple indirection. Deal with it.
   Access members using ppProtocolDescriptors[index]->element }
-const
-  PROTOCOLDESCRIPTOR_V3_SIZE = SizeOf(int)*2+SizeOf(PAnsiChar);
-
 type
   pfnInitProto = function(const szModuleName:PAnsiChar;const szUserName:TCHAR):PPROTO_INTERFACE; cdecl;
 
@@ -197,6 +194,13 @@ type
     fnUninit :pfnUninitProto;  // deallocates an account instance
     fnDestroy:pfnDestroyProto; // removes an account
   end;
+
+const
+  {$IFNDEF WIN64}
+  PROTOCOLDESCRIPTOR_V3_SIZE = SizeOf(int)*2+SizeOf(PAnsiChar);
+  {$ELSE}
+  PROTOCOLDESCRIPTOR_V3_SIZE = SizeOf(TPROTOCOLDESCRIPTOR);
+  {$ENDIF}
 
 { v0.3.3+:
   For recv, it will go from lower to higher, so in this case:
@@ -407,9 +411,9 @@ const
 type
   PPROTO_AVATAR_INFORMATION = ^TPROTO_AVATAR_INFORMATION;
   TPROTO_AVATAR_INFORMATION = record
-    cbSize  : longint; // sizeof()
+    cbSize  : int;     // sizeof()
     hContact: THANDLE; // this might have to be set by the caller too
-    format  : longint; // PA_FORMAT_*
+    format  : int;     // PA_FORMAT_*
     // full path to filename which contains the avatar
     filename: array[0..(MAX_PATH)-1] of AnsiChar;
   end;

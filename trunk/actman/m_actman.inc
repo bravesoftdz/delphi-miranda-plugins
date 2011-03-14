@@ -56,7 +56,7 @@ type
   PAct_Param = ^TAct_Param;
   TAct_Param = record
     flags :dword; // ACTP_*
-    ID    :dword; // Id or name
+    ID    :uint_ptr; // Id or name
     wParam:WPARAM;
     lParam:LPARAM;
   end;

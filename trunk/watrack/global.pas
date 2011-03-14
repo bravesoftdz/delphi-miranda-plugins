@@ -65,7 +65,7 @@ begin
   ti.hinst   :=hInstance;
   ti.uId     :=GetDlgItem(wnd,id);
   ti.lpszText:=TranslateA2W(txt);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   mFreeMem(ti.lpszText);
 end;
 
@@ -80,7 +80,7 @@ begin
   ti.hinst   :=hInstance;
   ti.uId     :=GetDlgItem(wnd,id);
   ti.lpszText:=TranslateW(txt);
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
 end;
 
 end.

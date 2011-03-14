@@ -283,7 +283,7 @@ begin
   NumTemplates:=GetNumProto;
   i:=SizeOf(tStrTemplate)*(NumTemplates+1);
   mGetMem(StrTemplates,i);
-  FillChar(StrTemplates^,i,-1);
+  FillChar(StrTemplates^,i,byte(-1));
   LoadTemplates;
 end;
 
@@ -310,10 +310,10 @@ begin
     status:=GetProtoStatusNum(proto);
     r:=GetTemplateStr(TmplType,proto,plStat,status);
   end;
-  if integer(r)=-2 then
+  if int_ptr(r)=-2 then
     result:=pWideChar(-2)
   else
-    result:=pWideChar(CallService(MS_WAT_REPLACETEXT,0,dword(r)));
+    result:=pWideChar(CallService(MS_WAT_REPLACETEXT,0,lparam(r)));
 end;
 
 end.

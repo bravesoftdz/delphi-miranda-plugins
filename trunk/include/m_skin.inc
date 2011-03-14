@@ -113,8 +113,13 @@ type
   end;
 
 const
+  {$IFNDEF WIN64}
   SKINSOUNDDESC_SIZE_V1 = 5*SizeOf(dword); // (offsetof(SKINSOUNDDESCEX, pszSection))
   SKINSOUNDDESC_SIZE_V2 = 6*SizeOf(dword); // (offsetof(SKINSOUNDDESCEX, dwFlags)) // MIRANDA_VER >= 0x0900
+  {$ELSE}
+  SKINSOUNDDESC_SIZE_V1 = SIZEOF(TSKINSOUNDDESCEX);
+  SKINSOUNDDESC_SIZE_V2 = SIZEOF(TSKINSOUNDDESCEX);
+  {$ENDIF}
 
 type
 // Old struct pre 0.3.4

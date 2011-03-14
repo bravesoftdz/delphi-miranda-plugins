@@ -306,7 +306,7 @@ begin
     end;
 
     WM_NOTIFY: begin
-      case PNMHdr(lParam)^.code of
+      case integer(PNMHdr(lParam)^.code) of
         PSN_APPLY: begin
           SaveHookData(Dialog);
           CheckHookList(GetDlgItem(Dialog,IDC_HOOKLIST));

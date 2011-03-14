@@ -41,7 +41,11 @@ type
   PUpdate = ^TUpdate;
 
 const
+  {$IFNDEF WIN64}
   OLD_UPDATER_SIZE = SizeOf(TUpdate)-SizeOf(PAnsiChar);
+  {$ELSE}
+  OLD_UPDATER_SIZE = SizeOf(TUpdate);
+  {$ENDIF}
 
 const
   {

@@ -42,7 +42,7 @@ KolZLibBzip.pas      +
 ===============================================
 projects
 -----------------------------------------------
-ActMan               +
+ActMan               +          *       *
 Hooks                +          +       +
 mradio               +
 quicksearch          +

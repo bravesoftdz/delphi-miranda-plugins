@@ -31,9 +31,7 @@ function  IsMirandaUser(hContact:THANDLE):integer; // >0=Miranda; 0=Not miranda;
 procedure ShowContactDialog(hContact:THANDLE;DblClk:boolean=true;anystatus:boolean=true);
 function  FindContactHandle(proto:pAnsiChar;const dbv:TDBVARIANT;is_chat:boolean=false):THANDLE;
 function  WndToContact(wnd:hwnd):integer; overload;
-{$IFNDEF FPC}
 function  WndToContact:integer; overload;
-{$ENDIF}
 function  GetContactStatus(hContact:THANDLE):integer;
 // -2 - deleted account, -1 - disabled account, 0 - hidden
 // 1 - metacontact, 2 - submetacontact, positive - active
@@ -70,7 +68,7 @@ function LoadImageURL(url:pAnsiChar;size:integer=0):HBITMAP;
 
 implementation
 
-uses dbsettings,common,io,freeimage{$IFNDEF FPC},syswin,kol{$ENDIF};
+uses dbsettings,common,io,freeimage,syswin{$IFNDEF FPC},kol{$ENDIF};
 
 function ConvertFileName(src:pWideChar;dst:pWideChar;hContact:THANDLE=0):pWideChar; overload;
 var
@@ -373,7 +371,7 @@ begin
   end;
   result:=0;
 end;
-{$IFNDEF FPC}
+
 function WndToContact:integer; overload;
 var
   wnd:HWND;
@@ -388,7 +386,7 @@ begin
   if result=0 then
     result:=GetCListSelContact;
 end;
-{$ENDIF}
+
 function GetContactStatus(hContact:THANDLE):integer;
 var
   szProto:PAnsiChar;

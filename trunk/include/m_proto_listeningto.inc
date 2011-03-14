@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 type
   PLISTENINGTOINFO = ^TLISTENINGTOINFO;
   TLISTENINGTOINFO = record
-    cbSize  :integer;
+    cbSize  :int;
     szType  :TCHAR; // Media type: Music, Video, etc...
     szArtist:TCHAR; // Artist name
     szAlbum :TCHAR; // Album name

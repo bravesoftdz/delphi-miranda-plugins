@@ -16,7 +16,7 @@ const
 type
   PTTBButton = ^TTBButton;
   TTBButton = record
-    cbSize        :integer;
+    cbSize        :int;
     hbBitmapUp    :HBITMAP;
     hbBitmapDown  :HBITMAP;
     pszServiceUp  :PAnsiChar;
@@ -31,7 +31,7 @@ type
 
   PTTBButtonV2 = ^TTBButtonV2;
   TTBButtonV2 = record
-    cbSize        :integer;
+    cbSize        :int;
     hbBitmapUp    :HBITMAP;
     hbBitmapDown  :HBITMAP;
     pszServiceUp  :PAnsiChar;

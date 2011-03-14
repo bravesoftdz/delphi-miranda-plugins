@@ -69,7 +69,7 @@ type
     nIDRightSimpleControl :int;     // v0.1.2.1+
       // if in simple mode the dlg will be cut off after this control,
       // 0 to disable
-    expertOnlyControls    :^int;
+    expertOnlyControls    :^uint;
     nExpertOnlyControls   :int;     // v0.1.2.1+
       // these controls will be hidden in simple mode. Array must remain valid
       // for duration of dlg.
@@ -78,9 +78,15 @@ type
   end;
 
 const
+  {$IFNDEF WIN64}
   OPTIONPAGE_OLD_SIZE  = 40;
   OPTIONPAGE_OLD_SIZE2 = 60;
   OPTIONPAGE_OLD_SIZE3 = 64;
+  {$ELSE}
+  OPTIONPAGE_OLD_SIZE  = SIZEOF(TOPTIONSDIALOGPAGE);
+  OPTIONPAGE_OLD_SIZE2 = SIZEOF(TOPTIONSDIALOGPAGE);
+  OPTIONPAGE_OLD_SIZE3 = SIZEOF(TOPTIONSDIALOGPAGE);
+  {$ENDIF}
 
 const
   ODPF_SIMPLEONLY    =  1; // page is only shown when in simple mode

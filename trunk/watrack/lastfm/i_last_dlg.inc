@@ -101,7 +101,7 @@ begin
     end;
 
     WM_NOTIFY: begin
-      if PNMHdr(lParam)^.code=PSN_APPLY then
+      if integer(PNMHdr(lParam)^.code)=PSN_APPLY then
       begin
         mFreeMem(lfm_login   ); lfm_login   :=GetDlgText(Dialog,IDC_LOGIN,true);
         mFreeMem(lfm_password); lfm_password:=GetDlgText(Dialog,IDC_PASS ,true);

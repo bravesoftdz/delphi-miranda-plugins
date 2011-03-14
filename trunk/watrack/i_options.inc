@@ -12,11 +12,8 @@ const
   WATFormats:PAnsiChar = 'formats/';
 const
   WATPlayers   :PAnsiChar = 'players/';
-const
-  opt_DefPlayer:PAnsiChar = 'defplayer';
 
 const
-  opt_version  :PAnsiChar = 'version';
   opt_disable  :PAnsiChar = 'disableplugin';
 
   opt_InsHotKey :PAnsiChar = 'inshotkey';
@@ -32,14 +29,9 @@ const
   opt_CheckAll  :PAnsiChar = 'checkall';
 
   opt_ThTimeout :PAnsiChar = 'thtimeout';
-const
-  opt_HiddenOption:PAnsiChar = 'hiddenoption';
 
 procedure _loadopt;
 begin
-//  PlgVersion:=DBReadDWord(0,PluginShort,opt_version,0);
-  HiddenOption:=DBReadDWord(0,PluginShort,opt_HiddenOption,0);
-
   DisablePlugin:=DBReadByte(0,PluginShort,opt_disable,0);
   if DisablePlugin<>dsPermanent then
     DisablePlugin:=dsEnabled;
@@ -64,8 +56,6 @@ end;
 
 procedure _saveopt;
 begin
-//  DBWriteDWord(0,PluginShort,opt_version,PluginInfo.version);
-
   DBWriteWord(0,PluginShort,opt_InsHotKey ,inshotkey);
   DBWriteWord(0,PluginShort,opt_HotKey    ,globhotkey);
   DBWriteByte(0,PluginShort,opt_ThTimeout ,TimeoutForThread);
@@ -82,12 +72,12 @@ begin
   DBWriteByte (0,PluginShort,opt_mmkeyemu  ,mmkeyemu);
 end;
 
-function enumwp(desc:PAnsiChar;lParam:integer):bool; stdcall;
+function enumwp(desc:PAnsiChar;lParam:LPARAM):bool; stdcall;
 var
   i:integer;
   buf:array [0..63] of AnsiChar;
 begin
-  i:=CallService(MS_WAT_PLAYER,WAT_ACT_GETSTATUS,dword(desc));
+  i:=CallService(MS_WAT_PLAYER,WAT_ACT_GETSTATUS,tlparam(desc));
   if i=WAT_RES_ENABLED then
     i:=1
   else
@@ -102,7 +92,7 @@ begin
   EnumPlayers(@enumwp,0);
 end;
 
-function enumrp(desc:PAnsiChar;lParam:integer):bool; stdcall;
+function enumrp(desc:PAnsiChar;lParam:LPARAM):bool; stdcall;
 var
   i:integer;
   buf:array [0..63] of AnsiChar;
@@ -113,7 +103,7 @@ begin
     i:=WAT_ACT_ENABLE
   else
     i:=WAT_ACT_DISABLE;
-  CallService(MS_WAT_PLAYER,i,dword(desc));
+  CallService(MS_WAT_PLAYER,i,tlparam(desc));
   result:=true;
 end;
 
@@ -126,12 +116,12 @@ begin
 }
 end;
 
-function enumwf(ext:PAnsiChar;lParam:integer):bool; stdcall;
+function enumwf(ext:PAnsiChar;lParam:LPARAM):bool; stdcall;
 var
   i:integer;
   buf:array [0..63] of AnsiChar;
 begin
-  i:=CallService(MS_WAT_FORMAT,WAT_ACT_GETSTATUS,dword(ext));
+  i:=CallService(MS_WAT_FORMAT,WAT_ACT_GETSTATUS,tlparam(ext));
   if i=WAT_RES_ENABLED then
     i:=1
   else
@@ -146,7 +136,7 @@ begin
   EnumFormats(@enumwf,0);
 end;
 
-function enumrf(ext:PAnsiChar;lParam:integer):bool; stdcall;
+function enumrf(ext:PAnsiChar;lParam:LPARAM):bool; stdcall;
 var
   i:integer;
   buf:array [0..63] of AnsiChar;
@@ -157,7 +147,7 @@ begin
     i:=WAT_ACT_ENABLE
   else
     i:=WAT_ACT_DISABLE;
-  CallService(MS_WAT_FORMAT,i,dword(ext));
+  CallService(MS_WAT_FORMAT,i,tlparam(ext));
   result:=true;
 end;
 

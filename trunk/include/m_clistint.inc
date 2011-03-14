@@ -252,7 +252,7 @@ type
     pfnClcBroadcast        : procedure (_para1:int; _para2:WPARAM; _para3:LPARAM); cdecl;
     pfnBuildGroupPopupMenu : function  (_para1:PClcGroup):HMENU; cdecl;
 
-    pfnContactListControlWndProc:function(hwnd:HWND; msg:uint; wParam:WPARAM; lParam:LPARAM):int; stdcall;
+    pfnContactListControlWndProc:function(hwnd:HWND; msg:uint; wParam:WPARAM; lParam:LPARAM):LRESULT; stdcall;
 
   (* clcfiledrop.c *)
     pfnRegisterFileDropping   : procedure (hwnd:HWND); cdecl;

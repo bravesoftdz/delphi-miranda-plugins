@@ -575,7 +575,7 @@ begin
           begin
             StrCopyW(buf,TranslateW('Action "$" exists, do you want to rewrite it?'));
             impact:=DialogBoxParam(hInstance,MAKEINTRESOURCE(IDD_ASK),0,
-            @QuestionDlg,dword(StrReplaceW(buf,'$',tmp)));
+            @QuestionDlg,TLPARAM(StrReplaceW(buf,'$',tmp)));
           end;
           if (impact=imp_yesall) or (impact=imp_yes) then
           begin
@@ -1130,7 +1130,7 @@ begin
   end;
 end;
 
-function ActInOut(wParam:WPARAM;lParam:LPARAM):int; cdecl;
+function ActInOut(wParam:WPARAM;lParam:LPARAM):int_ptr; cdecl;
 begin
   if (wParam and ACIO_EXPORT)=0 then
   begin

@@ -20,7 +20,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 }
 {$A+,H+}
-{$IFDEF WIN64}{$A8}{$ENDIF}
+{$IFNDEF VER130} // skip for delphi 5
+  {$IFDEF WIN32}{$A4}{$ENDIF}
+  {$IFDEF WIN64}{$A8}{$ENDIF}
+{$ENDIF}
 unit m_api;
 
 interface
@@ -46,18 +49,22 @@ type
 // C translations
 type
 {$IFNDEF FPC}
-  size_t   = integer;
-  int_ptr  = integer;
-  uint_ptr = cardinal;
+  size_t    = integer;
+  int_ptr   = integer;
+  uint_ptr  = cardinal;
+  long      = longint;
+  plong     = ^long;
 {$ENDIF}
-  time_t   = DWORD;
-  int      = integer;
+  pint_ptr  = ^int_ptr;
+  puint_ptr = ^uint_ptr;
+  time_t    = DWORD;
+  int       = integer;
 //  uint     = Cardinal;
 //  pint     = ^int;
 //  WPARAM   = Integer;
 //  LPARAM   = Integer;
-  TLPARAM = LPARAM;
-  TWPARAM = WPARAM;
+  TLPARAM   = LPARAM;
+  TWPARAM   = WPARAM;
 
 // My definitions
   TWNDPROC = function (Dialog:HWnd; hMessage, wParam:WPARAM;lParam:LPARAM):integer; cdecl;
@@ -225,11 +232,11 @@ type
 type
   PDATABASELINK = ^TDATABASELINK;
   TDATABASELINK = record
-    cbSize : longint;
+    cbSize : int;
     {
       returns what the driver can do given the flag
     }
-    getCapability : function (flag:longint):longint; cdecl;
+    getCapability : function (flag:int):int; cdecl;
     {
        buf: pointer to a string buffer
        cch: length of buffer
@@ -238,7 +245,7 @@ type
          e.g. "Database driver for 3.xx profiles"
        Returns: 0 on success, non zero on failure
     }
-    getFriendlyName : function (buf:PAnsiChar; cch:size_t; shortName:longint):longint; cdecl;
+    getFriendlyName : function (buf:PAnsiChar; cch:size_t; shortName:int):int; cdecl;
     {
       profile: pointer to a string which contains full path + name
       Affect: The database plugin should create the profile, the filepath will not exist at
@@ -247,7 +254,7 @@ type
       Note: Do not initialise internal data structures at this point!
       Returns: 0 on success, non zero on failure - error contains extended error information, see EMKPRF_
     }
-    makeDatabase : function (profile:PAnsiChar; error:Plongint):longint; cdecl;
+    makeDatabase : function (profile:PAnsiChar; error:Pint):int; cdecl;
     {
       profile: [in] a null terminated string to file path of selected profile
       error: [in/out] pointer to an int to set with error if any
@@ -258,19 +265,19 @@ type
         etc.
       Returns: 0 on success, non zero on failure
     }
-    grokHeader : function (profile:PAnsiChar; error:Plongint):longint; cdecl;
+    grokHeader : function (profile:PAnsiChar; error:Pint):int; cdecl;
     {
       Affect: Tell the database to create all services/hooks that a 3.xx legecy database might support into link,
         which is a PLUGINLINK structure
       Returns: 0 on success, nonzero on failure
     }
-    Load : function (profile:PAnsiChar; link:pointer):longint; cdecl;
+    Load : function (profile:PAnsiChar; link:pointer):int; cdecl;
     {
       Affect: The database plugin should shutdown, unloading things from the core and freeing internal structures
       Returns: 0 on success, nonzero on failure
       Note: Unload() might be called even if Load() was never called, wasLoaded is set to 1 if Load() was ever called.
     }
-    Unload : function (wasLoaded:longint):longint; cdecl;
+    Unload : function (wasLoaded:int):int; cdecl;
   end;
 
 {-- end newpluginapi --}

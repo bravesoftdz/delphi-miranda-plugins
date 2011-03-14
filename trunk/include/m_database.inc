@@ -23,8 +23,8 @@ type
     1: (cVal: AnsiChar);
     2: (wVal: Word);
     3: (sVal: ShortInt);
-    4: (dVal: LongInt);
-    5: (lVal: Integer);
+    4: (dVal: dword);
+    5: (lVal: long);
     6: (
       szVal : TChar;
       cchVal: Word;
@@ -287,7 +287,11 @@ const
 
 const
   DBEVENTTYPEDESCR_SIZE    = sizeof(TDBEVENTTYPEDESCR);
+  {$IFNDEF WIN64}
   DBEVENTTYPEDESCR_SIZE_V1 = $10;
+  {$ELSE}
+  DBEVENTTYPEDESCR_SIZE_V1 = DBEVENTTYPEDESCR_SIZE;
+  {$ENDIF}
 
 const
   MS_DB_EVENT_REGISTERTYPE:PAnsiChar = 'DB/EventType/Register';

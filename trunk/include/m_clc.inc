@@ -220,7 +220,7 @@ type
     pszText     : TChar;
     hParentGroup: THandle;
     flags       : DWORD;
-    hIcon       : THandle; // todo
+    hIcon       : HICON; // todo
   end;
 
   PNMCLISTCONTROL = ^TNMCLISTCONTROL;

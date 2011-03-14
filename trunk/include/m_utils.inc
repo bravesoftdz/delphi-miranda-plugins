@@ -61,7 +61,7 @@ type
   TUTILRESIZEDIALOG = record
     cbSize    : int;
     hwndDlg   : HWND;
-    hInstance : THANDLE;
+    hInstance : HINST;
     lpTemplate: PAnsiChar;
     lParam    : LPARAM;
     pfnResizer: TDIALOGRESIZERPROC;
@@ -393,8 +393,8 @@ type
 
   pmir_md5_state_t = ^mir_md5_state_t;
   mir_md5_state_t = record
-    count:array [0..1] of mir_md5_word_t;  // message length in bits, lsw first
-    abcd :array [0..3] of mir_md5_word_t;  // digest buffer
+    count:array [0.. 1] of mir_md5_word_t; // message length in bits, lsw first
+    abcd :array [0.. 3] of mir_md5_word_t; // digest buffer
     buf  :array [0..63] of mir_md5_byte_t; // accumulate block
   end;
 
@@ -426,12 +426,17 @@ type
   mir_sha1_long_t = longword;
 
 const
+  {.$IFNDEF WIN64}
   MIR_SHA1_HASH_SIZE = 20;
-
+(*
+  {$ELSE}
+  MIR_SHA1_HASH_SIZE = SIZEOF(SHA1_INTERFACE);
+  {$ENDIF}
+*)
 type
   pmir_sha1_ctx = ^mir_sha1_ctx;
   mir_sha1_ctx = record
-    H:array [0..4] of mir_sha1_long_t;
+    H:array [0.. 4] of mir_sha1_long_t;
     W:array [0..79] of mir_sha1_long_t;
     lenW:int;
     sizeHi,sizeLo:mir_sha1_long_t;

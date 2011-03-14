@@ -1252,10 +1252,10 @@ function DlgProcOpt2(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lres
        show and (CB_GetData(wnd)<>lresult(aeNot)));//(SendMessage(wnd,CB_GETCURSEL,0,0)<>0));
   end;
 
-  procedure SetMBRadioIcon(h:THANDLE;id:dword;icon:dword);
+  procedure SetMBRadioIcon(h:THANDLE;id:dword;icon:uint_ptr);
   begin
     SendDlgItemMessage(Dialog,id,BM_SETIMAGE,IMAGE_ICON,
-      LoadImage(h,MakeIntResource(icon),IMAGE_ICON,16,16,0{LR_SHARED}));
+      LoadImage(h,MAKEINTRESOURCE(icon),IMAGE_ICON,16,16,0{LR_SHARED}));
   //  SendDlgItemMessage(Dialog,id,BM_SETIMAGE,IMAGE_ICON,LoadIcon(0,icon));
   end;
 
@@ -1632,7 +1632,7 @@ begin
               else
                 pw:=lstruct;
               j:=DialogBoxParamW(hInstance,MAKEINTRESOURCEW(IDD_STRUCTURE),
-                 Dialog,@StructEdit,dword(pw));
+                 Dialog,@StructEdit,TLPARAM(pw));
               if j<>0 then
               begin
                 ChMask:=ChMask or ACTM_ACT or ACTM_ACTS;
@@ -1935,7 +1935,7 @@ begin
     end;
 
     WM_NOTIFY: begin
-      case PNMHdr(lParam)^.code of
+      case integer(PNMHdr(lParam)^.code) of
         PSN_APPLY: begin
           BuildActionChain;
           SetSave(Dialog,LV_GetLParam(GetDlgItem(Dialog,IDC_ACTION_GROUP)));

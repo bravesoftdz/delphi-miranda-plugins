@@ -8,6 +8,8 @@ implementation
 uses windows,winampapi,swrapper,messages,common,srv_player,wat_api;
 
 const
+  HWND_MESSAGE = HWND(-3);
+const
   HOSTWND_CLASS	= 'TLB_JETAUDIO';
 
   CowonClass   = 'COWON Jet-Audio MainWnd Class';
@@ -90,7 +92,7 @@ function Init:integer;cdecl;
 begin
   hostwnd:=CreateWindowExW(0,'STATIC',nil,0,1,1,1,1,dword(HWND_MESSAGE),0,hInstance,nil);
   if hostwnd<>0 then
-    SetWindowLongPtrW(hostwnd,GWL_WNDPROC,dword(@HiddenWindProc));
+    SetWindowLongPtrW(hostwnd,GWL_WNDPROC,int_ptr(@HiddenWindProc));
 	result:=hostwnd;
 end;
 
@@ -132,7 +134,7 @@ begin
     result:=FindWindow(PluginClass,PluginName);
 }
   if (result<>0) {and (result<>wnd)} then
-    if EnumWindows(@chwnd,dword(@titlewnd)) then
+    if EnumWindows(@chwnd,int_ptr(@titlewnd)) then
       titlewnd:=0;
 end;
 
@@ -343,7 +345,7 @@ begin
   end;
 end;
 
-function Command(wnd:HWND;cmd:integer;value:integer):integer;cdecl;
+function Command(wnd:HWND;cmd:integer;value:int_ptr):integer;cdecl;
 begin
   case cmd of
     WAT_CTRL_PREV : result:=Prev (wnd);

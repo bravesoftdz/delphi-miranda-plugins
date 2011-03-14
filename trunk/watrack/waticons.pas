@@ -1,7 +1,12 @@
 unit WATIcons;
 interface
 
-uses wat_api,icobuttons;
+uses wat_api;
+
+const // to not load icobuttons module
+  AST_NORMAL  = 0;
+  AST_HOVERED = 1;
+  AST_PRESSED = 2;
 
 // main Enable/Disable icons
 const // name in icolib
@@ -47,14 +52,14 @@ begin
   result:=true;
   sid.pszDefaultFile.a:='icons\'+ICOCtrlName;
 //    ConvertFileName(sid.pszDefaultFile.a,buf);
-  PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,dword(sid.pszDefaultFile),dword(@buf));
+  PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,wparam(sid.pszDefaultFile),lparam(@buf));
 
   hIconDLL:=LoadLibraryA(buf);
   if hIconDLL=0 then // not found
   begin
     sid.pszDefaultFile.a:='plugins\'+ICOCtrlName;
 //      ConvertFileName(sid.pszDefaultFile.a,buf);
-    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,dword(sid.pszDefaultFile),dword(@buf));
+    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,wparam(sid.pszDefaultFile),lparam(@buf));
     hIconDLL:=LoadLibraryA(buf);
   end;
 
@@ -71,14 +76,14 @@ begin
       MAKEINTRESOURCE(IDI_PLUGIN_ENABLE),IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoBtnEnable;
   sid.szDescription.a:='Plugin Enabled';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hIconDLL,
       MAKEINTRESOURCE(IDI_PLUGIN_DISABLE),IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoBtnDisable;
   sid.szDescription.a:='Plugin Disabled';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
   if hIconDLL<>hInstance then
@@ -90,7 +95,7 @@ type
   TAWKIconButton = record
     descr:PAnsiChar;
     name :PAnsiChar;
-    id   :integer;
+    id   :int_ptr;
   end;
 const
   CtrlIcoLib:array [WAT_CTRL_FIRST..WAT_CTRL_LAST,AST_NORMAL..AST_PRESSED] of
@@ -150,14 +155,14 @@ begin
     sid.szSection.a     :='WATrack/Frame Controls';
     sid.pszDefaultFile.a:='icons\'+ICOCtrlName;
 //    ConvertFileName(sid.pszDefaultFile.a,buf);
-    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,dword(sid.pszDefaultFile),dword(@buf));
+    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,wparam(sid.pszDefaultFile),lparam(@buf));
 
     hIconDLL:=LoadLibraryA(buf);
     if hIconDLL=0 then // not found
     begin
       sid.pszDefaultFile.a:='plugins\'+ICOCtrlName;
 //      ConvertFileName(sid.pszDefaultFile.a,buf);
-      PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,dword(sid.pszDefaultFile),dword(@buf));
+      PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,wparam(sid.pszDefaultFile),lparam(@buf));
       hIconDLL:=LoadLibraryA(buf);
     end;
 
@@ -176,7 +181,7 @@ begin
           sid.pszName        :=CtrlIcoLib[i][j].name;
           sid.szDescription.a:=CtrlIcoLib[i][j].descr;
 
-          PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+          PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
           DestroyIcon(sid.hDefaultIcon);
           Inc(j);
         until j>AST_PRESSED;
@@ -193,7 +198,7 @@ end;
 function GetIcon(action:integer;stat:integer):cardinal;
 begin
   result:=PluginLink^.CallService(MS_SKIN2_GETICON,0,
-      dword(CtrlIcoLib[action][stat].name));
+      lparam(CtrlIcoLib[action][stat].name));
 end;
 
 function GetIconDescr(action:integer):pAnsiChar;

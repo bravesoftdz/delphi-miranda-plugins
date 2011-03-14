@@ -38,14 +38,14 @@ const
 {$include i_tmpl_dlg.inc}
 {$include i_expkey.inc}
 
-function WATReplaceText(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function WATReplaceText(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 begin
   if (lParam<>0) and (pWideChar(lParam)^<>#0) then
   begin
     if isVarsInstalled then
-      result:=int(ParseVarString(pWideChar(lParam)))
+      result:=int_ptr(ParseVarString(pWideChar(lParam)))
     else
-      result:=integer(ReplaceAll(pWideChar(lParam)));
+      result:=int_ptr(ReplaceAll(pWideChar(lParam)));
     if (result<>0) and (pWideChar(result)^=#0) then
       mFreeMem(PWideChar(result));
   end

@@ -98,7 +98,7 @@ begin
     WM_HELP: CallService(MS_WAT_MACROHELP,Dialog,0);
 
     WM_NOTIFY: begin
-      if PNMHdr(lParam)^.code=PSN_APPLY then
+      if integer(PNMHdr(lParam)^.code)=PSN_APPLY then
         SaveChangesLite(Dialog);
     end;
 

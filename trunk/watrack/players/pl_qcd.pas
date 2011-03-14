@@ -46,7 +46,7 @@ begin
     SongInfo.winampwnd:=WinampFindWindow(SongInfo.plwnd);
   if SongInfo.winampwnd<>0 then
   begin
-    result:=WinampGetInfo(integer(@SongInfo),flags);
+    result:=WinampGetInfo(int_ptr(@SongInfo),flags);
   end
   else
     result:=0;

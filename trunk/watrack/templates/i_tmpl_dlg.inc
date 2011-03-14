@@ -1,5 +1,5 @@
 {}
-function DlgProcOptions(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function DlgProcOptions(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
 begin
   result:=0;
   case hMessage of
@@ -71,7 +71,7 @@ begin
     end;
 
     WM_NOTIFY: begin
-      if PNMHdr(lParam)^.code=PSN_APPLY then
+      if integer(PNMHdr(lParam)^.code)=PSN_APPLY then
       begin
         ReplaceSpc:=IsDlgButtonChecked(Dialog,IDC_REPLACESPC);
         LoCaseType:=IsDlgButtonChecked(Dialog,IDC_LOCASE);

@@ -238,8 +238,8 @@ begin
   mFreeMem(lpath);
 end;
 
-function MakeStructure(txt:dword;aparam,alast:uint_ptr;
-         var code,alen,ofs:integer; restype:integer=rtInt):int_ptr; forward;
+function MakeStructure(txt:uint_ptr;aparam,alast:uint_ptr;
+         var code,alen:integer;var ofs:int_ptr; restype:integer=rtInt):int_ptr; forward;
 procedure FreeStructure(var struct;descr:pWideChar); forward;
 
 function RunService(act:pHKAction;LastResult,Param:dword;var restype:dword):uint_ptr;
@@ -412,11 +412,11 @@ begin
               restype:=rtWide;
             end;
             SST_BPTR: begin
-              AnsiToWide(pAnsiChar(pdword(ofs)^),pWideChar(result),MirandaCP);
+              AnsiToWide(pAnsiChar(puint_ptr(ofs)^),pWideChar(result),MirandaCP);
               restype:=rtWide;
             end;
             SST_WPTR: begin
-              StrDupW(pWideChar(result),pWideChar(pdword(ofs)^));
+              StrDupW(pWideChar(result),pWideChar(puint_ptr(ofs)^));
               restype:=rtWide;
             end;
           end;
@@ -478,11 +478,11 @@ begin
               restype:=rtWide;
             end;
             SST_BPTR: begin
-              AnsiToWide(pAnsiChar(pdword(ofs)^),pWideChar(result),MirandaCP);
+              AnsiToWide(pAnsiChar(puint_ptr(ofs)^),pWideChar(result),MirandaCP);
               restype:=rtWide;
             end;
             SST_WPTR: begin
-              StrDupW(pWideChar(result),pWideChar(pdword(ofs)^));
+              StrDupW(pWideChar(result),pWideChar(puint_ptr(ofs)^));
               restype:=rtWide;
             end;
           end;

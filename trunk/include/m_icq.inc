@@ -48,13 +48,13 @@ type
     hdr : TPROTOSEARCHRESULT;
     uin : DWORD;
     auth: BYTE;
-
+{
     // not presents in new version
     uid          :PAnsiChar;
     nick         :PAnsiChar; // utf-8
     firstName    :PAnsiChar;
     lastName     :PAnsiChar;
-
+}
     gender       :byte;
     age          :byte;
     country      :dword;

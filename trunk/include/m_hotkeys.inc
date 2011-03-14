@@ -25,9 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 const
   HKD_UNICODE = $0001;
-const
-  HOTKEYDESC_SIZE_V1 = 7*SizeOf(dword); //(offsetof(HOTKEYDESC, dwFlags))
-
 type
   HOTKEYDESC = record
     cbSize        :int;
@@ -40,6 +37,13 @@ type
     dwFlags       :dword;      // Miranda ver >=9.0
   end;
   THOTKEYDESC = HOTKEYDESC;
+
+const
+  {$IFNDEF Win64}
+  HOTKEYDESC_SIZE_V1 = 7*SizeOf(dword); //(offsetof(HOTKEYDESC, dwFlags))
+  {$ELSE}
+  HOTKEYDESC_SIZE_V1 = SizeOf(HOTKEYDESC);
+  {$ENDIF}
 
 const
   HKF_MIRANDA_LOCAL = $8000;

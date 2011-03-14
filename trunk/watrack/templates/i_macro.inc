@@ -33,7 +33,7 @@ begin
     mFreeMem(vars[i].alias);
 end;
 
-function MacroHelpDlg(Dialog:HWnd;hMessage,wParam,lParam:DWord):integer; stdcall;
+function MacroHelpDlg(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
 const
   Changed:bool=false;
 var
@@ -64,7 +64,7 @@ begin
         if ws=nil then
           ws:=vars[i].name;
         itemw.pszText:=ws;
-        SendMessageW(wnd,LVM_INSERTITEMW,0,dword(@itemw));
+        SendMessageW(wnd,LVM_INSERTITEMW,0,tlparam(@itemw));
       end;
       ListView_SetColumnWidth(wnd,0,LVSCW_AUTOSIZE);
       ListView_InsertColumn(wnd,1,lvc);
@@ -76,7 +76,7 @@ begin
         if vars[i].help<>nil then
           s:=vars[i].help;
         itemw.pszText:=TranslateA2W(s);
-        SendMessageW(wnd,LVM_SETITEMTEXTW,i,dword(@itemw));
+        SendMessageW(wnd,LVM_SETITEMTEXTW,i,tlparam(@itemw));
         mFreeMem(itemw.pszText);
       end;
       ListView_SetColumnWidth(wnd,1,LVSCW_AUTOSIZE);
@@ -111,7 +111,7 @@ begin
     WM_NOTIFY: begin
       if wParam=IDC_MACROHELP then
       begin
-        case PNMHdr(lParam)^.code of
+        case integer(PNMHdr(lParam)^.code) of
           LVN_ENDLABELEDITW: begin
             with PLVDISPINFO(lParam)^ do
             begin
@@ -120,7 +120,7 @@ begin
                 item.mask:=LVIF_TEXT;
                 if pWideChar(item.pszText)^=#0 then
                   pWideChar(item.pszText):=vars[item.iItem].name;
-                SendMessageW(hdr.hWndFrom,LVM_SETITEMW,0,dword(@item));
+                SendMessageW(hdr.hWndFrom,LVM_SETITEMW,0,tlparam(@item));
                 mFreeMem(vars[item.iItem].alias);
                 StrDupW(vars[item.iItem].alias,pWideChar(item.pszText));
                 result:=1;

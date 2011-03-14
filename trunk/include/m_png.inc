@@ -42,7 +42,7 @@ type
      pbmi       : PBITMAPINFO;
      pDiData    : PBYTE;
      pResult    : PBYTE;
-     pResultLen : Plongint;
+     pResultLen : Plong;
   end;
 
 const

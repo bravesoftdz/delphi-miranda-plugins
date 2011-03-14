@@ -142,7 +142,7 @@ begin
       v:=Null;
     end;
   end;
-  result:=WinampGetInfo(integer(@SongInfo),flags);
+  result:=WinampGetInfo(int_ptr(@SongInfo),flags);
 end;
 
 function Command(wnd:HWND;cmd:integer;value:integer):integer;cdecl;

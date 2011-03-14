@@ -34,9 +34,9 @@ const
 type
   PPLUGIN_DB_ENUM = ^TPLUGIN_DB_ENUM;
   TPLUGIN_DB_ENUM = record
-    cbSize : longint;
+    cbSize : int;
 // 0 = continue, 1 = found, -1 = stop now
-    pfnEnumCallback : function (pluginname:PAnsiChar; link:pointer; lParam:LPARAM):longint;cdecl;
+    pfnEnumCallback : function (pluginname:PAnsiChar; link:pointer; lParam:LPARAM):int;cdecl;
     lParam : LPARAM;
   end;
 

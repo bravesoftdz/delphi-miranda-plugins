@@ -123,10 +123,10 @@ begin
       if Changed<>DLGED_INIT then
       begin
         if PNMHDR(lParam)^.idFrom=IDC_SHARE then
-          if PNMHdr(lParam)^.code=CLN_CHECKCHANGED then
+          if integer(PNMHdr(lParam)^.code)=CLN_CHECKCHANGED then
             SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
 
-        if PNMHdr(lParam)^.code=PSN_APPLY then
+        if integer(PNMHdr(lParam)^.code)=PSN_APPLY then
         begin
           mFreeMem(ProtoText);
           ProtoText:=GetDlgText(Dialog,IDC_PROTO_TEXT);

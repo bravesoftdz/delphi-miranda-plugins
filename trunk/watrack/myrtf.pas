@@ -67,7 +67,7 @@ begin
   FillChar(stream,SizeOf(stream),0);
   stream.pfnCallback:=@StreamWriteCallback;
   stream.dwCookie   :=dword(pszText);
-  SendMessage(wnd,EM_STREAMIN,SF_RTF or SFF_PLAINRTF or SFF_SELECTION,dword(@stream));
+  SendMessage(wnd,EM_STREAMIN,SF_RTF or SFF_PLAINRTF or SFF_SELECTION,lparam(@stream));
 end;
 
 function StreamReadCallback(dwCookie:dword;pbBuff:PAnsiChar;cb:dword;var pcb:dword):dword;stdcall;
@@ -85,7 +85,7 @@ begin
   FillChar(stream,SizeOf(stream),0);
   stream.pfnCallback:=@StreamReadCallback;
   stream.dwCookie:=dword(@dst);
-  SendMessage(wnd,EM_STREAMOUT,SF_RTF+SFF_SELECTION,dword(@stream));
+  SendMessage(wnd,EM_STREAMOUT,SF_RTF+SFF_SELECTION,lparam(@stream));
 end;
 
 procedure ReplaceTag(src:PAnsiChar;what,new:PAnsiChar;recurse:boolean);
@@ -195,12 +195,12 @@ var
   sstart:integer;
   ls:PAnsiChar;
 begin
-  SendMessage(wnd,EM_GETSEL,dword(@sstart),0);
+  SendMessage(wnd,EM_GETSEL,wparam(@sstart),0);
   if isUnicode then
-    SendMessagew(wnd,EM_REPLACESEL,0,longint(txt))
+    SendMessagew(wnd,EM_REPLACESEL,0,lparam(txt))
   else
   begin
-    SendMessageA(wnd,EM_REPLACESEL,0,longint(WideToANSI(txt,ls,CP)));
+    SendMessageA(wnd,EM_REPLACESEL,0,lparam(WideToANSI(txt,ls,CP)));
     mFreeMem(ls);
   end;
 

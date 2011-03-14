@@ -460,7 +460,7 @@ type
     dwFlags   :dword;   // event flags: GCEF_ADDTOLOG, GC_UNICODE
 
                         // FALSE any other time than when initializing the window (before sending SESSION_INITDONE)
-    dwItemData:dword;   // User specified data.
+    dwItemData:dword_ptr; // User specified data.
     time      :dword;   // Timestamp of the event
   end;
 
@@ -507,17 +507,17 @@ const
 // The GC_INFO structure
 type
   TGC_INFO = record
-    Flags     :dword;   // use a combination of the above flags
-    iItem     :int;     // session type (GCW_*)
-    iType     :int;     // session type (GCW_*)
-    pszModule :PAnsiChar;   // the module name as registered in MS_GC_REGISTER
-    pszID     :TCHAR;   // unique ID of the session
-    pszName   :TCHAR;   // display name of the session
-    dwItemData:dword;   // user specified data.
-    iCount    :int;     // count of users in the nicklist
-    pszUsers  :PAnsiChar;   // space separated string containing the UID's of the users in the user list.
-                        // NOTE. Use Mirandas mmi_free() on the returned string.
-    hContact  :THANDLE; // hContact for the session (can be NULL)
+    Flags     :dword;     // use a combination of the above flags
+    iItem     :int;       // session type (GCW_*)
+    iType     :int;       // session type (GCW_*)
+    pszModule :PAnsiChar; // the module name as registered in MS_GC_REGISTER
+    pszID     :TCHAR;     // unique ID of the session
+    pszName   :TCHAR;     // display name of the session
+    dwItemData:dword_ptr; // user specified data.
+    iCount    :int;       // count of users in the nicklist
+    pszUsers  :PAnsiChar; // space separated string containing the UID's of the users in the user list.
+                          // NOTE. Use Mirandas mmi_free() on the returned string.
+    hContact  :THANDLE;   // hContact for the session (can be NULL)
   end;
 
 const
@@ -550,10 +550,10 @@ const
 
 type
   TGCHOOK = record
-    pDest :PGCDEST; // pointer to a GCDEST structure which specifies from which session the hook was triggered
-    szText:TCHAR;   // usage depends on type of event
-    szUID :TCHAR;   // unique identifier, usage depends on type of event
-    dwData:dword;   // user defined data, usage depends on type of event}
+    pDest :PGCDEST;   // pointer to a GCDEST structure which specifies from which session the hook was triggered
+    szText:TCHAR;     // usage depends on type of event
+    szUID :TCHAR;     // unique identifier, usage depends on type of event
+    dwData:dword_ptr; // user defined data, usage depends on type of event}
   end;
 
 {

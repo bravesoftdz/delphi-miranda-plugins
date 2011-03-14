@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 {$DEFINE M_PROTOSVC}
 
 type
-  PFNAMECHAR = ^FNAMECHAR;
+//  PFNAMECHAR = ^FNAMECHAR;
 //#if MIRANDA_VER >= 0x0900
   FNAMECHAR = TCHAR;
 //#else
@@ -185,13 +185,13 @@ type
   PPROTOSEARCHRESULT = ^TPROTOSEARCHRESULT;
   TPROTOSEARCHRESULT = record
     cbSize   : int;
-    nick     : TChar;
-    firstName: TChar;
-    lastName : TChar;
-    email    : TChar;
-    id       : TChar;
+    nick     : TFNAMECHAR;
+    firstName: TFNAMECHAR;
+    lastName : TFNAMECHAR;
+    email    : TFNAMECHAR;
+    id       : TFNAMECHAR;
     flags    : int;
-    reserved : array [0..8] of Byte;
+    reserved : array [0..(8*SizeOf(THANDLE) div SizeOf(dword))-1] of Byte;
     // Protocols may extend this structure with extra members at will and supply
     // a larger cbSize to reflect the new information, but they must not change
     // any elements above this comment
@@ -203,9 +203,9 @@ type
 
   PPROTOSEARCHBYNAME = ^TPROTOSEARCHBYNAME;
   TPROTOSEARCHBYNAME = record
-    pszNick     : PAnsiChar;
-    pszFirstName: PAnsiChar;
-    pszLastName : PAnsiChar;
+    pszNick     : TChar;
+    pszFirstName: TChar;
+    pszLastName : TChar;
   end;
 
   PPROTORECVEVENT = ^TPROTORECVEVENT;
@@ -231,7 +231,7 @@ type
     flags        : DWORD;
     timestamp    : DWORD;   // unix time
     szDescription: TChar;
-    FileCount    : integer;
+    FileCount    : int;
     pFiles       : ^TChar;     // pointer to an array of PAnsiChar's
     lParam       : LPARAM;
   end;
