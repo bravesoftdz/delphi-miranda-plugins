@@ -9,7 +9,7 @@ procedure DestroyFrame;
 
 implementation
 
-uses commctrl,Messages,m_api,common,swrapper,mirutils,sr_global;
+uses commctrl,Messages,m_api,common,wrapper,mirutils,sr_global;
 
 {$include resource.inc}
 

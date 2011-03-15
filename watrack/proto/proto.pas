@@ -7,7 +7,7 @@ implementation
 
 uses
   windows,messages,commctrl,
-  common,m_api,mirutils,dbsettings,swrapper,
+  common,m_api,mirutils,dbsettings,wrapper,
   global,wat_api;
 
 {$include i_proto_rc.inc}
@@ -80,7 +80,7 @@ begin
     else
       timestamp:=GetCurrentTime;
   end;
-  PluginLink^.CallService(MS_DB_EVENT_ADD,hContact,dword(@dbeo));
+  PluginLink^.CallService(MS_DB_EVENT_ADD,hContact,lparam(@dbeo));
 end;
 
 {SEND-time text translation}
@@ -275,7 +275,7 @@ begin
               curpos:=buf;
 //!! check to DisableTemporary
 
-            s:=PWideChar(PluginLink^.CallService(MS_WAT_REPLACETEXT,0,dword(ProtoText)));
+            s:=PWideChar(PluginLink^.CallService(MS_WAT_REPLACETEXT,0,tlparam(ProtoText)));
             textpos:=StrCopyW(curpos,s);
             mFreeMem(s);
             curpos:=strendw(curpos)+1;
@@ -303,11 +303,11 @@ begin
           mGetMem(encbuf,base64.cchEncoded+1+Length(wpAnswer));
           base64.pszEncoded:=PAnsiChar(encbuf)+Length(wpAnswer);
           StrCopy(PAnsiChar(encbuf),wpAnswer);
-          PluginLink^.CallService(MS_NETLIB_BASE64ENCODE,0,dword(@base64));
+          PluginLink^.CallService(MS_NETLIB_BASE64ENCODE,0,tlparam(@base64));
           if (HistMask and hmOutInfo)<>0 then
             AddEvent(ccs^.hContact,EVENTTYPE_WAT_ANSWER,DBEF_SENT,
                      base64.pbDecoded,base64.cbDecoded);
-          CallContactService(ccs^.hContact,PSS_MESSAGE,0,dword(encbuf));
+          CallContactService(ccs^.hContact,PSS_MESSAGE,0,tlparam(encbuf));
         end
         else
         begin
@@ -316,7 +316,7 @@ begin
             AddEvent(ccs^.hContact,EVENTTYPE_WAT_MESSAGE,DBEF_SENT,encbuf,i);
 //          if CallContactService(ccs^.hContact,PSS_MESSAGEW,PREF_UNICODE,dword(encbuf))=
 //             ACKRESULT_FAILED then
-            CallContactService(ccs^.hContact,PSS_MESSAGE,PREF_UNICODE,dword(encbuf));
+            CallContactService(ccs^.hContact,PSS_MESSAGE,PREF_UNICODE,tlparam(encbuf));
         end;
         mFreeMem(encbuf);
       end;
@@ -337,7 +337,7 @@ begin
           pc:=PAnsiChar(buf)+Length(wpError);
         end;
         StrCopy(pc,'Sorry, but you have no permission to obtain this info!');
-        CallContactService(ccs^.hContact,PSS_MESSAGE,0,dword(buf));
+        CallContactService(ccs^.hContact,PSS_MESSAGE,0,tlparam(buf));
         if (HistMask and hmOutError)<>0 then
         begin
           AddEvent(ccs^.hContact,EVENTTYPE_WAT_ERROR,DBEF_SENT,nil,0,
@@ -354,7 +354,7 @@ begin
     base64.cbDecoded :=Netlib_GetBase64DecodedBufferSize(base64.cchEncoded);
     mGetMem(base64.pbDecoded,base64.cbDecoded);
 
-    PluginLink^.CallService(MS_NETLIB_BASE64DECODE,0,dword(@base64));
+    PluginLink^.CallService(MS_NETLIB_BASE64DECODE,0,tlparam(@base64));
 
     curpos:=pWideChar(base64.pbDecoded);           // pos_artist:=curpos;
     while curpos^<>#0 do inc(curpos); inc(curpos); // pos_title :=curpos;
@@ -401,7 +401,7 @@ begin
   result:=0;
   StrCopy(buf,wpRequest);
   StrCopy(buf+Length(wpRequest),SendRequestText);
-  CallContactService(hContact,PSS_MESSAGE,0,dword(@buf));
+  CallContactService(hContact,PSS_MESSAGE,0,tlparam(@buf));
   if (HistMask and hmOutRequest)<>0 then
     AddEvent(hContact,EVENTTYPE_WAT_REQUEST,DBEF_SENT,nil,0);
 end;
@@ -414,7 +414,7 @@ begin
   while hContact<>0 do
   begin
     if not IsChat(hContact) then
-      CallService(MS_PROTO_ADDTOCONTACT,hContact,dword(PluginShort));
+      CallService(MS_PROTO_ADDTOCONTACT,hContact,lparam(PluginShort));
     hContact:=CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
   end;
 end;
@@ -423,7 +423,7 @@ function HookAddUser(hContact:WPARAM;lParam:LPARAM):integer; cdecl;
 begin
   result:=0;
   if not IsChat(hContact) then
-    CallService(MS_PROTO_ADDTOCONTACT,hContact,dword(PluginShort));
+    CallService(MS_PROTO_ADDTOCONTACT,hContact,tlparam(PluginShort));
 end;
 
 function OnContactMenu(hContact:WPARAM;lParam:LPARAM):int;cdecl;
@@ -436,7 +436,7 @@ begin
     mi.flags:=CMIF_NOTOFFLINE or CMIF_NOTOFFLIST or CMIM_FLAGS or CMIF_HIDDEN
   else
     mi.flags:=CMIF_NOTOFFLINE or CMIF_NOTOFFLIST or CMIM_FLAGS;
-  PluginLink^.CallService(MS_CLIST_MODIFYMENUITEM,hContactMenuItem,dword(@mi));
+  PluginLink^.CallService(MS_CLIST_MODIFYMENUITEM,hContactMenuItem,tlparam(@mi));
   result:=0;
 end;
 
@@ -448,7 +448,7 @@ begin
   desc.szName:=PluginShort;
   desc._type :=PROTOTYPE_TRANSLATION;
 
-  CallService(MS_PROTO_REGISTERMODULE,0,dword(@desc));
+  CallService(MS_PROTO_REGISTERMODULE,0,lparam(@desc));
 //  CreateProtoServiceFunction(PluginShort,PSS_MESSAGE ,@SendMessageProcW);
 //  CreateProtoServiceFunction(PluginShort,PSS_MESSAGEW,@SendMessageProcW);
   hSRM:=CreateProtoServiceFunction(PluginShort,PSR_MESSAGE ,@ReceiveMessageProcW);
@@ -464,8 +464,8 @@ begin
   mi.cbSize:=sizeof(mi);
   mi.flags :=CMIM_ICON;
 
-  mi.hIcon:=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnContext));
-  PluginLink^.CallService(MS_CLIST_MODIFYMENUITEM,hContactMenuItem,dword(@mi));
+  mi.hIcon:=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnContext));
+  PluginLink^.CallService(MS_CLIST_MODIFYMENUITEM,hContactMenuItem,tlparam(@mi));
 end;
 
 procedure RegisterIcons;
@@ -481,7 +481,7 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(BTN_CONTEXT),IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoBtnContext;
   sid.szDescription.a:='Context Menu';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 //!!
   icchangedhook:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
@@ -513,10 +513,10 @@ begin
   mi.szPopupName.a:=PluginShort;
   mi.flags        :=CMIF_NOTOFFLINE or CMIF_NOTOFFLIST;
 //  mi.popupPosition:=MenuUserInfoPos;
-  mi.hIcon        :=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnContext));
+  mi.hIcon        :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnContext));
   mi.szName.a     :='Get user''s Music Info';
   mi.pszService   :=MS_WAT_GETCONTACTINFO;
-  hContactMenuItem:=PluginLink^.CallService(MS_CLIST_ADDCONTACTMENUITEM,0,dword(@mi));
+  hContactMenuItem:=PluginLink^.CallService(MS_CLIST_ADDCONTACTMENUITEM,0,lparam(@mi));
 
   SetProtocol;
   RegisterContacts;

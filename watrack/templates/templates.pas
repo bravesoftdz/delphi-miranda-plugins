@@ -6,7 +6,7 @@ implementation
 
 uses
   messages,windows,commctrl,
-  common,syswin,swrapper,
+  common,syswin,wrapper,
   m_api,dbsettings,mirutils,
   wat_api,global,macros,HlpDlg;
 

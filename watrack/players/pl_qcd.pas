@@ -5,7 +5,7 @@ unit pl_QCD;
 interface
 
 implementation
-uses windows,syswinexe,common,swrapper,winampapi,srv_player,wat_api;
+uses windows,common,syswin,wrapper,winampapi,srv_player,wat_api;
 
 const
   QCDExe = 'QCDPLAYER.EXE';

@@ -4,18 +4,18 @@ utils
 -----------------------------------------------
 appcmdapi.pas        +       +  +       +
 base64.pas           +       +  +       +
-cbex.pas             +       *  .       .
+cbex.pas             +       *  +       +
 common.pas           +       +  +       +
 dbsettings.pas       +       +  +       +
-hotkeys.pas          +       +  +
+hotkeys.pas          +       +  +       +
 icobuttons.pas       +
 ini.pas              +       +  +       +
 io.pas               +       +  +       +
 kolsizer.pas         +
-mirutils.pas         +          .       .
+mirutils.pas         +       *  .       .
 playlist.pas         +       +  +       +
 protocols.pas        +       +  +       +
-syswin.pas           +
+syswin.pas           +       *  +       +
 TextBlock.pas        +
 utils.pas            +       +  +       +
 wrapper.pas          +       +  +       +
@@ -42,9 +42,9 @@ KolZLibBzip.pas      +
 ===============================================
 projects
 -----------------------------------------------
-ActMan               +          *       *
+ActMan               +          +       +
 Hooks                +          +       +
-mradio               +
-quicksearch          +
+mradio               +                         (icobuttons->KOL)
+quicksearch          +                         (StrList ->KOL)
 translate            +          +       +
-watrack              +
+watrack              +          *       *      (ansi commctrl;kolframe->KOL)

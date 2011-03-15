@@ -6,7 +6,7 @@ implementation
 
 uses windows, messages, commctrl,
   common,
-  m_api,dbsettings,swrapper,mirutils,
+  m_api,dbsettings,wrapper,mirutils,
   wat_api,global;
 
 const
@@ -115,7 +115,7 @@ begin
       FillChar(mi,sizeof(mi),0);
       mi.cbSize:=sizeof(mi);
       mi.flags :=CMIM_FLAGS+flag;
-      CallService(MS_CLIST_MODIFYMENUITEM,hMenuLast,dword(@mi));
+      CallService(MS_CLIST_MODIFYMENUITEM,hMenuLast,tlparam(@mi));
     end;
     
     WAT_EVENT_PLAYERSTATUS: begin
@@ -142,8 +142,8 @@ begin
   FillChar(mi,SizeOf(mi),0);
   mi.cbSize:=sizeof(mi);
   mi.flags :=CMIM_ICON;
-  mi.hIcon :=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoLastFM));
-  CallService(MS_CLIST_MODIFYMENUITEM,hMenuLast,dword(@mi));
+  mi.hIcon :=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoLastFM));
+  CallService(MS_CLIST_MODIFYMENUITEM,hMenuLast,tlparam(@mi));
 end;
 
 function SrvLastFMInfo(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -181,7 +181,7 @@ begin
       hTimer:=0;
     end;
   end;
-  CallService(MS_CLIST_MODIFYMENUITEM,hMenuLast,dword(@mi));
+  CallService(MS_CLIST_MODIFYMENUITEM,hMenuLast,tlparam(@mi));
   result:=ord(not odd(lfm_on));
 end;
 
@@ -199,18 +199,18 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_LAST),IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoLastFM;
   sid.szDescription.a:='LastFM';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
   
   FillChar(mi, sizeof(mi), 0);
   mi.cbSize       :=sizeof(mi);
   mi.szPopupName.a:=PluginShort;
 
-  mi.hIcon        :=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoLastFM));
+  mi.hIcon        :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(IcoLastFM));
   mi.szName.a     :='Disable scrobbling';
   mi.pszService   :=MS_WAT_LASTFM;
   mi.popupPosition:=500050000;
-  hMenuLast:=PluginLink^.CallService(MS_CLIST_ADDMAINMENUITEM,0,dword(@mi));
+  hMenuLast:=PluginLink^.CallService(MS_CLIST_ADDMAINMENUITEM,0,lparam(@mi));
 end;
 
 // ------------ base interface functions -------------
@@ -249,7 +249,7 @@ begin
   if md5.cbSize=0 then
   begin
     md5.cbSize:=SizeOf(TMD5_INTERFACE);
-    if (CallService(MS_SYSTEM_GET_MD5I,0,dword(@md5))<>0) then
+    if (CallService(MS_SYSTEM_GET_MD5I,0,lparam(@md5))<>0) then
     begin
     end;
   end;

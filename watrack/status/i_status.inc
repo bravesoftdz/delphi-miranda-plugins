@@ -4,12 +4,12 @@
 const
   xsnum = 31;
 
-function ListenProc(wParam:WPARAM;lParam:LPARAM):int; cdecl;
+function ListenProc(wParam:WPARAM;lParam:LPARAM):int_ptr; cdecl;
 begin
   // ignoring incoming ListeningTo info, uses internal
   if PLISTENINGTOINFO(lParam).cbSize=SizeOf(TLISTENINGTOINFO) then
   begin
-    result:=int(GetMacros(tmpl_tunes,0,WAT_PLS_NORMAL)); // need real poto number here
+    result:=int_ptr(GetMacros(tmpl_tunes,0,WAT_PLS_NORMAL)); // need real poto number here
   end
   else
   begin
@@ -114,7 +114,7 @@ begin
           lti.szPlayer.W:=si.player;
           lti.dwFlags   :=LTI_UNICODE;
 
-          CallProtoService(proto,PS_SET_LISTENINGTO,0,dword(@lti));
+          CallProtoService(proto,PS_SET_LISTENINGTO,0,tlparam(@lti));
         end;
       end;
 

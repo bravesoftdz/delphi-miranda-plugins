@@ -1,6 +1,6 @@
 {format specific}
 
-function DlgProcOptions3(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function DlgProcOptions3(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 const
   dlginit:boolean=false;
 var

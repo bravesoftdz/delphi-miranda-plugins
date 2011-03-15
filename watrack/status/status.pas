@@ -7,7 +7,7 @@ implementation
 
 uses
   windows,messages,commctrl,
-  common,m_api,mirutils,protocols,dbsettings,swrapper,syswin,
+  common,m_api,mirutils,protocols,dbsettings,wrapper,syswin,
   global,wat_api,hlpdlg,CBEx,myRTF,Tmpl;
 
 const
@@ -29,7 +29,7 @@ begin
     DefHotKey       :=((HOTKEYF_ALT or HOTKEYF_CONTROL) shl 8) or VK_F5;
     lParam          :=0;
   end;
-  CallService(MS_HOTKEY_REGISTER,0,dword(@hkrec));
+  CallService(MS_HOTKEY_REGISTER,0,lparam(@hkrec));
 end;
 
 {$include i_st_vars.inc}

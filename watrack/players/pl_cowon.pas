@@ -5,7 +5,7 @@ unit pl_cowon;
 interface
 
 implementation
-uses windows,winampapi,swrapper,messages,common,srv_player,wat_api;
+uses windows,winampapi,wrapper,messages,common,srv_player,wat_api;
 
 const
   HWND_MESSAGE = HWND(-3);

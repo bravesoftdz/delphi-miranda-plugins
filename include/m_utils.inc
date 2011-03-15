@@ -398,12 +398,13 @@ type
     buf  :array [0..63] of mir_md5_byte_t; // accumulate block
   end;
 
+  TMD5Hash = array [0..15] of mir_md5_byte_t;
   TMD5_INTERFACE = record
     cbSize:int;
     md5_init   : procedure(pms:pmir_md5_state_t); cdecl;
     md5_append : procedure(pms:pmir_md5_state_t; const data:pmir_md5_byte_t; nbytes:int); cdecl;
-    md5_finish : procedure(pms:pmir_md5_state_t; digest:array of mir_md5_byte_t); cdecl;
-    md5_hash   : procedure(const data:pmir_md5_byte_t; len:int; digest:array of mir_md5_byte_t); cdecl; //16 byte
+    md5_finish : procedure(pms:pmir_md5_state_t; digest:TMD5Hash); cdecl;
+    md5_hash   : procedure(const data:pmir_md5_byte_t; len:int; digest:TMD5Hash); cdecl; //16 byte
   end;
 
 const
@@ -426,13 +427,8 @@ type
   mir_sha1_long_t = longword;
 
 const
-  {.$IFNDEF WIN64}
   MIR_SHA1_HASH_SIZE = 20;
-(*
-  {$ELSE}
-  MIR_SHA1_HASH_SIZE = SIZEOF(SHA1_INTERFACE);
-  {$ENDIF}
-*)
+
 type
   pmir_sha1_ctx = ^mir_sha1_ctx;
   mir_sha1_ctx = record
@@ -442,13 +438,14 @@ type
     sizeHi,sizeLo:mir_sha1_long_t;
   end;
 
+  SHA1Hash = array [0..MIR_SHA1_HASH_SIZE-1] of mir_sha1_byte_t;
+
   SHA1_INTERFACE = record
     cbSize:int;
     sha1_init   : procedure(ctx:pmir_sha1_ctx); cdecl;
     sha1_append : procedure(ctx:pmir_sha1_ctx; dataIn:pmir_sha1_byte_t; len:int); cdecl;
-    sha1_finish : procedure(ctx:pmir_sha1_ctx; hashout:array of mir_sha1_byte_t); cdecl;
-    sha1_hash   : procedure(dataIn:pmir_sha1_byte_t; len:int;
-                  hashout:array of mir_sha1_byte_t); cdecl; //20 bytes
+    sha1_finish : procedure(ctx:pmir_sha1_ctx; hashout:SHA1Hash); cdecl;
+    sha1_hash   : procedure(dataIn:pmir_sha1_byte_t; len:int;hashout:SHA1Hash); cdecl;
   end;
 
 const

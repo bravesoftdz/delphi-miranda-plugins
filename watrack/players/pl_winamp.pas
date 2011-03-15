@@ -6,7 +6,7 @@ interface
 
 implementation
 
-uses winampapi,windows,common,messages,syswinexe,srv_player,wat_api;
+uses winampapi,windows,common,messages,syswin,srv_player,wat_api;
 
 {
 #define IPC_GETPLAYLISTTITLE 212
@@ -62,7 +62,7 @@ end;
 function GetInfo(var SongInfo:tSongInfo;aflags:integer):integer;cdecl;
 begin
   SongInfo.winampwnd:=SongInfo.plwnd;
-  result:=WinampGetInfo(integer(@SongInfo),aflags);
+  result:=WinampGetInfo(int_ptr(@SongInfo),aflags);
   with SongInfo do
   begin
     if (aflags and WAT_OPT_CHANGES)<>0 then
@@ -92,7 +92,7 @@ end;
 
 function GetFileName(wnd:HWND;flags:integer):pWideChar;cdecl;
 var
-  fpos,fname:integer;
+  fpos,fname:int_ptr;
   pid:dword;
   op:THANDLE;
   buf:array [0..1023] of AnsiChar;

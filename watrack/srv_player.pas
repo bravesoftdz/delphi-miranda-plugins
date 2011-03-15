@@ -58,7 +58,7 @@ implementation
 
 uses
   shellapi,CommCtrl
-  ,appcmdapi,io,syswinexe,syswin,swrapper,srv_format,winampapi;
+  ,appcmdapi,io,syswin,wrapper,srv_format,winampapi;
 
 type
   pPlyArray = ^tPlyArray;

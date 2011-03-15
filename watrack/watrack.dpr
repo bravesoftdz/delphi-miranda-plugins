@@ -5,7 +5,7 @@ uses
   {$IFNDEF FPC}fastmm4,{$ENDIF}
   m_api,dbsettings,activex,winampapi,
   Windows,messages,commctrl,//uxtheme,
-  srv_format,srv_player,wat_api,swrapper,wrapper,
+  srv_format,srv_player,wat_api,wrapper,//wrapper,
   common,syswin,HlpDlg,mirutils
   ,global,waticons,io,macros
   ,lastfm    in 'lastfm\lastfm.pas'
@@ -249,6 +249,7 @@ begin
         ClearPlayerInfo(SongInfo,true);
         CopyPlayerInfo (WorkSI,SongInfo);
       end;
+      WorkSI.status:=(WAT_MES_STOPPED shl 16) or (WAT_PLS_NOMUSIC and $FFFF);
       SongInfo.status:=WorkSI.status;
     end
     else

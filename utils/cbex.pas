@@ -1,7 +1,7 @@
 unit CBEx;
 interface
 
-uses windows,commctrl;
+uses windows;
 
 // build combobox with xstatus icons and names
 
@@ -9,7 +9,7 @@ function AddCBEx(wnd:HWND;proto:PAnsiChar):HWND;
 
 implementation
 
-uses messages,m_api,common,mirutils;
+uses messages,commctrl,m_api,common;
 
 function AddCBEx(wnd:HWND;proto:PAnsiChar):HWND;
 var
@@ -23,17 +23,17 @@ var
 begin
   result:=0;
   SendMessage(wnd,CB_RESETCONTENT,0,0);
-  StrCopy(buf,proto);
-  StrCat (buf,PS_ICQ_GETCUSTOMSTATUSICON);
-  if PluginLink^.ServiceExists(buf)=0 then
+  StrCopy(StrCopyE(buf,proto),PS_ICQ_GETCUSTOMSTATUSICON);
+
+  if PluginLink^.ServiceExists(@buf)=0 then
     exit;
 
   il:=ImageList_Create(16,16,ILC_COLOR32 or ILC_MASK,0,1);
   if il=0 then exit;
 
   cnt:=0;
-  StrCopy(buf1,proto);
-  StrCat (buf1,PS_ICQ_GETCUSTOMSTATUSEX);
+  StrCopy(StrCopyE(buf1,proto),PS_ICQ_GETCUSTOMSTATUSEX);
+
   cbei.mask:=CBEIF_IMAGE or CBEIF_SELECTEDIMAGE or CBEIF_TEXT; //!!
   ics.cbSize  :=SizEOf(ics);
   ics.flags   :=CSSF_STATUSES_COUNT;
@@ -51,11 +51,11 @@ begin
     end
     else
     begin
-      icon:=CallService(buf,cnt,LR_SHARED);
+      icon:=CallService(@buf,cnt,LR_SHARED);
       if icon=0 then break;
       if ImageList_AddIcon(il,icon)=-1 then break;
       ics.wParam:=@cnt;
-      CallService(buf1,0,lparam(@ics));
+      CallService(@buf1,0,lparam(@ics));
       cbei.pszText:=TranslateW(@b);
     end;
     cbei.iItem         :=cnt;

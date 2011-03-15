@@ -7,7 +7,7 @@ implementation
 
 uses windows,messages,commctrl,
      wat_api,waticons,global,
-     swrapper,common,m_api,dbsettings,mirutils;
+     wrapper,common,m_api,dbsettings,mirutils;
 
 const
   MenuInfoPos = 500050002;

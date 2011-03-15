@@ -21,7 +21,7 @@ const
 implementation
 
 uses kol,messages,commctrl,sr_global,m_api,common,dbsettings,mirutils,
-    swrapper,wrapper,sr_optdialog;
+    wrapper,sr_optdialog;
 
 const
   strCListDel:PAnsiChar='CList/DeleteContactCommand';
@@ -382,14 +382,14 @@ var
   buf:array [0..16] of WideChar;
   p:PWideChar;
 begin
-  p:=buf;
+  p:=@buf;
   IntToStr(buf,ip shr 24);
   while p^<>#0 do inc(p); p^:='.'; inc(p);
   IntToStr(p,(ip shr 16) and $FF);
   while p^<>#0 do inc(p); p^:='.'; inc(p);
-  IntToStr(p,HI(ip));
+  IntToStr(p,HIByte(ip));
   while p^<>#0 do inc(p); p^:='.'; inc(p);
-  IntToStr(p,LO(ip));
+  IntToStr(p,LOByte(ip));
   if IsAnsi then
     FastWideToAnsi(buf,pAnsiChar(result))
   else
@@ -2086,7 +2086,7 @@ end;
           end;
           pc^:=#0;
 }
-          CallService(MS_TIPPER_SHOWTIP,dword(txt),dword(@info));
+          CallService(MS_TIPPER_SHOWTIP,0{dword(txt)},dword(@info));
         end
         else
         begin

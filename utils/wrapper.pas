@@ -2,8 +2,29 @@
 unit wrapper;
 
 interface
+
 uses windows;
 
+function GetScreenRect():TRect;
+procedure SnapToScreen(var rc:TRect;dx:integer=0;dy:integer=0{;
+          minw:integer=240;minh:integer=100});
+
+function GetDlgText(Dialog:HWND;idc:integer;getAnsi:boolean=false):pointer; overload;
+function GetDlgText(wnd:HWND;getAnsi:boolean=false):pointer; overload;
+
+function StringToGUID(const astr:PAnsiChar):TGUID; overload;
+function StringToGUID(const astr:PWideChar):TGUID; overload;
+
+// Comboboxes
+function CB_SelectData(cb:HWND;data:dword):lresult; overload;
+function CB_SelectData(Dialog:HWND;id:cardinal;data:dword):lresult; overload;
+function CB_GetData   (cb:HWND;idx:integer=-1):lresult;
+function CB_AddStrData (cb:HWND;astr:pAnsiChar;data:integer=0;idx:integer=-1):HWND;
+function CB_AddStrDataW(cb:HWND;astr:pWideChar;data:integer=0;idx:integer=-1):HWND;
+
+// CommCtrl - ListView
+Procedure ListView_GetItemTextA(hwndLV:hwnd;i:WPARAM;iSubItem:integer;pszText:Pointer;cchTextMax:integer);
+Procedure ListView_GetItemTextW(hwndLV:hwnd;i:WPARAM;iSubItem:integer;pszText:Pointer;cchTextMax:integer);
 function  LV_GetLParam  (list:HWND;item:integer=-1):lresult;
 function  LV_SetLParam  (list:HWND;lParam:LPARAM;item:integer=-1):lresult;
 function  LV_ItemAtPos(wnd:HWND;Pt:TPOINT;var SubItem:dword):Integer; overload;
@@ -14,159 +35,187 @@ function  LV_MoveItem(list:hwnd;direction:integer;item:integer=-1):integer;
 function  LV_GetColumnCount(list:HWND):lresult;
 function  LV_CheckDirection(list:HWND):integer; // bit 0 - can move up, bit 1 - down
 
+// CommDLG - Dialogs
 function ShowDlg (dst:PAnsiChar;fname:PAnsiChar=nil;Filter:PAnsiChar=nil;open:boolean=true):boolean;
 function ShowDlgW(dst:PWideChar;fname:PWideChar=nil;Filter:PWideChar=nil;open:boolean=true):boolean;
 
-function SelectDirectory(Caption:PAnsiChar;var Directory:PAnsiChar;
-         Parent:HWND=0;newstyle:bool=false):Boolean; overload;
-function SelectDirectory(Caption:PWideChar;var Directory:PWideChar;
-         Parent:HWND=0;newstyle:bool=false):Boolean; overload;
-
 implementation
-uses messages,common,shlobj,activex,commctrl,commdlg;
 
-{.$IFNDEF DELPHI10_UP}
+uses messages,common,commctrl,commdlg;
+
+const
+  EmptyGUID:TGUID = '{00000000-0000-0000-0000-000000000000}';
+
+{$IFNDEF FPC}
 const
   LVM_SORTITEMSEX = LVM_FIRST + 81;
-{.$ENDIF}
-{$IFNDEF DELPHI7_UP}
-const
-  BIF_NEWDIALOGSTYLE = $0040;
 {$ENDIF}
 
-function ShowDlg(dst:PAnsiChar;fname:PAnsiChar=nil;Filter:PAnsiChar=nil;open:boolean=true):boolean;
-var
-  NameRec:OpenFileNameA;
+{$IFNDEF DELPHI7_UP}
+const
+  SM_XVIRTUALSCREEN  = 76;
+  SM_YVIRTUALSCREEN  = 77;
+  SM_CXVIRTUALSCREEN = 78;
+  SM_CYVIRTUALSCREEN = 79;
+{$ENDIF}
+
+function GetScreenRect():TRect;
 begin
-  FillChar(NameRec,SizeOf(NameRec),0);
-  with NameRec do
+  result.left  := GetSystemMetrics( SM_XVIRTUALSCREEN  );
+  result.top   := GetSystemMetrics( SM_YVIRTUALSCREEN  );
+  result.right := GetSystemMetrics( SM_CXVIRTUALSCREEN ) + result.left;
+  result.bottom:= GetSystemMetrics( SM_CYVIRTUALSCREEN ) + result.top;
+end;
+
+procedure SnapToScreen(var rc:TRect;dx:integer=0;dy:integer=0{;
+          minw:integer=240;minh:integer=100});
+var
+  rect:TRect;
+begin
+  rect:=GetScreenRect;
+  if rc.right >rect.right  then rc.right :=rect.right -dx;
+  if rc.bottom>rect.bottom then rc.bottom:=rect.bottom-dy;
+  if rc.left  <rect.left   then rc.left  :=rect.left;
+  if rc.top   <rect.top    then rc.top   :=rect.top;
+end;
+
+function GetDlgText(wnd:HWND;getAnsi:boolean=false):pointer;
+var
+  a:cardinal;
+begin
+  result:=nil;
+  if getAnsi then
   begin
-    LStructSize:=SizeOf(NameRec);
-    if fname=nil then
-      dst[0]:=#0
-    else if fname<>dst then
-      StrCopy(dst,fname);
-//    lpstrInitialDir:=dst;
-    lpStrFile  :=dst;
-    lpStrFilter:=Filter;
-    if Filter<>nil then
+    a:=SendMessageA(wnd,WM_GETTEXTLENGTH,0,0)+1;
+    if a>1 then
     begin
-      lpstrDefExt:=StrEnd(Filter)+1;
-      inc(lpstrDefExt,2); // skip "*."
+      mGetMem(PAnsiChar(result),a);
+      SendMessageA(wnd,WM_GETTEXT,a,lparam(result));
     end;
-    NMaxFile   :=511;
-    Flags      :=OFN_EXPLORER or OFN_OVERWRITEPROMPT;// or OFN_HIDEREADONLY;
-  end;
-  if open then
-    result:=GetOpenFileNameA({$IFDEF FPC}@{$ENDIF}NameRec)
+  end
   else
-    result:=GetSaveFileNameA({$IFDEF FPC}@{$ENDIF}NameRec);
+  begin
+    a:=SendMessageW(wnd,WM_GETTEXTLENGTH,0,0)+1;
+    if a>1 then
+    begin
+      mGetMem(pWideChar(result),a*SizeOf(WideChar));
+      SendMessageW(wnd,WM_GETTEXT,a,lparam(result));
+    end;
+  end;
 end;
 
-function ShowDlgW(dst:PWideChar;fname:PWideChar=nil;Filter:PWideChar=nil;open:boolean=true):boolean;
-var
-  NameRec:OpenFileNameW;
+function GetDlgText(Dialog:HWND;idc:integer;getAnsi:boolean=false):pointer;
 begin
-  FillChar(NameRec,SizeOf(NameRec),0);
-  with NameRec do
+  result:=GetDlgText(GetDlgItem(Dialog,idc),getAnsi);
+end;
+
+//----- Combobox functions -----
+
+function CB_SelectData(cb:HWND;data:dword):lresult; overload;
+var
+  i:integer;
+begin
+  result:=0;
+  for i:=0 to SendMessage(cb,CB_GETCOUNT,0,0)-1 do
   begin
-    LStructSize:=SizeOf(NameRec);
-    if fname=nil then
-      dst[0]:=#0
-    else if fname<>dst then
-      StrCopyW(dst,fname);
-//    lpstrInitialDir:=dst;
-    lpStrFile  :=dst;
-    lpStrFilter:=Filter;
-    if Filter<>nil then
+    if data=dword(SendMessage(cb,CB_GETITEMDATA,i,0)) then
     begin
-      lpstrDefExt:=StrEndW(Filter)+1;
-      inc(lpstrDefExt,2); // skip "*."
+      result:=i;
+      break;
     end;
-    NMaxFile   :=511;
-    Flags      :=OFN_EXPLORER or OFN_OVERWRITEPROMPT;// or OFN_HIDEREADONLY;
   end;
-  if open then
-    result:=GetOpenFileNameW({$IFDEF FPC}@{$ENDIF}NameRec)
+  result:=SendMessage(cb,CB_SETCURSEL,result,0);
+end;
+
+function CB_SelectData(Dialog:HWND;id:cardinal;data:dword):lresult; overload;
+begin
+  result:=CB_SelectData(GetDlgItem(Dialog,id),data);
+end;
+
+function CB_GetData(cb:HWND;idx:integer=-1):lresult;
+begin
+  if idx<0 then
+    idx:=SendMessage(cb,CB_GETCURSEL,0,0);
+  result:=SendMessage(cb,CB_GETITEMDATA,idx,0);
+end;
+
+function CB_AddStrData(cb:HWND;astr:pAnsiChar;data:integer=0;idx:integer=-1):HWND;
+begin
+  result:=cb;
+  if idx<0 then
+    idx:=SendMessage(cb,CB_ADDSTRING,0,lparam(astr))
   else
-    result:=GetSaveFileNameW({$IFDEF FPC}@{$ENDIF}NameRec)
+    idx:=SendMessage(cb,CB_INSERTSTRING,idx,lparam(astr));
+  SendMessage(cb,CB_SETITEMDATA,idx,data);
 end;
 
-function SelectDirectory(Caption:PAnsiChar;var Directory:PAnsiChar;
-         Parent:HWND=0;newstyle:bool=false):Boolean;
-var
-  BrowseInfo:TBrowseInfoA;
-  Buffer:array [0..MAX_PATH-1] of AnsiChar;
-  ItemIDList:PItemIDList;
-  ShellMalloc:IMalloc;
+function CB_AddStrDataW(cb:HWND;astr:pWideChar;data:integer=0;idx:integer=-1):HWND;
 begin
-  Result:=False;
-  FillChar(BrowseInfo,SizeOf(BrowseInfo),0);
-  if (ShGetMalloc(ShellMalloc)=S_OK) and (ShellMalloc<>nil) then
+  result:=cb;
+  if idx<0 then
+    idx:=SendMessageW(cb,CB_ADDSTRING,0,lparam(astr))
+  else
+    idx:=SendMessageW(cb,CB_INSERTSTRING,idx,lparam(astr));
+  SendMessage(cb,CB_SETITEMDATA,idx,data);
+end;
+
+function StringToGUID(const astr:PAnsiChar):TGUID;
+var
+  i:integer;
+begin
+  result:=EmptyGUID;
+  if StrLen(astr)<>38 then exit;
+  result.D1:=HexToInt(PAnsiChar(@astr[01]),8);
+  result.D2:=HexToInt(PAnsiChar(@astr[10]),4);
+  result.D3:=HexToInt(PAnsiChar(@astr[15]),4);
+
+  result.D4[0]:=HexToInt(PAnsiChar(@astr[20]),2);
+  result.D4[1]:=HexToInt(PAnsiChar(@astr[22]),2);
+  for i:=2 to 7 do
   begin
-    with BrowseInfo do
-    begin
-      hwndOwner     :=Parent;
-      pszDisplayName:=@Buffer;
-      lpszTitle     :=Caption;
-      ulFlags       :=BIF_RETURNONLYFSDIRS;
-    end;
-    if newstyle then
-      if CoInitializeEx(nil,COINIT_APARTMENTTHREADED)<>RPC_E_CHANGED_MODE then
-        BrowseInfo.ulFlags:=BrowseInfo.ulFlags or BIF_NEWDIALOGSTYLE;
-    try
-      ItemIDList:=ShBrowseForFolderA({$IFDEF FPC}@{$ENDIF}BrowseInfo);
-      Result:=ItemIDList<>nil;
-      if Result then
-      begin
-        ShGetPathFromIDListA(ItemIDList,Buffer);
-        StrDup(Directory,Buffer);
-        ShellMalloc.Free(ItemIDList);
-      end;
-    finally
-      if newstyle then CoUninitialize;
-    end;
+    result.D4[i]:=HexToInt(PAnsiChar(@astr[21+i*2]),2);
   end;
 end;
 
-function SelectDirectory(Caption:PWideChar;var Directory:PWideChar;
-         Parent:HWND=0;newstyle:bool=false):Boolean;
+function StringToGUID(const astr:PWideChar):TGUID;
 var
-  BrowseInfo:TBrowseInfoW;
-  Buffer:array [0..MAX_PATH-1] of WideChar;
-  ItemIDList:PItemIDList;
-  ShellMalloc:IMalloc;
+  i:integer;
 begin
-  Result:=False;
-  FillChar(BrowseInfo,SizeOf(BrowseInfo),0);
-  if (ShGetMalloc(ShellMalloc)=S_OK) and (ShellMalloc<>nil) then
+  result:=EmptyGUID;
+  if StrLenW(astr)<>38 then exit;
+  result.D1:=HexToInt(pWideChar(@astr[01]),8);
+  result.D2:=HexToInt(pWideChar(@astr[10]),4);
+  result.D3:=HexToInt(pWideChar(@astr[15]),4);
+
+  result.D4[0]:=HexToInt(pWideChar(@astr[20]),2);
+  result.D4[1]:=HexToInt(pWideChar(@astr[22]),2);
+  for i:=2 to 7 do
   begin
-    with BrowseInfo do
-    begin
-      hwndOwner     :=Parent;
-      pszDisplayName:=@Buffer;
-      lpszTitle     :=Caption;
-      ulFlags       :=BIF_RETURNONLYFSDIRS;
-    end;
-    if newstyle then
-      if CoInitializeEx(nil,COINIT_APARTMENTTHREADED)<>RPC_E_CHANGED_MODE then
-        BrowseInfo.ulFlags:=BrowseInfo.ulFlags or BIF_NEWDIALOGSTYLE;
-    try
-      ItemIDList:=ShBrowseForFolderW({$IFDEF FPC}@{$ENDIF}BrowseInfo);
-      Result:=ItemIDList<>nil;
-      if Result then
-      begin
-        ShGetPathFromIDListW(ItemIDList,Buffer);
-        StrDupW(Directory,Buffer);
-        ShellMalloc.Free(ItemIDList);
-      end;
-    finally
-      if newstyle then CoUninitialize;
-    end;
+    result.D4[i]:=HexToInt(pWideChar(@astr[21+i*2]),2);
   end;
 end;
 
 //----- ListView functions -----
+
+Procedure ListView_GetItemTextA(hwndLV:hwnd;i:WPARAM;iSubItem:integer;pszText:Pointer;cchTextMax:integer);
+Var
+  lvi:LV_ITEMA;
+Begin
+  lvi.iSubItem  :=iSubItem;
+  lvi.cchTextMax:=cchTextMax;
+  lvi.pszText   :=pszText;
+  SendMessageA(hwndLV,LVM_GETITEMTEXT,i,LPARAM(@lvi));
+end;
+
+Procedure ListView_GetItemTextW(hwndLV:hwnd;i:WPARAM;iSubItem:integer;pszText:Pointer;cchTextMax:integer);
+Var
+  lvi:LV_ITEMW;
+Begin
+  lvi.iSubItem  :=iSubItem;
+  lvi.cchTextMax:=cchTextMax;
+  lvi.pszText   :=pszText;
+  SendMessageW(hwndLV,LVM_GETITEMTEXT,i,LPARAM(@lvi));
+end;
 
 procedure LV_SetItem(handle:hwnd;str:PAnsiChar;item:integer;subitem:integer=0);
 var
@@ -328,6 +377,66 @@ begin
   end;
   if (last>=0) and (last<cnt) then
     result:=result or 2;
+end;
+
+//----- CommDlg procedures -----
+
+function ShowDlg(dst:PAnsiChar;fname:PAnsiChar=nil;Filter:PAnsiChar=nil;open:boolean=true):boolean;
+var
+  NameRec:OpenFileNameA;
+begin
+  FillChar(NameRec,SizeOf(NameRec),0);
+  with NameRec do
+  begin
+    LStructSize:=SizeOf(NameRec);
+    if fname=nil then
+      dst[0]:=#0
+    else if fname<>dst then
+      StrCopy(dst,fname);
+//    lpstrInitialDir:=dst;
+    if Filter<>nil then
+    begin
+      lpstrDefExt:=StrEnd(Filter)+1;
+      inc(lpstrDefExt,2); // skip "*."
+    end;
+    lpStrFile  :=dst;
+    lpStrFilter:=Filter;
+    NMaxFile   :=511;
+    Flags      :=OFN_EXPLORER or OFN_OVERWRITEPROMPT;// or OFN_HIDEREADONLY;
+  end;
+  if open then
+    result:=GetOpenFileNameA({$IFDEF FPC}@{$ENDIF}NameRec)
+  else
+    result:=GetSaveFileNameA({$IFDEF FPC}@{$ENDIF}NameRec);
+end;
+
+function ShowDlgW(dst:PWideChar;fname:PWideChar=nil;Filter:PWideChar=nil;open:boolean=true):boolean;
+var
+  NameRec:OpenFileNameW;
+begin
+  FillChar(NameRec,SizeOf(NameRec),0);
+  with NameRec do
+  begin
+    LStructSize:=SizeOf(NameRec);
+    if fname=nil then
+      dst[0]:=#0
+    else if fname<>dst then
+      StrCopyW(dst,fname);
+//    lpstrInitialDir:=dst;
+    if Filter<>nil then
+    begin
+      lpstrDefExt:=StrEndW(Filter)+1;
+      inc(lpstrDefExt,2); // skip "*."
+    end;
+    lpStrFile  :=dst;
+    lpStrFilter:=Filter;
+    NMaxFile   :=511;
+    Flags      :=OFN_EXPLORER or OFN_OVERWRITEPROMPT;// or OFN_HIDEREADONLY;
+  end;
+  if open then
+    result:=GetOpenFileNameW({$IFDEF FPC}@{$ENDIF}NameRec)
+  else
+    result:=GetSaveFileNameW({$IFDEF FPC}@{$ENDIF}NameRec)
 end;
 
 end.

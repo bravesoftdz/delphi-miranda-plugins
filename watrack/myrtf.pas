@@ -8,7 +8,7 @@ uses windows;
 procedure SendRTF(wnd:hwnd;txt:PWideChar;isUnicode:Boolean;CP:integer=CP_ACP);
 
 implementation
-uses richedit,common,messages;
+uses richedit,common,messages,m_api;
 
 const
   RTFBufferSize = 16384;
@@ -52,7 +52,7 @@ const
   '\red127\green127\blue127;'+
   '\red210\green210\blue210;';
 
-function StreamWriteCallback(dwCookie:dword;pbBuff:PAnsiChar;cb:dword;var pcb:dword):dword;stdcall;
+function StreamWriteCallback(dwCookie:dword_ptr;pbBuff:PAnsiChar;cb:long;var pcb:long):dword;stdcall;
 begin
   pcb:=StrLen(PAnsiChar(dwCookie));
   if cb<pcb then pcb:=cb;
@@ -66,14 +66,16 @@ var
 begin
   FillChar(stream,SizeOf(stream),0);
   stream.pfnCallback:=@StreamWriteCallback;
-  stream.dwCookie   :=dword(pszText);
+  stream.dwCookie   :=dword_ptr(pszText);
   SendMessage(wnd,EM_STREAMIN,SF_RTF or SFF_PLAINRTF or SFF_SELECTION,lparam(@stream));
 end;
 
-function StreamReadCallback(dwCookie:dword;pbBuff:PAnsiChar;cb:dword;var pcb:dword):dword;stdcall;
+function StreamReadCallback(dwCookie:dword_ptr;pbBuff:PAnsiChar;cb:long;var pcb:long):dword;stdcall;
+type
+  pdword_ptr=^dword_ptr;
 begin
   pcb:=cb;
-  move(pbBuff^,PAnsiChar(pdword(dwCookie)^)^,pcb);
+  move(pbBuff^,PAnsiChar(pdword_ptr(dwCookie)^)^,pcb);
 //  PAnsiChar(pdword(dwCookie)^)[pcb]:=#0;
   result:=0;
 end;
@@ -84,7 +86,7 @@ var
 begin
   FillChar(stream,SizeOf(stream),0);
   stream.pfnCallback:=@StreamReadCallback;
-  stream.dwCookie:=dword(@dst);
+  stream.dwCookie:=dword_ptr(@dst);
   SendMessage(wnd,EM_STREAMOUT,SF_RTF+SFF_SELECTION,lparam(@stream));
 end;
 

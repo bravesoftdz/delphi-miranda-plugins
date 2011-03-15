@@ -850,7 +850,7 @@ begin
   result:=nil;
 
   FillChar(req,SizeOf(req),0);
-  req.cbSize     :=SizeOf(req);//NETLIBHTTPREQUEST_V1_SIZE;//SizeOf(req);
+  req.cbSize     :=NETLIBHTTPREQUEST_V1_SIZE;//SizeOf(req);
   req.requestType:=rtype;
   req.szUrl      :=url;
   req.flags      :=NLHRF_NODUMP or NLHRF_HTTP11;

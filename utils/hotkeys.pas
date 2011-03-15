@@ -10,7 +10,7 @@ type
 
 function AddProc(aproc:AWKHotKeyProc;ahotkey:integer;global:bool=false):integer; overload;
 function AddProc(ahotkey:integer;wnd:HWND;aproc:AWKHotKeyProc         ):integer; overload;
-function AddProc(ahotkey:integer;wnd:HWND;msg:DWORD                   ):integer; overload;
+function AddProc(ahotkey:integer;wnd:HWND;msg:uint_ptr                ):integer; overload;
 function DelProc(hotkey:integer         ):integer;  overload;
 function DelProc(hotkey:integer;wnd:HWND):integer; overload;
 
@@ -310,14 +310,14 @@ begin
   result:=CallNextHookEx(KbHook,code,wParam,lParam);
 end;
 
-function HiddenWindProc(wnd:HWnd;msg:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
+function HiddenWindProc(wnd:HWnd;msg:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
   key:dword;
 begin
   if Msg=WM_HOTKEY then
   begin
     key:=(lParam shr 16)+((lParam and $FF) shl 8);
-    result:=integer(FindHotKey(key,false));
+    result:=lresult(FindHotKey(key,false));
     if result<>0 then
     begin
       result:=AWKHotKeyProc(result)(HotkeyHookToDlg(key));
@@ -464,7 +464,7 @@ begin
   end;
 end;
 
-function AddProc(ahotkey:integer;wnd:HWND;msg:DWORD):integer;
+function AddProc(ahotkey:integer;wnd:HWND;msg:uint_ptr):integer;
 begin
   result:=AddProcWin(ahotkey,wnd);
   if result<0 then

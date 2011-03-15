@@ -1,7 +1,7 @@
 library ActMHook;
 
 uses
-  m_api, Windows, commctrl, messages, swrapper, common, dbsettings, io;
+  m_api, Windows, commctrl, messages, wrapper, common, dbsettings, io;
 
 {$r hooks.res}
 

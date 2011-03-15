@@ -20,9 +20,13 @@ uses Windows;
 
 type
   PPointer = ^Pointer;
+  PHMODULE = ^HMODULE;
+{$IFNDEF FPC}
+  size_t   = integer;
+{$ENDIF}
 
   TEnumProcesses = function (lpidProcess: LPDWORD; cb: DWORD; var cbNeeded: DWORD): BOOL stdcall;
-  TEnumProcessModules = function (hProcess: THandle; lphModule: LPDWORD; cb: DWORD;
+  TEnumProcessModules = function (hProcess: THandle; lphModule: PHMODULE; cb: DWORD;
     var lpcbNeeded: DWORD): BOOL stdcall;
   TGetModuleBaseNameA = function (hProcess: THandle; hModule: HMODULE;
     lpBaseName: PAnsiChar; nSize: DWORD): DWORD stdcall;
@@ -38,12 +42,12 @@ type
   _MODULEINFO = packed record
     lpBaseOfDll: Pointer;
     SizeOfImage: DWORD;
-    EntryPoint: Pointer;
+    EntryPoint : Pointer;
   end;
-  MODULEINFO = _MODULEINFO;
+  MODULEINFO   = _MODULEINFO;
   LPMODULEINFO = ^_MODULEINFO;
-  TModuleInfo = _MODULEINFO;
-  PModuleInfo = LPMODULEINFO;
+  TModuleInfo  = _MODULEINFO;
+  PModuleInfo  = LPMODULEINFO;
 
   TGetModuleInformation = function (hProcess: THandle; hModule: HMODULE;
     lpmodinfo: LPMODULEINFO; cb: DWORD): BOOL stdcall;
@@ -55,10 +59,10 @@ type
     FaultingPc: Pointer;
     FaultingVa: Pointer;
   end;
-  PSAPI_WS_WATCH_INFORMATION = _PSAPI_WS_WATCH_INFORMATION;
+  PSAPI_WS_WATCH_INFORMATION  = _PSAPI_WS_WATCH_INFORMATION;
   PPSAPI_WS_WATCH_INFORMATION = ^_PSAPI_WS_WATCH_INFORMATION;
-  TPSAPIWsWatchInformation = _PSAPI_WS_WATCH_INFORMATION;
-  PPSAPIWsWatchInformation = PPSAPI_WS_WATCH_INFORMATION;
+  TPSAPIWsWatchInformation    = _PSAPI_WS_WATCH_INFORMATION;
+  PPSAPIWsWatchInformation    = PPSAPI_WS_WATCH_INFORMATION;
 
   TGetWsChanges = function (hProcess: THandle; lpWatchInfo: PPSAPI_WS_WATCH_INFORMATION;
     cb: DWORD): BOOL stdcall;
@@ -83,27 +87,27 @@ type
     var lpcbNeeded: DWORD): BOOL stdcall;
 
   _PROCESS_MEMORY_COUNTERS = packed record
-    cb: DWORD;
-    PageFaultCount: DWORD;
-    PeakWorkingSetSize: DWORD;
-    WorkingSetSize: DWORD;
-    QuotaPeakPagedPoolUsage: DWORD;
-    QuotaPagedPoolUsage: DWORD;
-    QuotaPeakNonPagedPoolUsage: DWORD;
-    QuotaNonPagedPoolUsage: DWORD;
-    PagefileUsage: DWORD;
-    PeakPagefileUsage: DWORD;
+    cb                        : DWORD;
+    PageFaultCount            : DWORD;
+    PeakWorkingSetSize        : size_t;
+    WorkingSetSize            : size_t;
+    QuotaPeakPagedPoolUsage   : size_t;
+    QuotaPagedPoolUsage       : size_t;
+    QuotaPeakNonPagedPoolUsage: size_t;
+    QuotaNonPagedPoolUsage    : size_t;
+    PagefileUsage             : size_t;
+    PeakPagefileUsage         : size_t;
   end;
-  PROCESS_MEMORY_COUNTERS = _PROCESS_MEMORY_COUNTERS;
+  PROCESS_MEMORY_COUNTERS  = _PROCESS_MEMORY_COUNTERS;
   PPROCESS_MEMORY_COUNTERS = ^_PROCESS_MEMORY_COUNTERS;
-  TProcessMemoryCounters = _PROCESS_MEMORY_COUNTERS;
-  PProcessMemoryCounters = ^_PROCESS_MEMORY_COUNTERS;
+  TProcessMemoryCounters   = _PROCESS_MEMORY_COUNTERS;
+  PProcessMemoryCounters   = ^_PROCESS_MEMORY_COUNTERS;
 
   TGetProcessMemoryInfo = function (Process: THandle;
     ppsmemCounters: PPROCESS_MEMORY_COUNTERS; cb: DWORD): BOOL stdcall;
 
 function EnumProcesses(lpidProcess: LPDWORD; cb: DWORD; var cbNeeded: DWORD): BOOL;
-function EnumProcessModules(hProcess: THandle; lphModule: LPDWORD; cb: DWORD;
+function EnumProcessModules(hProcess: THandle; lphModule:PHMODULE ; cb: DWORD;
   var lpcbNeeded: DWORD): BOOL;
 function GetModuleBaseName(hProcess: THandle; hModule: HMODULE;
   lpBaseName: PWideChar; nSize: DWORD): DWORD;
@@ -149,29 +153,30 @@ implementation
 
 var
   hPSAPI: THandle;
-  _EnumProcesses: TEnumProcesses;
-  _EnumProcessModules: TEnumProcessModules;
-  _GetModuleBaseName: TGetModuleBaseNameW;
-  _GetModuleFileNameEx: TGetModuleFileNameExW;
-  _GetModuleBaseNameA: TGetModuleBaseNameA;
-  _GetModuleFileNameExA: TGetModuleFileNameExA;
-  _GetModuleBaseNameW: TGetModuleBaseNameW;
-  _GetModuleFileNameExW: TGetModuleFileNameExW;
-  _GetModuleInformation: TGetModuleInformation;
-  _EmptyWorkingSet: TEmptyWorkingSet;
-  _QueryWorkingSet: TQueryWorkingSet;
+var
+  _EnumProcesses              : TEnumProcesses;
+  _EnumProcessModules         : TEnumProcessModules;
+  _GetModuleBaseName          : TGetModuleBaseNameW;
+  _GetModuleFileNameEx        : TGetModuleFileNameExW;
+  _GetModuleBaseNameA         : TGetModuleBaseNameA;
+  _GetModuleFileNameExA       : TGetModuleFileNameExA;
+  _GetModuleBaseNameW         : TGetModuleBaseNameW;
+  _GetModuleFileNameExW       : TGetModuleFileNameExW;
+  _GetModuleInformation       : TGetModuleInformation;
+  _EmptyWorkingSet            : TEmptyWorkingSet;
+  _QueryWorkingSet            : TQueryWorkingSet;
   _InitializeProcessForWsWatch: TInitializeProcessForWsWatch;
-  _GetMappedFileName: TGetMappedFileNameW;
-  _GetDeviceDriverBaseName: TGetDeviceDriverBaseNameW;
-  _GetDeviceDriverFileName: TGetDeviceDriverFileNameW;
-  _GetMappedFileNameA: TGetMappedFileNameA;
-  _GetDeviceDriverBaseNameA: TGetDeviceDriverBaseNameA;
-  _GetDeviceDriverFileNameA: TGetDeviceDriverFileNameA;
-  _GetMappedFileNameW: TGetMappedFileNameW;
-  _GetDeviceDriverBaseNameW: TGetDeviceDriverBaseNameW;
-  _GetDeviceDriverFileNameW: TGetDeviceDriverFileNameW;
-  _EnumDeviceDrivers: TEnumDeviceDrivers;
-  _GetProcessMemoryInfo: TGetProcessMemoryInfo;
+  _GetMappedFileName          : TGetMappedFileNameW;
+  _GetDeviceDriverBaseName    : TGetDeviceDriverBaseNameW;
+  _GetDeviceDriverFileName    : TGetDeviceDriverFileNameW;
+  _GetMappedFileNameA         : TGetMappedFileNameA;
+  _GetDeviceDriverBaseNameA   : TGetDeviceDriverBaseNameA;
+  _GetDeviceDriverFileNameA   : TGetDeviceDriverFileNameA;
+  _GetMappedFileNameW         : TGetMappedFileNameW;
+  _GetDeviceDriverBaseNameW   : TGetDeviceDriverBaseNameW;
+  _GetDeviceDriverFileNameW   : TGetDeviceDriverFileNameW;
+  _EnumDeviceDrivers          : TEnumDeviceDrivers;
+  _GetProcessMemoryInfo       : TGetProcessMemoryInfo;
 
 function CheckPSAPILoaded: Boolean;
 begin
@@ -184,29 +189,29 @@ begin
       Result := False;
       Exit;
     end;
-    @_EnumProcesses := GetProcAddress(hPSAPI, PAnsiChar('EnumProcesses'));
-    @_EnumProcessModules := GetProcAddress(hPSAPI, PAnsiChar('EnumProcessModules'));
-    @_GetModuleBaseName := GetProcAddress(hPSAPI, PAnsiChar('GetModuleBaseNameW'));
-    @_GetModuleFileNameEx := GetProcAddress(hPSAPI, PAnsiChar('GetModuleFileNameExW'));
-    @_GetModuleBaseNameA := GetProcAddress(hPSAPI, PAnsiChar('GetModuleBaseNameA'));
-    @_GetModuleFileNameExA := GetProcAddress(hPSAPI, PAnsiChar('GetModuleFileNameExA'));
-    @_GetModuleBaseNameW := GetProcAddress(hPSAPI, PAnsiChar('GetModuleBaseNameW'));
-    @_GetModuleFileNameExW := GetProcAddress(hPSAPI, PAnsiChar('GetModuleFileNameExW'));
-    @_GetModuleInformation := GetProcAddress(hPSAPI, PAnsiChar('GetModuleInformation'));
-    @_EmptyWorkingSet := GetProcAddress(hPSAPI, PAnsiChar('EmptyWorkingSet'));
-    @_QueryWorkingSet := GetProcAddress(hPSAPI, PAnsiChar('QueryWorkingSet'));
+    @_EnumProcesses               := GetProcAddress(hPSAPI, PAnsiChar('EnumProcesses'));
+    @_EnumProcessModules          := GetProcAddress(hPSAPI, PAnsiChar('EnumProcessModules'));
+    @_GetModuleBaseName           := GetProcAddress(hPSAPI, PAnsiChar('GetModuleBaseNameW'));
+    @_GetModuleFileNameEx         := GetProcAddress(hPSAPI, PAnsiChar('GetModuleFileNameExW'));
+    @_GetModuleBaseNameA          := GetProcAddress(hPSAPI, PAnsiChar('GetModuleBaseNameA'));
+    @_GetModuleFileNameExA        := GetProcAddress(hPSAPI, PAnsiChar('GetModuleFileNameExA'));
+    @_GetModuleBaseNameW          := GetProcAddress(hPSAPI, PAnsiChar('GetModuleBaseNameW'));
+    @_GetModuleFileNameExW        := GetProcAddress(hPSAPI, PAnsiChar('GetModuleFileNameExW'));
+    @_GetModuleInformation        := GetProcAddress(hPSAPI, PAnsiChar('GetModuleInformation'));
+    @_EmptyWorkingSet             := GetProcAddress(hPSAPI, PAnsiChar('EmptyWorkingSet'));
+    @_QueryWorkingSet             := GetProcAddress(hPSAPI, PAnsiChar('QueryWorkingSet'));
     @_InitializeProcessForWsWatch := GetProcAddress(hPSAPI, PAnsiChar('InitializeProcessForWsWatch'));
-    @_GetMappedFileName := GetProcAddress(hPSAPI, PAnsiChar('GetMappedFileNameW'));
-    @_GetDeviceDriverBaseName := GetProcAddress(hPSAPI, PAnsiChar('GetDeviceDriverBaseNameW'));
-    @_GetDeviceDriverFileName := GetProcAddress(hPSAPI, PAnsiChar('GetDeviceDriverFileNameW'));
-    @_GetMappedFileNameA := GetProcAddress(hPSAPI, PAnsiChar('GetMappedFileNameA'));
-    @_GetDeviceDriverBaseNameA := GetProcAddress(hPSAPI, PAnsiChar('GetDeviceDriverBaseNameA'));
-    @_GetDeviceDriverFileNameA := GetProcAddress(hPSAPI, PAnsiChar('GetDeviceDriverFileNameA'));
-    @_GetMappedFileNameW := GetProcAddress(hPSAPI, PAnsiChar('GetMappedFileNameW'));
-    @_GetDeviceDriverBaseNameW := GetProcAddress(hPSAPI, PAnsiChar('GetDeviceDriverBaseNameW'));
-    @_GetDeviceDriverFileNameW := GetProcAddress(hPSAPI, PAnsiChar('GetDeviceDriverFileNameW'));
-    @_EnumDeviceDrivers := GetProcAddress(hPSAPI, PAnsiChar('EnumDeviceDrivers'));
-    @_GetProcessMemoryInfo := GetProcAddress(hPSAPI, PAnsiChar('GetProcessMemoryInfo'));
+    @_GetMappedFileName           := GetProcAddress(hPSAPI, PAnsiChar('GetMappedFileNameW'));
+    @_GetDeviceDriverBaseName     := GetProcAddress(hPSAPI, PAnsiChar('GetDeviceDriverBaseNameW'));
+    @_GetDeviceDriverFileName     := GetProcAddress(hPSAPI, PAnsiChar('GetDeviceDriverFileNameW'));
+    @_GetMappedFileNameA          := GetProcAddress(hPSAPI, PAnsiChar('GetMappedFileNameA'));
+    @_GetDeviceDriverBaseNameA    := GetProcAddress(hPSAPI, PAnsiChar('GetDeviceDriverBaseNameA'));
+    @_GetDeviceDriverFileNameA    := GetProcAddress(hPSAPI, PAnsiChar('GetDeviceDriverFileNameA'));
+    @_GetMappedFileNameW          := GetProcAddress(hPSAPI, PAnsiChar('GetMappedFileNameW'));
+    @_GetDeviceDriverBaseNameW    := GetProcAddress(hPSAPI, PAnsiChar('GetDeviceDriverBaseNameW'));
+    @_GetDeviceDriverFileNameW    := GetProcAddress(hPSAPI, PAnsiChar('GetDeviceDriverFileNameW'));
+    @_EnumDeviceDrivers           := GetProcAddress(hPSAPI, PAnsiChar('EnumDeviceDrivers'));
+    @_GetProcessMemoryInfo        := GetProcAddress(hPSAPI, PAnsiChar('GetProcessMemoryInfo'));
   end;
   Result := True;
 end;
@@ -218,7 +223,7 @@ begin
   else Result := False;
 end;
 
-function EnumProcessModules(hProcess: THandle; lphModule: LPDWORD; cb: DWORD;
+function EnumProcessModules(hProcess: THandle; lphModule: PHMODULE; cb: DWORD;
   var lpcbNeeded: DWORD): BOOL;
 begin
   if CheckPSAPILoaded then

@@ -159,10 +159,10 @@ begin
   result^:=#0;
   p:=result;
   ces.pfnEnumProc:=@EnumSettingsProc;
-  ces.lParam     :=dword(@p);
+  ces.lParam     :=lparam(@p);
   ces.szModule   :=PluginShort;
   ces.ofsSettings:=0;
-  PluginLink^.CallService(MS_DB_CONTACT_ENUMSETTINGS,0,dword(@ces));
+  PluginLink^.CallService(MS_DB_CONTACT_ENUMSETTINGS,0,lparam(@ces));
 end;
 
 procedure LoadTemplates;
