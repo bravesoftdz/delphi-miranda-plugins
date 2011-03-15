@@ -5,7 +5,7 @@ unit pl_1by1;
 interface
 
 implementation
-uses windows,common,swrapper,srv_player,wat_api;
+uses windows,common,wrapper,srv_player,wat_api;
 
 const
   ObOClass = '1by1WndClass';

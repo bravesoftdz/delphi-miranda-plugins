@@ -31,11 +31,15 @@ function ExecuteWaitW(AppPath:pWideChar; CmdLine:pWideChar=nil; DfltDirectory:PW
 function ExecuteWait(AppPath:PAnsiChar; CmdLine:PAnsiChar=nil; DfltDirectory:PAnsiChar=nil;
          Show:DWORD=SW_SHOWNORMAL; TimeOut:DWORD=0; ProcID:PDWORD=nil):dword;
 
+function GetEXEbyWnd(w:HWND; var dst:pWideChar):pWideChar; overload;
+function GetEXEbyWnd(w:HWND; var dst:PAnsiChar):PAnsiChar; overload;
+function IsExeRunning(exename:PWideChar):boolean; {hwnd}
+
 implementation
 
 uses
   {$IFNDEF FPC}shellapi,{$ENDIF}
-  common,messages;
+  common,messages,psapi;
 
 function ExecuteWaitW(AppPath:pWideChar; CmdLine:pWideChar=nil; DfltDirectory:PWideChar=nil;
          Show:DWORD=SW_SHOWNORMAL; TimeOut:DWORD=0; ProcID:PDWORD=nil):dword;
@@ -163,6 +167,8 @@ begin
   end;
 end;
 
+//----- Information functions -----
+
 function GetWorkOfflineStatus:integer;
 var
   lKey:HKEY;
@@ -179,6 +185,44 @@ begin
     ;
     RegCloseKey(lKey);
   end;
+end;
+
+function GetAssoc(key:PAnsiChar):PAnsiChar;
+var
+  lKey:HKEY;
+  tmpbuf:array [0..511] of AnsiChar;
+  len:integer;
+begin
+  result:=nil;
+  if RegOpenKeyExA(HKEY_CLASSES_ROOT,key,0,
+     KEY_READ,lKey)=ERROR_SUCCESS then
+  begin
+    len:=511;
+    if (RegQueryValueExA(lKey,NIL,NIL,NIL,@tmpbuf,@len)=ERROR_SUCCESS) then
+    begin
+      StrDup(result,tmpbuf);
+//      only path
+//      while result[len]<>'\' do dec(len);
+//      StrCopy(result,result+2,len-3);
+    end;
+    RegCloseKey(lKey);
+  end;
+end;
+
+function GetFocusedChild(wnd:HWND):HWND;
+var
+  dwTargetOwner:DWORD;
+  dwThreadID:DWORD;
+  res:boolean;
+begin
+  dwTargetOwner:=GetWindowThreadProcessId(wnd,nil);
+  dwThreadID:=GetCurrentThreadId();
+  res:=false;
+  if (dwTargetOwner<>dwThreadID) then
+    res:=AttachThreadInput(dwThreadID,dwTargetOwner,TRUE);
+  result:=GetFocus;
+  if res then
+    AttachThreadInput(dwThreadID,dwTargetOwner,FALSE);
 end;
 
 function WaitFocusedWndChild(Wnd:HWnd):HWnd;
@@ -289,44 +333,80 @@ begin
   until false;
 end;
 
-function GetFocusedChild(wnd:HWND):HWND;
+//----- work with EXE -----
+
+function GetEXEbyWnd(w:HWND; var dst:pWideChar):pWideChar;
 var
-  dwTargetOwner:DWORD;
-  dwThreadID:DWORD;
-  res:boolean;
+  hProcess:THANDLE;
+  ProcID:DWORD;
+  ModuleName: array [0..300] of WideChar;
 begin
-  dwTargetOwner:=GetWindowThreadProcessId(wnd,nil);
-  dwThreadID:=GetCurrentThreadId();
-  res:=false;
-  if (dwTargetOwner<>dwThreadID) then
-    res:=AttachThreadInput(dwThreadID,dwTargetOwner,TRUE);
-  result:=GetFocus;
-  if res then
-    AttachThreadInput(dwThreadID,dwTargetOwner,FALSE);
+  dst:=nil;
+  GetWindowThreadProcessId(w,@ProcID);
+  if ProcID<>0 then
+  begin
+    hProcess:=OpenProcess(PROCESS_QUERY_INFORMATION or PROCESS_VM_READ,False,ProcID);
+    if hProcess<>0 then
+    begin
+      ModuleName[0]:=#0;
+      GetModuleFilenameExW(hProcess,0,ModuleName,SizeOf(ModuleName));
+      StrDupW(dst,ModuleName);
+      CloseHandle(hProcess);
+    end;
+  end;
+  result:=dst;
 end;
 
-function GetAssoc(key:PAnsiChar):PAnsiChar;
+function GetEXEbyWnd(w:HWND; var dst:PAnsiChar):PAnsiChar;
 var
-  lKey:HKEY;
-  tmpbuf:array [0..511] of AnsiChar;
-  len:integer;
+  hProcess:THANDLE;
+  ProcID:DWORD;
+  ModuleName: array [0..300] of AnsiChar;
 begin
-  result:=nil;
-  if RegOpenKeyExA(HKEY_CLASSES_ROOT,key,0,
-     KEY_READ,lKey)=ERROR_SUCCESS then
+  dst:=nil;
+  GetWindowThreadProcessId(w,@ProcID);
+  if ProcID<>0 then
   begin
-    len:=511;
-    if (RegQueryValueExA(lKey,NIL,NIL,NIL,@tmpbuf,@len)=ERROR_SUCCESS) then
+    hProcess:=OpenProcess(PROCESS_QUERY_INFORMATION or PROCESS_VM_READ,False,ProcID);
+    if hProcess<>0 then
     begin
-      StrDup(result,tmpbuf);
-//      only path
-//      while result[len]<>'\' do dec(len);
-//      StrCopy(result,result+2,len-3);
+      ModuleName[0]:=#0;
+      GetModuleFilenameExA(hProcess,0,ModuleName,SizeOf(ModuleName));
+      StrDup(dst,ModuleName);
+      CloseHandle(hProcess);
     end;
-    RegCloseKey(lKey);
+  end;
+  result:=dst;
+end;
+
+function IsExeRunning(exename:PWideChar):boolean;{hwnd}
+const
+  nCount = 4096;
+var
+  Processes:array [0..nCount-1] of dword;
+  nProcess:dword;
+  hProcess:THANDLE;
+  ModuleName: array [0..300] of WideChar;
+  i:integer;
+begin
+  result:=false;
+  EnumProcesses(pointer(@Processes),nCount*SizeOf(DWORD),nProcess);
+  nProcess:=(nProcess div 4)-1;
+  for i:=2 to nProcess do //skip Idle & System
+  begin
+    hProcess:=OpenProcess(PROCESS_QUERY_INFORMATION or PROCESS_VM_READ,
+      False,Processes[i]);
+    if hProcess<>0 then
+    begin
+      GetModuleFilenameExW(hProcess,0,ModuleName,SizeOf(ModuleName));
+      result:=lstrcmpiw(extractw(ModuleName,true),exename)=0;
+      CloseHandle(hProcess);
+      if result then exit;
+    end;
   end;
 end;
 
+//----- work with handles -----
 type
   TThreadInfo = record
     ftCreationTime:TFileTime;

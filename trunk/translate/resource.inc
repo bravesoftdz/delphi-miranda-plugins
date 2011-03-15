@@ -6,4 +6,4 @@ const
   IDC_FRAME_FROM   = 1027;
   IDC_FRAME_TO     = 1028;
   IDC_FRAME_SWITCH = 1029;
-  
+  IDC_FRAME_SOUND  = 1030;

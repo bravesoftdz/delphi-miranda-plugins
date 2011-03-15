@@ -5,7 +5,7 @@ interface
 
 implementation
 
-uses windows,common,messages,syswinexe,srv_player,wat_api;
+uses windows,common,messages,syswin,srv_player,wat_api;
 
 
 const

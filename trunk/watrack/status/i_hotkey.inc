@@ -44,10 +44,10 @@ begin
         else
         begin
           if IsUnicode then
-            SendMessageW(CurWin,EM_REPLACESEL,0,longint(s))
+            SendMessageW(CurWin,EM_REPLACESEL,0,tlparam(s))
           else
           begin
-            SendMessageA(CurWin,EM_REPLACESEL,0,longint(WideToANSI(s,p,UserCP)));
+            SendMessageA(CurWin,EM_REPLACESEL,0,tlparam(WideToANSI(s,p,UserCP)));
             mFreeMem(p);
           end;
         end;

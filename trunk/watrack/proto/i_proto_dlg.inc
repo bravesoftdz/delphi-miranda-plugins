@@ -75,7 +75,7 @@ begin
   if IsDlgButtonChecked(Dlg,IDC_ISEND      )<>BST_UNCHECKED then HistMask:=HistMask or hmISend;
 end;
 
-function DlgProcOptions(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function DlgProcOptions(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 const
   Changed:integer=0;
 //  hItemAll:THANDLE=0;

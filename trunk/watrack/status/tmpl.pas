@@ -310,7 +310,7 @@ begin
     status:=GetProtoStatusNum(proto);
     r:=GetTemplateStr(TmplType,proto,plStat,status);
   end;
-  if int_ptr(r)=-2 then
+  if r=pWidechar(-2) then
     result:=pWideChar(-2)
   else
     result:=pWideChar(CallService(MS_WAT_REPLACETEXT,0,lparam(r)));

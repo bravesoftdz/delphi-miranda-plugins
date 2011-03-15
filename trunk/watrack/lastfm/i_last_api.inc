@@ -1,6 +1,4 @@
 {}
-type
-  tDigest = array [0..15] of byte;
 
 const
   client_id  = 'wat';//'wat'; 'tst'
@@ -10,7 +8,7 @@ const
 const
   defreq = 'http://post.audioscrobbler.com/?hs=true&p=1.2.1&c=<client-id>&v=<client-ver>&u=<user>&t=<timestamp>&a=<auth>';
 
-function GetMD5Str(digest:TDigest; buf:pAnsiChar):PAnsiChar;
+function GetMD5Str(digest:TMD5Hash; buf:pAnsiChar):PAnsiChar;
 begin
   buf[00]:=HexDigitChrLo[digest[00] shr 4]; buf[01]:=HexDigitChrLo[digest[00] and $0F];
   buf[02]:=HexDigitChrLo[digest[01] shr 4]; buf[03]:=HexDigitChrLo[digest[01] and $0F];
@@ -32,7 +30,7 @@ begin
   result:=@buf;
 end;
 
-function GetMD5(const data;datalen:integer;var digest:tDigest):tDigest;
+function GetMD5(const data;datalen:integer;var digest:TMD5Hash):TMD5Hash;
 begin
   FillChar(digest,16,0);
 
@@ -44,7 +42,7 @@ end;
 function HandShake(login, password:PAnsiChar; notify:bool=false):bool;
 var
   buf:array [0..32] of AnsiChar;
-  digest:TDigest;
+  digest:TMD5Hash;
   stat:mir_md5_state_t;
   timestamp:array [0..31] of AnsiChar;
   request:array [0..511] of AnsiChar;

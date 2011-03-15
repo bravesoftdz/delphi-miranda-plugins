@@ -5,7 +5,7 @@ unit pl_alsong;
 interface
 
 implementation
-uses windows,swrapper,srv_player,common,wat_api;
+uses windows,wrapper,srv_player,common,wat_api;
 
 const
   ALSongClass  = 'ALSongKernelWindow';

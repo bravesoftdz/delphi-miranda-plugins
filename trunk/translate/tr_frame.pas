@@ -9,7 +9,7 @@ procedure DestroyFrame;
 
 implementation
 
-uses Messages,m_api,common,swrapper,mirutils,dbsettings;
+uses Messages,m_api,common,wrapper,mirutils,dbsettings;
 
 {$include resource.inc}
 
@@ -27,7 +27,7 @@ const
   qstart:PAnsiChar = 'v=1.0&langpair=';
   rest:PWideChar = '"translatedText":"';
 const
-  speakquery:PAnsiChar='http://translate.google.com/translate_tts?tl=';
+  speakquery:PAnsiChar='http://translate.google.com/translate_tts?ie=UTF-8&tl=';
 
 type
   tLang = record
@@ -162,15 +162,14 @@ var
   tmpstr:pAnsiChar;
 begin
   result:=nil;
-//!!!  WideToUTF8(src,tmpstr);
-  WideToAnsi(src,tmpstr);
+  WideToUTF8(src,tmpstr);
   mGetMem(buf,StrLen(speakquery)+StrLen(tmpstr)*3+16);
   pc:=StrCopyE(StrCopyE(buf,speakquery),Lang);
   pc^:='&'; inc(pc);
   pc^:='q'; inc(pc);
   pc^:='='; inc(pc);
   Encode(pc,tmpstr);
-  //!! return now: content-Length=0
+
   if GetFile(buf,pAnsiChar('c:\test.mp3'),hNetLib) then
   ;
 
@@ -186,6 +185,11 @@ var
   locale:integer;
 begin
   result:=nil;
+  if StrCmp(tFrom,tTo)=0 then
+  begin
+    StrDupW(result,src);
+    exit;
+  end;
 
   FillChar(langstr,SizeOf(langstr),#0);
   WideToUTF8(src,pca);
@@ -242,7 +246,6 @@ begin
   if pc<>nil then
   begin
     result:=ProcessResult(pc);
-//    MakeMP3(result,tTo);
     mFreeMem(pc);
   end;
 end;
@@ -332,6 +335,7 @@ begin
     IDC_FRAME_TO    : result:=RD_ANCHORX_LEFT  or RD_ANCHORY_CENTRE;
     IDC_FRAME_EDIT  : result:=RD_ANCHORX_WIDTH or RD_ANCHORY_CENTRE;
     IDC_FRAME_START : result:=RD_ANCHORX_RIGHT or RD_ANCHORY_CENTRE;
+    IDC_FRAME_SOUND : result:=RD_ANCHORX_RIGHT or RD_ANCHORY_CENTRE;
   else
     result:=0;
   end;
@@ -354,10 +358,11 @@ begin
     end;
 
     WM_INITDIALOG: begin
-      OldEditProc:=pointer(SetWindowLongPtrA(GetDlgItem(dialog,IDC_FRAME_EDIT),
+      OldEditProc:=pointer(SetWindowLongPtrW(GetDlgItem(dialog,IDC_FRAME_EDIT),
          GWL_WNDPROC,LONG_PTR(@NewEditProc)));
 
       EnableWindow(GetDlgItem(Dialog,IDC_FRAME_START),false);
+      EnableWindow(GetDlgItem(Dialog,IDC_FRAME_SOUND),false);
     end;
 
     WM_SIZE: begin
@@ -416,6 +421,7 @@ begin
                 end;
               end;
             end;
+            IDC_FRAME_SOUND,
             IDC_FRAME_START : begin
               txt:=GetDlgText(Dialog,IDC_FRAME_EDIT);
               if txt<>nil then
@@ -434,12 +440,17 @@ begin
                 end
                 else
                 begin
-                  mGetMem(txt,(StrLenW(sres)+StrLenW(AddText)+1)*SizeOf(WideChar));
-                  StrCopyW(StrCopyEW(txt,sres),AddText);
-                  if MessageBoxW(0,txt,TranslateW(MainTitle),
-                     MB_YESNO+MB_ICONINFORMATION)=IDYES then
+                  if loword(wParam)=IDC_FRAME_SOUND then
+                    MakeMP3(sres,tTo)
+                  else
                   begin
-                    CopyToClipboard(sres,false);
+                    mGetMem(txt,(StrLenW(sres)+StrLenW(AddText)+1)*SizeOf(WideChar));
+                    StrCopyW(StrCopyEW(txt,sres),AddText);
+                    if MessageBoxW(0,txt,TranslateW(MainTitle),
+                       MB_YESNO+MB_ICONINFORMATION)=IDYES then
+                    begin
+                      CopyToClipboard(sres,false);
+                    end;
                   end;
                   mFreeMem(sres);
                   mFreeMem(txt);

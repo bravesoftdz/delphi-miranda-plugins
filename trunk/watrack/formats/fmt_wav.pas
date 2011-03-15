@@ -58,7 +58,7 @@ var
 begin
   result:=false;
   f:=Reset(Info.mfile);
-  if dword(f)=INVALID_HANDLE_VALUE then
+  if f=THANDLE(INVALID_HANDLE_VALUE) then
     exit;
   BlockRead(f,chunk,SizeOf(chunk));
   if chunk.id=WavPackID then

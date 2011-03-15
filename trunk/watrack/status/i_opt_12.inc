@@ -45,7 +45,7 @@ begin
   end;
 end;
 
-function DlgProcOptions12(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function DlgProcOptions12(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lparam; stdcall;
 begin
   result:=0;
   case hMessage of

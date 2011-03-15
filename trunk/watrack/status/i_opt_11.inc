@@ -49,7 +49,7 @@ begin
 
   wnd:=GetDlgItem(Dialog,IDC_STATUS_TEXT);
 
-  SendMessageW(wnd,WM_SETTEXT,0,dword(p));
+  SendMessageW(wnd,WM_SETTEXT,0,lparam(p));
   if IsTemplateActive(tmpl_stext,proto,CurPlyStat,CurStatus) then
   begin
     EnableWindow(wnd,true);
@@ -67,9 +67,9 @@ begin
     wnd :=GetDlgItem(Dialog,IDC_XSTATUS_TITLE);
     wnd1:=GetDlgItem(Dialog,IDC_XSTATUS_TEXT);
     p:=GetTemplateStr(tmpl_xtitle,proto,CurPlyStat,CurStatus);
-    SendMessageW(wnd ,WM_SETTEXT,0,dword(p));
+    SendMessageW(wnd ,WM_SETTEXT,0,lparam(p));
     SendMessageW(wnd1,WM_SETTEXT,0,
-        dword(GetTemplateStr(tmpl_xtext,proto,CurPlyStat,CurStatus)));
+        lparam(GetTemplateStr(tmpl_xtext,proto,CurPlyStat,CurStatus)));
 
     if IsTemplateActive(tmpl_xtitle,proto,CurPlyStat,CurStatus) then
     begin
@@ -90,7 +90,7 @@ begin
   begin
     p:=GetTemplateStr(tmpl_tunes,proto,CurPlyStat,CurStatus);
     wnd:=GetDlgItem(Dialog,IDC_LISTENING_TEXT);
-    SendMessageW(wnd,WM_SETTEXT,0,dword(p));
+    SendMessageW(wnd,WM_SETTEXT,0,lparam(p));
     if IsTemplateActive(tmpl_tunes,proto,CurPlyStat,CurStatus) then
     begin
       EnableWindow(wnd,true);
@@ -142,7 +142,7 @@ begin
   SendMessage(wnd,CB_SETCURSEL,0,0);
 
 //  SendMessageA(wnd,LVM_GETITEMTEXTA,);
-  ListView_GetItemTextA(wnd,CurProto,0,buf,SizeOf(buf));
+  ListView_GetItemTextA(wnd,CurProto,0,@buf,SizeOf(buf));
   StrCat(buf,PS_ICQ_GETCUSTOMSTATUSICON);
   endis:=PluginLink^.ServiceExists(buf)<>0;
 
@@ -244,13 +244,13 @@ begin
   SendMessage(wnd,CB_RESETCONTENT,0,0);
 
   CB_AddStrDataW(wnd,TranslateW('Status'),0);
-  if IsXStatusSupported(dword(proto)) then CB_AddStrDataW(wnd,TranslateW('XStatus'),1);
-  if IsTunesSupported  (dword(proto)) then CB_AddStrDataW(wnd,TranslateW('Tunes'  ),2);
+  if IsXStatusSupported(uint_ptr(proto)) then CB_AddStrDataW(wnd,TranslateW('XStatus'),1);
+  if IsTunesSupported  (uint_ptr(proto)) then CB_AddStrDataW(wnd,TranslateW('Tunes'  ),2);
 
   SendMessage(wnd,CB_SETCURSEL,0,0);
 end;
 
-function DlgProcOptions11(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function DlgProcOptions11(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
   Item:LV_ITEMA;
   buf:array [0..127] of AnsiChar;
@@ -401,7 +401,7 @@ begin
     WM_NOTIFY: begin
       if (Changed and DLGED_INIT)<>0 then
         exit;
-      if PNMLISTVIEW(lParam)^.hdr.code=LVN_ITEMCHANGED then
+      if integer(PNMLISTVIEW(lParam)^.hdr.code)=LVN_ITEMCHANGED then
       begin
         SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
         if ((PNMLISTVIEW(lParam)^.uNewState and LVIS_FOCUSED)<>0) then
@@ -414,7 +414,7 @@ begin
             SaveCBExValue(Dialog,true);
             CurProto:=PNMLISTVIEW(lParam)^.iItem;
             SetScreenFull(Dialog);
-            ListView_GetItemTextA(PNMLISTVIEW(lParam)^.hdr.hwndFrom,CurProto,0,buf,SizeOf(buf));
+            ListView_GetItemTextA(PNMLISTVIEW(lParam)^.hdr.hwndFrom,CurProto,0,@buf,SizeOf(buf));
             wnd:=GetDlgItem(Dialog,IDC_CBEX);
             FillCBType(Dialog,buf);
             if AddCBEx(wnd,buf)<>0 then

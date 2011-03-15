@@ -97,7 +97,7 @@ var
 begin
   result:=false;
   f:=Reset(Info.mfile);
-  if dword(f)=INVALID_HANDLE_VALUE then
+  if f=THANDLE(INVALID_HANDLE_VALUE) then
     exit;
   fsize:=FileSize(f);
   while FilePos(f)<fsize do

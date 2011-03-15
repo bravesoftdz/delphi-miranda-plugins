@@ -13,7 +13,7 @@ const
 
 implementation
 
-uses messages,commctrl,sr_global,m_api,common,mirutils,swrapper,wrapper,sr_window;
+uses messages,commctrl,sr_global,m_api,common,mirutils,wrapper,sr_window;
 
 var
   OldListProc:pointer;

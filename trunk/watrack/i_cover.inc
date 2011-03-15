@@ -70,7 +70,7 @@ begin
   StrCopyW(buf,mfile);
   ChangeExtW(buf,'txt');
   f:=Reset(buf);
-  if dword(f)=INVALID_HANDLE_VALUE then
+  if f=THANDLE(INVALID_HANDLE_VALUE) then
   begin
     dst:=nil;
     result:=false;

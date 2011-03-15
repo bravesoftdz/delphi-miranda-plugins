@@ -37,7 +37,7 @@ begin
   mFreeMem(data.image);
 end;
 
-function DlgProcOptions(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function DlgProcOptions(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
   tmp:longbool;
   bmp,wnd:HWND;
