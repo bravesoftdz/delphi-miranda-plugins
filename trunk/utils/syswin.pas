@@ -407,94 +407,15 @@ begin
 end;
 
 //----- work with handles -----
-type
-  TThreadInfo = record
-    ftCreationTime:TFileTime;
-    dwUnknown1:dword;
-    dwStartAddress:dword;
-    dwOwningPID:dword;
-    dwThreadID:dword;
-    dwCurrentPriority:dword;
-    dwBasePriority:dword;
-    dwContextSwitches:dword;
-    dwThreadState:dword;
-    dwUnknown2:dword;
-    dwUnknown3:dword;
-    dwUnknown4:dword;
-    dwUnknown5:dword;
-    dwUnknown6:dword;
-    dwUnknown7:dword;
-  end;
+function GetProcessHandleCount(hProcess:THANDLE;var pdwHandleCount:dword):bool; stdcall; external 'kernel32.dll';
 
-  TProcessInfo = record
-    dwOffset:dword;
-    dwThreadCount:dword;
-    dwUnknown1:array[0..5] of dword;
-    ftCreationTime:TFileTime;
-    ftUserTime:int64;
-    ftKernelTime:int64;
-    wLength:word;
-    wMaximumLength:word;
-    pszProcessName:pWideChar;
-    dwBasePriority:dword;
-    dwProcessID:dword;
-    dwParentProcessID:dword;
-    dwHandleCount:dword;
-//  not interesting
-    dwUnknown7:dword;
-    dwUnknown8:dword;
-    dwVirtualBytesPeak:dword;
-    dwVirtualBytes:dword;
-    dwPageFaults:dword;
-    dwWorkingSetPeak:dword;
-    dwWorkingSet:dword;
-    dwUnknown9:dword;
-    dwPagedPool:dword;
-    dwUnknown10:dword;
-    dwNonPagedPool:dword;
-    dwPageFileBytesPeak:dword;
-    dwPageFileBytes:dword;
-    dwPrivateBytes:dword;
-    dwUnknown11:dword;
-    dwUnknown12:dword;
-    dwUnknown13:dword;
-    dwUnknown14:dword;
-    ati:array[0..0] of TThreadInfo;
-  end;
+function NtQueryObject(ObjectHandle:THANDLE;ObjectInformationClass:dword;ObjectInformation:pointer;Length:ulong;var ResultLength:longint):cardinal; stdcall; external 'ntdll.dll';
 
-function NtQuerySystemInformation(si_class:cardinal;si:pointer;si_length:cardinal;ret_length:cardinal):cardinal; stdcall; external 'ntdll.dll';
-function NtQueryObject(ObjectHandle:THANDLE;ObjectInformationClass:dword;ObjectInformation:pointer;Length:dword;var ResultLength:dword):cardinal; stdcall; external 'ntdll.dll';
 const
   ObjectNameInformation = 1; // +4 bytes
   ObjectTypeInformation = 2; // +$60 bytes
 const
   STATUS_INFO_LENGTH_MISMATCH = $C0000004;
-
-function GetHandleCount(pid:dword):dword;
-var
-  buf:pointer;
-  pi:^TProcessInfo;
-begin
-{BOOL GetProcessHandleCount(
-  HANDLE hProcess,
-  PDWORD pdwHandleCount
-}
-  mGetMem(buf,300000);
-  NtQuerySystemInformation(5, buf, 300000, 0);
-  pi:=buf;
-  result:=0;
-  repeat
-    pAnsiChar(pi):=pAnsiChar(pi)+pi^.dwOffset; //first - Idle process
-    if pi^.dwProcessID=pid then
-    begin
-      result:=pi^.dwHandleCount;
-      break;
-    end;
-    if pi^.dwOffset=0 then
-      break;
-  until false;
-  mFreeMem(buf);
-end;
 
 function TranslatePath(fn:PWideChar):PWideChar;
 const
@@ -644,14 +565,16 @@ const
 var
   TmpBuf:array [0..BufSize-1] of WideChar;
 
-function GetName(param:pdword):dword; //stdcall;
+function GetName(param:pointer):dword; //stdcall;
+var
+  dummy:longint;
 begin
   result:=0;
   if NTQueryObject(prec(param)^.handle,ObjectNameInformation,
-     @TmpBuf,BufSize*SizeOf(WideChar),pdword(nil)^)=0 then
+     @TmpBuf,BufSize*SizeOf(WideChar),dummy)=0 then
   begin
     GetMem(prec(param)^.fname,(lstrlenw(TmpBuf)-3)*SizeOf(WideChar));
-    StrCopyW(prec(param)^.fname,TmpBuf+4);
+    StrCopyW(prec(param)^.fname,TmpBuf+4); //skip "FileNameLength"
   end;
 end;
 
@@ -659,13 +582,19 @@ function TestHandle(Handle:THANDLE;MultiThread:bool;timeout:cardinal):pWideChar;
 var
   hThread:THANDLE;
   rec:trec;
+  dummy:longint;
 begin
   result:=nil;
 
+  // check what it - file
   if (NTQueryObject(Handle,ObjectTypeInformation,
-     @TmpBuf,BufSize*SizeOf(WideChar),pdword(nil)^)<>0) or
+     @TmpBuf,BufSize*SizeOf(WideChar),dummy)<>0) or
      (StrCmpW(TmpBuf+$30,'File')<>0) then
     Exit;
+
+  // check what it disk file
+//!!! need to check again
+  if GetFileType(handle)<>FILE_TYPE_DISK then exit;
 
   rec.handle:=Handle;
   rec.fname:=nil;
@@ -699,41 +628,44 @@ var
   pc:pWideChar;
 begin
   result:=nil;
-  i:=4;
   GetWindowThreadProcessId(wnd,@c);
   pid:=OpenProcess(PROCESS_DUP_HANDLE,true,c);
-  Handles:=GetHandleCount(c)*4;
+  if pid=0 then exit;
   harcnt:=0;
-  hProcess:=GetCurrentProcess;
-
-  while true do
+  if GetProcessHandleCount(pid,handles) then
   begin
-    if DuplicateHandle(pid,i,hProcess,@h,GENERIC_READ,false,0) then
+    hProcess:=GetCurrentProcess;
+    i:=4;
+
+    while true do
     begin
-      pc:=TestHandle(h,(flags and gffdMultiThread)<>0,timeout);
-      if pc<>nil then
+      if DuplicateHandle(pid,i,hProcess,@h,GENERIC_READ,false,0) then
       begin
-//        if GetFileType(h)=FILE_TYPE_DISK then
+        pc:=TestHandle(h,(flags and gffdMultiThread)<>0,timeout);
+        if pc<>nil then
         begin
-          if (@Filter=nil) or Filter(pc) and (harcnt<maxhandles) then
+  //        if GetFileType(h)=FILE_TYPE_DISK then
           begin
-            har[harcnt]:=pc;
-            inc(harcnt);
-          end
-          else
-            FreeMem(pc);
+            if (@Filter=nil) or Filter(pc) and (harcnt<maxhandles) then
+            begin
+              har[harcnt]:=pc;
+              inc(harcnt);
+            end
+            else
+              FreeMem(pc);
+          end;
         end;
+        CloseHandle(h);
+      end
+      else
+      begin
+        inc(handles,4); //skip empty number and non-duplicates
+        if Handles>MaxHandle then break; //file not found
       end;
-      CloseHandle(h);
-    end
-    else
-    begin
-      inc(handles,4); //skip empty number and non-duplicates
-      if Handles>MaxHandle then break; //file not found
+      inc(i,4);
+      if i>Handles then
+        break;
     end;
-    inc(i,4);
-    if i>Handles then
-      break;
   end;
 
   CloseHandle(pid);

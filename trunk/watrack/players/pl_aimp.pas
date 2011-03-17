@@ -32,30 +32,30 @@ const
 type
   PAIMP2FileInfo = ^TAIMP2FileInfo;
   TAIMP2FileInfo = packed record
-    cbSizeOF    :Cardinal;
+    cbSizeOF    :dword;
     //
-    nActive     :BOOL;
-    nBitRate    :Cardinal;
-    nChannels   :Cardinal;
-    nDuration   :Cardinal;
+    nActive     :LONGBOOL;
+    nBitRate    :dword;
+    nChannels   :dword;
+    nDuration   :dword;
     nFileSize   :Int64;
-    nRating     :Cardinal;
-    nSampleRate :Cardinal;
-    nTrackID    :Cardinal;
+    nRating     :dword;
+    nSampleRate :dword;
+    nTrackID    :dword;
     //
-    nAlbumLen   :Cardinal;
-    nArtistLen  :Cardinal;
-    nDateLen    :Cardinal;
-    nFileNameLen:Cardinal;
-    nGenreLen   :Cardinal;
-    nTitleLen   :Cardinal;
+    nAlbumLen   :dword;
+    nArtistLen  :dword;
+    nDateLen    :dword;
+    nFileNameLen:dword;
+    nGenreLen   :dword;
+    nTitleLen   :dword;
     //
-    sAlbum      :pWideChar;
-    sArtist     :pWideChar;
-    sDate       :pWideChar;
-    sFileName   :pWideChar;
-    sGenre      :pWideChar;
-    sTitle      :pWideChar;
+    sAlbum      :dword_ptr;
+    sArtist     :dword_ptr;
+    sDate       :dword_ptr;
+    sFileName   :dword_ptr;
+    sGenre      :dword_ptr;
+    sTitle      :dword_ptr;
   end;
 
 function Check(wnd:HWND;flags:integer):HWND;cdecl;

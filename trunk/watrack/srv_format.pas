@@ -20,9 +20,9 @@ procedure RegisterFormat(ext:PAnsiChar;proc:tReadFormatProc;flags:dword=0);
 procedure ClearFormats;
 
 type
-  MusEnumProc = function(param:PAnsiChar;lParam:integer):bool;stdcall;
+  MusEnumProc = function(param:PAnsiChar;lParam:LPARAM):bool;stdcall;
 
-function EnumFormats(param:MusEnumProc;lParam:integer):bool;
+function EnumFormats(param:MusEnumProc;lParam:LPARAM):bool;
 
 type
   pwFormat = ^twFormat;
@@ -65,7 +65,7 @@ begin
   end;
 end;
 
-function EnumFormats(param:MusEnumProc;lParam:integer):bool;
+function EnumFormats(param:MusEnumProc;lParam:LPARAM):bool;
 var
   tmp:pFmtArray;
   i,j:integer;
