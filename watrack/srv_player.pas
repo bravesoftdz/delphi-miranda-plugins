@@ -22,9 +22,9 @@ procedure DefFillPlayerList (hwndList:hwnd);
 procedure DefCheckPlayerList(hwndList:hwnd);
 
 type
-  MusEnumProc = function(param:PAnsiChar;lParam:integer):bool;stdcall;
+  MusEnumProc = function(param:PAnsiChar;lParam:LPARAM):bool;stdcall;
 
-function EnumPlayers(param:MusEnumProc;lParam:integer):bool;
+function EnumPlayers(param:MusEnumProc;lParam:LPARAM):bool;
 
 // "Get info" procedures
 function CheckPlayers   (var dst:tSongInfo;flags:cardinal):integer;
@@ -140,7 +140,7 @@ begin
   end;
 end;
 
-function EnumPlayers(param:MusEnumProc;lParam:integer):bool;
+function EnumPlayers(param:MusEnumProc;lParam:LPARAM):bool;
 var
   tmp:pPlyArray;
   i,j:integer;

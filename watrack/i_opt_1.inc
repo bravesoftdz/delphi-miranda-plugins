@@ -145,7 +145,7 @@ begin
       begin
         if (iContextType=HELPINFO_WINDOW) and (iCtrlId=IDC_PLAYERLIST) then
         begin
-          ListView_GetItemText(hItemHandle,
+          ListView_GetItemTextA(hItemHandle,
               SendMessage(hItemHandle,LVM_GETNEXTITEM,-1,LVNI_FOCUSED),0,
               @pldescr,HIGH(pldescr));
           p:=GetPlayerNote(pldescr);
