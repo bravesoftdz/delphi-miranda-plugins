@@ -551,7 +551,7 @@ begin
 end;
 
 const
-  MaxHandle = 8192;
+  MaxHandle = $2000;
 
 type
   prec = ^trec;
@@ -560,21 +560,21 @@ type
     fname:pWideChar;
   end;
 
+function GetName(param:pointer):dword; //stdcall;
 const
-  BufSize = $1000;
+  BufSize = $800;
 var
   TmpBuf:array [0..BufSize-1] of WideChar;
-
-function GetName(param:pointer):dword; //stdcall;
 var
   dummy:longint;
 begin
   result:=0;
+
   if NTQueryObject(prec(param)^.handle,ObjectNameInformation,
      @TmpBuf,BufSize*SizeOf(WideChar),dummy)=0 then
   begin
     GetMem(prec(param)^.fname,(lstrlenw(TmpBuf)-3)*SizeOf(WideChar));
-    StrCopyW(prec(param)^.fname,TmpBuf+4); //skip "FileNameLength"
+    StrCopyW(prec(param)^.fname,TmpBuf+4);
   end;
 end;
 
@@ -582,16 +582,16 @@ function TestHandle(Handle:THANDLE;MultiThread:bool;timeout:cardinal):pWideChar;
 var
   hThread:THANDLE;
   rec:trec;
-  dummy:longint;
+//  dummy:longint;
 begin
   result:=nil;
-
+{
   // check what it - file
   if (NTQueryObject(Handle,ObjectTypeInformation,
      @TmpBuf,BufSize*SizeOf(WideChar),dummy)<>0) or
      (StrCmpW(TmpBuf+$30,'File')<>0) then
     Exit;
-
+}
   // check what it disk file
 //!!! need to check again
   if GetFileType(handle)<>FILE_TYPE_DISK then exit;
@@ -629,13 +629,16 @@ var
 begin
   result:=nil;
   GetWindowThreadProcessId(wnd,@c);
-  pid:=OpenProcess(PROCESS_DUP_HANDLE,true,c);
+  pid:=OpenProcess(//PROCESS_VM_READ or
+    PROCESS_DUP_HANDLE or PROCESS_QUERY_INFORMATION {or PROCESS_QUERY_LIMITED_INFORMATION},
+    true,c);
   if pid=0 then exit;
   harcnt:=0;
   if GetProcessHandleCount(pid,handles) then
   begin
+    Handles:=Handles*SizeOf(THANDLE);
     hProcess:=GetCurrentProcess;
-    i:=4;
+    i:=SIZEOF(THANDLE); // skip first
 
     while true do
     begin
@@ -659,10 +662,10 @@ begin
       end
       else
       begin
-        inc(handles,4); //skip empty number and non-duplicates
+        inc(handles,SizeOf(THANDLE)); //????skip empty number and non-duplicates
         if Handles>MaxHandle then break; //file not found
       end;
-      inc(i,4);
+      inc(i,SizeOf(THANDLE));
       if i>Handles then
         break;
     end;

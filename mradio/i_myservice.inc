@@ -35,7 +35,7 @@ begin
       if (p<>nil) and (StrCmp(p,PluginName)=0) then
       begin
         cni.hContact:=hContact;
-        if PluginLink^.CallService(MS_CONTACT_GETCONTACTINFO,0,integer(@cni))=0 then
+        if PluginLink^.CallService(MS_CONTACT_GETCONTACTINFO,0,tlparam(@cni))=0 then
         begin
           if lParam=1 then
             i:=StrCmp(pAnsiChar(wParam),cni.retval.szVal.a)
@@ -83,10 +83,10 @@ begin
   ood.pszGroup:='Network';
   ood.pszPage :=PluginName;
   ood.pszTab  :='Technical';
-  CallService(MS_OPT_OPENOPTIONS,0,dword(@ood));
+  CallService(MS_OPT_OPENOPTIONS,0,tlparam(@ood));
   if tbUsed then
     CallService(MS_TTB_SETBUTTONOPTIONS,(ttbSettings shl 16)+TTBO_TIPNAME,
-        dword(Translate('mRadio settings')));
+        tlparam(Translate('mRadio settings')));
 end;
 
 function Service_RadioRecord(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -121,7 +121,7 @@ begin
     end;
     if tbUsed then
       CallService(MS_TTB_SETBUTTONOPTIONS,(ttbRecord shl 16)+TTBO_TIPNAME,
-          dword(Translate(p)));
+          tlparam(Translate(p)));
   end;
   result:=ORD(doRecord);
 end;

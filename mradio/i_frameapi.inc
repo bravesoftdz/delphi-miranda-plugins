@@ -4,9 +4,6 @@ const
 const
   FrameWnd:HWND = 0;
   FrameId:integer = -1;
-  OldEditProc:pointer=nil;
-  pattern:pWideChar=nil;
-  current: THANDLE = 0;
 var
   colorhook:THANDLE;
   hbr:HBRUSH;
@@ -24,7 +21,7 @@ begin
   end;
 end;
 
-function SliderWndProc(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function SliderWndProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 begin
   if hMessage=WM_ERASEBKGND then
     result:=1
@@ -32,7 +29,7 @@ begin
     result:=CallWindowProc(OldSliderWndProc, Dialog, hMessage, wParam, lParam);
 end;
 
-function BtnWndProc(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function BtnWndProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 begin
   if hMessage=WM_ERASEBKGND then
     result:=1
@@ -40,13 +37,13 @@ begin
     result:=CallWindowProc(OldBtnWndProc, Dialog, hMessage, wParam, lParam);
 end;
 
-function RadioFrameProc(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function RadioFrameProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
   urd:TUTILRESIZEDIALOG;
   rc:TRECT;
   ti:TTOOLINFOW;
   wnd,hwndTooltip:HWND;
-  tmp:cardinal;
+  tmp:tlparam;
 begin
   result:=0;
   case hMessage of
@@ -59,7 +56,7 @@ begin
       wnd:=GetDlgItem(Dialog,IDC_RADIO_MUTE);
       SendMessage(wnd, BUTTONSETASFLATBTN,0,0);
       SendMessage(wnd,BM_SETIMAGE,IMAGE_ICON,
-        PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnOn)));
+        PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnOn)));
 
       hwndTooltip:=CreateWindowW(TOOLTIPS_CLASS,nil,TTS_ALWAYSTIP,
           integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
@@ -73,14 +70,14 @@ begin
       ti.hinst   :=hInstance;
       ti.uId     :=GetDlgItem(Dialog,IDC_RADIO_MUTE);
       ti.lpszText:=pWideChar(TranslateW('Mute'));
-      SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+      SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,tlparam(@ti));
 
       hVolFrmCtrl:=GetDlgItem(Dialog,IDC_RADIO_VOL);
       SendMessage(hVolFrmCtrl,TBM_SETRANGE,0,MAKELONG(0,100));
       SendMessage(hVolFrmCtrl,TBM_SETPOS,1,gVolume);
 
-      OldSliderWndProc:=pointer(SetWindowLong(hVolFrmCtrl,GWL_WNDPROC,dword(@SliderWndProc)));
-      OldBtnWndProc   :=pointer(SetWindowLong(hVolFrmCtrl,GWL_WNDPROC,dword(@BtnWndProc)));
+      OldSliderWndProc:=pointer(SetWindowLongPtrW(hVolFrmCtrl,GWL_WNDPROC,tlparam(@SliderWndProc)));
+      OldBtnWndProc   :=pointer(SetWindowLongPtrW(hVolFrmCtrl,GWL_WNDPROC,tlparam(@BtnWndProc)));
     end;
 
     WM_SIZE: begin
@@ -91,7 +88,7 @@ begin
       urd.lpTemplate:=MAKEINTRESOURCEA(IDD_FRAME);
       urd.lParam    :=0;
       urd.pfnResizer:=@QSDlgResizer;
-      CallService(MS_UTILS_RESIZEDIALOG,0,dword(@urd));
+      CallService(MS_UTILS_RESIZEDIALOG,0,tlparam(@urd));
     end;
 
     WM_ERASEBKGND: begin
@@ -120,12 +117,12 @@ begin
             IDC_RADIO_MUTE: begin
               if gVolume<0{IsDlgButtonChecked(Dialog,IDC_RADIO_MUTE)=BST_UNCHECKED} then
               begin
-                tmp:=dword(IcoBtnOn);
+                tmp:=tlparam(IcoBtnOn);
 //                gVolume:=ABS(gVolume);
               end
               else
               begin
-                tmp:=dword(IcoBtnOff);
+                tmp:=tlparam(IcoBtnOff);
 //                gVolume:=-ABS(gVolume);
 //                if gVolume=0 then
 //                 gVolume:=-1;
@@ -162,7 +159,7 @@ begin
   cid.cbSize:=SizeOf(cid);
   StrCopy(cid.group,'mRadio');
   StrCopy(cid.name ,frm_back);
-  frm_bkg:=CallService(MS_COLOUR_GETA,dword(@cid),0);
+  frm_bkg:=CallService(MS_COLOUR_GETA,twparam(@cid),0);
   if hbr<>0 then DeleteObject(hbr);
   hbr:=CreateSolidBrush(frm_bkg);
 
@@ -214,7 +211,7 @@ begin
       end;
     end;
 
-    FrameId:=CallService(MS_CLIST_FRAMES_ADDFRAME,dword(@Frame),0);
+    FrameId:=CallService(MS_CLIST_FRAMES_ADDFRAME,wparam(@Frame),0);
     if FrameId>=0 then
     begin
       CallService(MS_CLIST_FRAMES_UPDATEFRAME,FrameId, FU_FMPOS);
@@ -232,11 +229,12 @@ begin
       StrCopy(cid.setting,'frame_back');
       cid.defcolour:=COLOR_3DFACE;
       cid.order    :=0;
-      CallService(MS_COLOUR_REGISTERA,dword(@cid),0);
+      CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
 
       hbr:=0;
       colorhook:=PluginLink^.HookEvent(ME_COLOUR_RELOAD,@ColorReload);
       ColorReload(0,0);
+      CallService(MS_RADIO_SETVOL,gVolume,0);
     end;
   end;
 end;
@@ -245,6 +243,7 @@ procedure DestroyFrame;
 begin
   if FrameId>=0 then
   begin
+    PluginLink.UnhookEvent(colorhook);
     CallService(MS_CLIST_FRAMES_REMOVEFRAME,FrameId,0);
     FrameId:=-1;
   end;

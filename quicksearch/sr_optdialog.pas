@@ -34,68 +34,35 @@ const
   stScript     :PAnsiChar = 'Script';
   stMetacontact:PAnsiChar = 'Metacontact';
 
-type
-  tcnName = array [boolean] of pointer;
 const
-  cntFirstName  = 'FIRSTNAME' ;
-  cntLastName   = 'LASTNAME'  ;
-  cntNick       = 'NICK'      ;
-  cntCustomNick = 'CUSTOMNICK';
-  cntEmail      = 'EMAIL'     ;
-  cntCity       = 'CITY'      ;
-  cntState      = 'STATE'     ;
-  cntCountry    = 'COUNTRY'   ;
-  cntPhone      = 'PHONE'     ;
-  cntHomepage   = 'HOMEPAGE'  ;
-  cntAbout      = 'ABOUT'     ;
-  cntGender     = 'GENDER'    ;
-  cntAge        = 'AGE'       ;
-  cntFirstLast  = 'FIRSTLAST' ;
-  cntUniqueID   = 'UNIQUEID'  ;
-  cntFax        = 'FAX'       ;
-  cntCellular   = 'CELLULAR'  ;
-  cntTimezone   = 'TIMEZONE'  ;
-  cntMyNotes    = 'MYNOTES'   ;
-  cntBirthday   = 'BIRTHDAY'  ;
-  cntBirthMonth = 'BIRTHMONTH';
-  cntBirthYear  = 'BIRTHYEAR' ;
-  cntZIP        = 'ZIP'       ;
-  cntStreet     = 'STREET'    ;
-  cntLanguage1  = 'LANGUAGE1' ;
-  cntLanguage2  = 'LANGUAGE2' ;
-  cntLanguage3  = 'LANGUAGE3' ;
-  cntCoName     = 'CONAME'    ;
-
-const
-  cnFirstName :tcnName = (pWideChar(widestring(cntFirstName )), pAnsiChar(string(cntFirstName )));
-  cnLastName  :tcnName = (pWideChar(widestring(cntLastName  )), pAnsiChar(string(cntLastName  )));
-  cnNick      :tcnName = (pWideChar(widestring(cntNick      )), pAnsiChar(string(cntNick      )));
-  cnCustomNick:tcnName = (pWideChar(widestring(cntCustomNick)), pAnsiChar(string(cntCustomNick)));
-  cnEmail     :tcnName = (pWideChar(widestring(cntEmail     )), pAnsiChar(string(cntEmail     )));
-  cnCity      :tcnName = (pWideChar(widestring(cntCity      )), pAnsiChar(string(cntCity      )));
-  cnState     :tcnName = (pWideChar(widestring(cntState     )), pAnsiChar(string(cntState     )));
-  cnCountry   :tcnName = (pWideChar(widestring(cntCountry   )), pAnsiChar(string(cntCountry   )));
-  cnPhone     :tcnName = (pWideChar(widestring(cntPhone     )), pAnsiChar(string(cntPhone     )));
-  cnHomepage  :tcnName = (pWideChar(widestring(cntHomepage  )), pAnsiChar(string(cntHomepage  )));
-  cnAbout     :tcnName = (pWideChar(widestring(cntAbout     )), pAnsiChar(string(cntAbout     )));
-  cnGender    :tcnName = (pWideChar(widestring(cntGender    )), pAnsiChar(string(cntGender    )));
-  cnAge       :tcnName = (pWideChar(widestring(cntAge       )), pAnsiChar(string(cntAge       )));
-  cnFirstLast :tcnName = (pWideChar(widestring(cntFirstLast )), pAnsiChar(string(cntFirstLast )));
-  cnUniqueID  :tcnName = (pWideChar(widestring(cntUniqueID  )), pAnsiChar(string(cntUniqueID  )));
-
-  cnFax       :tcnName = (pWideChar(widestring(cntFax       )), pAnsiChar(string(cntFax       )));
-  cnCellular  :tcnName = (pWideChar(widestring(cntCellular  )), pAnsiChar(string(cntCellular  )));
-  cnTimezone  :tcnName = (pWideChar(widestring(cntTimezone  )), pAnsiChar(string(cntTimezone  )));
-  cnMyNotes   :tcnName = (pWideChar(widestring(cntMyNotes   )), pAnsiChar(string(cntMyNotes   )));
-  cnBirthday  :tcnName = (pWideChar(widestring(cntBirthday  )), pAnsiChar(string(cntBirthday  )));
-  cnBirthMonth:tcnName = (pWideChar(widestring(cntBirthMonth)), pAnsiChar(string(cntBirthMonth)));
-  cnBirthYear :tcnName = (pWideChar(widestring(cntBirthYear )), pAnsiChar(string(cntBirthYear )));
-  cnStreet    :tcnName = (pWideChar(widestring(cntStreet    )), pAnsiChar(string(cntStreet    )));
-  cnZIP       :tcnName = (pWideChar(widestring(cntZIP       )), pAnsiChar(string(cntZIP       )));
-  cnLanguage1 :tcnName = (pWideChar(widestring(cntLanguage1 )), pAnsiChar(string(cntLanguage1 )));
-  cnLanguage2 :tcnName = (pWideChar(widestring(cntLanguage2 )), pAnsiChar(string(cntLanguage2 )));
-  cnLanguage3 :tcnName = (pWideChar(widestring(cntLanguage3 )), pAnsiChar(string(cntLanguage3 )));
-  cnCoName    :tcnName = (pWideChar(widestring(cntCoName    )), pAnsiChar(string(cntCoName    )));
+  cnFirstName  = 'FIRSTNAME' ;
+  cnLastName   = 'LASTNAME'  ;
+  cnNick       = 'NICK'      ;
+  cnCustomNick = 'CUSTOMNICK';
+  cnEmail      = 'EMAIL'     ;
+  cnCity       = 'CITY'      ;
+  cnState      = 'STATE'     ;
+  cnCountry    = 'COUNTRY'   ;
+  cnPhone      = 'PHONE'     ;
+  cnHomepage   = 'HOMEPAGE'  ;
+  cnAbout      = 'ABOUT'     ;
+  cnGender     = 'GENDER'    ;
+  cnAge        = 'AGE'       ;
+  cnFirstLast  = 'FIRSTLAST' ;
+  cnUniqueID   = 'UNIQUEID'  ;
+  cnFax        = 'FAX'       ;
+  cnCellular   = 'CELLULAR'  ;
+  cnTimezone   = 'TIMEZONE'  ;
+  cnMyNotes    = 'MYNOTES'   ;
+  cnBirthday   = 'BIRTHDAY'  ;
+  cnBirthMonth = 'BIRTHMONTH';
+  cnBirthYear  = 'BIRTHYEAR' ;
+  cnZIP        = 'ZIP'       ;
+  cnStreet     = 'STREET'    ;
+  cnLanguage1  = 'LANGUAGE1' ;
+  cnLanguage2  = 'LANGUAGE2' ;
+  cnLanguage3  = 'LANGUAGE3' ;
+  cnCoName     = 'CONAME'    ;
 
 const
   strNotSelected = 'Not Selected';
@@ -161,56 +128,48 @@ begin
     result:=stByte;
   end;
 
-  if isAnsi then
-    StrDup(pAnsiChar(result),Translate(result))
-  else
-  begin
-    FastAnsiToWideBuf(result,tmp);
-    StrDupW(pWideChar(result),TranslateW(tmp));
-  end;
+  FastAnsiToWideBuf(result,tmp);
+  StrDupW(pWideChar(result),TranslateW(tmp));
 end;
 
-function setcnftype2str(settype:integer):PAnsiChar;
+function setcnftype2str(settype:integer):PWideChar;
 var
-  res:^tcnName;
+  res:pWideChar;
 begin
   case settype of
 //    CNF_FIRSTNAME:  result:=translate(cnFirstName);
-    CNF_LASTNAME:   res:=@cnLastName  ;
-    CNF_NICK:       res:=@cnNick      ;
-    CNF_CUSTOMNICK: res:=@cnCustomNick;
-    CNF_EMAIL:      res:=@cnEmail     ;
-    CNF_CITY:       res:=@cnCity      ;
-    CNF_STATE:      res:=@cnState     ;
-    CNF_COUNTRY:    res:=@cnCountry   ;
-    CNF_PHONE:      res:=@cnPhone     ;
-    CNF_HOMEPAGE:   res:=@cnHomepage  ;
-    CNF_ABOUT:      res:=@cnAbout     ;
-    CNF_GENDER:     res:=@cnGender    ;
-    CNF_AGE:        res:=@cnAge       ;
-    CNF_FIRSTLAST:  res:=@cnFirstLast ;
-    CNF_UNIQUEID:   res:=@cnUniqueID  ;
+    CNF_LASTNAME:   res:=cnLastName  ;
+    CNF_NICK:       res:=cnNick      ;
+    CNF_CUSTOMNICK: res:=cnCustomNick;
+    CNF_EMAIL:      res:=cnEmail     ;
+    CNF_CITY:       res:=cnCity      ;
+    CNF_STATE:      res:=cnState     ;
+    CNF_COUNTRY:    res:=cnCountry   ;
+    CNF_PHONE:      res:=cnPhone     ;
+    CNF_HOMEPAGE:   res:=cnHomepage  ;
+    CNF_ABOUT:      res:=cnAbout     ;
+    CNF_GENDER:     res:=cnGender    ;
+    CNF_AGE:        res:=cnAge       ;
+    CNF_FIRSTLAST:  res:=cnFirstLast ;
+    CNF_UNIQUEID:   res:=cnUniqueID  ;
 
-    CNF_FAX:        res:=@cnFax       ;
-    CNF_CELLULAR:   res:=@cnCellular  ;
-    CNF_TIMEZONE:   res:=@cnTimezone  ;
-    CNF_MYNOTES:    res:=@cnMyNotes   ;
-    CNF_BIRTHDAY:   res:=@cnBirthday  ;
-    CNF_BIRTHMONTH: res:=@cnBirthMonth;
-    CNF_BIRTHYEAR:  res:=@cnBirthYear ;
-    CNF_STREET:     res:=@cnStreet    ;
-    CNF_ZIP:        res:=@cnZIP       ;
-    CNF_LANGUAGE1:  res:=@cnLanguage1 ;
-    CNF_LANGUAGE2:  res:=@cnLanguage2 ;
-    CNF_LANGUAGE3:  res:=@cnLanguage3 ;
-    CNF_CONAME:     res:=@cnCoName    ;
+    CNF_FAX:        res:=cnFax       ;
+    CNF_CELLULAR:   res:=cnCellular  ;
+    CNF_TIMEZONE:   res:=cnTimezone  ;
+    CNF_MYNOTES:    res:=cnMyNotes   ;
+    CNF_BIRTHDAY:   res:=cnBirthday  ;
+    CNF_BIRTHMONTH: res:=cnBirthMonth;
+    CNF_BIRTHYEAR:  res:=cnBirthYear ;
+    CNF_STREET:     res:=cnStreet    ;
+    CNF_ZIP:        res:=cnZIP       ;
+    CNF_LANGUAGE1:  res:=cnLanguage1 ;
+    CNF_LANGUAGE2:  res:=cnLanguage2 ;
+    CNF_LANGUAGE3:  res:=cnLanguage3 ;
+    CNF_CONAME:     res:=cnCoName    ;
   else
-    res:=@cnFirstName;
+    res:=cnFirstName;
   end;
-  if IsAnsi then
-    result:=Translate(res^[true])
-  else
-    result:=PAnsiChar(TranslateW(pWideChar(res^[false])));
+  result:=TranslateW(res);
 end;
 
 procedure addcolumn(handle:hwnd;width:word;title:PAnsiChar);
@@ -220,16 +179,8 @@ var
 begin
   lvcol.mask:=LVCF_TEXT or LVCF_WIDTH;
   lvcol.cx  :=width;
-  if IsAnsi then
-  begin
-    lvcol.pszText:=pWideChar(Translate(title));
-    SendMessageA(handle,LVM_INSERTCOLUMNA,0,integer(@lvcol));
-  end
-  else
-  begin
-    lvcol.pszText:=TranslateW(FastAnsiToWideBuf(title,buf));
-    SendMessageW(handle,LVM_INSERTCOLUMNW,0,integer(@lvcol));
-  end;
+  lvcol.pszText:=TranslateW(FastAnsiToWideBuf(title,buf));
+  SendMessageW(handle,LVM_INSERTCOLUMNW,0,lparam(@lvcol));
 end;
 
 function getselecteditem(list:hwnd):integer;
@@ -310,10 +261,7 @@ begin
       setting_type:=SendMessage(tmpwnd,CB_GETITEMDATA,
              SendMessage(tmpwnd,CB_GETCURSEL,0,0),0);
 
-      if IsAnsi then
-        GetText(IDC_E_TITLE,1,PAnsiChar(title))
-      else
-        GetText(IDC_E_TITLE,1,title);
+      GetText(IDC_E_TITLE,1,title);
 
       case oldtype of
         ST_SCRIPT: begin
@@ -329,23 +277,12 @@ begin
 
       case setting_type of
         ST_METACONTACT: begin
-          if IsAnsi then
-            LV_SetItem(listhwnd,Translate('Metacontact'),selitem,2)
-          else
-            LV_SetItemW(listhwnd,TranslateW('Metacontact'),selitem,2);
+          LV_SetItemW(listhwnd,TranslateW('Metacontact'),selitem,2);
         end;
 
         ST_SCRIPT: begin
-          if isAnsi then
-          begin
-            StrDup(wparam.a,curscript);
-            LV_SetItem(listhwnd,Translate('Script'),selitem,2);
-          end
-          else
-          begin
-            StrDupW(wparam.w,curscript);
-            LV_SetItemW(listhwnd,TranslateW('Script'),selitem,2);
-          end;
+          StrDupW(wparam.w,curscript);
+          LV_SetItemW(listhwnd,TranslateW('Script'),selitem,2);
         end;
 
         ST_CONTACTINFO: begin
@@ -355,24 +292,13 @@ begin
           i:=SendMessage(tmpwnd,CB_GETCURSEL,0,0);
           setting_cnftype:=SendMessage(tmpwnd,CB_GETITEMDATA,i,0);
 
-          if IsAnsi then
-          begin
-            SendMessageA(tmpwnd,CB_GETLBTEXT,i,integer(@tpc));
-            LV_SetItem(listhwnd,pAnsiChar(@tpc),selitem,2);
-          end
-          else
-          begin
-            SendMessageW(tmpwnd,CB_GETLBTEXT,i,integer(@tpc));
-            LV_SetItemW(listhwnd,tpc,selitem,2);
-          end;
+          SendMessageW(tmpwnd,CB_GETLBTEXT,i,tlparam(@tpc));
+          LV_SetItemW(listhwnd,tpc,selitem,2);
         end;
 
         ST_SERVICE: begin
           GetText(IDC_E_MODULE,3,module_name);
-          if IsAnsi then
-            LV_SetItem(listhwnd,Translate('Service'),selitem,2)
-          else
-            LV_SetItemW(listhwnd,TranslateW('Service'),selitem,2);
+          LV_SetItemW(listhwnd,TranslateW('Service'),selitem,2);
 //!!          setitem(listhwnd,selitem,3,module_name);
 
           setting_cnftype:=SendDlgItemMessage(dialog,IDC_C_RESULT,CB_GETCURSEL,0,0);
@@ -428,8 +354,7 @@ procedure displcurinfo(dialog:hwnd;column:integer);
 
 var
   v:PWideChar;
-  va:pAnsiChar;
-  i:integer;
+  i:int_ptr;
   selpos:integer;
 begin
   CheckDirection(dialog,column);
@@ -448,10 +373,7 @@ begin
       case setting_type of
         ST_SCRIPT: begin
           mFreeMem(curscript);
-          if isAnsi then
-            StrDup(pAnsiChar(curscript),wparam.a)
-          else
-            StrDupW(pWideChar(curscript),wparam.w);
+          StrDupW(pWideChar(curscript),wparam.w);
         end;
         ST_SERVICE: begin
           SendDlgItemMessage(dialog,IDC_C_RESULT,CB_SETCURSEL,setting_cnftype,0);
@@ -460,11 +382,8 @@ begin
           set_elem(lparam,IDC_C_LPAR,IDC_E_LPAR);
         end;
         ST_CONTACTINFO: begin
-          i:=integer(setcnftype2str(setting_cnftype));
-          if IsAnsi then
-            SendDlgItemMessageA(dialog,IDC_C_CNFTYPE,CB_SELECTSTRING,-1,i)
-          else
-            SendDlgItemMessageW(dialog,IDC_C_CNFTYPE,CB_SELECTSTRING,-1,i);
+          i:=int_ptr(setcnftype2str(setting_cnftype));
+          SendDlgItemMessageW(dialog,IDC_C_CNFTYPE,CB_SELECTSTRING,-1,i);
         end;
       else
         SetDlgItemTextA(dialog,IDC_E_MODULE,module_name);
@@ -472,16 +391,8 @@ begin
       end;
 
       v:=settype2str(setting_type);
-      if IsAnsi then
-      begin
-        SetDlgItemTextA(dialog,IDC_E_TITLE,pAnsiChar(title));
-        SendDlgItemMessageA(dialog,IDC_C_VARTYPE,CB_SELECTSTRING,-1,dword(v));
-      end
-      else
-      begin
-        SetDlgItemTextW(dialog,IDC_E_TITLE,title);
-        SendDlgItemMessageW(dialog,IDC_C_VARTYPE,CB_SELECTSTRING,-1,dword(v));
-      end;
+      SetDlgItemTextW(dialog,IDC_E_TITLE,title);
+      SendDlgItemMessageW(dialog,IDC_C_VARTYPE,CB_SELECTSTRING,-1,tlparam(v));
       mFreeMem(v);
     end;
   end
@@ -492,26 +403,13 @@ begin
     disable_elem(dialog,IDC_DELETE);
     disable_elem(dialog,IDC_SETITEM);
 
-    if IsAnsi then
-    begin
-      va:=Translate(strNotSelected);
-      SetDlgItemTextA(dialog,IDC_E_TITLE ,va);
-      SetDlgItemTextA(dialog,IDC_E_MODULE,va);
-      SetDlgItemTextA(dialog,IDC_E_VAR   ,va);
-      SetDlgItemTextA(dialog,IDC_E_LPAR  ,va);
-      SendDlgItemMessageA(dialog,IDC_C_VARTYPE,CB_SELECTSTRING,-1,lparam(va));
-      SendDlgItemMessageA(dialog,IDC_C_CNFTYPE,CB_SELECTSTRING,-1,lparam(va));
-    end
-    else
-    begin
-      v:=TranslateW(strNotSelected);
-      SetDlgItemTextW(dialog,IDC_E_TITLE ,v);
-      SetDlgItemTextW(dialog,IDC_E_MODULE,v);
-      SetDlgItemTextW(dialog,IDC_E_VAR   ,v);
-      SetDlgItemTextW(dialog,IDC_E_LPAR  ,v);
-      SendDlgItemMessageW(dialog,IDC_C_VARTYPE,CB_SELECTSTRING,-1,lparam(v));
-      SendDlgItemMessageW(dialog,IDC_C_CNFTYPE,CB_SELECTSTRING,-1,lparam(v));
-    end;
+    v:=TranslateW(strNotSelected);
+    SetDlgItemTextW(dialog,IDC_E_TITLE ,v);
+    SetDlgItemTextW(dialog,IDC_E_MODULE,v);
+    SetDlgItemTextW(dialog,IDC_E_VAR   ,v);
+    SetDlgItemTextW(dialog,IDC_E_LPAR  ,v);
+    SendDlgItemMessageW(dialog,IDC_C_VARTYPE,CB_SELECTSTRING,-1,lparam(v));
+    SendDlgItemMessageW(dialog,IDC_C_CNFTYPE,CB_SELECTSTRING,-1,lparam(v));
   end;
 end;
 
@@ -524,42 +422,27 @@ begin
   li.mask  :=LVIF_PARAM;
   li.lParam:=i;
   li.iItem :=i;
-  SendMessage(list,LVM_INSERTITEM,0,integer(@li));
+  SendMessage(list,LVM_INSERTITEM,0,lparam(@li));
 
   with qsopt.columns[i] do
   begin
     ListView_SetCheckState(list,i,(flags and COL_ON)<>0);
-    if IsAnsi then
-      LV_SetItem(list,pAnsiChar(title),i,1)
-    else
-      LV_SetItemW(list,title,i,1);
+    LV_SetItemW(list,title,i,1);
     case setting_type of
       ST_METACONTACT: begin
-        if IsAnsi then
-          LV_SetItem(list,Translate('Metacontact'),i,2)
-        else
-          LV_SetItemW(list,TranslateW('Metacontact'),i,2);
+        LV_SetItemW(list,TranslateW('Metacontact'),i,2);
       end;
 
       ST_CONTACTINFO: begin
-        if IsAnsi then
-          LV_SetItem(list,setcnftype2str(setting_cnftype),i,2)
-        else
-          LV_SetItemW(list,pWideChar(setcnftype2str(setting_cnftype)),i,2)
+        LV_SetItemW(list,setcnftype2str(setting_cnftype),i,2)
       end;
 
       ST_SCRIPT: begin
-        if IsAnsi then
-          LV_SetItem(list,Translate('Script'),i,2)
-        else
-          LV_SetItemW(list,TranslateW('Script'),i,2);
+        LV_SetItemW(list,TranslateW('Script'),i,2);
       end;
 
       ST_SERVICE: begin
-        if IsAnsi then
-          LV_SetItem(list,Translate('Service'),i,2)
-        else
-          LV_SetItemW(list,TranslateW('Service'),i,2);
+        LV_SetItemW(list,TranslateW('Service'),i,2);
         LV_SetItem(list,module_name,i,3);
       end;
     else
@@ -587,29 +470,17 @@ end;
 
 procedure addresulttypes(list:integer);
 begin
-  if IsAnsi then
-  begin
-    SendMessageA(list,CB_INSERTSTRING,ptNumber ,dword(Translate('number value' )));
-    SendMessageA(list,CB_INSERTSTRING,ptInteger,dword(Translate('integer value')));
-    SendMessageA(list,CB_INSERTSTRING,ptString ,dword(Translate('ANSI string'  )));
-  end
-  else
-  begin
-    SendMessageW(list,CB_INSERTSTRING,ptNumber ,dword(TranslateW('number value'  )));
-    SendMessageW(list,CB_INSERTSTRING,ptInteger,dword(TranslateW('integer value' )));
-    SendMessageW(list,CB_INSERTSTRING,ptString ,dword(TranslateW('ANSI string'   )));
-    SendMessageW(list,CB_INSERTSTRING,ptUnicode,dword(TranslateW('Unicode string')));
-  end;
+  SendMessageW(list,CB_INSERTSTRING,ptNumber ,lparam(TranslateW('number value'  )));
+  SendMessageW(list,CB_INSERTSTRING,ptInteger,lparam(TranslateW('integer value' )));
+  SendMessageW(list,CB_INSERTSTRING,ptString ,lparam(TranslateW('ANSI string'   )));
+  SendMessageW(list,CB_INSERTSTRING,ptUnicode,lparam(TranslateW('Unicode string')));
   SendMessage(list,CB_SETCURSEL,0,0);
 end;
 
 procedure addparamtypes(list:integer);
 begin
   addresulttypes(list);
-  if IsAnsi then
-    SendMessageA(list,CB_INSERTSTRING,ptCurrent,dword(Translate ('current contact')))
-  else
-    SendMessageW(list,CB_INSERTSTRING,ptCurrent,dword(TranslateW('current contact')));
+  SendMessageW(list,CB_INSERTSTRING,ptCurrent,lparam(TranslateW('current contact')));
 end;
 
 procedure AddVal(list:HWND;param:integer);
@@ -618,10 +489,7 @@ var
   v:pointer;
 begin
   v:=settype2str(param);
-  if isAnsi then
-    i:=SendMessageA(list,CB_ADDSTRING,0,dword(v))
-  else
-    i:=SendMessageW(list,CB_ADDSTRING,0,dword(v));
+  i:=SendMessageW(list,CB_ADDSTRING,0,lparam(v));
   mFreeMem(v);
   SendMessage(list,CB_SETITEMDATA,i,param);
 end;
@@ -644,21 +512,11 @@ begin
 end;
 
 procedure AddCnf(list:HWND;param:integer);
-var
-  str:pWideChar;
 begin
-  if IsAnsi then
-    SendMessage(list,CB_SETITEMDATA,
-      SendMessageA(list,CB_ADDSTRING,0,integer(setcnftype2str(param))),
-      param)
-  else
-  begin
-    str:=pWideChar(setcnftype2str(param));
-    SendMessage(list,CB_SETITEMDATA,
-      SendMessageW(list,CB_ADDSTRING,0,integer(str)),
-      param);
+  SendMessage(list,CB_SETITEMDATA,
+    SendMessageW(list,CB_ADDSTRING,0,lparam(setcnftype2str(param))),
+    param);
 //    mFreeMem(str);
-  end;
 end;
 
 procedure addsetcnftypes(list:hwnd);
@@ -699,13 +557,13 @@ end;
 procedure _GetIcon(idc:integer;ico:PAnsiChar);
 begin
   SendMessage(GetDlgItem(maindlg,idc),BM_SETIMAGE,IMAGE_ICON,
-      PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(ico)));
+      PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(ico)));
 end;
 
 procedure _GetIcon2(win:HWND;ico:PAnsiChar);
 begin
   SendMessage(win,BM_SETIMAGE,IMAGE_ICON,
-      PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(ico)));
+      PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(ico)));
 end;
 
 function IconChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -720,7 +578,7 @@ begin
   _GetIcon(IDC_RELOAD ,QS_RELOAD);
 end;
 
-function ScriptEdit(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function ScriptEdit(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
   tmp:pointer;
   vhi:TVARHELPINFO;
@@ -730,10 +588,7 @@ begin
 
     WM_INITDIALOG: begin
       TranslateDialogDefault(Dialog);
-      if IsAnsi then
-        SetDlgItemTextA(dialog,IDC_EDIT_SCRIPT,pAnsiChar(lParam))
-      else
-        SetDlgItemTextW(dialog,IDC_EDIT_SCRIPT,pWideChar(lParam));
+      SetDlgItemTextW(dialog,IDC_EDIT_SCRIPT,pWideChar(lParam));
     end;
 
     WM_COMMAND: begin
@@ -742,8 +597,8 @@ begin
           case loword(wParam) of
             IDHELP: SendMessage(Dialog,WM_HELP,0,0);
             IDOK: begin
-              tmp:=GetDlgText(Dialog,IDC_EDIT_SCRIPT,isAnsi);
-              EndDialog(Dialog,dword(tmp));
+              tmp:=GetDlgText(Dialog,IDC_EDIT_SCRIPT);
+              EndDialog(Dialog,tlparam(tmp));
             end;
             IDCANCEL: begin // clear result / restore old value
               EndDialog(Dialog,0);
@@ -760,7 +615,7 @@ begin
         cbSize:=SizeOf(vhi);
         flags:=VHF_NOINPUTDLG;
       end;
-      PluginLink^.CallService(MS_VARS_SHOWHELPEX,Dialog,dword(@vhi));
+      PluginLink^.CallService(MS_VARS_SHOWHELPEX,Dialog,tlparam(@vhi));
     end;
   end;
 end;
@@ -838,14 +693,9 @@ begin
       InitDlg:=true;
       listhwnd:=GetDlgItem(dialog,IDC_LIST);
 
-      if IsAnsi then
-        SendMessageA(listhwnd,LVM_SETEXTENDEDLISTVIEWSTYLE,0,
-          SendMessageA(listhwnd,LVM_GETEXTENDEDLISTVIEWSTYLE,0,0) or
-            LVS_EX_FULLROWSELECT or LVS_EX_CHECKBOXES)
-      else
-        SendMessageW(listhwnd,LVM_SETEXTENDEDLISTVIEWSTYLE,0,
-          SendMessageW(listhwnd,LVM_GETEXTENDEDLISTVIEWSTYLE,0,0) or
-            LVS_EX_FULLROWSELECT or LVS_EX_CHECKBOXES);
+      SendMessageW(listhwnd,LVM_SETEXTENDEDLISTVIEWSTYLE,0,
+        SendMessageW(listhwnd,LVM_GETEXTENDEDLISTVIEWSTYLE,0,0) or
+          LVS_EX_FULLROWSELECT or LVS_EX_CHECKBOXES);
 
       TranslateDialogDefault(Dialog);
 
@@ -878,16 +728,10 @@ begin
       if PluginLink^.ServiceExists(MS_TTB_ADDBUTTON)=0 then
         EnableWindow(GetDlgItem(dialog,IDC_CH_ADDTOTOPTOOLBAR),FALSE);
 
-      if IsAnsi then
-        hwndTooltip:=CreateWindowA(TOOLTIPS_CLASS,nil,TTS_ALWAYSTIP,
-            integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
-            integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
-            Dialog,0,hInstance,nil)
-      else
-        hwndTooltip:=CreateWindowW(TOOLTIPS_CLASS,nil,TTS_ALWAYSTIP,
-            integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
-            integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
-            Dialog,0,hInstance,nil);
+      hwndTooltip:=CreateWindowW(TOOLTIPS_CLASS,nil,TTS_ALWAYSTIP,
+          integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
+          integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
+          Dialog,0,hInstance,nil);
 
       hNew    :=GetDlgItem(dialog,IDC_NEW);
       hItem   :=GetDlgItem(dialog,IDC_SETITEM);
@@ -903,52 +747,26 @@ begin
       ti.hwnd    :=dialog;
       ti.hinst   :=hInstance;
       ti.uId     :=hNew;
-      if IsAnsi then
-      begin
-        ti.lpszText:=pWideChar(Translate('New'));
-        SendMessageA(hwndTooltip,TTM_ADDTOOL,0,integer(@ti));
-        ti.uId     :=hItem;
-        ti.lpszText:=pWideChar(Translate('Save Item'));
-        SendMessageA(hwndTooltip,TTM_ADDTOOL,0,integer(@ti));
-        ti.uId     :=hUp;
-        ti.lpszText:=pWideChar(Translate('Up'));
-        SendMessageA(hwndTooltip,TTM_ADDTOOL,0,integer(@ti));
-        ti.uId     :=hDown;
-        ti.lpszText:=pWideChar(Translate('Down'));
-        SendMessageA(hwndTooltip,TTM_ADDTOOL,0,integer(@ti));
-        ti.uId     :=hDelete;
-        ti.lpszText:=pWideChar(Translate('Delete'));
-        SendMessageA(hwndTooltip,TTM_ADDTOOL,0,integer(@ti));
-        ti.uId     :=hDefault;
-        ti.lpszText:=pWideChar(Translate('Default'));
-        SendMessageA(hwndTooltip,TTM_ADDTOOL,0,integer(@ti));
-        ti.uId     :=hReload;
-        ti.lpszText:=pWideChar(Translate('Reload'));
-        SendMessageA(hwndTooltip,TTM_ADDTOOL,0,integer(@ti));
-      end
-      else
-      begin
-        ti.lpszText:=TranslateW('New');
-        SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
-        ti.uId     :=hItem;
-        ti.lpszText:=TranslateW('Save Item');
-        SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
-        ti.uId     :=hUp;
-        ti.lpszText:=TranslateW('Up');
-        SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
-        ti.uId     :=hDown;
-        ti.lpszText:=TranslateW('Down');
-        SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
-        ti.uId     :=hDelete;
-        ti.lpszText:=TranslateW('Delete');
-        SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
-        ti.uId     :=hDefault;
-        ti.lpszText:=TranslateW('Default');
-        SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
-        ti.uId     :=hReload;
-        ti.lpszText:=TranslateW('Reload');
-        SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
-      end;
+      ti.lpszText:=TranslateW('New');
+      SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,tlparam(@ti));
+      ti.uId     :=hItem;
+      ti.lpszText:=TranslateW('Save Item');
+      SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,tlparam(@ti));
+      ti.uId     :=hUp;
+      ti.lpszText:=TranslateW('Up');
+      SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,tlparam(@ti));
+      ti.uId     :=hDown;
+      ti.lpszText:=TranslateW('Down');
+      SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,tlparam(@ti));
+      ti.uId     :=hDelete;
+      ti.lpszText:=TranslateW('Delete');
+      SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,tlparam(@ti));
+      ti.uId     :=hDefault;
+      ti.lpszText:=TranslateW('Default');
+      SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,tlparam(@ti));
+      ti.uId     :=hReload;
+      ti.lpszText:=TranslateW('Reload');
+      SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,tlparam(@ti));
 
       _GetIcon2(hNew    ,QS_NEW);
       _GetIcon2(hItem,   QS_ITEM);
@@ -965,10 +783,7 @@ begin
 
       result:=1;
 
-      if IsAnsi then
-        OldListProc:=pointer(SetWindowLongPtrA(listhwnd,GWL_WNDPROC,integer(@NewListProc)))
-       else
-        OldListProc:=pointer(SetWindowLongPtrW(listhwnd,GWL_WNDPROC,integer(@NewListProc)));
+      OldListProc:=pointer(SetWindowLongPtrW(listhwnd,GWL_WNDPROC,tlparam(@NewListProc)));
 
       InitDlg:=false;
     end;
@@ -1123,11 +938,11 @@ begin
       result:=1;
       case loword(wParam) of
         IDC_SCRIPT: begin
-          i:=DialogBoxParamW(hInstance,MAKEINTRESOURCEW(IDD_SCRIPT),
-             Dialog,@ScriptEdit,dword(curscript));
-          if i<>0 then
+          tmpwnd:=DialogBoxParamW(hInstance,MAKEINTRESOURCEW(IDD_SCRIPT),
+             Dialog,@ScriptEdit,tlparam(curscript));
+          if tmpwnd<>0 then
           begin
-            curscript:=pointer(i);
+            curscript:=pointer(tmpwnd);
           end;
         end;
 

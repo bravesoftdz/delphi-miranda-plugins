@@ -5,7 +5,7 @@ uses
   {$IFNDEF FPC}fastmm4,{$ENDIF}
   m_api,dbsettings,activex,winampapi,
   Windows,messages,commctrl,//uxtheme,
-  srv_format,srv_player,wat_api,wrapper,//wrapper,
+  srv_format,srv_player,wat_api,wrapper,
   common,syswin,HlpDlg,mirutils
   ,global,waticons,io,macros
   ,lastfm    in 'lastfm\lastfm.pas'
@@ -15,9 +15,9 @@ uses
   ,status    in 'status\status.pas'
   ,tmpl      in 'status\tmpl.pas'
   ,templates in 'templates\templates.pas'
-
-//  ,kolframe  in 'kolframe\kolframe.pas'
-
+{$IFDEF KOL_MCK}
+  ,kolframe  in 'kolframe\kolframe.pas'
+{$ENDIF}
   {$include lst_players.inc}
   {$include lst_formats.inc}
 ;

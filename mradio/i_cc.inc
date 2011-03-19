@@ -91,7 +91,7 @@ end;
 
 function ControlCenter(code:WPARAM;arg:LPARAM):integer; cdecl;
 var
-  res:dword;
+  res:uint_ptr;
   tmpbuf,buf1:array [0..MAX_PATH-1] of WideChar;
   plFile:pWideChar;
   plLocal:boolean;
@@ -179,7 +179,7 @@ begin
       begin
         CloseHandle(BeginThread(nil,0,@OpenURL,ActiveURLw,0,res));
       end;
-      PluginLink^.NotifyEventHooks(hhRadioStatus,MRC_PLAY,dword(ActiveURLw));
+      PluginLink^.NotifyEventHooks(hhRadioStatus,MRC_PLAY,lparam(ActiveURLw));
     end;
 
     MRC_RECORD: begin

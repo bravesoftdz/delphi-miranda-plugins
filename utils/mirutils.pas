@@ -40,10 +40,10 @@ function  IsContactActive(hContact:THANDLE):integer; overload;
 
 function CreateGroupW(name:pWideChar;hContact:THANDLE):integer;
 function CreateGroup (name:pAnsiChar;hContact:THANDLE):integer;
-{$IFNDEF FPC}
+
 function MakeGroupMenu(idxfrom:integer=100):HMENU;
 function GetNewGroupName(parent:HWND):pWideChar;
-{$ENDIF}
+
 const
   HKMT_CORE       = 1;
   HKMT_HOTKEYPLUS = 2;
@@ -68,7 +68,7 @@ function LoadImageURL(url:pAnsiChar;size:integer=0):HBITMAP;
 
 implementation
 
-uses dbsettings,common,io,freeimage,syswin{$IFNDEF FPC},kol{$ENDIF};
+uses dbsettings,common,io,freeimage,syswin{$IFDEF KOL_MCK},kol{$ENDIF};
 
 function ConvertFileName(src:pWideChar;dst:pWideChar;hContact:THANDLE=0):pWideChar; overload;
 var
@@ -788,7 +788,7 @@ begin
   result:=1;
 end;
 
-{$IFNDEF FPC}
+{$IFDEF KOL_MCK}
 function MakeGroupMenu(idxfrom:integer=100):HMENU;
 var
   sl:PWStrList;
@@ -817,6 +817,28 @@ begin
   sl.Clear;
   sl.Free;
 end;
+{$ELSE}
+function MakeGroupMenu(idxfrom:integer=100):HMENU;
+var
+  i:integer;
+  b:array [0..15] of AnsiChar;
+  p:pWideChar;
+begin
+  result:=CreatePopupMenu;
+  inc(idxfrom);
+  i:=0;
+  AppendMenuW(result,MF_STRING,idxfrom,TranslateW('<Root Group>'));
+  AppendMenuW(result,MF_SEPARATOR,0,nil);
+  repeat
+    p:=DBReadUnicode(0,'CListGroups',IntToStr(b,i),nil);
+    if p=nil then break;
+    AppendMenuW(result,MF_STRING,idxfrom,p+1);
+    mFreeMem(p);
+    inc(i);
+    inc(idxfrom);
+  until false;
+end;
+{$ENDIF}
 
 function GetNewGroupName(parent:HWND):pWideChar;
 var
@@ -836,7 +858,6 @@ begin
   end;
   DestroyMenu(mmenu);
 end;
-{$ENDIF}
 
 function SendRequest(url:PAnsiChar;rtype:int;args:pAnsiChar=nil;hNetLib:THANDLE=0):pAnsiChar;
 var

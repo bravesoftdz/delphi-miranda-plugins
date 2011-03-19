@@ -105,7 +105,7 @@ begin
     result:=CallService(MS_DB_CONTACT_ADD,0,0);
     if result<>0 then
     begin
-      CallService(MS_PROTO_ADDTOCONTACT,result,dword(PluginName));
+      CallService(MS_PROTO_ADDTOCONTACT,result,lparam(PluginName));
       DBWriteString(result,PluginName,optStationURL,buf);
       DBWriteString(result,PluginName,optFirstName ,buf);
       GetPrivateProfileStringA(section,'Bitrate','0',buf,SizeOf(buf),ini);
@@ -307,17 +307,17 @@ begin
   ti.lpszText:=TranslateW('Add');
 
   SendMessage(ti.uId,BM_SETIMAGE,IMAGE_ICON,
-      CallService(MS_SKIN2_GETICON,0,dword(IcoBtnAdd)));
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+      CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnAdd)));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   
   ti.uId     :=GetDlgItem(Dialog,IDC_EQ_DEL);
   ti.lpszText:=TranslateW('Delete');
   SendMessage(ti.uId,BM_SETIMAGE,IMAGE_ICON,
-      CallService(MS_SKIN2_GETICON,0,dword(IcoBtnDel)));
-  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
+      CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnDel)));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
 end;
 
-function DlgProcOpt(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function DlgProcOpt(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 const
   DlgInit:integer=1;
 var
@@ -407,7 +407,7 @@ begin
                 hwndCtrl     :=GetDlgItem(Dialog,IDC_STATUS);
                 szSubjectDesc:='test your variables';
               end;
-              PluginLink^.CallService(MS_VARS_SHOWHELPEX,Dialog,dword(@vhi));
+              PluginLink^.CallService(MS_VARS_SHOWHELPEX,Dialog,tlparam(@vhi));
             end;
 
             IDC_BN_URLPATH: begin
@@ -422,7 +422,7 @@ begin
               dst:=nil;
               if SelectDirectory(pWideChar(nil),dst,Dialog,true) then
               begin
-                PluginLink^.CallService(MS_UTILS_PATHTORELATIVEW,dword(dst),dword(@buf));
+                PluginLink^.CallService(MS_UTILS_PATHTORELATIVEW,twparam(dst),tlparam(@buf));
                 SetDlgItemTextW(Dialog,IDC_ED_RECPATH,pWideChar(@buf));
                 mFreeMem(dst);
               end;
@@ -466,7 +466,7 @@ begin
 
                   if loword(wParam)=IDC_ADD_LIST then
                   begin
-                    i:=Service_AddToList(0,dword(@psr));
+                    i:=Service_AddToList(0,tlparam(@psr));
 
                     GetDlgItemTextW(Dialog,IDC_STATION,@buf,SizeOf(buf));
                     DBWriteUnicode(i,strCList,optMyHandle,@buf);
@@ -550,7 +550,7 @@ begin
         mFreeMem(recpath);
         mGetMem(recpath,MAX_PATH*SizeOf(WideChar));
         GetDlgItemTextW(Dialog,IDC_ED_RECPATH,@buf,SizeOf(buf) div SizeOf(WideChar));
-        PluginLink^.CallService(MS_UTILS_PATHTORELATIVEW,dword(@buf),dword(recpath));
+        PluginLink^.CallService(MS_UTILS_PATHTORELATIVEW,twparam(@buf),tlparam(recpath));
         DBWriteUnicode(0,PluginName,optRecPath,recpath);
       end;
     end;
@@ -560,7 +560,7 @@ begin
   end;
 end;
 
-function DlgProcOptTech(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function DlgProcOptTech(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 const
   DlgInit:integer=1;
 var
@@ -610,12 +610,12 @@ begin
 
       hEAXCombo:=GetDlgItem(Dialog,IDC_EAXTYPE);
       for i:=0 to EAX_ENVIRONMENT_COUNT do
-        SendMessageW(hEAXCombo,CB_ADDSTRING,0,dword(TranslateW(EAXItems[i].name)));
+        SendMessageW(hEAXCombo,CB_ADDSTRING,0,tlparam(TranslateW(EAXItems[i].name)));
       SendMessage(hEAXCombo,CB_SETCURSEL,DBReadByte(0,PluginName,optEAXType,0),0);
 
       wnd:=GetDlgItem(Dialog,IDC_PRESET);
       for i:=0 to HIGH(Presets) do
-        SendMessageW(wnd,CB_ADDSTRING,0,dword(Presets[i].name));
+        SendMessageW(wnd,CB_ADDSTRING,0,tlparam(Presets[i].name));
       SendMessage(wnd,CB_SETCURSEL,OldEQPreset,0);
 
       for i:=0 to 9 do
@@ -624,7 +624,7 @@ begin
         SendMessage(eq[i].wnd,TBM_SETRANGE,1,(16 shl 16)-15);
         SendMessage(eq[i].wnd,TBM_SETTIC,0,0);
         SendMessage(eq[i].wnd,TBM_SETPOS,1,-trunc(eq[i].param.fGain));
-        SendDlgItemMessage(Dialog,IDC_0+i,WM_SETTEXT,0,dword(eq[i].text));
+        SendDlgItemMessageA(Dialog,IDC_0+i,WM_SETTEXT,0,tlparam(eq[i].text));
         EnableWindow(eq[i].wnd,isEQ_OFF=BST_UNCHECKED);
       end;
       
@@ -651,7 +651,7 @@ begin
               dst:=nil;
               if SelectDirectory(pWideChar(nil),dst,Dialog,true) then
               begin
-                PluginLink^.CallService(MS_UTILS_PATHTORELATIVEW,dword(dst),dword(@buf));
+                PluginLink^.CallService(MS_UTILS_PATHTORELATIVEW,twparam(dst),tlparam(@buf));
                 SetDlgItemTextW(Dialog,IDC_BASSPATH,pWideChar(@buf));
                 mFreeMem(dst);
               end;
@@ -690,7 +690,7 @@ begin
               if Presets[HIGH(Presets)].name=nil then
                 StrDupW(Presets[HIGH(Presets)].name,'New');
               OldEQPreset:=SendMessage(wnd,CB_SETCURSEL,
-                SendMessageW(wnd,CB_ADDSTRING,0,dword(Presets[HIGH(Presets)].name)),0);
+                SendMessageW(wnd,CB_ADDSTRING,0,tlparam(Presets[HIGH(Presets)].name)),0);
             end;
 
             IDC_EQ_DEL: begin
@@ -830,17 +830,17 @@ begin
   odp.pszTemplate:=MAKEINTRESOURCEA(IDD_SETTING);
   odp.pfnDlgProc :=@DlgProcOpt;
   odp.szTab.a    :='Common';
-  PluginLink^.CallService(MS_OPT_ADDPAGE,wParam,dword(@odp));
+  PluginLink^.CallService(MS_OPT_ADDPAGE,wParam,tlparam(@odp));
 
   odp.pszTemplate:=MAKEINTRESOURCEA(IDD_SETTING_TECH);
   odp.pfnDlgProc :=@DlgProcOptTech;//!!
   odp.szTab.a    :='Technical';
-  PluginLink^.CallService(MS_OPT_ADDPAGE,wParam,dword(@odp));
+  PluginLink^.CallService(MS_OPT_ADDPAGE,wParam,tlparam(@odp));
 
   result:=0;
 end;
 
-function OnSettingsChanged(wParam:WPARAM;lParam:LPARAM):integer;cdecl;
+function OnSettingsChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
   buf:array [0..MAX_PATH-1] of AnsiChar;
   i:integer;
@@ -906,7 +906,7 @@ begin
   end;
 end;
 
-function OnContactDeleted(wParam:WPARAM;lParam:LPARAM):integer;cdecl;
+function OnContactDeleted(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
   result:=0;
   if ActiveContact<>THANDLE(wParam) then exit;

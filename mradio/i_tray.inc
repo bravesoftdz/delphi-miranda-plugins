@@ -1,9 +1,11 @@
 {}
 const
+  HWND_MESSAGE = HWND(-3);
+const
   hiddenwindow:HWND = 0;
 var
   hsTrayMenu:THANDLE;
-
+{$IFDEF KOL_MCK}
 function MakeStationsMenu:HMENU;
 var
   hContact:Cardinal;
@@ -44,6 +46,40 @@ begin
     sl.Free;
   end;
 end;
+{$ELSE}
+function MakeStationsMenu:HMENU;
+var
+  hContact:Cardinal;
+  p:pWideChar;
+  i:integer;
+  flag:integer;
+begin
+  result:=CreatePopupMenu;
+  if result<>0 then
+  begin
+    i:=0;
+    hContact:=PluginLink^.CallService(MS_DB_CONTACT_FINDFIRST,0,0);
+    while hContact<>0 do
+    begin
+       if StrCmp(PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,hContact,0)),'mRadio')=0 then
+       begin
+         p:=DBReadUnicode(hContact,strCList,'MyHandle',nil);
+         if p<>nil then
+         begin
+           if (i=0) or ((i mod 20)<>0) then
+             flag:=MF_STRING
+           else
+             flag:=MF_STRING or MF_MENUBARBREAK;
+           AppendMenuW(result,flag,hContact,p);
+           mFreeMem(p);
+         end;
+       end;
+      hContact:=PluginLink^.CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
+      inc(i);
+    end;
+  end;
+end;
+{$ENDIF}
 
 function CreateTrayMenu(wParam:WPARAM;lParam:LPARAM):int; cdecl;
 const
@@ -53,7 +89,9 @@ var
   flag,id:integer;
   pt:TPOINT;
   playstr:pWideChar;
+{$IFDEF KOL_MCK}
   med:TMouseEventData;
+{$ENDIF}
 begin
   id:=0;
   menu:=CreatePopupMenu;
@@ -79,6 +117,7 @@ begin
     case id of
       0: ; // nothing
       startid+1: begin // mute
+{$IFDEF KOL_MCK}
         if btnMute<>nil then
         begin
           FillChar(med,SizeOf(med),0);
@@ -88,6 +127,7 @@ begin
           btnMute.Invalidate;
         end
         else
+{$ENDIF}
           CallService(MS_RADIO_MUTE,0,0);
       end;
       startid+2: begin // play/pause
@@ -120,7 +160,7 @@ begin
        1,1,1,1,dword(HWND_MESSAGE),0,hInstance,nil);
     if wnd<>0 then
     begin
-      SetWindowLongA(wnd,GWL_WNDPROC,dword(@HiddenWindProc));
+      SetWindowLongPtrA(wnd,GWL_WNDPROC,int_ptr(@HiddenWindProc));
       hiddenwindow:=wnd;
     end
   end;
@@ -150,8 +190,8 @@ begin
       mi.cbSize    :=sizeof(mi);
       mi.pszService:='mRadio/MakeTrayMenu';
       mi.szName.a  :='mRadio';
-      mi.hIcon     :=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnSettings));
-      PluginLink^.CallService(MS_CLIST_ADDTRAYMENUITEM,0,dword(@mi));
+      mi.hIcon     :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnSettings));
+      PluginLink^.CallService(MS_CLIST_ADDTRAYMENUITEM,0,lparam(@mi));
     end;
 end;
 

@@ -18,7 +18,7 @@ const
    (name:'radio_status' ;help:'Current status'));
 // contact,protocol,host,port,file/path
 
-function GetField(ai:PARGUMENTSINFO):int; cdecl;
+function GetField(ai:PARGUMENTSINFO):pWideChar; cdecl;
 var
   i:integer;
   res:PWideChar;
@@ -48,7 +48,7 @@ begin
     mGetMem(res,2);
     res^:=#0;
   end;
-  result:=int(res);
+  result:=res;
 end;
 
 function FreeField(szReturn:PWideChar):int; cdecl;
@@ -77,6 +77,6 @@ begin
   begin
     rt.szTokenString.w:=vars[i].name;
     StrCopy(p,vars[i].help);
-    CallService(MS_VARS_REGISTERTOKEN,0,dword(@rt));
+    CallService(MS_VARS_REGISTERTOKEN,0,lparam(@rt));
   end;
 end;

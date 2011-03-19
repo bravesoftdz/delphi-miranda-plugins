@@ -44,7 +44,9 @@ DBSet=Genre
 
 Changelog:
 ----------
-0.0.1,7 ()
+0.0.2.0 (19 mar 2011)
+  Adapted for FreePascal and 64 bit support
+0.0.1.7 ()
   Added internet radio reconnect on track end
   Added button to import all radiostations from file
   Added frame right-click action "Open mradio settings"

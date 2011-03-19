@@ -2,17 +2,17 @@ unit sr_window;
 
 interface
 
-uses windows;
+uses windows,m_api;
 
 function OpenSrWindow(apattern:PWideChar;flags:integer):boolean;
 function BringToFront:integer;
 function CloseSrWindow:boolean;
 procedure WndChangeColumns(code:integer;column:integer=-1);
 
-function OnContactAdded  (wParam:WPARAM;lParam:LPARAM):integer;cdecl;
-function OnStatusChanged (wParam:WPARAM;lParam:LPARAM):integer;cdecl;
-function OnContactDeleted(wParam:WPARAM;lParam:LPARAM):integer;cdecl;
-function OnAccountChanged(wParam:WPARAM;lParam:LPARAM):integer;cdecl;
+function OnContactAdded  (wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function OnStatusChanged (wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function OnContactDeleted(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function OnAccountChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 procedure RegisterColors;
 
 const
@@ -20,7 +20,7 @@ const
 
 implementation
 
-uses kol,messages,commctrl,sr_global,m_api,common,dbsettings,mirutils,
+uses {$IFDEF KOL_MCK}kol,{$ENDIF}messages,commctrl,sr_global,common,dbsettings,mirutils,
     wrapper,sr_optdialog;
 
 const
@@ -210,7 +210,7 @@ begin
   cid.cbSize:=SizeOf(cid);
   StrCopy(cid.group,'QuickSearch');
   StrCopy(cid.name ,name);
-  result:=CallService(MS_COLOUR_GETA,dword(@cid),0);
+  result:=CallService(MS_COLOUR_GETA,lparam(@cid),0);
 end;
 
 procedure RegisterColors;
@@ -226,85 +226,85 @@ begin
   StrCopy(cid.setting,'back_norm');
   cid.defcolour:=$00FFFFFF;
   cid.order    :=0;
-  CallService(MS_COLOUR_REGISTERA,dword(@cid),0);
+  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
 
   StrCopy(cid.name   ,fgr_norm);
   StrCopy(cid.setting,'fore_norm');
   cid.defcolour:=$00000000;
   cid.order    :=1;
-  CallService(MS_COLOUR_REGISTERA,dword(@cid),0);
+  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
 
   StrCopy(cid.name   ,bkg_odd);
   StrCopy(cid.setting,'back_odd');
   cid.defcolour:=$00EBE6DE;
   cid.order    :=2;
-  CallService(MS_COLOUR_REGISTERA,dword(@cid),0);
+  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
 
   StrCopy(cid.name   ,fgr_odd);
   StrCopy(cid.setting,'fore_odd');
   cid.defcolour:=$00000000;
   cid.order    :=3;
-  CallService(MS_COLOUR_REGISTERA,dword(@cid),0);
+  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
 
   StrCopy(cid.name   ,bkg_dis);
   StrCopy(cid.setting,'back_dis');
   cid.defcolour:=$008080FF;
   cid.order    :=4;
-  CallService(MS_COLOUR_REGISTERA,dword(@cid),0);
+  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
 
   StrCopy(cid.name   ,fgr_dis);
   StrCopy(cid.setting,'fore_dis');
   cid.defcolour:=$00000000;
   cid.order    :=5;
-  CallService(MS_COLOUR_REGISTERA,dword(@cid),0);
+  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
 
   StrCopy(cid.name   ,bkg_del);
   StrCopy(cid.setting,'back_del');
   cid.defcolour:=$008000FF;
   cid.order    :=6;
-  CallService(MS_COLOUR_REGISTERA,dword(@cid),0);
+  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
 
   StrCopy(cid.name   ,fgr_del);
   StrCopy(cid.setting,'fore_del');
   cid.defcolour:=$00000000;
   cid.order    :=7;
-  CallService(MS_COLOUR_REGISTERA,dword(@cid),0);
+  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
 
   StrCopy(cid.name   ,bkg_hid);
   StrCopy(cid.setting,'back_hid');
   cid.defcolour:=$0080FFFF;
   cid.order    :=8;
-  CallService(MS_COLOUR_REGISTERA,dword(@cid),0);
+  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
 
   StrCopy(cid.name   ,fgr_hid);
   StrCopy(cid.setting,'fore_hid');
   cid.defcolour:=$00000000;
   cid.order    :=9;
-  CallService(MS_COLOUR_REGISTERA,dword(@cid),0);
+  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
 
   StrCopy(cid.name   ,bkg_meta);
   StrCopy(cid.setting,'back_meta');
   cid.defcolour:=$00BAE699;
   cid.order    :=10;
-  CallService(MS_COLOUR_REGISTERA,dword(@cid),0);
+  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
 
   StrCopy(cid.name   ,fgr_meta);
   StrCopy(cid.setting,'fore_meta');
   cid.defcolour:=$00000000;
   cid.order    :=11;
-  CallService(MS_COLOUR_REGISTERA,dword(@cid),0);
+  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
 
   StrCopy(cid.name   ,bkg_sub);
   StrCopy(cid.setting,'back_sub');
   cid.defcolour:=$00B3CCC1;
   cid.order    :=12;
-  CallService(MS_COLOUR_REGISTERA,dword(@cid),0);
+  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
 
   StrCopy(cid.name   ,fgr_sub);
   StrCopy(cid.setting,'fore_sub');
   cid.defcolour:=$00000000;
   cid.order    :=13;
-  CallService(MS_COLOUR_REGISTERA,dword(@cid),0);
+  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
 end;
 
 function int2stra(i:integer):PAnsiChar;
@@ -351,10 +351,7 @@ begin
     vars[0]:=DBReadWord(cont,modulename,'Day'    ,0);
     vars[3]:=DBReadWord(cont,modulename,'Hours'  ,0);
     vars[4]:=DBReadWord(cont,modulename,'Minutes',0);
-    if IsAnsi then
-      wvsprintfa(pAnsiChar(result),'%.2u.%.2u.%.4u - %.2u:%.2u',@vars)
-    else
-      wvsprintfw(result,'%.2u.%.2u.%.4u - %.2u:%.2u',@vars);
+    wvsprintfw(result,'%.2u.%.2u.%.4u - %.2u:%.2u',@vars);
   end
   else
     result:=nil;
@@ -390,10 +387,7 @@ begin
   IntToStr(p,HIByte(ip));
   while p^<>#0 do inc(p); p^:='.'; inc(p);
   IntToStr(p,LOByte(ip));
-  if IsAnsi then
-    FastWideToAnsi(buf,pAnsiChar(result))
-  else
-    StrDupW(result,buf);
+  StrDupW(result,buf);
 end;
 
 function TimeToStrW(data:dword):PWideChar;
@@ -404,7 +398,7 @@ begin
   dbtts.cbDest    :=sizeof(strdatetime);
   dbtts.szDest.w  :=@strdatetime;
   dbtts.szFormat.w:='d - t';
-  PluginLink^.CallService(MS_DB_TIME_TIMESTAMPTOSTRINGT,data,integer(@dbtts));
+  PluginLink^.CallService(MS_DB_TIME_TIMESTAMPTOSTRINGT,data,lparam(@dbtts));
   StrDupW(result,strdatetime);
 end;
 
@@ -416,7 +410,7 @@ begin
   dbtts.cbDest    :=sizeof(strdatetime);
   dbtts.szDest.a  :=@strdatetime;
   dbtts.szFormat.a:='d - t';
-  PluginLink^.CallService(MS_DB_TIME_TIMESTAMPTOSTRING,data,integer(@dbtts));
+  PluginLink^.CallService(MS_DB_TIME_TIMESTAMPTOSTRING,data,lparam(@dbtts));
   StrDup(result,strdatetime);
 end;
 
@@ -448,7 +442,6 @@ end;
 
 function DoMeta(hContact:THANDLE):pointer;
 var
-  pc:pAnsiChar;
   pw:pWideChar;
   i:integer;
 begin
@@ -476,34 +469,17 @@ begin
         if wparam>0 then
         begin
           mGetMem(result,32);
-          if IsAnsi then
+          pw:=result;
+          pw[0]:='[';
+          IntToStr(pw+1,wparam,3);
+          pw[4]:=']';
+          if lparam>0 then
           begin
-            pc:=result;
-            pc[0]:='[';
-            IntToStr(pc+1,wparam,3);
-            pc[4]:=']';
-            if lparam>0 then
-            begin
-              pc[5]:=' ';
-              IntToStr(pc+6,lparam);
-            end
-            else
-              pc[5]:=#0;
+            pw[5]:=' ';
+            IntToStr(pw+6,lparam);
           end
           else
-          begin
-            pw:=result;
-            pw[0]:='[';
-            IntToStr(pw+1,wparam,3);
-            pw[4]:=']';
-            if lparam>0 then
-            begin
-              pw[5]:=' ';
-              IntToStr(pw+6,lparam);
-            end
-            else
-              pw[5]:=#0;
-          end;
+            pw[5]:=#0;
         end;
         break;
       end;
@@ -516,7 +492,7 @@ var
   cni:TCONTACTINFO;
   dbei:TDBEVENTINFO;
   hDBEvent:cardinal;
-  tmp:dword;
+  tmp:int_ptr;
   protov:PAnsiChar;
 begin
   FillChar(res,SizeOf(QSRec),0);
@@ -536,33 +512,24 @@ begin
       end;
 
       ST_SCRIPT: begin
-        if isAnsi then
-          pAnsiChar(res.text):=ParseVarString(wparam.a,hContact)
-        else
-          res.text:=ParseVarString(wparam.w,hContact);
+        res.text:=ParseVarString(wparam.w,hContact);
       end;
 
       ST_SERVICE: begin
         if wparam._type=ptCurrent then wparam.n:=hContact;
         if lparam._type=ptCurrent then lparam.n:=hContact;
         tmp:=PluginLink^.CallService(protov,wparam.n,lparam.n);
-        if tmp=CALLSERVICE_NOTFOUND then exit;
+        if int_ptr(tmp)=int_ptr(CALLSERVICE_NOTFOUND) then exit;
         case setting_cnftype of
           ptString: begin
-            if IsAnsi then
-              StrDup(pAnsiChar(res.text),pAnsiChar(tmp))
-            else
-              AnsiToWide(PAnsiChar(tmp),res.text);
+            AnsiToWide(PAnsiChar(tmp),res.text);
           end;
           ptUnicode: begin
             StrDupW(res.text,PWideChar(tmp));
           end;
           ptNumber,ptInteger:begin
             res.data:=tmp;
-            if IsAnsi then
-              res.text:=pWideChar(int2stra(tmp))
-            else
-              res.text:=int2strw(tmp);
+            res.text:=int2strw(tmp);
           end;
         end;
       end;
@@ -570,22 +537,16 @@ begin
       ST_CONTACTINFO: begin
         FillChar(cni,SizeOf(cni),0);
         cni.cbSize  :=sizeof(cni);
-        if IsAnsi then
-          cni.dwFlag:=setting_cnftype
-        else
-          cni.dwFlag:=setting_cnftype or CNF_UNICODE;
+        cni.dwFlag:=setting_cnftype or CNF_UNICODE;
         cni.hContact:=hContact;
         cni.szProto :=proto;
-        if PluginLink^.CallService(MS_CONTACT_GETCONTACTINFO,0,integer(@cni))=0 then
+        if PluginLink^.CallService(MS_CONTACT_GETCONTACTINFO,0,tlparam(@cni))=0 then
         begin
           case cni._type of
             CNFT_ASCIIZ: begin
               if cni.retval.szVal.w<>nil then
               begin
-                if IsAnsi then
-                  StrDup(pAnsiChar(res.text),cni.retval.szVal.a)
-                else
-                  StrDupW(res.text,cni.retval.szVal.w);
+                StrDupW(res.text,cni.retval.szVal.w);
                 mmi.free(cni.retval.szVal.w);
               end;
               exit;
@@ -602,52 +563,34 @@ begin
             CNFT_WORD :res.data:=cni.retval.wVal;
             CNFT_DWORD:res.data:=cni.retval.dVal;
           end;
-          if IsAnsi then
-            res.text:=pWideChar(int2stra(res.data))
-          else
-            res.text:=int2strw(res.data);
+          res.text:=int2strw(res.data);
         end;
       end;
 
       ST_STRING: begin
-        if IsAnsi then
-          res.text:=PWideChar(DBReadString(hContact,protov,wparam.a,nil))
-        else
-          res.text:=DBReadUnicode(hContact,protov,wparam.a,nil)
+        res.text:=DBReadUnicode(hContact,protov,wparam.a,nil)
       end;
 
       ST_BYTE: begin
         res.data:=DBReadByte(hContact,protov,wparam.a,0);
-          if IsAnsi then
-            res.text:=pWideChar(int2stra(res.data))
-          else
-            res.text:=int2strw(res.data);
+        res.text:=int2strw(res.data);
       end;
 
       ST_WORD: begin
         res.data:=DBReadWord(hContact,protov,wparam.a,0);
-          if IsAnsi then
-            res.text:=pWideChar(int2stra(res.data))
-          else
-            res.text:=int2strw(res.data);
+        res.text:=int2strw(res.data);
       end;
 
       ST_INT: begin
         if (module_name=nil) and (wparam.a=nil) then
         begin
           res.data:=hContact;
-          if IsAnsi then
-            res.text:=pWideChar(int2hexa(res.data))
-          else
-            res.text:=int2hexw(res.data);
+          res.text:=int2hexw(res.data);
         end
         else
         begin
           res.data:=DBReadDWord(hContact,protov,wparam.a,0);
-          if IsAnsi then
-            res.text:=pWideChar(int2stra(res.data))
-          else
-            res.text:=int2strw(res.data);
+          res.text:=int2strw(res.data);
         end;
       end;
 
@@ -664,10 +607,7 @@ begin
       ST_TIMESTAMP: begin
         res.data:=DBReadDWord(hContact,protov,wparam.a,0);
         if res.data<>0 then
-          if IsAnsi then
-            res.text:=pWideChar(TimeToStrA(res.data))
-          else
-            res.text:=TimeToStrW(res.data);
+           res.text:=TimeToStrW(res.data);
       end;
 
       ST_LASTEVENT: begin
@@ -676,12 +616,9 @@ begin
         begin
           ZeroMemory(@dbei,sizeof(dbei));
           dbei.cbSize:=SizeOf(dbei);
-          PluginLink^.CallService(MS_DB_EVENT_GET,hDbEvent,integer(@dbei));
+          PluginLink^.CallService(MS_DB_EVENT_GET,hDbEvent,tlparam(@dbei));
           res.data:=dbei.timestamp;
-          if IsAnsi then
-            res.text:=pWideChar(TimeToStrA(res.data))
-          else
-            res.text:=TimeToStrW(res.data);
+          res.text:=TimeToStrW(res.data);
         end
         else
           res.data:=0;
@@ -726,10 +663,7 @@ begin
       else if res1.text=nil then
         result:=-1
       else
-        if IsAnsi then
-          result:=lstrcmpia(pAnsiChar(res1.text),pAnsiChar(res2.text))
-        else
-          result:=lstrcmpiw(res1.text,res2.text);
+        result:=lstrcmpiw(res1.text,res2.text);
     end
     else if typ1 or typ2 then // string & num
     begin
@@ -776,7 +710,7 @@ begin
     FillChar(fi,SizeOf(fi),0);
     fi.flags :=LVFI_PARAM;
     fi.lParam:=num;
-    result:=SendMessage(grid,LVM_FINDITEM,-1,dword(@fi));
+    result:=SendMessage(grid,LVM_FINDITEM,-1,lparam(@fi));
   end
   else
     result:=num;
@@ -792,10 +726,7 @@ begin
   li.mask  :=LVIF_IMAGE or LVIF_PARAM;
   li.iImage:=PluginLink^.CallService(MS_CLIST_GETCONTACTICON,hContact,0);
   li.lParam:=num;
-  if IsAnsi then
-    li.iItem :=SendMessageA(grid,LVM_INSERTITEMA,0,integer(@li))
-  else
-    li.iItem :=SendMessageW(grid,LVM_INSERTITEMW,0,integer(@li));
+  li.iItem :=SendMessageW(grid,LVM_INSERTITEMW,0,lparam(@li));
 
   li.iImage:=0;
   for i:=0 to qsopt.numcolumns-1 do
@@ -811,10 +742,7 @@ begin
       else
         li.mask:=LVIF_TEXT;
       li.iSubItem:=colorder[i];
-      if IsAnsi then
-        SendMessageA(grid,LVM_SETITEMA,0,integer(@li))
-      else
-        SendMessageW(grid,LVM_SETITEMW,0,integer(@li));
+      SendMessageW(grid,LVM_SETITEMW,0,lparam(@li));
     end;
   end;
 end;
@@ -830,111 +758,12 @@ type
     liston:cardinal; // pattern online
   end;
 
-procedure DrawSBA(const SBData:tSBData;protocnt:integer);
-var
-  aPartPos:array [0..63 ] of integer;
-  buf     :array [0..255] of AnsiChar;
-  fmtstr  :array [0..255] of AnsiChar;
-  vars    :array [0..6  ] of integer;
-  all:integer;
-  i,j:integer;
-  p:PAnsiChar;
-  rc:TRECT;
-  dc:HDC;
-  icon:HICON;
-begin
-  StrCopy(@fmtstr,Translate('%u users found (%u) Online: %u'));
-  vars[0]:=SBData[0].found;
-  vars[1]:=Length(FlagBuf);
-  vars[2]:=SBData[0].online;
-  wvsprintfa(buf,fmtstr,@vars);
-  dc:=GetDC(StatusBar);
-  DrawTextA(dc,PAnsiChar(@buf),-1,rc,DT_CALCRECT);
-  ReleaseDC(StatusBar,dc);
-  all:=rc.right-rc.left;
-  aPartPos[0]:=all;
-  i:=1;
-  while i<=protocnt do
-  begin
-    inc(all,55);
-    aPartPos[i]:=all;
-    inc(i);
-  end;
-  aPartPos[i]:=-1;
-  SendMessageA(StatusBar,SB_SETPARTS,protocnt+2,dword(@aPartPos));
-  SendMessageA(StatusBar,SB_SETTEXTA,0,dword(@buf));
-
-  vars[4]:=dword(Translate('Online'));
-  i:=protocnt;
-  while i>0 do
-  begin
-
-    if (SBData[i].name=nil) or
-      ((SBData[i].flags and (QSF_ACCDEL or QSF_ACCOFF))<>0) then
-    begin
-      icon:=PluginLink^.CallService(MS_SKIN_LOADPROTOICON,0,ID_STATUS_OFFLINE);
-    end
-    else
-    begin
-      icon:=PluginLink^.CallService(
-          MS_SKIN_LOADPROTOICON,dword(SBData[i].name),ID_STATUS_ONLINE);
-    end;
-
-    if SBData[i].name=nil then
-      vars[0]:=dword(Translate('Unknown'))
-    else
-      vars[0]:=dword(SBData[i].name);
-
-    SendMessageA(StatusBar,SB_SETICON,i,icon);
-    j:=High(buf);//(SizeOf(buf) div SizeOf(WideChar))-1;
-    buf[j]:=#0;
-
-    p:=@buf[0];
-    while j>0 do
-    begin
-      dec(j);
-      p^:=' ';
-      inc(p);
-    end;
-
-    if (SBData[i].flags and QSF_ACCDEL)<>0 then
-    begin
-      buf [0]:='!';
-      vars[1]:=dword(Translate('deleted'));
-    end
-    else if (SBData[i].flags and QSF_ACCOFF)<>0 then
-    begin
-      buf [0]:='?';
-      vars[1]:=dword(Translate('off'));
-    end
-    else
-      vars[1]:=dword(Translate('active'));
-
-    IntToStr(pAnsiChar(@buf[2]),SBData[i].found);
-    StrEnd(buf)^:=' ';
-    SendMessageA(StatusBar,SB_SETTEXTA,i,dword(@buf));
-
-// create tooltip
-    with SBData[i] do
-    begin
-      vars[2]:=found;
-      vars[3]:=total;
-      vars[5]:=liston;
-      vars[6]:=online;
-    end;
-    wvsprintfa(buf,'%s (%s): %u (%u); %s %u (%u)',@vars);
-    SendMessageA(StatusBar,SB_SETTIPTEXTA,i,dword(@buf));
-    dec(i);
-  end;
-
-end;
-
 procedure DrawSBW(const SBData:tSBData; protocnt:integer);
 var
   aPartPos:array [0..63 ] of integer;
   buf     :array [0..255] of WideChar;
   fmtstr  :array [0..255] of WideChar;
-  vars    :array [0..6  ] of integer;
+  vars    :array [0..6  ] of int_ptr;
   all:integer;
   i,j:integer;
   p:PWideChar;
@@ -960,10 +789,10 @@ begin
     inc(i);
   end;
   aPartPos[i]:=-1;
-  SendMessageW(StatusBar,SB_SETPARTS,protocnt+2,dword(@aPartPos));
-  SendMessageW(StatusBar,SB_SETTEXTW,0,dword(@buf));
+  SendMessageW(StatusBar,SB_SETPARTS,protocnt+2,lparam(@aPartPos));
+  SendMessageW(StatusBar,SB_SETTEXTW,0,lparam(@buf));
 
-  vars[4]:=dword(TranslateW('Online'));
+  vars[4]:=int_ptr(TranslateW('Online'));
   i:=protocnt;
   while i>0 do
   begin
@@ -976,15 +805,15 @@ begin
     else
     begin
       icon:=PluginLink^.CallService(
-          MS_SKIN_LOADPROTOICON,dword(SBData[i].name),ID_STATUS_ONLINE);
+          MS_SKIN_LOADPROTOICON,wparam(SBData[i].name),ID_STATUS_ONLINE);
     end;
 
     if SBData[i].name=nil then
-      vars[0]:=dword(TranslateW('Unknown'))
+      vars[0]:=int_ptr(TranslateW('Unknown'))
     else
     begin
       FastAnsiToWideBuf(SBData[i].name,fmtstr);
-      PWideChar(vars[0]):=@fmtstr;
+      vars[0]:=int_ptr(@fmtstr);
     end;
 
     SendMessageW(StatusBar,SB_SETICON,i,icon);
@@ -1003,19 +832,19 @@ begin
     if (SBData[i].flags and QSF_ACCDEL)<>0 then
     begin
       buf [0]:='!';
-      vars[1]:=dword(TranslateW('deleted'));
+      vars[1]:=int_ptr(TranslateW('deleted'));
     end
     else if (SBData[i].flags and QSF_ACCOFF)<>0 then
     begin
       buf [0]:='?';
-      vars[1]:=dword(TranslateW('off'));
+      vars[1]:=int_ptr(TranslateW('off'));
     end
     else
-      vars[1]:=dword(TranslateW('active'));
+      vars[1]:=int_ptr(TranslateW('active'));
 
     IntToStr(pWideChar(@buf[2]),SBData[i].found);
     StrEndW(buf)^:=' ';
-    SendMessageW(StatusBar,SB_SETTEXTW,i,dword(@buf));
+    SendMessageW(StatusBar,SB_SETTEXTW,i,lparam(@buf));
 
 // create tooltip
     with SBData[i] do
@@ -1026,7 +855,7 @@ begin
       vars[6]:=online;
     end;
     wvsprintfw(buf,'%s (%s): %u (%u); %s %u (%u)',@vars);
-    SendMessageW(StatusBar,SB_SETTIPTEXTW,i,dword(@buf));
+    SendMessageW(StatusBar,SB_SETTIPTEXTW,i,lparam(@buf));
     dec(i);
   end;
   
@@ -1092,10 +921,7 @@ begin
 
   end;
 
-  if IsAnsi then
-    DrawSBA(SBData,protocnt)
-  else
-    DrawSBW(SBData,protocnt);
+  DrawSBW(SBData,protocnt);
 end;
 
 procedure Sort;
@@ -1304,10 +1130,7 @@ begin
 
   if test then
   begin
-    if IsAnsi then
-      l:=CheckPatternA(num)
-    else
-      l:=CheckPatternW(num);
+    l:=CheckPatternW(num);
     if l then
       p^.flags:=p^.flags or QSF_PATTERN
     else
@@ -1389,10 +1212,7 @@ begin
 
   SendMessage(grid,WM_SETREDRAW,0,0);
 
-  if IsAnsi then
-    MakePatternA
-  else
-    MakePatternW;
+  MakePatternW;
 
   for cnt:=0 to HIGH(FlagBuf) do
     ProcessLine(cnt);
@@ -1525,12 +1345,8 @@ var
 begin
   j:=ListView_GetItemCount(grid)-1;
 
-  if IsAnsi then
-    i:=MessageBoxA(0,Translate('Do you really want to delete selected contacts?'),
-       Translate('Warning'),MB_OKCANCEL+MB_ICONWARNING)
-  else
-    i:=MessageBoxW(0,TranslateW('Do you really want to delete selected contacts?'),
-       TranslateW('Warning'),MB_OKCANCEL+MB_ICONWARNING);
+  i:=MessageBoxW(0,TranslateW('Do you really want to delete selected contacts?'),
+     TranslateW('Warning'),MB_OKCANCEL+MB_ICONWARNING);
 
   if i=IDOK then
   begin
@@ -1563,14 +1379,9 @@ begin
           hMeta:=tmp
         else if tmp<>hMeta then
         begin
-          if IsAnsi then
-            MessageBoxA(0,
-              Translate('Some of selected contacts in different metacontacts already'),
-              qs_name,MB_ICONERROR)
-          else
-            MessageBoxW(0,
-              TranslateW('Some of selected contacts in different metacontacts already'),
-              'Quick Search',MB_ICONERROR);
+          MessageBoxW(0,
+            TranslateW('Some of selected contacts in different metacontacts already'),
+            'Quick Search',MB_ICONERROR);
           exit;
         end;
     end;
@@ -1578,14 +1389,9 @@ begin
 
   if hMeta<>0 then
   begin
-    if IsAnsi then
-      i:=MessageBoxA(0,
-        Translate('One or more contacts in same Meta already. Try to convert anyway?'),
-        qs_name,MB_YESNO+MB_ICONWARNING)
-    else
-      i:=MessageBoxW(0,
-        TranslateW('One or more contacts in same Meta already. Try to convert anyway?'),
-        'Quick Search',MB_YESNO+MB_ICONWARNING);
+    i:=MessageBoxW(0,
+      TranslateW('One or more contacts in same Meta already. Try to convert anyway?'),
+      'Quick Search',MB_YESNO+MB_ICONWARNING);
     if i<>IDYES then
       exit;
   end;
@@ -1629,10 +1435,7 @@ begin
     if ListView_GetItemState(grid,i,LVIS_SELECTED)<>0 then
     begin
       contact:=FlagBuf[LV_GetLParam(grid,i)].contact;
-      if IsAnsi then //!!!!!
-        DBWriteString(contact,strCList,'Group',pAnsiChar(group))
-      else
-        DBWriteUnicode(contact,strCList,'Group',group);
+      DBWriteUnicode(contact,strCList,'Group',group);
       if (not qsopt.closeafteraction) and (grcol>=0) then
       begin
          LoadOneItem(contact,grcol,nil,MainBuf[i,grcol]);
@@ -1840,7 +1643,6 @@ var
   buf :array [0..255] of WideChar; //!! for spec columns and patterns now only
   buf1:array [0..127] of AnsiChar;
   p,pp:PWideChar;
-  pc,ppc:pAnsiChar;
   i,num,cnt:integer;
   pinfo:LV_HITTESTINFO;
   TI:TToolInfoW;
@@ -1848,7 +1650,6 @@ var
 
   info:TCLCINFOTIP;
 //  qsr:QSRec;
-  txt:pWideChar;
   tmpCursor:TPOINT;
 begin
   result:=0;
@@ -1870,162 +1671,80 @@ begin
         PostMessage(GetParent(Dialog),WM_COMMAND,(BN_CLICKED shl 16)+IDCANCEL,0);
         exit;
       end;
-      if IsAnsi then
-      begin
-        case wParam of
-          1: begin
-            ListView_SetItemState(grid,-1,LVIS_SELECTED,LVIS_SELECTED);
-          end;
-          3: begin
-            i:=ListView_GetSelectedCount(grid);
-            if (i>1) or qsopt.singlecsv then
-            begin
-              CopyMultiLinesA(i);
-              exit;
-            end;
-
-            cnt:=0;
-            num:=LV_GetLParam(grid,ListView_GetNextItem(grid,-1,LVNI_FOCUSED));
-            i:=0;
-            while i<qsopt.numcolumns do
-            begin
-              if not (qsopt.skipminimized and IsColumnMinimized(i)) then
-              begin
-                pc:=Translate(pAnsiChar(qsopt.columns[i].title));
-                inc(cnt,StrLen(pc)+1);
-                if (StrEnd(pc)-1)^<>':' then
-                  inc(cnt);
-
-                inc(cnt,StrLen(pAnsiChar(MainBuf[num,i].text))+2);
-              end;
-            end;
-            if cnt=0 then
-              exit;
-            mGetMem(ppc,cnt+1);
-            pc:=ppc;
-
-            i:=0;
-            while i<qsopt.numcolumns do
-            begin
-              if not (qsopt.skipminimized and IsColumnMinimized(i)) then
-              begin
-                StrCopy(pc,Translate(pAnsiChar(qsopt.columns[i].title)));
-                pc:=StrEnd(pc);
-                if (pc-1)^<>':' then
-                begin
-                  pc^:=':';
-                  inc(pc);
-                end;
-                pc^:=' '; inc(pc);
-                StrCopy(pc,pAnsiChar(MainBuf[num,i].text));
-                pc:=StrEnd(pc);
-                pc^:=#13; (pc+1)^:=#10; inc(pc,2);
-              end;
-            end;
-            pc^:=#0;
-
-            CopyToClipboard(ppc,true);
-            mFreeMem(ppc);
-            exit;
-          end;
-          8: begin
-            if pattern<>nil then
-            begin
-              StrCopy(pAnsiChar(@buf),pAnsiChar(pattern));
-              pc:=StrEnd(pAnsiChar(@buf));
-              (pc-1)^:=#0;
-              SetDlgItemTextA(mainwnd,IDC_E_SEARCHTEXT,pAnsiChar(@buf));
-            end;
-          end;
-          32..127: begin
-            if pattern<>nil then
-              StrCopy(pAnsiChar(@buf),pAnsiChar(pattern))
-            else
-              buf[0]:=#0;
-            pc:=StrEnd(pAnsiChar(@buf));
-            pc^:=AnsiChar(wParam);
-            (pc+1)^:=#0;
-            SetDlgItemTextA(mainwnd,IDC_E_SEARCHTEXT,pAnsiChar(@buf));
-          end;
+      case wParam of
+        1: begin
+          ListView_SetItemState(grid,-1,LVIS_SELECTED,LVIS_SELECTED);
         end;
-      end
-      else
-      begin
-        case wParam of
-          1: begin
-            ListView_SetItemState(grid,-1,LVIS_SELECTED,LVIS_SELECTED);
-          end;
-          3: begin
-            i:=ListView_GetSelectedCount(grid);
-            if (i>1) or qsopt.singlecsv then
-            begin
-              CopyMultiLinesW(i);
-              exit;
-            end;
-
-            cnt:=0;
-            num:=LV_GetLParam(grid,ListView_GetNextItem(grid,-1,LVNI_FOCUSED));
-            i:=0;
-            while i<qsopt.numcolumns do
-            begin
-              if not (qsopt.skipminimized and IsColumnMinimized(i)) then
-              begin
-                p:=TranslateW(qsopt.columns[i].title);
-                inc(cnt,StrLenW(p)+1);
-                if (StrEndW(p)-1)^<>':' then
-                  inc(cnt);
-
-                inc(cnt,StrLenW(MainBuf[num,i].text)+2);
-              end;
-            end;
-            if cnt=0 then
-              exit;
-            mGetMem(pp,(cnt+1)*SizeOf(WideChar));
-            p:=pp;
-
-            i:=0;
-            while i<qsopt.numcolumns do
-            begin
-              if not (qsopt.skipminimized and IsColumnMinimized(i)) then
-              begin
-                StrCopyW(p,TranslateW(qsopt.columns[i].title));
-                p:=StrEndW(p);
-                if (p-1)^<>':' then
-                begin
-                  p^:=':';
-                  inc(p);
-                end;
-                p^:=' '; inc(p);
-                StrCopyW(p,MainBuf[num,i].text);
-                p:=StrEndW(p);
-                p^:=#13; (p+1)^:=#10; inc(p,2);
-              end;
-            end;
-            p^:=#0;
-            
-            CopyToClipboard(pp,false);
-            mFreeMem(pp);
+        3: begin
+          i:=ListView_GetSelectedCount(grid);
+          if (i>1) or qsopt.singlecsv then
+          begin
+            CopyMultiLinesW(i);
             exit;
           end;
-          8: begin
-            if pattern<>nil then
+
+          cnt:=0;
+          num:=LV_GetLParam(grid,ListView_GetNextItem(grid,-1,LVNI_FOCUSED));
+          i:=0;
+          while i<qsopt.numcolumns do
+          begin
+            if not (qsopt.skipminimized and IsColumnMinimized(i)) then
             begin
-              StrCopyW(buf,pattern);
-              p:=StrEndW(buf);
-              (p-1)^:=#0;
-              SetDlgItemTextW(mainwnd,IDC_E_SEARCHTEXT,buf);
+              p:=TranslateW(qsopt.columns[i].title);
+              inc(cnt,StrLenW(p)+1);
+              if (StrEndW(p)-1)^<>':' then
+                inc(cnt);
+
+              inc(cnt,StrLenW(MainBuf[num,i].text)+2);
             end;
           end;
-          32..127: begin
-            if pattern<>nil then
-              StrCopyW(buf,pattern)
-            else
-              buf[0]:=#0;
+          if cnt=0 then
+            exit;
+          mGetMem(pp,(cnt+1)*SizeOf(WideChar));
+          p:=pp;
+
+          i:=0;
+          while i<qsopt.numcolumns do
+          begin
+            if not (qsopt.skipminimized and IsColumnMinimized(i)) then
+            begin
+              StrCopyW(p,TranslateW(qsopt.columns[i].title));
+              p:=StrEndW(p);
+              if (p-1)^<>':' then
+              begin
+                p^:=':';
+                inc(p);
+              end;
+              p^:=' '; inc(p);
+              StrCopyW(p,MainBuf[num,i].text);
+              p:=StrEndW(p);
+              p^:=#13; (p+1)^:=#10; inc(p,2);
+            end;
+          end;
+          p^:=#0;
+          
+          CopyToClipboard(pp,false);
+          mFreeMem(pp);
+          exit;
+        end;
+        8: begin
+          if pattern<>nil then
+          begin
+            StrCopyW(buf,pattern);
             p:=StrEndW(buf);
-            p^:=WideChar(wParam);
-            (p+1)^:=#0;
+            (p-1)^:=#0;
             SetDlgItemTextW(mainwnd,IDC_E_SEARCHTEXT,buf);
           end;
+        end;
+        32..127: begin
+          if pattern<>nil then
+            StrCopyW(buf,pattern)
+          else
+            buf[0]:=#0;
+          p:=StrEndW(buf);
+          p^:=WideChar(wParam);
+          (p+1)^:=#0;
+          SetDlgItemTextW(mainwnd,IDC_E_SEARCHTEXT,buf);
         end;
       end
     end;
@@ -2047,49 +1766,11 @@ begin
           ptCursor.x:=loword(lParam);
           ptCursor.y:=hiword(lParam);
 }
-          SendMessage(grid,LVM_GETITEMRECT,OldHItem,dword(@rcItem));
+          SendMessage(grid,LVM_GETITEMRECT,OldHItem,tlparam(@rcItem));
           ScreenToClient(grid,tmpCursor);
           if not PtInRect(rcItem,tmpCursor) then exit;
         end;
 //        mGetMem(txt,16384*SizeOf(WideChar));
-        if IsAnsi then
-        begin
-{          pc:=pAnsiChar(txt);
-          for cnt:=0 to HIGH(MainBuf[0]) do
-          begin
-            if (qsopt.columns[cnt].flags and COL_ON)=0 then
-            begin
-              LoadOneItem(info.hItem,cnt,FlagBuf[i].proto,qsr);
-              if qsr.text<>nil then
-              begin
-                if pAnsiChar(qsr.text)^<>#0 then
-                begin
-//!! need: buffer free space check here
-
-num:=StrLen(pAnsiChar(qsopt.columns[cnt].title))+StrLen(pAnsiChar(qsr.text))+4;
-if (32768-num)>(pc-pAnsiChar(txt)) then
-begin
-                  pc:=StrCopyE(pc,pAnsiChar(qsopt.columns[cnt].title));
-                  pc^:=':'; inc(pc); pc^:=' '; inc(pc);
-                  pc:=StrCopyE(pc,pAnsiChar(qsr.text));
-                  pc^:=#13; inc(pc); pc^:=#10; inc(pc);
-end
-else
-begin
-  mFreeMem(qsr.text);
-  break;
-end;
-                end;
-                mFreeMem(qsr.text);
-              end;
-            end;
-          end;
-          pc^:=#0;
-}
-          CallService(MS_TIPPER_SHOWTIP,0{dword(txt)},dword(@info));
-        end
-        else
-        begin
 {
           p:=txt;
           for cnt:=0 to HIGH(MainBuf[0]) do
@@ -2123,8 +1804,7 @@ end;
           end;
           p^:=#0;
 }
-          CallService(MS_TIPPER_SHOWTIPW,0{dword(txt)},dword(@info));
-        end;
+        CallService(MS_TIPPER_SHOWTIPW,0{dword(txt)},tlparam(@info));
 //        mFreeMem(txt);
         TTShowed:=true;
       end;
@@ -2134,7 +1814,7 @@ end;
       pinfo.pt.x:=loword(lParam);
       pinfo.pt.y:=hiword(lParam);
       pinfo.flags:=0;
-      if integer(SendMessage(grid,LVM_SUBITEMHITTEST,0,dword(@pinfo)))<>-1 then
+      if integer(SendMessage(grid,LVM_SUBITEMHITTEST,0,tlparam(@pinfo)))<>-1 then
       begin
         if (pinfo.iItem<>OldHItem) or (pinfo.iSubItem<>OldHSubItem) then
         begin
@@ -2182,16 +1862,8 @@ end;
             end
             else // if (qsopt.columns[OldHSubItem].flags and COL_XSTATUS)<>0 then
             begin
-              if IsAnsi then
-              begin
-                StrCopy(pAnsiChar(@buf),pAnsiChar(MainBuf[i,OldHSubItem].text));
-                ics.flags:=CSSF_DEFAULT_NAME or CSSF_MASK_NAME;
-              end
-              else
-              begin
-                StrCopyW(buf,MainBuf[i,OldHSubItem].text);
-                ics.flags:=CSSF_DEFAULT_NAME or CSSF_MASK_NAME or CSSF_UNICODE;
-              end;
+              StrCopyW(buf,MainBuf[i,OldHSubItem].text);
+              ics.flags:=CSSF_DEFAULT_NAME or CSSF_MASK_NAME or CSSF_UNICODE;
 
               StrCopy(StrCopyE(buf1,FlagBuf[i].proto),PS_ICQ_GETCUSTOMSTATUSEX);
 
@@ -2200,11 +1872,8 @@ end;
               ics.cbSize:=SizeOf(ics);
               ics.szName.w:=@buf;
 
-              CallService(buf1,0,dword(@ics));
-              if IsAnsi then
-                TI.lpszText:=pWideChar(Translate(@buf))
-              else
-                TI.lpszText:=TranslateW(@buf);
+              CallService(buf1,0,tlparam(@ics));
+              TI.lpszText:=TranslateW(@buf);
             end;
           end
           else
@@ -2212,10 +1881,7 @@ end;
             TI.lpszText:=nil;
 //            TTShowed:=false;
           end;
-          if IsAnsi then
-            SendMessageA(HintWnd,TTM_SETTOOLINFOA,0,DWORD(@TI))
-          else
-            SendMessageW(HintWnd,TTM_SETTOOLINFOW,0,DWORD(@TI));
+          SendMessageW(HintWnd,TTM_SETTOOLINFOW,0,tlparam(@TI));
         end
       end;
     end;
@@ -2266,7 +1932,7 @@ begin
   hdi.mask:=HDI_BITMAP or HDI_FORMAT;
   hdi.fmt :=HDF_LEFT   or HDF_STRING;
   header:=ListView_GetHeader(wnd);
-  SendMessage(header,HDM_SETITEM,qsopt.columnsort,dword(@hdi));
+  SendMessage(header,HDM_SETITEM,qsopt.columnsort,lparam(@hdi));
 
   if qsopt.columnsort<>num then
   begin
@@ -2295,27 +1961,13 @@ begin
   menu:=CreatePopupMenu;
   if menu<>0 then
   begin
-    if IsAnsi then
+    for id:=0 to qsopt.numcolumns-1 do
     begin
-      for id:=0 to qsopt.numcolumns-1 do
-      begin
-        if (qsopt.columns[id].flags and COL_ON)<>0 then
-          flag:=MF_CHECKED or MF_STRING
-        else
-          flag:=MF_UNCHECKED or MF_STRING;
-        AppendMenuA(menu,flag,100+id,Translate(pAnsiChar(qsopt.columns[id].title)));
-      end;
-    end
-    else
-    begin
-      for id:=0 to qsopt.numcolumns-1 do
-      begin
-        if (qsopt.columns[id].flags and COL_ON)<>0 then
-          flag:=MF_CHECKED or MF_STRING
-        else
-          flag:=MF_UNCHECKED or MF_STRING;
-        AppendMenuW(menu,flag,100+id,TranslateW(qsopt.columns[id].title));
-      end;
+      if (qsopt.columns[id].flags and COL_ON)<>0 then
+        flag:=MF_CHECKED or MF_STRING
+      else
+        flag:=MF_UNCHECKED or MF_STRING;
+      AppendMenuW(menu,flag,100+id,TranslateW(qsopt.columns[id].title));
     end;
     GetCursorPos(pt);
     id:=integer(TrackPopupMenu(menu,TPM_RETURNCMD+TPM_NONOTIFY,pt.x,pt.y,0,mainwnd,nil));
@@ -2481,10 +2133,7 @@ begin
       end
       else if (qsopt.columns[sub].flags and COL_XSTATUS)<>0 then
       begin
-        if IsAnsi then
-          j:=StrToInt(pAnsiChar(MainBuf[i,sub].text))
-        else
-          j:=StrToInt(MainBuf[i,sub].text);
+        j:=StrToInt(MainBuf[i,sub].text);
         if j>0 then
         begin
           StrCopy(buf,FlagBuf[i].proto);
@@ -2508,15 +2157,12 @@ begin
       if (qsopt.columns[sub].flags and COL_CLIENT)<>0 then
       begin
         i:=LV_GetLParam(grid,lplvcd^.nmcd.dwItemSpec);
-        if IsAnsi then
-          StrCopy(buf,PAnsiChar(MainBuf[i,sub].text))
-        else
-          FastWideToAnsiBuf(MainBuf[i,sub].text,buf);
+        FastWideToAnsiBuf(MainBuf[i,sub].text,buf);
         
 //        ListView_GetItemTextA(grid,lplvcd^.nmcd.dwItemSpec,lplvcd^.iSubItem,buf,SizeOf(buf));
         if buf[0]<>#0 then
         begin
-          h:=PluginLink^.CallService(MS_FP_GETCLIENTICON,dword(@buf),1);
+          h:=PluginLink^.CallService(MS_FP_GETCLIENTICON,tlparam(@buf),1);
           ListView_GetSubItemRect(grid,lplvcd^.nmcd.dwItemSpec,lplvcd^.iSubItem,LVIR_ICON,@rc);
           DrawIconEx(lplvcd^.nmcd.hdc,rc.left+1,rc.top,h,16,16,0,0,DI_NORMAL);
           DestroyIcon(h);
@@ -2575,7 +2221,7 @@ begin
       begin
         li.statemask:=LVIS_SELECTED;
         li.state:=0;
-        SendMessage(grid,LVM_SETITEMSTATE,-1,integer(@li));
+        SendMessage(grid,LVM_SETITEMSTATE,-1,tlparam(@li));
         ListView_SetItemState(grid,next,LVIS_FOCUSED or LVIS_SELECTED,
             LVIS_FOCUSED or LVIS_SELECTED);
   //      ListView_EnsureVisible(grid,next,false);
@@ -2613,120 +2259,79 @@ var
   buf:array [0..255] of WideChar;
   p:PWideChar;
   pt:TPOINT;
-  b:array [0..31] of AnsiChar;
-  pc:pAnsiChar;
-  sl:PWStrList;
-  sla:PStrList;
 begin
   mmenu:=CreatePopupMenu;
   if mmenu=0 then
     exit;
 
-  if IsAnsi then
+  StrCopyW(buf,TranslateW('Selected'));
+  p:=@buf;
+  while p^<>#0 do inc(p);
+  p^:=' '; inc(p);
+
+  IntToStr(p,cnt);
+
+  while p^<>#0 do inc(p);
+  p^:=' '; inc(p);
+  StrCopyW(p,TranslateW('contacts'));
+  AppendMenuW(mmenu,MF_DISABLED+MF_STRING,0,buf);
+  AppendMenuW(mmenu,MF_SEPARATOR,0,nil);
+  AppendMenuW(mmenu,MF_STRING,101,TranslateW('&Delete'));
+  AppendMenuW(mmenu,MF_STRING,102,TranslateW('&Copy'));
+  if PluginLink^.ServiceExists(MS_MC_CONVERTTOMETA)<>0 then
+    AppendMenuW(mmenu,MF_STRING,103,TranslateW('C&onvert to Meta'));
+(*
+  grpmenu:=CreatePopupMenu;
+  i:=0;
+  AppendMenuW(grpmenu,MF_STRING,1234,TranslateW('<Root Group>'));
+  AppendMenuW(grpmenu,MF_SEPARATOR,0,nil);
+{$IFDEF KOL_MCK}
+  sl:=NewWStrList;
+  repeat
+    p:=DBReadUnicode(0,'CListGroups',IntToStr(b,i),nil);
+    if p=nil then break;
+    sl.Add(p+1);
+    mFreeMem(p);
+    inc(i);
+  until false;
+  sl.Sort(false);
+  for i:=0 to sl.Count-1 do
   begin
-    StrCopy(pAnsiChar(@buf),Translate('Selected'));
-    pc:=@buf;
-    while pc^<>#0 do inc(pc);
-    pc^:=' '; inc(pc);
-
-    IntToStr(pc,cnt);
-
-    while pc^<>#0 do inc(pc);
-    pc^:=' '; inc(pc);
-    StrCopy(pc,Translate('contacts'));
-    AppendMenuA(mmenu,MF_DISABLED+MF_STRING,0,pAnsiChar(@buf));
-    AppendMenuA(mmenu,MF_SEPARATOR,0,nil);
-    AppendMenuA(mmenu,MF_STRING,101,Translate('&Delete'));
-    AppendMenuA(mmenu,MF_STRING,102,Translate('&Copy'));
-    if PluginLink^.ServiceExists(MS_MC_CONVERTTOMETA)<>0 then
-      AppendMenuA(mmenu,MF_STRING,103,Translate('C&onvert to Meta'));
-
-    grpmenu:=CreatePopupMenu;
-    i:=0;
-    AppendMenuA(grpmenu,MF_STRING,1234,Translate('<Root Group>'));
-    AppendMenuA(grpmenu,MF_SEPARATOR,0,nil);
-    sla:=NewStrList;
-    repeat
-      pc:=DBReadString(0,'CListGroups',IntToStr(b,i),nil);
-      if pc=nil then break;
-      sla.Add(pc+1);
-      mFreeMem(pc);
-      inc(i);
-    until false;
-    sla.Sort(false);
-    for i:=0 to sla.Count-1 do
-    begin
-      AppendMenuA(grpmenu,MF_STRING,i+1,pAnsiChar(sla.Items[i]));
-    end;
-    sla.Clear;
-    sla.Free;
-
-    AppendMenuA(mmenu,MF_POPUP,grpmenu,Translate('&Move to Group'));
-  end
-  else
-  begin
-    StrCopyW(buf,TranslateW('Selected'));
-    p:=@buf;
-    while p^<>#0 do inc(p);
-    p^:=' '; inc(p);
-
-    IntToStr(p,cnt);
-
-    while p^<>#0 do inc(p);
-    p^:=' '; inc(p);
-    StrCopyW(p,TranslateW('contacts'));
-    AppendMenuW(mmenu,MF_DISABLED+MF_STRING,0,buf);
-    AppendMenuW(mmenu,MF_SEPARATOR,0,nil);
-    AppendMenuW(mmenu,MF_STRING,101,TranslateW('&Delete'));
-    AppendMenuW(mmenu,MF_STRING,102,TranslateW('&Copy'));
-    if PluginLink^.ServiceExists(MS_MC_CONVERTTOMETA)<>0 then
-      AppendMenuW(mmenu,MF_STRING,103,TranslateW('C&onvert to Meta'));
-
-    grpmenu:=CreatePopupMenu;
-    i:=0;
-    AppendMenuW(grpmenu,MF_STRING,1234,TranslateW('<Root Group>'));
-    AppendMenuW(grpmenu,MF_SEPARATOR,0,nil);
-    sl:=NewWStrList;
-    repeat
-      p:=DBReadUnicode(0,'CListGroups',IntToStr(b,i),nil);
-      if p=nil then break;
-      sl.Add(p+1);
-      mFreeMem(p);
-      inc(i);
-    until false;
-    sl.Sort(false);
-    for i:=0 to sl.Count-1 do
-    begin
-      AppendMenuW(grpmenu,MF_STRING,i+1,pWideChar(sl.Items[i]));
-    end;
-    sl.Clear;
-    sl.Free;
+    AppendMenuW(grpmenu,MF_STRING,i+1,pWideChar(sl.Items[i]));
+  end;
+  sl.Clear;
+  sl.Free;
+{$ELSE}
+  repeat
+    p:=DBReadUnicode(0,'CListGroups',IntToStr(b,i),nil);
+    if p=nil then break;
+    AppendMenuW(grpmenu,MF_STRING,i+1,pWideChar(p+1));
+    mFreeMem(p);
+    inc(i);
+  until false;
+{$ENDIF}
+*)
+  grpmenu:=MakeGroupMenu(400);
 
 //    grpmenu:=CallService(MS_CLIST_GROUPBUILDMENU,0,0);
-    AppendMenuW(mmenu,MF_POPUP,grpmenu,TranslateW('&Move to Group'));
-  end;
+  AppendMenuW(mmenu,MF_POPUP,grpmenu,TranslateW('&Move to Group'));
+
   GetCursorPos(pt);
   i:=integer(TrackPopupMenu(mmenu,TPM_RETURNCMD+TPM_NONOTIFY,pt.x,pt.y,0,mainwnd,nil));
   case i of
     101: DeleteByList;
     102: begin
-      if IsAnsi then
-        CopyMultiLinesA(ListView_GetSelectedCount(grid))
-      else
-        CopyMultiLinesW(ListView_GetSelectedCount(grid))
+      CopyMultiLinesW(ListView_GetSelectedCount(grid))
     end;
     103: ConvertToMeta;
   else
     if i>0 then
     begin // move to group
-      if i=1234 then // root group
+      if i=400 then // root group
         buf[0]:=#0
       else
       begin
-        if IsAnsi then
-          GetMenuStringA(grpmenu,i,pAnsiChar(@buf),SizeOf(buf),MF_BYCOMMAND)
-        else
-          GetMenuStringW(grpmenu,i,buf,SizeOf(buf),MF_BYCOMMAND);
+        GetMenuStringW(grpmenu,i,buf,SizeOf(buf),MF_BYCOMMAND);
       end;
       MoveToGroup(buf);
     end;
@@ -2744,7 +2349,7 @@ begin
   lvcol.mask      :=LVCF_TEXT or LVCF_WIDTH;
   lvcol.pszText   :=title;
   lvcol.cx        :=width;
-  SendMessageA(handle,LVM_INSERTCOLUMNA,num,integer(@lvcol));
+  SendMessageA(handle,LVM_INSERTCOLUMNA,num,lparam(@lvcol));
 end;
 
 procedure addcolumn(handle:hwnd;num,width:integer;title:PWideChar); overload;
@@ -2755,7 +2360,7 @@ begin
   lvcol.mask      :=LVCF_TEXT or LVCF_WIDTH;
   lvcol.pszText   :=title;
   lvcol.cx        :=width;
-  SendMessageW(handle,LVM_INSERTCOLUMNW,num,integer(@lvcol));
+  SendMessageW(handle,LVM_INSERTCOLUMNW,num,lparam(@lvcol));
 end;
 
 // from zero!!
@@ -2831,21 +2436,12 @@ begin
     else if (setting_type=ST_CONTACTINFO) and
             (setting_cnftype=CNF_GENDER) then
     begin
-      if hIconF=0 then hIconF:=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(QS_FEMALE));
-      if hIconM=0 then hIconM:=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(QS_MALE));
+      if hIconF=0 then hIconF:=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(QS_FEMALE));
+      if hIconM=0 then hIconM:=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(QS_MALE));
       flags:=flags or COL_GENDER;
-      if IsAnsi then
-      begin
-        tstrMale   :=pWideChar(Translate('Male'));
-        tstrFemale :=pWideChar(Translate('Female'));
-        tstrUnknown:=pWideChar(Translate('Unknown'));
-      end
-      else
-      begin
-        tstrMale   :=TranslateW('Male');
-        tstrFemale :=TranslateW('Female');
-        tstrUnknown:=TranslateW('Unknown');
-      end;
+      tstrMale   :=TranslateW('Male');
+      tstrFemale :=TranslateW('Female');
+      tstrUnknown:=TranslateW('Unknown');
     end
 
     else if (wparam.a<>NIL) and // FingerPrint preprocess
@@ -2884,10 +2480,7 @@ begin
     begin
       if (flags and COL_ON)<>0 then
       begin
-        if IsAnsi then
-          addcolumn(grid,tablecolumns,width,Translate(pAnsiChar(title)))
-        else
-          addcolumn(grid,tablecolumns,width,TranslateW(title));
+        addcolumn(grid,tablecolumns,width,TranslateW(title));
         inc(tablecolumns);
       end;
 
@@ -2909,7 +2502,7 @@ end;
 function QSMainWndProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
 var
   tmp:cardinal;
-  w,h:cardinal;
+  w,h:uint_ptr;
   i:integer;
   buf:array [0..255] of WideChar;
   rc:TRECT;
@@ -2953,10 +2546,7 @@ begin
       grid:=0;
 
       if qsopt.savepattern then
-        if IsAnsi then
-          DBWriteString (0,qs_module,'pattern',pAnsiChar(pattern))
-        else
-          DBWriteUnicode(0,qs_module,'pattern',pattern);
+        DBWriteUnicode(0,qs_module,'pattern',pattern);
 
       mFreeMem(patstr);
       mFreeMem(pattern);
@@ -2972,21 +2562,14 @@ begin
       if sortcolup=0 then
         sortcolup:=LoadImage(tmp,PAnsiChar(239),IMAGE_BITMAP,0,0,LR_LOADMAP3DCOLORS);
 
-      if IsAnsi then
-        SetWindowTextA(dialog,'Quick Search')
-      else
-        SetWindowTextW(dialog,'Quick Search');
+      SetWindowTextW(dialog,'Quick Search');
 
       StatusBar:=GetDlgItem(Dialog,IDC_STATUSBAR);
 
       smenu:=GetSystemMenu(dialog,false);
       InsertMenu (smenu,5,MF_BYPOSITION or MF_SEPARATOR,0,nil);
-      if IsAnsi then
-        InsertMenuA(smenu,6,MF_BYPOSITION or MF_STRING,
-          IDM_STAYONTOP,Translate('Stay on Top'))
-      else
-        InsertMenuW(smenu,6,MF_BYPOSITION or MF_STRING,
-          IDM_STAYONTOP,TranslateW('Stay on Top'));
+      InsertMenuW(smenu,6,MF_BYPOSITION or MF_STRING,
+        IDM_STAYONTOP,TranslateW('Stay on Top'));
 
       if qsopt.stayontop then
       begin
@@ -3002,27 +2585,15 @@ begin
       gridbrush:=CreateSolidBrush(RGB(222,230,235));
 
       mainwnd:=dialog;
-      if IsAnsi then
-      begin
-        tmp:=GetWindowLongA(Dialog,GWL_EXSTYLE);
-        if qsopt.usetoolstyle then
-          tmp:=tmp or WS_EX_TOOLWINDOW
-        else
-          tmp:=tmp and not WS_EX_TOOLWINDOW;
-        SetWindowLongPtrA(dialog,GWL_EXSTYLE,tmp);
-      end
+      tmp:=GetWindowLongW(Dialog,GWL_EXSTYLE);
+      if qsopt.usetoolstyle then
+        tmp:=tmp or WS_EX_TOOLWINDOW
       else
-      begin
-        tmp:=GetWindowLongW(Dialog,GWL_EXSTYLE);
-        if qsopt.usetoolstyle then
-          tmp:=tmp or WS_EX_TOOLWINDOW
-        else
-          tmp:=tmp and not WS_EX_TOOLWINDOW;
-        SetWindowLongPtrW(dialog,GWL_EXSTYLE,tmp);
-      end;
+        tmp:=tmp and not WS_EX_TOOLWINDOW;
+      SetWindowLongPtrW(dialog,GWL_EXSTYLE,tmp);
 
       SendMessage(dialog,WM_SETICON,ICON_SMALL,//LoadIcon(hInstance,PAnsiChar(IDI_QS))
-        PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(QS_QS)));
+        PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(QS_QS)));
       grid:=GetDlgItem(dialog,IDC_LIST);
 
       ListView_SetImageList(grid,
@@ -3033,37 +2604,19 @@ begin
         tmp:=tmp or LVS_EX_GRIDLINES;
       SendMessage(grid,LVM_SETEXTENDEDLISTVIEWSTYLE,0,tmp);
 
-      if IsAnsi then
-      begin
-        OldLVProc  :=pointer(SetWindowLongPtrA(grid,GWL_WNDPROC,integer(@NewLVProc)));
-        OldEditProc:=pointer(SetWindowLongPtrA(GetDlgItem(dialog,IDC_E_SEARCHTEXT),
-           GWL_WNDPROC,integer(@NewEditProc)));
+      OldLVProc  :=pointer(SetWindowLongPtrW(grid,GWL_WNDPROC,tlparam(@NewLVProc)));
+      OldEditProc:=pointer(SetWindowLongPtrW(GetDlgItem(dialog,IDC_E_SEARCHTEXT),
+         GWL_WNDPROC,tlparam(@NewEditProc)));
 
-        oldproc:=pointer(SetWindowLongPtrA(
-            SendMessage(grid,LVM_GETHEADER,0,0),
-            GWL_WNDPROC,integer(@NewLVHProc)));
-
-      end
-      else
-      begin
-        OldLVProc  :=pointer(SetWindowLongPtrW(grid,GWL_WNDPROC,integer(@NewLVProc)));
-        OldEditProc:=pointer(SetWindowLongPtrW(GetDlgItem(dialog,IDC_E_SEARCHTEXT),
-           GWL_WNDPROC,integer(@NewEditProc)));
-
-        oldproc:=pointer(SetWindowLongPtrW(
-            SendMessage(grid,LVM_GETHEADER,0,0),
-            GWL_WNDPROC,integer(@NewLVHProc)));
-
-      end;
+      oldproc:=pointer(SetWindowLongPtrW(
+          SendMessage(grid,LVM_GETHEADER,0,0),
+          GWL_WNDPROC,tlparam(@NewLVHProc)));
 
       PrepareTable;
       
       if pattern<>nil then
       begin
-        if IsAnsi then
-          SetDlgItemTextA(Dialog,IDC_E_SEARCHTEXT,pAnsiChar(pattern))
-        else
-          SetDlgItemTextW(Dialog,IDC_E_SEARCHTEXT,pattern)
+        SetDlgItemTextW(Dialog,IDC_E_SEARCHTEXT,pattern)
       end
       else
         FillGrid;
@@ -3083,24 +2636,12 @@ begin
         hInst      :=0;
         lpszText   :=nil;
       end;
-      if IsAnsi then
-      begin
-        HintWnd:=CreateWindowExA(0,TOOLTIPS_CLASS,nil,0,
-            integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
-            integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
-            Dialog,0,HInstance,NIL);
+      HintWnd:=CreateWindowExW(0,TOOLTIPS_CLASS,nil,0,
+          integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
+          integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
+          Dialog,0,HInstance,NIL);
 
-        SendMessageA(HintWnd,TTM_ADDTOOLA,0,DWORD(@TI));
-      end
-      else
-      begin
-        HintWnd:=CreateWindowExW(0,TOOLTIPS_CLASS,nil,0,
-            integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
-            integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
-            Dialog,0,HInstance,NIL);
-
-        SendMessageW(HintWnd,TTM_ADDTOOLW,0,DWORD(@TI));
-      end;
+      SendMessageW(HintWnd,TTM_ADDTOOLW,0,tlparam(@TI));
 //      SetWindowsHookEx(WH_KEYBOARD,@QSKbdHook,0,GetCurrentThreadId);
       colorhook:=PluginLink^.HookEvent(ME_COLOUR_RELOAD,@ColorReload);
       
@@ -3124,7 +2665,7 @@ begin
       urd.lpTemplate:=MAKEINTRESOURCEA(IDD_MAIN);
       urd.lParam    :=0;
       urd.pfnResizer:=@FindAddDlgResizer;
-      CallService(MS_UTILS_RESIZEDIALOG,0,dword(@urd));
+      CallService(MS_UTILS_RESIZEDIALOG,0,tlparam(@urd));
     end;
 
     WM_SYSCOMMAND: begin
@@ -3230,22 +2771,11 @@ begin
 
       case wParam shr 16 of
         EN_CHANGE: begin
-          if IsAnsi then
-          begin
-            GetDlgItemTextA(Dialog,IDC_E_SEARCHTEXT,pAnsiChar(@buf),sizeOf(buf));
-            mFreeMem(pattern);
-            StrDup(pAnsiChar(pattern),pAnsiChar(@buf));
-            if pattern<>nil then
-              CharLowerA(pAnsiChar(pattern));
-          end
-          else
-          begin
-            GetDlgItemTextW(Dialog,IDC_E_SEARCHTEXT,buf,sizeOf(buf));
-            mFreeMem(pattern);
-            StrDupW(pattern,buf);
-            if pattern<>nil then
-              CharLowerW(pattern);
-          end;
+          GetDlgItemTextW(Dialog,IDC_E_SEARCHTEXT,buf,sizeOf(buf));
+          mFreeMem(pattern);
+          StrDupW(pattern,buf);
+          if pattern<>nil then
+            CharLowerW(pattern);
           FillGrid; //!!
         end;
 
@@ -3282,10 +2812,7 @@ begin
         NM_CUSTOMDRAW: begin
           if PNMHdr(lParam)^.hwndFrom=grid then
           begin
-            if IsAnsi then
-              SetWindowLongPtrA(dialog,DWL_MSGRESULT,ProcessCustomDraw(lParam))
-            else
-              SetWindowLongPtrW(dialog,DWL_MSGRESULT,ProcessCustomDraw(lParam));
+            SetWindowLongPtrW(dialog,DWL_MSGRESULT,ProcessCustomDraw(lParam));
             result:=1;
           end;
         end;
@@ -3316,46 +2843,25 @@ begin
   
   TTInstalled := PluginLink^.ServiceExists(MS_TIPPER_SHOWTIP)<>0;
   // too lazy to move pattern and flags to thread
-  if IsAnsi then
+  if apattern<>nil then
   begin
-    if apattern<>nil then
-    begin
-      if flags<>0 then
-        StrDup(pAnsiChar(pattern),pAnsiChar(apattern))
-      else
-        WideToAnsi(PWideChar(apattern),pAnsiChar(pattern));
-      CharLowerA(pAnsiChar(pattern));
-    end
-    else if qsopt.savepattern then
-      pattern:=pWideChar(DBReadString(0,qs_module,'pattern',nil))
+    if flags=0 then
+      StrDupW(pattern,apattern)
     else
-      pattern:=nil;
+      AnsiToWide(PAnsiChar(apattern),pattern);
+    CharLowerW(pattern);
   end
+  else if qsopt.savepattern then
+    pattern:=DBReadUnicode(0,qs_module,'pattern',nil)
   else
-  begin
-    if apattern<>nil then
-    begin
-      if flags=0 then
-        StrDupW(pattern,apattern)
-      else
-        AnsiToWide(PAnsiChar(apattern),pattern);
-      CharLowerW(pattern);
-    end
-    else if qsopt.savepattern then
-      pattern:=DBReadUnicode(0,qs_module,'pattern',nil)
-    else
-      pattern:=nil;
-  end;
+    pattern:=nil;
 
   if PrepareToFill then
   begin
 //!!    SetLength(colorder,qsopt.numcolumns);
     ColorReload(0,0);
 
-    if IsAnsi then
-      CreateDialogA(hInstance,PAnsiChar(IDD_MAIN),0,@QSMainWndProc)
-    else
-      CreateDialogW(hInstance,PWideChar(IDD_MAIN),0,@QSMainWndProc);
+    CreateDialogW(hInstance,PWideChar(IDD_MAIN),0,@QSMainWndProc);
   end;
 end;
 
@@ -3371,7 +2877,7 @@ begin
   SetForegroundWindow(mainwnd);
 end;
 
-procedure ChangeStatusPicture(row:integer; hContact:dword;Pic:integer);
+procedure ChangeStatusPicture(row:integer; hContact:THANDLE;Pic:integer);
 var
   li:LV_ITEM;
 begin
@@ -3382,11 +2888,11 @@ begin
     li.iSubItem:=0;
     li.mask    :=LVIF_IMAGE;
     li.iImage  :=pic;//PluginLink^.CallService(MS_CLIST_GETCONTACTICON,hContact,0);
-    SendMessage(grid,LVM_SETITEM,0,integer(@li));
+    SendMessage(grid,LVM_SETITEM,0,lparam(@li));
   end;
 end;
 
-function OnStatusChanged(wParam:WPARAM;lParam:LPARAM):integer;cdecl;
+function OnStatusChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
   j:integer;
   oldstat,newstat:integer;
@@ -3428,21 +2934,21 @@ begin
   end;
 end;
 
-function OnContactAdded(wParam:WPARAM;lParam:LPARAM):integer;cdecl;
+function OnContactAdded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
   result:=0;
   if opened then
     PostMessage(mainwnd,WM_MYADDCONTACT,wParam,lParam);
 end;
 
-function OnContactDeleted(wParam:WPARAM;lParam:LPARAM):integer;cdecl;
+function OnContactDeleted(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
   result:=0;
   if opened then
     PostMessage(mainwnd,WM_MYDELETECONTACT,wParam,lParam);
 end;
 
-function OnAccountChanged(wParam:WPARAM;lParam:LPARAM):integer;cdecl;
+function OnAccountChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
   result:=0;
   if not opened then exit;
@@ -3486,7 +2992,7 @@ begin
     li.iItem   :=i;
     li.mask    :=LVIF_PARAM;
     li.iSubItem:=0;
-    SendMessage(grid,LVM_GETITEM,0,dword(@li));
+    SendMessage(grid,LVM_GETITEM,0,lparam(@li));
 
     li.pszText :=MainBuf[li.lParam,column].text;
     // Client icons preprocess
@@ -3497,10 +3003,7 @@ begin
     else
       li.mask:=LVIF_TEXT;
     li.iSubItem:=lvcolumn;
-    if IsAnsi then
-      SendMessageA(grid,LVM_SETITEMA,0,integer(@li))
-    else
-      SendMessageW(grid,LVM_SETITEMW,0,integer(@li));
+    SendMessageW(grid,LVM_SETITEMW,0,lparam(@li));
   end;
 end;
 
@@ -3517,7 +3020,7 @@ begin
       inc(col);
     end;
 
-  SendMessageW(grid,LVM_SETCOLUMNORDERARRAY,col,dword(@lcol[0]));
+  SendMessageW(grid,LVM_SETCOLUMNORDERARRAY,col,lparam(@lcol[0]));
 
   InvalidateRect(grid,nil,false);
 end;
@@ -3603,10 +3106,7 @@ begin
         end;
         // screen
         with qsopt.columns[column] do // atm - to the end only
-          if IsAnsi then
-            addcolumn(grid,tablecolumns,width,Translate(pAnsiChar(title)))
-          else
-            addcolumn(grid,tablecolumns,width,TranslateW(title));
+          addcolumn(grid,tablecolumns,width,TranslateW(title));
         
         // fill new column
         FillLVColumn(column,tablecolumns);
