@@ -89,8 +89,8 @@ begin
   mi.cbSize:=sizeof(mi);
   mi.flags :=CMIM_ICON;
 
-  mi.hIcon:=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(QS_QS));
-  PluginLink^.CallService(MS_CLIST_MODIFYMENUITEM,MainMenuItem,dword(@mi));
+  mi.hIcon:=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(QS_QS));
+  PluginLink^.CallService(MS_CLIST_MODIFYMENUITEM,MainMenuItem,tlparam(@mi));
 
 {// toptoolbar
   if PluginLink^.ServiceExists(MS_TTB_GETBUTTONOPTIONS)<>0 then
@@ -116,61 +116,61 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_QS),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_QS;
   sid.szDescription.a:=qs_name;
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_NEW),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_NEW;
   sid.szDescription.a:='New Column';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_ITEM),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_ITEM;
   sid.szDescription.a:='Save Column';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_UP),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_UP;
   sid.szDescription.a:='Column Up';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_DOWN),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_DOWN;
   sid.szDescription.a:='Column Down';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_DELETE),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_DELETE;
   sid.szDescription.a:='Delete Column';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_DEFAULT),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_DEFAULT;
   sid.szDescription.a:='Default';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_RELOAD),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_RELOAD;
   sid.szDescription.a:='Reload';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_MALE),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_MALE;
   sid.szDescription.a:='Male';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_FEMALE),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_FEMALE;
   sid.szDescription.a:='Female';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
   icohook:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
@@ -189,11 +189,11 @@ begin
   odp.szGroup.a  :='Contact List';
   odp.pfnDlgProc :=@sr_optdialog.DlgProcOptions;
   odp.flags      :=ODPF_BOLDGROUPS;
-  PluginLink^.CallService(MS_OPT_ADDPAGE,wParam,dword(@odp));
+  PluginLink^.CallService(MS_OPT_ADDPAGE,wParam,tlparam(@odp));
   Result:=0;
 end;
 
-function OpenSearchWindow(wParam,lParam:DWord):integer;cdecl;
+function OpenSearchWindow(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 begin
   result:=0;
   if not opened then
@@ -212,7 +212,7 @@ begin
   if DetectHKManager<>HKMT_CORE then
     InitHotKeys;
 
-  PluginLink^.CallService('DBEditorpp/RegisterSingleModule',dword(qs_module),0);
+  PluginLink^.CallService('DBEditorpp/RegisterSingleModule',twparam(qs_module),0);
 
   if PluginLink^.ServiceExists(MS_UPDATE_REGISTER)<>0 then
   begin
@@ -232,7 +232,7 @@ begin
       cpbVersion          :=StrLen(pbVersion);
       szBetaChangelogURL  :=BetaChangelogURL;
     end;
-    PluginLink^.CallService(MS_UPDATE_REGISTER,0,dword(@upd));
+    PluginLink^.CallService(MS_UPDATE_REGISTER,0,tlparam(@upd));
   end;
 
   RegisterIcons;

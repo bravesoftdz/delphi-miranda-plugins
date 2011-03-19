@@ -13,8 +13,8 @@ const
 function WinampGetStatus(wnd:HWND):integer;
 function WinampGetWindowText(wnd:HWND):pWideChar;
 function WinampFindWindow(wnd:HWND):HWND;
-function WinampCommand(wParam:WPARAM;lParam:LPARAM):integer;cdecl;
-function WinampGetInfo(wParam:WPARAM;lParam:LPARAM):integer;cdecl;
+function WinampCommand(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
+function WinampGetInfo(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 
 const
   WM_WA_IPC = WM_USER;
@@ -170,7 +170,7 @@ begin
   result:=(result shl 16)+(result shr 4);
 end;
 
-function WinampGetInfo(wParam:WPARAM;lParam:LPARAM):integer;cdecl;
+function WinampGetInfo(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
   wnd:HWND;
 begin
@@ -192,7 +192,6 @@ begin
     end
     else if (lParam and WAT_OPT_CHANGES)<>0 then
     begin
-      status:=WinampGetStatus(wnd);
       volume:=GetVolume(wnd);
       if status<>WAT_MES_STOPPED then
         time:=GetElapsedTime(wnd);
@@ -256,7 +255,7 @@ begin
     SendMessage(wnd,WM_WA_IPC,value*1000,IPC_JUMPTOTIME);
 end;
 
-function WinampCommand(wParam:WPARAM;lParam:LPARAM):integer;cdecl;
+function WinampCommand(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
   wnd:HWND;
 begin

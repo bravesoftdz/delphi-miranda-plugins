@@ -62,7 +62,7 @@ begin
           csr.nSize      :=SizeOf(csr);
           csr.nFieldCount:=4;
           csr.szFields   :=@columns;
-          ProtoBroadcastAck(PluginName,0,ACKTYPE_SEARCH,ACKRESULT_SEARCHRESULT,AckHandle,dword(@csr));
+          ProtoBroadcastAck(PluginName,0,ACKTYPE_SEARCH,ACKRESULT_SEARCHRESULT,AckHandle,lparam(@csr));
         end;
       end;
       mFreeMem(csr.psr.nick);
@@ -98,7 +98,7 @@ begin
   csr.nFieldCount:=4;
   csr.szFields   :=@columns;
   csr.psr.cbSize :=0;
-  ProtoBroadcastAck(PluginName,0,ACKTYPE_SEARCH,ACKRESULT_SEARCHRESULT,AckHandle,dword(@csr));
+  ProtoBroadcastAck(PluginName,0,ACKTYPE_SEARCH,ACKRESULT_SEARCHRESULT,AckHandle,lparam(@csr));
 
   while pc^<>#0 do
   begin
@@ -168,9 +168,9 @@ begin
   result:=0;
 end;
 
-function Service_SearchBasic(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function Service_SearchBasic(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
-  res:dword;
+  res:uint_ptr;
 begin
   if lParam=0 then
     result:=0
@@ -182,9 +182,9 @@ begin
   end;
 end;
 
-function Service_SearchByAdvanced(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function Service_SearchByAdvanced(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
-  res:dword;
+  res:uint_ptr;
 begin
   if lParam=0 then
     result:=0
@@ -195,9 +195,9 @@ begin
   end;
 end;
 
-function Service_GetCaps(wParam:WPARAM;lParam:LPARAM):int;cdecl; forward;
+function Service_GetCaps(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl; forward;
 
-function ExtSearchProc(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function ExtSearchProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
   buf:array [0..MAX_PATH-1] of AnsiChar;
 begin
@@ -224,7 +224,7 @@ begin
   end;
 end;
 
-function Service_ExtSearchUI(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function Service_ExtSearchUI(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 type
   PDLGTEMPLATEEX = ^TDLGTEMPLATEEX;
   TDLGTEMPLATEEX = packed record
@@ -265,13 +265,14 @@ begin
       begin
         if (Service_GetCaps(PFLAGNUM_1,0) and PF1_EXTSEARCHUI)<>0 then
           ptr^.style:=(ptr^.style and not WS_CHILD) or WS_POPUP or WS_BORDER;
-        result:=CreateDialogIndirect(hInstance,PDlgTemplate(ptr)^,lParam,@ExtSearchProc);
+        result:=CreateDialogIndirect(hInstance,
+            PDlgTemplate(ptr){$IFNDEF FPC}^{$ENDIF},lParam,@ExtSearchProc);
       end;
     end;
   end;
 end;
 
-function Service_AddToList(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function Service_AddToList(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
   hContact:THANDLE;
   p:PAnsiChar;
@@ -309,7 +310,7 @@ begin
         hContact:=CallService(MS_DB_CONTACT_ADD,0,0);
         if hContact<>0 then
         begin
-          CallService(MS_PROTO_ADDTOCONTACT,hContact,dword(PluginName));
+          CallService(MS_PROTO_ADDTOCONTACT,hContact,tlparam(PluginName));
           DBWriteString(hContact,strCList,optMyHandle,nick.a);
 
           DBWriteString(hContact,PluginName,optBitrate   ,email.a);

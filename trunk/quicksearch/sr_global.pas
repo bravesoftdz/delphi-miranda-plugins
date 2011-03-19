@@ -145,7 +145,6 @@ uses common;
 const
   HKN_GLOBAL:PAnsiChar = 'QS_Global';
 const
-  so_order           :PAnsiChar = 'colorder';
   so_mbottom         :PAnsiChar = 'mbottom';
   so_mright          :PAnsiChar = 'mright';
   so_mtop            :PAnsiChar = 'mtop';
@@ -162,7 +161,6 @@ const
   so_singlecsv       :PAnsiChar = 'singlecsv';
   so_savepattern     :PAnsiChar = 'savepattern';
   so_numcolumns      :PAnsiChar = 'numcolumns';
-  so_ver             :PAnsiChar = 'ver';
   so_item            :PAnsiChar = 'item';
   so_drawgrid        :PAnsiChar = 'drawgrid';
   so_stayontop       :PAnsiChar = 'stayontop';
@@ -196,12 +194,12 @@ begin
     DefHotKey       :=(HOTKEYF_ALT shl 8) or VK_F3;
     lParam          :=0;
   end;
-  CallService(MS_HOTKEY_REGISTER,0,dword(@hkrec));
+  CallService(MS_HOTKEY_REGISTER,0,lparam(@hkrec));
 end;
 
 procedure unreghotkeys;
 begin
-  CallService(MS_HOTKEY_UNREGISTER,0,dword(HKN_GLOBAL));
+  CallService(MS_HOTKEY_UNREGISTER,0,lparam(HKN_GLOBAL));
 end;
 
 procedure addtotoolbar;
@@ -224,7 +222,7 @@ begin
       ttbopt.cbSize        :=sizeof(ttbopt);
       ttbopt.pszServiceUp  :=qs_showservice;
       ttbopt.pszServiceDown:=qs_showservice;
-      ttbopt.hIconUp       :=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(QS_QS));
+      ttbopt.hIconUp       :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(QS_QS));
       ttbopt.hIconDn       :=ttbopt.hIconUp;
       ttbopt.dwFlags       :=TTBBF_VISIBLE;
       ttbopt.name          :=qs_module;
@@ -247,8 +245,8 @@ begin
 //    cmi.pszPopupName:=nil;
 //    cmi.flags       :=0;
     cmi.pszService  :=qs_showservice;
-    cmi.hIcon       :=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(QS_QS));
-    MainMenuItem    :=PluginLink^.CallService(MS_CLIST_ADDMAINMENUITEM,0,cardinal(@cmi));
+    cmi.hIcon       :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(QS_QS));
+    MainMenuItem    :=PluginLink^.CallService(MS_CLIST_ADDMAINMENUITEM,0,lparam(@cmi));
   end
   else
   begin
@@ -309,10 +307,7 @@ begin
   FillChar(qsopt.columns[qsopt.numcolumns],SizeOf(tcolumnitem),0);
   with qsopt.columns[qsopt.numcolumns] do
   begin
-    if IsAnsi then
-      StrDup(PAnsiChar(title),'New column')
-    else
-      StrDupW(title,'New column');
+    StrDupW(title,'New column');
     width:=64;
     flags:=COL_ON;
   end;
@@ -322,10 +317,7 @@ end;
 
 procedure MakeTitle(var title; name:pAnsiChar);
 begin
-  if IsAnsi then
-    StrDup(PAnsiChar(title),name)
-  else
-    FastAnsiToWide(name,pWideChar(title));
+  FastAnsiToWide(name,pWideChar(title));
 end;
 
 procedure loaddefaultcolumns;
@@ -583,17 +575,11 @@ begin
     with qsopt.columns[i] do
     begin
       StrCopy(p,so__title);
-      if IsAnsi then
-        WriteStr(buf,PAnsiChar(title))
-      else
-        WriteUnicode(buf,title);
+      WriteUnicode(buf,title);
       case setting_type of
         ST_SCRIPT: begin
           StrCopy(p,so__wparam);
-          if isAnsi then
-            WriteStr(buf,wparam.a)
-          else
-            WriteUnicode(buf,wparam.w);
+          WriteUnicode(buf,wparam.w);
         end;
         ST_CONTACTINFO: begin
           StrCopy(p,so__setting_cnftype); WriteWord(buf,setting_cnftype);
@@ -712,18 +698,12 @@ begin
       with qsopt.columns[i] do
       begin
         StrCopy(p,so__title);
-        if IsAnsi then
-          PAnsiChar(title):=GetStr(buf)
-        else
-          title:=GetUnicode(buf);
+        title:=GetUnicode(buf);
         StrCopy(p,so__setting_type); setting_type:=GetWord(buf,0);
         case setting_type of
           ST_SCRIPT: begin
             StrCopy(p,so__wparam);
-            if isAnsi then
-              wparam.a:=GetStr(buf)
-            else
-              wparam.w:=GetUnicode(buf);
+            wparam.w:=GetUnicode(buf);
           end;
           ST_CONTACTINFO: begin
             StrCopy(p,so__setting_cnftype); setting_cnftype:=GetWord(buf,0);

@@ -4,10 +4,10 @@ library MRadio;
 
 uses
 //  FastMM4,
-  kol,Windows,messages,commctrl
+  {$IFDEF KOL_MCK}kol,icobuttons,KOLCCtrls,{$ENDIF}Windows,messages,commctrl
   ,common,io,wrapper,wrapdlgs,syswin
   ,Dynamic_Bass,dynbasswma
-  ,m_api,dbsettings,mirutils,playlist,icobuttons,KOLCCtrls;
+  ,m_api,dbsettings,mirutils,playlist;
 
 {$include mr_rc.inc}
 {$r mradio.res}
@@ -57,7 +57,11 @@ procedure ConstructMsg(astr:PWideChar;status:integer=-1;astr1:PWideChar=nil); fo
 {$include i_variables.inc}
 {$include i_service.inc}
 {$include i_myservice.inc}
-{$include i_frame.inc}
+{$IFDEF KOL_MCK}
+  {$include i_frame.inc}
+{$ELSE}
+  {$include i_frameapi.inc}
+{$ENDIF}
 {$include i_tray.inc}
 {$include i_visual.inc}
 {$include i_optdlg.inc}
@@ -131,7 +135,7 @@ begin
       cpbVersion          :=StrLen(pbVersion);
       szBetaChangelogURL  :=BetaChangelogURL;
     end;
-    PluginLink^.CallService(MS_UPDATE_REGISTER,0,dword(@upd));
+    PluginLink^.CallService(MS_UPDATE_REGISTER,0,tlparam(@upd));
   end;
 
   szTemp[0]:='E';
@@ -159,7 +163,7 @@ begin
   nlu.cbSize             :=SizeOf(nlu);
   nlu.flags              :=NUF_HTTPCONNS or NUF_NOHTTPSOPTION or NUF_OUTGOING;
   nlu.szSettingsModule   :=PluginName;
-  hNetlib:=CallService(MS_NETLIB_REGISTERUSER,0,dword(@nlu));
+  hNetlib:=CallService(MS_NETLIB_REGISTERUSER,0,tlparam(@nlu));
 
   CallService(MS_RADIO_COMMAND,MRC_RECORD,2);
 
@@ -227,6 +231,7 @@ begin
     DestroyHookableEvent(hhRadioStatus);
 
     UnhookEvent(onsetting);
+    UnhookEvent(ondelete);
     UnhookEvent(hHookShutdown);
     UnhookEvent(hDblClick);
     UnhookEvent(opthook);
@@ -270,13 +275,13 @@ begin
 //    StrDup(storage,szTemp);
     FastWideToAnsi(szTemp,storage);
     mGetMem(storagep,MAX_PATH+32);
-    CallService(MS_DB_GETPROFILEPATH,MAX_PATH-1,dword(storagep));
+    CallService(MS_DB_GETPROFILEPATH,MAX_PATH-1,lparam(storagep));
     StrCat(storagep,'\mradio.ini');
 
     desc.cbSize:=PROTOCOLDESCRIPTOR_V3_SIZE;//SizeOf(desc);
     desc.szName:=PluginName;
     desc._type :=PROTOTYPE_PROTOCOL;
-    CallService(MS_PROTO_REGISTERMODULE,0,dword(@desc));
+    CallService(MS_PROTO_REGISTERMODULE,0,lparam(@desc));
 
     with PluginLink^ do
     begin

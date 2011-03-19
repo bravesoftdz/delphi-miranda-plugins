@@ -1,6 +1,6 @@
 {services}
 
-function Service_GetCaps(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function Service_GetCaps(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 begin
   case wParam of
     PFLAGNUM_1:
@@ -12,13 +12,13 @@ begin
     PFLAGNUM_4:
       result:=PF4_NOCUSTOMAUTH;
     PFLAG_UNIQUEIDSETTING:
-      result:=dword(optStationURL)
+      result:=int_ptr(optStationURL)
     else
       result:=0;
   end
 end;
 
-function Service_GetName(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function Service_GetName(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 begin
   if lParam<>0 then
     StrCopy(PAnsiChar(lParam),Translate(PluginName),wParam);
@@ -88,15 +88,15 @@ begin
     end;
   end;
 
-  ProtoBroadcastAck(PluginName,hContact,ACKTYPE_AWAYMSG,ACKRESULT_SUCCESS,AckHandle,dword(buf));
+  ProtoBroadcastAck(PluginName,hContact,ACKTYPE_AWAYMSG,ACKRESULT_SUCCESS,AckHandle,lParam(buf));
   mFreeMem(buf);
   result:=0;
 end;
 
-function Service_GetAwayMsg(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function Service_GetAwayMsg(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
   ccs:PCCSDATA;
-  res:dword;
+  res:uint_ptr;
 begin
   ccs:=PCCSDATA(lParam);
   if (ccs^.hContact<>0) and (PluginStatus=ID_STATUS_ONLINE) and
@@ -109,12 +109,12 @@ begin
     result:=0;
 end;
 
-function Service_GetStatus(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function Service_GetStatus(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 begin
   result:=PluginStatus;
 end;
 
-function Service_LoadIcon(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function Service_LoadIcon(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 begin
   case loword(wParam) of
     PLI_PROTOCOL: result:=LoadImage(hInstance,MAKEINTRESOURCE(IDI_MAIN),IMAGE_ICON,16,16,LR_SHARED);
@@ -125,7 +125,7 @@ begin
   end;
 end;
 
-function Service_SetStatus(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function Service_SetStatus(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
   OldStatus:integer;
 begin

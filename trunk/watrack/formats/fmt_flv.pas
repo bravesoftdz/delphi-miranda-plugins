@@ -27,14 +27,14 @@ type
     StreamID         :array [0..2] of byte;
 //    Body
   end;
-
+{
   twork = record
     endptr:PAnsiChar;
     Info  :pSongInfo;
     key   :PAnsiChar;
     len   :cardinal;
   end;
-
+}
 //  FLVTagTypes
 const
   FLV_AUDIO = 8;

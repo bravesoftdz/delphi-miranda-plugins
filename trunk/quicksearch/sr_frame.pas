@@ -32,14 +32,9 @@ var
 begin
   result:=0;
 
-  SendMessage(wnd,CLM_GETITEMTEXT,hContact,dword(@buf));
+  SendMessage(wnd,CLM_GETITEMTEXT,hContact,lparam(@buf));
 
-  if IsAnsi then
-  begin
-    if StrPos(CharLowerA(pAnsiChar(@buf)),pAnsiChar(pattern))<>nil then
-      result:=hContact;
-  end
-  else if StrPosW(CharLowerW(@buf),pattern)<>nil then
+  if StrPosW(CharLowerW(@buf),pattern)<>nil then
     result:=hContact;
 end;
 
@@ -50,8 +45,6 @@ var
 begin
   result:=0;
   repeat
-
-//    SendMessage(wnd,CLM_GETITEMTEXT,hContact,dword(@buf));
 
     if skip=0 then
     begin
@@ -135,7 +128,7 @@ begin
     SetCListSelContact(result);
 end;
 
-function NewEditProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
+function NewEditProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 begin
 //  result:=0;
   case hMessage of
@@ -188,19 +181,13 @@ begin
     end;
 
     WM_INITDIALOG: begin
-      OldEditProc:=pointer(SetWindowLongPtrA(GetDlgItem(dialog,IDC_FRAME_EDIT),
-         GWL_WNDPROC,integer(@NewEditProc)));
+      OldEditProc:=pointer(SetWindowLongPtrW(GetDlgItem(dialog,IDC_FRAME_EDIT),
+         GWL_WNDPROC,tlparam(@NewEditProc)));
 
-      if IsAnsi then
-        hwndTooltip:=CreateWindowA(TOOLTIPS_CLASS,nil,TTS_ALWAYSTIP,
-            integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
-            integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
-            Dialog,0,hInstance,nil)
-      else
-        hwndTooltip:=CreateWindowW(TOOLTIPS_CLASS,nil,TTS_ALWAYSTIP,
-            integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
-            integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
-            Dialog,0,hInstance,nil);
+      hwndTooltip:=CreateWindowW(TOOLTIPS_CLASS,nil,TTS_ALWAYSTIP,
+          integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
+          integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
+          Dialog,0,hInstance,nil);
 
       FillChar(ti,SizeOf(ti),0);
       ti.cbSize  :=sizeof(TOOLINFO);
@@ -208,28 +195,15 @@ begin
       ti.hwnd    :=dialog;
       ti.hinst   :=hInstance;
       ti.uId     :=GetDlgItem(Dialog,IDC_FRAME_PREV);
-      if IsAnsi then
-      begin
-        ti.lpszText:=pWideChar(Translate('Previous item'));
-        SendMessageA(hwndTooltip,TTM_ADDTOOL,0,integer(@ti));
-        ti.uId     :=GetDlgItem(Dialog,IDC_FRAME_NEXT);
-        ti.lpszText:=pWideChar(Translate('Next item'));
-        SendMessageA(hwndTooltip,TTM_ADDTOOL,0,integer(@ti));
-        ti.uId     :=GetDlgItem(Dialog,IDC_FRAME_OPEN);
-        ti.lpszText:=pWideChar(Translate('Open main window'));
-        SendMessageA(hwndTooltip,TTM_ADDTOOL,0,integer(@ti));
-      end
-      else
-      begin
-        ti.lpszText:=pWideChar(TranslateW('Previous item'));
-        SendMessage(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
-        ti.uId     :=GetDlgItem(Dialog,IDC_FRAME_NEXT);
-        ti.lpszText:=pWideChar(TranslateW('Next item'));
-        SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
-        ti.uId     :=GetDlgItem(Dialog,IDC_FRAME_OPEN);
-        ti.lpszText:=pWideChar(TranslateW('Open main window'));
-        SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,integer(@ti));
-      end;
+
+      ti.lpszText:=pWideChar(TranslateW('Previous item'));
+      SendMessage(hwndTooltip,TTM_ADDTOOLW,0,tlparam(@ti));
+      ti.uId     :=GetDlgItem(Dialog,IDC_FRAME_NEXT);
+      ti.lpszText:=pWideChar(TranslateW('Next item'));
+      SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,tlparam(@ti));
+      ti.uId     :=GetDlgItem(Dialog,IDC_FRAME_OPEN);
+      ti.lpszText:=pWideChar(TranslateW('Open main window'));
+      SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,tlparam(@ti));
     end;
 
     WM_SIZE: begin
@@ -240,7 +214,7 @@ begin
       urd.lpTemplate:=MAKEINTRESOURCEA(IDD_FRAME);
       urd.lParam    :=0;
       urd.pfnResizer:=@QSDlgResizer;
-      CallService(MS_UTILS_RESIZEDIALOG,0,dword(@urd));
+      CallService(MS_UTILS_RESIZEDIALOG,0,tlparam(@urd));
     end;
 
     WM_ERASEBKGND: begin
@@ -253,13 +227,9 @@ begin
       case wParam shr 16 of
         EN_CHANGE: begin
           mFreeMem(pattern);
-          pattern:=GetDlgText(Dialog,IDC_FRAME_EDIT,IsAnsi);
-
+          pattern:=GetDlgText(Dialog,IDC_FRAME_EDIT);
           if pattern<>nil then
-            if IsAnsi then
-              CharLowerA(pAnsiChar(pattern))
-            else
-              CharLowerW(pattern);
+            CharLowerW(pattern);
 
           tmp:=SearchContact(CLGN_NEXT,0);
           if tmp=0 then
@@ -272,7 +242,7 @@ begin
           case loword(wParam) of
             IDC_FRAME_PREV: tmp:=SearchContact(CLGN_PREVIOUS);
             IDC_FRAME_NEXT: tmp:=SearchContact(CLGN_NEXT);
-            IDC_FRAME_OPEN: CallService(qs_showservice,dword(pattern),ord(IsAnsi));
+            IDC_FRAME_OPEN: CallService(qs_showservice,twparam(pattern),0);
           end;
           if tmp<>0 then current:=tmp;
         end;
@@ -292,7 +262,7 @@ begin
   cid.cbSize:=SizeOf(cid);
   StrCopy(cid.group,'QuickSearch');
   StrCopy(cid.name ,frm_back);
-  frm_bkg:=CallService(MS_COLOUR_GETA,dword(@cid),0);
+  frm_bkg:=CallService(MS_COLOUR_GETA,twparam(@cid),0);
   DeleteObject(hbr);
   hbr:=CreateSolidBrush(frm_bkg);
 
@@ -326,21 +296,12 @@ begin
       hIcon   :=0;
       align   :=alTop;
       height  :=tr.bottom-tr.top+2;
-      if IsAnsi then
-      begin
-        Flags   :=F_VISIBLE or F_NOBORDER;
-        name.a  :='Quick search';
-        TBName.a:='Quick search';
-      end
-      else
-      begin
-        Flags   :=F_VISIBLE or F_NOBORDER or F_UNICODE;
-        name.w  :='Quick search';
-        TBName.w:='Quick search';
-      end;
+      Flags   :=F_VISIBLE or F_NOBORDER or F_UNICODE;
+      name.w  :='Quick search';
+      TBName.w:='Quick search';
     end;
 
-    FrameId:=CallService(MS_CLIST_FRAMES_ADDFRAME,dword(@Frame),0);
+    FrameId:=CallService(MS_CLIST_FRAMES_ADDFRAME,wparam(@Frame),0);
     if FrameId>=0 then
     begin
       CallService(MS_CLIST_FRAMES_UPDATEFRAME,FrameId, FU_FMPOS);
@@ -358,7 +319,7 @@ begin
       StrCopy(cid.setting,'frame_back');
       cid.defcolour:=COLOR_3DFACE;
       cid.order    :=0;
-      CallService(MS_COLOUR_REGISTERA,dword(@cid),0);
+      CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
 
       colorhook:=PluginLink^.HookEvent(ME_COLOUR_RELOAD,@ColorReload);
       ColorReload(0,0);
@@ -370,6 +331,7 @@ procedure DestroyFrame;
 begin
   if FrameId>=0 then
   begin
+    PluginLink.UnhookEvent(colorhook);
     CallService(MS_CLIST_FRAMES_REMOVEFRAME,FrameId,0);
     FrameId:=-1;
   end;

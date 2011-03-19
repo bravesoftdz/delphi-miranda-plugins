@@ -112,7 +112,7 @@ begin
       pc := nil;
       if SelectDirectory(TranslateW('Choose BASS.dll path'),pc,0,true) then
       begin
-        PluginLink^.CallService(MS_UTILS_PATHTORELATIVEW,dword(pc),dword(@buf));
+        PluginLink^.CallService(MS_UTILS_PATHTORELATIVEW,wparam(pc),lparam(@buf));
         pc:=StrCopyEW(basspath,buf);
         if (pc-1)^<>'\' then
         begin
@@ -164,6 +164,16 @@ begin
       syncEND:=0
     end;
     if syncWMA<>0 then
+    begin
+      BASS_ChannelRemoveSync(chan,syncWMA);
+      syncWMA:=0
+    end;
+    if syncOGG<>0 then
+    begin
+      BASS_ChannelRemoveSync(chan,syncWMA);
+      syncWMA:=0
+    end;
+    if syncWMA1<>0 then
     begin
       BASS_ChannelRemoveSync(chan,syncWMA);
       syncWMA:=0
@@ -382,8 +392,8 @@ end;
           if pc<>nil then
             hRecord:=Rewrite(pc)
           else
-            dword(hRecord):=INVALID_HANDLE_VALUE;
-          if dword(hRecord)=INVALID_HANDLE_VALUE then
+            hRecord:=THANDLE(INVALID_HANDLE_VALUE);
+          if hRecord=THANDLE(INVALID_HANDLE_VALUE) then
             hRecord:=0
           else if flag and (StationHeader<>nil) then
           begin
@@ -417,7 +427,7 @@ begin
   end;
 end;
 
-function DoMeta(meta:PAnsiChar;TagType:integer):Boolean;
+function DoMeta(meta:PAnsiChar;TagType:int_ptr):Boolean;
 var
   p:Integer;
   pcw1,pcw:pWideChar;
@@ -593,18 +603,19 @@ begin
   end;
 end;
 
-procedure MetaSync(handle:HSYNC;channel,data,user:DWORD); stdcall;
-var
-  tagtype:Integer;
+procedure MetaSync(handle:HSYNC;channel,data:dword;user:pointer); stdcall;
+//var tagtype:Integer;
 begin
+(*
   if      handle=syncOGG  then tagtype:=BASS_TAG_OGG
   else if handle=syncWMA  then tagtype:=BASS_TAG_WMA
   else if handle=syncWMA1 then tagtype:=BASS_TAG_WMA_META
   else {if handle=syncMETA then} tagtype:=BASS_TAG_META;
-  DoMeta(PAnsiChar(data),tagtype);
+*)
+  DoMeta(nil{PAnsiChar(data)},int_ptr(user){tagtype});
 end;
 
-procedure EndSync(handle:HSYNC;channel,data,user:DWORD); stdcall;
+procedure EndSync(handle:HSYNC;channel,data:dword;user:pointer); stdcall;
 var
   lContact:cardinal;
 begin
@@ -772,10 +783,10 @@ begin
      // get the stream title and set sync for subsequent titles
       DoMeta(nil,BASS_TAG_META);
 
-      syncMETA:=BASS_ChannelSetSync(chan,{BASS_SYNC_MIXTIME+}BASS_SYNC_META      ,0,@MetaSync,nil);
-      syncOGG :=BASS_ChannelSetSync(chan,{BASS_SYNC_MIXTIME+}BASS_SYNC_OGG_CHANGE,0,@MetaSync,nil);
-      syncWMA :=BASS_ChannelSetSync(chan,{BASS_SYNC_MIXTIME+}BASS_SYNC_WMA_CHANGE,0,@MetaSync,nil);
-      syncWMA1:=BASS_ChannelSetSync(chan,{BASS_SYNC_MIXTIME+}BASS_SYNC_WMA_META  ,0,@MetaSync,nil);
+      syncMETA:=BASS_ChannelSetSync(chan,BASS_SYNC_META      ,0,@MetaSync,pointer(BASS_TAG_META));
+      syncOGG :=BASS_ChannelSetSync(chan,BASS_SYNC_OGG_CHANGE,0,@MetaSync,pointer(BASS_TAG_OGG));
+      syncWMA :=BASS_ChannelSetSync(chan,BASS_SYNC_WMA_CHANGE,0,@MetaSync,pointer(BASS_TAG_WMA));
+      syncWMA1:=BASS_ChannelSetSync(chan,BASS_SYNC_WMA_META  ,0,@MetaSync,pointer(BASS_TAG_WMA_META));
     end
     else
     begin

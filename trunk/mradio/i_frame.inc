@@ -227,6 +227,7 @@ procedure DestroyFrame;
 begin
   if FrameId>=0 then
   begin
+    PluginLink.UnhookEvent(colorhook);
     CallService(MS_CLIST_FRAMES_REMOVEFRAME,FrameId,0);
     FrameId:=-1;
   end;

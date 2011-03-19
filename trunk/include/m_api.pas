@@ -54,6 +54,7 @@ type
   uint_ptr  = cardinal;
   long      = longint;
   plong     = ^long;
+  DWORD_PTR = ULONG_PTR;
 {$ENDIF}
   pint_ptr  = ^int_ptr;
   puint_ptr = ^uint_ptr;
