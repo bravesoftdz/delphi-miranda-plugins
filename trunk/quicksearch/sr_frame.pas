@@ -166,7 +166,7 @@ begin
   end;
 end;
 
-function QSFrameProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
+function QSFrameProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
   urd:TUTILRESIZEDIALOG;
   tmp:THANDLE;
@@ -242,7 +242,7 @@ begin
           case loword(wParam) of
             IDC_FRAME_PREV: tmp:=SearchContact(CLGN_PREVIOUS);
             IDC_FRAME_NEXT: tmp:=SearchContact(CLGN_NEXT);
-            IDC_FRAME_OPEN: CallService(qs_showservice,twparam(pattern),0);
+            IDC_FRAME_OPEN: CallService(QS_SHOWSERVICE,twparam(pattern),0);
           end;
           if tmp<>0 then current:=tmp;
         end;

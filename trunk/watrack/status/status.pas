@@ -19,6 +19,7 @@ var
 begin
 //  if DisablePlugin=dsPermanent then
 //    exit;
+  FillChar(hkrec,SizeOf(hkrec),0);
   with hkrec do
   begin
     cbSize          :=HOTKEYDESC_SIZE_V1;
@@ -27,7 +28,7 @@ begin
     pszSection.a    :=PluginName;
     pszService      :=MS_WAT_INSERT;
     DefHotKey       :=((HOTKEYF_ALT or HOTKEYF_CONTROL) shl 8) or VK_F5;
-    lParam          :=0;
+//    lParam          :=0;
   end;
   CallService(MS_HOTKEY_REGISTER,0,lparam(@hkrec));
 end;
@@ -60,8 +61,8 @@ begin
   loadopt;
   CreateProtoList;
   CreateTemplates;
-  reghotkey;
   hINS:=PluginLink^.CreateServiceFunction(MS_WAT_INSERT,@InsertProc);
+  reghotkey;
   plStatusHook:=PluginLink^.HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);
 
 //  if PluginLink^.ServiceExists(MS_LISTENINGTO_GETPARSEDTEXT)<>0 then

@@ -4,7 +4,7 @@ interface
 
 uses windows,m_api;
 
-function OpenSrWindow(apattern:PWideChar;flags:integer):boolean;
+function OpenSrWindow(apattern:PWideChar;flags:LPARAM):boolean;
 function BringToFront:integer;
 function CloseSrWindow:boolean;
 procedure WndChangeColumns(code:integer;column:integer=-1);
@@ -55,7 +55,7 @@ type
   PQSRec = ^QSRec;
   QSRec = record // cell
     text:PWideChar;
-    data:dword;
+    data:uint_ptr;
   end;
   PQSFRec = ^QSFRec;
   QSFRec = record // row
@@ -63,8 +63,8 @@ type
     proto  :PAnsiChar;
     flags  :dword;
     status :dword;
-    wparam :dword;
-    lparam :dword;
+    wparam :WPARAM;
+    lparam :LPARAM;
   end;
 var
   colorhook:THANDLE;
@@ -126,7 +126,7 @@ var
   cbkg_sub,
   cfgr_sub:TCOLORREF;
   
-function GetQSColumn(item:integer):integer;
+function GetQSColumn(item:integer):LPARAM;
 var
   i:integer;
 begin
@@ -414,7 +414,7 @@ begin
   StrDup(result,strdatetime);
 end;
 
-function FindMeta(hMeta:THANDLE;var MetaNum:dword):dword;
+function FindMeta(hMeta:THANDLE;var MetaNum:WPARAM):LPARAM;
 var
   i:integer;
 begin
@@ -627,11 +627,11 @@ begin
   end;
 end;
 
-function CompareItem(lParam1,lParam2:Cardinal;SortType:integer):integer; stdcall;
+function CompareItem(lParam1,lParam2:LPARAM;SortType:LPARAM):int; stdcall;
 var
   typ1,typ2:boolean;
   res1,res2:PQSRec;
-  i1,i2:dword;
+  i1,i2:uint_ptr;
 begin
   result:=0;
   if SortType=StatusSort then //sort by status
@@ -651,8 +651,8 @@ begin
     res2:=@MainBuf[lParam2,SortType];
     i1  := res1^.data;
     i2  := res2^.data;
-    typ1:=i1=dword(-1);
-    typ2:=i2=dword(-1);
+    typ1:=i1=uint_ptr(-1);
+    typ2:=i2=uint_ptr(-1);
     
     if (typ1 and typ2) then // string & string
     begin
@@ -929,10 +929,12 @@ begin
   if qsopt.columnsort>=tablecolumns then
     qsopt.columnsort:=StatusSort;
 
-  ListView_SortItems(grid,@CompareItem,GetQSColumn(qsopt.columnsort));
+  SendMessage(grid,LVM_SORTITEMS,GetQSColumn(qsopt.columnsort),LPARAM(@CompareItem));
+//  ListView_SortItems(grid,@CompareItem,GetQSColumn(qsopt.columnsort));
 
   if (qsopt.columnsort<>StatusSort) and qsopt.sortbystatus then
-    ListView_SortItems(grid,@CompareItem,StatusSort);
+    SendMessage(grid,LVM_SORTITEMS,StatusSort,LPARAM(@CompareItem));
+//    ListView_SortItems(grid,@CompareItem,StatusSort);
 end;
 
 procedure MakePatternA;
@@ -1226,7 +1228,7 @@ begin
     LVIS_FOCUSED or LVIS_SELECTED);
 end;
 
-procedure AddContact(num:integer;hContact:cardinal);
+procedure AddContact(num:integer;hContact:THANDLE);
 var
   i:integer;
 begin
@@ -1261,7 +1263,7 @@ end;
 function PrepareToFill:boolean;
 var
   cnt,cnt1:integer;
-  hContact:cardinal;
+  hContact:THANDLE;
   i:integer;
 begin
   result:=false;
@@ -2499,9 +2501,10 @@ begin
   ListView_SetItemCount(grid,HIGH(FlagBuf)+1);
 end;
 
-function QSMainWndProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
+function QSMainWndProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
-  tmp:cardinal;
+  tmp:uint_ptr;
+  tmph:THANDLE;
   w,h:uint_ptr;
   i:integer;
   buf:array [0..255] of WideChar;
@@ -2556,11 +2559,11 @@ begin
 
     WM_INITDIALOG: begin
 
-      tmp:=GetModuleHandle(nil);
+      tmph:=GetModuleHandle(nil);
       if sortcoldn=0 then
-        sortcoldn:=LoadImage(tmp,PAnsiChar(240),IMAGE_BITMAP,0,0,LR_LOADMAP3DCOLORS);
+        sortcoldn:=LoadImage(tmph,PAnsiChar(240),IMAGE_BITMAP,0,0,LR_LOADMAP3DCOLORS);
       if sortcolup=0 then
-        sortcolup:=LoadImage(tmp,PAnsiChar(239),IMAGE_BITMAP,0,0,LR_LOADMAP3DCOLORS);
+        sortcolup:=LoadImage(tmph,PAnsiChar(239),IMAGE_BITMAP,0,0,LR_LOADMAP3DCOLORS);
 
       SetWindowTextW(dialog,'Quick Search');
 
@@ -2585,7 +2588,7 @@ begin
       gridbrush:=CreateSolidBrush(RGB(222,230,235));
 
       mainwnd:=dialog;
-      tmp:=GetWindowLongW(Dialog,GWL_EXSTYLE);
+      tmp:=GetWindowLongPtrW(Dialog,GWL_EXSTYLE);
       if qsopt.usetoolstyle then
         tmp:=tmp or WS_EX_TOOLWINDOW
       else
@@ -2835,7 +2838,7 @@ begin
   end;
 end;
 
-function OpenSRWindow(apattern:PWideChar;flags:integer):boolean;
+function OpenSRWindow(apattern:PWideChar;flags:LPARAM):boolean;
 begin
   result:=true;
   if opened then
