@@ -825,10 +825,10 @@ var
   p:pWideChar;
 begin
   result:=CreatePopupMenu;
-  inc(idxfrom);
   i:=0;
   AppendMenuW(result,MF_STRING,idxfrom,TranslateW('<Root Group>'));
   AppendMenuW(result,MF_SEPARATOR,0,nil);
+  inc(idxfrom);
   repeat
     p:=DBReadUnicode(0,'CListGroups',IntToStr(b,i),nil);
     if p=nil then break;

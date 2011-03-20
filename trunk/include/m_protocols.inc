@@ -186,7 +186,7 @@ type
 type
   PPROTOCOLDESCRIPTOR = ^TPROTOCOLDESCRIPTOR;
   TPROTOCOLDESCRIPTOR = record
-    cbSize : int;
+    cbSize : size_t;
     szName : PAnsiChar; // unique name of the module
     _type  : int;   // module type, see PROTOTYPE_ constants
   // 0.8.0+ additions
@@ -196,11 +196,8 @@ type
   end;
 
 const
-  {$IFNDEF WIN64}
-  PROTOCOLDESCRIPTOR_V3_SIZE = SizeOf(int)*2+SizeOf(PAnsiChar);
-  {$ELSE}
-  PROTOCOLDESCRIPTOR_V3_SIZE = SizeOf(TPROTOCOLDESCRIPTOR);
-  {$ENDIF}
+  PROTOCOLDESCRIPTOR_V3_SIZE = SizeOf(int_ptr)+SizeOf(PAnsiChar)+SizeOf(size_t);
+  //                          for 64 bit align
 
 { v0.3.3+:
   For recv, it will go from lower to higher, so in this case:
