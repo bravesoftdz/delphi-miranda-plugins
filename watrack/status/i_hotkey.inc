@@ -1,5 +1,5 @@
 {main hotkey code}
-function InsertProc(wParam:WPARAM;lParam:LPARAM):int; cdecl;
+function InsertProc(wParam:WPARAM;lParam:LPARAM):int_ptr; cdecl;
 var
   CurWin:HWND;
   s:pWideChar;

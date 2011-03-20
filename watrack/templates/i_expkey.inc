@@ -2,7 +2,7 @@
 const
   HKN_EXPORT:PAnsiChar = 'WAT_Export';
 
-function ExportProc(wParam:WPARAM;lParam:LPARAM):int; cdecl;
+function ExportProc(wParam:WPARAM;lParam:LPARAM):int_ptr; cdecl;
 var
   p:pWideChar;
 begin
@@ -19,6 +19,7 @@ procedure reginshotkey;
 var
   hkrec:HOTKEYDESC;
 begin
+  FillChar(hkrec,SizeOf(hkrec),0);
   with hkrec do
   begin
     cbSize          :=HOTKEYDESC_SIZE_V1;
@@ -27,7 +28,7 @@ begin
     pszSection.a    :=PluginName;
     pszService      :=MS_WAT_EXPORT;
     DefHotKey       :=((HOTKEYF_ALT or HOTKEYF_SHIFT) shl 8) or VK_F7;
-    lParam          :=0;
+//    lParam          :=0;
   end;
   CallService(MS_HOTKEY_REGISTER,0,lparam(@hkrec));
 end;

@@ -238,7 +238,7 @@ begin
   RegisterIcons;
   RegisterColors;
 
-  servshow:=PluginLink^.CreateServiceFunction(qs_showservice,@OpenSearchWindow);
+  servshow:=PluginLink^.CreateServiceFunction(QS_SHOWSERVICE,@OpenSearchWindow);
   AddRemoveMenuItemToMainMenu;
 
   reghotkeys;
