@@ -278,6 +278,7 @@ begin
     CallService(MS_DB_GETPROFILEPATH,MAX_PATH-1,lparam(storagep));
     StrCat(storagep,'\mradio.ini');
 
+    FillChar(desc,SizeOf(desc),0);
     desc.cbSize:=PROTOCOLDESCRIPTOR_V3_SIZE;//SizeOf(desc);
     desc.szName:=PluginName;
     desc._type :=PROTOTYPE_PROTOCOL;

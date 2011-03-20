@@ -794,6 +794,7 @@ begin
         if not DoMeta(nil,BASS_TAG_ID3V2) then
           if not DoMeta(nil,BASS_TAG_ID3) then
            if not DoMeta(nil,BASS_TAG_APE) then
+      ;
 
     end;
 
