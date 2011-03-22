@@ -299,6 +299,7 @@ var
   {$include m_email.inc}
   {$include m_history.inc}
   {$include m_message.inc}
+  {$include m_tabsrmm.inc}
   {$include m_url.inc}
   {$include m_clui.inc}
   {$include m_ignore.inc}

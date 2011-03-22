@@ -11,7 +11,7 @@ function SelectDirectory(Caption:PWideChar;var Directory:PWideChar;
          Parent:HWND=0;newstyle:bool=false):Boolean; overload;
 
 implementation
-uses messages,common,shlobj,activex,commctrl;
+uses common,shlobj,activex;
 
 {$IFNDEF DELPHI7_UP}
 const

@@ -1109,7 +1109,7 @@ begin
   sid.flags      :=0;
   sid.szSection.a:=group;
 
-  sid.hDefaultIcon   :=LoadImage(hInstance,resname,IMAGE_ICON,16,16,0);
+  sid.hDefaultIcon   :=LoadImageA(hInstance,resname,IMAGE_ICON,16,16,0);
   sid.pszName        :=ilname;
   sid.szDescription.a:=descr;
   result:=PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));

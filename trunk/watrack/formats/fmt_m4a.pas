@@ -9,7 +9,8 @@ function ReadM4A(var Info:tSongInfo):boolean; cdecl;
 
 implementation
 
-uses windows,common,io,srv_format,{$IFDEF FPC}Zlib{$ELSE}KolZlibBzip{$ENDIF};
+uses windows,common,io,srv_format,
+{$IFDEF FPC}Zlib,zwrapper{$ELSE}{$IFDEF KOL_MCK}KolZlibBzip{$ELSE}Zlib,zwrapper{$ENDIF}{$ENDIF};
 
 type
   mp4Atom = record
