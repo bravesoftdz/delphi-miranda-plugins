@@ -197,7 +197,6 @@ type
 
 const
   PROTOCOLDESCRIPTOR_V3_SIZE = SizeOf(int_ptr)+SizeOf(PAnsiChar)+SizeOf(size_t);
-  //                          for 64 bit align
 
 { v0.3.3+:
   For recv, it will go from lower to higher, so in this case:
