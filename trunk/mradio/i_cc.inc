@@ -89,7 +89,7 @@ begin
     DBDeleteSetting(ActiveContact,strCList,optStatusMsg);
 end;
 
-function ControlCenter(code:WPARAM;arg:LPARAM):integer; cdecl;
+function ControlCenter(code:WPARAM;arg:LPARAM):int_ptr; cdecl;
 var
   res:uint_ptr;
   tmpbuf,buf1:array [0..MAX_PATH-1] of WideChar;
@@ -102,6 +102,8 @@ begin
       if arg<>0 then
       begin
         ActiveURLw:=DBReadUnicode(arg,PluginName,optStationURL);
+        if (ActiveURLw=nil) or (ActiveURLw^=#0) then exit;
+
         ActiveContact:=arg;
         RemoteSong:=StrPosW(ActiveURLw,'://')<>nil;
 
@@ -207,6 +209,12 @@ begin
           ControlCenter(MRC_STATUS,RD_STATUS_PLAYING);
           PluginLink^.NotifyEventHooks(hhRadioStatus,MRC_PAUSE,0);
         end;
+      end
+      else
+      begin
+        ActiveContact:=DBReadDWord(0,PluginName,optLastStn);
+        if ActiveContact<>0 then
+          ControlCenter(MRC_PLAY,ActiveContact);
       end;
     end;
 
@@ -235,6 +243,10 @@ begin
       end;
       StopStation;
       PluginLink^.NotifyEventHooks(hhRadioStatus,MRC_STOP,0);
+    end;
+
+    MRC_MUTE: begin
+      CallService(MS_RADIO_MUTE,0,arg);
     end;
 
     MRC_NEXT: begin

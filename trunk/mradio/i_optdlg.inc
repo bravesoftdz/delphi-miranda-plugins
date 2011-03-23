@@ -741,7 +741,7 @@ begin
     WM_VSCROLL: begin
       for i:=0 to 9 do
       begin
-        if lParam=eq[i].wnd then
+        if HWND(lParam)=eq[i].wnd then
         begin
           eq[i].param.fGain:=-SendMessage(lParam,TBM_GETPOS,0,0);
           if (chan<>0) and (isEQ_OFF=BST_UNCHECKED) then

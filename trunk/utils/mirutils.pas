@@ -24,6 +24,9 @@ function ShowVarHelp(dlg:HWND;id:integer=0):integer;
 function  IsChat(hContact:THANDLE):bool;
 procedure SendToChat(hContact:THANDLE;pszText:PWideChar);
 
+function LoadContact(group,setting:PAnsiChar):THANDLE;
+function SaveContact(hContact:THANDLE;group,setting:PAnsiChar):integer;
+
 function SetCListSelContact(hContact:THANDLE):THANDLE;
 function GetCListSelContact:THANDLE; {$IFDEF DELPHI10_UP}inline;{$ENDIF}
 function GetContactProtoAcc(hContact:THANDLE):PAnsiChar;
@@ -69,6 +72,12 @@ function LoadImageURL(url:pAnsiChar;size:integer=0):HBITMAP;
 implementation
 
 uses dbsettings,common,io,freeimage,syswin{$IFDEF KOL_MCK},kol{$ENDIF};
+
+// Save / Load contact 
+const
+  opt_cproto   = 'cproto';
+  opt_cuid     = 'cuid';
+  opt_ischat   = 'ischat';
 
 function ConvertFileName(src:pWideChar;dst:pWideChar;hContact:THANDLE=0):pWideChar; overload;
 var
@@ -340,6 +349,70 @@ end;
 function GetCListSelContact:THANDLE;
 begin
   result:=SendMessageW(CallService(MS_CLUI_GETHWNDTREE,0,0),CLM_GETSELECTION,0,0);
+end;
+
+function LoadContact(group,setting:PAnsiChar):THANDLE;
+var
+  p,proto:pAnsiChar;
+  section:array [0..63] of AnsiChar;
+  dbv:TDBVARIANT;
+  is_chat:boolean;
+begin
+  p:=StrCopyE(section,setting);
+  StrCopy(p,opt_cproto); proto  :=DBReadString(0,group,section);
+  StrCopy(p,opt_ischat); is_chat:=DBReadByte  (0,group,section,0)<>0;
+  StrCopy(p,opt_cuid  );
+  if is_chat then
+    dbv.szVal.W:=DBReadUnicode(0,group,section,@dbv)
+  else
+    DBReadSetting(0,group,section,@dbv);
+
+  result:=FindContactHandle(proto,dbv,is_chat);
+
+  mFreeMem(proto);
+  if not is_chat then
+    DBFreeVariant(@dbv)
+  else
+    mFreeMem(dbv.szVal.W);
+end;
+
+function SaveContact(hContact:THANDLE;group,setting:PAnsiChar):integer;
+var
+  p,proto,uid:pAnsiChar;
+  cws:TDBVARIANT;
+  section:array [0..63] of AnsiChar;
+  pw:pWideChar;
+  is_chat:boolean;
+begin
+  result:=0;
+  proto:=GetContactProtoAcc(hContact);
+  if proto<>nil then
+  begin
+    p:=StrCopyE(section,setting);
+    is_chat:=IsChat(hContact);
+    if is_chat then
+    begin
+      pw:=DBReadUnicode(hContact,proto,'ChatRoomID');
+      StrCopy(p,opt_cuid); DBWriteUnicode(0,group,section,pw);
+      mFreeMem(pw);
+      result:=1;
+    end
+    else
+    begin
+      uid:=pAnsiChar(CallProtoService(proto,PS_GETCAPS,PFLAG_UNIQUEIDSETTING,0));
+      if DBReadSetting(hContact,proto,uid,@cws)=0 then
+      begin
+        StrCopy(p,opt_cuid); DBWriteSetting(0,group,section,@cws);
+        DBFreeVariant(@cws);
+        result:=1;
+      end;
+    end;
+    if result<>0 then
+    begin
+      StrCopy(p,opt_cproto); DBWriteString(0,group,section,proto);
+      StrCopy(p,opt_ischat); DBWriteByte  (0,group,section,ord(is_chat));
+    end;
+  end;
 end;
 
 function WndToContact(wnd:hwnd):integer; overload;

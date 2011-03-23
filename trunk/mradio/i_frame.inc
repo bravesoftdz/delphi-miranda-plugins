@@ -2,7 +2,6 @@
 const
   frm_back:pAnsiChar = 'Frame background';
 const
-  btnMute:pIcoButton = nil;
   FrameWnd:HWND = 0;
   FrameId:integer = -1;
   OldEditProc:pointer=nil;
@@ -44,10 +43,14 @@ begin
 
     WM_HSCROLL: begin
        case loword(msg.wParam) of
-         SB_THUMBTRACK:
-           Service_RadioSetVolume(Hiword(msg.wParam),2);
-         SB_ENDSCROLL:
-           Service_RadioSetVolume({Hiword(msg.wParam)}SendMessage(msg.lParam,TBM_GETPOS,0,0),2)
+         SB_THUMBTRACK: begin
+//           gVolume:=Hiword(msg.wParam);
+           Service_RadioSetVolume(Hiword(msg.wParam){gVolume},2);
+         end;
+         SB_ENDSCROLL: begin
+//           gVolume:=SendMessage(msg.lParam,TBM_GETPOS,0,0);
+           Service_RadioSetVolume({Hiword(msg.wParam)}SendMessage(msg.lParam,TBM_GETPOS,0,0){gVolume},2)
+         end;
        end;
     end;
 
@@ -56,7 +59,7 @@ end;
 
 function DoAction(action:integer):integer;
 begin
-  result:=CallService(MS_RADIO_MUTE,0,0);
+  result:=CallService(MS_RADIO_MUTE,0,1);
 end;
 
 function ColorReload(wParam:WPARAM;lParam:LPARAM):int;cdecl;

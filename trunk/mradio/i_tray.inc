@@ -89,9 +89,11 @@ var
   flag,id:integer;
   pt:TPOINT;
   playstr:pWideChar;
+(*
 {$IFDEF KOL_MCK}
   med:TMouseEventData;
 {$ENDIF}
+*)
 begin
   id:=0;
   menu:=CreatePopupMenu;
@@ -117,6 +119,7 @@ begin
     case id of
       0: ; // nothing
       startid+1: begin // mute
+(*
 {$IFDEF KOL_MCK}
         if btnMute<>nil then
         begin
@@ -128,6 +131,7 @@ begin
         end
         else
 {$ENDIF}
+*)
           CallService(MS_RADIO_MUTE,0,0);
       end;
       startid+2: begin // play/pause

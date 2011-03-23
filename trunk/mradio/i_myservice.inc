@@ -127,6 +127,12 @@ begin
 end;
 
 function Service_RadioMute(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+var
+{$IFDEF KOL_MCK}
+  med:TMouseEventData;
+{$ELSE}
+  tmp:TLPARAM;
+{$ENDIF}
 begin
   if gVolume=0 then
     gVolume:=-1
@@ -135,6 +141,30 @@ begin
   Result:=CallService(MS_RADIO_SETVOL,gVolume,0);
   if hVolFrmCtrl<>0 then
     EnableWindow(hVolFrmCtrl,gVolume>=0);
+
+{$IFDEF KOL_MCK}
+  if lParam=0 then // 0 - from Service, not frame
+  begin
+    if btnMute<>nil then
+    begin
+      FillChar(med,SizeOf(med),0);
+      btnMute.OnMouseDown(btnMute,med);
+  //    btnMute.Click; // without click processing
+      btnMute.OnMouseUp  (btnMute,med);
+      btnMute.Invalidate;
+    end
+  end;
+{$ELSE}
+  if hMuteFrmCtrl<>0 then
+  begin
+    if gVolume<0 then
+      tmp:=tlparam(IcoBtnOff)
+    else
+      tmp:=tlparam(IcoBtnOn);
+    SendMessage(hMuteFrmCtrl,BM_SETIMAGE,IMAGE_ICON,
+      PluginLink^.CallService(MS_SKIN2_GETICON,0,tmp));
+  end;
+{$ENDIF}
 end;
 
 function Service_RadioGetVolume(wParam:WPARAM;lParam:LPARAM):int;cdecl;
