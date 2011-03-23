@@ -20,12 +20,13 @@ var
 
 procedure SetSndVol(arg:integer);
 begin
+  if arg<0 then
+    arg:=gVolume
+  else
+    gVolume:=arg;
+
   if chan<>0 then
   begin
-    if arg<0 then
-      arg:=gVolume
-    else
-      gVolume:=arg;
     if arg<0 then arg:=0;
     BASS_ChannelSetAttribute(chan,BASS_ATTRIB_VOL,arg/100);
   end;

@@ -42,20 +42,20 @@ var
   urd:TUTILRESIZEDIALOG;
   rc:TRECT;
   ti:TTOOLINFOW;
-  wnd,hwndTooltip:HWND;
-  tmp:tlparam;
+  hwndTooltip:HWND;
 begin
   result:=0;
   case hMessage of
     WM_DESTROY: begin
-      hVolFrmCtrl:=0;
+      hVolFrmCtrl :=0;
+      hMuteFrmCtrl:=0;
       DeleteObject(hbr);
     end;
 
     WM_INITDIALOG: begin
-      wnd:=GetDlgItem(Dialog,IDC_RADIO_MUTE);
-      SendMessage(wnd, BUTTONSETASFLATBTN,0,0);
-      SendMessage(wnd,BM_SETIMAGE,IMAGE_ICON,
+      hMuteFrmCtrl:=GetDlgItem(Dialog,IDC_RADIO_MUTE);
+      SendMessage(hMuteFrmCtrl, BUTTONSETASFLATBTN,0,0);
+      SendMessage(hMuteFrmCtrl,BM_SETIMAGE,IMAGE_ICON,
         PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnOn)));
 
       hwndTooltip:=CreateWindowW(TOOLTIPS_CLASS,nil,TTS_ALWAYSTIP,
@@ -68,7 +68,7 @@ begin
       ti.uFlags  :=TTF_IDISHWND or TTF_SUBCLASS;
       ti.hwnd    :=dialog;
       ti.hinst   :=hInstance;
-      ti.uId     :=GetDlgItem(Dialog,IDC_RADIO_MUTE);
+      ti.uId     :=hMuteFrmCtrl;
       ti.lpszText:=pWideChar(TranslateW('Mute'));
       SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,tlparam(@ti));
 
@@ -115,26 +115,7 @@ begin
         BN_CLICKED: begin
           case loword(wParam) of
             IDC_RADIO_MUTE: begin
-              if gVolume<0{IsDlgButtonChecked(Dialog,IDC_RADIO_MUTE)=BST_UNCHECKED} then
-              begin
-                tmp:=tlparam(IcoBtnOn);
-//                gVolume:=ABS(gVolume);
-              end
-              else
-              begin
-                tmp:=tlparam(IcoBtnOff);
-//                gVolume:=-ABS(gVolume);
-//                if gVolume=0 then
-//                 gVolume:=-1;
-              end;
-              if gVolume=0 then
-                gVolume:=-1
-              else
-                gVolume:=-gVolume;
-              CallService(MS_RADIO_SETVOL,gVolume,0);
-              EnableWindow(hVolFrmCtrl,gVolume>=0);
-              SendDlgItemMessage(Dialog,IDC_RADIO_MUTE,BM_SETIMAGE,IMAGE_ICON,
-                PluginLink^.CallService(MS_SKIN2_GETICON,0,tmp));
+              CallService(MS_RADIO_MUTE,0,1);
             end;
           end;
         end;
@@ -142,7 +123,8 @@ begin
     end;
 
     WM_HSCROLL: begin
-       Service_RadioSetVolume(SendMessage(lParam,TBM_GETPOS,0,0),2)
+//      gVolume:=SendMessage(lParam,TBM_GETPOS,0,0);
+      Service_RadioSetVolume(SendMessage(lParam,TBM_GETPOS,0,0){gVolume},2)
     end;
 
   else

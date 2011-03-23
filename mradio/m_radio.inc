@@ -14,6 +14,7 @@ const
   MRC_STATUS = 5; // lParam is RD_STATUS_* value (RD_STATUS_GET only now)
   MRC_SEEK   = 6; // lParam is value in sec; -1 mean obtain current position
   MRC_RECORD = 7; // lParam is 0 - switch; 1 - on; 2 - off
+  MRC_MUTE   = 8;
 
 const
   // please, do not use these commands, internal using only

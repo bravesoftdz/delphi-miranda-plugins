@@ -45,68 +45,18 @@ const
   opt_msgtext  = 'msgtext';
   opt_boxopts  = 'boxopts';
 
-function LoadContact(num:integer):THANDLE;
+function ActLoadContact(num:integer):THANDLE;
 var
-  p,proto:pAnsiChar;
   section:array [0..63] of AnsiChar;
-  dbv:TDBVARIANT;
-  is_chat:boolean;
 begin
-  p:=StrEnd(IntToStr(section,num));
-  StrCopy(p,opt_cproto); proto  :=DBReadString(0,opt_actions,section);
-  StrCopy(p,opt_ischat); is_chat:=DBReadByte  (0,opt_actions,section,0)<>0;
-  StrCopy(p,opt_cuid  );
-  if is_chat then
-    dbv.szVal.W:=DBReadUnicode(0,opt_actions,section,@dbv)
-  else
-    DBReadSetting(0,opt_actions,section,@dbv);
-
-  result:=FindContactHandle(proto,dbv,is_chat);
-
-  mFreeMem(proto);
-  if not is_chat then
-    DBFreeVariant(@dbv)
-  else
-    mFreeMem(dbv.szVal.W);
+  result:=LoadContact(opt_actions,IntToStr(section,num));
 end;
 
-function SaveContact(hContact:THANDLE;num:integer):integer;
+function ActSaveContact(hContact:THANDLE;num:integer):integer;
 var
-  p,proto,uid:pAnsiChar;
-  cws:TDBVARIANT;
   section:array [0..63] of AnsiChar;
-  pw:pWideChar;
-  is_chat:boolean;
 begin
-  result:=0;
-  proto:=GetContactProtoAcc(hContact);
-  if proto<>nil then
-  begin
-    p:=StrEnd(IntToStr(section,num));
-    is_chat:=IsChat(hContact);
-    if is_chat then
-    begin
-      pw:=DBReadUnicode(hContact,proto,'ChatRoomID');
-      StrCopy(p,opt_cuid); DBWriteUnicode(0,opt_actions,section,pw);
-      mFreeMem(pw);
-      result:=1;
-    end
-    else
-    begin
-      uid:=pAnsiChar(CallProtoService(proto,PS_GETCAPS,PFLAG_UNIQUEIDSETTING,0));
-      if DBReadSetting(hContact,proto,uid,@cws)=0 then
-      begin
-        StrCopy(p,opt_cuid); DBWriteSetting(0,opt_actions,section,@cws);
-        DBFreeVariant(@cws);
-        result:=1;
-      end;
-    end;
-    if result<>0 then
-    begin
-      StrCopy(p,opt_cproto); DBWriteString(0,opt_actions,section,proto);
-      StrCopy(p,opt_ischat); DBWriteByte  (0,opt_actions,section,ord(is_chat));
-    end;
-  end;
+  result:=SaveContact(hContact,opt_actions,IntToStr(section,num));
 end;
 
 procedure SaveNumValue(setting:pAnsiChar;value:uint_ptr;isvar:boolean);
@@ -144,7 +94,7 @@ begin
 
     case act^.actionType of
       ACT_CONTACT: begin
-        SaveContact(act^.contact,start);
+        ActSaveContact(act^.contact,start);
 //        StrCopy(p,opt_contact); DBWriteDWord(0,opt_actions,section,act^.contact);
       end;
 
@@ -221,7 +171,7 @@ begin
 
       ACT_RW: begin
         if (act^.flags and ACF_NOCNTCT)=0 then
-          SaveContact(act^.dbcontact,start);
+          ActSaveContact(act^.dbcontact,start);
 //        StrCopy(p,opt_contact); DBWriteDWord (0,opt_actions,section,act^.dbcontact);
         StrCopy(p,opt_module ); DBWriteString(0,opt_actions,section,act^.dbmodule);
         StrCopy(p,opt_setting); DBWriteString(0,opt_actions,section,act^.dbsetting);
@@ -344,7 +294,7 @@ begin
 
       case act^.actionType of
         ACT_CONTACT: begin
-          act^.contact:=LoadContact(i);
+          act^.contact:=ActLoadContact(i);
         end;
 
         ACT_SERVICE: begin
@@ -415,7 +365,7 @@ begin
 
         ACT_RW: begin
           if (act^.flags and ACF_NOCNTCT)=0 then
-            act^.dbcontact:=LoadContact(i);
+            act^.dbcontact:=ActLoadContact(i);
           StrCopy(p,opt_module ); act^.dbmodule :=DBReadString(0,opt_actions,section);
           StrCopy(p,opt_setting); act^.dbsetting:=DBReadString(0,opt_actions,section);
           StrCopy(p,opt_value  );

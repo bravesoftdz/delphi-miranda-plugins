@@ -95,8 +95,14 @@ var
   sTimeout,
   sPreBuf:dword;
 const
-  hVolCtrl   :HWND=0;
-  hVolFrmCtrl:HWND=0;
+  hVolCtrl    :HWND=0;
+  hVolFrmCtrl :HWND=0;
+const
+  {$IFDEF KOL_MCK}
+  btnMute:pIcoButton = nil;
+  {$ELSE}
+  hMuteFrmCtrl:HWND=0;
+  {$ENDIF}
 const
   Inited:boolean=false;
 const

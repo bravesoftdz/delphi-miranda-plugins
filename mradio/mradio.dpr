@@ -48,7 +48,7 @@ const
 
 procedure SetStatus(hContact:THANDLE;Status:integer); forward;
 
-function  ControlCenter(code:WPARAM;arg:LPARAM):integer; cdecl; forward;
+function  ControlCenter(code:WPARAM;arg:LPARAM):int_ptr; cdecl; forward;
 procedure ConstructMsg(astr:PWideChar;status:integer=-1;astr1:PWideChar=nil); forward;
 
 {$include i_search.inc}
@@ -57,6 +57,7 @@ procedure ConstructMsg(astr:PWideChar;status:integer=-1;astr1:PWideChar=nil); fo
 {$include i_variables.inc}
 {$include i_service.inc}
 {$include i_myservice.inc}
+{$include i_hotkey.inc}
 {$IFDEF KOL_MCK}
   {$include i_frame.inc}
 {$ELSE}
@@ -204,11 +205,16 @@ begin
   ondelete :=PluginLink^.HookEvent(ME_DB_CONTACT_DELETED       ,@OnContactDeleted);
   randomize;
   CreateFrame(0);
+
+  RegisterHotKey;
+
   result:=0;
 end;
 
 function PreShutdown(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
+  UnRegisterHotKey;
+
   DestroyHiddenWindow;
   DestroyFrame();
   MyFreeBASS;
