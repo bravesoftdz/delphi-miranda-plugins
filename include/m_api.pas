@@ -78,6 +78,8 @@ type
       true:  (w:PWideChar); // Unicode
   end;
 
+const
+  hLangpack:THANDLE = 0;
 {$include m_system.inc}
 const
   mmi:TMM_INTERFACE=(
@@ -287,11 +289,12 @@ var
   { this is now a pointer to a record of function pointers to match the C API,
   and to break old code and annoy you. }
   PLUGINLINK: PPLUGINLINK;
-(*
+
   { has to be returned via MirandaPluginInfo and has to be statically allocated,
   this means only one module can return info, you shouldn't be merging them anyway! }
-  PLUGININFO: TPLUGININFO;
-*)
+  PLUGININFO: TPLUGININFOEX;
+
+
   {$include m_plugins.inc}
   {$include m_database.inc}
   {$include m_findadd.inc}

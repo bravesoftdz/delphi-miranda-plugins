@@ -14,7 +14,7 @@
   Key Objects Library (C) 2000 by Vladimir Kladov.
 
 ****************************************************************
-* VERSION 3.1415926535897
+* VERSION 3.14159265358979
 ****************************************************************
 
   K.O.L. - is a set of objects and functions to create small programs
@@ -14270,7 +14270,7 @@ function CrackStack_MapInFile( const MapFileName: KOLString; Max_length: Integer
 //......... these declarations are here to stop hints from Delphi5 while compiling MCK:
 function CallTControlCreateWindow( Ctl: PControl ): Boolean;
 function DumpWindowed( c: PControl ): PControl;
-function WndProcAppAsm( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean; //forward;
+function WndProcAppAsm( Self_: PControl; var Msg: TMsg; var Rslt: Integer ): Boolean;
 //22{$IFDEF ASM_VERSION}
 const ButtonClass: array[ 0..6 ] of KOLChar = ( 'B','U','T','T','O','N',#0 );
 //22{$ENDIF ASM_VERSION}
@@ -14803,6 +14803,8 @@ asm
         TEST     EAX, EAX
         JNZ      @@exit
         MOV      EAX, offset[EmptyString]
+        //LEA      EAX, [EmptyString]
+        //MOV      EAX, [EmptyString]
 @@exit:
 end;
 
@@ -30406,7 +30408,7 @@ begin
     begin
       GetTextExtentPoint32( DC, PKOLChar( CapText ), J, Sz );
       W := Sz.cx;
-      Windows.GetTextExtentPoint32( DC, PKOLChar('_'), 1, Sz ); // A/W KOL_ANSI
+      Windows.GetTextExtentPoint32( DC, '_', 1, Sz ); // A/W KOL_ANSI
       H := Sz.cy - 1;
       Windows.GetTextExtentPoint32( DC, @ CapTxtOrig[ I + 1 ], 1, Sz );
       Windows.MoveToEx( DC, X + W, Y + H, nil );
@@ -32646,7 +32648,8 @@ begin
         Form := Form.Parent;
       Form := Form.ParentForm;
       if (Form <> nil) and (Form.MDIClient <> nil) then
-        Result := TranslateMDISysAccel( Form.MDIClient.fHandle, Msg );
+        Result := TranslateMDISysAccel( Form.MDIClient.fHandle,
+            Windows.TMsg(Msg) );
     end;
   end;
 end;

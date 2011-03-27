@@ -427,6 +427,8 @@ function Translate(sz: PAnsiChar): PAnsiChar;
 function Translatew(sz: PWideChar): PWideChar;
 function TranslateString(const sz: string): string;
 function TranslateDialogDefault(hwndDlg: THandle): int_ptr;
+function TranslateMenu(hMenu: HMENU): int_ptr;
+function Langpack_PCharToTChar(astr:PAnsiChar):int_ptr;
 
   {$else}
 
@@ -436,7 +438,7 @@ begin
   string has to be removed from the DLL heap, this has little to do with Miranda,
   but if a dynamic string is passed and a return string is used -- the dynamic
   string is lost -- be careful, lazy? use TranslateString (note it's slower) }
-  Result := PWideChar(PluginLink^.CallService(MS_LANGPACK_TRANSLATESTRING, LANG_UNICODE, lParam(sz)));
+  Result := PWideChar(PluginLink^.CallService(MS_LANGPACK_TRANSLATESTRING, hLangpack+LANG_UNICODE, lParam(sz)));
 end;
 
 function Translate(sz: PAnsiChar): PAnsiChar;
@@ -445,12 +447,12 @@ begin
   string has to be removed from the DLL heap, this has little to do with Miranda,
   but if a dynamic string is passed and a return string is used -- the dynamic
   string is lost -- be careful, lazy? use TranslateString (note it's slower) }
-  Result := PAnsiChar(PluginLink^.CallService(MS_LANGPACK_TRANSLATESTRING, 0, lParam(sz)));
+  Result := PAnsiChar(PluginLink^.CallService(MS_LANGPACK_TRANSLATESTRING, hLangpack, lParam(sz)));
 end;
 
 function TranslateString(const sz:string):string;
 begin
-  Result:=string(PAnsiChar(PluginLink^.CallService(MS_LANGPACK_TRANSLATESTRING,0,lparam(@sz))));
+  Result:=string(PAnsiChar(PluginLink^.CallService(MS_LANGPACK_TRANSLATESTRING,hLangpack,lparam(@sz))));
 end;
 
 function TranslateDialogDefault(hwndDlg: THandle): int_ptr;
@@ -458,10 +460,20 @@ var
   lptd: TLANGPACKTRANSLATEDIALOG;
 begin
   lptd.cbSize         := sizeof(lptd);
-  lptd.flags          := 0;
+  lptd.flags          := hLangpack;
   lptd.hwndDlg        := hwndDlg;
   lptd.ignoreControls := nil;
   Result := PluginLink^.CallService(MS_LANGPACK_TRANSLATEDIALOG, 0, lParam(@lptd));
+end;
+
+function TranslateMenu(hMenu: HMENU): int_ptr;
+begin
+  result := PluginLink^.CallService(MS_LANGPACK_TRANSLATEMENU,LPARAM(hMenu),hLangpack);
+end;
+
+function Langpack_PCharToTChar(astr:PAnsiChar):int_ptr;
+begin
+  result := CallService(MS_LANGPACK_PCHARTOTCHAR, hLangpack, LPARAM(astr));
 end;
 
   {$endif}

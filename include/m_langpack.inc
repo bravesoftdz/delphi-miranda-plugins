@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 {$DEFINE M_LANGPACK}
 
 const
+  MS_TRANSLATE_PREFIX = 'LangPack';
+const
   LANG_UNICODE = $1000;
 
 {
@@ -96,5 +98,13 @@ const
   This string should be freed using mir_free() then
 }
   MS_LANGPACK_PCHARTOTCHAR:PAnsiChar = 'LangPack/PcharToTchar';
+
+{
+  initializes the plugin-specific translation context  v0.10.0+
+  wParam=pointer to the langpack handle
+  lParam=PLUGININFOEX* of the caller plugin
+  always returns 0
+}
+  MS_LANGPACK_REGISTER:PAnsiChar = 'LangPack/Register';
 
 {$ENDIF}

@@ -30,7 +30,10 @@ uses
   syswin,
   base64,
   helpfile,
-  question;
+  question,
+  global
+  ,hooks in 'hooks\hooks.pas'
+  ;
 
 {$r options.res}
 
@@ -56,38 +59,26 @@ const
   BetaUpdateURL     = 'http://awkward.miranda.im/actman.zip';
   BetaChangelogURL  = nil; //'http://awkward.miranda.im/actman.txt';
 
-const
-  PluginInfo:TPLUGININFOEX = (
-    cbSize     :sizeof(TPLUGININFOEX);
-    shortName  :'Action manager';
-    version    :$0001010A;
-    description:'Plugin for manage hotkeys to open contact window, insert text, '+
-                'run program and call services';
-    author     :'Awkward';
-    authorEmail:'panda75@bk.ru';
-    copyright  :'';
-    homepage   :'http://awkward.miranda.im/';
-    flags      :UNICODE_AWARE;
-    replacesDefaultModule:0;
-    uuid:'{9584DA04-FB4F-40c1-9325-E4F9CAAFCB5D}'
-  );
-
 var
   PluginInterfaces:array [0..1] of MUUID;
-
-function MirandaPluginInfo(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
-begin
-  result:=@PluginInfo;
-  PluginInfo.cbSize:=SizeOf(TPLUGININFO);
-  PluginInfo.uuid  :=PluginInfo.uuid;
-end;
 
 function MirandaPluginInfoEx(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
 begin
   result:=@PluginInfo;
-  PluginInfo.cbSize:=SizeOf(TPLUGININFOEX);
-  PluginInfo.uuid  :=PluginInfo.uuid;
+  PluginInfo.cbSize     :=SizeOf(TPLUGININFOEX);
+  PluginInfo.shortName  :='Action manager';
+  PluginInfo.version    :=$0001010A;
+  PluginInfo.description:='Plugin for manage hotkeys to open contact window, insert text, '+
+                          'run program and call services';
+  PluginInfo.author     :='Awkward';
+  PluginInfo.authorEmail:='panda75@bk.ru; awk1975@ya.ru';
+  PluginInfo.copyright  :='(c) 2007-2011 Awkward';
+  PluginInfo.homepage   :='http://code.google.com/p/delphi-miranda-plugins/';
+  PluginInfo.flags      :=UNICODE_AWARE;
+  PluginInfo.replacesDefaultModule:=0;
+  PluginInfo.uuid       :=MIID_ACTMAN;
 end;
+
 {$include i_const.inc}
 {$include i_vars.inc}
 
@@ -123,7 +114,7 @@ begin
   if cnt>0 then
   begin
     mGetMem(pc,cnt*SizeOf(tChain)+4);
-    pdword(lParam)^:=uint_ptr(pc);
+    {$IFDEF WIN64}pqword{$ELSE}pdword{$ENDIF}(lParam)^:=uint_ptr(pc);
     pdword(pc)^:=SizeOf(TChain);
     inc(PByte(pc),4);
 
@@ -140,6 +131,8 @@ begin
       inc(p);
     end;
   end
+  else
+    {$IFDEF WIN64}pqword{$ELSE}pdword{$ENDIF}(lParam)^:=0;
 end;
 
 function ActRun(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
@@ -226,8 +219,19 @@ begin
 end;
 
 function PreShutdown(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+var
+  ptr:pActionLink;
 begin
   result:=0;
+
+  ptr:=ActionLink;
+  while ptr<>nil do
+  begin
+    if @ptr^.DeInit<>nil then
+      ptr^.DeInit;
+    ptr:=ptr^.Next;
+  end;
+
   FreeGroups;
   PluginLink^.UnhookEvent(hHookShutdown);
   PluginLink^.UnhookEvent(opthook);
@@ -247,6 +251,7 @@ function OnModulesLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
   upd:TUpdate;
   buf:array [0..63] of AnsiChar;
+  ptr:pActionLink;
 begin
   Result:=0;
   PluginLink^.UnhookEvent(onloadhook);
@@ -280,6 +285,15 @@ begin
     PluginLink^.CallService(MS_UPDATE_REGISTER,0,tlparam(@upd));
   end;
 //  CallService('DBEditorpp/RegisterSingleModule',dword(PluginShort),0);
+
+  ptr:=ActionLink;
+  while ptr<>nil do
+  begin
+    if @ptr^.Init<>nil then
+      ptr^.Init;
+    ptr:=ptr^.Next;
+  end;
+
 end;
 
 function Load(link:PPLUGINLINK):int; cdecl;
@@ -317,7 +331,6 @@ end;
 
 exports
   Load, Unload,
-  MirandaPluginInfo,
   MirandaPluginInterfaces,MirandaPluginInfoEx;
 
 end.

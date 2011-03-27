@@ -3,34 +3,39 @@ library testdll;
 uses
   m_api, Windows;
 
-const
-  PluginInfo:TPLUGININFOEX=(
-    cbSize     :sizeof(TPLUGININFOEX);
-    shortName  :'Plugin Template';
-    version    :$00000001;
-    description:'The long description of your plugin, to go in the plugin options dialog';
-    author     :'J. Random Hacker';
-    authorEmail:'noreply@sourceforge.net';
-    copyright  :'(c) 2003 J. Random Hacker';
-    homepage   :'http://miranda-icq.sourceforge.net/';
-    flags      :UNICODE_AWARE;
-    replacesDefaultModule:0;
-    uuid:'{08B86253-EC6E-4d09-B7A9-64ACDF0627B8}';
-  );
-
 var
   PluginInterfaces:array [0..1] of MUUID;
 
+// for old plugin API - old miranda version compatibility
 function MirandaPluginInfo(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
 begin
   result:=@PluginInfo;
-  PluginInfo.cbSize:=SizeOf(TPLUGININFO);
+  PluginInfo.cbSize     :=SizeOf(TPLUGININFO);
+  PluginInfo.shortName  :='Plugin Template';
+  PluginInfo.version    :=$00000001;
+  PluginInfo.description:='The long description of your plugin, to go in the plugin options dialog';
+  PluginInfo.author     :='J. Random Hacker';
+  PluginInfo.authorEmail:='noreply@sourceforge.net';
+  PluginInfo.copyright  :='(c) 2003 J. Random Hacker';
+  PluginInfo.homepage   :='http://miranda-icq.sourceforge.net/';
+  PluginInfo.flags      :=UNICODE_AWARE;
+  PluginInfo.replacesDefaultModule:=0;
 end;
 
 function MirandaPluginInfoEx(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
 begin
   result:=@PluginInfo;
-  PluginInfo.cbSize:=SizeOf(TPLUGININFOEX);
+  PluginInfo.cbSize     :=SizeOf(TPLUGININFOEX);
+  PluginInfo.shortName  :='Plugin Template';
+  PluginInfo.version    :=$00000001;
+  PluginInfo.description:='The long description of your plugin, to go in the plugin options dialog';
+  PluginInfo.author     :='J. Random Hacker';
+  PluginInfo.authorEmail:='noreply@sourceforge.net';
+  PluginInfo.copyright  :='(c) 2003 J. Random Hacker';
+  PluginInfo.homepage   :='http://miranda-icq.sourceforge.net/';
+  PluginInfo.flags      :=UNICODE_AWARE;
+  PluginInfo.replacesDefaultModule:=0;
+  PluginInfo.uuid:='{08B86253-EC6E-4d09-B7A9-64ACDF0627B8}';
 end;
 
 function PluginMenuCommand(wParam: WPARAM; lParam: LPARAM):Integer; cdecl;
