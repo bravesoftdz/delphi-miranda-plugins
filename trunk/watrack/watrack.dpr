@@ -29,21 +29,6 @@ uses
 
 {$include i_vars.inc}
 
-const
-  PluginInfo:TPLUGININFOEX=(
-    cbSize     :sizeof(TPLUGININFOEX);
-    shortName  :PluginName;
-    version    :$0000060C;
-    description:'Paste played music info into message window or status text';
-    author     :'Awkward';
-    authorEmail:'panda75@bk.ru; awkward@land.ru';
-    copyright  :'';
-    homepage   :'http://awkward.miranda.im/';
-    flags      :UNICODE_AWARE;
-    replacesDefaultModule:0;
-//    uuid:'{FC6C81F4-837E-4430-9601-A0AA43177AE3}'
-  );
-
 var
   PluginInterfaces:array [0..1] of MUUID;
 
@@ -60,18 +45,20 @@ const
   BetaUpdateURL     = 'http://awkward.miranda.im/watrack.zip';
   BetaChangelogURL  = nil; //'http://awkward.mirandaim.ru/watrack.txt';
 
-function MirandaPluginInfo(mirandaVersion:DWORD):PPLUGININFO; cdecl;
-begin
-  result:=@PluginInfo;
-  PluginInfo.cbSize:=SizeOf(TPLUGININFO);
-  PluginInfo.uuid  :=MIID_WATRACK;
-end;
-
 function MirandaPluginInfoEx(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
 begin
   result:=@PluginInfo;
-  PluginInfo.cbSize:=SizeOf(TPLUGININFOEX);
-  PluginInfo.uuid  :=MIID_WATRACK;
+  PluginInfo.cbSize     :=SizeOf(TPLUGININFOEX);
+  PluginInfo.shortName  :=PluginName;
+  PluginInfo.version    :=$0000060C;
+  PluginInfo.description:='Paste played music info into message window or status text';
+  PluginInfo.author     :='Awkward';
+  PluginInfo.authorEmail:='panda75@bk.ru; awk1975@ya.ru';
+  PluginInfo.copyright  :='(c) 2005-2011 Awkward';
+  PluginInfo.homepage   :='http://code.google.com/p/delphi-miranda-plugins/';
+  PluginInfo.flags      :=UNICODE_AWARE;
+  PluginInfo.replacesDefaultModule:=0;
+  PluginInfo.uuid       :=MIID_WATRACK;
 end;
 
 {$include i_options.inc}

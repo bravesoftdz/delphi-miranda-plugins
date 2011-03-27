@@ -18,22 +18,6 @@ uses
 const
   PluginName:PAnsiChar = 'mRadio';
 
-const                 
-  PluginInfo:TPLUGININFOEX=(
-    cbSize     :sizeof(TPLUGININFOEX);
-    shortName  :'mRadio Mod';
-    version    :$00000107;
-    description:'This plugin plays and records Internet radio streams.'+
-                ' Also local media files can be played.';
-    author     :'Awkward';
-    authorEmail:'panda75@bk.ru';
-    copyright  :'(c) 2007-2010 Awkward';
-    homepage   :'http://awkward.miranda.im/';
-    flags      :UNICODE_AWARE;
-    replacesDefaultModule:0;
-//    uuid:'{EEBC474C-B0AD-470F-99A8-9DD9210CE233}';
-  );
-
 var
   PluginInterfaces:array [0..1] of MUUID;
 
@@ -91,17 +75,20 @@ begin
     DBWriteWord(hContact,PluginName,optStatus,Status);
 end;
 
-function MirandaPluginInfo(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
-begin
-  result:=@PluginInfo;
-  PluginInfo.cbSize:=SizeOf(TPLUGININFO);
-  PluginInfo.uuid  :=MIID_MRADIO;
-end;
-
 function MirandaPluginInfoEx(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
 begin
   result:=@PluginInfo;
-  PluginInfo.cbSize:=SizeOf(TPLUGININFOEX);
+  PluginInfo.cbSize     :=SizeOf(TPLUGININFOEX);
+  PluginInfo.shortName  :='mRadio Mod';
+  PluginInfo.version    :=$00000107;
+  PluginInfo.description:='This plugin plays and records Internet radio streams.'+
+                          ' Also local media files can be played.';
+  PluginInfo.author     :='Awkward';
+  PluginInfo.authorEmail:='panda75@bk.ru; awk1975@ya.ru';
+  PluginInfo.copyright  :='(c) 2007-2011 Awkward';
+  PluginInfo.homepage   :='http://code.google.com/p/delphi-miranda-plugins/';
+  PluginInfo.flags      :=UNICODE_AWARE;
+  PluginInfo.replacesDefaultModule:=0;
   PluginInfo.uuid  :=MIID_MRADIO;
 end;
 
@@ -336,7 +323,6 @@ end;
 
 exports
   Load, Unload,
-  MirandaPluginInfo,
   MirandaPluginInterfaces,MirandaPluginInfoEx;
 
 begin

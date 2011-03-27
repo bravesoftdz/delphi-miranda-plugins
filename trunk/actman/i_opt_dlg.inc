@@ -204,11 +204,16 @@ end;
 function OnOptInitialise(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
   odp:TOPTIONSDIALOGPAGE;
+  ptr:pActionLink;
+  tmpl:pAnsiChar;
+  name:pansiChar;
+  proc:pointer;
+  i:integer;
 begin
   result:=0;
   NoDescription  :=TranslateW('No Description');
   FillChar(odp,SizeOf(odp),0);
-  odp.cbSize     :=OPTIONPAGE_OLD_SIZE3;  //for 0.5 compatibility
+  odp.cbSize     :=SizeOf(odp);
   odp.flags      :=ODPF_BOLDGROUPS or ODPF_EXPERTONLY;
   odp.Position   :=900003000;
   odp.hInstance  :=hInstance;
@@ -220,4 +225,19 @@ begin
   PluginLink^.CallService(MS_OPT_ADDPAGE,wParam,tlparam(@odp));
   DoInitCommonControls(ICC_USEREX_CLASSES);
   StrCopyW(xmlfilename,'c:\export.xml');
+
+  ptr:=ActionLink;
+  while ptr<>nil do
+  begin
+    if @ptr^.AddOption<>nil then
+    begin
+      i:=ptr^.AddOption(tmpl,proc,name);
+      odp.pszTemplate:=tmpl;
+      odp.pfnDlgProc :=proc;
+      odp.szTab.a    :=name;
+      PluginLink^.CallService(MS_OPT_ADDPAGE,wParam,tlparam(@odp));
+      if i>0 then continue;
+    end;
+    ptr:=ptr^.Next;
+  end;
 end;

@@ -37,40 +37,27 @@ const
   BetaUpdateURL     = 'http://awkward.miranda.im/quicksearch.zip';
   BetaChangelogURL  = nil;
 
-const
-  PluginInfo:TPLUGININFOEX = (
-    cbSize     :sizeof(TPLUGININFOEX);
-    shortName  :'Quick Search Mod';
-    version    :$01040112;
-    description:
-    'This Plugin allow you to quick search for nickname,'+
-    'firstname, lastname, email, uin in your contact list.'+
-    'And now you may add any setting to display - for example'+
-    'users version of miranda,group or city.';
-    author     :'Awkward, based on Bethoven sources';
-    authorEmail:'panda75@bk.ru';
-    copyright  :'(c) 2004,2005 Bethoven; 2006-2010 Awkward';
-    homepage   :'http://awkward.miranda.im/';
-    flags:UNICODE_AWARE;
-    replacesDefaultModule:0;
-//    uuid:'{E4058506-6494-4d60-9CF4-40BF545F78BD}'
-  );
-
 var
   PluginInterfaces:array [0..1] of MUUID;
-
-function MirandaPluginInfo(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
-begin
-  result:=@PluginInfo;
-  PluginInfo.cbSize:=SizeOf(TPLUGININFO);
-  PluginInfo.uuid  :=MIID_QUICKSEARCH;
-end;
 
 function MirandaPluginInfoEx(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
 begin
   result:=@PluginInfo;
-  PluginInfo.cbSize:=SizeOf(TPLUGININFOEX);
-  PluginInfo.uuid  :=MIID_QUICKSEARCH;
+  PluginInfo.cbSize     :=SizeOf(TPLUGININFOEX);
+  PluginInfo.shortName  :='Quick Search Mod';
+  PluginInfo.version    :=$01040112;
+  PluginInfo.description:=
+    'This Plugin allow you to quick search for nickname,'+
+    'firstname, lastname, email, uin in your contact list.'+
+    'And now you may add any setting to display - for example'+
+    'users version of miranda,group or city.';
+  PluginInfo.author     :='Awkward, based on Bethoven sources';
+  PluginInfo.authorEmail:='panda75@bk.ru; awk1975@ya.ru';
+  PluginInfo.copyright  :='(c) 2004,2005 Bethoven; 2006-2011 Awkward';
+  PluginInfo.homepage   :='http://code.google.com/p/delphi-miranda-plugins/';
+  PluginInfo.flags      :=UNICODE_AWARE;
+  PluginInfo.replacesDefaultModule:=0;
+  PluginInfo.uuid       :=MIID_QUICKSEARCH;
 end;
 
 function OnTTBLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -295,7 +282,6 @@ end;
 
 exports
   Load, Unload,
-  MirandaPluginInfo,
   MirandaPluginInterfaces,MirandaPluginInfoEx;
 
 begin

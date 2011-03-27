@@ -7,34 +7,23 @@ library Translate;
 uses
   Windows, m_api, tr_frame;
 
-const
-  PluginInfo:TPLUGININFOEX=(
-    cbSize     :sizeof(TPLUGININFOEX);
-    shortName  :'Google Translate frame';
-    version    :$00000001;
-    description:'this plugin creating frame with google translate text ability';
-    author     :'Awkward';
-    authorEmail:'panda75@bk.ru';
-    copyright  :'(c) 2010 Awkward';
-    homepage   :'http://awkward.miranda.im/';
-    flags      :UNICODE_AWARE;
-    replacesDefaultModule:0;
-    uuid:'{0C0954EA-43D7-4452-99AC-F084D4456716}';
-  );
-
 var
   PluginInterfaces:array [0..1] of MUUID;
-
-function MirandaPluginInfo(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
-begin
-  result:=@PluginInfo;
-  PluginInfo.cbSize:=SizeOf(TPLUGININFO);
-end;
 
 function MirandaPluginInfoEx(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
 begin
   result:=@PluginInfo;
-  PluginInfo.cbSize:=SizeOf(TPLUGININFOEX);
+  PluginInfo.cbSize     :=SizeOf(TPLUGININFOEX);
+  PluginInfo.shortName  :='Google Translate frame';
+  PluginInfo.version    :=$00000001;
+  PluginInfo.description:='this plugin creating frame with google translate text ability';
+  PluginInfo.author     :='Awkward';
+  PluginInfo.authorEmail:='panda75@bk.ru; awk1975@ya.ru';
+  PluginInfo.copyright  :='(c) 2010-2011 Awkward';
+  PluginInfo.homepage   :='http://code.google.com/p/delphi-miranda-plugins/';
+  PluginInfo.flags      :=UNICODE_AWARE;
+  PluginInfo.replacesDefaultModule:=0;
+  PluginInfo.uuid:=MIID_TRANSLATE;
 end;
 
 var
@@ -72,7 +61,6 @@ end;
 
 exports
   Load, Unload,
-  MirandaPluginInfo,
   MirandaPluginInterfaces,MirandaPluginInfoEx;
 
 end.
