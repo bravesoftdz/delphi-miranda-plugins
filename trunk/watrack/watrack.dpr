@@ -485,6 +485,7 @@ var
 begin
    PluginLink^.UnhookEvent(onloadhook);
 
+  Langpack_register;
   if PluginLink^.ServiceExists(MS_UPDATE_REGISTER)<>0 then
   begin
     with upd do
@@ -680,8 +681,7 @@ end;
 
 exports
   Load, Unload,
-  MirandaPluginInfo
-  ,MirandaPluginInterfaces,MirandaPluginInfoEx;
+  MirandaPluginInterfaces,MirandaPluginInfoEx;
 
 begin
 end.

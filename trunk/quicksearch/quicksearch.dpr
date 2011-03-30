@@ -196,6 +196,8 @@ var
 begin
   PluginLink^.UnhookEvent(onloadhook);
 
+  Langpack_register;
+
   if DetectHKManager<>HKMT_CORE then
     InitHotKeys;
 

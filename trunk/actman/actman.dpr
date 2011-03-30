@@ -256,6 +256,8 @@ begin
   Result:=0;
   PluginLink^.UnhookEvent(onloadhook);
 
+  Langpack_register;
+
   LoadGroups;
   InitHelpFile;
   RegisterIcons;
