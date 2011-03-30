@@ -167,26 +167,43 @@ begin
   ProtoBroadcastAck(PluginName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS,OldStatus,PluginStatus);
 end;
 
-procedure CreateProtoService(serviceName:PAnsiChar;pFunc:pointer);
+function CreateProtoService(serviceName:PAnsiChar;pFunc:pointer):THANDLE;
 var
   temp:array [0..MAXMODULELABELLENGTH-1] of AnsiChar;
 begin
   StrCopy(StrCopyE(temp,PluginName),serviceName);
-  CreateServiceFunction(temp,pFunc);
+  result:=CreateServiceFunction(temp,pFunc);
+end;
+
+var
+  prh0,prh1,prh2,prh3,prh4,prh5,prh6,prh7,prh8,prh9:THANDLE;
+
+procedure DestroyProtoServices;
+begin
+  PluginLink^.DestroyServiceFunction(prh0);
+  PluginLink^.DestroyServiceFunction(prh1);
+  PluginLink^.DestroyServiceFunction(prh2);
+  PluginLink^.DestroyServiceFunction(prh3);
+  PluginLink^.DestroyServiceFunction(prh4);
+  PluginLink^.DestroyServiceFunction(prh5);
+  PluginLink^.DestroyServiceFunction(prh6);
+  PluginLink^.DestroyServiceFunction(prh7);
+  PluginLink^.DestroyServiceFunction(prh8);
+  PluginLink^.DestroyServiceFunction(prh9);
 end;
 
 procedure CreateProtoServices;
 begin
-  CreateProtoService(PS_GETCAPS          ,@Service_GetCaps);
-  CreateProtoService(PS_ADDTOLIST        ,@Service_AddToList);
-  CreateProtoService(PS_CREATEADVSEARCHUI,@Service_ExtSearchUI);
-  CreateProtoService(PS_SEARCHBYADVANCED ,@Service_SearchByAdvanced);
-  CreateProtoService(PS_BASICSEARCH      ,@Service_SearchBasic);
-  CreateProtoService(PS_GETNAME          ,@Service_GetName);
-  CreateProtoService(PS_LOADICON         ,@Service_LoadIcon);
-  CreateProtoService(PS_GETSTATUS        ,@Service_GetStatus);
-  CreateProtoService(PS_SETSTATUS        ,@Service_SetStatus);
-  CreateProtoService(PSS_GETAWAYMSG      ,@Service_GetAwayMsg);
+  prh0:=CreateProtoService(PS_GETCAPS          ,@Service_GetCaps);
+  prh1:=CreateProtoService(PS_ADDTOLIST        ,@Service_AddToList);
+  prh2:=CreateProtoService(PS_CREATEADVSEARCHUI,@Service_ExtSearchUI);
+  prh3:=CreateProtoService(PS_SEARCHBYADVANCED ,@Service_SearchByAdvanced);
+  prh4:=CreateProtoService(PS_BASICSEARCH      ,@Service_SearchBasic);
+  prh5:=CreateProtoService(PS_GETNAME          ,@Service_GetName);
+  prh6:=CreateProtoService(PS_LOADICON         ,@Service_LoadIcon);
+  prh7:=CreateProtoService(PS_GETSTATUS        ,@Service_GetStatus);
+  prh8:=CreateProtoService(PS_SETSTATUS        ,@Service_SetStatus);
+  prh9:=CreateProtoService(PSS_GETAWAYMSG      ,@Service_GetAwayMsg);
 (*
 {
  Asks protocol for the status message for a status

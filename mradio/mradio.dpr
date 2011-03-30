@@ -202,6 +202,7 @@ function PreShutdown(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
   UnRegisterHotKey;
 
+  DestroyProtoServices;
   DestroyHiddenWindow;
   DestroyFrame();
   MyFreeBASS;
@@ -251,6 +252,7 @@ var
 begin
   PluginLink:=Pointer(link);
   InitMMI;
+  Langpack_register;
 
   GetModuleFileNameW(0,szTemp,MAX_PATH-1);
   pc:=StrEndW(szTemp);

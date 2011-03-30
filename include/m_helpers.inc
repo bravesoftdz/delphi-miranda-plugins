@@ -429,6 +429,7 @@ function TranslateString(const sz: string): string;
 function TranslateDialogDefault(hwndDlg: THandle): int_ptr;
 function TranslateMenu(hMenu: HMENU): int_ptr;
 function Langpack_PCharToTChar(astr:PAnsiChar):int_ptr;
+function Langpack_Register:int_ptr;
 
   {$else}
 
@@ -474,6 +475,11 @@ end;
 function Langpack_PCharToTChar(astr:PAnsiChar):int_ptr;
 begin
   result := CallService(MS_LANGPACK_PCHARTOTCHAR, hLangpack, LPARAM(astr));
+end;
+
+function Langpack_Register:int_ptr;
+begin
+  result:=CallService(MS_LANGPACK_REGISTER,WPARAM(@hLangpack),LPARAM(@PluginInfo));
 end;
 
   {$endif}
