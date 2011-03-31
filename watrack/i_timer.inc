@@ -1,6 +1,6 @@
 {Timer related procedures}
 
-procedure TimerProc(wnd:HWND;uMsg:cardinal;idEvent:cardinal;dwTime:dword); stdcall;
+procedure TimerProc(wnd:HWND;uMsg:uint;idEvent:uint_ptr;dwTime:dword); stdcall;
 begin
   case DisablePlugin of
     dsEnabled  : CallService(MS_WAT_GETMUSICINFO,0,0);

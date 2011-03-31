@@ -134,7 +134,7 @@ begin
     end;
 end;
 
-procedure TimerProc(wnd:HWND;uMsg:cardinal;TB:pTextBlock;dwTime:dword); stdcall;
+procedure TimerProc(wnd:HWND;uMsg:uint;TB:pTextBlock;dwTime:dword); stdcall;
 var
   DC:HDC;
 begin

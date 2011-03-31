@@ -35,7 +35,7 @@ begin
   RefreshPicture(nil);
 end;
 
-procedure FrameTimerProc(wnd:HWND;uMsg:cardinal;idEvent:cardinal;dwTime:dword); stdcall;
+procedure FrameTimerProc(wnd:HWND;uMsg:uint;idEvent:uint_ptr;dwTime:dword); stdcall;
 var
   psi:PSongInfo;
   D:PWATFrameData;
@@ -218,7 +218,7 @@ begin
   AdjustFrame;
 end;
 
-procedure BkTimerProc(wnd:HWND;uMsg:cardinal;idEvent:cardinal;dwTime:dword); stdcall;
+procedure BkTimerProc(wnd:HWND;uMsg:uint;idEvent:uint_ptr;dwTime:dword); stdcall;
 var
   D:PWATFrameData;
 begin

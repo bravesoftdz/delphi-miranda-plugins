@@ -147,7 +147,7 @@ begin
 //  PControl(Sender).Parent.Update; //??
 end;
 
-procedure TimerProc(wnd:HWND;uMsg:cardinal;idEvent:cardinal;dwTime:dword); stdcall;
+procedure TimerProc(wnd:HWND;uMsg:uint;idEvent:uint_ptr;dwTime:dword); stdcall;
 begin
   PControl(IdEvent).OnClick(PControl(IdEvent));
 end;
