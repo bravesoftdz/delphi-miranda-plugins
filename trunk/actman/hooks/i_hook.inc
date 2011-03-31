@@ -93,7 +93,7 @@ begin
   end;
 end;
 
-function GetHookByMessage(msg:dword):pHookRec;
+function GetHookByMessage(msg:uint):pHookRec;
 var
   i:integer;
 begin
@@ -111,7 +111,7 @@ begin
   end;
 end;
 
-function HookWndProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
+function HookWndProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
   p:pHookRec;
   ap:TAct_Param;

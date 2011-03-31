@@ -65,7 +65,7 @@ end;
 const
   hTimer:THANDLE=0;
 
-procedure TimerProc(wnd:HWND;uMsg:cardinal;idEvent:cardinal;dwTime:dword); stdcall;
+procedure TimerProc(wnd:HWND;uMsg:uint;idEvent:uint_ptr;dwTime:dword); stdcall;
 var
   res:uint_ptr;
 begin
