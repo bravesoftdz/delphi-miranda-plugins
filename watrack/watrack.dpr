@@ -178,6 +178,7 @@ var
   OldPlayerStatus:integer;
   stat:integer;
   newplayer:bool;
+  buf1,buf2:array [0..31] of ansichar;
 begin
   result:=WAT_RES_NOTFOUND;
   if DisablePlugin=dsPermanent then
@@ -226,7 +227,9 @@ begin
       ClearTrackInfo   (WorkSI,false);
 
       if Hiword(OldPlayerStatus)<>WAT_MES_STOPPED then
+      begin
         PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLAYERSTATUS,WAT_MES_STOPPED);
+      end;
 
       ClearFileInfo    (SongInfo,true);
       ClearChangingInfo(SongInfo,true);
@@ -271,7 +274,9 @@ begin
       WorkSI.status:=(WorkSI.status shl 16) or (stat and $FFFF);
 
       if OldPlayerStatus<>WorkSI.status then
+      begin
         PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLAYERSTATUS,WorkSI.status);
+      end;
 
       // no playing file - clear all file info
       if stat=WAT_PLS_NOMUSIC then
@@ -373,7 +378,7 @@ begin
   //----- Player not found -----
   else
   begin
-    if HiWord(OldPlayerStatus)<>WorkSI.status then
+    if OldPlayerStatus<>WorkSI.status then
     begin
       PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLAYERSTATUS,
           WAT_PLS_NOTFOUND+WAT_MES_UNKNOWN shl 16);

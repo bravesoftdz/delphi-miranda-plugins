@@ -840,6 +840,7 @@ begin
   result:=0;
 end;
 
+// checking proto in several places for speed, not size economy
 function OnSettingsChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
   buf:array [0..MAX_PATH-1] of AnsiChar;
@@ -856,9 +857,6 @@ begin
       exit;
     end;
 }
-  if StrCmp(PAnsiChar(PluginLink^.CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0)),
-             PluginName)<>0 then exit;
-
   with PDBCONTACTWRITESETTING(lParam)^ do
   begin
     // works only if called AFTER changes
@@ -868,6 +866,9 @@ begin
       begin
         if value._type=DBVT_DELETED then
         begin
+          if StrCmp(PAnsiChar(PluginLink^.CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0)),
+             PluginName)<>0 then exit;
+
           pc:=DBReadString(wParam,PluginName,optNick);
           DBWriteString(wParam,strCList,optMyHandle,pc);
           mFreeMem(pc);
@@ -880,6 +881,8 @@ begin
 
     if StrCmp(szSetting,optAge)=0 then
     begin
+      if StrCmp(PAnsiChar(PluginLink^.CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0)),
+         PluginName)<>0 then exit;
       if value._type=DBVT_DELETED then
         i:=DBReadWord(wParam,PluginName,optAge)
       else
@@ -889,12 +892,21 @@ begin
     end;
     
     case value._type of
+      DBVT_DELETED,
+      DBVT_ASCIIZ ,
+      DBVT_WCHAR  ,
+      DBVT_UTF8   :
+      if StrCmp(PAnsiChar(PluginLink^.CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0)),
+         PluginName)<>0 then exit;
+    else
+      exit;
+    end;
+
+    case value._type of
       DBVT_DELETED: pc:=DBReadString(wParam,PluginName,szSetting);
       DBVT_ASCIIZ : pc:=value.szVal.a;
       DBVT_WCHAR  : WideToAnsi(value.szVal.w,pc,MirandaCP);
       DBVT_UTF8   : UTF8ToANSI(value.szVal.a,pc,MirandaCP);
-    else
-      exit
     end;
 
     if      StrCmp(szSetting,optFirstName)=0 then DBWriteString(wParam,PluginName,optStationURL,pc)
