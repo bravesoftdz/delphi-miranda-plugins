@@ -178,7 +178,6 @@ var
   OldPlayerStatus:integer;
   stat:integer;
   newplayer:bool;
-  buf1,buf2:array [0..31] of ansichar;
 begin
   result:=WAT_RES_NOTFOUND;
   if DisablePlugin=dsPermanent then

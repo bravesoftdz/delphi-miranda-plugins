@@ -186,7 +186,7 @@ begin
                          ((oldstatus=0) and (XStatusSet=2))) then // empty
                   begin
                     mFreeMem(txt);
-                    exit; //!! do nothing!
+                    continue; //!! do nothing!
                   end;
                 end;
                 if isvideo then
