@@ -156,6 +156,7 @@ procedure tIcoButton.myMouseDown(Sender:PControl; var Mouse:TMouseEventData);
 var
   D: PIcoBtnData;
 begin
+  if Mouse.Button<>mbLeft then exit;
   D:=Sender.CustomData;
   if D.checking then
   begin
@@ -185,6 +186,7 @@ var
   D: PIcoBtnData;
   tp:TPOINT;
 begin
+  if Mouse.Button<>mbLeft then exit;
   D:=Sender.CustomData;
   if not D.checking then
   begin

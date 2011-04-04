@@ -200,6 +200,7 @@ end;
 
 function PreShutdown(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
+  CallService(MS_RADIO_COMMAND,MRC_STOP,1);
   UnRegisterHotKey;
 
   DestroyProtoServices;
