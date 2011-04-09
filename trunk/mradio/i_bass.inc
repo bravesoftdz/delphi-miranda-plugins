@@ -318,7 +318,7 @@ begin
 //!!  
   pcw:=StrCopyEW(pcw,CurDescrW);
   if (pcw=buf) or ((pcw-1)^='\') then
-    pcw:=StrEnd(IntToHex(pcw,GetCurrentTime));
+    pcw:=StrEndW(IntToHex(pcw,GetCurrentTime));
 // ext
   pcw^:='.'; inc(pcw);
   GetFileExt(pcw,sign);
