@@ -21,8 +21,10 @@ const
 implementation
 
 uses {$IFDEF KOL_MCK}kol,{$ENDIF}messages,commctrl,sr_global,common,dbsettings,mirutils,
-    wrapper,sr_optdialog;
+    wrapper,sr_optdialog,protocols;
 
+const
+  flt_show_offline = $100;
 const
   strCListDel:PAnsiChar='CList/DeleteContactCommand';
 const
@@ -60,7 +62,7 @@ type
   PQSFRec = ^QSFRec;
   QSFRec = record // row
     contact:THANDLE;
-    proto  :PAnsiChar;
+    proto  :uint_ptr;
     flags  :dword;
     status :dword;
     wparam :WPARAM;
@@ -125,6 +127,7 @@ var
   cfgr_meta,
   cbkg_sub,
   cfgr_sub:TCOLORREF;
+  AdvFilter:cardinal;
   
 function GetQSColumn(item:integer):LPARAM;
 var
@@ -158,6 +161,7 @@ var
   lsize,lshift:integer;
 begin
   col:=-1;
+  lshift:=0;
   for i:=0 to qsopt.numcolumns-1 do
   begin
     if (qsopt.columns[i].flags and COL_ON)<>0 then
@@ -402,18 +406,6 @@ begin
   StrDupW(result,strdatetime);
 end;
 
-function TimeToStrA(data:dword):PAnsiChar;
-var
-  strdatetime:array [0..63] of AnsiChar;
-  dbtts:TDBTIMETOSTRING;
-begin
-  dbtts.cbDest    :=sizeof(strdatetime);
-  dbtts.szDest.a  :=@strdatetime;
-  dbtts.szFormat.a:='d - t';
-  PluginLink^.CallService(MS_DB_TIME_TIMESTAMPTOSTRING,data,lparam(@dbtts));
-  StrDup(result,strdatetime);
-end;
-
 function FindMeta(hMeta:THANDLE;var MetaNum:WPARAM):LPARAM;
 var
   i:integer;
@@ -487,7 +479,7 @@ begin
   end;
 end;
 
-procedure LoadOneItem(hContact:THANDLE;num:integer;proto:PAnsiChar; var res:QSRec);
+procedure LoadOneItem(hContact:THANDLE;num:integer;proto:integer; var res:QSRec);
 var
   cni:TCONTACTINFO;
   dbei:TDBEVENTINFO;
@@ -504,7 +496,7 @@ begin
     if module_name<>nil then
       protov:=module_name
     else
-      protov:=proto;
+      protov:=GetProtoName(proto);
 
     case setting_type of
       ST_METACONTACT: begin
@@ -539,7 +531,7 @@ begin
         cni.cbSize  :=sizeof(cni);
         cni.dwFlag:=setting_cnftype or CNF_UNICODE;
         cni.hContact:=hContact;
-        cni.szProto :=proto;
+        cni.szProto :=GetProtoName(proto);
         if PluginLink^.CallService(MS_CONTACT_GETCONTACTINFO,0,tlparam(@cni))=0 then
         begin
           case cni._type of
@@ -748,17 +740,17 @@ begin
 end;
 
 type
-  pSBData = ^tSBData;
-  tSBData = array [0..63] of record
+  pSBDataRecord = ^tSBDataRecord;
+  tSBDataRecord = record
     flags :cardinal;
-    name  :PAnsiChar;
     total :cardinal; // in clist
     found :cardinal; // by pattern
     online:cardinal; // clist online
     liston:cardinal; // pattern online
   end;
+  tSBData = array [0..63] of TSBDataRecord;
 
-procedure DrawSBW(const SBData:tSBData; protocnt:integer);
+procedure DrawSBW(const SBData:tSBData);
 var
   aPartPos:array [0..63 ] of integer;
   buf     :array [0..255] of WideChar;
@@ -770,6 +762,7 @@ var
   rc:TRECT;
   dc:HDC;
   icon:HICON;
+  protocnt:integer;
 begin
   StrCopyW(@fmtstr,TranslateW('%u users found (%u) Online: %u'));
   vars[0]:=SBData[0].found;
@@ -781,6 +774,7 @@ begin
   ReleaseDC(StatusBar,dc);
   all:=rc.right-rc.left;
   aPartPos[0]:=all;
+  protocnt:=GetNumProto;
   i:=1;
   while i<=protocnt do
   begin
@@ -793,28 +787,21 @@ begin
   SendMessageW(StatusBar,SB_SETTEXTW,0,lparam(@buf));
 
   vars[4]:=int_ptr(TranslateW('Online'));
-  i:=protocnt;
-  while i>0 do
-  begin
 
-    if (SBData[i].name=nil) or
-      ((SBData[i].flags and (QSF_ACCDEL or QSF_ACCOFF))<>0) then
+  for i:=1 to protocnt do
+  begin
+    if ((SBData[i].flags and (QSF_ACCDEL or QSF_ACCOFF))<>0) then
     begin
       icon:=PluginLink^.CallService(MS_SKIN_LOADPROTOICON,0,ID_STATUS_OFFLINE);
     end
     else
     begin
       icon:=PluginLink^.CallService(
-          MS_SKIN_LOADPROTOICON,wparam(SBData[i].name),ID_STATUS_ONLINE);
+          MS_SKIN_LOADPROTOICON,wparam(GetProtoName(i)),ID_STATUS_ONLINE);
     end;
 
-    if SBData[i].name=nil then
-      vars[0]:=int_ptr(TranslateW('Unknown'))
-    else
-    begin
-      FastAnsiToWideBuf(SBData[i].name,fmtstr);
-      vars[0]:=int_ptr(@fmtstr);
-    end;
+    FastAnsiToWideBuf(GetProtoName(i),fmtstr);
+    vars[0]:=int_ptr(@fmtstr);
 
     SendMessageW(StatusBar,SB_SETICON,i,icon);
 
@@ -856,72 +843,46 @@ begin
     end;
     wvsprintfw(buf,'%s (%s): %u (%u); %s %u (%u)',@vars);
     SendMessageW(StatusBar,SB_SETTIPTEXTW,i,lparam(@buf));
-    dec(i);
   end;
-  
+
 end;
 
 procedure UpdateSB;
 var
-  protocnt:integer;
   SBData: tSBData;
-  i,j:integer;
-  p:pQSFRec;
+  j:integer;
+  p:pSBDataRecord;
 begin
   FillChar(SBData,SizeOf(SBData),0);
-  protocnt:=0;
 
+  // for all contacts
   for j:=0 to HIGH(FlagBuf) do
   begin
+    p:=@SBData[FlagBuf[j].proto];
+    p^.flags:=FlagBuf[j].flags;
 
-    p:=@FlagBuf[j];
-    if protocnt>0 then
-    begin
-      i:=protocnt;
-      while i>0 do
-      begin
-        if StrCmp(SBData[i].name,p^.proto)=0 then
-          break;
-        dec(i);
-      end;
-    end
-    else
-      i:=0;
-
-    if i=0 then // no known proto
-    begin
-      if protocnt<63 then
-      begin
-        inc(protocnt);
-        i:=protocnt;
-        SBData[protocnt].name :=p.proto;
-        SBData[protocnt].flags:=p.flags;
-      end
-      else ; //!! error
-    end;
-
-    inc(SBData[i].total);
+    inc(p^.total);
 
     if (p^.flags and QSF_ACTIVE)<>0 then
     begin
-      inc(SBData[i].found);
+      inc(p^.found);
       inc(SBData[0].found);
     end;
 
-    if p^.status<>ID_STATUS_OFFLINE then
+    if FlagBuf[j].status<>ID_STATUS_OFFLINE then
     begin
-      inc(SBData[i].online);
+      inc(p^.online);
       inc(SBData[0].online);
       if (p^.flags and QSF_ACTIVE)<>0 then
       begin
-        inc(SBData[i].liston);
+        inc(p^.liston);
         inc(SBData[0].liston);
       end;
     end;
 
   end;
 
-  DrawSBW(SBData,protocnt);
+  DrawSBW(SBData);
 end;
 
 procedure Sort;
@@ -935,61 +896,6 @@ begin
   if (qsopt.columnsort<>StatusSort) and qsopt.sortbystatus then
     SendMessage(grid,LVM_SORTITEMS,StatusSort,LPARAM(@CompareItem));
 //    ListView_SortItems(grid,@CompareItem,StatusSort);
-end;
-
-procedure MakePatternA;
-var
-  wasquote:bool;
-  lpatptr:PAnsiChar;
-begin
-  numpattern:=0;
-  if (pattern<>nil) and (pattern^<>#0) then
-  begin
-    wasquote:=false;
-    mFreeMem(patstr);
-    StrDup(pAnsiChar(patstr),pAnsiChar(pattern));
-    lpatptr:=pAnsiChar(patstr);
-    repeat
-      while lpatptr^=' ' do inc(lpatptr);
-      if lpatptr^<>#0 then
-      begin
-        if lpatptr^='"' then
-        begin
-          inc(lpatptr);
-          wasquote:=true;
-        end
-        else
-        begin
-          patterns[numpattern].str:=pWideChar(lpatptr);
-          inc(numpattern);
-          while lpatptr^<>#0 do
-          begin
-            if wasquote then
-            begin
-              if lpatptr^='"' then
-              begin
-                wasquote:=false;
-                break;
-              end;
-            end
-            else if lpatptr^=' ' then
-              break;
-            inc(lpatptr);
-          end;
-          if lpatptr^<>#0 then
-          begin
-            lpatptr^:=#0;
-            inc(lpatptr);
-          end;
-        end;
-        if numpattern=maxpattern then break;
-      end;
-    until lpatptr^=#0;
-  end
-  else
-  begin
-    mFreeMem(patstr);
-  end;
 end;
 
 procedure MakePatternW;
@@ -1045,40 +951,6 @@ begin
   begin
     mFreeMem(patstr);
   end;
-end;
-
-function CheckPatternA(cnt:integer):boolean;
-var
-  lstr:array [0..1023] of AnsiChar;
-  i,j:integer;
-begin
-  if numpattern>0 then
-  begin
-    for i:=0 to numpattern-1 do
-      patterns[i].res:=false;
-
-    for i:=0 to qsopt.numcolumns-1 do
-    begin
-      if ((qsopt.columns[i].flags and COL_ON)<>0) and
-         (MainBuf[cnt,i].text<>nil) then
-      begin
-        StrCopy(lstr,pAnsiChar(MainBuf[cnt,i].text),HIGH(lstr));
-        CharLowerA(lstr);
-        for j:=0 to numpattern-1 do
-          if not patterns[j].res then
-          begin
-            if StrPos(lstr,pAnsiChar(patterns[j].str))<>nil then //!!
-              patterns[j].res:=true;
-          end;
-      end;
-    end;
-
-    result:=true;
-    for i:=0 to numpattern-1 do
-      result:=result and patterns[i].res;
-  end
-  else
-    result:=true;
 end;
 
 function CheckPatternW(cnt:integer):boolean;
@@ -1162,11 +1034,11 @@ begin
   end;
 end;
 
-//!!
-function ShowHideOffline(show:boolean):integer;
+function AdvancedFilter:integer;
 var
   p:pQSFRec;
   i:integer;
+  show:boolean;
 begin
   result:=0;
 
@@ -1175,24 +1047,19 @@ begin
   for i:=0 to HIGH(FlagBuf) do
   begin
     p:=@FlagBuf[i];
-    if (p^.status=ID_STATUS_OFFLINE) and ((p^.flags and QSF_PATTERN)<>0) then
+    // firstly = proto
+    show:=(LoByte(AdvFilter)=0) or (p^.proto=LoByte(AdvFilter));
+    // secondary = show/hide offline
+    show:=show and ((p^.status<>ID_STATUS_OFFLINE) or ((AdvFilter and flt_show_offline)<>0));
+
+    if (p^.flags and QSF_PATTERN)<>0 then
     begin
       if show then
       begin
-        p^.flags:=p^.flags or QSF_ACTIVE;
-        AddContactToList(p^.contact,i);
+        if (p^.flags and QSF_ACTIVE)=0 then
+          ProcessLine(i,false);
       end
-      else if (p^.flags and QSF_ACTIVE)<>0 then
-      begin
-        p^.flags:=p^.flags and not QSF_ACTIVE;
-        ListView_DeleteItem(grid,FindItem(i));
-      end;
-
-      if (p^.flags and QSF_ACTIVE)=0 then
-      begin
-        if show then ProcessLine(i,false)
-      end
-      else if not show then
+      else
       begin
         p^.flags:=p^.flags and not QSF_ACTIVE;
         ListView_DeleteItem(grid,FindItem(i));
@@ -1231,13 +1098,16 @@ end;
 procedure AddContact(num:integer;hContact:THANDLE);
 var
   i:integer;
+  tmpstr:array [0..63] of AnsiChar;
 begin
   FillChar(FlagBuf[num],SizeOf(QSFRec),0);
   with FlagBuf[num] do
   begin
     contact:=hContact;
     flags  :=0;
-    i:=IsContactActive(hContact,proto);
+    i:=IsContactActive(hContact,tmpstr);
+    proto:=FindProto(tmpstr);
+
     case i of
       -2: flags:=flags or QSF_ACCDEL;  // deleted account
       -1: flags:=flags or QSF_ACCOFF;  // disabled account
@@ -1248,10 +1118,10 @@ begin
     if i>0 then
       flags:=flags or QSF_INLIST;      // normal contact
 
-    if (proto=nil) or (i<0) then
+    if (proto=0) or (i<0) then
       status:=ID_STATUS_OFFLINE
     else
-      status:=DBReadWord(contact,proto,'Status',ID_STATUS_OFFLINE);
+      status:=DBReadWord(contact,GetProtoName(proto),'Status',ID_STATUS_OFFLINE);
 
     for i:=0 to qsopt.numcolumns-1 do
       if (qsopt.columns[i].flags and COL_ON)<>0 then
@@ -1440,7 +1310,7 @@ begin
       DBWriteUnicode(contact,strCList,'Group',group);
       if (not qsopt.closeafteraction) and (grcol>=0) then
       begin
-         LoadOneItem(contact,grcol,nil,MainBuf[i,grcol]);
+         LoadOneItem(contact,grcol,0,MainBuf[i,grcol]);
       end;
     end;
   end;
@@ -1454,95 +1324,6 @@ const
 function IsColumnMinimized(num:integer):bool;
 begin
   result:=ListView_GetColumnWidth(grid,num)<=10;
-end;
-
-procedure CopyMultiLinesA(num:integer);
-var
-  i,j,k:integer;
-  p,buf:PAnsiChar;
-  tmpcnt,cnt:integer;
-begin
-  cnt:=0;
-  if qsopt.exportheaders then
-  begin
-    k:=0;
-    while k<qsopt.numcolumns do
-    begin
-      if not (qsopt.skipminimized and IsColumnMinimized(k)) then
-        inc(cnt,StrLen(Translate(pAnsiChar(qsopt.columns[k].title)))+1);
-      Inc(k);
-    end;
-    if cnt>0 then
-      inc(cnt,2);
-  end;
-  j:=ListView_GetItemCount(grid)-1;
-  tmpcnt:=cnt;
-  for i:=0 to j do
-  begin
-    if ListView_GetItemState(grid,i,LVIS_SELECTED)<>0 then
-    begin
-      k:=0;
-      num:=LV_GetLParam(grid,i);
-      while k<qsopt.numcolumns do
-      begin
-        if not (qsopt.skipminimized and IsColumnMinimized(k)) then
-          inc(cnt,StrLen(pAnsiChar(MainBuf[num,k].text))+1);
-        Inc(k);
-      end;
-    end;
-    if tmpcnt<>cnt then
-      inc(cnt,2);
-  end;
-  if cnt=0 then
-    exit;
-
-  inc(cnt);
-  mGetMem(buf,cnt);
-  p:=buf;
-
-  if qsopt.exportheaders then
-  begin
-    k:=0;
-    while k<qsopt.numcolumns do
-    begin
-      if not (qsopt.skipminimized and IsColumnMinimized(k)) then
-      begin
-        StrCopy(p,Translate(pAnsiChar(qsopt.columns[k].title)));
-        p:=StrEnd(p);
-        p^:=#9;
-        inc(p);
-      end;
-      inc(k);
-    end;
-    (p-1)^:=#13;
-    p^    :=#10;
-    inc(p);
-  end;
-  for i:=0 to j do
-  begin
-    if ListView_GetItemState(grid,i,LVIS_SELECTED)<>0 then
-    begin
-      k:=0;
-      num:=LV_GetLParam(grid,i);
-      while k<qsopt.numcolumns do
-      begin
-        if not (qsopt.skipminimized and IsColumnMinimized(k)) then
-        begin
-          StrCopy(p,pAnsiChar(MainBuf[num,k].text));
-          p:=StrEnd(p);
-          p^:=#9;
-          inc(p);
-        end;
-        inc(k);
-      end;
-      (p-1)^:=#13;
-      p^    :=#10;
-      inc(p);
-    end;
-  end;
-  p^:=#0;
-  CopyToClipboard(buf,true);
-  mFreeMem(buf);
 end;
 
 procedure CopyMultiLinesW(num:integer);
@@ -1637,7 +1418,7 @@ end;
 var
   HintWnd:HWND;
 
-function NewLVProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
+function NewLVProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 const
   OldHItem   :integer=0;
   OldHSubItem:integer=0;
@@ -1677,6 +1458,7 @@ begin
         1: begin
           ListView_SetItemState(grid,-1,LVIS_SELECTED,LVIS_SELECTED);
         end;
+        // Ctrl-C
         3: begin
           i:=ListView_GetSelectedCount(grid);
           if (i>1) or qsopt.singlecsv then
@@ -1729,6 +1511,7 @@ begin
           mFreeMem(pp);
           exit;
         end;
+        // backspace
         8: begin
           if pattern<>nil then
           begin
@@ -1738,6 +1521,7 @@ begin
             SetDlgItemTextW(mainwnd,IDC_E_SEARCHTEXT,buf);
           end;
         end;
+        // letters
         32..127: begin
           if pattern<>nil then
             StrCopyW(buf,pattern)
@@ -1867,7 +1651,7 @@ end;
               StrCopyW(buf,MainBuf[i,OldHSubItem].text);
               ics.flags:=CSSF_DEFAULT_NAME or CSSF_MASK_NAME or CSSF_UNICODE;
 
-              StrCopy(StrCopyE(buf1,FlagBuf[i].proto),PS_ICQ_GETCUSTOMSTATUSEX);
+              StrCopy(StrCopyE(buf1,GetProtoName(FlagBuf[i].proto)),PS_ICQ_GETCUSTOMSTATUSEX);
 
               i:=StrToInt(buf);
               ics.wParam:=@i;
@@ -1991,7 +1775,7 @@ begin
   end;
 end;
 
-function NewLVHProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
+function NewLVHProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 begin
   case hMessage of
 
@@ -2002,37 +1786,6 @@ begin
 
     WM_RBUTTONDOWN: begin
       MakeColumnMenu;
-{
-      hti.point.x:=LOWORD(lParam);
-      hti.point.y:=HIWORD(lParam);
-      i:=SendMessage(Dialog,HDM_HITTEST,0,dword(@hti));
-//      i:=SendMessage(Dialog,HDM_ORDERTOINDEX,i,0);
-      oldw:=ListView_GetColumnWidth(grid,i);
-      if oldw<>10 then
-        oldw:=10
-      else
-        oldw:=LVSCW_AUTOSIZE;
-      SendMessage(grid,LVM_SETCOLUMNWIDTH,i,oldw);
-      exit;
-}{
-      x:=LOWORD(lParam);
-      cnt:=0;
-      for i:=0 to qsopt.numcolumns-1 do
-      begin
-        oldw:=ListView_GetColumnWidth(grid,i);
-        inc(cnt,oldw);
-        if x<cnt then
-        begin
-          if oldw<>10 then
-            oldw:=10
-          else
-            oldw:=LVSCW_AUTOSIZE;
-          SendMessage(grid,LVM_SETCOLUMNWIDTH,i,oldw);
-          result:=0;
-          exit;
-        end;
-      end;
-}
     end;
   end;
   result:=CallWindowProc(OldProc,dialog,hMessage,wParam,lParam);
@@ -2138,8 +1891,7 @@ begin
         j:=StrToInt(MainBuf[i,sub].text);
         if j>0 then
         begin
-          StrCopy(buf,FlagBuf[i].proto);
-          StrCat(buf,PS_ICQ_GETCUSTOMSTATUSICON);
+          StrCopy(StrCopyE(buf,GetProtoName(FlagBuf[i].proto)),PS_ICQ_GETCUSTOMSTATUSICON);
           if PluginLink^.ServiceExists(buf)<>0 then
           begin
             h:=CallService(buf,j,LR_SHARED);
@@ -2175,7 +1927,7 @@ begin
   end;
 end;
 
-function NewEditProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
+function NewEditProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
   count,current,next,perpage:integer;
   li:LV_ITEM;
@@ -2282,37 +2034,7 @@ begin
   AppendMenuW(mmenu,MF_STRING,102,TranslateW('&Copy'));
   if PluginLink^.ServiceExists(MS_MC_CONVERTTOMETA)<>0 then
     AppendMenuW(mmenu,MF_STRING,103,TranslateW('C&onvert to Meta'));
-(*
-  grpmenu:=CreatePopupMenu;
-  i:=0;
-  AppendMenuW(grpmenu,MF_STRING,1234,TranslateW('<Root Group>'));
-  AppendMenuW(grpmenu,MF_SEPARATOR,0,nil);
-{$IFDEF KOL_MCK}
-  sl:=NewWStrList;
-  repeat
-    p:=DBReadUnicode(0,'CListGroups',IntToStr(b,i),nil);
-    if p=nil then break;
-    sl.Add(p+1);
-    mFreeMem(p);
-    inc(i);
-  until false;
-  sl.Sort(false);
-  for i:=0 to sl.Count-1 do
-  begin
-    AppendMenuW(grpmenu,MF_STRING,i+1,pWideChar(sl.Items[i]));
-  end;
-  sl.Clear;
-  sl.Free;
-{$ELSE}
-  repeat
-    p:=DBReadUnicode(0,'CListGroups',IntToStr(b,i),nil);
-    if p=nil then break;
-    AppendMenuW(grpmenu,MF_STRING,i+1,pWideChar(p+1));
-    mFreeMem(p);
-    inc(i);
-  until false;
-{$ENDIF}
-*)
+
   grpmenu:=MakeGroupMenu(400);
 
 //    grpmenu:=CallService(MS_CLIST_GROUPBUILDMENU,0,0);
@@ -2343,18 +2065,7 @@ begin
     CloseSrWindow;
 end;
 
-procedure addcolumn(handle:hwnd;num,width:integer;title:PAnsiChar); overload;
-var
-  lvcol:LV_COLUMNA;
-begin
-  zeromemory(@lvcol,sizeof(lvcol));
-  lvcol.mask      :=LVCF_TEXT or LVCF_WIDTH;
-  lvcol.pszText   :=title;
-  lvcol.cx        :=width;
-  SendMessageA(handle,LVM_INSERTCOLUMNA,num,lparam(@lvcol));
-end;
-
-procedure addcolumn(handle:hwnd;num,width:integer;title:PWideChar); overload;
+procedure addcolumn(handle:hwnd;num,width:integer;title:PWideChar);
 var
   lvcol:LV_COLUMNW;
 begin
@@ -2384,16 +2095,6 @@ begin
   end;
   result:=arr[0];
 end;
-{
-function QSKbdHook(code:integer;wParam:integer;lParam:longint):longint; stdcall;
-begin
-  if (code=HC_ACTION) and
-     (lParam>0) and (LoWord(lParam)=1) then
-  begin
-  end;
-  result:=CallNextHookEx(KbHook,code,wParam,lParam);
-end;
-}
 
 function ColorReload(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
@@ -2418,8 +2119,6 @@ procedure ClearBuffers;
 var
   w,h:integer;
 begin
-  for w:=0 to HIGH(FlagBuf) do
-    mFreeMem(FlagBuf[w].proto);
   for w:=0 to HIGH(MainBuf) do
     for h:=0 to HIGH(MainBuf[0]) do
       mFreeMem(MainBuf[w,h].text);
@@ -2457,11 +2156,12 @@ end;
 function FindAddDlgResizer(Dialog:HWND;lParam:LPARAM;urc:PUTILRESIZECONTROL):int; cdecl;
 begin
   case urc^.wId of
-    IDC_E_SEARCHTEXT:   result:=RD_ANCHORX_WIDTH or RD_ANCHORY_TOP;
     IDCANCEL:           result:=RD_ANCHORX_RIGHT or RD_ANCHORY_TOP;
     IDC_REFRESH:        result:=RD_ANCHORX_RIGHT or RD_ANCHORY_TOP;
     IDC_CH_SHOWOFFLINE: result:=RD_ANCHORX_LEFT  or RD_ANCHORY_TOP;
     IDC_CH_COLORIZE:    result:=RD_ANCHORX_LEFT  or RD_ANCHORY_TOP;
+    IDC_CB_PROTOCOLS:   result:=RD_ANCHORX_LEFT  or RD_ANCHORY_TOP;
+    IDC_E_SEARCHTEXT:   result:=RD_ANCHORX_WIDTH or RD_ANCHORY_TOP;
     IDC_LIST:           result:=RD_ANCHORX_WIDTH or RD_ANCHORY_HEIGHT;
     IDC_STATUSBAR:      result:=RD_ANCHORX_WIDTH or RD_ANCHORY_BOTTOM;
   else
@@ -2499,6 +2199,20 @@ begin
 
   ListView_DeleteAllItems(grid);
   ListView_SetItemCount(grid,HIGH(FlagBuf)+1);
+end;
+
+procedure FillProtoCombo(cb:HWND);
+var
+  i:integer;
+  buf:array [0..63] of WideChar;
+begin
+  SendMessage(cb,CB_RESETCONTENT,0,0);
+  CB_AddStrDataW(cb,TranslateW('All'));
+  for i:=1 to GetNumProto do
+  begin
+    CB_AddStrDataW(cb,FastAnsiToWideBuf(GetProtoName(i),@buf),i);
+  end;
+  SendMessage(cb,CB_SETCURSEL,0,0);
 end;
 
 function QSMainWndProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
@@ -2579,8 +2293,12 @@ begin
         CheckMenuItem(smenu,IDM_STAYONTOP,MF_BYCOMMAND or MF_CHECKED);
         SetWindowPos(dialog,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE or SWP_NOSIZE);
       end;
+      AdvFilter:=0;
       if qsopt.showoffline then
+      begin
         CheckDlgButton(dialog,IDC_CH_SHOWOFFLINE,ORD(qsopt.showoffline));
+        AdvFilter:=AdvFilter or flt_Show_offline;
+      end;
 
       if qsopt.colorize then
         CheckDlgButton(dialog,IDC_CH_COLORIZE,ORD(qsopt.colorize));
@@ -2614,6 +2332,8 @@ begin
       oldproc:=pointer(SetWindowLongPtrW(
           SendMessage(grid,LVM_GETHEADER,0,0),
           GWL_WNDPROC,tlparam(@NewLVHProc)));
+
+      FillProtoCombo(GetDlgItem(Dialog,IDC_CB_PROTOCOLS));
 
       PrepareTable;
       
@@ -2773,6 +2493,11 @@ begin
       end;
 
       case wParam shr 16 of
+        CBN_SELCHANGE: begin
+          AdvFilter:=(AdvFilter and not $FF) or CB_GetData(LParam);
+          AdvancedFilter;
+        end;
+
         EN_CHANGE: begin
           GetDlgItemTextW(Dialog,IDC_E_SEARCHTEXT,buf,sizeOf(buf));
           mFreeMem(pattern);
@@ -2786,7 +2511,11 @@ begin
           case loword(wParam) of
             IDC_CH_SHOWOFFLINE: begin
               qsopt.showoffline:=IsDlgButtonChecked(dialog,IDC_CH_SHOWOFFLINE)<>BST_UNCHECKED;
-              ShowHideOffline(qsopt.showoffline);
+              if qsopt.showoffline then
+                AdvFilter:=AdvFilter or flt_show_offline
+              else
+                AdvFilter:=AdvFilter and not flt_show_offline;
+              AdvancedFilter;
             end;
 
             IDC_CH_COLORIZE: begin
@@ -2833,9 +2562,11 @@ begin
   if opened and (mainwnd<>0) then
   begin
     DestroyWindow(mainwnd);
+
     opened:=false;
     mainwnd:=0;
   end;
+  FreeProtoList;
 end;
 
 function OpenSRWindow(apattern:PWideChar;flags:LPARAM):boolean;
@@ -2843,7 +2574,7 @@ begin
   result:=true;
   if opened then
     exit;
-  
+
   TTInstalled := PluginLink^.ServiceExists(MS_TIPPER_SHOWTIP)<>0;
   // too lazy to move pattern and flags to thread
   if apattern<>nil then
@@ -2859,11 +2590,11 @@ begin
   else
     pattern:=nil;
 
+  CreateProtoList;
   if PrepareToFill then
   begin
 //!!    SetLength(colorder,qsopt.numcolumns);
     ColorReload(0,0);
-
     CreateDialogW(hInstance,PWideChar(IDD_MAIN),0,@QSMainWndProc);
   end;
 end;
@@ -2907,7 +2638,7 @@ begin
   if j>=0 then
   begin
     oldstat:=FlagBuf[j].status;
-    newstat:=DBReadWord(wParam,FlagBuf[j].proto,'Status',ID_STATUS_OFFLINE);
+    newstat:=DBReadWord(wParam,GetProtoName(FlagBuf[j].proto),'Status',ID_STATUS_OFFLINE);
     FlagBuf[j].status:=newstat;
 
     if (oldstat<>ID_STATUS_OFFLINE) and (newstat<>ID_STATUS_OFFLINE) then

@@ -4,15 +4,17 @@ const
   rtWide = 2;
 
 const
-  SST_BYTE  = 0;
-  SST_WORD  = 1;
-  SST_DWORD = 2;
-  SST_BARR  = 3;
-  SST_WARR  = 4;
-  SST_BPTR  = 5;
-  SST_WPTR  = 6;
-  SST_LAST  = 7;
-  SST_PARAM = 8;
+  SST_BYTE   = 0;
+  SST_WORD   = 1;
+  SST_DWORD  = 2;
+  SST_QWORD  = 3;
+  SST_NATIVE = 4;
+  SST_BARR   = 5;
+  SST_WARR   = 6;
+  SST_BPTR   = 7;
+  SST_WPTR   = 8;
+  SST_LAST   = 9;
+  SST_PARAM  = 10;
 
 const
   protostr = '<proto>';
@@ -238,17 +240,17 @@ begin
   mFreeMem(lpath);
 end;
 
-function MakeStructure(txt:uint_ptr;aparam,alast:uint_ptr;
-         var code,alen:integer;var ofs:int_ptr; restype:integer=rtInt):int_ptr; forward;
+function MakeStructure(txt:pWideChar;aparam,alast:LPARAM;
+         var code,alen:integer;var ofs:int_ptr; restype:integer=rtInt):pointer; forward;
 procedure FreeStructure(var struct;descr:pWideChar); forward;
 
-function RunService(act:pHKAction;LastResult,Param:dword;var restype:dword):uint_ptr;
+function RunService(act:pHKAction;LastResult,Param:LPARAM;var restype:dword):uint_ptr;
 var
   res,ofs:int_ptr;
   buf:array [0..255] of AnsiChar;
   cc:integer;
   lservice:pAnsiChar;
-  lwparam,llparam:uint_ptr;
+  lwparam,llparam:LPARAM;
   tmp1,tmp2:pWideChar;
   code,len:integer;
 begin
@@ -283,7 +285,7 @@ begin
       code:=-1;
       if (flags and ACF_WSTRUCT)<>0 then
       begin
-        lwparam:=MakeStructure(lwparam,Param,LastResult,code,len,ofs,restype)
+        lwparam:=twParam(MakeStructure(pWideChar(lwparam),Param,LastResult,code,len,ofs,restype))
       end
       else if (flags and ACF_WPARAM)<>0 then
       begin
@@ -316,7 +318,7 @@ begin
 
       if (flags and ACF_LSTRUCT)<>0 then
       begin
-        llparam:=MakeStructure(llparam,Param,LastResult,code,len,ofs,restype)
+        llparam:=tlParam(MakeStructure(pWideChar(llparam),Param,LastResult,code,len,ofs,restype))
       end
       else if (flags and ACF_LPARAM)<>0 then
       begin

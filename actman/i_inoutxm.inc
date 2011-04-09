@@ -58,6 +58,7 @@ const
   ioReturn       :PWideChar = 'return';
   ioLength       :PWideChar = 'length';
   ioFree         :PWideChar = 'free';
+  ioPacked       :PWideChar = 'packed';
   
   // Values
   ioNumber       :PWideChar = 'number';
@@ -114,6 +115,11 @@ begin
   result:=int_ptr(tmp);
   with xmlparser do
   begin
+    typ:=getAttrValue(act,ioPacked);
+    if (typ<>nil) and (typ^<>#0) and (typ^<>'0') then
+    begin
+      tmp^:=char_packed; inc(tmp);
+    end;
     child:=0;
     repeat
       sub:=getNextChild(act,ioItem,@child);
@@ -138,7 +144,9 @@ begin
         SST_LAST, SST_PARAM: ;
         SST_BYTE,
         SST_WORD,
-        SST_DWORD: begin
+        SST_DWORD,
+        SST_QWORD,
+        SST_NATIVE: begin
           tmp:=StrCopyEW(tmp,getAttrValue(sub,ioValue));
         end;
         SST_BARR, SST_WARR,
@@ -633,6 +641,11 @@ begin
   lsrc:=pWideChar(struct);
   with xmlparser do
   begin
+    if lsrc^=char_packed then
+    begin
+      AddAttrInt(node,ioPacked,1);
+      inc(lsrc);
+    end;
     while lsrc^<>#0 do
     begin
       sub:=AddChild(node,ioItem,nil);
@@ -666,7 +679,7 @@ begin
 
       case typ of
         SST_LAST,SST_PARAM: ;
-        SST_BYTE,SST_WORD,SST_DWORD: begin
+        SST_BYTE,SST_WORD,SST_DWORD,SST_QWORD,SST_NATIVE: begin
           AddAttr(sub,ioValue,value);
         end;
         SST_BARR,SST_WARR,SST_BPTR,SST_WPTR: begin

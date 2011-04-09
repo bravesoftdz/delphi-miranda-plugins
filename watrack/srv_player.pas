@@ -1075,7 +1075,7 @@ begin
     begin
       f:=Reset(fname);
 
-      if dword(f)<>INVALID_HANDLE_VALUE then
+      if f<>THANDLE(INVALID_HANDLE_VALUE) then
       begin
         GetFileTime(f,nil,nil,@ftime);
         CloseHandle(f);

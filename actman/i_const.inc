@@ -40,6 +40,7 @@ const
   IDC_DATA_DOWN     = 2011;
   IDC_DATA_CHANGE   = 2012;
   IDC_DATA_VARS     = 2013;
+  IDC_DATA_PACKED   = 2014;
   
   // Action page
 //  IDC_RESET         = 2001;

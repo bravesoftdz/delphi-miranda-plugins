@@ -212,10 +212,8 @@ const
   PROTOTYPE_TRANSLATION = 4000;
   PROTOTYPE_OTHER       = 10000; // avoid using this if at all possible
   PROTOTYPE_DISPROTO    = 20000;
-{
-  MS_PROTO_ENUMPROTOS  :PAnsiChar = 'Proto/EnumProtos';   // MIRANDA_VER >= $800
-  MS_PROTO_ENUMACCOUNTS:PAnsiChar = 'Proto/EnumAccounts'; // MIRANDA_VER >= $800
-}
+
+  MS_PROTO_ENUMPROTOS   :PAnsiChar = 'Proto/EnumProtos';   // MIRANDA_VER >= $800
   MS_PROTO_ENUMPROTOCOLS:PAnsiChar = 'Proto/EnumProtocols';// MIRANDA_VER < $800
 
 { determines if a protocol module is loaded or not

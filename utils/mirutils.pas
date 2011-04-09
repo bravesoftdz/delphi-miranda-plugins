@@ -38,8 +38,8 @@ function  WndToContact:integer; overload;
 function  GetContactStatus(hContact:THANDLE):integer;
 // -2 - deleted account, -1 - disabled account, 0 - hidden
 // 1 - metacontact, 2 - submetacontact, positive - active
-function  IsContactActive(hContact:THANDLE;var proto:pAnsiChar):integer; overload;
-function  IsContactActive(hContact:THANDLE):integer; overload;
+// proto - ASSIGNED buffer
+function  IsContactActive(hContact:THANDLE;proto:pAnsiChar=nil):integer;
 
 function CreateGroupW(name:pWideChar;hContact:THANDLE):integer;
 function CreateGroup (name:pAnsiChar;hContact:THANDLE):integer;
@@ -681,7 +681,7 @@ begin
   end;
 end;
 
-function IsContactActive(hContact:THANDLE;var proto:pAnsiChar):integer; overload;
+function IsContactActive(hContact:THANDLE;proto:pAnsiChar=nil):integer;
 var
   p:PPROTOACCOUNT;
   dbv  :TDBVARIANT;
@@ -727,23 +727,16 @@ begin
          result:=1;
       end;
     end;
-    if @proto<>nil then
-      StrDup(proto,dbv.szVal.a);
+    if proto<>nil then
+      StrCopy(proto,dbv.szVal.a);
   end
   else
   begin
     result:=-2;
-    if @proto<>nil then
-      proto:=nil;
+    if proto<>nil then
+      proto^:=#0;
   end;
  
-end;
-
-function IsContactActive(hContact:THANDLE):integer; overload;
-type
-  ppAnsiChar = ^pAnsiChar;
-begin
-  result:=IsContactActive(hContact,ppAnsiChar(nil)^);
 end;
 
 // Import plugin function adaptation
