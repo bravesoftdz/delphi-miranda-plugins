@@ -9,8 +9,8 @@ function FindProto(proto:PAnsiChar):uint_ptr;
 function GetStatusNum(status:integer):integer;
 function GetNumProto:cardinal;
 
-function  GetProtoSetting(ProtoNum:uint_ptr;param:boolean=false):dword;
-procedure SetProtoSetting(ProtoNum:uint_ptr;mask:dword;param:boolean=false);
+function  GetProtoSetting(ProtoNum:uint_ptr;param:boolean=false):LPARAM;
+procedure SetProtoSetting(ProtoNum:uint_ptr;mask:LPARAM;param:boolean=false);
 
 function IsTunesSupported  (ProtoNum:uint_ptr):bool;
 function IsXStatusSupported(ProtoNum:uint_ptr):bool;
@@ -25,7 +25,7 @@ procedure CheckProtoList (list:hwnd);
 procedure FillStatusList (proto:cardinal;list:hwnd;withIcons:bool=false);
 procedure CheckStatusList(list:hwnd;ProtoNum:cardinal);
 
-function  CreateProtoList:integer;
+function  CreateProtoList(deepscan:boolean=false):integer;
 procedure FreeProtoList;
 
 function SetStatus(proto:PAnsiChar;status:integer;txt:PAnsiChar=pointer(-1)):integer;
@@ -45,9 +45,11 @@ const
   psf_onthephone = $0100;
   psf_enabled    = $0800;
   psf_all        = $08FF;
+  // protocol properties
   psf_chat       = $1000;
   psf_icq        = $2000;
   psf_tunes      = $4000;
+  psf_deleted    = $8000;
 
 implementation
 
@@ -81,7 +83,7 @@ type
 //    xstat   :integer; // old ICQ XStatus
     enabled :integer;
     status  :integer; // mask
-    param   :dword;
+    param   :LPARAM;
   end;
   pMyProtos = ^tMyProtos;
   tMyProtos = array [0..100] of tMyProto;
@@ -138,7 +140,7 @@ begin
     result:=false;
 end;
 
-function GetProtoSetting(ProtoNum:uint_ptr;param:boolean=false):dword;
+function GetProtoSetting(ProtoNum:uint_ptr;param:boolean=false):LPARAM;
 begin
   ProtoNum:=FindProto(PAnsiChar(ProtoNum));
   if ProtoNum<=NumProto then
@@ -152,7 +154,7 @@ begin
     result:=0;
 end;
 
-procedure SetProtoSetting(ProtoNum:uint_ptr;mask:dword;param:boolean=false);
+procedure SetProtoSetting(ProtoNum:uint_ptr;mask:LPARAM;param:boolean=false);
 begin
   ProtoNum:=FindProto(PAnsiChar(ProtoNum));
   if ProtoNum<=NumProto then
@@ -372,13 +374,14 @@ begin
   end;
 end;
 
-function CreateProtoList:integer;
+function CreateProtoList(deepscan:boolean=false):integer;
 var
   protoCount,i:integer;
   proto:^PPROTOCOLDESCRIPTOR;
   buf:array [0..127] of AnsiChar;
   flag:integer;
   p:pAnsichar;
+//  hContract:THANDLE;
 begin
   CallService(MS_PROTO_ENUMPROTOCOLS,wparam(@protoCount),lparam(@proto));
   mGetMem(protos,(protoCount+1)*SizeOf(tMyProto)); // 0 - default
@@ -391,7 +394,8 @@ begin
   end;
   for i:=1 to protoCount do
   begin
-    if proto^^._type=PROTOTYPE_PROTOCOL then
+    // active and switched off (but not deleted)
+    if (proto^^._type and PROTOTYPE_PROTOCOL)<>0 then
     begin
       inc(NumProto);
       with protos^[NumProto] do
@@ -436,7 +440,24 @@ begin
     NASPresents:=true
   else
     NASPresents:=false;
+{
+  if deepscan then
+  begin
+    hContact:=PluginLink^.CallService(MS_DB_CONTACT_FINDFIRST,0,0);
+    while hContact<>0 do
+    begin
+      i:=NumProto;
+      while i>0 do
+      begin
+        if StrCmp()=0 then
+          break;
+        dec(i);
+      end;
 
+      hContact:=PluginLink^.CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
+    end;
+  end;
+}
   result:=NumProto;
 end;
 

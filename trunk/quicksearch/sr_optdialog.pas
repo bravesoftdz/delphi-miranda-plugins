@@ -926,12 +926,13 @@ begin
       end;
 
       if not InitDlg then
-        if ((wparam shr 16)=CBN_SELCHANGE) or
-           ((wparam shr 16)=BN_CLICKED) or
-           ((wparam shr 16)=EN_CHANGE) then
-        begin
-          SendMessage(GetParent(dialog),PSM_CHANGED,0,0);
-          enable_elem(dialog,IDC_SETITEM);
+        case wparam shr 16 of
+          CBN_SELCHANGE,
+          BN_CLICKED,
+          EN_CHANGE: begin
+            SendMessage(GetParent(dialog),PSM_CHANGED,0,0);
+            enable_elem(dialog,IDC_SETITEM);
+          end;
         end;
 
       listhwnd:=GetDlgItem(dialog,IDC_LIST);

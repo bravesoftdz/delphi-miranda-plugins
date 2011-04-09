@@ -315,8 +315,10 @@ begin
   else
     pcw:=buf;
 // name
-//!!  IntToHex(pcw,GetCurrentTime);
+//!!  
   pcw:=StrCopyEW(pcw,CurDescrW);
+  if (pcw=buf) or ((pcw-1)^='\') then
+    pcw:=StrEnd(IntToHex(pcw,GetCurrentTime));
 // ext
   pcw^:='.'; inc(pcw);
   GetFileExt(pcw,sign);

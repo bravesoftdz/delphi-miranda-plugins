@@ -91,7 +91,8 @@ begin
       end;
 
       if (UseListeningTo<>BST_UNCHECKED) and
-         (ProtoServiceExists(proto,PS_SET_LISTENINGTO)<>0) then
+         ((mask and psf_tunes)<>0) then
+//         (ProtoServiceExists(proto,PS_SET_LISTENINGTO)<>0) then
       begin
         if lParam<>WAT_PLS_NORMAL then
 //        if (wParam=WAT_EVENT_PLAYERSTATUS) and

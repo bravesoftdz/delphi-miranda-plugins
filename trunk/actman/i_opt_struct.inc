@@ -5,6 +5,7 @@
 const
   char_return = '*';
   char_script = '%';
+  char_packed = '!';
 type
   TStructType = record
     typ  :dword;
@@ -12,23 +13,27 @@ type
     full :PAnsiChar;
   end;
 const
-  MaxStructTypes = 9;
+  MaxStructTypes = 11;
 const
   StructElems: array [0..MaxStructTypes-1] of TStructType = (
-    (typ:SST_BYTE ; short:'byte' ; full:'Byte'),
-    (typ:SST_WORD ; short:'word' ; full:'Word'),
-    (typ:SST_DWORD; short:'dword'; full:'DWord'),
-    (typ:SST_BARR ; short:'b.arr'; full:'Byte Array'),
-    (typ:SST_WARR ; short:'w.arr'; full:'Word Array'),
-    (typ:SST_BPTR ; short:'b.ptr'; full:'Pointer to bytes'),
-    (typ:SST_WPTR ; short:'w.ptr'; full:'Pointer to words'),
-    (typ:SST_LAST ; short:'last' ; full:'Last result'),
-    (typ:SST_PARAM; short:'param'; full:'Parameter'));
+    (typ:SST_BYTE  ; short:'byte'  ; full:'Byte'),
+    (typ:SST_WORD  ; short:'word'  ; full:'Word'),
+    (typ:SST_DWORD ; short:'dword' ; full:'DWord'),
+    (typ:SST_QWORD ; short:'qword' ; full:'QWord'),
+    (typ:SST_NATIVE; short:'native'; full:'NativeInt'),
+    (typ:SST_BARR  ; short:'b.arr' ; full:'Byte Array'),
+    (typ:SST_WARR  ; short:'w.arr' ; full:'Word Array'),
+    (typ:SST_BPTR  ; short:'b.ptr' ; full:'Pointer to bytes'),
+    (typ:SST_WPTR  ; short:'w.ptr' ; full:'Pointer to words'),
+    (typ:SST_LAST  ; short:'last'  ; full:'Last result'),
+    (typ:SST_PARAM ; short:'param' ; full:'Parameter'));
 
 const
   STE_BYTE    = $01;
   STE_WORD    = $00;
   STE_DWORD   = $02;
+  STE_QWORD   = $04;
+
   STE_POINTER = $00;
   STE_ARRAY   = $04;
   STE_LAST    = $08;
@@ -42,6 +47,13 @@ const
   col_data =3;
 var
   OldLVProc:pointer;
+
+function AdjustSize(summ:int_ptr;len:integer;spacked:boolean):integer;
+begin
+  result:=summ+len;
+  if not spacked then
+    result:=((result+SizeOf(LPARAM)) div SizeOf(LPARAM))*SizeOf(LPARAM);
+end;
 
 function GetOneElement(txt:pWideChar;var len:integer;var value:pWideChar):integer;
 var
@@ -65,9 +77,11 @@ begin
   result:=StructElems[i].typ;
   case result of
     SST_LAST,SST_PARAM: ;
-    SST_BYTE,SST_WORD,SST_DWORD: begin
+
+    SST_BYTE,SST_WORD,SST_DWORD,SST_QWORD,SST_NATIVE: begin
       value:=pc+1;
     end;
+
     SST_BARR,SST_WARR,SST_BPTR,SST_WPTR: begin
       len:=StrToInt(pc+1);
       txt:=pc+1;
@@ -80,12 +94,14 @@ begin
   end;
 
   case result of
-    SST_LAST,SST_PARAM: len:=4;
-    SST_BYTE : len:=1;
-    SST_WORD : len:=2;
-    SST_DWORD: len:=4;
+    SST_LAST,SST_PARAM: len:=SizeOf(LPARAM);
+    SST_BYTE  : len:=1;
+    SST_WORD  : len:=2;
+    SST_DWORD : len:=4;
+    SST_QWORD : len:=8;
+    SST_NATIVE: len:=SizeOf(LPARAM); // SizeOf(NativeInt)
 //    SST_BARR : len:=len;
-    SST_WARR : len:=len;
+    SST_WARR  : len:=len; //??
 //    SST_BPTR,SST_WPTR: len:=4;
   end;
 end;
@@ -153,20 +169,30 @@ begin
   end;
 end;
 
-function MakeStructure(txt:uint_ptr;aparam,alast:uint_ptr;
-         var code,alen:integer;var ofs:int_ptr; restype:integer=rtInt):int_ptr;
+function MakeStructure(txt:pWideChar;aparam,alast:LPARAM;
+         var code,alen:integer;var ofs:int_ptr; restype:integer=rtInt):pointer;
 var
   i,summ,len:integer;
   value,lsrc:pWideChar;
-  res:int_ptr;
+  res:pByte;
   ppc,p,pc:pWideChar;
   buf:array [0..31] of WideChar;
   pLast: pWideChar;
+  spacked:boolean;
 begin
+  result:=nil;
+  if (txt=nil) or (txt^=#0) then
+    exit;
+
   mGetMem(pc,4096);
   ppc:=pc;
   summ:=0;
-  lsrc:=pWideChar(txt);
+
+  lsrc:=txt;
+
+  spacked:=lsrc^=char_packed;
+  if spacked then inc(lsrc);
+
   if restype=rtInt then
     pLast:=IntToStr(buf,alast)
   else
@@ -184,8 +210,8 @@ begin
       ofs :=summ;
     end;
     if (i=SST_BPTR) or (i=SST_WPTR) then
-      len:=4;
-    inc(summ,len);
+      len:=SizeOf(pointer);
+    AdjustSize(summ,len,spacked);
     if p=nil then break;
     lsrc:=p+1;
   end;
@@ -193,7 +219,11 @@ begin
   FillChar(PAnsiChar(result)^,summ,0);
   res:=result;
 
-  lsrc:=pWideChar(txt);
+  lsrc:=txt;
+
+  spacked:=lsrc^=char_packed;
+  if spacked then inc(lsrc);
+
   while lsrc^<>#0 do
   begin
     p:=StrScanW(lsrc,'|');
@@ -208,10 +238,10 @@ begin
 
     case i of
       SST_LAST: begin
-        pDWord(res)^:=alast;
+        pint_ptr(res)^:=alast;
       end;
       SST_PARAM: begin
-        pDWord(res)^:=aparam;
+        pint_ptr(res)^:=aparam;
       end;
       SST_BYTE: begin
         pByte(res)^:=StrToInt(value);
@@ -222,6 +252,12 @@ begin
       SST_DWORD: begin
         pDWord(res)^:=StrToInt(value);
       end;
+      SST_QWORD: begin
+        pint64(res)^:=StrToInt(value);
+      end;
+      SST_NATIVE: begin
+        pint_ptr(res)^:=StrToInt(value);
+      end;
       SST_BARR: begin
         TranslateBlob(pByte(res),value,true);
       end;
@@ -230,34 +266,34 @@ begin
       end;
       SST_BPTR: begin
         if len=0 then
-          pDWord(res)^:=0
+          pint_ptr(res)^:=0
         else
         begin
           mGetMem (lsrc ,len+1);
           FillChar(lsrc^,len+1,0);
           TranslateBlob(pByte(lsrc),value,true);
-          pDWord(res)^:=uint_ptr(lsrc);
+          pint_ptr(res)^:=uint_ptr(lsrc);
         end;
-        len:=4;
+        len:=SizeOf(pointer);
       end;
       SST_WPTR: begin
         if len=0 then
-          pDWord(res)^:=0
+          pint_ptr(res)^:=0
         else
         begin
           mGetMem (lsrc ,len+2);
           FillChar(lsrc^,len+2,0);
           TranslateBlob(pByte(lsrc),value,false);
-          pdword(res)^:=uint_ptr(lsrc);
+          pint_ptr(res)^:=uint_ptr(lsrc);
         end;
-        len:=4;
+        len:=SizeOf(pointer);
       end;
     end;
     if pc^=char_script then
     begin
       mFreeMem(value);
     end;
-    inc(res,len);
+    AdjustSize(int_ptr(res),len,spacked);
 
     if p=nil then break;
     lsrc:=p+1;
@@ -270,10 +306,18 @@ var
   summ,len:integer;
   value,lsrc:pWideChar;
   p,pc:pWideChar;
+  spacked:boolean;
 begin
+  if (descr=nil) or (descr^=#0) then
+    exit;
+
   mGetMem(pc,4096);
 
   lsrc:=pWideChar(descr);
+
+  spacked:=lsrc^=char_packed;
+  if spacked then inc(lsrc);
+
   summ:=0;
   while lsrc^<>#0 do
   begin
@@ -281,11 +325,12 @@ begin
     StrCopyW(pc,lsrc,p-lsrc);
     case GetOneElement(pc,len,value) of
       SST_BPTR,SST_WPTR: begin
-        value:=pWideChar(pAnsiChar(struct)+summ);
+        value:=pWideChar(pint_ptr(pAnsiChar(struct)+summ)^);
         mFreeMem(value);
+        len:=SizeOf(pointer);
       end;
     end;
-    inc(summ,len);
+    AdjustSize(summ,len,spacked);
 
     if p=nil then break;
     lsrc:=p+1;
@@ -586,7 +631,7 @@ begin
   dst:=StrEndW(dst);
 end;
 
-function SaveStructure(list:HWND):pWideChar;
+function SaveStructure(list:HWND;spacked:boolean):pWideChar;
 var
   p:PWideChar;
   i:integer;
@@ -594,6 +639,11 @@ begin
   mGetMem(p,32768);
   result:=p;
   FillChar(p^,32768,0);
+  if spacked then
+  begin
+    result^:=char_packed;
+    inc(result);
+  end;
   for i:=0 to SendMessage(list,LVM_GETITEMCOUNT,0,0)-1 do
   begin
     GetLVRow(result,list,i);
@@ -619,6 +669,7 @@ begin
     IDC_DATA_DOWN:   result:=RD_ANCHORX_LEFT  or RD_ANCHORY_TOP;
     IDC_DATA_DELETE: result:=RD_ANCHORX_LEFT  or RD_ANCHORY_TOP;
     IDC_DATA_CHANGE: result:=RD_ANCHORX_LEFT  or RD_ANCHORY_TOP;
+    IDC_DATA_PACKED: result:=RD_ANCHORX_LEFT  or RD_ANCHORY_TOP;
     IDOK:            result:=RD_ANCHORX_LEFT  or RD_ANCHORY_TOP;
     IDCANCEL:        result:=RD_ANCHORX_LEFT  or RD_ANCHORY_TOP;
     IDC_DATA_HELP:   result:=RD_ANCHORX_WIDTH or RD_ANCHORY_TOP;
@@ -783,7 +834,14 @@ begin
       SetDataButtonIcons(Dialog);
       FillDataTypeList(GetDlgItem(Dialog,IDC_DATA_TYPE));
       if lParam<>0 then
+      begin
+        if pWideChar(lParam)^=char_packed then
+        begin
+          CheckDlgButton(Dialog,IDC_DATA_PACKED,BST_CHECKED);
+          inc(pWideChar(lParam));
+        end;
         FillLVStruct(wnd,pWideChar(lParam)) // fill lv with current structure
+      end
       else
         SendMessage(Dialog,WM_COMMAND,(CBN_SELCHANGE shl 16)+IDC_DATA_TYPE,
             GetDlgItem(Dialog,IDC_DATA_TYPE));
@@ -920,7 +978,10 @@ begin
             end;
 
             IDOK: begin // save result
-              EndDialog(Dialog,int_ptr(SaveStructure(GetDlgItem(Dialog,IDC_DATA_FULL))));
+              EndDialog(Dialog,int_ptr(
+                  SaveStructure(GetDlgItem(Dialog,IDC_DATA_FULL),
+                  IsDlgButtonChecked(Dialog,IDC_DATA_PACKED)<>BST_UNCHECKED
+                  )));
             end;
             IDCANCEL: begin // clear result / restore old value
               EndDialog(Dialog,0);
