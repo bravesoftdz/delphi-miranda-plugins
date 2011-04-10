@@ -52,7 +52,7 @@ function AdjustSize(var summ:int_ptr;len:integer;spacked:boolean):integer;
 begin
   result:=summ+len;
   if not spacked then
-    result:=((result+SizeOf(LPARAM)) div SizeOf(LPARAM))*SizeOf(LPARAM);
+    result:=((result+SizeOf(LPARAM)-1) div SizeOf(LPARAM))*SizeOf(LPARAM);
   summ:=result;
 end;
 
