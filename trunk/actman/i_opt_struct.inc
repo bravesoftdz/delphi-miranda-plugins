@@ -48,11 +48,12 @@ const
 var
   OldLVProc:pointer;
 
-function AdjustSize(summ:int_ptr;len:integer;spacked:boolean):integer;
+function AdjustSize(var summ:int_ptr;len:integer;spacked:boolean):integer;
 begin
   result:=summ+len;
   if not spacked then
     result:=((result+SizeOf(LPARAM)) div SizeOf(LPARAM))*SizeOf(LPARAM);
+  summ:=result;
 end;
 
 function GetOneElement(txt:pWideChar;var len:integer;var value:pWideChar):integer;
