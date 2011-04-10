@@ -2,7 +2,7 @@
 
 LANGUAGE 0,0
 
-IDD_STRUCTURE DIALOGEX 0, 0, 332,170, 0
+IDD_STRUCTURE DIALOGEX 0, 0, 332,184, 0
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_VISIBLE | WS_THICKFRAME
 CAPTION "Structure Editor"
 //EXSTYLE  WS_EX_CONTROLPARENT
@@ -12,7 +12,7 @@ FONT 8, "MS Shell Dlg", 0, 0
                     WS_BORDER | WS_TABSTOP |
                     LVS_NOCOLUMNHEADER | LVS_SHOWSELALWAYS |
                     LVS_SINGLESEL | LVS_REPORT,
-                    2,  2, 160, 166, WS_EX_CONTROLPARENT
+                    2,  2, 160, 180, WS_EX_CONTROLPARENT
 
   CONTROL "New"   ,IDC_DATA_NEW   ,"MButtonClass",WS_TABSTOP,166, 2,16,16,$18000000// | WS_GROUP
   CONTROL "Up"    ,IDC_DATA_UP    ,"MButtonClass",WS_TABSTOP,166,22,16,16,$18000000
@@ -36,7 +36,7 @@ FONT 8, "MS Shell Dlg", 0, 0
         "$## replaces by byte with hex value ##\n"\
         "$#### replaces by word with hex value #### (for Unicode strings only)\n\n"\
         "All data length calculating in bytes",
-        IDC_DATA_HELP,166,94,162,74
+        IDC_DATA_HELP,166,94,162,88
 
 }
 

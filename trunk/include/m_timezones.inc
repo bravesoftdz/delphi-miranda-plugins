@@ -31,6 +31,9 @@ const
   TZF_DIFONLY   = 4;
   TZF_KNOWNONLY = 8;
 
+const
+  LOCAL_TIME_HANDLE = 0;
+  UTC_TIME_HANDLE   = pointer(-1);
 
 type
   TIME_API = record

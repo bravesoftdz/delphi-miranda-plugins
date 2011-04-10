@@ -557,16 +557,17 @@ const
              see notes
     Returns: Always returns 0
     notes  : The string is formatted according to thhe current user's locale
-             language and preference --
+             language and preference.
 
-             .szFormat can have the following special chars :
-                t       time without seconds, e.g. hh:mm
-                s       time with seconds, e.g. hh:mm:ss
-                m       time without minutes e.g. hh
-                d       short date, e.g. dd/mm/yyyy
-                D       long date, e.g. d mmmm yyyy
+   szFormat can have the following special chars :
+      t  time without seconds, e.g. hh:mm
+      s  time with seconds, e.g. hh:mm:ss
+      m  time without minutes e.g. hh
+      d  short date, e.g. dd/mm/yyyy
+      D  long date, e.g. d mmmm yyyy
+      I  ISO 8061 Time yyyy-mm-ddThh:mm:ssZ
 
-             all other characters are copied as is.
+   all other characters are copied as is.
   }
 
 type
