@@ -2217,7 +2217,7 @@ end;
 
 function QSMainWndProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
-  tmp:uint_ptr;
+  tmp:LONG_PTR;
   tmph:THANDLE;
   w,h:uint_ptr;
   i:integer;
@@ -2325,13 +2325,13 @@ begin
         tmp:=tmp or LVS_EX_GRIDLINES;
       SendMessage(grid,LVM_SETEXTENDEDLISTVIEWSTYLE,0,tmp);
 
-      OldLVProc  :=pointer(SetWindowLongPtrW(grid,GWL_WNDPROC,tlparam(@NewLVProc)));
+      OldLVProc  :=pointer(SetWindowLongPtrW(grid,GWL_WNDPROC,LONG_PTR(@NewLVProc)));
       OldEditProc:=pointer(SetWindowLongPtrW(GetDlgItem(dialog,IDC_E_SEARCHTEXT),
-         GWL_WNDPROC,tlparam(@NewEditProc)));
+         GWL_WNDPROC,LONG_PTR(@NewEditProc)));
 
       oldproc:=pointer(SetWindowLongPtrW(
           SendMessage(grid,LVM_GETHEADER,0,0),
-          GWL_WNDPROC,tlparam(@NewLVHProc)));
+          GWL_WNDPROC,LONG_PTR(@NewLVHProc)));
 
       FillProtoCombo(GetDlgItem(Dialog,IDC_CB_PROTOCOLS));
 

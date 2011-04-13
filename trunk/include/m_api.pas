@@ -169,7 +169,7 @@ type
   TDestroyHookableEvent           = function(Handle: THandle): int; cdecl;
   TNotifyEventHooks               = function(Handle: THandle; wParam: WPARAM; lParam: LPARAM): int; cdecl;
   THookEvent                      = function(const AnsiChar: PAnsiChar; MIRANDAHOOK: TMIRANDAHOOK): THandle; cdecl;
-  THookEventMessage               = function(const AnsiChar: PAnsiChar; Wnd: THandle; wMsg: Integer): THandle; cdecl;
+  THookEventMessage               = function(const AnsiChar: PAnsiChar; Wnd: THandle; wMsg: uint): THandle; cdecl;
   TUnhookEvent                    = function(Handle: THandle): int; cdecl;
   TCreateServiceFunction          = function(const AnsiChar: PAnsiChar; MIRANDASERVICE: TMIRANDASERVICE): THandle; cdecl;
   TCreateTransientServiceFunction = function(const AnsiChar: PAnsiChar; MIRANDASERVICE: TMIRANDASERVICE): THandle; cdecl;

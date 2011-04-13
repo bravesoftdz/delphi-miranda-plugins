@@ -60,9 +60,9 @@ begin
   end
   else if bspwnd=0 then
   begin
-    bspwnd:=CreateWindowEx(0,'STATIC',nil,0,1,1,1,1,dword(HWND_MESSAGE),0,hInstance,nil);
+    bspwnd:=CreateWindowExW(0,'STATIC',nil,0,1,1,1,1,HWND_MESSAGE,0,hInstance,nil);
     if bspwnd<>0 then
-      setwindowlongPtr(bspwnd,GWL_WNDPROC,int_ptr(@HiddenWindProc));
+      setwindowlongPtrW(bspwnd,GWL_WNDPROC,LONG_PTR(@HiddenWindProc));
   end;
 end;
 

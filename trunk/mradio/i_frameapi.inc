@@ -76,8 +76,8 @@ begin
       SendMessage(hVolFrmCtrl,TBM_SETRANGE,0,MAKELONG(0,100));
       SendMessage(hVolFrmCtrl,TBM_SETPOS,1,gVolume);
 
-      OldSliderWndProc:=pointer(SetWindowLongPtrW(hVolFrmCtrl,GWL_WNDPROC,tlparam(@SliderWndProc)));
-      OldBtnWndProc   :=pointer(SetWindowLongPtrW(hVolFrmCtrl,GWL_WNDPROC,tlparam(@BtnWndProc)));
+      OldSliderWndProc:=pointer(SetWindowLongPtrW(hVolFrmCtrl,GWL_WNDPROC,LONG_PTR(@SliderWndProc)));
+      OldBtnWndProc   :=pointer(SetWindowLongPtrW(hVolFrmCtrl,GWL_WNDPROC,LONG_PTR(@BtnWndProc)));
     end;
 
     WM_SIZE: begin

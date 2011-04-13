@@ -348,7 +348,7 @@ begin
   if hiddenwindow=0 then
   begin
     wnd:=CreateWindowExA(0,'STATIC',nil,0,
-       1,1,1,1,dword(HWND_MESSAGE),0,hInstance,nil);
+       1,1,1,1,HWND_MESSAGE,0,hInstance,nil);
     if wnd<>0 then
     begin
       SetWindowLongPtrA(wnd,GWL_WNDPROC,LONG_PTR(@HiddenWindProc));

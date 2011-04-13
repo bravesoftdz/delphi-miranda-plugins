@@ -783,7 +783,7 @@ begin
 
       result:=1;
 
-      OldListProc:=pointer(SetWindowLongPtrW(listhwnd,GWL_WNDPROC,tlparam(@NewListProc)));
+      OldListProc:=pointer(SetWindowLongPtrW(listhwnd,GWL_WNDPROC,LONG_PTR(@NewListProc)));
 
       InitDlg:=false;
     end;

@@ -90,9 +90,9 @@ end;
 
 function Init:integer;cdecl;
 begin
-  hostwnd:=CreateWindowExW(0,'STATIC',nil,0,1,1,1,1,dword(HWND_MESSAGE),0,hInstance,nil);
+  hostwnd:=CreateWindowExW(0,'STATIC',nil,0,1,1,1,1,HWND_MESSAGE,0,hInstance,nil);
   if hostwnd<>0 then
-    SetWindowLongPtrW(hostwnd,GWL_WNDPROC,int_ptr(@HiddenWindProc));
+    SetWindowLongPtrW(hostwnd,GWL_WNDPROC,LONG_PTR(@HiddenWindProc));
 	result:=hostwnd;
 end;
 
