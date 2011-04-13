@@ -1346,9 +1346,9 @@ begin
       end;
       
       helpwindow:=0;
-      OldActTableProc  :=pointer(SetWindowLongPtr(wnd,GWL_WNDPROC,int_ptr(@NewActTableProc)));
-      OldGroupTableProc:=pointer(SetWindowLongPtr(GetDlgItem(Dialog,IDC_ACTION_GROUP),
-            GWL_WNDPROC,int_ptr(@NewGroupTableProc)));
+      OldActTableProc  :=pointer(SetWindowLongPtrW(wnd,GWL_WNDPROC,long_ptr(@NewActTableProc)));
+      OldGroupTableProc:=pointer(SetWindowLongPtrW(GetDlgItem(Dialog,IDC_ACTION_GROUP),
+            GWL_WNDPROC,long_ptr(@NewGroupTableProc)));
 
       // fill group list
       wnd:=GetDlgItem(Dialog,IDC_ACTION_GROUP);

@@ -149,9 +149,9 @@ begin
   result:=id;
 end;
 
-function HiddenWindProc(wnd:HWnd; msg,wParam,lParam:integer):integer; stdcall;
+function HiddenWindProc(wnd:HWnd; msg:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 begin
-  result:=DefWindowProcA(wnd,msg,wparam,lparam);
+  result:=DefWindowProcW(wnd,msg,wparam,lparam);
 end;
 
 function CreateHiddenWindow:HWND;
@@ -160,11 +160,11 @@ var
 begin
   if hiddenwindow=0 then
   begin
-    wnd:=CreateWindowExA(0,'STATIC',nil,0,
-       1,1,1,1,dword(HWND_MESSAGE),0,hInstance,nil);
+    wnd:=CreateWindowExW(0,'STATIC',nil,0,
+       1,1,1,1,HWND_MESSAGE,0,hInstance,nil);
     if wnd<>0 then
     begin
-      SetWindowLongPtrA(wnd,GWL_WNDPROC,int_ptr(@HiddenWindProc));
+      SetWindowLongPtrW(wnd,GWL_WNDPROC,LONG_PTR(@HiddenWindProc));
       hiddenwindow:=wnd;
     end
   end;

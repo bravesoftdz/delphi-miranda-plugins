@@ -274,7 +274,7 @@ begin
       SendMessage (wnd,LVM_SETEXTENDEDLISTVIEWSTYLE,0,
           LVS_EX_FULLROWSELECT or LVS_EX_CHECKBOXES or LVS_EX_GRIDLINES);
       SendMessage(wnd,LVM_SETUNICODEFORMAT,1,0);
-      OldTableProc:=pointer(SetWindowLongPtr(wnd,GWL_WNDPROC,LONG_PTR(@NewHKTableProc)));
+      OldTableProc:=pointer(SetWindowLongPtrW(wnd,GWL_WNDPROC,LONG_PTR(@NewHKTableProc)));
       TranslateDialogDefault(Dialog);
 
       SetIcons(Dialog);

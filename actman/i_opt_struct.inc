@@ -173,7 +173,8 @@ end;
 function MakeStructure(txt:pWideChar;aparam,alast:LPARAM;
          var code,alen:integer;var ofs:int_ptr; restype:integer=rtInt):pointer;
 var
-  i,summ,len:integer;
+  i,len:integer;
+  summ:int_ptr;
   value,lsrc:pWideChar;
   res:pByte;
   ppc,p,pc:pWideChar;
@@ -304,7 +305,8 @@ end;
 
 procedure FreeStructure(var struct;descr:pWideChar);
 var
-  summ,len:integer;
+  summ:int_ptr;
+  len:integer;
   value,lsrc:pWideChar;
   p,pc:pWideChar;
   spacked:boolean;
@@ -429,7 +431,7 @@ begin
 
   SendMessageW(list,LVM_SETCOLUMNWIDTH,col_data,LVSCW_AUTOSIZE_USEHEADER);
 
-  OldLVProc:=pointer(SetWindowLongPtr(list,GWL_WNDPROC,int_ptr(@NewLVProc)));
+  OldLVProc:=pointer(SetWindowLongPtrW(list,GWL_WNDPROC,long_ptr(@NewLVProc)));
   result:=list;
 end;
 

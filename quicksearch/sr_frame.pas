@@ -182,7 +182,7 @@ begin
 
     WM_INITDIALOG: begin
       OldEditProc:=pointer(SetWindowLongPtrW(GetDlgItem(dialog,IDC_FRAME_EDIT),
-         GWL_WNDPROC,tlparam(@NewEditProc)));
+         GWL_WNDPROC,LONG_PTR(@NewEditProc)));
 
       hwndTooltip:=CreateWindowW(TOOLTIPS_CLASS,nil,TTS_ALWAYSTIP,
           integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
