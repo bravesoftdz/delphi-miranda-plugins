@@ -192,15 +192,6 @@ end;
 {$include i_opt_struct.inc}
 {$include i_opt_dlg2.inc}
 
-procedure DoInitCommonControls(dwICC:DWORD);
-var
-  ICC: TInitCommonControlsEx;
-begin
-  ICC.dwSize:= Sizeof(ICC);
-  ICC.dwICC := dwICC;
-  InitCommonControlsEx(ICC);
-end;
-
 function OnOptInitialise(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
   odp:TOPTIONSDIALOGPAGE;

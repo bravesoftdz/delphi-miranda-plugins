@@ -503,7 +503,9 @@ begin
     end;
     case StructElems[i].typ of
       SST_LAST,SST_PARAM: ;
-      SST_BYTE,SST_WORD,SST_DWORD: begin
+
+      SST_BYTE,SST_WORD,SST_DWORD,
+      SST_QWORD,SST_NATIVE: begin
         if (pc<>txt) and (pc<>nil) then
         begin
           li.iSubItem:=col_data;
@@ -511,6 +513,7 @@ begin
           SendMessageW(list,LVM_SETITEMW,0,lparam(@li));
         end;
       end;
+
       SST_BARR,SST_WARR,SST_BPTR,SST_WPTR: begin
         txt:=pc+1;
         pc:=StrScanW(txt,' ');
@@ -597,7 +600,8 @@ begin
   case loword(li.lParam) of
     SST_LAST,SST_PARAM: exit;
 
-    SST_BYTE,SST_WORD,SST_DWORD: begin
+    SST_BYTE,SST_WORD,SST_DWORD,
+    SST_QWORD,SST_NATIVE: begin
       li.iSubItem  :=col_data;
       li.cchTextMax:=32;
       li.pszText   :=@buf;
@@ -731,10 +735,13 @@ begin
       b :=false;
       b1:=false;
     end;
-    SST_BYTE,SST_WORD,SST_DWORD: begin
+
+    SST_BYTE,SST_WORD,SST_DWORD,
+    SST_QWORD,SST_NATIVE: begin
       b :=true;
       b1:=false;
     end;
+
     SST_BARR,SST_WARR,SST_BPTR,SST_WPTR: begin
       b :=true;
       b1:=true;
@@ -901,10 +908,13 @@ begin
                   b :=false;
                   b1:=false;
                 end;
-                SST_BYTE,SST_WORD,SST_DWORD: begin
+
+                SST_BYTE,SST_WORD,SST_DWORD,
+                SST_QWORD,SST_NATIVE: begin
                   b :=true;
                   b1:=false;
                 end;
+
                 SST_BARR,SST_WARR,SST_BPTR,SST_WPTR: begin
                   b :=true;
                   b1:=true;
@@ -984,6 +994,7 @@ begin
                   IsDlgButtonChecked(Dialog,IDC_DATA_PACKED)<>BST_UNCHECKED
                   )));
             end;
+
             IDCANCEL: begin // clear result / restore old value
               EndDialog(Dialog,0);
             end;
