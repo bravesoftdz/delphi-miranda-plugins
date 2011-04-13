@@ -5,6 +5,8 @@ interface
 
 uses windows;
 
+function DoInitCommonControls(dwICC:DWORD):boolean;
+
 function GetScreenRect():TRect;
 procedure SnapToScreen(var rc:TRect;dx:integer=0;dy:integer=0{;
           minw:integer=240;minh:integer=100});
@@ -58,6 +60,17 @@ const
   SM_CXVIRTUALSCREEN = 78;
   SM_CYVIRTUALSCREEN = 79;
 {$ENDIF}
+
+function DoInitCommonControls(dwICC:DWORD):boolean;
+var
+  ICC: TInitCommonControlsEx;
+begin
+  if dwICC=0 then
+    dwICC:=ICC_STANDARD_CLASSES or ICC_WIN95_CLASSES;
+  ICC.dwSize:= Sizeof(ICC);
+  ICC.dwICC := dwICC;
+  result:=InitCommonControlsEx(ICC);
+end;
 
 function GetScreenRect():TRect;
 begin

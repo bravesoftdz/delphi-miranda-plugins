@@ -166,10 +166,10 @@ function IntToHex(dst:pWideChar;Value:dword  ;Digits:integer=0):pWideChar; overl
 function IntToHex(dst:PAnsiChar;Value:dword  ;Digits:integer=0):PAnsiChar; overload;
 function IntToStr(dst:pWideChar;Value:integer;Digits:integer=0):pWideChar; overload;
 function IntToStr(dst:PAnsiChar;Value:integer;Digits:integer=0):PAnsiChar; overload;
-function StrToInt(src:pWideChar):integer; overload;
-function StrToInt(src:PAnsiChar):integer; overload;
-function HexToInt(src:pWideChar;len:cardinal=$FFFF):integer; overload;
-function HexToInt(src:PAnsiChar;len:cardinal=$FFFF):integer; overload;
+function StrToInt(src:pWideChar):int64; overload;
+function StrToInt(src:PAnsiChar):int64; overload;
+function HexToInt(src:pWideChar;len:cardinal=$FFFF):int64; overload;
+function HexToInt(src:PAnsiChar;len:cardinal=$FFFF):int64; overload;
 
 // filename work
 function ChangeExt (src,ext:PAnsiChar):PAnsiChar;
@@ -1855,7 +1855,7 @@ begin
   result:=FastAnsiToWideBuf(IntToTime(buf,time),dst);
 end;
 
-function StrToInt(src:pWideChar):integer;
+function StrToInt(src:pWideChar):int64;
 var
   sign:boolean;
 begin
@@ -1876,7 +1876,7 @@ begin
   end;
 end;
 
-function StrToInt(src:PAnsiChar):integer;
+function StrToInt(src:PAnsiChar):int64;
 var
   sign:boolean;
 begin
@@ -1959,7 +1959,7 @@ begin
   result:=dst;
 end;
 
-function HexToInt(src:pWideChar;len:cardinal=$FFFF):integer;
+function HexToInt(src:pWideChar;len:cardinal=$FFFF):int64;
 begin
   result:=0;
   while (src^<>#0) and (len>0) do
@@ -1977,7 +1977,7 @@ begin
   end;
 end;
 
-function HexToInt(src:PAnsiChar;len:cardinal=$FFFF):integer;
+function HexToInt(src:PAnsiChar;len:cardinal=$FFFF):int64;
 begin
   result:=0;
   while (src^<>#0) and (len>0) do
