@@ -30,7 +30,7 @@ implementation
 
 uses m_api,windows,mirutils;
 
-{$include icons\waticons.inc}
+{$include waticons.inc}
 
 const
   ICOCtrlName = 'watrack_buttons.dll';

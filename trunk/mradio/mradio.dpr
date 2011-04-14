@@ -11,7 +11,6 @@ uses
 
 {$include mr_rc.inc}
 {$r mradio.res}
-{$r ver.res}
 
 {$include i_vars.inc}
 

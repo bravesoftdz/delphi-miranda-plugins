@@ -1,7 +1,7 @@
 {$IMAGEBASE $13100000}
 library quicksearch;
 
-{$R tmpl.res}
+{$R qs.res}
 
 uses
 //  FastMM4,
