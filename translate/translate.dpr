@@ -2,7 +2,7 @@
 //{$IFDEF WIN64}{$A8}{$ENDIF}
 library Translate;
 
-{$R frm.res}
+{$R translate.res}
 
 uses
   Windows, m_api, tr_frame;

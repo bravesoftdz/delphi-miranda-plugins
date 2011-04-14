@@ -1,7 +1,7 @@
 unit templates;
 {$include compilers.inc}
 interface
-{$Resource tmpl.res}
+{$Resource templates.res}
 implementation
 
 uses

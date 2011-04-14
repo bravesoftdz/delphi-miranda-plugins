@@ -2,7 +2,7 @@
 unit Status;
 {$include compilers.inc}
 interface
-{$Resource st_opt.res}
+{$Resource status.res}
 implementation
 
 uses

@@ -2494,7 +2494,7 @@ begin
 
       case wParam shr 16 of
         CBN_SELCHANGE: begin
-          AdvFilter:=(AdvFilter and not $FF) or CB_GetData(LParam);
+          AdvFilter:=(AdvFilter and not $FF) or cardinal(CB_GetData(LParam));
           AdvancedFilter;
         end;
 
