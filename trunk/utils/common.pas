@@ -471,7 +471,6 @@ begin
       SetClipboardData(CF_TEXT,fh)
     else
       SetClipboardData(CF_UNICODETEXT,fh);
-    GlobalFree(fh);
     CloseClipboard;
   end;
 end;
