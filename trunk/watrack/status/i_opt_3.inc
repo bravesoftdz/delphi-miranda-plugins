@@ -70,7 +70,9 @@ begin
       end;
 
       case wParam shr 16 of
-        EN_CHANGE,BN_CLICKED: SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
+        CBN_SELCHANGE,
+        EN_CHANGE,
+        BN_CLICKED: SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
       end;
       result:=1;
     end;

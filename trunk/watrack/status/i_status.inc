@@ -91,7 +91,7 @@ begin
       end;
 
       if (UseListeningTo<>BST_UNCHECKED) and
-         ((mask and psf_tunes)<>0) then
+         IsTunesSupported(j) then
 //         (ProtoServiceExists(proto,PS_SET_LISTENINGTO)<>0) then
       begin
         if lParam<>WAT_PLS_NORMAL then
