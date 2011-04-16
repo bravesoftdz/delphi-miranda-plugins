@@ -24,7 +24,7 @@ uses
 
 {$include res\i_const.inc}
 
-{$Resource watrack.res}
+{$Resource res\watrack.res}
 
 {$include i_vars.inc}
 
