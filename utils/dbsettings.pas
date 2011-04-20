@@ -7,8 +7,8 @@ function DBReadByte (hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;def
 function DBReadWord (hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;default:word =0):word;
 function DBReadDword(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;default:dword=0):dword;
 
-function DBReadSetting   (hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;dbv:PDBVARIANT):Integer;
-function DBReadSettingStr(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;dbv:PDBVARIANT):Integer;
+function DBReadSetting   (hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;dbv:PDBVARIANT):int_ptr;
+function DBReadSettingStr(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;dbv:PDBVARIANT):int_ptr;
 
 function DBReadStringLength(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar):integer;
 function DBReadString (hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;
@@ -21,20 +21,20 @@ function DBReadStruct (hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;
 function DBWriteStruct(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;
          ptr:pointer;size:dword):Integer;
 
-function DBWriteSetting(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;dbv:PDBVARIANT):Integer;
-function DBWriteByte (hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:Byte ):Integer;
-function DBWriteWord (hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:Word ):Integer;
-function DBWriteDWord(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:dword):Integer;
+function DBWriteSetting(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;dbv:PDBVARIANT):int_ptr;
+function DBWriteByte (hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:Byte ):int_ptr;
+function DBWriteWord (hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:Word ):int_ptr;
+function DBWriteDWord(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:dword):int_ptr;
 
 function DBWriteString (hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;
-         val:PAnsiChar;enc:integer=DBVT_ASCIIZ):Integer;
-function DBWriteUTF8   (hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:PAnsiChar):Integer;
-function DBWriteUnicode(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:PWideChar):Integer;
+         val:PAnsiChar;enc:integer=DBVT_ASCIIZ):int_ptr;
+function DBWriteUTF8   (hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:PAnsiChar):int_ptr;
+function DBWriteUnicode(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:PWideChar):int_ptr;
 
-function DBFreeVariant(dbv:PDBVARIANT):integer;
-function DBDeleteSetting(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar):Integer;
+function DBFreeVariant(dbv:PDBVARIANT):int_ptr;
+function DBDeleteSetting(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar):int_ptr;
 
-function DBDeleteGroup(hContact:THANDLE;szModule:PAnsiChar):integer;
+function DBDeleteGroup(hContact:THANDLE;szModule:PAnsiChar):int_ptr;
 
 function DBDeleteModule(szModule:PAnsiChar):integer; // 0.8.0+
 
@@ -86,7 +86,7 @@ begin
     Result:=dbv.dVal;
 end;
 
-function DBReadSetting(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;dbv:PDBVARIANT):Integer;
+function DBReadSetting(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;dbv:PDBVARIANT):int_ptr;
 var
   cgs:TDBCONTACTGETSETTING;
 begin
@@ -96,7 +96,7 @@ begin
   Result:=PluginLink^.CallService(MS_DB_CONTACT_GETSETTING,hContact,lParam(@cgs));
 end;
 
-function DBReadSettingStr(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;dbv:PDBVARIANT):Integer;
+function DBReadSettingStr(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;dbv:PDBVARIANT):int_ptr;
 var
   cgs:TDBCONTACTGETSETTING;
 begin
@@ -110,7 +110,7 @@ function DBReadStringLength(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiC
 var
   cgs:TDBCONTACTGETSETTING;
   dbv:TDBVARIANT;
-  i:integer;
+  i:int_ptr;
 begin
   FillChar(dbv,SizeOf(dbv),0);
   cgs.szModule :=szModule;
@@ -130,7 +130,7 @@ function DBReadString(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;
 var
   cgs:TDBCONTACTGETSETTING;
   dbv:TDBVARIANT;
-  i:integer;
+  i:int_ptr;
 begin
   FillChar(dbv,SizeOf(dbv),0);
   cgs.szModule :=szModule;
@@ -159,7 +159,7 @@ function DBReadUnicode(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;d
 var
   cgs:TDBCONTACTGETSETTING;
   dbv:TDBVARIANT;
-  i:integer;
+  i:int_ptr;
 begin
   FillChar(dbv,SizeOf(dbv),0);
   cgs.szModule :=szModule;
@@ -211,7 +211,7 @@ begin
   result:=PluginLink^.CallService(MS_DB_CONTACT_WRITESETTING,0,lParam(@cws));
 end;
 
-function DBWriteSetting(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;dbv:PDBVARIANT):Integer;
+function DBWriteSetting(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;dbv:PDBVARIANT):int_ptr;
 var
   cws: TDBCONTACTWRITESETTING;
 begin
@@ -221,7 +221,7 @@ begin
   Result := PluginLink^.CallService(MS_DB_CONTACT_WRITESETTING, hContact, lParam(@cws));
 end;
 
-function DBWriteByte(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:Byte):Integer;
+function DBWriteByte(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:Byte):int_ptr;
 var
   cws:TDBCONTACTWRITESETTING;
 begin
@@ -232,7 +232,7 @@ begin
   Result:=PluginLink^.CallService(MS_DB_CONTACT_WRITESETTING,hContact,lParam(@cws));
 end;
 
-function DBWriteWord(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:Word):Integer;
+function DBWriteWord(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:Word):int_ptr;
 var
   cws:TDBCONTACTWRITESETTING;
 begin
@@ -243,7 +243,7 @@ begin
   Result:=PluginLink^.CallService(MS_DB_CONTACT_WRITESETTING,hContact,lParam(@cws));
 end;
 
-function DBWriteDWord(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:dword):Integer;
+function DBWriteDWord(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:dword):int_ptr;
 var
   cws:TDBCONTACTWRITESETTING;
 begin
@@ -255,7 +255,7 @@ begin
 end;
 
 function DBWriteString(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;
-         val:PAnsiChar;enc:integer=DBVT_ASCIIZ):Integer;
+         val:PAnsiChar;enc:integer=DBVT_ASCIIZ):int_ptr;
 var
   cws:TDBCONTACTWRITESETTING;
 begin
@@ -268,12 +268,12 @@ begin
   Result:=PluginLink^.CallService(MS_DB_CONTACT_WRITESETTING,hContact,lParam(@cws));
 end;
 
-function DBWriteUTF8(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:PAnsiChar):Integer;
+function DBWriteUTF8(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:PAnsiChar):int_ptr;
 begin
   result:=DBWriteString(hContact,szModule,szSetting,val,DBVT_UTF8);
 end;
 
-function DBWriteUnicode(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:PWideChar):Integer;
+function DBWriteUnicode(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:PWideChar):int_ptr;
 begin
   result:=DBWriteString(hContact,szModule,szSetting,PAnsiChar(val),DBVT_WCHAR);
 {
@@ -288,12 +288,12 @@ begin
 }
 end;
 
-function DBFreeVariant(dbv:PDBVARIANT):integer;
+function DBFreeVariant(dbv:PDBVARIANT):int_ptr;
 begin
   Result:=PluginLink^.CallService(MS_DB_CONTACT_FREEVARIANT,0,lParam(dbv));
 end;
 
-function DBDeleteSetting(hContact:THandle;szModule:PAnsiChar;szSetting:PAnsiChar):Integer;
+function DBDeleteSetting(hContact:THandle;szModule:PAnsiChar;szSetting:PAnsiChar):int_ptr;
 var
   cgs:TDBCONTACTGETSETTING;
 begin
@@ -366,7 +366,7 @@ begin
   result:=0;
 end;
 //  hContact = 0
-function DBDeleteGroup(hContact:THANDLE;szModule:PAnsiChar):integer;
+function DBDeleteGroup(hContact:THANDLE;szModule:PAnsiChar):int_ptr;
 var
   ces:TDBCONTACTENUMSETTINGS;
   cgs:TDBCONTACTGETSETTING;

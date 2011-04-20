@@ -5,5 +5,5 @@ if /i '%1' == 'fpc' (
 ) else if /i '%1' == 'fpc64' (
   ..\FPC\bin64\ppcrossx64.exe mradio.dpr %2 %3 %4 %5 %6 %7 %8 %9
 ) else (
-  ..\delphi\dcc32 mradio.dpr %2 %3 %4 %5 %6 %7 %8 %9
+  ..\delphi\dcc32 mradio.dpr %1 %2 %3 %4 %5 %6 %7 %8 %9
 )
