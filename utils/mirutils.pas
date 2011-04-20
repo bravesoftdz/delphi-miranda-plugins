@@ -672,11 +672,12 @@ begin
               end;
             end;
           end;
-          if result<>0 then break;
         end;
         DBFreeVariant(@ldbv);
       end;
     end;
+    // added 2011.04.20
+    if result<>0 then break;
     hContact:=CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
   end;
 end;
