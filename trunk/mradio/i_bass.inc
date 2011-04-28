@@ -171,13 +171,13 @@ begin
     end;
     if syncOGG<>0 then
     begin
-      BASS_ChannelRemoveSync(chan,syncWMA);
-      syncWMA:=0
+      BASS_ChannelRemoveSync(chan,syncOGG);
+      syncOGG:=0
     end;
     if syncWMA1<>0 then
     begin
-      BASS_ChannelRemoveSync(chan,syncWMA);
-      syncWMA:=0
+      BASS_ChannelRemoveSync(chan,syncWMA1);
+      syncWMA1:=0
     end;
 //    ControlCenter(MRC_STOP,1);
   end;

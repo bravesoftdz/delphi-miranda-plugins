@@ -181,7 +181,7 @@ begin
       begin
         CloseHandle(BeginThread(nil,0,@OpenURL,ActiveURLw,0,res));
       end;
-      PluginLink^.NotifyEventHooks(hhRadioStatus,MRC_PLAY,lparam(ActiveURLw));
+//      PluginLink^.NotifyEventHooks(hhRadioStatus,MRC_PLAY,lparam(ActiveURLw));
     end;
 
     MRC_RECORD: begin
@@ -294,6 +294,8 @@ begin
             SetStatus(ActiveContact,ID_STATUS_ONLINE);
             ConstructMsg(CurDescrW);
             DBWriteString(0,PluginName,optActiveCodec,GetMusicFormat);
+//!!
+            PluginLink^.NotifyEventHooks(hhRadioStatus,MRC_PLAY,lparam(ActiveURLw));
           end;
           RD_STATUS_PAUSED : begin
           end;
