@@ -322,7 +322,7 @@ begin
           DBWriteString(hContact,PluginName,optLastName ,lastname.a);
           DBWriteString(hContact,PluginName,optFirstName,firstname.a);
 
-          if (PluginStatus=ID_STATUS_OFFLINE){ or (asOffline<>BST_UNCHECKED)} then
+          if PluginStatus=ID_STATUS_OFFLINE then
             status:=ID_STATUS_OFFLINE
           else
             status:=ID_STATUS_INVISIBLE;

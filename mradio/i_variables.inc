@@ -38,9 +38,9 @@ begin
       2: StrDupW(res,ActiveURLw);
       3: res:=DBReadUnicode(ActiveContact,PluginName,optGenre);
       4: res:=DBReadUnicode(ActiveContact,PluginName,optBitrate);
-      5: StrDupW(res,CurDescrw);//res:=DBReadString(ActiveContact,strCList  ,optStatusMsg);
+      5: res:=MakeMessage;
       6: res:=DBReadUnicode(0,PluginName,optActiveCodec);
-      7: StrDupW(res,TranslateW(GetStatusText(PlayStatus)));
+      7: StrDupW(res,TranslateW(GetStatusText(CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_GET))));
     end;
   end;
   if res=nil then

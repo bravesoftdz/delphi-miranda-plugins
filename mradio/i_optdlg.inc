@@ -117,10 +117,10 @@ begin
       GetPrivateProfileStringA(section,'Genre','unknown',buf,SizeOf(buf),ini);
       DBWriteString(result,PluginName,optGenre   ,buf);
       DBWriteString(result,PluginName,optLastName,buf);
-      if (PluginStatus=ID_STATUS_OFFLINE){ or (asOffline<>BST_UNCHECKED)} then
+      if PluginStatus=ID_STATUS_OFFLINE then
         status:=ID_STATUS_OFFLINE
       else
-       status:=ID_STATUS_INVISIBLE;
+        status:=ID_STATUS_INVISIBLE;
       SetStatus(result,status);
 
       if group=nil then
@@ -332,12 +332,10 @@ begin
   result:=0;
   case hMessage of
     WM_DESTROY: begin
-//!!      hRecButton:=0;
       DBWriteByte(0,PluginName,optLoop    ,doLoop);
       DBWriteByte(0,PluginName,optShuffle ,doShuffle);
       DBWriteByte(0,PluginName,optContRec ,doContRec);
       DBWriteByte(0,PluginName,optPlay1st ,PlayFirst);
-      DBWriteByte(0,PluginName,optOffline ,asOffline);
       DBWriteByte(0,PluginName,optConnect ,AuConnect);
 
       DBWriteUnicode(0,PluginName,optStatusTmpl,StatusTmpl);
@@ -356,19 +354,13 @@ begin
       else
         ShowWindow(wnd,SW_HIDE);
 
-//!!      hRecButton:=GetDlgItem(Dialog,IDC_BN_RECORD);
       if recpath<>nil then
         SetDlgItemTextW(Dialog,IDC_ED_RECPATH,recpath);
 
-{!!
-      if CallService(MS_RADIO_RECORD,1,0)<>0 then
-        SendMessage(hRecButton,BM_SETCHECK,BST_CHECKED,0);
-}
       CheckDlgButton(Dialog,IDC_LOOP     ,doLoop);
       CheckDlgButton(Dialog,IDC_SHUFFLE  ,doShuffle);
       CheckDlgButton(Dialog,IDC_CONTREC  ,doContRec);
       CheckDlgButton(Dialog,IDC_PLAYFIRST,PlayFirst);
-      CheckDlgButton(Dialog,IDC_OFFLINE  ,asOffline);
       CheckDlgButton(Dialog,IDC_CONNECT  ,AuConnect);
 
       SetDlgItemTextW(Dialog,IDC_STATUS,StatusTmpl);
@@ -428,16 +420,7 @@ begin
               end;
             end;
 
-{!!
-            IDC_BN_RECORD: begin
-              if IsDlgButtonChecked(Dialog,IDC_BN_RECORD)<>BST_UNCHECKED then
-                i:=1
-              else
-                i:=2;
-              CallService(MS_RADIO_COMMAND,MRC_RECORD,i);
-            end;
-}
-            IDC_LOOP,IDC_SHUFFLE,IDC_CONTREC,IDC_OFFLINE,IDC_CONNECT:
+            IDC_LOOP,IDC_SHUFFLE,IDC_CONTREC,IDC_CONNECT:
               SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
 
             IDC_ADD_LIST,IDC_ADD_INI: begin
@@ -524,15 +507,6 @@ begin
 
         mFreeMem(StatusTmpl);
         StatusTmpl:=GetDlgText(Dialog,IDC_STATUS);
-
-        i:=IsDlgButtonChecked(Dialog,IDC_OFFLINE);
-        if i<>asOffline then
-        begin
-          asOffline:=i;
-          SetStatus(0,ID_STATUS_INVISIBLE);
-          if ActiveContact<>0 then
-            SetStatus(ActiveContact,ID_STATUS_ONLINE);
-        end;
 
         doLoop:=IsDlgButtonChecked(Dialog,IDC_LOOP);
         if chan<>0 then
@@ -848,15 +822,7 @@ var
   pc:PAnsiChar;
 begin
   result:=0;
-{
-  with PDBCONTACTWRITESETTING(lParam)^ do
-    if (StrCmp(szModule,'Skin')=0) and (StrCmp(szSetting,'UseSound')=0) then
-    begin
-      SetSndVol(Value.bVal);
-//       Mute(Value.bVal);
-      exit;
-    end;
-}
+
   with PDBCONTACTWRITESETTING(lParam)^ do
   begin
     // works only if called AFTER changes

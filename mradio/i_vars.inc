@@ -8,7 +8,6 @@ const
   optActiveCodec:PAnsiChar = 'ActiveCodec';
   optLastStn    :PAnsiChar = 'LastStation';
   optConnect    :PAnsiChar = 'AutoConnect';
-  optOffline    :PAnsiChar = 'asOffline';
   optEQ_OFF     :PAnsiChar = 'eqoff';
   optStatusMsg  :PAnsiChar = 'StatusMsg';
   optCurElement :PAnsiChar = 'LastPlayed';
@@ -75,7 +74,6 @@ var
 //  plLocal:boolean;  // true - no need to delete playlist
 var
   RemoteSong:bool;
-  PlayStatus:dword;
   gVolume:integer;
   NumTries:cardinal;
   doLoop:dword;
@@ -83,14 +81,11 @@ var
   doShuffle:dword;
   ForcedMono:dword;
   doContRec:dword;
-  asOffline:dword;
   AuConnect:dword;
   isEQ_OFF:dword;
   PluginStatus:integer;
   storagep,storage:PAnsiChar;
   recpath:pWideChar;
-  ttbRecord,ttbSettings:integer;
-  tbUsed:bool;
   sBuffer,
   sTimeout,
   sPreBuf:dword;
@@ -136,12 +131,10 @@ const
   IcoBtnAdd     :PAnsiChar = 'Radio_Add';
   IcoBtnDel     :PAnsiChar = 'Radio_Del';
 const
-  hRecButton   :HWND    = 0;
   hRecord      :THANDLE = 0;
   chan         :HSTREAM = 0;
   ActiveContact:THANDLE = 0;
   ActiveURLW   :PWideChar = nil;
-  CurDescrW    :PWideChar = nil;
 
 type
   TEAXItem = record

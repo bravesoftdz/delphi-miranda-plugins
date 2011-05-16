@@ -1,34 +1,4 @@
 {Visual part}
-function OnTTBLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
-var
-  ttb:TTBButtonV2;
-begin
-  PluginLink^.UnhookEvent(onloadhook);
-  tbUsed:=true;
-
-  FillChar(ttb,SizeOf(ttb),0);
-  ttb.cbSize :=SizeOf(ttb);
-  ttb.dwFlags:=TTBBF_VISIBLE or TTBBF_SHOWTOOLTIP;
-  ttb.hIconDn       :=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnRecDn));
-  ttb.hIconUp       :=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnRecUp));
-  ttb.pszServiceUp  :=MS_RADIO_RECORD;
-  ttb.pszServiceDown:=MS_RADIO_RECORD;
-  ttb.name          :='mRadio record';
-  ttbRecord:=CallService(MS_TTB_ADDBUTTON,twparam(@ttb),0);
-  CallService(MS_TTB_SETBUTTONOPTIONS,(ttbRecord shl 16)+TTBO_TIPNAME,
-      tlparam(Translate('Start record')));
-
-  ttb.hIconDn       :=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnSettings));
-  ttb.hIconUp       :=ttb.hIconDn;
-  ttb.pszServiceUp  :=MS_RADIO_SETTINGS;
-  ttb.pszServiceDown:=MS_RADIO_SETTINGS;
-  ttb.name          :='mRadio settings';
-  ttbSettings:=CallService(MS_TTB_ADDBUTTON,twparam(@ttb),0);
-  CallService(MS_TTB_SETBUTTONOPTIONS,(ttbSettings shl 16)+TTBO_TIPNAME,
-      tlparam(Translate('mRadio settings')));
-  result:=0;
-end;
-
 function OnContactMenu(hContact:WPARAM;lParam:LPARAM):int;cdecl;
 var
   mi:TCListMenuItem;
@@ -90,24 +60,8 @@ begin
   mi.pszService :=MS_RADIO_PLAYSTOP;
   mi.szName.a   :='Start/Stop broadcasting';
   hCMenuItemPlay:=PluginLink^.CallService(MS_CLIST_ADDCONTACTMENUITEM,0,lparam(@mi));
-
 end;
 
-{
-function IconChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
-var
-  ttb:TTBButtonV2;// work only with TTBButton type :(
-begin
-  result:=0;
-  if PluginLink^.ServiceExists(MS_TTB_GETBUTTONOPTIONS)<>0 then
-  begin
-    PluginLink^.CallService(MS_TTB_GETBUTTONOPTIONS,(ttbRecord shl 16)+TTBO_ALLDATA,dword(@ttb));
-    ttb.hIconUp:=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnRecUp));
-    ttb.hIconUp:=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnRecDn));
-    PluginLink^.CallService(MS_TTB_SETBUTTONOPTIONS,(ttbRecord shl 16)+TTBO_ALLDATA,dword(@ttb));
-  end;
-end;
-}
 procedure RegisterIcons;
 var
   sid:TSKINICONDESC;
@@ -158,5 +112,4 @@ begin
   sid.szDescription.a:='Delete EQ preset';
   PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
-//  PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
 end;

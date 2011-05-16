@@ -15,23 +15,7 @@ const
 function mRadio_Hotkey(wParam:WPARAM;lParam:LPARAM):int_ptr; cdecl;
 begin
   if lParam=MRC_MUTE then
-  begin
-(*
-{$IFDEF KOL_MCK}
-    if btnMute<>nil then
-    begin
-      FillChar(med,SizeOf(med),0);
-      btnMute.OnMouseDown(btnMute,med);
-      btnMute.Click;
-      btnMute.OnMouseUp  (btnMute,med);
-      btnMute.Invalidate;
-      result:=0;
-    end
-    else
-{$ENDIF}
-*)
-    result:=CallService(MS_RADIO_MUTE,0,0);
-  end
+    result:=CallService(MS_RADIO_MUTE,0,0)
   else
     result:=CallService(MS_RADIO_COMMAND,lParam,0);
 end;

@@ -24,6 +24,12 @@ const
   RD_STATUS_STOPPED   = 3; // media is stopped (only for playlists)
   RD_STATUS_CONNECT   = 4; // plugin try to connect to the station
   RD_STATUS_ABORT     = 5; // plugin want to abort while try to connect
+  // next is for events only
+  RD_STATUS_POSITION  = 107; // position was changed
+  RD_STATUS_MUTED     = 108; // Mute/Unmute command was sent
+  RD_STATUS_RECORD    = 109; // "Record" action called
+  RD_STATUS_NEWTRACK  = 110; // new track/station
+  RD_STATUS_NEWTAG    = 111; // tag data changed
   // next command is for users
   RD_STATUS_GET       = 6; // to get current status
 
@@ -38,7 +44,7 @@ const
   Switch 'record' mode
   wParam: 0 - switch mode; else - get record status
   lParam: 0
-  Return: Current status: 1 - record is ON
+  Return: Current status: 1 - record is ON, 0 - OFF
 }
   MS_RADIO_RECORD:PAnsiChar = 'mRadio/REC';
 

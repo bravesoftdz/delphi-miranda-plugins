@@ -143,6 +143,7 @@ begin
   if pltNew then SkipLine(pp);
 
   ldescr:=nil;
+  finish:=false;
   repeat
     if pltNew then
     begin
