@@ -57,7 +57,9 @@ begin
       StrCopyW(p,title);
       mFreeMem(title);
     end;
-  end;
+  end
+  else
+    result:=nil;
 end;
 
 procedure SetStatus(hContact:THANDLE;Status:integer);

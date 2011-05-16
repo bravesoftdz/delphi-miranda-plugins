@@ -76,6 +76,19 @@ begin
     DBDeleteSetting(ActiveContact,strCList,optStatusMsg);
 end;
 
+procedure log(a,b:lparam);
+var
+  f:thandle;
+  buf:array [0..31] of ansichar;
+  p:pansichar;
+begin
+  f:=Append(pansichar('mradio.log'));
+  p:=IntToStr(buf,a); BlockWrite(f,p^,StrLen(p));
+  p:=#13#10; BlockWrite(f,p^,StrLen(p));
+  p:=IntToStr(buf,b); BlockWrite(f,p^,StrLen(p));
+  CloseHandle(f);
+end;
+
 function ControlCenter(code:WPARAM;arg:LPARAM):int_ptr; cdecl;
 const
   PlayStatus:int_ptr=RD_STATUS_NOSTATION;
@@ -87,6 +100,7 @@ var
   artist,title:pWideChar;
 begin
   result:=0;
+//  log(code,arg);
   case code of
     MRC_PLAY : begin
       // play new station?
