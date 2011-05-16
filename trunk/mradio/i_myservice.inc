@@ -18,6 +18,7 @@ begin
       exit;
     hContact:=wParam;
   end
+  // wParam = station name
   else
   begin
     FillChar(cni,SizeOf(cni),0);
@@ -41,33 +42,33 @@ begin
             i:=StrCmp(pAnsiChar(wParam),cni.retval.szVal.a)
           else
             i:=StrCmpW(pWideChar(wParam),cni.retval.szVal.w);
-          mmi.free(cni.retval.szVal.w); //!!!!!!??????
+          mmi.free(cni.retval.szVal.w);
           if i=0 then
             break;
         end;
-//???????        CallService(MS_RADIO_COMMAND,MRC_PLAY,hContact);
       end;
       hContact:=PluginLink^.CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
     end;
   end;
+
   if hContact<>0 then
   begin
     result:=1;
     if PluginStatus=ID_STATUS_OFFLINE then
       Service_SetStatus(ID_STATUS_ONLINE,0);
 
-    if PlayStatus=RD_STATUS_CONNECT then //break while connect
-    begin
-      ControlCenter(MRC_STATUS,RD_STATUS_ABORT);
-      exit;
-    end
-    else if PlayStatus=RD_STATUS_ABORT then
-      exit;
+    case CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_GET) of
+      RD_STATUS_CONNECT: begin //break while connect
+        CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_ABORT);
+        exit;
+      end;
+      RD_STATUS_ABORT: exit;
+    end;
 
-    new:=ActiveContact<>dword(hContact);
+    new:=ActiveContact<>hContact;
 
     if ActiveContact<>0 then
-      ControlCenter(MRC_STOP,1);
+      CallService(MS_RADIO_COMMAND,MRC_STOP,1);
 
     if new then
       CallService(MS_RADIO_COMMAND,MRC_PLAY,hContact);
@@ -84,45 +85,15 @@ begin
   ood.pszPage :=PluginName;
   ood.pszTab  :='Technical';
   CallService(MS_OPT_OPENOPTIONS,0,tlparam(@ood));
-  if tbUsed then
-    CallService(MS_TTB_SETBUTTONOPTIONS,(ttbSettings shl 16)+TTBO_TIPNAME,
-        tlparam(Translate('mRadio settings')));
 end;
 
 function Service_RadioRecord(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 const
   doRecord:boolean=false;
-var
-  p:PAnsiChar;
 begin
-  if (wParam=0) or (dword(wParam)>2) then
-  begin
-    if not doRecord then  // start recording
-    begin
-      if hRecButton<>0 then
-        SendMessage(hRecButton,BM_SETCHECK,BST_CHECKED,0);
-      if tbUsed then
-      begin
-        CallService(MS_TTB_SETBUTTONSTATE,ttbRecord,TTBST_PUSHED);
-        p:='Stop record';
-      end;
-      doRecord:=true;
-    end
-    else // stop recording
-    begin
-      if hRecButton<>0 then
-        SendMessage(hRecButton,BM_SETCHECK,BST_UNCHECKED,0);
-      if tbUsed then
-      begin
-        CallService(MS_TTB_SETBUTTONSTATE,ttbRecord,TTBST_RELEASED);
-        p:='Start record';
-      end;
-      doRecord:=false;
-    end;
-    if tbUsed then
-      CallService(MS_TTB_SETBUTTONOPTIONS,(ttbRecord shl 16)+TTBO_TIPNAME,
-          tlparam(Translate(p)));
-  end;
+  if (wParam=0) or (wParam>2) then
+    doRecord:=not doRecord;
+
   result:=ORD(doRecord);
 end;
 

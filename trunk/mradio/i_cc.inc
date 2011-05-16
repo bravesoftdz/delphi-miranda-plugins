@@ -1,70 +1,55 @@
 {}
-{
-function Mute(arg:integer=-1):boolean;
-var
-  vol:integer;
-begin
-  if arg<0 then
-    result:=DBReadByte(0,'Skin','UseSound')=0
-  else
-  begin
-    result:=true;
-    if chan<>0 then
-    begin
-      if arg=0 then
-        vol:=0
-      else
-        vol:=Volume;
-      BASS_ChannelSetAttributes(chan,-1,vol,-101);
-    end;
-  end;
-end;
-}
 
-function GetStatusText(status:integer):PWideChar;
+function GetStatusText(status:integer;toCList:boolean=false):PWideChar;
 begin
   case status of
     RD_STATUS_PAUSED : result:='paused';
-    RD_STATUS_STOPPED: result:='stopped';
+    RD_STATUS_STOPPED: if toCList then result:=nil else result:='stopped';
     RD_STATUS_CONNECT: result:='connecting';
     RD_STATUS_ABORT  : result:='aborting';
-    RD_STATUS_PLAYING: result:='playing';
+    RD_STATUS_PLAYING: if toCList then result:=nil else result:='playing';
   else
     result:=nil;
   end;
 end;
 
-procedure ConstructMsg(astr:PWideChar;status:integer=-1;astr1:PWideChar=nil);
+procedure ConstructMsg(artist,title:PWideChar;status:integer=-1);
 var
   buf:PWideChar;
-  astrlen,astr1len,statuslen:integer;
+  tstrlen,astrlen,statuslen:integer;
   sstatus:PWideChar;
   p:pWideChar;
 begin
-  if (astr<>nil) and (astr^<>#0) then
-    astrlen:=StrLenW(astr)
-  else
-    astrlen:=0;
-  if (astr1<>nil) and (astr1^<>#0) then
-    astr1len:=StrLenW(astr1)+3
-  else
-    astr1len:=0;
+  astrlen:=StrLenW(artist);
+  
+  tstrlen:=0;
+  // if need to remove duplicate
+  if (title<>nil) and (title^<>#0) then
+  begin
+    if (astrlen=0) or (StrCmpW(artist,title)<>0) then
+      tstrlen:=StrLenW(title);
+  end;
+  if (astrlen>0) and (tstrlen>0) then
+    inc(tstrlen,3);
 
   statuslen:=0;
   if status>=0 then
   begin
-    sstatus:=TranslateW(GetStatusText(status));
+    sstatus:=TranslateW(GetStatusText(status,true));
     if sstatus<>nil then
       statuslen:=StrLenW(sstatus)+3;
-  end;
+  end
+  else
+    sstatus:=nil;
 
-  if (astrlen+astr1len+statuslen)>0 then
+  if (astrlen+tstrlen+statuslen)>0 then
   begin
-    mGetMem(buf,(astrlen+astr1len+statuslen+1)*SizeOf(WideChar));
+    mGetMem(buf,(astrlen+tstrlen+statuslen+1)*SizeOf(WideChar));
     p:=buf;
     if astrlen>0 then
-      p:=StrCopyEW(p,astr);
-    if astr1len>0 then
+      p:=StrCopyEW(p,artist);
+
+    if tstrlen>0 then
     begin
       if astrlen>0 then
       begin
@@ -72,8 +57,9 @@ begin
         p^:='-'; inc(p);
         p^:=' '; inc(p);
       end;
-      p:=StrCopyEW(p,astr1);
+      p:=StrCopyEW(p,title);
     end;
+
     if statuslen>0 then
     begin
       p^:=' '; inc(p);
@@ -82,6 +68,7 @@ begin
       p^:=')'; inc(p);
       p^:=#0;
     end;
+
     DBWriteUnicode(ActiveContact,strCList,optStatusMsg,buf);
     mFreeMem(buf);
   end
@@ -90,18 +77,23 @@ begin
 end;
 
 function ControlCenter(code:WPARAM;arg:LPARAM):int_ptr; cdecl;
+const
+  PlayStatus:int_ptr=RD_STATUS_NOSTATION;
 var
   res:uint_ptr;
   tmpbuf,buf1:array [0..MAX_PATH-1] of WideChar;
   plFile:pWideChar;
   plLocal:boolean;
+  artist,title:pWideChar;
 begin
   result:=0;
   case code of
     MRC_PLAY : begin
+      // play new station?
       if arg<>0 then
       begin
         ActiveURLw:=DBReadUnicode(arg,PluginName,optStationURL);
+        // no URL for this contact
         if (ActiveURLw=nil) or (ActiveURLw^=#0) then exit;
 
         ActiveContact:=arg;
@@ -151,11 +143,11 @@ begin
             mFreeMem(ActiveURLw);
             ActiveURLw:=plist.GetSong;
           end;
+          RemoteSong:=StrPosW(ActiveURLw,'://')<>nil; // coz activeuRLw can be changed
         end
         else
           plist:=nil;
 
-        RemoteSong:=StrPosW(ActiveURLw,'://')<>nil; // coz activeuRLw can be changed
         if (ActiveURLw<>nil) and (ActiveURLw^<>#0) then
         begin
           if RemoteSong then
@@ -172,16 +164,18 @@ begin
           CloseHandle(BeginThread(nil,0,@OpenURL,ActiveURLw,0,res));
         end;
       end
+      // play current from start
       else if chan<>0 then
       begin
         BASS_ChannelPlay(chan,true);
-        ControlCenter(MRC_STATUS,RD_STATUS_PLAYING);
+        code:=MRC_STATUS;
+        arg :=RD_STATUS_PLAYING;
       end
-      else if Assigned(plist) then
+      // play playlist entry?
+      else if Assigned(plist) and (ActiveURLw<>nil) and (ActiveURLw^<>#0) then
       begin
         CloseHandle(BeginThread(nil,0,@OpenURL,ActiveURLw,0,res));
       end;
-//      PluginLink^.NotifyEventHooks(hhRadioStatus,MRC_PLAY,lparam(ActiveURLw));
     end;
 
     MRC_RECORD: begin
@@ -191,28 +185,29 @@ begin
          ((result= 0) and (arg=1)) then // no record and need to start
         result:=CallService(MS_RADIO_RECORD,0,0);
 
-      PluginLink^.NotifyEventHooks(hhRadioStatus,MRC_RECORD,result);
+      code:=MRC_STATUS;
+      arg :=RD_STATUS_RECORD+(result shl 16);
     end;
 
     MRC_PAUSE: begin
       if chan<>0 then
       begin
-        if PlayStatus=RD_STATUS_PLAYING then
-        begin
-          BASS_ChannelPause(chan);
-          ControlCenter(MRC_STATUS,RD_STATUS_PAUSED);
-          PluginLink^.NotifyEventHooks(hhRadioStatus,MRC_PAUSE,1);
-        end
-        else if PlayStatus=RD_STATUS_PAUSED then
-        begin
-          BASS_ChannelPlay(chan,false);
-          ControlCenter(MRC_STATUS,RD_STATUS_PLAYING);
-          PluginLink^.NotifyEventHooks(hhRadioStatus,MRC_PAUSE,0);
+        case ControlCenter(MRC_STATUS,RD_STATUS_GET) of
+          RD_STATUS_PLAYING: begin
+            BASS_ChannelPause(chan);
+            arg:=1;
+          end;
+          RD_STATUS_PAUSED: begin
+            BASS_ChannelPlay(chan,false);
+            arg:=0;
+          end;
         end;
+        code:=MRC_STATUS;
+        arg :=RD_STATUS_PAUSED+(arg shl 16);
       end
       else
       begin
-        ActiveContact:=DBReadDWord(0,PluginName,optLastStn);
+        ActiveContact:=LoadContact(PluginName,optLastStn);
         if ActiveContact<>0 then
           ControlCenter(MRC_PLAY,ActiveContact);
       end;
@@ -220,33 +215,35 @@ begin
 
     MRC_STOP: begin
       ControlCenter(MRC_RECORD,2);
+
+      code:=MRC_STATUS;
+      // stop playlist track but not station
       if Assigned(plist) and (arg=0) then
       begin
         if chan<>0 then
-        begin
           BASS_ChannelStop(chan);
-          ControlCenter(MRC_STATUS,RD_STATUS_STOPPED);
-        end;
+
+        arg:=RD_STATUS_STOPPED;
       end
-      else
+      else // forced or "normal" stop
       begin
         if Assigned(plist) then
         begin
           DBWriteWord(ActiveContact,PluginName,optCurElement,plist.Track);
           plist.free;
+          plist:=nil;
         end;
-//??        StopStation;
-        ControlCenter(MRC_STATUS,RD_STATUS_NOSTATION);
-        DBDeleteSetting(0,PluginName,optActiveURL);
-        DBDeleteSetting(0,PluginName,optTitle);
-        DBDeleteSetting(0,PluginName,optArtist);
+        ControlCenter(MRC_STATUS,RD_STATUS_STOPPED);
+        StopStation;
+
+        arg:=RD_STATUS_NOSTATION;
       end;
-      StopStation;
-      PluginLink^.NotifyEventHooks(hhRadioStatus,MRC_STOP,0);
     end;
 
     MRC_MUTE: begin
       CallService(MS_RADIO_MUTE,0,arg);
+      code:=MRC_STATUS;
+      arg :=RD_STATUS_MUTED;
     end;
 
     MRC_NEXT: begin
@@ -267,44 +264,6 @@ begin
       end;
     end;
 
-    MRC_STATUS: begin
-      if arg=RD_STATUS_GET then
-        result:=PlayStatus
-      else
-      begin
-        PlayStatus:=arg;
-
-        ConstructMsg(nil,arg);
-        case lobyte(arg) of
-          RD_STATUS_NOSTATION: begin
-            DBDeleteSetting(ActiveContact,strCList,optStatusMsg);
-{            if asOffline<>BST_UNCHECKED then
-              SetStatus(ActiveContact,ID_STATUS_OFFLINE)
-            else
-}              SetStatus(ActiveContact,ID_STATUS_INVISIBLE);
-            ActiveContact:=0;
-          end;
-          RD_STATUS_CONNECT: begin
-            SetStatus(ActiveContact,ID_STATUS_AWAY);
-          end;
-          RD_STATUS_ABORT  : begin
-          end;
-          RD_STATUS_PLAYING: begin
-            DBWriteUnicode(0,PluginName,optActiveURL,ActiveURLw);
-            SetStatus(ActiveContact,ID_STATUS_ONLINE);
-            ConstructMsg(CurDescrW);
-            DBWriteString(0,PluginName,optActiveCodec,GetMusicFormat);
-//!!
-            PluginLink^.NotifyEventHooks(hhRadioStatus,MRC_PLAY,lparam(ActiveURLw));
-          end;
-          RD_STATUS_PAUSED : begin
-          end;
-          RD_STATUS_STOPPED: begin
-          end;
-        end;
-      end;
-    end;
-
     MRC_SEEK: begin
       if not RemoteSong and (chan<>0) then
       begin
@@ -317,9 +276,123 @@ begin
         else
         begin
           BASS_ChannelSetPosition(chan,BASS_ChannelSeconds2Bytes(chan,arg),BASS_POS_BYTE);
-          PluginLink^.NotifyEventHooks(hhRadioStatus,MRC_SEEK,arg);
+
+          code:=MRC_STATUS;
+          arg :=RD_STATUS_POSITION+(arg shl 16);
         end;
       end;
     end;
+  end;
+
+  if code=MRC_STATUS then
+  begin
+    if arg=RD_STATUS_GET then
+      result:=PlayStatus
+    else
+    begin
+
+      code:=(arg and $FFFF);
+      arg :=hiword(arg);
+      // this is just events
+      case code of
+        RD_STATUS_MUTED: begin
+        end;
+
+        RD_STATUS_RECORD: begin
+        end;
+
+        RD_STATUS_POSITION: begin
+        end;
+
+      else
+        // these statuses are for events and some tasks
+        artist:=nil;
+        title :=nil;
+        case code of
+          RD_STATUS_NOSTATION: begin
+            SetStatus(ActiveContact,ID_STATUS_INVISIBLE);
+            ActiveContact:=0;
+
+            DBDeleteSetting(0,PluginName,optActiveURL);
+
+            PlayStatus:=RD_STATUS_NOSTATION;
+            // empty message
+          end;
+
+          RD_STATUS_STOPPED: begin
+            if ActiveContact<>0 then //!! fools proof
+              DBDeleteSetting(ActiveContact,strCList,optStatusMsg);
+
+            DBDeleteSetting(0,PluginName,optTitle);
+            DBDeleteSetting(0,PluginName,optArtist);
+
+            PlayStatus:=RD_STATUS_STOPPED;
+            // empty message
+          end;
+
+          RD_STATUS_ABORT: begin
+            PlayStatus:=RD_STATUS_ABORT;
+            // status as message
+          end;
+
+          RD_STATUS_CONNECT: begin
+            SetStatus(ActiveContact,ID_STATUS_AWAY);
+            PlayStatus:=RD_STATUS_CONNECT;
+            // status as message
+          end;
+
+          RD_STATUS_NEWTRACK: begin
+            SetStatus(ActiveContact,ID_STATUS_ONLINE);
+            DBWriteUnicode(0,PluginName,optActiveURL,ActiveURLw);
+
+            DBWriteString(0,PluginName,optActiveCodec,GetMusicFormat);
+            arg :=lparam(ActiveURLw);
+
+            // for case when tags was in meta
+            artist:=DBReadUnicode(0,PluginName,optArtist);
+            title :=DBReadUnicode(0,PluginName,optTitle);
+            PlayStatus:=RD_STATUS_PLAYING;
+            // status as message
+          end;
+
+          RD_STATUS_NEWTAG: begin
+          // must be updated tags
+            artist:=DBReadUnicode(0,PluginName,optArtist);
+            title :=DBReadUnicode(0,PluginName,optTitle);
+
+            PlayStatus:=RD_STATUS_PLAYING; // maybe keep RD_STATUS_NEWTAG?
+          end;
+
+          RD_STATUS_PLAYING: begin
+            SetStatus(ActiveContact,ID_STATUS_ONLINE);
+            PlayStatus:=RD_STATUS_PLAYING;
+            // status as message
+          end;
+
+          RD_STATUS_PAUSED: begin
+            if arg=0 then
+            begin
+              PlayStatus:=RD_STATUS_PLAYING;
+              if StrPosW(ActiveURLw,'://')=nil then //local only
+              begin
+                artist:=DBReadUnicode(0,PluginName,optArtist);
+                title :=DBReadUnicode(0,PluginName,optTitle);
+              end;
+            end
+            else
+              PlayStatus:=RD_STATUS_PAUSED;
+            // status as message
+          end;
+        else
+          exit;
+        end;
+        ConstructMsg(artist,title,PlayStatus);
+        mFreeMem(artist);
+        mFreeMem(title);
+      end;
+      
+      PluginLink^.NotifyEventHooks(hhRadioStatus,code,arg);
+    end;
+
   end;
 end;

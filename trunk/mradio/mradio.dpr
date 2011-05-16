@@ -29,34 +29,41 @@ const
   BetaUpdateURL     = 'http://awkward.miranda.im/mradio.zip';
   BetaChangelogURL  = nil;
 
-procedure SetStatus(hContact:THANDLE;Status:integer); forward;
+function MakeMessage:pWideChar;
+var
+  p,artist,title:pWideChar;
+  len:cardinal;
+begin
+  artist:=DBReadUnicode(0,PluginName,optArtist);
+  title :=DBReadUnicode(0,PluginName,optTitle);
+  len:=StrLenW(artist);
+  if (artist<>nil) and (title<>nil) then
+    inc(len,3);
+  inc(len,StrLenW(title));
 
-function  ControlCenter(code:WPARAM;arg:LPARAM):int_ptr; cdecl; forward;
-procedure ConstructMsg(astr:PWideChar;status:integer=-1;astr1:PWideChar=nil); forward;
-
-{$include i_search.inc}
-{$include i_bass.inc}
-{$include i_cc.inc}
-{$include i_variables.inc}
-{$include i_service.inc}
-{$include i_myservice.inc}
-{$include i_hotkey.inc}
-{$IFDEF KOL_MCK}
-  {$include i_frame.inc}
-{$ELSE}
-  {$include i_frameapi.inc}
-{$ENDIF}
-{$include i_tray.inc}
-{$include i_visual.inc}
-{$include i_optdlg.inc}
+  if len>0 then
+  begin
+    mGetMem(result,(len+1)*SizeOf(WideChar));
+    p:=result;
+    if artist<>nil then
+    begin
+      p:=StrCopyEW(p,artist);
+      if title<>nil then
+        p:=StrCopyEW(p,' - ');
+      mFreeMem(artist);
+    end;
+    if title<>nil then
+    begin
+      StrCopyW(p,title);
+      mFreeMem(title);
+    end;
+  end;
+end;
 
 procedure SetStatus(hContact:THANDLE;Status:integer);
 begin
-  if (Status=ID_STATUS_INVISIBLE) and (asOffline<>BST_UNCHECKED) then
-    Status:=ID_STATUS_OFFLINE;
-
-  if Status=ID_STATUS_OFFLINE then
-    MyStopBass;
+//  if Status=ID_STATUS_OFFLINE then
+//    MyStopBass;
 
   if hContact=0 then
   begin
@@ -74,12 +81,28 @@ begin
     DBWriteWord(hContact,PluginName,optStatus,Status);
 end;
 
+{$include i_search.inc}
+{$include i_bass.inc}
+{$include i_cc.inc}
+{$include i_variables.inc}
+{$include i_service.inc}
+{$include i_myservice.inc}
+{$include i_hotkey.inc}
+{$IFDEF KOL_MCK}
+  {$include i_frame.inc}
+{$ELSE}
+  {$include i_frameapi.inc}
+{$ENDIF}
+{$include i_tray.inc}
+{$include i_visual.inc}
+{$include i_optdlg.inc}
+
 function MirandaPluginInfoEx(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
 begin
   result:=@PluginInfo;
   PluginInfo.cbSize     :=SizeOf(TPLUGININFOEX);
   PluginInfo.shortName  :='mRadio Mod';
-  PluginInfo.version    :=$00000107;
+  PluginInfo.version    :=$00000201;
   PluginInfo.description:='This plugin plays and records Internet radio streams.'+
                           ' Also local media files can be played.';
   PluginInfo.author     :='Awkward';
@@ -140,9 +163,6 @@ begin
   CreateMenu;
   CreateMIMTrayMenu;
 
-  tbUsed:=false;
-  onloadhook:=PluginLink^.HookEvent(ME_TTB_MODULELOADED,@OnTTBLoaded);
-
   FillChar(nlu,SizeOf(nlu),0);
   StrCopy(szTemp,Translate('%s server connection'));
   StrReplace(szTemp,'%s',PluginName);
@@ -170,7 +190,6 @@ begin
   doContRec :=DBReadByte(0,PluginName,optContRec);
   PlayFirst :=DBReadByte(0,PluginName,optPlay1st);
   isEQ_OFF  :=DBReadByte(0,PluginName,optEQ_OFF);
-  asOffline :=DBReadByte(0,PluginName,optOffline);
   AuConnect :=DBReadByte(0,PluginName,optConnect);
   gVolume   :=DBReadByte(0,PluginName,optVolume,50);
   NumTries  :=DBReadByte(0,PluginName,optNumTries,1);
@@ -180,11 +199,12 @@ begin
   StatusTmpl:=DBReadUnicode(0,PluginName,optStatusTmpl,'%radio_title%');
 
   if Auconnect<>BST_UNCHECKED then
-    ActiveContact:=DBReadDWord(0,PluginName,optLastStn)
+    ActiveContact:=LoadContact(PluginName,optLastStn)
   else
     ActiveContact:=0;
 
-  PlayStatus:=RD_STATUS_NOSTATION;
+  CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_NOSTATION);
+
   RegisterVariables;
 
   onsetting:=Pluginlink^.HookEvent(ME_DB_CONTACT_SETTINGCHANGED,@OnSettingsChanged);
@@ -206,7 +226,7 @@ begin
   DestroyHiddenWindow;
   DestroyFrame();
   MyFreeBASS;
-  DBWriteDWord(0,PluginName,optLastStn,ActiveContact);
+  SaveContact(ActiveContact,PluginName,optLastStn);
 
   with PluginLink^ do
   begin

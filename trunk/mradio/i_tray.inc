@@ -89,11 +89,6 @@ var
   flag,id:integer;
   pt:TPOINT;
   playstr:pWideChar;
-(*
-{$IFDEF KOL_MCK}
-  med:TMouseEventData;
-{$ENDIF}
-*)
 begin
   id:=0;
   menu:=CreatePopupMenu;
@@ -104,7 +99,7 @@ begin
     else
       flag:=MF_STRING+MF_UNCHECKED;
 
-    if PlayStatus<>RD_STATUS_PAUSED then
+    if CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_GET)<>RD_STATUS_PAUSED then
       playstr:='Pause'
     else
       playstr:='Play';
@@ -119,20 +114,7 @@ begin
     case id of
       0: ; // nothing
       startid+1: begin // mute
-(*
-{$IFDEF KOL_MCK}
-        if btnMute<>nil then
-        begin
-          FillChar(med,SizeOf(med),0);
-          btnMute.OnMouseDown(btnMute,med);
-          btnMute.Click;
-          btnMute.OnMouseUp  (btnMute,med);
-          btnMute.Invalidate;
-        end
-        else
-{$ENDIF}
-*)
-          CallService(MS_RADIO_MUTE,0,0);
+        CallService(MS_RADIO_MUTE,0,0);
       end;
       startid+2: begin // play/pause
         CallService(MS_RADIO_COMMAND,MRC_PAUSE,0);
@@ -141,8 +123,7 @@ begin
         CallService(MS_RADIO_COMMAND,MRC_STOP,0);
       end;
     else // choose station
-//      CallService(MS_RADIO_COMMAND,MRC_PLAY,id);
-      Service_RadioPlayStop(id,0);
+      CallService(MS_RADIO_PLAYSTOP,id,0);
     end;
     DestroyMenu(menu);
   end;

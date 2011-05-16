@@ -72,7 +72,10 @@ begin
     end;
     if StrPos(buf,'%radio_title%')<>nil then
     begin
-      StrReplace(buf,'%radio_title%',WideToAnsi(CurDescrw,p,MirandaCP));
+      pc:=MakeMessage;
+      WideToAnsi(pc,p);
+      StrReplace(buf,'%radio_title%',p);
+      mFreeMem(pc);
       mFreeMem(p);
     end;
     if StrPos(buf,'')<>nil then
@@ -84,7 +87,8 @@ begin
     if StrPos(buf,'%radio_status%')<>nil then
     begin
       StrReplace(buf,'%radio_status%',
-         Translate(FastWideToAnsiBuf(GetStatusText(PlayStatus),tmp)));
+         Translate(FastWideToAnsiBuf(GetStatusText(
+             CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_GET)),tmp)));
     end;
   end;
 
@@ -132,12 +136,12 @@ begin
   result:=0;
   OldStatus:=PluginStatus;
   if wParam<>ID_STATUS_OFFLINE then
-    wParam:=ID_STATUS_ONLINE
-  else
-    mFreeMem(proxy);
+    wParam:=ID_STATUS_ONLINE;
 
   if wParam=PluginStatus then
     exit;
+
+  mFreeMem(proxy);
   PluginStatus:=ID_STATUS_OFFLINE;
   if wParam<>ID_STATUS_OFFLINE then
   begin
@@ -145,18 +149,13 @@ begin
     begin
       PluginStatus:=ID_STATUS_ONLINE;
 
-      mFreeMem(proxy);
       proxy:=GetProxy(hNetLib);
       BASS_SetConfigPtr(BASS_CONFIG_NET_PROXY,proxy);
 
-{      if asOffline<>BST_UNCHECKED then
-        SetStatus(0,ID_STATUS_OFFLINE)
-      else
-}        SetStatus(0,ID_STATUS_INVISIBLE);
+      SetStatus(0,ID_STATUS_INVISIBLE);
 
       if (ActiveContact<>0) and (auConnect<>0) then
-        ControlCenter(MRC_PLAY,ActiveContact);
-//        SetStatus(ActiveContact,ID_STATUS_ONLINE);
+        CallService(MS_RADIO_COMMAND,MRC_PLAY,ActiveContact);
     end;
   end
   else //offline

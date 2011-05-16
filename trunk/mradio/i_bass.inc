@@ -32,17 +32,6 @@ begin
   end;
 end;
 
-procedure StopStation;
-begin
-  if chan<>0 then
-    BASS_StreamFree(chan); // close old stream
-  chan:=0;
-  mFreeMem(StationHeader);
-  mFreeMem(ActiveURLw);
-  mFreeMem(CurDescrW);
-  DBDeleteSetting(ActiveContact,strCList,optStatusMsg);
-end;
-
 procedure Error(text:PWideChar);
 begin
   MessageboxW(0,TranslateW(text),TranslateW('Sorry!'),MB_ICONERROR)
@@ -179,7 +168,6 @@ begin
       BASS_ChannelRemoveSync(chan,syncWMA1);
       syncWMA1:=0
     end;
-//    ControlCenter(MRC_STOP,1);
   end;
 end;
 
@@ -188,6 +176,17 @@ begin
   MyStopBass;
   BASS_Free;
   BASS_PluginFree(0);
+end;
+
+procedure StopStation;
+begin
+  if chan<>0 then
+    BASS_StreamFree(chan); // close old stream
+  chan:=0;
+  mFreeMem(StationHeader);
+  mFreeMem(ActiveURLw);
+  DBDeleteSetting(ActiveContact,strCList,optStatusMsg);
+  MyStopBass;
 end;
 
 function MyInitBASS:int;
@@ -226,7 +225,6 @@ begin
       repeat
         StrCopyW(pc,fd.cFileName);
         if BASS_PluginLoad(pAnsiChar(@buf),BASS_UNICODE)=0 then
-//          messageboxw(0,inttostr(buf1,BASS_ErrorGetCode),pc,0);
       until not FindNextFileW(fh,fd);
       FindClose(fh);
     end;
@@ -288,7 +286,7 @@ end;
 
 function MakeFileName(sign:pointer):pWideChar;
 var
-  pcw:PWideChar;
+  p,pcw:PWideChar;
   buf:pWideChar;
 begin
 // allocate buffer
@@ -315,8 +313,10 @@ begin
   else
     pcw:=buf;
 // name
-//!!  
-  pcw:=StrCopyEW(pcw,CurDescrW);
+//!!
+  p:=MakeMessage;
+  pcw:=StrCopyEW(pcw,p);
+  mFreeMem(p);
   if (pcw=buf) or ((pcw-1)^='\') then
     pcw:=StrEndW(IntToHex(pcw,GetCurrentTime));
 // ext
@@ -412,35 +412,17 @@ end;
   end;
 end;
 
-function MakeMessage(buf,artist,title:pAnsiChar):pAnsiChar;
-begin
-  if artist<>nil then
-  begin
-    result:=StrCopyE(buf,artist);
-    if title<>nil then
-      result:=StrCopyE(result,' - ');
-  end
-  else
-  begin
-    result:=buf;
-  end;
-  if title<>nil then
-  begin
-    StrCopy(result,title);
-  end;
-end;
-
 function DoMeta(meta:PAnsiChar;TagType:int_ptr):Boolean;
 var
-  p:Integer;
-  pcw1,pcw:pWideChar;
+  pcw:pWideChar;
   buf:array [0..511] of AnsiChar;
   artist,title:PAnsiChar;
+  oldartist,oldtitle:pAnsiChar;
   ppc,pc:pAnsiChar;
-  OldDescr:pWideChar;
   lcp:integer;
-  c:WideChar;
   needtofree:Boolean;
+  CurDescrW:PWideChar;
+  old:boolean;
 begin
   result:=false;
 
@@ -450,10 +432,10 @@ begin
   begin
     needtofree:=false;
     lcp:=CP_UTF8;
-    OldDescr:=CurDescrW;
     buf[0]:=#0;
     artist:=nil;
     title :=nil;
+    CurDescrW:=nil;
 
     case TagType of
       BASS_TAG_WMA_META: begin
@@ -465,28 +447,24 @@ begin
           begin
             mGetMem(artist,256);
             Decode(artist,pc+7);
-          end
-          else
-            artist:=nil;
-          DBWriteUTF8(0,PluginName,optArtist,artist);
+          end;
+
           pc:=StrPos(meta,'title=');
           if pc<>nil then
           begin
             mGetMem(title,256);
             Decode(title,pc+6);
-          end
-          else
-            title:=nil;
-          DBWriteUTF8(0,PluginName,optTitle,title);
+          end;
+
           pc:=StrPos(meta,'album=');
           if pc<>nil then
           begin
           end;
+
           pc:=StrPos(meta,'duration=');
           if pc<>nil then
           begin
           end;
-          MakeMessage(buf,artist,title);
           // to avoid mem leak and wrong tag process
           needtofree:=true;
           result:=true;
@@ -508,13 +486,38 @@ begin
             lcp:=GetTextFormat(@buf,ppc-pc-1);
           end;
         end;
+        if buf[0]<>#0 then
+        begin
+          case lcp of
+            CP_UTF8: UTF8ToWide(buf,CurDescrW);
+            CP_ACP : AnsiToWide(buf,CurDescrW,MirandaCP);
+          end;
+        end;
+
+        pcw:=StrPosW(CurDescrW,' - ');
+        if pcw=nil then
+          pcw:=StrScanW(CurDescrW,'-');
+        if pcw<>nil then
+        begin
+          artist:=pAnsiChar(CurDescrW);
+          if pcw^=' ' then
+            title:=pAnsiChar(pcw+3)
+          else
+            title:=pAnsiChar(pcw+1);
+          pcw^:=#0;
+        end;
+        lcp:=CP_UNICODE;
+
         StatusProc(nil,0,0); // split records here
         result:=true;
       end;
+
       BASS_TAG_ID3: begin // not realized, anyway - at the end of track
       end;
+
       BASS_TAG_ID3V2: begin
       end;
+
       BASS_TAG_APE, // not sure, need to check. maybe better process BASS_TAG_APEBINARY
       BASS_TAG_WMA,
       BASS_TAG_OGG: begin
@@ -524,85 +527,64 @@ begin
           if StrCmp(buf,'title',5)=0 then
           begin
             title:=meta+6;
-            DBWriteUTF8(0,PluginName,optTitle,title);
           end
           else if StrCmp(buf,'artist',6)=0 then
           begin
             artist:=meta+7;
-            DBWriteUTF8(0,PluginName,optArtist,artist);
           end;
           if (artist<>nil) and (title<>nil) then
             break;
           while meta^<>#0 do inc(meta); inc(meta);
         end;
-
-        MakeMessage(buf,artist,title);
+        buf[0]:=#0;
       end;
     end;
-
-    if buf[0]=#0 then
-    begin
-      CurDescrW:=nil;
-      p:=RD_STATUS_PLAYING
-    end
-    else
-    begin
-      p:=-1;
-      case lcp of
-        CP_UTF8: UTF8ToWide(buf,CurDescrW);
-        CP_ACP : AnsiToWide(buf,CurDescrW,MirandaCP);
-      end;
-
-      if CurDescrW<>nil then
-      begin
-        if (artist=nil) or (title=nil) then
+    // check for old
+    old:=false;
+    oldartist:=nil;
+    oldtitle :=nil;
+    case lcp of
+      CP_UTF8: begin
+        oldartist:=DBReadUTF8(0,PluginName,optArtist);
+        if StrCmp(artist,oldartist)=0 then
         begin
-          pcw:=StrPosW(CurDescrW,' - ');
-          if pcw=nil then
-            pcw:=StrScanW(CurDescrW,'-');
-          if pcw<>nil then
-          begin
-            if pcw^=' ' then
-              pcw1:=pcw+3
-            else
-              pcw1:=pcw+1;
-          end;
-
-          if artist=nil then
-          begin
-            if pcw<>nil then
-            begin
-              c:=pcw^;
-              pcw^:=#0;
-              DBWriteUnicode(0,PluginName,optArtist,CurDescrW);
-              pcw^:=c;
-              DBWriteUnicode(0,PluginName,optTitle,pcw1);
-            end
-            else
-              DBWriteUnicode(0,PluginName,optArtist,CurDescrW);
-          end;
-
-          if title=nil then
-          begin
-            if pcw<>nil then
-              DBWriteUnicode(0,PluginName,optTitle,pcw1)
-            else
-              DBWriteUnicode(0,PluginName,optTitle,CurDescrW);
-          end;
+          oldtitle:=DBReadUTF8(0,PluginName,optTitle);
+          if StrCmp(title,oldtitle)=0 then
+            old:=true;
         end;
-
+        if not old then
+        begin
+          DBWriteUTF8(0,PluginName,optArtist,artist);
+          DBWriteUTF8(0,PluginName,optTitle ,title);
+        end;
+      end;
+      CP_UNICODE:begin
+        oldartist:=pAnsiChar(DBReadUnicode(0,PluginName,optArtist));
+        if StrCmpW(pWideChar(artist),pWideChar(oldartist))=0 then
+        begin
+          oldtitle:=pAnsiChar(DBReadUnicode(0,PluginName,optTitle));
+          if StrCmpW(pWideChar(title),pWideChar(oldtitle))=0 then
+            old:=true;
+        end;
+        if not old then
+        begin
+          DBWriteUnicode(0,PluginName,optArtist,pWideChar(artist));
+          DBWriteUnicode(0,PluginName,optTitle ,pWideChar(title));
+        end;
       end;
     end;
+    
+    mFreeMem(oldartist);
+    mFreeMem(oldtitle);
+    mFreeMem(CurDescrW);
     if needtofree then
     begin
       mFreeMem(artist);
       mFreeMem(title );
     end;
 
-    // make status info
-    if ((CurDescrW<>nil) or (TagType=BASS_TAG_META)) and (StrCmpW(OldDescr,CurDescrW)<>0) then
-      ConstructMsg(CurDescrW,p);
-    mFreeMem(OldDescr);
+    if not old then
+      CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_NEWTAG);
   end;
 end;
 
@@ -625,13 +607,11 @@ begin
   if RemoteSong then
   begin
     lContact:=ActiveContact;
-//    StopStation;
-    ControlCenter(MRC_STOP,0);
-    ControlCenter(MRC_PLAY,lContact)
-//    ControlCenter(MRC_PLAY,0)
+    CallService(MS_RADIO_COMMAND,MRC_STOP,0);
+    CallService(MS_RADIO_COMMAND,MRC_PLAY,lContact)
   end
-  else if plist<>nil           then ControlCenter(MRC_NEXT,0)
-  else if doLoop=BST_UNCHECKED then ControlCenter(MRC_STOP,0);
+  else if plist<>nil           then CallService(MS_RADIO_COMMAND,MRC_NEXT,0)
+  else if doLoop=BST_UNCHECKED then CallService(MS_RADIO_COMMAND,MRC_STOP,0);
 end;
 
 function OpenURL(url:PWideChar):dword;// stdcall;
@@ -645,7 +625,7 @@ var
 begin
   result:=0;
   if plist=nil then
-    ControlCenter(MRC_STATUS,RD_STATUS_CONNECT);
+    CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_CONNECT);
 
   EAXUsed:=DBReadByte(0,PluginName,optEAXType,0)<>0;
 
@@ -702,15 +682,13 @@ begin
 
   if chan=0 then
   begin
-    if PlayStatus=RD_STATUS_ABORT then
+    if (CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_GET)=RD_STATUS_ABORT) or 
+       (plist=nil) then
     begin
-      ControlCenter(MRC_STOP,1);
-      exit;
-    end;
-    if plist<>nil then
-      ControlCenter(MRC_NEXT,0)
-    else
-      ControlCenter(MRC_STATUS,RD_STATUS_NOSTATION);
+      CallService(MS_RADIO_COMMAND,MRC_STOP,1);
+    end
+    else if plist<>nil then
+      CallService(MS_RADIO_COMMAND,MRC_NEXT,0);
   end
   else
   begin
@@ -729,10 +707,11 @@ begin
       url[4]:=']';
       url[5]:=' ';
 {$ENDIF}
+      progress:=0;
       repeat
-        if PlayStatus=RD_STATUS_ABORT then
+        if CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_GET)=RD_STATUS_ABORT then
         begin
-          ControlCenter(MRC_STOP,1);
+          CallService(MS_RADIO_COMMAND,MRC_STOP,1);
           exit;
         end;
         len:=BASS_StreamGetFilePosition(chan,BASS_FILEPOS_END);
@@ -803,12 +782,10 @@ begin
 
     syncEND:=BASS_ChannelSetSync(chan,BASS_SYNC_END,0,@EndSync,nil);
 
-    ControlCenter(MRC_STATUS,RD_STATUS_PLAYING);
+    CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_NEWTRACK);
 
     SetSndVol(-1);
     // play it!
-//    if not Mute then
-//      BASS_ChannelSetAttributes(chan,-1,Volume,-101);
     BASS_ChannelPlay(chan,FALSE);
   end;
 end;

@@ -61,7 +61,6 @@ const
   IDC_8          = 1169;
   IDC_9          = 1170;
 
-  IDC_OFFLINE    = 1071;
   IDC_CONNECT    = 1072;
 
   IDC_STATUS     = 1073;
