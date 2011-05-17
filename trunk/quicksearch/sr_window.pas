@@ -2275,9 +2275,9 @@ begin
 
       tmph:=GetModuleHandle(nil);
       if sortcoldn=0 then
-        sortcoldn:=LoadImage(tmph,PAnsiChar(240),IMAGE_BITMAP,0,0,LR_LOADMAP3DCOLORS);
+        sortcoldn:=LoadImageA(tmph,PAnsiChar(240),IMAGE_BITMAP,0,0,LR_LOADMAP3DCOLORS);
       if sortcolup=0 then
-        sortcolup:=LoadImage(tmph,PAnsiChar(239),IMAGE_BITMAP,0,0,LR_LOADMAP3DCOLORS);
+        sortcolup:=LoadImageA(tmph,PAnsiChar(239),IMAGE_BITMAP,0,0,LR_LOADMAP3DCOLORS);
 
       SetWindowTextW(dialog,'Quick Search');
 
