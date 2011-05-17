@@ -86,6 +86,8 @@ begin
   p:=IntToStr(buf,a); BlockWrite(f,p^,StrLen(p));
   p:=#13#10; BlockWrite(f,p^,StrLen(p));
   p:=IntToStr(buf,b); BlockWrite(f,p^,StrLen(p));
+  p:=#13#10; BlockWrite(f,p^,StrLen(p));
+  p:=#13#10; BlockWrite(f,p^,StrLen(p));
   CloseHandle(f);
 end;
 
@@ -173,6 +175,7 @@ begin
               exit;
             end;
           end;
+          ControlCenter(MRC_STATUS,RD_STATUS_NEWSTATION);
           if Assigned(plist) then
             ControlCenter(MRC_STATUS,RD_STATUS_CONNECT);
           CloseHandle(BeginThread(nil,0,@OpenURL,ActiveURLw,0,res));
@@ -353,6 +356,11 @@ begin
             SetStatus(ActiveContact,ID_STATUS_AWAY);
             PlayStatus:=RD_STATUS_CONNECT;
             // status as message
+          end;
+
+          RD_STATUS_NEWSTATION: begin
+            arg:=ActiveContact;
+            PlayStatus:=RD_STATUS_PLAYING;
           end;
 
           RD_STATUS_NEWTRACK: begin
