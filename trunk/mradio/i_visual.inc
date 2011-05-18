@@ -53,7 +53,7 @@ begin
 //  mi.popupPosition:=MenuUserInfoPos;
   mi.pszService:=MS_RADIO_RECORD;
   mi.szName.a  :='Start/Stop Record';
-  hCMenuItemRec:=pluginLink^.CallService(MS_CLIST_ADDCONTACTMENUITEM,0,lparam(@mi));
+  hCMenuItemRec:=PluginLink^.CallService(MS_CLIST_ADDCONTACTMENUITEM,0,lparam(@mi));
 
 //!!  mi.flags        :=CMIF_NOTOFFLINE or CMIF_NOTOFFLIST;
   mi.hIcon      :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnOn));
