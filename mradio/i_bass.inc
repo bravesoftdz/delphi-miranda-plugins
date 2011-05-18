@@ -335,7 +335,7 @@ var
   doRecord:bool;
 begin
   flag:=true;
-  doRecord:=CallService(MS_RADIO_RECORD,1,0)<>0;
+  doRecord:=CallService(MS_RADIO_COMMAND,MRC_RECORD,LPARAM(-1))<>0;
   if (buffer<>nil) and (len<>0) and SaveHeader then
   begin
     SaveHeader:=false;
@@ -412,6 +412,22 @@ end;
   end;
 end;
 
+procedure logmeta(tag,a,b:pansiChar);
+var
+  f:thandle;
+  p:pansichar;
+begin
+  f:=Append(pansichar('mradio.log'));
+  BlockWrite(f,tag^,StrLen(tag));
+  p:=#13#10; BlockWrite(f,p^,StrLen(p));
+  BlockWrite(f,a^,StrLen(a));
+  p:=#13#10; BlockWrite(f,p^,StrLen(p));
+  BlockWrite(f,b^,StrLen(b));
+  p:=#13#10; BlockWrite(f,p^,StrLen(p));
+  p:=#13#10; BlockWrite(f,p^,StrLen(p));
+  CloseHandle(f);
+end;
+
 function DoMeta(meta:PAnsiChar;TagType:int_ptr):Boolean;
 var
   pcw:pWideChar;
@@ -423,6 +439,9 @@ var
   needtofree:Boolean;
   CurDescrW:PWideChar;
   old:boolean;
+
+  tag:PAnsiChar;
+  gotartist,gottitle:boolean; // indicate what we got artist/title
 begin
   result:=false;
 
@@ -430,6 +449,9 @@ begin
     meta:=BASS_ChannelGetTags(chan,TagType);
   if meta<>nil then
   begin
+    // for cases when artist or title presents but empty
+    gotartist:=false;
+    gottitle :=false;
     needtofree:=false;
     lcp:=CP_UTF8;
     buf[0]:=#0;
@@ -437,6 +459,7 @@ begin
     title :=nil;
     CurDescrW:=nil;
 
+tag:=meta;
     case TagType of
       BASS_TAG_WMA_META: begin
         pc:=StrPos(meta,'data=');
@@ -445,6 +468,7 @@ begin
           pc:=StrPos(meta,'artist=');
           if pc<>nil then
           begin
+            gotartist:=true;
             mGetMem(artist,256);
             Decode(artist,pc+7);
           end;
@@ -452,6 +476,7 @@ begin
           pc:=StrPos(meta,'title=');
           if pc<>nil then
           begin
+            gottitle:=true;
             mGetMem(title,256);
             Decode(title,pc+6);
           end;
@@ -465,14 +490,51 @@ begin
           if pc<>nil then
           begin
           end;
+
+          if not gotartist then
+          begin
+            if not gottitle then
+            begin
+              pc:=StrPos(meta,'caption=');
+              if pc<>nil then
+              begin
+                gottitle:=true;
+                mGetMem(title,256);
+                Decode(title,pc+8);
+              end;
+            end;
+
+            // analize title/caption for artist-title
+            if gottitle then
+            begin
+              pc:=StrPos(title,' - ');
+              if pc=nil then
+                pc:=StrScan(title,'-');
+              if pc<>nil then
+              begin
+                artist:=title;
+                if pc^=' ' then
+                  title:=pc+3
+                else
+                  title:=pc+1;
+                pc^:=#0;
+                CurDescrW:=pWideChar(artist);
+              end
+              else
+                CurDescrW:=pWideChar(title);
+            end;
+          end
+          else
+            needtofree:=true;
+          
           // to avoid mem leak and wrong tag process
-          needtofree:=true;
           result:=true;
         end;
         StatusProc(nil,0,0); // split records here
       end;
 
       BASS_TAG_META: begin
+//tag:='SHOUTCAST';
         // SHOUTCAST StreamTitle='xxx';StreamUrl='xxx';
         // "Station=xyz" meta tag="Trackinfo"
         pc:=StrPos(meta,'StreamTitle=');
@@ -494,6 +556,8 @@ begin
           end;
         end;
 
+        gottitle:=true;
+        title:=pAnsiChar(CurDescrW);
         pcw:=StrPosW(CurDescrW,' - ');
         if pcw=nil then
           pcw:=StrScanW(CurDescrW,'-');
@@ -506,6 +570,7 @@ begin
             title:=pAnsiChar(pcw+1);
           pcw^:=#0;
         end;
+
         lcp:=CP_UNICODE;
 
         StatusProc(nil,0,0); // split records here
@@ -521,66 +586,90 @@ begin
       BASS_TAG_APE, // not sure, need to check. maybe better process BASS_TAG_APEBINARY
       BASS_TAG_WMA,
       BASS_TAG_OGG: begin
+//tag:='OGG';
         while meta^<>#0 do
         begin
           CharLowerA(StrCopy(buf,meta,10));
           if StrCmp(buf,'title',5)=0 then
           begin
             title:=meta+6;
+            gottitle:=true;
           end
           else if StrCmp(buf,'artist',6)=0 then
           begin
             artist:=meta+7;
+            gotartist:=true;
           end;
-          if (artist<>nil) and (title<>nil) then
+          if gotartist and gottitle then
             break;
           while meta^<>#0 do inc(meta); inc(meta);
         end;
         buf[0]:=#0;
       end;
     end;
-    // check for old
-    old:=false;
-    oldartist:=nil;
-    oldtitle :=nil;
-    case lcp of
-      CP_UTF8: begin
-        oldartist:=DBReadUTF8(0,PluginName,optArtist);
-        if StrCmp(artist,oldartist)=0 then
-        begin
-          oldtitle:=DBReadUTF8(0,PluginName,optTitle);
-          if StrCmp(title,oldtitle)=0 then
-            old:=true;
-        end;
-        if not old then
-        begin
-          DBWriteUTF8(0,PluginName,optArtist,artist);
-          DBWriteUTF8(0,PluginName,optTitle ,title);
-        end;
-      end;
-      CP_UNICODE:begin
-        oldartist:=pAnsiChar(DBReadUnicode(0,PluginName,optArtist));
-        if StrCmpW(pWideChar(artist),pWideChar(oldartist))=0 then
-        begin
-          oldtitle:=pAnsiChar(DBReadUnicode(0,PluginName,optTitle));
-          if StrCmpW(pWideChar(title),pWideChar(oldtitle))=0 then
-            old:=true;
-        end;
-        if not old then
-        begin
-          DBWriteUnicode(0,PluginName,optArtist,pWideChar(artist));
-          DBWriteUnicode(0,PluginName,optTitle ,pWideChar(title));
-        end;
-      end;
-    end;
-    
-    mFreeMem(oldartist);
-    mFreeMem(oldtitle);
-    mFreeMem(CurDescrW);
-    if needtofree then
+
+    old:=true;
+    if gotartist or gottitle then
     begin
-      mFreeMem(artist);
-      mFreeMem(title );
+      // check for old
+      oldartist:=nil;
+      oldtitle :=nil;
+      case lcp of
+        CP_UTF8: begin
+          if gotartist then
+          begin
+            oldartist:=DBReadUTF8(0,PluginName,optArtist);
+            if StrCmp(artist,oldartist)<>0 then
+              old:=false;
+          end;
+
+          if old and gottitle then
+          begin
+            oldtitle:=DBReadUTF8(0,PluginName,optTitle);
+            if StrCmp(title,oldtitle)<>0 then
+              old:=false;
+          end;
+
+          if not old then
+          begin
+            DBWriteUTF8(0,PluginName,optArtist,artist);
+            DBWriteUTF8(0,PluginName,optTitle ,title);
+          end;
+        end;
+
+        CP_UNICODE:begin
+          if gotartist then
+          begin
+            oldartist:=pAnsiChar(DBReadUnicode(0,PluginName,optArtist));
+            if StrCmpW(pWideChar(artist),pWideChar(oldartist))<>0 then
+              old:=false;
+          end;
+
+          if old and gottitle then
+          begin
+            oldtitle:=pAnsiChar(DBReadUnicode(0,PluginName,optTitle));
+            if StrCmpW(pWideChar(title),pWideChar(oldtitle))<>0 then
+              old:=false;
+          end;
+
+          if not old then
+          begin
+            DBWriteUnicode(0,PluginName,optArtist,pWideChar(artist));
+            DBWriteUnicode(0,PluginName,optTitle ,pWideChar(title));
+          end;
+        end;
+      end;
+      
+//logmeta(tag,artist,title);
+
+      mFreeMem(oldartist);
+      mFreeMem(oldtitle);
+      mFreeMem(CurDescrW);
+      if needtofree then
+      begin
+        mFreeMem(artist);
+        mFreeMem(title );
+      end;
     end;
 
     if not old then

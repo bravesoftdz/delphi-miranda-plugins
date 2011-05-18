@@ -88,13 +88,10 @@ begin
 end;
 
 function Service_RadioRecord(wParam:WPARAM;lParam:LPARAM):int;cdecl;
-const
-  doRecord:boolean=false;
 begin
-  if (wParam=0) or (wParam>2) then
-    doRecord:=not doRecord;
+  if wParam<>0 then lParam:=TLPARAM(-1) else lParam:=0;
 
-  result:=ORD(doRecord);
+  result:=CallService(MS_RADIO_COMMAND,MRC_RECORD,lParam);
 end;
 
 function Service_RadioMute(wParam:WPARAM;lParam:LPARAM):int;cdecl;

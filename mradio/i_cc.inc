@@ -94,6 +94,7 @@ end;
 function ControlCenter(code:WPARAM;arg:LPARAM):int_ptr; cdecl;
 const
   PlayStatus:int_ptr=RD_STATUS_NOSTATION;
+  doRecord:boolean=false;
 var
   res:uint_ptr;
   tmpbuf,buf1:array [0..MAX_PATH-1] of WideChar;
@@ -196,14 +197,21 @@ begin
     end;
 
     MRC_RECORD: begin
-      result:=CallService(MS_RADIO_RECORD,arg,0);
+      if arg=LPARAM(-1) then
+        result:=ord(doRecord)
+      else
+      begin
+        case arg of
+          1: doRecord:=true;  // force start
+          2: doRecord:=false; // force stop
+        else
+          doRecord:=not doRecord;
+        end;
+        result:=ord(doRecord);
 
-      if ((result<>0) and (arg=2)) or   // record on and need to stop
-         ((result= 0) and (arg=1)) then // no record and need to start
-        result:=CallService(MS_RADIO_RECORD,0,0);
-
-      code:=MRC_STATUS;
-      arg :=RD_STATUS_RECORD+(result shl 16);
+        code:=MRC_STATUS;
+        arg :=RD_STATUS_RECORD+(result shl 16);
+      end;
     end;
 
     MRC_PAUSE: begin
