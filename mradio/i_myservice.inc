@@ -89,7 +89,7 @@ end;
 
 function Service_RadioRecord(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
-  if wParam<>0 then lParam:=TLPARAM(-1) else lParam:=0;
+  if lParam<>0 then lParam:=TLPARAM(-1) else lParam:=0;
 
   result:=CallService(MS_RADIO_COMMAND,MRC_RECORD,lParam);
 end;

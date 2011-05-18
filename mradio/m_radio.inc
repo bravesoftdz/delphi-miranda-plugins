@@ -43,8 +43,8 @@ const
   MS_RADIO_SETTINGS:PAnsiChar = 'mRadio/Settings';
 {
   Switch 'record' mode
-  wParam: 0 - switch mode; else - get record status
-  lParam: 0
+  wParam: not used
+  lParam: 0 - switch mode; else - get record status
   Return: Current status: 1 - record is ON, 0 - OFF
 }
   MS_RADIO_RECORD:PAnsiChar = 'mRadio/REC';
