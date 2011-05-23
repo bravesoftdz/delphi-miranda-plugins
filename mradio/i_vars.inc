@@ -25,6 +25,7 @@ const
   optVersion    :PAnsiChar = 'version';
   optStatusTmpl :PAnsiChar = 'StatusTmpl';
   optNumTries   :PAnsiChar = 'NumTries';
+  optOffline    :PAnsiChar = 'asOffline';
   // mRadio compatibility
   optStationURL :PAnsiChar = 'StationURL';
   optMyHandle   :PAnsiChar = 'MyHandle';
@@ -82,6 +83,7 @@ var
   ForcedMono:dword;
   doContRec:dword;
   AuConnect:dword;
+  AsOffline:dword;
   isEQ_OFF:dword;
   PluginStatus:integer;
   storagep,storage:PAnsiChar;

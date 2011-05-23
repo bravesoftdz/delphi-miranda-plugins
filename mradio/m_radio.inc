@@ -17,7 +17,7 @@ const
   MRC_MUTE   = 8;
 
 const
-  // please, do not use these commands, internal using only
+  // Plugin status (result of RD_STATUS_GET)
   RD_STATUS_NOSTATION  = 0;   // no active station found
   RD_STATUS_PLAYING    = 1;   // media is playing
   RD_STATUS_PAUSED     = 2;   // media is paused
@@ -63,12 +63,13 @@ const
   lParam: 0
   Return: volime value (negative if muted)
 }
-  MS_RADIO_GETVOL:PAnsiChar = 'mRadio/SetVol';
+  MS_RADIO_GETVOL:PAnsiChar = 'mRadio/GetVol';
 
 {
   wParam,lParam = 0
 }
   MS_RADIO_MUTE:PAnsiChar = 'mRadio/Mute';
+
 {
   Send command to mRadio
   wParam: command (see MRC_* constant)
@@ -104,6 +105,7 @@ const
     RD_STATUS_NEWSTATION - contact handle
     RD_STATUS_NEWTRACK   - URL (unicode)
     RD_STATUS_PAUSED     - 1 - pause, 0 - continued
+    RD_STATUS_RECORD     -,0 - off,   1 - on
 }
   ME_RADIO_STATUS:PAnsiChar = 'mRadio/Status';
 

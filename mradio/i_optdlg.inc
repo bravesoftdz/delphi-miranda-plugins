@@ -95,7 +95,6 @@ end;
 function ImportOneStation(group,ini,section:PAnsiChar):int;
 var
   grbuf,buf:array [0..511] of AnsiChar;
-  status:integer;
   p:pWideChar;
 begin
   result:=0;
@@ -117,11 +116,7 @@ begin
       GetPrivateProfileStringA(section,'Genre','unknown',buf,SizeOf(buf),ini);
       DBWriteString(result,PluginName,optGenre   ,buf);
       DBWriteString(result,PluginName,optLastName,buf);
-      if PluginStatus=ID_STATUS_OFFLINE then
-        status:=ID_STATUS_OFFLINE
-      else
-        status:=ID_STATUS_INVISIBLE;
-      SetStatus(result,status);
+      SetStatus(result,ID_STATUS_OFFLINE);
 
       if group=nil then
       begin
@@ -337,6 +332,7 @@ begin
       DBWriteByte(0,PluginName,optContRec ,doContRec);
       DBWriteByte(0,PluginName,optPlay1st ,PlayFirst);
       DBWriteByte(0,PluginName,optConnect ,AuConnect);
+      DBWriteByte(0,PluginName,optOffline ,AsOffline);
 
       DBWriteUnicode(0,PluginName,optStatusTmpl,StatusTmpl);
     end;
@@ -362,6 +358,7 @@ begin
       CheckDlgButton(Dialog,IDC_CONTREC  ,doContRec);
       CheckDlgButton(Dialog,IDC_PLAYFIRST,PlayFirst);
       CheckDlgButton(Dialog,IDC_CONNECT  ,AuConnect);
+      CheckDlgButton(Dialog,IDC_OFFLINE  ,AsOffline);
 
       SetDlgItemTextW(Dialog,IDC_STATUS,StatusTmpl);
       
@@ -420,7 +417,7 @@ begin
               end;
             end;
 
-            IDC_LOOP,IDC_SHUFFLE,IDC_CONTREC,IDC_CONNECT:
+            IDC_LOOP,IDC_SHUFFLE,IDC_CONTREC,IDC_CONNECT,IDC_OFFLINE:
               SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
 
             IDC_ADD_LIST,IDC_ADD_INI: begin
@@ -504,6 +501,7 @@ begin
         doContRec:=IsDlgButtonChecked(Dialog,IDC_CONTREC);
         PlayFirst:=IsDlgButtonChecked(Dialog,IDC_PLAYFIRST);
         AuConnect:=IsDlgButtonChecked(Dialog,IDC_CONNECT);
+        AsOffline:=IsDlgButtonChecked(Dialog,IDC_OFFLINE);
 
         mFreeMem(StatusTmpl);
         StatusTmpl:=GetDlgText(Dialog,IDC_STATUS);

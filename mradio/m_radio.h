@@ -15,15 +15,24 @@
 #define MRC_SEEK   6 // lParam is value in sec; -1 mean obtain current position
 #define MRC_RECORD 7 // lParam is 0 - switch; 1 - on; 2 - off
 
-// please, do not use these commands, internal using only
-#define RD_STATUS_NOSTATION 0 // no active station found
-#define RD_STATUS_PLAYING   1 // media is playing
-#define RD_STATUS_PAUSED    2 // media is paused
-#define RD_STATUS_STOPPED   3 // media is stopped (only for playlists)
-#define RD_STATUS_CONNECT   4 // plugin try to connect to the station
-#define RD_STATUS_ABORT     5 // plugin want to abort while try to connect
-// next command is for users
-#define RD_STATUS_GET       6 // to get current status
+/* RD_STATUS_* constands
+   [C]used as command    [E]used as event
+   [-]do not use         [+]used as command and event
+*/
+#define RD_STATUS_NOSTATION  0   // [E] no active station found
+#define RD_STATUS_PLAYING    1   // [-] media is playing
+#define RD_STATUS_PAUSED     2   // [E] media is paused
+#define RD_STATUS_STOPPED    3   // [E] media is stopped (only for playlists)
+#define RD_STATUS_CONNECT    4   // [E] plugin try to connect to the station
+#define RD_STATUS_ABORT      5   // [E] plugin want to abort while try to connect
+#define RD_STATUS_GET        6   // [C] to get current status
+// next is for events only +0.0.2.1
+#define RD_STATUS_POSITION   107 // [E] position was changed
+#define RD_STATUS_MUTED      108 // [E] Mute/Unmute command was sent
+#define RD_STATUS_RECORD     109 // [E] "Record" action called
+#define RD_STATUS_NEWTRACK   110 // [E] new track/station
+#define RD_STATUS_NEWTAG     111 // [E] tag data changed
+#define RD_STATUS_NEWSTATION 112 // [E] new station (contact)
 
 /*
   Open radio Options, if Main Options window not opened
@@ -47,6 +56,19 @@
 #define MS_RADIO_SETVOL "mRadio/SetVol"
 
 /*
+  Get current radio volume
+  wParam: 0
+  lParam: 0
+  Return: volime value (negative if muted)
+*/
+#define MS_RADIO_GETVOL:PAnsiChar "mRadio/GetVol"
+
+/*
+  wParam,lParam = 0
+*/
+#define MS_RADIO_MUTE "mRadio/Mute"
+
+/*
   Send command to mRadio
   wParam: command (see MRC_* constant)
   lParam: value (usually 0)
@@ -61,14 +83,14 @@
 */
 #define MS_RADIO_PLAYSTOP "mRadio/PlayStop"
 
-/*
+/* +0.0.1.4
   wParam: station handle (0 - all)
   lParam: nil (through dialog, radio.ini by default) or ansi string with filename
   Return: exported stations amount
 */
 #define MS_RADIO_EXPORT "mRadio/Export"
 
-/*
+/* +0.0.1.4
   wParam: group to import radio or 0
   lParam: nil (through dialog, radio.ini by default) or ansi string with filename
   Return: imported stations amount
@@ -76,19 +98,29 @@
 #define MS_RADIO_IMPORT "mRadio/Import"
 
 /*
-  MRC_STOP   , LParam - 0
-  MRC_PLAY   , LParam - url
-  MRC_PAUSE  , LParam - 0 (pause) / 1 (play)
-  MRC_SEEK   , LParam - lParam is value in sec
-  MRC_RECORD , LParam - 0 (stop) / 1 (record)
-*/
-#define ME_RADIO_STATUS "mRadio/Status"
-
-/*
   wParam: 0 - switch; 1 - switch on; -1 - switch off
   lParam: 0
   Return: last state (0 - was off, 1 - was on)
 */
 #define MS_RADIO_EQONOFF "mRadio/EqOnOff"
+
+//////event/////
+
+/* +0.0.1.4 (deprecatet only used in 0.0.1.4+)
+  wParam:
+  MRC_STOP   , LParam - 0
+  MRC_PLAY   , LParam - url
+  MRC_PAUSE  , LParam - 0 (pause) / 1 (play)
+  MRC_SEEK   , LParam - lParam is value in sec
+  MRC_RECORD , LParam - 0 (stop) / 1 (record)
+
+  +0.0.2.1 new event constants !!
+  wParam: RD_STATUS_* (see constants)
+  RD_STATUS_NEWSTATION , lParam: contact handle
+  RD_STATUS_NEWTRACK   , lParam: URL (unicode)
+  RD_STATUS_PAUSED     , lParam: 1 - pause, 0 - continued
+  RD_STATUS_RECORD     , lParam: 0 - off,   1 - on
+*/
+#define ME_RADIO_STATUS "mRadio/Status"
 
 #endif
