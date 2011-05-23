@@ -4,76 +4,73 @@
 #define MIID_WATRACK {0xfc6c81f4, 0x837e, 0x4430, {0x96, 0x01, 0xa0, 0xaa, 0x43, 0x17, 0x7a, 0xe3}}
 
 typedef struct tSongInfoA {
-    CHAR *artist;
-    CHAR *title;
-    CHAR *album;
-    CHAR *genre;
-    CHAR *comment;
-    CHAR *year;
-    CHAR *mfile;    // media file
-    int kbps;
-    int khz;
-    int channels;
-    int track;
-    int total;      // music length
-    int time;       // elapsed time
-    CHAR *wndtext;  // window title
-    CHAR *player;   // player name
-    int plyver;     // player version
-    HANDLE icon;    // player icon
-    int fsize;      // media file size
-    int vbr;
-    int status;     // player status: 0 - stopped; 1 - playing; 2 - paused
-    HWND plwnd;     // player window
-    // video part
-    int codec;
-    int width;
-    int height;
-    int fps;
-    __int64 date;
-    CHAR *txtver;
-    CHAR *lyric;
-    CHAR *cover;
-    int volume;
-    CHAR *url;
-    HWND winampwnd
+	CHAR*	artist;
+	CHAR*	title;
+	CHAR*	album;
+	CHAR*	genre;
+	CHAR*	comment;
+	CHAR*	year;
+	CHAR*	mfile;		// media file
+	DWORD	kbps;
+	DWORD	khz;
+	DWORD	channels;
+	DWORD	track;
+	DWORD	total;		// music length
+	DWORD	time;		// elapsed time
+	CHAR*	wndtext;	// window title
+	CHAR*	player;		// player name
+	DWORD	plyver;		// player version
+	HANDLE	icon;		// player icon
+	DWORD	fsize;		// media file size
+	DWORD	vbr;
+	int		status;		// WAT_MES_* const
+	HWND	plwnd;		// player window
+	// video part
+	DWORD	codec;
+	DWORD	width;
+	DWORD	height;
+	DWORD	fps;
+	__int64	date;
+	CHAR*	txtver;
+	CHAR*	lyric;
+	CHAR*	cover;
+	DWORD	volume;
+	CHAR*	url;		// player homepage
 } SONGINFOA, *LPSONGINFOA;
 
 typedef struct tSongInfo {
-    WCHAR *artist;
-    WCHAR *title;
-    WCHAR *album;
-    WCHAR *genre;
-    WCHAR *comment;
-    WCHAR *year;
-    WCHAR *mfile;   // media file
-    int kbps;
-    int khz;
-    int channels;
-    int track;
-    int total;      // music length
-    int time;       // elapsed time
-    WCHAR *wndtext; // window title
-    WCHAR *player;  // player name
-    int plyver;     // player version
-    HANDLE icon;    // player icon
-    int fsize;      // media file size
-    int vbr;
-    int status;     // player status: 0 - stopped; 1 - playing; 2 - paused
-    HWND plwnd;     // player window
-    // video part
-    int codec;
-    int width;
-    int height;
-    int fps;
-    __int64 date;
-    WCHAR txtver;
-    // not implemented yet
-    WCHAR *lyric;
-    WCHAR *cover;
-    int volume;
-    WCHAR *url;
-    HWND winampwnd
+	WCHAR*	artist;
+	WCHAR*	title;
+	WCHAR*	album;
+	WCHAR*	genre;
+	WCHAR*	comment;
+	WCHAR*	year;
+	WCHAR*	mfile;		// media file
+	DWORD	kbps;
+	DWORD	khz;
+	DWORD	channels;
+	DWORD	track;
+	DWORD	total;		// music length
+	DWORD	time;		// elapsed time
+	WCHAR*	wndtext;	// window title
+	WCHAR*	player;		// player name
+	DWORD*	plyver;		// player version
+	HANDLE	icon;		// player icon
+	DWORD	fsize;		// media file size
+	DWORD	vbr;
+	int		status;		// WAT_MES_* const
+	HWND	plwnd;		// player window
+	// video part
+	DWORD	codec;
+	DWORD	width;
+	DWORD	height;
+	DWORD	fps;
+	__int64	date;
+	WCHAR*	txtver;
+	WCHAR*	lyric;
+	WCHAR*	cover;		// cover path
+	DWORD	volume;
+	WCHAR*	url;		// player homepage
 } SONGINFO, *LPSONGINFO;
 
 #if defined(_UNICODE)
@@ -93,18 +90,17 @@ typedef struct tSongInfo {
 #define WAT_RES_DISABLED    1
   // internal
 #define WAT_RES_NEWFILE     3
+#define WAT_RES_NEWPLAYER   4
 
-#define WAT_PLS_NORMAL   WAT_RES_OK
-#define WAT_PLS_NOMUSIC  WAT_RES_DISABLED
-#define WAT_PLS_NOTFOUND WAT_RES_NOTFOUND
+// result for MS_WAT_GETMUSICINFO service
+#define WAT_PLS_NORMAL      WAT_RES_OK
+#define WAT_PLS_NOMUSIC     WAT_RES_DISABLED
+#define WAT_PLS_NOTFOUND    WAT_RES_NOTFOUND
 
-#define WAT_INF_UNICODE 0
-#define WAT_INF_ANSI    1
-#define WAT_INF_UTF8    2
-#define WAT_INF_CHANGES 0x100
-
-#define MS_WAT_INSERT "WATrack/Insert"
-#define MS_WAT_EXPORT "WATrack/Export"
+#define WAT_INF_UNICODE     0
+#define WAT_INF_ANSI        1
+#define WAT_INF_UTF8        2
+#define WAT_INF_CHANGES     0x100
 
 /*
   wParam : WAT_INF_* constant
@@ -118,7 +114,6 @@ typedef struct tSongInfo {
     LPSONGINFO p;
     PluginLink->CallService(MS_WAT_GETMUSICINFO,0,(DWORD)&p);
 */
-
 #define MS_WAT_GETMUSICINFO  "WATrack/GetMusicInfo"
 
 /*
@@ -139,16 +134,18 @@ typedef struct tSongInfo {
 #define MS_WAT_RETURNGLOBAL "WATrack/GetMainStructure"
 
 //!! DON'T CHANGE THESE VALUES!
-#define WAT_CTRL_FIRST  1
-#define WAT_CTRL_PREV   1
-#define WAT_CTRL_PLAY   2
-#define WAT_CTRL_PAUSE  3
-#define WAT_CTRL_STOP   4
-#define WAT_CTRL_NEXT   5
-#define WAT_CTRL_VOLDN  6
-#define WAT_CTRL_VOLUP  7
-#define WAT_CTRL_SEEK   8 // lParam is new position (sec)
-#define WAT_CTRL_LAST   8
+#define WAT_CTRL_FIRST 1
+
+#define WAT_CTRL_PREV  1
+#define WAT_CTRL_PLAY  2
+#define WAT_CTRL_PAUSE 3
+#define WAT_CTRL_STOP  4
+#define WAT_CTRL_NEXT  5
+#define WAT_CTRL_VOLDN 6
+#define WAT_CTRL_VOLUP 7
+#define WAT_CTRL_SEEK  8 // lParam is new position (sec)
+
+#define WAT_CTRL_LAST  8
 
 /*
   wParam: button code (WAT_CTRL_* const)
@@ -156,12 +153,12 @@ typedef struct tSongInfo {
   Affects: emulate player button pressing
   returns: 0 if unsuccesful
 */
-#define MS_WAT_PRESSBUTTON  "WATrack/PressButton"
+#define MS_WAT_PRESSBUTTON "WATrack/PressButton"
 
 /*
   Get user's Music Info
 */
-#define MS_WAT_GETCONTACTINFO = "WATrack/GetContactInfo"
+#define MS_WAT_GETCONTACTINFO "WATrack/GetContactInfo"
 
 // ------------ Plugin/player status ------------
 
@@ -173,15 +170,15 @@ typedef struct tSongInfo {
           other - get plugin status
   lParam: 0
   Affects: Switch plugin status to enabled or disabled
-  returns: version, old plugin status, 0, if was enabled
+  returns: old plugin status, 0, if was enabled
 */
 
 #define MS_WAT_PLUGINSTATUS "WATrack/PluginStatus"
 
 #define ME_WAT_MODULELOADED "WATrack/ModuleLoaded"
 
-#define WAT_EVENT_PLAYERSTATUS    1 // 0-normal; 1-no music (possibly stopped); 2-not found
-#define WAT_EVENT_NEWTRACK        2
+#define WAT_EVENT_PLAYERSTATUS    1 // WAT_PLS_* const
+#define WAT_EVENT_NEWTRACK        2 // LPSONGINFO
 #define WAT_EVENT_PLUGINSTATUS    3 // 0-enabled; 1-dis.temporary; 2-dis.permanent
 #define WAT_EVENT_NEWPLAYER       4 //
 #define WAT_EVENT_NEWTEMPLATE     5 // TM_* constant
@@ -201,7 +198,6 @@ typedef struct tSongInfo {
   Affects: Show popup or Info window with current music information
   note: Only Info window will be showed if Popup plugin disabled
 */
-
 #define MS_WAT_SHOWMUSICINFO "WATrack/ShowMusicInfo"
 
 // --------- Statistic (report) module -------------
@@ -231,38 +227,39 @@ typedef struct tSongInfo {
 
 // media file status
 
-#define WAT_MES_STOPPED 0
-#define WAT_MES_PLAYING 1
-#define WAT_MES_PAUSED  2
-#define WAT_MES_UNKNOWN -1
+#define WAT_MES_STOPPED     0
+#define WAT_MES_PLAYING     1
+#define WAT_MES_PAUSED      2
+#define WAT_MES_UNKNOWN    -1
 
 #define WAT_ACT_REGISTER    1
 #define WAT_ACT_UNREGISTER  2
 #define WAT_ACT_DISABLE     3
 #define WAT_ACT_ENABLE      4
-#define WAT_ACT_GETSTATUS   5         // not found/enabled/disabled
+#define WAT_ACT_GETSTATUS   5       // not found/enabled/disabled
 #define WAT_ACT_SETACTIVE   6
-#define WAT_ACT_REPLACE     0x10000   // can be combined with WAT_REGISTERFORMAT
+#define WAT_ACT_REPLACE     0x10000 // can be combined with WAT_REGISTERFORMAT
 
   // flags
-#define WAT_OPT_DISABLED    0x00000001 // format registered but disabled
-#define WAT_OPT_ONLYONE     0x00000002 // format can't be overwriten
-#define WAT_OPT_PLAYERINFO  0x00000004 // song info from player
-#define WAT_OPT_WINAMPAPI   0x00000008 // Winamp API support
-#define WAT_OPT_CHECKTIME   0x00000010 // check file time for changes
-#define WAT_OPT_VIDEO       0x00000020 // only for format registering used
-#define WAT_OPT_LAST        0x00000040 // (internal)
-#define WAT_OPT_FIRST       0x00000080 // (internal)
-#define WAT_OPT_TEMPLATE    0x00000100 // (internal)
-#define WAT_OPT_IMPLANTANT  0x00000200 // use process implantation
-#define WAT_OPT_HASURL      0x00000400 // (player registration) URL field present
-#define WAT_OPT_CHANGES     0x00000800 // obtain only chaged values
-                                       // (volume, status, window text, elapsed time)
-#define WAT_OPT_APPCOMMAND  0x00001000 // Special (multimedia) key support
-#define WAT_OPT_CHECKALL    0x00002000 // Check all players
-#define WAT_OPT_KEEPOLD     0x00004000 // Keep Old opened file
-#define WAT_OPT_MULTITHREAD 0x00008000 // Use multithread scan
-#define WAT_OPT_SINGLEINST  0x00010000 // Single player instance
+#define WAT_OPT_DISABLED    0x00001 // format registered but disabled
+#define WAT_OPT_ONLYONE     0x00002 // format can't be overwriten
+#define WAT_OPT_PLAYERINFO  0x00004 // song info from player
+#define WAT_OPT_WINAMPAPI   0x00008 // Winamp API support
+#define WAT_OPT_CHECKTIME   0x00010 // check file time for changes
+#define WAT_OPT_VIDEO       0x00020 // only for format registering used
+#define WAT_OPT_LAST        0x00040 // (internal)
+#define WAT_OPT_FIRST       0x00080 // (internal)
+#define WAT_OPT_TEMPLATE    0x00100 // (internal)
+#define WAT_OPT_IMPLANTANT  0x00200 // use process implantation
+#define WAT_OPT_HASURL      0x00400 // (player registration) URL field present
+#define WAT_OPT_CHANGES     0x00800 // obtain only chaged values
+                                    // (volume, status, window text, elapsed time)
+#define WAT_OPT_APPCOMMAND  0x01000 // Special (multimedia) key support
+#define WAT_OPT_CHECKALL    0x02000 // Check all players
+#define WAT_OPT_KEEPOLD     0x04000 // Keep Old opened file
+#define WAT_OPT_MULTITHREAD 0x08000 // Use multithread scan
+#define WAT_OPT_SINGLEINST  0x10000 // Single player instance
+#define WAT_OPT_PLAYERDATA  0x20000 // (internal) to obtain player data
 
 
 typedef BOOL (__cdecl *LPREADFORMATPROC)(LPSONGINFO Info);
@@ -270,7 +267,7 @@ typedef BOOL (__cdecl *LPREADFORMATPROC)(LPSONGINFO Info);
 typedef struct tMusicFormat {
     LPREADFORMATPROC proc;
     CHAR ext[8];
-    int flags;
+    UINT flags;
 } MUSICFORMAT, *LPMUSICFORMAT;
 
 /*
@@ -279,48 +276,42 @@ typedef struct tMusicFormat {
           else - pointer to extension string (ANSI)
   returns: see result codes
 */
-
 #define MS_WAT_FORMAT  "WATrack/Format"
 
 /*
   wParam - pointer to SONGINFO structure (plwind field must be initialized)
   lParam - flags
+  Affects: trying to fill SongInfo using Winamp API
 */
-
 #define MS_WAT_WINAMPINFO   "WATrack/WinampInfo"
 
 /*
   wParam: window
   lParam: LoWord - command; HiWord - value
 */
-
 #define MS_WAT_WINAMPCOMMAND  "WATrack/WinampCommand"
 
-  tInitProc    = function():integer;cdecl;
-  tDeInitProc  = function():integer;cdecl;
-  tStatusProc  = function(wnd:HWND):integer;cdecl;
-
-typedef int (__cdecl *LPINITPROC)();
-typedef int (__cdecl *LPDEINITPROC)();
-typedef int (__cdecl *LPSTATUSPROC)(hwnd wnd);
-typedef WCHAR (__cdecl *LPNAMEPROC)(hwnd wnd, int flags);
-typedef HWND (__cdecl *LPCHECKPROC)(hwnd wnd, int flags);
-typedef int (__cdecl *LPINFOPROC)(LPSONGINFO Info, int flags);
-typedef int (__cdecl *LPCOMMANDPROC)(hwnd wnd, int command, int value);
+typedef int   (__cdecl *LPINITPROC)   ();
+typedef int   (__cdecl *LPDEINITPROC) ();
+typedef int   (__cdecl *LPSTATUSPROC) (HWND wnd);
+typedef WCHAR (__cdecl *LPNAMEPROC)   (HWND wnd, int flags);
+typedef HWND  (__cdecl *LPCHECKPROC)  (HWND wnd,int flags);
+typedef int   (__cdecl *LPINFOPROC)   (LPSONGINFO Info, int flags);
+typedef int   (__cdecl *LPCOMMANDPROC)(HWND wnd, int command, int value);
 
 typedef struct tPlayerCell {
-    CHAR *Desc;
-    int flags;
-    HICON Icon;                // can be 0. for registration only
-    LPINITPROC      Init;
-    LPDEINITPROC    DeInit;
-    LPCHECKPROC     Check;     // check player 
-    LPSTATUSPROC    GetStatus;
-    LPNAMEPROC      GetName;   // can be NULL. get media filename
-    LPINFOPROC      GetInfo;   // can be NULL. get info from player
-    LPCOMMANDPROC   Command;   // can be NULL. send command to player
-    CHAR *URL;                 // only if WAT_OPT_HASURL flag present
-    WCHAR *Notes;
+	CHAR*			Desc;		// Short player name
+	UINT			flags;
+	HICON			Icon;		// can be 0. for registration only
+	LPINITPROC		Init;		// LPINITPROC;    can be NULL. initialize any data
+	LPDEINITPROC	DeInit;		// LPDEINITPROC;   can be NULL. finalize player processing
+	LPCHECKPROC		Check;		// check player 
+	LPSTATUSPROC	GetStatus;	// tStatusProc;  can be NULL. get player status
+	LPNAMEPROC		GetName;	// can be NULL. get media filename
+	LPINFOPROC		GetInfo;	// can be NULL. get info from player
+	LPCOMMANDPROC	Command;	// can be NULL. send command to player
+	CHAR*			URL;		// only if WAT_OPT_HASURL flag present
+	WCHAR*			Notes;		// any tips, notes etc for this player
 } PLAYERCELL, *LPPLAYERCELL;
 
 /*
@@ -331,7 +322,6 @@ typedef struct tPlayerCell {
   note: If you use GetName or GetInfo field, please, do not return empty
         filename even when mediafile is remote!
 */
-
 #define MS_WAT_PLAYER   "WATrack/Player"
 
 // --------- Last FM  ---------
@@ -349,26 +339,24 @@ typedef struct tPlayerCell {
   lParam: int language (first 2 bytes - 2-letters language code)
 */
 typedef struct tLastFMInfo {
-  pLastFMInfo = ^tLastFMInfo;
-  tLastFMInfo = record
-    int   request;  // 0 - artist, 1 - album, 2 - track
-    WCHAR *artist;  // artist
-    WCHAR *album;   // album or similar artists for Artist info request
-    WCHAR *title;   // track title 
-    WCHAR *tags;    // tags
-    WCHAR *info;    // artist bio or wiki article
-    CHAR  *image;   // photo/cover link
-    WCHAR *similar;
-    WCHAR *release;
-    int   trknum;
-} LASTFMINFO, *LPLASTFMINFO;
+	UINT	request;	// 0 - artist, 1 - album, 2 - track
+	WCHAR*	artist;		// artist
+	WCHAR*	album;		// album or similar artists for Artist info request
+	WCHAR*	title;		// track title 
+	WCHAR*	tags;		// tags
+	WCHAR*	info;		// artist bio or wiki article
+	WCHAR*	image;		// photo/cover link
+	WCHAR*	similar;
+	WCHAR*	release;
+	UINT	trknum;
+}PLASTFMINFO, *LPLASTFMINFO;
 
 #define MS_WAT_LASTFMINFO "WATrack/LastFMInfo"
 
 // --------- Templates ----------
 
 /*
-  wParam: 0 (standard Info) or *SongInfo
+  wParam: 0 (standard Info) or pSongInfo
   lParam: Unicode template
   returns: New Unicode (replaced) string
 */

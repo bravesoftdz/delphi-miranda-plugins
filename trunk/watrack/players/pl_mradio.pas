@@ -12,7 +12,7 @@ const
   strUnknown:PwideChar = 'Unknown';
   playername:PAnsiChar = 'mRadio';
 const
-  CurrentStation:integer=-1;
+  CurrentStation:THANDLE=THANDLE(-1);
 const
   ChangesHook:THANDLE=0;
 const
@@ -35,7 +35,6 @@ const
   RD_STATUS_ABORT     = 5;
   RD_STATUS_GET       = 6;
 const
-  IsMod:integer=-1;
   PrevFile:PWideChar=nil;
 
 function ClearmRadio:integer; cdecl;
@@ -45,7 +44,7 @@ begin
   begin
     PluginLink^.UnhookEvent(ChangesHook);
     ChangesHook:=0;
-    CurrentStation:=-1;
+    CurrentStation:=THANDLE(-1);
   end;
   mFreeMem(PrevFile);
 end;
@@ -53,19 +52,11 @@ end;
 function SettingsChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
   result:=0;
-  with PDBCONTACTWRITESETTING(lParam)^ do
-  begin
-    if StrCmp(szModule,playername)<>0 then
-      exit;
-    if (value._type<>DBVT_WORD) or (StrCmp(szSetting,'Status')<>0) then
-      exit;
-    if (value.wVal<>ID_STATUS_ONLINE) and (CurrentStation=wParam) then
-    begin
-      mFreeMem(PrevFile);
-      CurrentStation:=0
-    end
-    else if value.wVal=ID_STATUS_ONLINE then
-      CurrentStation:=wParam;
+  case wParam of
+    // clear station
+    RD_STATUS_NOSTATION: CurrentStation:=THANDLE(-1);
+    // get new url
+    RD_STATUS_NEWSTATION: CurrentStation:=lParam;
   end;
 end;
 
@@ -91,10 +82,10 @@ function InitmRadio:integer;
 begin
   if ChangesHook=0 then
   begin
-    ChangesHook:=PluginLink^.HookEvent(ME_DB_CONTACT_SETTINGCHANGED,@SettingsChanged);
+    ChangesHook:=PluginLink^.HookEvent(ME_RADIO_STATUS,@SettingsChanged);
     result:=Fill;
   end
-  else if (CurrentStation<>0) and (CurrentStation<>-1) then
+  else if (CurrentStation<>0) and (CurrentStation<>THANDLE(-1)) then
     result:=1
   else
     result:=WAT_RES_NOTFOUND;
@@ -104,11 +95,6 @@ function Check(wnd:HWND;flags:integer):HWND;cdecl;
 begin
   if CallProtoService(playername,PS_GETSTATUS,0,0)=ID_STATUS_ONLINE then
   begin
-    if IsMod<0 then
-      if PluginLink^.ServiceExists(MS_RADIO_COMMAND)<>0 then
-        IsMod:=1
-      else
-        IsMod:=0;
     result:=InitmRadio
   end
   else
@@ -129,10 +115,7 @@ end;
 
 function GetFileName(wnd:HWND;flags:integer):pWideChar; cdecl;
 begin
-  if IsMod=0 then
-    result:=DBReadUnicode(CurrentStation,playername,'StationURL',nil)
-  else
-    result:=DBReadUnicode(0,playername,'ActiveURL',nil)
+  result:=DBReadUnicode(0,playername,'ActiveURL',nil)
 end;
 
 function GetGenre:pWideChar;
@@ -227,16 +210,15 @@ begin
   if CurrentStation<>0 then
   begin
     result:=WAT_MES_PLAYING;
-    if IsMod<>0 then
-      case CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_GET) of
-        RD_STATUS_PAUSED : result:=WAT_MES_PAUSED;
-        RD_STATUS_STOPPED: begin
-          result:=WAT_MES_STOPPED;
-          mFreeMem(PrevFile);
-        end;
-        RD_STATUS_NOSTATION,
-        RD_STATUS_ABORT  : result:=WAT_MES_UNKNOWN;
+    case CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_GET) of
+      RD_STATUS_PAUSED : result:=WAT_MES_PAUSED;
+      RD_STATUS_STOPPED: begin
+        result:=WAT_MES_STOPPED;
+        mFreeMem(PrevFile);
       end;
+      RD_STATUS_NOSTATION,
+      RD_STATUS_ABORT  : result:=WAT_MES_UNKNOWN;
+    end;
   end
   else
     result:=WAT_MES_STOPPED;
@@ -265,14 +247,13 @@ begin
         volume:=GetVolume;
         mFreeMem(wndtext);
         wndtext:=GetWndText;
-        if IsMod<>0 then
-          time:=CallService(MS_RADIO_COMMAND,MRC_SEEK,-1);
+        time:=CallService(MS_RADIO_COMMAND,MRC_SEEK,-1);
       end
       else
       begin
         lfile:=GetFileName(plwnd,flags);
         isRemote:=StrPosW(lfile,'://')<>nil;
-        if (PrevFile=nil) or (StrCmpW(PrevFile,lfile)<>0) or isRemote then
+        if (PrevFile=nil) or isRemote or (StrCmpW(PrevFile,lfile)<>0) then
         begin
           ClearTrackInfo(SongInfo,false);
           mfile:=lfile;
@@ -310,14 +291,14 @@ function Command(wnd:HWND;cmd:integer;value:integer):integer;cdecl;
 begin
   result:=0;
   case cmd of
-    WAT_CTRL_PREV : if IsMod<>0 then result:=CallService(MS_RADIO_COMMAND,MRC_PREV,0);
-    WAT_CTRL_PLAY : if IsMod<>0 then result:=CallService(MS_RADIO_COMMAND,MRC_PLAY,0);
-    WAT_CTRL_PAUSE: if IsMod<>0 then result:=CallService(MS_RADIO_COMMAND,MRC_PAUSE,0);
-    WAT_CTRL_STOP : if IsMod<>0 then result:=CallService(MS_RADIO_COMMAND,MRC_STOP,0);
-    WAT_CTRL_NEXT : if IsMod<>0 then result:=CallService(MS_RADIO_COMMAND,MRC_NEXT,0);
+    WAT_CTRL_PREV : result:=CallService(MS_RADIO_COMMAND,MRC_PREV,0);
+    WAT_CTRL_PLAY : result:=CallService(MS_RADIO_COMMAND,MRC_PLAY,0);
+    WAT_CTRL_PAUSE: result:=CallService(MS_RADIO_COMMAND,MRC_PAUSE,0);
+    WAT_CTRL_STOP : result:=CallService(MS_RADIO_COMMAND,MRC_STOP,0);
+    WAT_CTRL_NEXT : result:=CallService(MS_RADIO_COMMAND,MRC_NEXT,0);
     WAT_CTRL_VOLDN: result:=VolDn;
     WAT_CTRL_VOLUP: result:=VolUp;
-    WAT_CTRL_SEEK : if IsMod<>0 then result:=CallService(MS_RADIO_COMMAND,MRC_SEEK,value);
+    WAT_CTRL_SEEK : result:=CallService(MS_RADIO_COMMAND,MRC_SEEK,value);
   end;
 end;
 
@@ -333,7 +314,7 @@ const
     GetName  :@GetFileName;
     GetInfo  :@GetInfo;
     Command  :@Command;
-    URL      :'http://miranda.kom.pl/dev/bankrut/';
+    URL      :'https://code.google.com/p/delphi-miranda-plugins/';
     Notes    :nil);
 
 var

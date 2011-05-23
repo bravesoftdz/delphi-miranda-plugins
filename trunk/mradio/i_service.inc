@@ -143,6 +143,7 @@ begin
 
   mFreeMem(proxy);
   PluginStatus:=ID_STATUS_OFFLINE;
+
   if wParam<>ID_STATUS_OFFLINE then
   begin
     if MyInitBASS<>0 then
@@ -152,17 +153,17 @@ begin
       proxy:=GetProxy(hNetLib);
       BASS_SetConfigPtr(BASS_CONFIG_NET_PROXY,proxy);
 
-      SetStatus(0,ID_STATUS_INVISIBLE);
-
       if (ActiveContact<>0) and (auConnect<>0) then
         CallService(MS_RADIO_COMMAND,MRC_PLAY,ActiveContact);
     end;
   end
   else //offline
   begin
-    StopStation;
-    SetStatus(0,ID_STATUS_OFFLINE);
+    CallService(MS_RADIO_COMMAND,MRC_STOP,0);
+//    StopStation;
   end;
+  SetStatus(0,ID_STATUS_OFFLINE);
+
   ProtoBroadcastAck(PluginName,0,ACKTYPE_STATUS,ACKRESULT_SUCCESS,OldStatus,PluginStatus);
 end;
 

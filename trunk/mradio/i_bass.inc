@@ -440,7 +440,7 @@ var
   CurDescrW:PWideChar;
   old:boolean;
 
-  tag:PAnsiChar;
+//  tag:PAnsiChar;
   gotartist,gottitle:boolean; // indicate what we got artist/title
 begin
   result:=false;
@@ -459,7 +459,7 @@ begin
     title :=nil;
     CurDescrW:=nil;
 
-tag:=meta;
+//tag:=meta;
     case TagType of
       BASS_TAG_WMA_META: begin
         pc:=StrPos(meta,'data=');
@@ -781,6 +781,9 @@ begin
   end
   else
   begin
+
+    CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_NEWTRACK);
+
     if RemoteSong then
     begin
       if isEQ_OFF=BST_UNCHECKED then
@@ -870,8 +873,6 @@ begin
     end;
 
     syncEND:=BASS_ChannelSetSync(chan,BASS_SYNC_END,0,@EndSync,nil);
-
-    CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_NEWTRACK);
 
     SetSndVol(-1);
     // play it!

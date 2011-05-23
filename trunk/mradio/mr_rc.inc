@@ -62,6 +62,7 @@ const
   IDC_9          = 1170;
 
   IDC_CONNECT    = 1072;
+  IDC_OFFLINE    = 1079;
 
   IDC_STATUS     = 1073;
   IDC_HLP_VARS   = 1074;

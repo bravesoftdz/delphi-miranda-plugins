@@ -67,6 +67,12 @@ begin
 //  if Status=ID_STATUS_OFFLINE then
 //    MyStopBass;
 
+  if Status=ID_STATUS_OFFLINE then
+  begin
+    if (AsOffline=BST_UNCHECKED) or (PluginStatus<>ID_STATUS_OFFLINE) then
+      Status:=ID_STATUS_INVISIBLE;
+  end;
+
   if hContact=0 then
   begin
     hContact:=CallService(MS_DB_CONTACT_FINDFIRST,0,0);
@@ -125,8 +131,6 @@ var
 begin
   PluginLink^.UnhookEvent(onloadhook);
 
-  SetStatus(0,ID_STATUS_OFFLINE);
-
   DBWriteDWord(0,PluginName,optVersion,PluginInfo.version);
 
   if PluginLink^.ServiceExists(MS_UPDATE_REGISTER)<>0 then
@@ -174,7 +178,7 @@ begin
   nlu.szSettingsModule   :=PluginName;
   hNetlib:=CallService(MS_NETLIB_REGISTERUSER,0,tlparam(@nlu));
 
-  CallService(MS_RADIO_COMMAND,MRC_RECORD,2);
+//  CallService(MS_RADIO_COMMAND,MRC_RECORD,2); record off - not so necessary
 
   recpath:=DBReadUnicode(0,PluginName,optRecPath);
 
@@ -193,11 +197,14 @@ begin
   PlayFirst :=DBReadByte(0,PluginName,optPlay1st);
   isEQ_OFF  :=DBReadByte(0,PluginName,optEQ_OFF);
   AuConnect :=DBReadByte(0,PluginName,optConnect);
+  AsOffline :=DBReadByte(0,PluginName,optOffline);
   gVolume   :=DBReadByte(0,PluginName,optVolume,50);
   NumTries  :=DBReadByte(0,PluginName,optNumTries,1);
   ForcedMono:=DBReadByte(0,PluginName,optForcedMono);
   if NumTries<1 then NumTries:=1;
 
+  SetStatus(0,ID_STATUS_OFFLINE);
+  
   StatusTmpl:=DBReadUnicode(0,PluginName,optStatusTmpl,'%radio_title%');
 
   if Auconnect<>BST_UNCHECKED then

@@ -8,6 +8,11 @@ function ProtoServiceExists(const proto,service: PAnsiChar): int; cdecl;
 var
   buf:array [0..127] of AnsiChar;
 begin
+  if (proto=nil) or (service=nil) then
+  begin
+    result:=0;
+    exit;
+  end;
   lStrCpyA(@buf,proto);
   lStrCatA(@buf,service);
   result:=PluginLink^.ServiceExists(@buf);
@@ -71,8 +76,8 @@ end;
   {$ifdef M_API_UNIT}
 
 function CallService(const szService: PAnsiChar; wParam: WPARAM; lParam: LPARAM): int_ptr;
-function HookEvent(const szHook: PAnsiChar; hook_proc: TMIRANDAHOOK): int;
-function CreateServiceFunction(const szName: PAnsiChar; const MirandaService: TMIRANDASERVICE): int;
+function HookEvent(const szHook: PAnsiChar; hook_proc: TMIRANDAHOOK): THANDLE;
+function CreateServiceFunction(const szName: PAnsiChar; const MirandaService: TMIRANDASERVICE): THANDLE;
 
   {$else}
 
@@ -81,12 +86,12 @@ begin
   Result := PluginLink^.CallService(szService, wParam, lParam);
 end;
 
-function HookEvent(const szHook: PAnsiChar; hook_proc: TMIRANDAHOOK): int;
+function HookEvent(const szHook: PAnsiChar; hook_proc: TMIRANDAHOOK): THANDLE;
 begin
   Result := PluginLink^.HookEvent(szHook, @hook_proc);
 end;
 
-function CreateServiceFunction(const szName: PAnsiChar; const MirandaService: TMIRANDASERVICE): int;
+function CreateServiceFunction(const szName: PAnsiChar; const MirandaService: TMIRANDASERVICE): THANDLE;
 begin
   Result := PluginLink^.CreateServiceFunction(szName, @MirandaService);
 end;
@@ -509,6 +514,11 @@ function CallProtoService(const szModule, szService: PAnsiChar; wParam: WPARAM; 
 var
   szStr: array[0..MAXMODULELABELLENGTH*2] of AnsiChar;
 begin
+  if (szModule=nil) or (szService=nil) then
+  begin
+    result:=int_ptr(CALLSERVICE_NOTFOUND);
+    exit;
+  end;
   lstrcpya(szStr, szModule);
   lstrcata(szStr, szService);
   Result := PluginLink^.CallService(szStr, wParam, lParam);
@@ -543,6 +553,11 @@ function CreateProtoServiceFunction(const szModule, szService: PAnsiChar; servic
 var
   szStr: array[0..MAXMODULELABELLENGTH*2] of AnsiChar;
 begin
+  if (szModule=nil) or (szService=nil) then
+  begin
+    result:=0;
+    exit;
+  end;
   lstrcpya(szStr, szModule);
   lstrcata(szStr, szService);
   Result := PluginLink^.CreateServiceFunction(szStr, @serviceProc);

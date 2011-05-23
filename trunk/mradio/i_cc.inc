@@ -335,7 +335,7 @@ begin
         title :=nil;
         case code of
           RD_STATUS_NOSTATION: begin
-            SetStatus(ActiveContact,ID_STATUS_INVISIBLE);
+            SetStatus(ActiveContact,ID_STATUS_OFFLINE);
             ActiveContact:=0;
 
             DBDeleteSetting(0,PluginName,optActiveURL);

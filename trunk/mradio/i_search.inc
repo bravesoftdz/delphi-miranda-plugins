@@ -277,7 +277,6 @@ var
   hContact:THANDLE;
   p:PAnsiChar;
   l:bool;
-  status:integer;
 begin
   result:=0;
   if lParam<>0 then
@@ -322,11 +321,7 @@ begin
           DBWriteString(hContact,PluginName,optLastName ,lastname.a);
           DBWriteString(hContact,PluginName,optFirstName,firstname.a);
 
-          if PluginStatus=ID_STATUS_OFFLINE then
-            status:=ID_STATUS_OFFLINE
-          else
-            status:=ID_STATUS_INVISIBLE;
-          SetStatus(hContact,status);
+          SetStatus(hContact,ID_STATUS_OFFLINE);
           result:=hContact;
         end;
       end;
