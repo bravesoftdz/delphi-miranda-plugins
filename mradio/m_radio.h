@@ -42,9 +42,13 @@
 #define MS_RADIO_SETTINGS "mRadio/Settings"
 /*
   Switch 'record' mode
+  +0.0.1.x (deprecatet) !!!
   wParam: 0 - switch mode; else - get record status
   lParam: 0
-  Return: Current status: 1 - record is ON
+  +0.0.2.x  
+  wParam: not used
+  lParam: 0 - switch mode; else - get record status
+  Return: Current status: 1 - record is ON, 0 - OFF
 */
 #define MS_RADIO_RECORD "mRadio/REC"
 
@@ -52,6 +56,7 @@
   Set current radio volume
   wParam: volume (0-100)
   lParam: must be 0
+  Return: previous value
 */
 #define MS_RADIO_SETVOL "mRadio/SetVol"
 
@@ -61,7 +66,7 @@
   lParam: 0
   Return: volime value (negative if muted)
 */
-#define MS_RADIO_GETVOL:PAnsiChar "mRadio/GetVol"
+#define MS_RADIO_GETVOL "mRadio/GetVol"
 
 /*
   wParam,lParam = 0

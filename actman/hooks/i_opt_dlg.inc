@@ -74,9 +74,22 @@ begin
 end;
 
 procedure FillEventList(wnd:HWND);
+var
+  buf:array [0..8191] of AnsiChar;
+  p:PAnsiChar;
 begin
   SendMessage(wnd,CB_RESETCONTENT,0,0);
-  SendMessage(wnd,CB_SETCURSEL,0,0);
+
+  buf[0]:=#0;
+  GetPrivateProfileSectionNamesA(buf,SizeOf(buf),'plugins\events.ini'); // sections
+  p:=@buf;
+  while p^<>#0 do
+  begin
+    SendMessageA(wnd,CB_ADDSTRING,0,lparam(p));
+    while p^<>#0 do inc(p); inc(p);
+  end;
+
+  SendMessage(wnd,CB_SETCURSEL,-1,0);
 end;
 
 procedure FillActionList(wnd:HWND);
@@ -251,6 +264,8 @@ var
   wnd:HWND;
   lv:LV_COLUMNW;
   i:integer;
+  tmp:pAnsiChar;
+  buf:array [0..255] of AnsiChar;
 begin
   result:=0;
   case hMessage of
@@ -297,7 +312,24 @@ begin
       case wParam shr 16 of
         EN_CHANGE,
         CBN_EDITCHANGE,
-        CBN_SELCHANGE:  begin
+        CBN_SELCHANGE: begin
+          SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
+        end;
+      end;
+
+      case wParam shr 16 of
+        CBN_EDITCHANGE,
+        CBN_SELCHANGE: begin
+          case loword(wParam) of
+            IDC_EVENTLIST: begin
+              tmp:=GetDlgText(Dialog,IDC_EVENTLIST,true);
+              buf[0]:=#0;
+              if (tmp<>nil) and (tmp^<>#0) then
+                GetPrivateProfileStringA(tmp,'descr','',buf,SizeOf(buf),'plugins\events.ini');
+              SetDlgItemTextA(Dialog,IDC_DESCR,@buf);
+              mFreeMem(tmp);
+            end;
+          end;
           SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
         end;
 

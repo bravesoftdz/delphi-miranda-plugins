@@ -18,6 +18,7 @@ const
 const
   MS_RADIO_COMMAND = 'mRadio/Command';
   MS_RADIO_SETVOL  = 'mRadio/SetVol';
+  ME_RADIO_STATUS:PAnsiChar = 'mRadio/Status';
 const
   MRC_STOP   = 0;
   MRC_PLAY   = 1;
@@ -27,13 +28,21 @@ const
   MRC_STATUS = 5;
   MRC_SEEK   = 6;
 const
-  RD_STATUS_NOSTATION = 0;
-  RD_STATUS_PLAYING   = 1;
-  RD_STATUS_PAUSED    = 2;
-  RD_STATUS_STOPPED   = 3;
-  RD_STATUS_CONNECT   = 4;
-  RD_STATUS_ABORT     = 5;
-  RD_STATUS_GET       = 6;
+  RD_STATUS_NOSTATION  = 0;   // no active station found
+  RD_STATUS_PLAYING    = 1;   // media is playing
+  RD_STATUS_PAUSED     = 2;   // media is paused
+  RD_STATUS_STOPPED    = 3;   // media is stopped (only for playlists)
+  RD_STATUS_CONNECT    = 4;   // plugin try to connect to the station
+  RD_STATUS_ABORT      = 5;   // plugin want to abort while try to connect
+  // next is for events only
+  RD_STATUS_POSITION   = 107; // position was changed
+  RD_STATUS_MUTED      = 108; // Mute/Unmute command was sent
+  RD_STATUS_RECORD     = 109; // "Record" action called
+  RD_STATUS_NEWTRACK   = 110; // new track/station
+  RD_STATUS_NEWTAG     = 111; // tag data changed
+  RD_STATUS_NEWSTATION = 112; // new station (contact)
+  // next command is for users
+  RD_STATUS_GET        = 6;   // to get current status
 const
   PrevFile:PWideChar=nil;
 

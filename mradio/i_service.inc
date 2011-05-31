@@ -11,6 +11,8 @@ begin
       result:=PF2_ONLINE;// or PF2_INVISIBLE or PF2_SHORTAWAY;
     PFLAGNUM_4:
       result:=PF4_NOCUSTOMAUTH;
+    PFLAG_UNIQUEIDTEXT:
+      result:=int_ptr(Translate('Radio station URL'));
     PFLAG_UNIQUEIDSETTING:
       result:=int_ptr(optStationURL)
     else

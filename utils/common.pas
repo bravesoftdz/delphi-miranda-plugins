@@ -1457,15 +1457,17 @@ end;
 function StrCatE(Dest: PAnsiChar; const Source: PAnsiChar): PAnsiChar;
 begin
   if dest<>nil then
-    StrCopyE(StrEnd(Dest), Source);
-  Result := Dest;
+    result:=StrCopyE(StrEnd(Dest), Source)
+  else
+    result:=nil;
 end;
 
 function StrCatEW(Dest: PWideChar; const Source: PWideChar): PWideChar;
 begin
   if dest<>nil then
-    StrCopyEW(StrEndW(Dest), Source);
-  Result := Dest;
+    result:=StrCopyEW(StrEndW(Dest), Source)
+  else
+    result:=nil;
 end;
 
 function StrPos(const aStr, aSubStr: PAnsiChar): PAnsiChar;

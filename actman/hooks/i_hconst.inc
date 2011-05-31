@@ -15,3 +15,4 @@ const
   IDC_HOOK_NEW      = 1029;
   IDC_HOOK_DELETE   = 1030;
 
+  IDC_DESCR         = 1031;
