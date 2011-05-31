@@ -3,7 +3,7 @@
 procedure TimerProc(wnd:HWND;uMsg:uint;idEvent:uint_ptr;dwTime:dword); stdcall;
 begin
   case DisablePlugin of
-    dsEnabled  : CallService(MS_WAT_GETMUSICINFO,0,0);
+    dsEnabled  : CallService(MS_WAT_GETMUSICINFO,WAT_INF_CHANGES,0);
     dsTemporary: DisablePlugin:=dsWait;
   end;
 end;

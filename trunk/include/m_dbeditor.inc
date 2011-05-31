@@ -30,4 +30,12 @@ const
 }
   MS_DBEDIT_MENUCOMMAND:PAnsiChar = 'DBEditorpp/MenuCommand';
 
+{
+  Import settings\contacts from file
+  wParam=(HANDLE)hContact
+  lParam=(char*)FilePath
+  always returns 0
+}
+  MS_DBEDIT_IMPORT:PAnsiChar = 'DBEditorpp/Import';
+
 {$ENDIF}

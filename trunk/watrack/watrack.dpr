@@ -9,7 +9,7 @@ uses
   common,syswin,HlpDlg,mirutils
   ,global,waticons,io,macros
   ,lastfm    in 'lastfm\lastfm.pas'
-//  ,statlog   in 'stat\statlog.pas'
+  ,statlog   in 'stat\statlog.pas'
   ,popups    in 'popup\popups.pas'
   ,proto     in 'proto\proto.pas'
   ,status    in 'status\status.pas'

@@ -236,6 +236,7 @@ begin
   DestroyFrame();
   MyFreeBASS;
   SaveContact(ActiveContact,PluginName,optLastStn);
+  DBWriteByte(0,PluginName,optVolume,gVolume);
 
   with PluginLink^ do
   begin

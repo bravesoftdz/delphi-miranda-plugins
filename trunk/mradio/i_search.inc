@@ -275,16 +275,27 @@ end;
 function Service_AddToList(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
   hContact:THANDLE;
-  p:PAnsiChar;
+  p:PWideChar;
+  pc:pAnsiChar;
   l:bool;
+  lurl:pWideChar;
+  buf:array [0..255] of WideChar;
 begin
   result:=0;
   if lParam<>0 then
   begin
     with PPROTOSEARCHRESULT(lParam)^ do
     begin
-      if nick.a<>nil then
+      if id.w<>nil then
+        lurl:=id.w
+      else
+        lurl:=firstname.w;
+      if (flags and PSR_UNICODE)=0 then
+        lurl:=FastAnsiToWideBuf(pAnsiChar(lurl),@buf);
+
+      if lurl<>nil then
       begin
+{
 // find contact
         hContact:=CallService(MS_DB_CONTACT_FINDFIRST,0,0);
         while hContact<>0 do
@@ -293,7 +304,7 @@ begin
              PluginName)=0 then
           begin
             p:=DBReadString(hContact,PluginName,optStationURL);
-            l:=StrCmp(p,firstname.a)=0;
+            l:=StrCmp(p,lurl)=0;
             mFreeMem(p);
             if l then
             begin
@@ -306,22 +317,57 @@ begin
           hContact:=CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
         end;
 // if not found
+}
         hContact:=CallService(MS_DB_CONTACT_ADD,0,0);
         if hContact<>0 then
         begin
           CallService(MS_PROTO_ADDTOCONTACT,hContact,tlparam(PluginName));
-          DBWriteString(hContact,strCList,optMyHandle,nick.a);
 
-          DBWriteString(hContact,PluginName,optBitrate   ,email.a);
-          DBWriteString(hContact,PluginName,optGenre     ,lastname.a);
-          DBWriteString(hContact,PluginName,optStationURL,firstname.a);
+          // URL
+          DBWriteUnicode(hContact,PluginName,optStationURL,lurl);
+          DBWriteUnicode(hContact,PluginName,optFirstName ,lurl);
 
-          DBWriteWord  (hContact,PluginName,optAge,StrToInt(email.a));
-          DBWriteString(hContact,PluginName,optNick     ,nick.a);
-          DBWriteString(hContact,PluginName,optLastName ,lastname.a);
-          DBWriteString(hContact,PluginName,optFirstName,firstname.a);
+          // Name
+          l:=false;
+          if nick.w=nil then
+            p:=lurl
+          else if (flags and PSR_UNICODE)=0 then
+          begin
+            l:=true;
+            AnsiToWide(nick.a,p,MirandaCP);
+//            p:=FastAnsiToWideBuf(nick.a,@buf)
+          end
+          else
+            p:=nick.w;
+          DBWriteUnicode(hContact,strCList  ,optMyHandle,p);
+          DBWriteUnicode(hContact,PluginName,optNick    ,p);
+          if l then
+            mFreeMem(p);
+
+          // Bitrate
+          if email.a<>nil then
+          begin
+            if (flags and PSR_UNICODE)<>0 then
+              pc:=FastWideToAnsiBuf(email.w,@buf)
+            else
+              pc:=email.a;
+            DBWriteWord  (hContact,PluginName,optAge    ,StrToInt(pc));
+            DBWriteString(hContact,PluginName,optBitrate,pc);
+          end;
+
+          // Genre
+          if lastname.a<>nil then
+          begin
+            if (flags and PSR_UNICODE)<>0 then
+              pc:=FastWideToAnsiBuf(lastname.w,@buf)
+            else
+              pc:=lastname.a;
+            DBWriteString(hContact,PluginName,optGenre   ,pc);
+            DBWriteString(hContact,PluginName,optLastName,pc);
+          end;
 
           SetStatus(hContact,ID_STATUS_OFFLINE);
+          CallService(MS_IGNORE_IGNORE,hContact,IGNOREEVENT_ALL);
           result:=hContact;
         end;
       end;

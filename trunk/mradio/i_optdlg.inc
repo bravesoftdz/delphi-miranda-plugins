@@ -126,6 +126,7 @@ begin
       AnsiToWide(group,p,MirandaCP);
       CreateGroupW(p,result);
       mFreeMem(p);
+      CallService(MS_IGNORE_IGNORE,result,IGNOREEVENT_ALL);
     end;
   end;
 end;
@@ -447,13 +448,13 @@ begin
                   if loword(wParam)=IDC_ADD_LIST then
                   begin
                     i:=Service_AddToList(0,tlparam(@psr));
-
+{
                     GetDlgItemTextW(Dialog,IDC_STATION,@buf,SizeOf(buf));
                     DBWriteUnicode(i,strCList,optMyHandle,@buf);
 
                     GetDlgItemTextW(Dialog,IDC_STATIONURL,@buf,SizeOf(buf));
                     DBWriteUnicode(i,PluginName,optStationURL,@buf);
-
+}
                     // "changing" station group
                     dst:=GetNewGroupName(Dialog);
                     if dst<>nil then
@@ -571,7 +572,6 @@ begin
       hVolCtrl:=GetDlgItem(Dialog,IDC_VOLUME);
       SendMessage(hVolCtrl,TBM_SETRANGE,0,(100 shl 16)+0);
       SendMessage(hVolCtrl,TBM_SETPOS,1,ABS(gVolume));
-//      SendMessage(hVolCtrl,TBM_SETPOS,1,DBReadByte(0,PluginName,optVolume,50));
 
       SetDlgItemInt(Dialog,IDC_BUFFER ,sBuffer ,false);
       SetDlgItemInt(Dialog,IDC_PREBUF ,sPreBuf ,false);
