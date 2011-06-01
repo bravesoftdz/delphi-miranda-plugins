@@ -185,7 +185,7 @@ const
   ME_WAT_MODULELOADED:PAnsiChar = 'WATrack/ModuleLoaded';
 
 const
-  WAT_EVENT_PLAYERSTATUS = 1; // WAT_PLS_* const
+  WAT_EVENT_PLAYERSTATUS = 1; // WAT_PLS_* in loword, WAT_MES_* in hiword
   WAT_EVENT_NEWTRACK     = 2; // SongInfo ptr
   WAT_EVENT_PLUGINSTATUS = 3; // 0-enabled; 1-dis.temporary; 2-dis.permanent
   WAT_EVENT_NEWPLAYER    = 4; //

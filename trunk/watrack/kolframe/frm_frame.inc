@@ -7,6 +7,9 @@ function SetLayeredWindowAttributes(Hwnd: THandle; crKey: COLORREF; bAlpha: Byte
    external user32 name 'SetLayeredWindowAttributes';
 
 const
+  defFrameText = '%artist% - %title%';
+
+const
 //  opt_HiddenByMe:PAnsiChar = 'frame/hiddenbyme';
   opt_ShowCtrls :PAnsiChar = 'frame/showcontrols';
   opt_FrmUsePic :PAnsiChar = 'frame/frmusepic';
@@ -174,7 +177,7 @@ begin
 
   D.BkDefFile:=DBReadString(0,PluginShort,opt_FrmBkPic,nil);
   //!!!! saving NOT in TextBlock
-  D.Template:=DBReadUnicode(0,PluginShort,opt_FrameText);
+  D.Template:=DBReadUnicode(0,PluginShort,opt_FrameText,DefFrameText);
 end;
 
 {$include i_bitmap.inc}

@@ -172,18 +172,22 @@ typedef struct tSongInfo {
   Affects: Switch plugin status to enabled or disabled
   returns: old plugin status, 0, if was enabled
 */
-
 #define MS_WAT_PLUGINSTATUS "WATrack/PluginStatus"
 
+// ---------- events ------------
+
+/*ME_WAT_MODULELOADED
+  wParam: 0, lParam: 0
+*/
 #define ME_WAT_MODULELOADED "WATrack/ModuleLoaded"
 
-#define WAT_EVENT_PLAYERSTATUS    1 // WAT_PLS_* const
-#define WAT_EVENT_NEWTRACK        2 // LPSONGINFO
-#define WAT_EVENT_PLUGINSTATUS    3 // 0-enabled; 1-dis.temporary; 2-dis.permanent
+#define WAT_EVENT_PLAYERSTATUS    1 //lParam: WAT_PLS_* const
+#define WAT_EVENT_NEWTRACK        2 //lParam: LPSONGINFO
+#define WAT_EVENT_PLUGINSTATUS    3 //lParam: 0-enabled; 1-dis.temporary; 2-dis.permanent
 #define WAT_EVENT_NEWPLAYER       4 //
-#define WAT_EVENT_NEWTEMPLATE     5 // TM_* constant
+#define WAT_EVENT_NEWTEMPLATE     5 //lParam: TM_* constant
 
-/*
+/*ME_WAT_NEWSTATUS
   Plugin or player status changed:
   wParam: type of event (see above)
   lParam: value
