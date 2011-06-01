@@ -59,19 +59,8 @@ begin
     def1:=defPopupTitle;
     def2:=defPopupText;
   end;
-  if DBGetSettingType(0,PluginShort,opt_PopText)=DBVT_DELETED then
-  begin
-    pset:=StrCopyE(setting,spref);
-    IntToStr(pset,DBReadWord(0,PluginShort,opt_popuptext,3));
-    PopText :=DBReadUnicode(0,PluginShort,setting,nil);
-    IntToStr(pset,DBReadWord(0,PluginShort,opt_popuptitle,2));
-    PopTitle:=DBReadUnicode(0,PluginShort,setting,nil);
-  end
-  else
-  begin
-    PopTitle:=DBReadUnicode(0,PluginShort,opt_PopTitle,def1);
-    PopText :=DBReadUnicode(0,PluginShort,opt_PopText ,def2);
-  end;
+  PopTitle:=DBReadUnicode(0,PluginShort,opt_PopTitle,def1);
+  PopText :=DBReadUnicode(0,PluginShort,opt_PopText ,def2);
 end;
 
 procedure savepopup;

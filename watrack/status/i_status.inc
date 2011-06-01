@@ -9,7 +9,8 @@ begin
   // ignoring incoming ListeningTo info, uses internal
   if PLISTENINGTOINFO(lParam).cbSize=SizeOf(TLISTENINGTOINFO) then
   begin
-    result:=int_ptr(GetMacros(tmpl_tunes,0,WAT_PLS_NORMAL)); // need real poto number here
+    result:=int_ptr(GetMacros(tmpl_tunes,0)); // need real proto number here
+    if result=-1 then result:=0;
   end
   else
   begin
@@ -49,6 +50,7 @@ var
   staudio,stvideo:integer;
   lti:TLISTENINGTOINFO;
   buf,buf1:array [0..31] of WideChar;
+  doClear:boolean;
 begin
   result:=0;
   si:=pSongInfo(lParam);
@@ -56,15 +58,14 @@ begin
   case wParam of
     WAT_EVENT_NEWTRACK: begin
       isvideo:=pSongInfo(lParam)^.width<>0;
-      lParam:=WAT_PLS_NORMAL;
+      doClear:=false;
     end;
 
     WAT_EVENT_PLAYERSTATUS: begin
       LastStatus:=lParam;
-      if (loword(lParam)=WAT_PLS_NORMAL){ or (KeepStatus<>BST_UNCHECKED)} then
-        exit
-      else
-        isvideo:=false;
+      if (loword(lParam)=WAT_PLS_NORMAL) then
+        exit;
+      doClear:=true;
     end;
   else
     exit; // not accept template changes
@@ -94,9 +95,7 @@ begin
          IsTunesSupported(j) then
 //         (ProtoServiceExists(proto,PS_SET_LISTENINGTO)<>0) then
       begin
-        if lParam<>WAT_PLS_NORMAL then
-//        if (wParam=WAT_EVENT_PLAYERSTATUS) and
-//          ((lParam=WAT_PLS_NOMUSIC) or (lParam=WAT_PLS_NOTFOUND)) then
+        if doClear then
           CallProtoService(proto,PS_SET_LISTENINGTO,0,0)
         else if (wParam=WAT_EVENT_NEWTRACK) then
         begin
@@ -123,10 +122,10 @@ begin
         if todo then
         begin
           if SimpleMode<>BST_UNCHECKED then
-            txt:=GetMacros(tmpl_stext,0,0)
+            txt:=GetMacros(tmpl_stext,0)
           else
-            txt:=GetMacros(tmpl_stext,j,lParam);
-          if uint_ptr(txt)<>uint_ptr(-2) then
+            txt:=GetMacros(tmpl_stext,j);
+          if uint_ptr(txt)<>uint_ptr(-1) then
           begin
             if (txt=nil) or (txt^=#0) then
               ls:=nil
@@ -144,7 +143,7 @@ begin
         begin
           if IsXStatusSupported(j) then
           begin
-            if lParam<>WAT_PLS_NORMAL then // player status changed to no music/no player
+            if doClear then // player status changed to no music/no player
             begin
 
               if KeepStatus=BST_UNCHECKED then
@@ -162,10 +161,10 @@ begin
             else
             begin
               if SimpleMode<>BST_UNCHECKED then
-                txt:=GetMacros(tmpl_xtext,0,0)
+                txt:=GetMacros(tmpl_xtext,0)
               else
-                txt:=GetMacros(tmpl_xtext,j,lParam);
-              if uint_ptr(txt)<>uint_ptr(-2) then // status template presents
+                txt:=GetMacros(tmpl_xtext,j);
+              if uint_ptr(txt)<>uint_ptr(-1) then // status template presents
               begin
                 // XStatus for audio/video
                 if SimpleMode<>BST_UNCHECKED then
@@ -207,9 +206,9 @@ begin
                   SetXStatus(proto,0);
 
                 if SimpleMode<>BST_UNCHECKED then
-                  title:=GetMacros(tmpl_xtitle,0,0)
+                  title:=GetMacros(tmpl_xtitle,0)
                 else
-                  title:=GetMacros(tmpl_xtitle,j,lParam);
+                  title:=GetMacros(tmpl_xtitle,j);
                 SetXStatus(proto,xstat,txt,title);
                 mFreeMem(title);
                 mFreeMem(txt);

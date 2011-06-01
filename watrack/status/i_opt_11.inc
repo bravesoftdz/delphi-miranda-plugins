@@ -29,7 +29,6 @@ const
 
 var
   CurProto,
-  CurPlyStat,
   CurStatus:integer;
 
 procedure RedrawFields(Dialog:hwnd;proto:integer=-1);
@@ -43,14 +42,14 @@ begin
     proto:=CurProto;
 
   SetDlgItemTextW(Dialog,IDC_EDIT_MSG,
-      GetTemplateStr(tmpl_pm,proto,CurPlyStat,CurStatus));
+      GetTemplateStr(tmpl_pm,proto,CurStatus));
 
-  p:=GetTemplateStr(tmpl_stext,proto,CurPlyStat,CurStatus);
+  p:=GetTemplateStr(tmpl_stext,proto,CurStatus);
 
   wnd:=GetDlgItem(Dialog,IDC_STATUS_TEXT);
 
   SendMessageW(wnd,WM_SETTEXT,0,lparam(p));
-  if IsTemplateActive(tmpl_stext,proto,CurPlyStat,CurStatus) then
+  if IsTemplateActive(tmpl_stext,proto,CurStatus) then
   begin
     EnableWindow(wnd,true);
     i:=BST_CHECKED;
@@ -66,12 +65,12 @@ begin
   begin
     wnd :=GetDlgItem(Dialog,IDC_XSTATUS_TITLE);
     wnd1:=GetDlgItem(Dialog,IDC_XSTATUS_TEXT);
-    p:=GetTemplateStr(tmpl_xtitle,proto,CurPlyStat,CurStatus);
+    p:=GetTemplateStr(tmpl_xtitle,proto,CurStatus);
     SendMessageW(wnd ,WM_SETTEXT,0,lparam(p));
     SendMessageW(wnd1,WM_SETTEXT,0,
-        lparam(GetTemplateStr(tmpl_xtext,proto,CurPlyStat,CurStatus)));
+        lparam(GetTemplateStr(tmpl_xtext,proto,CurStatus)));
 
-    if IsTemplateActive(tmpl_xtitle,proto,CurPlyStat,CurStatus) then
+    if IsTemplateActive(tmpl_xtitle,proto,CurStatus) then
     begin
       EnableWindow(wnd ,true);
       EnableWindow(wnd1,true);
@@ -88,10 +87,10 @@ begin
 
   if IsTunesSupported(CurProto) then
   begin
-    p:=GetTemplateStr(tmpl_tunes,proto,CurPlyStat,CurStatus);
+    p:=GetTemplateStr(tmpl_tunes,proto,CurStatus);
     wnd:=GetDlgItem(Dialog,IDC_LISTENING_TEXT);
     SendMessageW(wnd,WM_SETTEXT,0,lparam(p));
-    if IsTemplateActive(tmpl_tunes,proto,CurPlyStat,CurStatus) then
+    if IsTemplateActive(tmpl_tunes,proto,CurStatus) then
     begin
       EnableWindow(wnd,true);
       i:=BST_CHECKED;
@@ -106,7 +105,7 @@ begin
  
   if IsChatSupported(CurProto) then
     SetDlgItemTextW(Dialog,IDC_EDIT_CHANNEL,
-       GetTemplateStr(tmpl_chat,proto,CurPlyStat,CurStatus));
+       GetTemplateStr(tmpl_chat,proto,CurStatus));
 
   Changed:=Changed and not DLGED_INIT;
 end;
@@ -119,11 +118,7 @@ var
   wnd:HWND;
 begin
   Changed:=Changed or DLGED_INIT;
-  CurPlyStat:=WAT_PLS_NORMAL;
   CurStatus:=0;
-  CheckDlgButton(Dialog,IDC_NORMAL  ,BST_CHECKED);
-  CheckDlgButton(Dialog,IDC_NOMUSIC ,BST_UNCHECKED);
-  CheckDlgButton(Dialog,IDC_NOPLAYER,BST_UNCHECKED);
 
   CheckDlgButton(Dialog,IDC_IRC_USER   ,BST_CHECKED);
   CheckDlgButton(Dialog,IDC_IRC_CHANNEL,BST_UNCHECKED);
@@ -163,8 +158,8 @@ end;
 
 procedure SetTemplate(Dialog:hwnd;idc:integer;Tmpl:tTemplateType);
 begin
-  SetTemplateStr   (GetDlgText(Dialog,ABS(idc)),Tmpl,CurProto,CurPlyStat,CurStatus);
-  SetTemplateActive(idc>0                      ,Tmpl,CurProto,CurPlyStat,CurStatus);
+  SetTemplateStr   (GetDlgText(Dialog,ABS(idc)),Tmpl,CurProto,CurStatus);
+  SetTemplateActive(idc>0                      ,Tmpl,CurProto,CurStatus);
 end;
 
 procedure SaveChanges(Dialog:hwnd);
@@ -239,6 +234,7 @@ end;
 procedure FillCBType(Dialog:hwnd;proto:pAnsiChar=nil);
 var
   wnd:HWND;
+  j:integer;
 begin
   wnd:=GetDlgItem(Dialog,IDC_CBSTATYPE);
   SendMessage(wnd,CB_RESETCONTENT,0,0);
@@ -248,6 +244,9 @@ begin
   if IsTunesSupported  (uint_ptr(proto)) then CB_AddStrDataW(wnd,TranslateW('Tunes'  ),2);
 
   SendMessage(wnd,CB_SETCURSEL,0,0);
+
+  for j:=0 to maxShowControls-1 do
+    ShowWindow(GetDlgItem(Dialog,aListFields[j]),aShowFields[0][j]);
 end;
 
 function DlgProcOptions11(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
@@ -270,7 +269,6 @@ begin
       Changed:=DLGED_INIT;
       FillProtoList(GetDlgItem(Dialog,IDC_PROTOLIST),true);
       CurProto  :=0;
-      CurPlyStat:=0;
       SetScreenFull(Dialog);
       FillCBType(Dialog,nil);
       SendMessage(Dialog,WM_COMMAND,(CBN_SELCHANGE shl 16)+IDC_CBSTATYPE,
@@ -373,17 +371,7 @@ begin
               ShowWindow(GetDlgItem(Dialog,IDC_EDIT_MSG    ),SW_HIDE);
             end;
           else
-            begin
-              SaveChanges(Dialog);
-              case loword(wParam) of
-                IDC_NORMAL  : CurPlyStat:=WAT_PLS_NORMAL;
-                IDC_NOMUSIC : CurPlyStat:=WAT_PLS_NOMUSIC;
-                IDC_NOPLAYER: CurPlyStat:=WAT_PLS_NOTFOUND;
-              else
-                exit;
-              end;
-              RedrawFields(Dialog);
-            end;
+            SaveChanges(Dialog); //??
           end;
         end;
       end;

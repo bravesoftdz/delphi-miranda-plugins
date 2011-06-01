@@ -12,6 +12,8 @@ begin
   result:=0;
   if DisablePlugin=dsPermanent then
     exit;
+  if Loword(LastStatus)<>WAT_PLS_NORMAL then
+    exit;
 //  i:=CallService(MS_WAT_GETMUSICINFO,0,0);
   if UseMessages=BST_CHECKED then
   begin
@@ -36,8 +38,9 @@ begin
         i:=0
       else
         i:=FindProto(p);
-      s:=GetMacros(tt,i,LastStatus);
-      if (s<>nil) and (uint_ptr(s)<>uint_ptr(-2)) then
+      s:=GetMacros(tt,i);
+      // not empty and not disabled
+      if (s<>nil) and (uint_ptr(s)<>uint_ptr(-1)) then
       begin
         if StrScanW(s,'{')<>nil then
           SendRTF(CurWin,s,isUnicode,UserCP)

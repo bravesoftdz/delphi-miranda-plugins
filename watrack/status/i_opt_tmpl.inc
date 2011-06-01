@@ -9,13 +9,12 @@ const
 procedure SaveTemplates;
 var
   i,lProtoStatus:cardinal;
-  lPlayerStatus:tPlayerStatus;
   lTmplType:tTemplateType;
   p:PAnsiChar;
   buf:PAnsiChar;
   NumProto:cardinal;
   tmpl:PStrTemplate;
-  tmp:integer;
+  tmp:SmallInt;
   setting:array [0..63] of AnsiChar;
   pset:PAnsiChar;
 begin
@@ -47,30 +46,29 @@ begin
     p:=buf;
     tmpl:=@StrTemplates^[i];
     pset[3]:=#0;
-    for lPlayerStatus:=player_first to player_last do
-      for lProtoStatus:=0 to NumStatus-1 do
-        for lTmplType:=tmpl_first to tmpl_last do
+    for lProtoStatus:=0 to NumStatus-1 do
+      for lTmplType:=tmpl_first to tmpl_last do
+      begin
+        tmp:=tmpl^[lProtoStatus,lTmplType];
+        if tmp=0 then
         begin
-          tmp:=tmpl^[lPlayerStatus,lProtoStatus,lTmplType];
-          if tmp=0 then
+          if p<>buf then
           begin
-            if p<>buf then
-            begin
-              p^:=',';
-              inc(p);
-            end;
-            p^:=AnsiChar(ORD(lPlayerStatus)+ORD('0')); inc(p);
-            p^:=AnsiChar(lProtoStatus      +ORD('0')); inc(p);
-            p^:=AnsiChar(ORD(lTmplType    )+ORD('0')); inc(p);
-          end
-          else if (tmp>0) or (tmp<-1) then
-          begin
-            pset[0]:=AnsiChar(ORD(lPlayerStatus)+ORD('0'));
-            pset[1]:=AnsiChar(lProtoStatus      +ORD('0'));
-            pset[2]:=AnsiChar(ORD(lTmplType    )+ORD('0'));
-            DBWriteWord(0,PluginShort,setting,word(tmp));
+            p^:=',';
+            inc(p);
           end;
+          p^:='0'; inc(p); // for compatibility
+          p^:=AnsiChar(lProtoStatus  +ORD('0')); inc(p);
+          p^:=AnsiChar(ORD(lTmplType)+ORD('0')); inc(p);
+        end
+        else if (tmp<>0) and (tmp<>smallint(dubtmpl)) then
+        begin
+          pset[0]:='0'; // for compatibility
+          pset[1]:=AnsiChar(lProtoStatus  +ORD('0'));
+          pset[2]:=AnsiChar(ORD(lTmplType)+ORD('0'));
+          DBWriteWord(0,PluginShort,setting,word(tmp));
         end;
+      end;
     if p<>buf then
     begin
       p^:=#0;
@@ -101,32 +99,16 @@ begin
   end;
   StrDupW(strings^[2].text,defStatusTitle);
   StrDupW(strings^[3].text,defStatusText);
-  StrDupW(strings^[5].text,defNoMusic);
-  StrDupW(strings^[6].text,defNoPlayer);
-  StrDupW(strings^[7].text,defChNoMusic);
-  StrDupW(strings^[8].text,defChNoPlayer);
 
   tmpl:=@StrTemplates^[DefaultTemplate];
-  if tmpl^[player_first,0,tmpl_first]=-1 then
+  if tmpl^[0,tmpl_first]=smallint(dubtmpl) then
   begin
     // music played
-    tmpl^[player_playing,0,tmpl_pm    ]:=1;
-    tmpl^[player_playing,0,tmpl_chat  ]:=4;
-    tmpl^[player_playing,0,tmpl_xtitle]:=2;
-    tmpl^[player_playing,0,tmpl_stext ]:=3;
-    tmpl^[player_playing,0,tmpl_xtext ]:=3;
-    // music stopped, player founded
-    tmpl^[player_stopped,0,tmpl_pm    ]:=5;
-    tmpl^[player_stopped,0,tmpl_chat  ]:=7;
-    tmpl^[player_stopped,0,tmpl_xtitle]:=5;
-    tmpl^[player_stopped,0,tmpl_stext ]:=5;
-    tmpl^[player_stopped,0,tmpl_xtext ]:=5;
-    // player not found
-    tmpl^[player_failed ,0,tmpl_pm    ]:=6;
-    tmpl^[player_failed ,0,tmpl_chat  ]:=8;
-    tmpl^[player_failed ,0,tmpl_xtitle]:=6;
-    tmpl^[player_failed ,0,tmpl_stext ]:=6;
-    tmpl^[player_failed ,0,tmpl_xtext ]:=6;
+    tmpl^[0,tmpl_pm    ]:=1;
+    tmpl^[0,tmpl_chat  ]:=4;
+    tmpl^[0,tmpl_xtitle]:=2;
+    tmpl^[0,tmpl_stext ]:=3;
+    tmpl^[0,tmpl_xtext ]:=3;
   end;
 end;
 
@@ -169,7 +151,6 @@ procedure LoadTemplates;
 var
   buf:PAnsiChar;
   lProtoStatus,i,j:cardinal;
-  lPlayerStatus:tPlayerStatus;
   lTmplType:tTemplateType;
   p:PAnsiChar;
   pc:PAnsiChar;
@@ -222,10 +203,9 @@ begin
         if (p^>='0') and (p^<='9') then
           while p^<>#0 do
           begin
-            lPlayerStatus:=tPlayerStatus(ORD(p[0])-ORD('0'));
             lProtoStatus :=              ORD(p[1])-ORD('0');
             lTmplType    :=tTemplateType(ORD(p[2])-ORD('0'));
-            tmpl^[lPlayerStatus,lProtoStatus,lTmplType]:=0;
+            tmpl^[lProtoStatus,lTmplType]:=0;
             inc(p,3);
             if p^=',' then
               inc(p);
@@ -242,16 +222,15 @@ begin
         if StrCmp(pc,setting,j)=0 then // only proper proto
         begin
           pc:=strend(pc);
-          lPlayerStatus:=tPlayerStatus(ORD((pc-3)^)-ORD('0'));
           lProtoStatus :=              ORD((pc-2)^)-ORD('0');
           lTmplType    :=tTemplateType(ORD((pc-1)^)-ORD('0'));
 
-          pset[0]:=AnsiChar(ORD(lPlayerStatus)+ORD('0'));
-          pset[1]:=AnsiChar(    lProtoStatus  +ORD('0'));
-          pset[2]:=AnsiChar(ORD(lTmplType    )+ORD('0'));
+          pset[0]:='0';
+          pset[1]:=AnsiChar(lProtoStatus  +ORD('0'));
+          pset[2]:=AnsiChar(ORD(lTmplType)+ORD('0'));
 
-          tmpl^[lPlayerStatus,lProtoStatus,lTmplType]:=
-              DBReadWord(0,PluginShort,setting,word(-1));
+          tmpl^[lProtoStatus,lTmplType]:=
+              DBReadWord(0,PluginShort,setting,dubtmpl);
         end
         else
           pc:=strend(pc);

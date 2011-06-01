@@ -6,13 +6,13 @@ var
 begin
   Changed:=Changed or DLGED_INIT;
 
-  p:=GetTemplateStr(tmpl_pm    ,0,0,0);// if integer(p)=-2 then p:=nil;
+  p:=GetTemplateStr(tmpl_pm    ,0,0);
   SetDlgItemTextW(Dialog,IDC_EDIT_MSG     ,p);
-  p:=GetTemplateStr(tmpl_xtitle,0,0,0);// if integer(p)=-2 then p:=nil;
+  p:=GetTemplateStr(tmpl_xtitle,0,0);
   SetDlgItemTextW(Dialog,IDC_XSTATUS_TITLE,p);
-  p:=GetTemplateStr(tmpl_stext ,0,0,0);// if integer(p)=-2 then p:=nil;
+  p:=GetTemplateStr(tmpl_stext ,0,0);
   SetDlgItemTextW(Dialog,IDC_STATUS_TEXT  ,p);
-  p:=GetTemplateStr(tmpl_chat  ,0,0,0);// if integer(p)=-2 then p:=nil;
+  p:=GetTemplateStr(tmpl_chat  ,0,0);
   SetDlgItemTextW(Dialog,IDC_EDIT_CHANNEL ,p);
 
   Changed:=Changed and not DLGED_INIT;
@@ -20,7 +20,7 @@ end;
 
 procedure SetTemplateLite(Dialog:HWnd;idc:integer;Tmpl:tTemplateType);
 begin
-  SetTemplateStr(GetDlgText(Dialog,idc),Tmpl,0,0,0);
+  SetTemplateStr(GetDlgText(Dialog,idc),Tmpl,0,0);
 end;
 
 procedure SaveChangesLite(Dialog:HWnd);

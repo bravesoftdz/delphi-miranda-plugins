@@ -1,5 +1,7 @@
 {}
 const
+  defProtoText = '%artist% - %title%';
+const
   opt_ModStatus:PAnsiChar = 'module/protocol';
 
   opt_histmask :PAnsiChar = 'historymask';
@@ -18,7 +20,7 @@ end;
 procedure ReadOptions;
 begin
   HistMask :=DBReadWord   (0,PluginShort,opt_histmask,0);
-  ProtoText:=DBReadUnicode(0,PluginShort,opt_prototext);
+  ProtoText:=DBReadUnicode(0,PluginShort,opt_prototext,defProtoText);
 end;
 
 procedure WriteOptions;

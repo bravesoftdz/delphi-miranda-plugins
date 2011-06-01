@@ -8,11 +8,7 @@ type
     tmpl_xtitle,tmpl_xtext,
     tmpl_stext ,
     tmpl_tunes);
-type
-  tPlayerStatus = (player_playing,player_stopped,player_failed);
 const
-  player_first = player_playing;
-  player_last  = player_failed;
   tmpl_first   = tmpl_pm;
   tmpl_last    = tmpl_tunes;
 
@@ -21,27 +17,29 @@ procedure FreeTemplates;
 procedure SaveTemplates;
 
 function SetTemplateActive(active:boolean;aType:tTemplateType;proto:cardinal=0;
-                          PlStatus:integer=0;ProtoStatus:integer=0):boolean;
+                          ProtoStatus:integer=0):boolean;
 function IsTemplateActive(aType:tTemplateType;proto:cardinal=0;
-                          PlStatus:integer=0;ProtoStatus:integer=0):boolean;
+                          ProtoStatus:integer=0):boolean;
 function GetTemplateStr(aType:tTemplateType;proto:cardinal=0;
-                        PlStatus:integer=0;ProtoStatus:integer=0):PWideChar;
+                        ProtoStatus:integer=0):PWideChar;
 function SetTemplateStr(aStr:PWideChar;aType:tTemplateType;proto:cardinal=0;
-                        PlStatus:integer=0;ProtoStatus:integer=0):integer;
+                        ProtoStatus:integer=0):integer;
 
-function GetMacros(TmplType:tTemplateType;proto:integer;plStat:integer=1):pWideChar;
+function GetMacros(TmplType:tTemplateType;proto:integer):pWideChar;
 
 implementation
 
 uses common, m_api, windows, dbsettings, mirutils, protocols,wat_api,global;
 
 const
+  dubtmpl = $4000;
+const
   DefaultTemplate = 0;
   NumStatus = 10;
 
 type
   pStrTemplate = ^tStrTemplate;
-  tStrTemplate = array [tPlayerStatus,0..NumStatus-1,tTemplateType] of SmallInt;
+  tStrTemplate = array [0..NumStatus-1,tTemplateType] of SmallInt;
 
 type
   pMyString = ^tMyString;
@@ -68,12 +66,8 @@ var
 const
   defTemplate    = 'I am listening to %artist% - "%title%"';
   defChannelText = '/me listening to %artist% - "%title%"';
-  defNoMusic     = 'Nothing';
-  defNoPlayer    = 'Nothing played';
-  defChNoMusic   = '/me stop any music';
-  defChNoPlayer  = '/me not listen anything';
-  defStatusTitle  = 'Now listening to';
-  defStatusText   = '%artist% - %title%';
+  defStatusTitle = 'Now listening to';
+  defStatusText  = '%artist% - %title%';
 
   defAltTemplate    = 'I am listening to %artist% - %title%?iflonger(%album%,0, (from "%album%"),)';
   defAltChannelText = '/me listening to %artist% - %title%?iflonger(%album%,0, (from "%album%"),)';
@@ -109,7 +103,6 @@ procedure PackStrings;
 var
   i,j:integer;
   OldNumString:cardinal;
-  lPlayerStatus:tPlayerStatus;
   lTmplType:tTemplateType;
   lProtoStatus:cardinal;
   tmp:pMyStrArray;
@@ -124,14 +117,13 @@ begin
   for i:=0 to NumProto do
   begin
     tmpl:=@StrTemplates^[i];
-    for lPlayerStatus:=player_first to player_last do
-      for lProtoStatus:=0 to NumStatus-1 do
-        for lTmplType:=tmpl_first to tmpl_last do
-        begin
-          j:=tmpl^[lPlayerStatus,lProtoStatus,lTmplType];
-          if j>0 then
-            inc(strings^[j].count);
-        end;
+    for lProtoStatus:=0 to NumStatus-1 do
+      for lTmplType:=tmpl_first to tmpl_last do
+      begin
+        j:=tmpl^[lProtoStatus,lTmplType];
+        if j>0 then
+          inc(strings^[j].count);
+      end;
   end;
   // delete strings
   i:=1;
@@ -153,13 +145,12 @@ begin
         for j:=0 to NumProto do
         begin
           tmpl:=@StrTemplates^[j];
-          for lPlayerStatus:=player_first to player_last do
-            for lProtoStatus:=0 to NumStatus-1 do
-              for lTmplType:=tmpl_first to tmpl_last do
-              begin
-                if tmpl^[lPlayerStatus,lProtoStatus,lTmplType]>i then
-                  dec(tmpl^[lPlayerStatus,lProtoStatus,lTmplType]);
-              end;
+          for lProtoStatus:=0 to NumStatus-1 do
+            for lTmplType:=tmpl_first to tmpl_last do
+            begin
+              if tmpl^[lProtoStatus,lTmplType]>i then
+                dec(tmpl^[lProtoStatus,lTmplType]);
+            end;
         end;
       end;
       dec(NumString);
@@ -182,6 +173,29 @@ begin
 
 end;
 
+function SetTemplateActive(active:boolean;aType:tTemplateType;proto:cardinal=0;
+                          ProtoStatus:integer=0):boolean;
+var
+  res:smallint;
+begin
+  if proto>NumTemplates then
+    proto:=0;
+
+  res:=ABS(StrTemplates^[proto][ProtoStatus,aType]);
+  if not active then res:=-res;
+  StrTemplates^[proto][ProtoStatus,aType]:=res;
+  result:=res>0;
+end;
+
+function IsTemplateActive(aType:tTemplateType;proto:cardinal=0;
+                          ProtoStatus:integer=0):boolean;
+begin
+  if proto>NumTemplates then
+    proto:=0;
+
+  result:=StrTemplates^[proto][ProtoStatus,aType]>0;
+end;
+
 function GetTmplString(num:integer):pWideChar;
 begin
   if (num>0) and (Cardinal(num)<=NumString) then
@@ -190,72 +204,29 @@ begin
     result:=nil;
 end;
 
-function FixPlStatus(plStat:integer):tPlayerStatus;
-begin
-  case plStat of
-    WAT_PLS_NOMUSIC : result:=player_stopped;
-    WAT_PLS_NOTFOUND: result:=player_failed;
-  else // WAT_PLS_NORMAL:
-    result:=player_playing;
-  end;
-end;
-
-function SetTemplateActive(active:boolean;aType:tTemplateType;proto:cardinal=0;
-                          PlStatus:integer=0;ProtoStatus:integer=0):boolean;
-var
-  pls:tPlayerStatus;
-  res:integer;
-begin
-  if proto>NumTemplates then
-    proto:=0;
-  pls:=FixPlStatus(PlStatus);
-
-  res:=ABS(StrTemplates^[proto][pls,ProtoStatus,aType]);
-  if not active then res:=-res;
-  StrTemplates^[proto][pls,ProtoStatus,aType]:=res;
-  result:=res>0;
-end;
-
-function IsTemplateActive(aType:tTemplateType;proto:cardinal=0;
-                          PlStatus:integer=0;ProtoStatus:integer=0):boolean;
-var
-  pls:tPlayerStatus;
-begin
-  if proto>NumTemplates then
-    proto:=0;
-  pls:=FixPlStatus(PlStatus);
-
-  result:=StrTemplates^[proto][pls,ProtoStatus,aType]>0;
-end;
-
 function GetTemplateStr(aType:tTemplateType;proto:cardinal=0;
-                        PlStatus:integer=0;ProtoStatus:integer=0):PWideChar;
+                        ProtoStatus:integer=0):PWideChar;
 var
-  i:integer;
-  pls:tPlayerStatus;
+  i:smallint;
 begin
    if proto>NumTemplates then
      proto:=0;
-   pls:=FixPlStatus(PlStatus);
 
-  i:=StrTemplates^[proto          ][pls,ProtoStatus,aType];
-  if i=-1 then begin
-  i:=StrTemplates^[proto          ][pls,0          ,aType];
-  if i=-1 then begin
-  i:=StrTemplates^[DefaultTemplate][pls,ProtoStatus,aType];
-  if i=-1 then
-  i:=StrTemplates^[DefaultTemplate][pls,0          ,aType]; end; end;
-  if i=-1 then
+                                    i:=abs(StrTemplates^[proto          ][ProtoStatus,aType]);
+  if i=smallint(dubtmpl) then begin i:=abs(StrTemplates^[proto          ][0          ,aType]);
+  if i=smallint(dubtmpl) then begin i:=abs(StrTemplates^[DefaultTemplate][ProtoStatus,aType]);
+  if i=smallint(dubtmpl) then       i:=abs(StrTemplates^[DefaultTemplate][0          ,aType]); end; end;
+  if i=smallint(dubtmpl) then
     i:=0;
 
   result:=GetTmplString(ABS(i)); //normalize
 end;
 
 function SetTemplateStr(aStr:PWideChar;aType:tTemplateType;proto:cardinal=0;
-                        PlStatus:integer=0;ProtoStatus:integer=0):integer;
+                        ProtoStatus:integer=0):integer;
 var
   tmpl:PStrTemplate;
-  tmp,tmp1:integer;
+  tmp,tmp1:smallint;
 begin
   tmpl:=@StrTemplates^[proto];
 
@@ -265,15 +236,15 @@ begin
     result:=AddString(aStr);
 
   tmp1:=result;
-  tmp:=tmpl^[FixPlStatus(PlStatus),0,aType];
+  tmp:=tmpl^[0,aType];
   if tmp1=tmp then
-    tmp1:=-1
-  else if tmp=-1 then
+    tmp1:=smallint(dubtmpl)
+  else if tmp=smallint(dubtmpl) then
   begin
-    if tmp1=tmpl^[player_first,0,aType] then
-      tmp1:=-1;
+    if tmp1=tmpl^[0,aType] then
+      tmp1:=smallint(dubtmpl);
   end;
-  tmpl^[FixPlStatus(PlStatus),ProtoStatus,aType]:=tmp1;
+  tmpl^[ProtoStatus,aType]:=tmp1;
 end;
 
 procedure CreateTemplates;
@@ -281,9 +252,10 @@ var
   i:integer;
 begin
   NumTemplates:=GetNumProto;
-  i:=SizeOf(tStrTemplate)*(NumTemplates+1);
+  i:=SizeOf(tStrTemplate)*(NumTemplates+1) div 2;
   mGetMem(StrTemplates,i);
-  FillChar(StrTemplates^,i,byte(-1));
+//!!!!!!!!!!!!!!
+  Fillword(StrTemplates^,i,dubtmpl);
   LoadTemplates;
 end;
 
@@ -298,20 +270,27 @@ begin
   mFreeMem(strings);
 end;
 
-function GetMacros(TmplType:tTemplateType;proto:integer;plStat:integer=1):pWideChar;
+function GetMacros(TmplType:tTemplateType;proto:integer):pWideChar;
 var
   r:PWideChar;
   status:integer;
 begin
-  if proto=0{SimpleMode<>BST_UNCHECKED} then
-    r:=GetTemplateStr(TmplType,0,0,0)//pWideChar(TmplType)
+  if proto=0 then
+    r:=GetTemplateStr(TmplType,0,0)
   else
   begin
     status:=GetProtoStatusNum(proto);
-    r:=GetTemplateStr(TmplType,proto,plStat,status);
+    if IsTemplateActive(TmplType,proto,status) then
+      r:=GetTemplateStr(TmplType,proto,status)
+    else
+    begin
+      result:=pWideChar(-1);
+      exit;
+    end;
   end;
-  if r=pWidechar(-2) then
-    result:=pWideChar(-2)
+
+  if r=nil then
+    result:=nil
   else
     result:=pWideChar(CallService(MS_WAT_REPLACETEXT,0,lparam(r)));
 end;
