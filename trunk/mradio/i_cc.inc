@@ -259,6 +259,8 @@ begin
           plist:=nil;
         end;
         ControlCenter(MRC_STATUS,RD_STATUS_STOPPED);
+        // Save station for next autoplay
+        SaveContact(ActiveContact,PluginName,optLastStn);
         StopStation;
 
         arg:=RD_STATUS_NOSTATION;

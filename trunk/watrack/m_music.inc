@@ -253,25 +253,26 @@ const
 
 const
   // flags
-  WAT_OPT_DISABLED    = $00000001; // registered but disabled
-  WAT_OPT_ONLYONE     = $00000002; // can't be overwriten
-  WAT_OPT_PLAYERINFO  = $00000004; // song info from player
-  WAT_OPT_WINAMPAPI   = $00000008; // Winamp API support
-  WAT_OPT_CHECKTIME   = $00000010; // check file time for changes
-  WAT_OPT_VIDEO       = $00000020; // only for format registering used
+  WAT_OPT_DISABLED    = $00000001; // [formats,players,options] registered but disabled
+  WAT_OPT_ONLYONE     = $00000002; // [formats,players] code can't be overwriten
+  WAT_OPT_PLAYERINFO  = $00000004; // [players] song info from player
+  WAT_OPT_WINAMPAPI   = $00000008; // [players] Winamp API support
+  WAT_OPT_CHECKTIME   = $00000010; // [options] check file time for changes
+  WAT_OPT_VIDEO       = $00000020; // [formats,options] format is video
   WAT_OPT_LAST        = $00000040; // (internal-Winamp Clone) put to the end of queue
   WAT_OPT_FIRST       = $00000080; // (internal)
   WAT_OPT_TEMPLATE    = $00000100; // (internal)
-  WAT_OPT_IMPLANTANT  = $00000200; // use process implantation
-  WAT_OPT_HASURL      = $00000400; // (player registration) URL field present
-  WAT_OPT_CHANGES     = $00000800; // obtain only chaged values
+  WAT_OPT_IMPLANTANT  = $00000200; // [options] use process implantation
+  WAT_OPT_HASURL      = $00000400; // [players] URL field present
+  WAT_OPT_CHANGES     = $00000800; // (internal) obtain only chaged values
                                    // (volume, status, window text, elapsed time)
-  WAT_OPT_APPCOMMAND  = $00001000; // Special (multimedia) key support
-  WAT_OPT_CHECKALL    = $00002000; // Check all players
-  WAT_OPT_KEEPOLD     = $00004000; // Keep Old opened file
-  WAT_OPT_MULTITHREAD = $00008000; // Use multithread scan
-  WAT_OPT_SINGLEINST  = $00010000; // Single player instance
+  WAT_OPT_APPCOMMAND  = $00001000; // [options] Special (multimedia) key support
+  WAT_OPT_CHECKALL    = $00002000; // [options] Check all players
+  WAT_OPT_KEEPOLD     = $00004000; // [options] Keep Old opened file
+  WAT_OPT_MULTITHREAD = $00008000; // [options] Use multithread scan
+  WAT_OPT_SINGLEINST  = $00010000; // [players] Single player instance
   WAT_OPT_PLAYERDATA  = $00020000; // (internal) to obtain player data
+  WAT_OPT_CONTAINER   = $00040000; // [formats] format is container (need to check full)
 
 type
   tReadFormatProc = function(var Info:tSongInfo):boolean; cdecl;

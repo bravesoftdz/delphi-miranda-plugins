@@ -228,39 +228,6 @@ begin
   end;
 end;
 
-procedure Destroy(dummy:PControl;sender:PObj);
-var
-  D:pTextData;
-begin
-  D:=PTextBlock(sender).CustomData;
-  if D.UpdTimer<>0 then
-  begin
-    KillTimer(0,D.UpdTimer);
-    D.UpdTimer:=0;
-  end;
-  PTextBlock(sender).ClearText;
-end;
-
-// avoiding anchors problems
-procedure tTextBlock.myCtrlResize(Sender: PObj);
-var
-  tmp:integer;
-  D:pTextData;
-begin
-  D:=CustomData;
-  if D.NeedResize then
-  begin
-    D.NeedResize:=false;
-
-    tmp:=PControl(Sender).Parent.Width-2*awkTextPad;
-
-    if (PControl(Sender)^.Width)>tmp then
-      PControl(Sender)^.Width:=tmp;
-
-    D.NeedResize:=true;
-  end;
-end;
-
 procedure tTextBlock.DrawText(DC:HDC; justpaint:boolean);
 var
   dst:TRECT;
@@ -305,6 +272,39 @@ begin
      SC_MOVE or HTCAPTION,MAKELPARAM(Mouse.x,Mouse.y));
 end;
 
+// avoiding anchors problems
+procedure tTextBlock.myCtrlResize(Sender: PObj);
+var
+  tmp:integer;
+  D:pTextData;
+begin
+  D:=CustomData;
+  if D.NeedResize then
+  begin
+    D.NeedResize:=false;
+
+    tmp:=PControl(Sender).Parent.Width-2*awkTextPad;
+
+    if (PControl(Sender)^.Width)>tmp then
+      PControl(Sender)^.Width:=tmp;
+
+    D.NeedResize:=true;
+  end;
+end;
+
+procedure Destroy(dummy:PControl;sender:PObj);
+var
+  D:pTextData;
+begin
+  D:=PTextBlock(sender).CustomData;
+  if D.UpdTimer<>0 then
+  begin
+    KillTimer(0,D.UpdTimer);
+    D.UpdTimer:=0;
+  end;
+  PTextBlock(sender).ClearText;
+end;
+
 function MakeNewTextBlock(AOwner:PControl;BkColor:TCOLORREF):pTextBlock;
 var
   D:pTextData;
@@ -324,7 +324,7 @@ begin
   result.OnResize   :=result.myCtrlResize;
   result.OnPaint    :=result.myTextPaint;
   result.OnMouseDown:=result.myMouseDown;
-  Result.OnDestroy:=TOnEvent(MakeMethod(nil,@DEstroy));
+  Result.OnDestroy:=TOnEvent(MakeMethod(nil,@Destroy));
 
 //    result..InitFrame;
   D.BkColor   :=BkColor;
