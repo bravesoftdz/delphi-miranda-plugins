@@ -302,10 +302,11 @@ begin
 
         // full info requires
         // "no music" case blocked
-        if (result=WAT_RES_NEWFILE) or               // new file
-           ((result=WAT_RES_OK) and                  // if not new but...
-           (((wParam and WAT_INF_CHANGES)=0) or      // ... ask for full info
-           (StrPosW(WorkSI.mfile,'://')<>nil))) then // ... or remote file
+        if (result=WAT_RES_NEWFILE) or           // new file
+           ((result=WAT_RES_OK) and              // if not new but...
+           (((wParam and WAT_INF_CHANGES)=0) or  // ... ask for full info
+           (StrPosW(WorkSI.mfile,'://')<>nil) or // ... or remote file
+           isContainer(WorkSI.mfile))) then      // ... or container like CUE
         begin
           // requirement: old artist/title for remote files
           stat:=GetInfo(WorkSI,flags);

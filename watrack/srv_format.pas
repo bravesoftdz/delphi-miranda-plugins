@@ -14,6 +14,7 @@ function CheckExt(fname:pWideChar):integer;
 
 function DeleteKnownExt(src:pWideChar):pWideChar;
 function KnownFileType(fname:PWideChar):boolean;
+function isContainer(fname:PWideChar):boolean;
 
 function ServiceFormat(wParam:WPARAM;lParam:LPARAM):integer;cdecl;
 procedure RegisterFormat(ext:PAnsiChar;proc:tReadFormatProc;flags:dword=0);
@@ -59,7 +60,7 @@ begin
   ptr:=FormatLink;
   while ptr<>nil do
   begin
-    RegisterFormat(@ptr.this.ext,ptr.this.proc);
+    RegisterFormat(@ptr.this.ext,ptr.this.proc,ptr.this.flags);
     inc(result);
     ptr:=ptr^.Next;
   end;
@@ -234,6 +235,16 @@ begin
       inc(i);
     end;
   end;
+end;
+
+function isContainer(fname:PWideChar):boolean;
+begin
+  if CheckExt(fname)=WAT_RES_OK then
+  begin
+    result:=(fmtLink^[0].flags and WAT_OPT_CONTAINER)<>0;
+  end
+  else
+    result:=false;
 end;
 
 function GetFileFormatInfo(var dst:tSongInfo):integer;

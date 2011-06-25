@@ -1,3 +1,4 @@
+,fmt_dummy in 'formats\fmt_dummy.pas'
 ,fmt_mpc  in 'formats\fmt_mpc.pas'
 ,fmt_ofr  in 'formats\fmt_ofr.pas'
 ,fmt_tta  in 'formats\fmt_tta.pas'

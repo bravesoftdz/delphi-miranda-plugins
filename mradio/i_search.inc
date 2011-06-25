@@ -367,7 +367,7 @@ begin
           end;
 
           SetStatus(hContact,ID_STATUS_OFFLINE);
-          CallService(MS_IGNORE_IGNORE,hContact,IGNOREEVENT_ALL);
+          CallService(MS_IGNORE_IGNORE,hContact,IGNOREEVENT_USERONLINE{IGNOREEVENT_ALL});
           result:=hContact;
         end;
       end;

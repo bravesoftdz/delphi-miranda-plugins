@@ -1102,7 +1102,7 @@ begin
       result:=WAT_RES_NOTFOUND;
       exit;
     end;
-    if FileChanged then
+    if FileChanged {or isContainer(fname)} then
     begin
       ClearFileInfo(dst,false);
       dst.mfile:=fname; //!! must be when format recognized or remote
@@ -1170,7 +1170,8 @@ begin
       if artist=NIL then artist:=DefGetArtist(plwnd,fname,wndtext);
       if title =NIL then title :=DefGetTitle (plwnd,fname,wndtext);
     end;
-  if remote or ((plyLink^[0].flags and WAT_OPT_PLAYERINFO)<>0) then
+  if remote or ((plyLink^[0].flags and WAT_OPT_PLAYERINFO)<>0) or
+     isContainer(dst.mfile) then
   begin
     if (oldartist=oldtitle) or
        ((oldartist<>nil) and (StrCmpW(dst.artist,oldartist)<>0)) or
