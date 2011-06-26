@@ -207,14 +207,14 @@ begin
   
   StatusTmpl:=DBReadUnicode(0,PluginName,optStatusTmpl,'%radio_title%');
 
+  CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_NOSTATION);
+
+  RegisterVariables;
+
   if Auconnect<>BST_UNCHECKED then
     ActiveContact:=LoadContact(PluginName,optLastStn)
   else
     ActiveContact:=0;
-
-  CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_NOSTATION);
-
-  RegisterVariables;
 
   onsetting:=Pluginlink^.HookEvent(ME_DB_CONTACT_SETTINGCHANGED,@OnSettingsChanged);
   ondelete :=PluginLink^.HookEvent(ME_DB_CONTACT_DELETED       ,@OnContactDeleted);
