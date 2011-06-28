@@ -232,13 +232,14 @@ begin
   UnRegisterHotKey;
 
   DestroyProtoServices;
-  DestroyHiddenWindow;
+  DestroyWindow(hiddenwindow);
   DestroyFrame();
   MyFreeBASS;
   DBWriteByte(0,PluginName,optVolume,gVolume);
 
   with PluginLink^ do
   begin
+    DestroyServiceFunction(hsTrayMenu);
     DestroyServiceFunction(hsPlayStop);
     DestroyServiceFunction(hsRecord);
     DestroyServiceFunction(hsSettings);
@@ -321,8 +322,12 @@ begin
       hsCommand :=CreateServiceFunction(MS_RADIO_COMMAND ,@ControlCenter);
       hsEqOnOff :=CreateServiceFunction(MS_RADIO_EQONOFF ,@Service_EqOnOff);
 
-      hsExport  :=CreateServiceFunction(MS_RADIO_EXPORT ,@ExportAll);
-      hsImport  :=CreateServiceFunction(MS_RADIO_IMPORT ,@ImportAll);
+      hiddenwindow:=CreateHiddenWindow;
+      hsTrayMenu:=CreateServiceFunction(MS_RADIO_TRAYMENU,@CreateTrayMenu);
+
+      hsExport  :=CreateServiceFunction(MS_RADIO_EXPORT  ,@ExportAll);
+      hsImport  :=CreateServiceFunction(MS_RADIO_IMPORT  ,@ImportAll);
+
 
       CreateProtoServices;
       onloadhook   :=HookEvent(ME_SYSTEM_MODULESLOADED     ,@OnModulesLoaded);

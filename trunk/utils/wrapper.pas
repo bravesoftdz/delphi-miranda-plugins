@@ -5,6 +5,8 @@ interface
 
 uses windows;
 
+function CreateHiddenWindow(proc:pointer=nil):HWND;
+
 function DoInitCommonControls(dwICC:DWORD):boolean;
 
 function GetScreenRect():TRect;
@@ -60,6 +62,59 @@ const
   SM_CXVIRTUALSCREEN = 78;
   SM_CYVIRTUALSCREEN = 79;
 {$ENDIF}
+
+//----- Hidden Window functions -----
+const
+  HWND_MESSAGE = HWND(-3);
+const
+  hiddenwindow:HWND = 0;
+  hwndcount:integer=0;
+
+function HiddenWindProc(wnd:HWnd; msg:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
+begin
+  if msg=WM_CLOSE then
+  begin
+    dec(hwndcount);
+    if hwndcount>0 then // not all references gone
+    begin
+      result:=0;
+      exit
+    end
+    else
+      hiddenwindow:=0
+  end;
+
+  result:=DefWindowProcW(wnd,msg,wparam,lparam);
+end;
+
+function CreateHiddenWindow(proc:pointer=nil):HWND;
+begin
+  if proc=nil then
+  begin
+    if hiddenwindow<>0 then
+    begin
+      result:=hiddenwindow;
+      inc(hwndcount); // one reference more
+    end
+    else
+    begin
+      result:=CreateWindowExW(0,'STATIC',nil,0,
+         1,1,1,1,HWND_MESSAGE,0,hInstance,nil);
+      if result<>0 then
+        SetWindowLongPtrW(result,GWL_WNDPROC,LONG_PTR(@HiddenWindProc));
+
+      hiddenwindow:=result;
+    end
+  end
+  else
+  begin
+    result:=CreateWindowExW(0,'STATIC',nil,0,
+       1,1,1,1,HWND_MESSAGE,0,hInstance,nil);
+    if result<>0 then
+      SetWindowLongPtrW(result,GWL_WNDPROC,LONG_PTR(proc));
+  end;
+end;
+//----- End of hidden window functions -----
 
 function DoInitCommonControls(dwICC:DWORD):boolean;
 var

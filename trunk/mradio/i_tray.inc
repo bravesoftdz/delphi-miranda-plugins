@@ -1,10 +1,4 @@
 {}
-const
-  HWND_MESSAGE = HWND(-3);
-const
-  hiddenwindow:HWND = 0;
-var
-  hsTrayMenu:THANDLE;
 {$IFDEF KOL_MCK}
 function MakeStationsMenu:HMENU;
 var
@@ -130,50 +124,16 @@ begin
   result:=id;
 end;
 
-function HiddenWindProc(wnd:HWnd; msg:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
-begin
-  result:=DefWindowProcW(wnd,msg,wparam,lparam);
-end;
-
-function CreateHiddenWindow:HWND;
-var
-  wnd:HWND;
-begin
-  if hiddenwindow=0 then
-  begin
-    wnd:=CreateWindowExW(0,'STATIC',nil,0,
-       1,1,1,1,HWND_MESSAGE,0,hInstance,nil);
-    if wnd<>0 then
-    begin
-      SetWindowLongPtrW(wnd,GWL_WNDPROC,LONG_PTR(@HiddenWindProc));
-      hiddenwindow:=wnd;
-    end
-  end;
-  result:=hiddenwindow;
-end;
-
-procedure DestroyHiddenWindow;
-begin
-  if hiddenwindow<>0 then
-  begin
-    DestroyWindow(hiddenwindow);
-    hiddenwindow:=0;
-    PluginLink.DestroyServiceFunction(hsTrayMenu);
-  end;
-end;
-
 procedure CreateMIMTrayMenu;
 var
   mi:TCListMenuItem;
 begin
   if PluginLink^.ServiceExists(MS_CLIST_ADDTRAYMENUITEM)<>0 then
-    if CreateHiddenWindow<>0 then
+//    if hiddenwindow<>0 then
     begin
-      hsTrayMenu:=CreateServiceFunction('mRadio/MakeTrayMenu',@CreateTrayMenu);
-
       FillChar(mi, sizeof(mi), 0);
       mi.cbSize    :=sizeof(mi);
-      mi.pszService:='mRadio/MakeTrayMenu';
+      mi.pszService:=MS_RADIO_TRAYMENU;
       mi.szName.a  :='mRadio';
       mi.hIcon     :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnSettings));
       PluginLink^.CallService(MS_CLIST_ADDTRAYMENUITEM,0,lparam(@mi));

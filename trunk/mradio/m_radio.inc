@@ -116,4 +116,11 @@ const
 }
   MS_RADIO_EQONOFF:PAnsiChar = 'mRadio/EqOnOff';
 
+{
+  wParam: 0 
+  lParam: 0
+  Return: 0, if cancelled, 101 - "mute", 102 - "play/pause", 103 - "stop" or station handle
+}
+  MS_RADIO_TRAYMENU:PAnsiChar = 'mRadio/MakeTrayMenu';
+
 {$ENDIF}
