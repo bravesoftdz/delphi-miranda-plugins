@@ -57,6 +57,7 @@ var
   hsCommand,
   hsExport,
   hsImport,
+  hsTrayMenu,
   hsEqOnOff,
 
   hNetLib,
@@ -69,6 +70,7 @@ var
   onsetting,
   ondelete,
   onloadhook:THANDLE;
+  hiddenwindow:HWND;
 var
   plist:tPlaylist;
 //  plFile:pWideChar; // playlist file name (for delete after using?)

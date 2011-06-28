@@ -81,6 +81,8 @@ const
   BASS_ERROR_BUSY         = 46;   // the device is busy
   BASS_ERROR_UNKNOWN      = -1;   // some other mystery problem
 
+  BASS_ERROR_MAXNUMBER    = 46;   // custom, just to have max error number
+
 const
   BASS_ERRORS: array [0..46] of pAnsiChar = (
   {BASS_OK            } 'all is OK',

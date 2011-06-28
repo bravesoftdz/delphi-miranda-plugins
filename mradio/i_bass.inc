@@ -37,6 +37,27 @@ begin
   MessageboxW(0,TranslateW(text),TranslateW('Sorry!'),MB_ICONERROR)
 end;
 
+procedure ErrorCustom(text:pWideChar=nil);
+var
+  buf:array [0..255] of WideChar;
+  idx:integer;
+  pcw:pWideChar;
+begin
+  idx:=BASS_ErrorGetCode();
+  if (idx<0) or (idx>BASS_ERROR_MAXNUMBER) then
+  begin
+    if text=nil then
+      pcw:='Unknown error'
+    else
+      pcw:=text;
+  end
+  else
+    pcw:=FastAnsiToWideBuf(BASS_ERRORS[idx],@buf);
+    
+  MessageBoxW(0,TranslateW(pcw),
+      TranslateW('Oops! BASS error'),MB_ICONERROR)
+end;
+
 procedure EQ_OFF;
 var
   i:dword;
@@ -213,7 +234,7 @@ begin
     p:=BASS_Init(1,44100,0,0,nil);
   if not p then
   begin
-    Error('Can''t initialize device');
+    ErrorCustom('Can''t initialize device');
     result:=0;
   end
   else
@@ -758,7 +779,7 @@ begin
 
     if (chan=0) and RemoteSong then
     begin
-      if BASS_ErrorGetCode=2 then
+      if BASS_ErrorGetCode=BASS_ERROR_FILEOPEN then
       begin
         flags:=flags and not BASS_UNICODE;
         chan:=BASS_StreamCreateURL(FastWideToAnsiBuf(url,ansiurl),0,flags,@StatusProc,nil)
