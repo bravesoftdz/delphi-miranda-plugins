@@ -351,7 +351,7 @@ begin
       else
         ShowWindow(wnd,SW_HIDE);
 
-      if recpath<>nil then
+//!!      if recpath<>nil then
         SetDlgItemTextW(Dialog,IDC_ED_RECPATH,recpath);
 
       CheckDlgButton(Dialog,IDC_LOOP     ,doLoop);
