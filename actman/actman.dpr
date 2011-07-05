@@ -32,7 +32,8 @@ uses
   helpfile,
   question,
   global
-  ,hooks in 'hooks\hooks.pas'
+  ,hooks     in 'hooks\hooks.pas'
+  ,scheduler in 'tasks\scheduler.pas'
   ;
 
 {$r options.res}

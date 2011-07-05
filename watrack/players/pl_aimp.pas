@@ -136,6 +136,7 @@ var
   pStr:pointer;
   s:integer;
   p:PAnsiChar;
+  pw,pw1:pWideChar;
 begin
   result:=nil;
   s:=AIMP2_RemoteFileSize;
@@ -151,6 +152,14 @@ begin
           pWideChar(PAnsiChar(pStr)+SizeOf(TAIMP2FileInfo))+
              nAlbumLen+nArtistLen+nDateLen,
           nFileNameLen);
+          // Delete rest index (like "filename.cue:3")
+          pw :=StrRScanW(result,':');
+          if pw<>nil then
+          begin
+            pw1:=StrScanW (result,':');
+            if pw<>pw1 then
+              pw^:=#0;
+          end;
       end;
     end;
   finally
