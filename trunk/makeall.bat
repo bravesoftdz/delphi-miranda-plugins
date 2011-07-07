@@ -48,18 +48,3 @@ echo. Start to compile Google Translate Frame
 cd .\translate\
 call make.bat %1 %2 %3 %4 %5 %6 %7 %8 %9
 cd ..\
-
-echo.
-echo -----------------------------------------
-echo. Start to compile Hooks for ActMan
-cd .\hooks\
-call make.bat %1 %2 %3 %4 %5 %6 %7 %8 %9
-cd ..\
-
-:echo.
-:echo -----------------------------------------
-:echo. Start to compile Langs (not finished)
-:cd .\lang\
-:call make.bat %1 %2 %3 %4 %5 %6 %7 %8 %9
-:cd ..\
-

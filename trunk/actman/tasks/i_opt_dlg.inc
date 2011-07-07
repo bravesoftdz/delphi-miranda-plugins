@@ -13,7 +13,7 @@ var
   arr:array [0..127] of WideChar;
 begin
   ClearTasks;
-
+{
   li.mask      :=LVIF_TEXT or LVIF_PARAM;
   li.pszText   :=@arr;
   li.cchTextMax:=SizeOf(arr) div SizeOf(WideChar);
@@ -26,22 +26,18 @@ begin
   begin
     with TaskList[i] do
     begin
-{
       flags:=ACF_ASSIGNED;
       li.iItem   :=i;
       li.iSubItem:=0;
       SendMessageW(wnd,LVM_GETITEMW,0,LPARAM(@li));
-      StrDupW(descr,arr);
+      StrDupW(name,arr);
       action:=li.lParam;
-      li.iSubItem:=1;
-      SendMessageA(wnd,LVM_GETITEMA,0,LPARAM(@li));
-      StrDup(name,pAnsiChar(@arr));
 
       if ListView_GetCheckState(wnd,i)=0 then // disabled
         flags:=flags or ACF_DISABLED;
-}
     end;
   end;
+}
 end;
 
 procedure FillTaskList(wnd:HWND);
@@ -54,22 +50,16 @@ begin
   begin
     with TaskList[i] do
     begin
-{
       if (flags and ACF_ASSIGNED)<>0 then
       begin
         li.mask    :=LVIF_TEXT+LVIF_PARAM;
         li.iSubItem:=0;
         li.iItem   :=i;
         li.lParam  :=action;
-        li.pszText :=descr;
+        li.pszText :=name;
         li.iItem   :=SendMessageW(wnd,LVM_INSERTITEMW,0,LPARAM(@li));
-        li.mask    :=LVIF_TEXT;
-        li.iSubItem:=1;
-        li.pszText :=pWideChar(name);
-        SendMessageA(wnd,LVM_SETITEMA,0,LPARAM(@li));
         ListView_SetCheckState(wnd,li.iItem,(flags and ACF_DISABLED)=0);
       end;
-}
     end;
   end;
   ListView_SetItemState(wnd,0,
@@ -77,52 +67,151 @@ begin
     LVIS_FOCUSED or LVIS_SELECTED);
 end;
 
+procedure ClearTaskData(Dialog:HWND);
+var
+  st:TSystemTime;
+begin
+  CheckDlgButton(Dialog,IDC_TASK_ABSOLUTE   ,BST_UNCHECKED);
+  CheckDlgButton(Dialog,IDC_TASK_IMMEDIATELY,BST_UNCHECKED);
+  CheckDlgButton(Dialog,IDC_TASK_BREAK      ,BST_UNCHECKED);
+
+  SetDlgItemInt(Dialog,IDC_TASK_DAYSV ,1,false);
+  SetDlgItemInt(Dialog,IDC_TASK_REPEAT,0,false);
+
+  FillChar(st,SizeOf(st),0);
+  SendDlgItemMessage(Dialog,IDC_TASK_TIME    ,DTM_SETSYSTEMTIME,GDT_VALID,lParam(@st));
+  SendDlgItemMessage(Dialog,IDC_TASK_INTERVAL,DTM_SETSYSTEMTIME,GDT_VALID,lParam(@st));
+{
+  ShowWindow(GetDlgItem(Dialog,IDC_TASK_DATET),SW_SHOW);
+  ShowWindow(GetDlgItem(Dialog,IDC_TASK_DATEV),SW_SHOW);
+  ShowWindow(GetDlgItem(Dialog,IDC_TASK_DAYST),SW_HIDE);
+  ShowWindow(GetDlgItem(Dialog,IDC_TASK_DAYSV),SW_HIDE);
+}
+end;
+
+procedure ShowDateType(Dialog:HWND);
+var
+  sh1,sh2:integer;
+begin
+  if IsDlgButtonChecked(Dialog,IDC_TASK_ABSOLUTE)<>BST_UNCHECKED then
+  begin
+    SetDlgItemTextW(Dialog,IDC_TASK_ABSOLUTE,TranslateW('Starting from'));
+    sh1:=SW_SHOW;
+    sh2:=SW_HIDE;
+  end
+  else
+  begin
+    SetDlgItemTextW(Dialog,IDC_TASK_ABSOLUTE,TranslateW('Starting after'));
+    sh1:=SW_HIDE;
+    sh2:=SW_SHOW;
+  end;
+  ShowWindow(GetDlgItem(Dialog,IDC_TASK_DATET),sh1);
+  ShowWindow(GetDlgItem(Dialog,IDC_TASK_DATEV),sh1);
+  ShowWindow(GetDlgItem(Dialog,IDC_TASK_DAYST),sh2);
+  ShowWindow(GetDlgItem(Dialog,IDC_TASK_DAYSV),sh2);
+end;
+
 procedure ShowTaskData(Dialog:HWND; item:integer=-1);
 var
   li:LV_ITEM;
-  arr:array [0..127] of WideChar;
   wnd:HWND;
+  st:TSystemTime;
 begin
-{
+  ClearTaskData(Dialog);
+
   wnd:=GetDlgItem(Dialog,IDC_TASK_NAME);
+
   if item<0 then
     li.iItem:=SendMessage(wnd,LVM_GETNEXTITEM,-1,LVNI_FOCUSED)
   else
     li.iItem:=item;
 
-  li.mask      :=LVIF_TEXT+LVIF_PARAM;
-  li.iSubItem  :=1;
-  li.pszText   :=@arr;
-  li.cchTextMax:=SizeOf(arr) div SizeOf(WideChar);
-  arr[0]:=#0;
+  li.mask      :=LVIF_PARAM;
+  li.iSubItem  :=0;
   SendMessageW(wnd,LVM_GETITEMW,0,LPARAM(@li));
-  if arr[0]<>#0 then
-    SetDlgItemTextW(Dialog,IDC_EVENTLIST,arr);
-  CB_SelectData(GetDlgItem(Dialog,IDC_TASK_ACTION),li.lParam);
-}
+  // lets think what lParam is task number, ok?
+  with TaskList[li.lParam] do
+  begin
+    // flags
+    ListView_SetCheckState(wnd,li.iItem,(flags and ACF_DISABLED)=0);
+
+    if (flags and TCF_ABSOLUTE)<>0 then
+      CheckDlgButton(Dialog,IDC_TASK_ABSOLUTE,BST_CHECKED);
+    if (flags and TCF_IMMEDIATELY)<>0 then
+      CheckDlgButton(Dialog,IDC_TASK_IMMEDIATELY,BST_CHECKED);
+    if (flags and TCF_NONZEROBREAK)<>0 then
+      CheckDlgButton(Dialog,IDC_TASK_BREAK,BST_CHECKED);
+    // action
+    CB_SelectData(GetDlgItem(Dialog,IDC_TASK_ACTION),action);
+    // times
+    FileTimeToSystemTime(starttime,st);
+    if (flags and TCF_ABSOLUTE)<>0 then
+      SendDlgItemMessage(Dialog,IDC_TASK_DATEV,DTM_SETSYSTEMTIME,GDT_VALID,lParam(@st))
+    else
+    begin
+      SetDlgItemInt(Dialog,IDC_TASK_DAYSV,dayoffset,false);
+    end;
+    SendDlgItemMessage(Dialog,IDC_TASK_TIME,DTM_SETSYSTEMTIME,GDT_VALID,lParam(@st));
+
+    SetDlgItemInt(Dialog,IDC_TASK_REPEAT,count,false);
+
+    FileTimeToSystemTime(interval,st);
+    SendDlgItemMessage(Dialog,IDC_TASK_INTERVAL,DTM_SETSYSTEMTIME,GDT_VALID,lParam(@st));
+  end;
+  ShowDateType(Dialog);
+
 end;
 
 procedure SaveTaskData(Dialog:HWND; item:integer=-1);
 var
   wnd:HWND;
   li:LV_ITEM;
+  st,st1:TSystemTime;
+  tmp:longbool;
 begin
   wnd:=GetDlgItem(Dialog,IDC_TASK_NAME);
-{
+
   if item<0 then
     li.iItem:=SendMessage(wnd,LVM_GETNEXTITEM,-1,LVNI_FOCUSED)
   else
     li.iItem:=item;
+
   li.mask      :=LVIF_PARAM;
-  li.lParam    :=CB_GetData(GetDlgItem(Dialog,IDC_ACTIONLIST));
   li.iSubItem  :=0;
-  SendMessageW(wnd,LVM_SETITEMW,0,LPARAM(@li));
-  li.mask      :=LVIF_TEXT;
-  li.iSubItem  :=1;
-  li.pszText   :=GetDlgText(Dialog,IDC_EVENTLIST);
-  SendMessageW(wnd,LVM_SETITEMW,0,LPARAM(@li));
-  mFreeMem(li.pszText);
-}
+  SendMessageW(wnd,LVM_GETITEMW,0,LPARAM(@li));
+
+  with TaskList[li.lParam] do
+  begin
+    flags:=flags or ACF_ASSIGNED;
+    // flags
+    if ListView_GetCheckState(wnd,li.iItem)=0 then
+      flags:=flags or ACF_DISABLED;
+
+    if IsDlgButtonChecked(Dialog,IDC_TASK_ABSOLUTE)<>BST_UNCHECKED then
+      flags:=flags or TCF_ABSOLUTE;
+    if IsDlgButtonChecked(Dialog,IDC_TASK_IMMEDIATELY)<>BST_UNCHECKED then
+      flags:=flags or TCF_IMMEDIATELY;
+    if IsDlgButtonChecked(Dialog,IDC_TASK_BREAK)<>BST_UNCHECKED then
+      flags:=flags or TCF_NONZEROBREAK;
+    // action
+    CB_SelectData(GetDlgItem(Dialog,IDC_TASK_ACTION),action);
+    // times
+
+    if (flags and TCF_ABSOLUTE)<>0 then
+      SendDlgItemMessage(Dialog,IDC_TASK_DATEV,DTM_GETSYSTEMTIME,0,lParam(@st1))
+    else
+      dayoffset:=GetDlgItemInt(Dialog,IDC_TASK_DAYSV,tmp,false);
+
+    SendDlgItemMessage(Dialog,IDC_TASK_TIME,DTM_GETSYSTEMTIME,0,lParam(@st));
+    st.wYear     :=st1.wYear;
+    st.wMonth    :=st1.wMonth;
+    st.wDayOfWeek:=st1.wDayOfWeek;
+    st.wDay      :=st1.wDay;
+    SystemTimeToFileTime(st,starttime);
+
+    SendDlgItemMessage(Dialog,IDC_TASK_INTERVAL,DTM_GETSYSTEMTIME,0,lParam(@st));
+    SystemTimeToFileTime(st,interval);
+  end;
 end;
 
 function NewTask(Dialog:HWND;item:integer=-1):integer;
@@ -131,12 +220,13 @@ var
   li:LV_ITEMW;
 begin
   wnd:=GetDlgItem(Dialog,IDC_TASK_NAME);
-  li.mask    :=LVIF_TEXT;
   if item<0 then
     li.iItem :=SendMessage(wnd,LVM_GETNEXTITEM,-1,LVNI_FOCUSED)+1
   else
     li.iItem :=item;
   li.iSubItem:=0;
+  li.mask    :=LVIF_TEXT + LVIF_PARAM;
+  li.lParam  :=CreateNewTask;
   li.pszText :=TranslateW('Task sample');
   result:=SendMessageW(wnd,LVM_INSERTITEMW,0,LPARAM(@li));
 end;
@@ -252,6 +342,7 @@ function DlgProcOpt(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresu
 var
   wnd:HWND;
   lv:LV_COLUMNW;
+  i:integer;
 begin
   result:=0;
   case hMessage of
@@ -278,13 +369,37 @@ begin
     WM_COMMAND: begin
       case wParam shr 16 of
         EN_CHANGE: begin
+          SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
         end;
 
         BN_CLICKED: begin
           case loword(wParam) of
             IDC_TASK_NEW   : NewTask(Dialog);
             IDC_TASK_DELETE: DeleteTask(Dialog);
+
+            IDC_TASK_ABSOLUTE: begin
+              ShowDateType(Dialog);
+{
+              if IsDlgButtonChecked(Dialog,IDC_TASK_ABSOLUTE)<>BST_UNCHECKED then
+              begin
+                SetDlgItemTextW(Dialog,IDC_TASK_ABSOLUTE,TranslateW('Starting from'));
+                sh1:=SW_SHOW;
+                sh2:=SW_HIDE;
+              end
+              else
+              begin
+                SetDlgItemTextW(Dialog,IDC_TASK_ABSOLUTE,TranslateW('Starting after'));
+                sh1:=SW_HIDE;
+                sh2:=SW_SHOW;
+              end;
+              ShowWindow(GetDlgItem(Dialog,IDC_TASK_DATET),sh1);
+              ShowWindow(GetDlgItem(Dialog,IDC_TASK_DATEV),sh1);
+              ShowWindow(GetDlgItem(Dialog,IDC_TASK_DAYST),sh2);
+              ShowWindow(GetDlgItem(Dialog,IDC_TASK_DAYSV),sh2);
+}
+            end;
           end;
+          SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
         end;
       end;
     end;
@@ -297,13 +412,44 @@ begin
           SaveTasks;
         end;
 
+        DTN_DATETIMECHANGE: begin
+          SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
+        end;
+
         NM_DBLCLK: begin
+          if PNMListView(lParam)^.iItem>=0 then
+            PostMessageW(PNMHdr(lParam)^.hWndFrom,LVM_EDITLABELW,
+                        PNMListView(lParam)^.iItem,0);
         end;
 
         LVN_ITEMCHANGED: begin
+          if PNMLISTVIEW(lParam)^.uChanged=LVIF_STATE then
+          begin
+            i:=(PNMLISTVIEW(lParam)^.uOldState and LVNI_FOCUSED)-
+               (PNMLISTVIEW(lParam)^.uNewState and LVNI_FOCUSED);
+
+            if i>0 then // old focus
+              SaveTaskData(Dialog,PNMLISTVIEW(lParam)^.iItem)
+            else if i<0 then // new focus
+            begin
+              ShowTaskData(Dialog,PNMLISTVIEW(lParam)^.iItem);
+            end
+            else if (settings<>0) and
+               ((PNMLISTVIEW(lParam)^.uOldState or PNMLISTVIEW(lParam)^.uNewState)=$3000) then
+              SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
+          end;
         end;
 
         LVN_ENDLABELEDITW: begin
+          with PLVDISPINFOW(lParam)^ do
+          begin
+            if item.pszText<>nil then
+            begin
+              item.mask:=LVIF_TEXT;
+              SendMessageW(hdr.hWndFrom,LVM_SETITEMW,0,TLPARAM(@item));
+            end;
+          end;
+          result:=1;
         end;
       end;
     end;

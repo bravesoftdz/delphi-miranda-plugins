@@ -18,9 +18,10 @@ type
   pTaskRec = ^tTaskRec;
   tTaskRec = record
     flags     :dword;
-    name      :PAnsiChar; // name for task
+    name      :PWideChar; // name for task
     action    :dword;     // assigned action
     // maybe tSystemTime is better? but harder to save
+    dayoffset :integer;   //!! offset, days
     starttime,            // task starttime
     interval  :TFileTime; // interval for repeat
     count     :integer;   // repeat count
@@ -76,5 +77,51 @@ begin
     end;
   else
     result:=DefWindowProc(Dialog,hMessage,wParam,lParam);
+  end;
+end;
+
+function CreateNewTask:integer;
+var
+  i:integer;
+  tmp:pTaskList;
+  st:tSystemTime;
+begin
+  result:=-1;
+  // if list is not empty, search for hole
+  if MaxTasks>0 then
+  begin
+    for i:=0 to MaxTasks-1 do
+    begin
+      if (TaskList[i].flags and ACF_ASSIGNED)=0 then
+      begin
+        FillChar(TaskList[i],SizeOf(tTaskRec),0);
+        result:=i;
+      end;
+    end;
+  end;
+  if result<0 then
+  begin
+    // not found or empty list
+    i:=(MaxTasks+16)*SizeOf(tTaskRec);
+    GetMem  (tmp ,i);
+    FillChar(tmp^,i,0);
+    if MaxTasks>0 then
+    begin
+      move(TaskList^,tmp^,MaxTasks*SizeOf(tTaskRec));
+      FreeMem(TaskList);
+    end;
+    TaskList:=tmp;
+    result:=MaxTasks;
+    inc(MaxTasks,16);
+  end;
+  with TaskList^[result] do
+  begin
+    flags:=flags or ACF_ASSIGNED or ACF_DISABLED;
+    FillChar(st,SizeOf(st),0);
+    st.wMonth :=1;
+    st.wDay   :=1;
+    st.wSecond:=1;
+    SystemTimeToFileTime(st,interval);
+//    interval.dwLowDateTime:=10000000; // 10 kk (100 ns)
   end;
 end;
