@@ -360,19 +360,19 @@ begin
   ti.hinst   :=hInstance;
   ti.uId     :=GetDlgItem(Dialog,IDC_DATA_NEW);
   ti.lpszText:=TranslateW('New');
-  SetIcon(ti.uId,ACI_NEW);
+  SetButtonIcon(ti.uId,ACI_NEW);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_DATA_UP);
   ti.lpszText:=TranslateW('Up');
-  SetIcon(ti.uId,ACI_UP);
+  SetButtonIcon(ti.uId,ACI_UP);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_DATA_DOWN);
   ti.lpszText:=TranslateW('Down');
-  SetIcon(ti.uId,ACI_DOWN);
+  SetButtonIcon(ti.uId,ACI_DOWN);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_DATA_DELETE);
   ti.lpszText:=TranslateW('Delete');
-  SetIcon(ti.uId,ACI_DELETE);
+  SetButtonIcon(ti.uId,ACI_DELETE);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
 end;
 

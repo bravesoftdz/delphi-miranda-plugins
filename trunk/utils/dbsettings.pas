@@ -362,7 +362,7 @@ begin
 end;
 function EnumSettingsProcCalc(const szSetting:PAnsiChar;lParam:LPARAM):int; cdecl;
 begin
-  inc(pdword(lParam)^,lstrlena(szSetting)+1);
+  inc(pint_ptr(lParam)^,lstrlena(szSetting)+1);
   result:=0;
 end;
 //  hContact = 0

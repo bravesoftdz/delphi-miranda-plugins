@@ -49,12 +49,6 @@ const
       (code:ACT_RW     ; id:IDI_RW     ; icon:ACI_RW     ; text:'Profile'),
       (code:ACT_MESSAGE; id:IDI_MESSAGE; icon:ACI_MESSAGE; text:'MessageBox'));
 
-function SetIcon(btn:HWND;name:PAnsiChar):HICON;
-begin
-  result:=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(name));
-  SendMessage(btn,BM_SETIMAGE,IMAGE_ICON,result);
-end;
-
 procedure RegisterIcons;
 var
   sid:TSKINICONDESC;

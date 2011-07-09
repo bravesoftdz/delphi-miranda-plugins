@@ -302,91 +302,91 @@ begin
   
   ti.uId     :=GetDlgItem(Dialog,IDC_ACTION_NEW);
   ti.lpszText:=TranslateW('New');
-  SetIcon(ti.uId,ACI_NEW);
+  SetButtonIcon(ti.uId,ACI_NEW);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_NEW);
-  SetIcon(ti.uId,ACI_NEW);
+  SetButtonIcon(ti.uId,ACI_NEW);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_ACTION_UP);
   ti.lpszText:=TranslateW('Up');
-  SetIcon(ti.uId,ACI_UP);
+  SetButtonIcon(ti.uId,ACI_UP);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_UP);
-  SetIcon(ti.uId,ACI_UP);
+  SetButtonIcon(ti.uId,ACI_UP);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_ACTION_DOWN);
   ti.lpszText:=TranslateW('Down');
-  SetIcon(ti.uId,ACI_DOWN);
+  SetButtonIcon(ti.uId,ACI_DOWN);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_DOWN);
-  SetIcon(ti.uId,ACI_DOWN);
+  SetButtonIcon(ti.uId,ACI_DOWN);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_ACTION_DELETE);
   ti.lpszText:=TranslateW('Delete');
-  SetIcon(ti.uId,ACI_DELETE);
+  SetButtonIcon(ti.uId,ACI_DELETE);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_DELETE);
-  SetIcon(ti.uId,ACI_DELETE);
+  SetButtonIcon(ti.uId,ACI_DELETE);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_RELOAD);
   ti.lpszText:=TranslateW('Reload');
-  SetIcon(ti.uId,ACI_RELOAD);
+  SetButtonIcon(ti.uId,ACI_RELOAD);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_TEST);
   ti.lpszText:=TranslateW('Test');
-  SetIcon(ti.uId,ACI_TEST);
+  SetButtonIcon(ti.uId,ACI_TEST);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
 
   ti.uId     :=GetDlgItem(Dialog,IDC_CNT_APPLY);
   ti.lpszText:=TranslateW('Apply format');
-  SetIcon(ti.uId,ACI_FORMAT);
+  SetButtonIcon(ti.uId,ACI_FORMAT);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
 
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_IMPORT);
   ti.lpszText:=TranslateW('Import');
-  SetIcon(ti.uId,ACI_IMPORT);
+  SetButtonIcon(ti.uId,ACI_IMPORT);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_EXPORT);
   ti.lpszText:=TranslateW('Export');
-  SetIcon(ti.uId,ACI_EXPORT);
+  SetButtonIcon(ti.uId,ACI_EXPORT);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
 
   ti.lpszText:=TranslateW('Use Variables');
   ti.uId:=GetDlgItem(Dialog,IDC_SRV_WPAR);
-  SetIcon(ti.uId,ACI_VAR_UNCHECKED);
+  SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_SRV_LPAR);
-  SetIcon(ti.uId,ACI_VAR_UNCHECKED);
+  SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_SRV_SRVC);
-  SetIcon(ti.uId,ACI_VAR_UNCHECKED);
+  SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_PRG_PRG);
-  SetIcon(ti.uId,ACI_VAR_UNCHECKED);
+  SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_PRG_ARG);
-  SetIcon(ti.uId,ACI_VAR_UNCHECKED);
+  SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_TXT_FILE);
-  SetIcon(ti.uId,ACI_VAR_UNCHECKED);
+  SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_TXT_TEXT);
-  SetIcon(ti.uId,ACI_VAR_UNCHECKED);
+  SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_RW_MVAR);
-  SetIcon(ti.uId,ACI_VAR_UNCHECKED);
+  SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_RW_SVAR);
-  SetIcon(ti.uId,ACI_VAR_UNCHECKED);
+  SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_RW_TVAR);
-  SetIcon(ti.uId,ACI_VAR_UNCHECKED);
+  SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_MSG_TTL);
-  SetIcon(ti.uId,ACI_VAR_UNCHECKED);
+  SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   ti.uId:=GetDlgItem(Dialog,IDC_MSG_TXT);
-  SetIcon(ti.uId,ACI_VAR_UNCHECKED);
+  SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
 
 end;
@@ -1550,7 +1550,7 @@ begin
             IDC_RW_SVAR ,
             IDC_RW_TVAR ,
             IDC_MSG_TTL ,
-            IDC_MSG_TXT : SetIcon(lParam,checknames[IsDlgButtonChecked(Dialog,loword(wParam))]);
+            IDC_MSG_TXT : SetButtonIcon(lParam,checknames[IsDlgButtonChecked(Dialog,loword(wParam))]);
           end;
 
           case loword(wParam) of

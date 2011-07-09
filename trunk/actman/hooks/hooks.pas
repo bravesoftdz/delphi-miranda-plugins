@@ -10,7 +10,7 @@ implementation
 
 uses
   windows, commctrl, messages,
-  common, dbsettings, io, m_api, wrapper,
+  mirutils, common, dbsettings, io, m_api, wrapper,
   global;
 
 {$R hooks.res}
@@ -26,7 +26,6 @@ uses
 
 procedure Init;
 begin
-//!!  hHookInOut :=PluginLink^.HookEvent(ME_ACT_INOUT{ME_SYSTEM_OKTOEXIT},@InOut);
 
   MessageWindow:=CreateWindowExW(0,'STATIC',nil,0,1,1,1,1,HWND_MESSAGE,0,hInstance,nil);
   if MessageWindow<>0 then
@@ -37,17 +36,6 @@ begin
     MaxHooks:=8;
     GetMem  (HookList ,MaxHooks*SizeOf(tHookRec));
     FillChar(HookList^,MaxHooks*SizeOf(tHookRec),0);
-{
-  with HookList^[0] do
-  begin
-    flags  :=ACF_ASSIGNED;
-    StrDup(name,'CList/PreBuildContactMenu');
-    StrDupW(descr,'sample');
-    handle :=0;
-    action :=763391581;
-    message:=WM_FIRSTHOOK;
-  end;
-}
   end
   else
     SetAllHooks;

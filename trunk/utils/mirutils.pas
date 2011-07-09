@@ -5,6 +5,11 @@ interface
 
 uses windows,m_api;
 
+// wrappers
+function SetButtonIcon(btn:HWND;name:PAnsiChar):HICON;
+
+// others
+
 function ConvertFileName(src:pAnsiChar;hContact:THANDLE=0):pAnsiChar; overload;
 function ConvertFileName(src:pWideChar;hContact:THANDLE=0):pWideChar; overload;
 function ConvertFileName(src:pAnsiChar;dst:pAnsiChar;hContact:THANDLE=0):pAnsiChar; overload;
@@ -71,13 +76,19 @@ function LoadImageURL(url:pAnsiChar;size:integer=0):HBITMAP;
 
 implementation
 
-uses dbsettings,common,io,freeimage,syswin{$IFDEF KOL_MCK},kol{$ENDIF};
+uses Messages,dbsettings,common,io,freeimage,syswin{$IFDEF KOL_MCK},kol{$ENDIF};
 
 // Save / Load contact 
 const
   opt_cproto   = 'cproto';
   opt_cuid     = 'cuid';
   opt_ischat   = 'ischat';
+
+function SetButtonIcon(btn:HWND;name:PAnsiChar):HICON;
+begin
+  result:=PluginLink^.CallService(MS_SKIN2_GETICON,0,LPARAM(name));
+  SendMessage(btn,BM_SETIMAGE,IMAGE_ICON,result);
+end;
 
 function ConvertFileName(src:pWideChar;dst:pWideChar;hContact:THANDLE=0):pWideChar; overload;
 var
