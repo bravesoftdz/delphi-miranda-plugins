@@ -99,7 +99,7 @@ var
 {$IFDEF KOL_MCK}
   med:TMouseEventData;
 {$ELSE}
-  tmp:TLPARAM;
+  tmp:pAnsiChar;
 {$ENDIF}
 begin
   if gVolume=0 then
@@ -126,11 +126,10 @@ begin
   if hMuteFrmCtrl<>0 then
   begin
     if gVolume<0 then
-      tmp:=tlparam(IcoBtnOff)
+      tmp:=IcoBtnOff
     else
-      tmp:=tlparam(IcoBtnOn);
-    SendMessage(hMuteFrmCtrl,BM_SETIMAGE,IMAGE_ICON,
-      PluginLink^.CallService(MS_SKIN2_GETICON,0,tmp));
+      tmp:=IcoBtnOn;
+    SetButtonIcon(hMuteFrmCtrl,tmp);
   end;
 {$ENDIF}
 end;

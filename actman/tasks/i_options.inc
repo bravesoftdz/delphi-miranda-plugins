@@ -7,6 +7,7 @@ const
   opt_flags   :PAnsiChar = 'flags';
   opt_action  :PAnsiChar = 'action';
   opt_repeat  :PAnsiChar = 'repeat';
+  opt_days    :PAnsiChar = 'dayoffset';
 
   opt_time_lo    :PAnsiChar = 'starttime_lo';
   opt_time_hi    :PAnsiChar = 'starttime_hi';
@@ -19,6 +20,7 @@ var
   p:PAnsiChar;
   i,amount:integer;
 begin
+  DBDeleteModule(opt_tasks);
   amount:=0;
   for i:=0 to MaxTasks-1 do
   begin
@@ -32,6 +34,7 @@ begin
       StrCopy(p,opt_name  ); DBWriteUnicode(0,opt_tasks,section,name);
       StrCopy(p,opt_action); DBWriteDWord  (0,opt_tasks,section,action);
       StrCopy(p,opt_repeat); DBWriteWord   (0,opt_tasks,section,count);
+      StrCopy(p,opt_days  ); DBWriteByte   (0,opt_tasks,section,dayoffset);
       //systemtime to filetime if needs
       StrCopy(p,opt_time_lo    ); DBWriteDWord(0,opt_tasks,section,starttime.dwLowDateTime);
       StrCopy(p,opt_time_hi    ); DBWriteDWord(0,opt_tasks,section,starttime.dwHighDateTime);
@@ -60,10 +63,11 @@ begin
       p:=StrEnd(IntToStr(section,i));
       with TaskList[i] do
       begin
-        StrCopy(p,opt_flags ); flags :=DBReadDWord  (0,opt_tasks,section);
-        StrCopy(p,opt_name  ); name  :=DBReadUnicode(0,opt_tasks,section);
-        StrCopy(p,opt_action); action:=DBReadDWord  (0,opt_tasks,section);
-        StrCopy(p,opt_repeat); count :=DBReadWord   (0,opt_tasks,section);
+        StrCopy(p,opt_flags ); flags    :=DBReadDWord  (0,opt_tasks,section);
+        StrCopy(p,opt_name  ); name     :=DBReadUnicode(0,opt_tasks,section);
+        StrCopy(p,opt_action); action   :=DBReadDWord  (0,opt_tasks,section);
+        StrCopy(p,opt_repeat); count    :=DBReadWord   (0,opt_tasks,section);
+        StrCopy(p,opt_days  ); dayoffset:=DBReadByte   (0,opt_tasks,section);
 
         StrCopy(p,opt_time_lo    ); starttime.dwLowDateTime :=DBReadDWord(0,opt_tasks,section);
         StrCopy(p,opt_time_hi    ); starttime.dwHighDateTime:=DBReadDWord(0,opt_tasks,section);

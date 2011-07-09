@@ -302,14 +302,13 @@ begin
   ti.uId     :=GetDlgItem(Dialog,IDC_EQ_ADD);
   ti.lpszText:=TranslateW('Add');
 
-  SendMessage(ti.uId,BM_SETIMAGE,IMAGE_ICON,
-      CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnAdd)));
+  SetButtonIcon(ti.uId,IcoBtnAdd);
+
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
   
   ti.uId     :=GetDlgItem(Dialog,IDC_EQ_DEL);
   ti.lpszText:=TranslateW('Delete');
-  SendMessage(ti.uId,BM_SETIMAGE,IMAGE_ICON,
-      CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnDel)));
+  SetButtonIcon(ti.uId,IcoBtnDel);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
 end;
 

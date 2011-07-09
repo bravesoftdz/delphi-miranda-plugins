@@ -25,6 +25,9 @@ type
     starttime,            // task starttime
     interval  :TFileTime; // interval for repeat
     count     :integer;   // repeat count
+
+    timer     :uint_ptr;  // (runtime) timer handle
+    curcount  :integer;   // (runtime) repeat count
   end;
   pTaskList = ^tTaskList;
   tTaskList  = array [0..1023] of tTaskRec;
@@ -33,12 +36,93 @@ var
   TaskList:pTaskList = nil;
   MaxTasks:integer = 0;
   settings:HWND = 0;
-  MessageWindow:HWND = 0;
-  hTaskInOut:THANDLE = 0;
-  hTaskShutdown:THANDLE = 0;
+
+procedure TimerProc(wnd:HWND;uMsg:uint;idEvent:uint_ptr;dwTime:dword); stdcall;
+var
+  i:integer;
+  res:int_ptr;
+begin
+  for i:=0 to MaxTasks-1 do
+  begin
+    if (TaskList[i].flags and (ACF_ASSIGNED or ACF_DISABLED))=ACF_ASSIGNED then
+      if TaskList[i].timer=idEvent then
+      begin
+        res:=CallService(MS_ACT_RUNBYID,TaskList[i].action,0);
+        dec(TaskList[i].curcount);
+        if (TaskList[i].curcount<=0) or 
+           ((res<>0) and ((TaskList[i].flags and TCF_NONZEROBREAK)<>0)) then
+        begin
+          KillTimer(0,idEvent);
+          TaskList[i].timer:=0;
+          TaskList[i].flags:=TaskList[i].flags or ACF_DISABLED;
+        end;
+        break;
+      end;
+  end;
+end;
+
+procedure SetTask(var task:tTaskRec);
+var
+  ltime:uint;
+  uli1,uli2:ULARGE_INTEGER;
+  sft:tFileTime;
+  st:tSystemTime;
+  dif:int64;
+begin
+  // Check task time
+  if (task.flags and TCF_ABSOLUTE)<>0 then
+  begin
+    uli1.LowPart :=task.starttime.dwLowDateTime;
+    uli1.HighPart:=task.starttime.dwHighDateTime;
+    GetLocalTime(st);
+    SystemTimeToFileTime(st,sft);
+    uli2.LowPart :=sft.dwLowDateTime;
+    uli2.HighPart:=sft.dwHighDateTime;
+    dif:=uli1.QuadPart-uli2.QuadPart;
+    if dif>0 then // time in future
+      ltime:=dif div 10000 // 100ns to 1 ms
+    else // was in past
+    begin
+      task.flags:=task.flags or ACF_DISABLED;
+      exit;
+    end;
+  end
+  else
+  begin
+    // days+hours+minutes+seconds+millseconds
+    FileTimeToSystemTime(task.starttime,st);
+    ltime:={st.wMilliseconds+}st.wSecond*1000+st.wMinute*1000*60+
+           st.wHour*60*60*1000+task.dayoffset*24*60*60*1000;
+  end;
+  // set timer
+  task.curcount:=task.count;
+  task.timer   :=SetTimer(0,0,ltime,@TimerProc);
+end;
 
 procedure SetAllTasks;
+var
+  i:integer;
 begin
+  for i:=0 to MaxTasks-1 do
+  begin
+    if (TaskList[i].flags and (ACF_ASSIGNED or ACF_DISABLED))=ACF_ASSIGNED then
+      SetTask(TaskList[i]);
+  end;
+end;
+
+procedure StopAllTasks;
+var
+  i:integer;
+begin
+  for i:=0 to MaxTasks-1 do
+  begin
+    if (TaskList[i].flags and (ACF_ASSIGNED or ACF_DISABLED))=ACF_ASSIGNED then
+      if TaskList[i].timer<>0 then
+      begin
+        KillTimer(0,TaskList[i].timer);
+        TaskList[i].timer:=0;
+      end;
+  end;
 end;
 
 procedure ClearTasks;
@@ -49,35 +133,12 @@ begin
   begin
     with TaskList[i] do
     begin
-      if (flags and ACF_ASSIGNED)<>0 then
+//!!      if (flags and ACF_ASSIGNED)<>0 then
         mFreeMem(name);
     end;
   end;
   FreeMem(TaskList);
   MaxTasks:=0;
-end;
-
-function SchedulerWndProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
-var
-  p:pTaskRec;
-  ap:TAct_Param;
-begin
-  result:=0;
-  case hMessage of
-    WM_FIRSTTASK..WM_LASTTASK: begin
-//      p:=GetTaskByMessage(hMessage);
-      if p<>nil then
-      begin
-        ap.flags :=ACTP_WAIT;
-        ap.id    :=p^.action;
-        ap.wParam:=wParam;
-        ap.lParam:=lParam;
-        result:=CallService(MS_ACT_RUNPARAMS,0,TLPARAM(@ap));
-      end;
-    end;
-  else
-    result:=DefWindowProc(Dialog,hMessage,wParam,lParam);
-  end;
 end;
 
 function CreateNewTask:integer;
@@ -96,6 +157,7 @@ begin
       begin
         FillChar(TaskList[i],SizeOf(tTaskRec),0);
         result:=i;
+        break;
       end;
     end;
   end;
@@ -116,12 +178,12 @@ begin
   end;
   with TaskList^[result] do
   begin
-    flags:=flags or ACF_ASSIGNED or ACF_DISABLED;
-    FillChar(st,SizeOf(st),0);
-    st.wMonth :=1;
-    st.wDay   :=1;
+    flags:=flags or ACF_ASSIGNED or ACF_DISABLED or TCF_ABSOLUTE;
+    //!!! CHEAT
+    GetSystemTime(st);
+    st.wHour  :=0;
+    st.wMinute:=0;
     st.wSecond:=1;
     SystemTimeToFileTime(st,interval);
-//    interval.dwLowDateTime:=10000000; // 10 kk (100 ns)
   end;
 end;

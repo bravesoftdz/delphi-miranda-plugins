@@ -285,7 +285,7 @@
       IDC_RW_SVAR ,
       IDC_RW_TVAR ,
       IDC_MSG_TTL ,
-      IDC_MSG_TXT : SetIcon(GetDlgItem(Dialog,Ctrl),checknames[state]);
+      IDC_MSG_TXT : SetButtonIcon(GetDlgItem(Dialog,Ctrl),checknames[state]);
      end;
   end;
 

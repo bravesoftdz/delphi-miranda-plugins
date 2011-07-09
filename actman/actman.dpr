@@ -15,9 +15,14 @@ library actman;
 {%File 'i_services.inc'}
 {%File 'i_vars.inc'}
 {%File 'i_inoutxm.inc'}
+{%File 'tasks\i_opt_dlg.inc'}
+{%File 'tasks\i_options.inc'}
+{%File 'tasks\i_task.inc'}
+{%File 'hooks\i_options.inc'}
+{%File 'hooks\i_hook.inc'}
+{%File 'hooks\i_opt_dlg.inc'}
 
 uses
-//  FastMM4,
   m_api,
   Windows,
   messages,
@@ -31,10 +36,9 @@ uses
   base64,
   helpfile,
   question,
-  global
-  ,hooks     in 'hooks\hooks.pas'
-  ,scheduler in 'tasks\scheduler.pas'
-  ;
+  global,
+  hooks in 'hooks\hooks.pas',
+  scheduler in 'tasks\scheduler.pas';
 
 {$r options.res}
 

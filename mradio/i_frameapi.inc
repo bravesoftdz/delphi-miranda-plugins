@@ -55,8 +55,7 @@ begin
     WM_INITDIALOG: begin
       hMuteFrmCtrl:=GetDlgItem(Dialog,IDC_RADIO_MUTE);
       SendMessage(hMuteFrmCtrl, BUTTONSETASFLATBTN,0,0);
-      SendMessage(hMuteFrmCtrl,BM_SETIMAGE,IMAGE_ICON,
-        PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnOn)));
+      SetButtonIcon(hMuteFrmCtrl,IcoBtnOn);
 
       hwndTooltip:=CreateWindowW(TOOLTIPS_CLASS,nil,TTS_ALWAYSTIP,
           integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),

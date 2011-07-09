@@ -221,12 +221,6 @@ begin
   result:=CallWindowProc(OldTableProc,Dialog,hMessage,wParam,lParam);
 end;
 
-function SetIcon(btn:HWND;name:PAnsiChar):HICON;
-begin
-  result:=PluginLink^.CallService(MS_SKIN2_GETICON,0,LPARAM(name));
-  SendMessage(btn,BM_SETIMAGE,IMAGE_ICON,result);
-end;
-
 procedure SetIcons(Dialog:HWND);
 var
   ti:TTOOLINFOW;
@@ -251,11 +245,11 @@ begin
   
   ti.uId     :=GetDlgItem(Dialog,IDC_HOOK_NEW);
   ti.lpszText:=TranslateW('New');
-  SetIcon(ti.uId,ACI_NEW);
+  SetButtonIcon(ti.uId,ACI_NEW);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,LPARAM(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_HOOK_DELETE);
   ti.lpszText:=TranslateW('Delete');
-  SetIcon(ti.uId,ACI_DELETE);
+  SetButtonIcon(ti.uId,ACI_DELETE);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,LPARAM(@ti));
 end;
 

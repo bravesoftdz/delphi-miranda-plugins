@@ -556,14 +556,7 @@ end;
 
 procedure _GetIcon(idc:integer;ico:PAnsiChar);
 begin
-  SendMessage(GetDlgItem(maindlg,idc),BM_SETIMAGE,IMAGE_ICON,
-      PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(ico)));
-end;
-
-procedure _GetIcon2(win:HWND;ico:PAnsiChar);
-begin
-  SendMessage(win,BM_SETIMAGE,IMAGE_ICON,
-      PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(ico)));
+  SetButtonIcon(GetDlgItem(maindlg,idc),ico);
 end;
 
 function IconChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -768,13 +761,13 @@ begin
       ti.lpszText:=TranslateW('Reload');
       SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,tlparam(@ti));
 
-      _GetIcon2(hNew    ,QS_NEW);
-      _GetIcon2(hItem,   QS_ITEM);
-      _GetIcon2(hUp     ,QS_UP);
-      _GetIcon2(hDown   ,QS_DOWN);
-      _GetIcon2(hDelete ,QS_DELETE);
-      _GetIcon2(hDefault,QS_DEFAULT);
-      _GetIcon2(hReload ,QS_RELOAD);
+      SetButtonIcon(hNew    ,QS_NEW);
+      SetButtonIcon(hItem,   QS_ITEM);
+      SetButtonIcon(hUp     ,QS_UP);
+      SetButtonIcon(hDown   ,QS_DOWN);
+      SetButtonIcon(hDelete ,QS_DELETE);
+      SetButtonIcon(hDefault,QS_DEFAULT);
+      SetButtonIcon(hReload ,QS_RELOAD);
 
       update_list(listhwnd);
 
