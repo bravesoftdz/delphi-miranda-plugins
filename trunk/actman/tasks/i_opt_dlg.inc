@@ -1,6 +1,7 @@
 {}
 var
   OldTableProc:pointer;
+  onactchanged:THANDLE;
 
 const
   ACI_NEW    :PAnsiChar = 'ACI_New';
@@ -316,6 +317,13 @@ begin
   end;
 end;
 
+function ActListChange(wParam:WPARAM;lParam:LPARAM):integer; cdecl;
+begin
+  result:=0;
+  if settings<>0 then
+    FillActionList(GetDlgItem(settings,IDC_TASK_ACTION));
+end;
+
 procedure SetIcons(Dialog:HWND);
 var
   ti:TTOOLINFOW;
@@ -358,6 +366,10 @@ var
 begin
   result:=0;
   case hMessage of
+    WM_CLOSE: begin
+      PluginLink^.UnhookEvent(onactchanged);
+    end;
+
     WM_INITDIALOG: begin
       wnd:=GetDlgItem(Dialog,IDC_TASK_NAME);
       SendMessage(wnd,LVM_SETEXTENDEDLISTVIEWSTYLE,LVS_EX_CHECKBOXES,LVS_EX_CHECKBOXES);
@@ -376,6 +388,7 @@ begin
       FillActionList(GetDlgItem(Dialog,IDC_TASK_ACTION));
       FillTaskList(wnd);
       CheckTaskList(Dialog,false);
+      onactchanged:=PluginLink^.HookEvent(ME_ACT_CHANGED,@ActListChange);
     end;
 
     WM_COMMAND: begin
@@ -458,11 +471,4 @@ begin
       end;
     end;
   end;
-end;
-
-function ActListChange(wParam:WPARAM;lParam:LPARAM):integer; cdecl;
-begin
-  result:=0;
-  if settings<>0 then
-    FillActionList(GetDlgItem(settings,IDC_TASK_ACTION));
 end;

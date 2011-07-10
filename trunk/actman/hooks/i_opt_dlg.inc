@@ -1,6 +1,7 @@
 {}
 var
   OldTableProc:pointer;
+  onactchanged:THANDLE;
 
 const
   ACI_NEW    :PAnsiChar = 'ACI_New';
@@ -112,6 +113,13 @@ begin
     CallService(MS_ACT_FREELIST,0,LPARAM(ptr1));
     SendMessage(wnd,CB_SETCURSEL,0,0);
   end;
+end;
+
+function ActListChange(wParam:WPARAM;lParam:LPARAM):integer; cdecl;
+begin
+  result:=0;
+  if settings<>0 then
+    FillActionList(GetDlgItem(settings,IDC_ACTIONLIST));
 end;
 
 procedure ShowHookData(Dialog:HWND; item:integer=-1);
@@ -263,7 +271,8 @@ var
 begin
   result:=0;
   case hMessage of
-    WM_DESTROY: begin
+    WM_CLOSE: begin
+      PluginLink^.UnhookEvent(onactchanged);
       settings:=0;
     end;
 
@@ -293,6 +302,7 @@ begin
       FillHookList(wnd);
       ShowHookData(Dialog);
 
+      onactchanged:=PluginLink^.HookEvent(ME_ACT_CHANGED,@ActListChange);
       settings:=Dialog;
     end;
 
@@ -384,11 +394,4 @@ begin
       end;
     end;
   end;
-end;
-
-function ActListChange(wParam:WPARAM;lParam:LPARAM):integer; cdecl;
-begin
-  result:=0;
-  if settings<>0 then
-    FillActionList(GetDlgItem(settings,IDC_ACTIONLIST));
 end;
