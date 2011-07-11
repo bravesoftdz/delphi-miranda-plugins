@@ -18,7 +18,7 @@ begin
   EnableWindow(GetDlgItem(Dialog,IDC_TASK_TIME       ),enable);
   EnableWindow(GetDlgItem(Dialog,IDC_TASK_REPEAT     ),enable);
   EnableWindow(GetDlgItem(Dialog,IDC_TASK_INTERVAL   ),enable);
-  EnableWindow(GetDlgItem(Dialog,IDC_TASK_IMMEDIATELY),enable);
+//  EnableWindow(GetDlgItem(Dialog,IDC_TASK_IMMEDIATELY),enable);
   EnableWindow(GetDlgItem(Dialog,IDC_TASK_BREAK      ),enable);
   if not enable then
   begin
@@ -59,8 +59,11 @@ var
   st:TSystemTime;
 begin
   CheckDlgButton(Dialog,IDC_TASK_ABSOLUTE   ,BST_UNCHECKED);
-  CheckDlgButton(Dialog,IDC_TASK_IMMEDIATELY,BST_UNCHECKED);
+//  CheckDlgButton(Dialog,IDC_TASK_IMMEDIATELY,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_TASK_BREAK      ,BST_UNCHECKED);
+  CheckDlgButton(Dialog,IDC_TASK_EVENT      ,BST_UNCHECKED);
+  CheckDlgButton(Dialog,IDC_TASK_ONCE       ,BST_UNCHECKED);
+  EnableWindow(GetDlgItem(Dialog,IDC_TASK_ONCE),false);
 
   SetDlgItemInt(Dialog,IDC_TASK_DAYSV ,1,false);
   SetDlgItemInt(Dialog,IDC_TASK_REPEAT,0,false);
@@ -123,10 +126,18 @@ begin
 
     if (flags and TCF_ABSOLUTE)<>0 then
       CheckDlgButton(Dialog,IDC_TASK_ABSOLUTE,BST_CHECKED);
-    if (flags and TCF_IMMEDIATELY)<>0 then
-      CheckDlgButton(Dialog,IDC_TASK_IMMEDIATELY,BST_CHECKED);
+//    if (flags and TCF_IMMEDIATELY)<>0 then
+//      CheckDlgButton(Dialog,IDC_TASK_IMMEDIATELY,BST_CHECKED);
     if (flags and TCF_NONZEROBREAK)<>0 then
       CheckDlgButton(Dialog,IDC_TASK_BREAK,BST_CHECKED);
+    if (flags and TCF_MAKEEVENT)<>0 then
+      CheckDlgButton(Dialog,IDC_TASK_EVENT,BST_CHECKED);
+    if (flags and TCF_EVENTONCE)<>0 then
+      CheckDlgButton(Dialog,IDC_TASK_ONCE,BST_CHECKED);
+
+    EnableWindow(GetDlgItem(Dialog,IDC_TASK_ONCE),
+      IsDlgButtonChecked(Dialog,IDC_TASK_EVENT)<>BST_UNCHECKED);
+
     // action
     CB_SelectData(GetDlgItem(Dialog,IDC_TASK_ACTION),action);
     // times
@@ -179,10 +190,16 @@ begin
 
         if IsDlgButtonChecked(Dialog,IDC_TASK_ABSOLUTE)<>BST_UNCHECKED then
           flags:=flags or TCF_ABSOLUTE;
-        if IsDlgButtonChecked(Dialog,IDC_TASK_IMMEDIATELY)<>BST_UNCHECKED then
-          flags:=flags or TCF_IMMEDIATELY;
+//        if IsDlgButtonChecked(Dialog,IDC_TASK_IMMEDIATELY)<>BST_UNCHECKED then
+//          flags:=flags or TCF_IMMEDIATELY;
         if IsDlgButtonChecked(Dialog,IDC_TASK_BREAK)<>BST_UNCHECKED then
           flags:=flags or TCF_NONZEROBREAK;
+        if IsDlgButtonChecked(Dialog,IDC_TASK_EVENT)<>BST_UNCHECKED then
+        begin
+          flags:=flags or TCF_MAKEEVENT;
+          if IsDlgButtonChecked(Dialog,IDC_TASK_ONCE )<>BST_UNCHECKED then
+            flags:=flags or TCF_EVENTONCE;
+        end;
         // action
         action:=CB_GetData(GetDlgItem(Dialog,IDC_TASK_ACTION));
         // times
@@ -401,6 +418,11 @@ begin
           case loword(wParam) of
             IDC_TASK_NEW   : NewTask(Dialog);
             IDC_TASK_DELETE: DeleteTask(Dialog);
+
+            IDC_TASK_EVENT: begin
+              EnableWindow(GetDlgItem(Dialog,IDC_TASK_ONCE),
+                IsDlgButtonChecked(Dialog,IDC_TASK_EVENT)<>BST_UNCHECKED);
+            end;
 
             IDC_TASK_ABSOLUTE: begin
               ShowDateType(Dialog);
