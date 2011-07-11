@@ -17,12 +17,20 @@ uses
 
 {$include m_actman.inc}
 
+var
+  hevent: THANDLE;
+
 {$include i_task.inc}
 {$include i_tconst.inc}
 {$include i_options.inc}
 {$include i_opt_dlg.inc}
+{$include i_service.inc}
 
 // ------------ base interface functions -------------
+
+var
+  hendis,
+  hdel: THANDLE;
 
 procedure Init;
 begin
@@ -35,10 +43,18 @@ begin
   end
   else
     SetAllTasks;
+
+  hendis:=PluginLink^.CreateServiceFunction(MS_ACT_TASKENABLE,@TaskEnable);
+  hdel  :=PluginLink^.CreateServiceFunction(MS_ACT_TASKDELETE,@TaskDelete);
+  hevent:=PluginLink^.CreateHookableEvent(ME_ACT_BELL);
+
 end;
 
 procedure DeInit;
 begin
+  StopAllTasks;
+  PluginLink^.DestroyServiceFunction(hendis);
+  PluginLink^.DestroyServiceFunction(hdel);
   ClearTasks;
 end;
 

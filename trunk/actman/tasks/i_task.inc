@@ -6,8 +6,10 @@ const
   ACF_DISABLED = $10000000;  // Task disabled
 
   TCF_ABSOLUTE     = $00000001;
-  TCF_IMMEDIATELY  = $00000002;
+//  TCF_IMMEDIATELY  = $00000002;
   TCF_NONZEROBREAK = $00000004;
+  TCF_MAKEEVENT    = $00000008;
+  TCF_EVENTONCE    = $00000010;
 
 const
   WM_RESETTASKS = WM_USER+1312;
@@ -44,20 +46,27 @@ var
 begin
   for i:=0 to MaxTasks-1 do
   begin
-    if (TaskList[i].flags and (ACF_ASSIGNED or ACF_DISABLED))=ACF_ASSIGNED then
-      if TaskList[i].timer=idEvent then
-      begin
-        res:=CallService(MS_ACT_RUNBYID,TaskList[i].action,0);
-        dec(TaskList[i].curcount);
-        if (TaskList[i].curcount<=0) or 
-           ((res<>0) and ((TaskList[i].flags and TCF_NONZEROBREAK)<>0)) then
+    with TaskList[i] do
+    begin
+      if (flags and (ACF_ASSIGNED or ACF_DISABLED))=ACF_ASSIGNED then
+        if timer=idEvent then
         begin
-          KillTimer(0,idEvent);
-          TaskList[i].timer:=0;
-          TaskList[i].flags:=TaskList[i].flags or ACF_DISABLED;
+          if ((flags and TCF_MAKEEVENT)<>0) and
+            (((flags and TCF_EVENTONCE) =0) or (curcount=count)) then
+            PluginLink^.NotifyEventHooks(hevent,count-curcount,lParam(name));
+
+          res:=CallService(MS_ACT_RUNBYID,action,0);
+          dec(curcount);
+          if (curcount<0) or 
+             ((res<>0) and ((flags and TCF_NONZEROBREAK)<>0)) then
+          begin
+            KillTimer(0,idEvent);
+            timer:=0;
+            flags:=flags or ACF_DISABLED;
+          end;
+          break;
         end;
-        break;
-      end;
+    end;
   end;
 end;
 
@@ -105,8 +114,16 @@ var
 begin
   for i:=0 to MaxTasks-1 do
   begin
-    if (TaskList[i].flags and (ACF_ASSIGNED or ACF_DISABLED))=ACF_ASSIGNED then
-      SetTask(TaskList[i]);
+    if (TaskList[i].flags and ACF_ASSIGNED)<>0 then
+    begin
+      if (TaskList[i].flags and ACF_DISABLED)=0 then
+        SetTask(TaskList[i])
+      else if TaskList[i].timer<>0 then
+      begin
+        KillTimer(0,TaskList[i].timer);
+        TaskList[i].timer:=0;
+      end;
+    end;
   end;
 end;
 
@@ -179,8 +196,9 @@ begin
   with TaskList^[result] do
   begin
     flags:=flags or ACF_ASSIGNED or ACF_DISABLED or TCF_ABSOLUTE;
+    GetLocalTime(st);
+    SystemTimeToFileTime(st,starttime);
     //!!! CHEAT
-    GetSystemTime(st);
     st.wHour  :=0;
     st.wMinute:=0;
     st.wSecond:=1;

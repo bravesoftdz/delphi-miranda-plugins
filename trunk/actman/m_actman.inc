@@ -112,4 +112,30 @@ const
   }
   ME_ACT_ACTION:PAnsiChar = 'Actions/Action';
 
+//----- Scheduling part services -----
+
+const
+  {
+    Enable or disable tasks
+    wParam - 1/0 (enable/disable)
+    lParam - unicode task name
+    Note - works for all tasks with same started name
+  }
+  MS_ACT_TASKENABLE:PAnsiChar = 'Actions/TaskEnable';
+
+  {
+    Delete task
+    wParam - 0
+    lParam - unicode task name
+    Note - works for all tasks with same started name
+  }
+  MS_ACT_TASKDELETE:PAnsiChar = 'Actions/TaskDelete';
+
+  {
+    Event for task start
+    wParam - counter of call (from 0 to repeat count)
+    lParam - unicode task name
+  }
+  ME_ACT_BELL:PAnsiChar = 'Actions/Bell';
+
 {$ENDIF}
