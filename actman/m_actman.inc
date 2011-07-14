@@ -5,6 +5,8 @@
 //const MIID_ACTMANAGER:MUUID='{9584DA04-FB4F-40c1-9325-E4F9CAAFCB5D}';
 
 const
+  AutoStartName:PWideChar = '#Autostart';
+const
   ACCF_DISABLED = $10000000;  // action disabled
   ACCF_EXPORT   = $08000000;  // action to export
   ACCF_VOLATILE = $04000000;  // don't save in DB

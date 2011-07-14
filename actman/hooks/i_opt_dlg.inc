@@ -1,4 +1,6 @@
 {}
+const
+  settings:HWND = 0;
 var
   OldTableProc:pointer;
   onactchanged:THANDLE;

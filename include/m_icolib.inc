@@ -13,7 +13,7 @@ type
     pszName        :PAnsiChar; // name to refer to icon when playing and in db
                            // this name is miranda-wide. so use prefixes of
                            // your plugin: "isee_connect", "clist_delete", etc
-    pszDefaultFile :TChar; // default icon file to use
+    szDefaultFile  :TChar; // default icon file to use
     iDefaultIndex  :int;   // index of icon in default file
     // V2
     hDefaultIcon   :HICON; // handle to default icon

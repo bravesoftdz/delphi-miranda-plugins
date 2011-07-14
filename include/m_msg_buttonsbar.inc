@@ -38,7 +38,7 @@ const
 // wParam =  hContact
 // lParam = (BBButton *) &description , only ModuleName and ID used
 // Returns BBButton struct with BBSF_ bbbFlags: 
-#define MS_BB_GETBUTTONSTATE	"TabSRMM/ButtonsBar/GetButtonState"
+  MS_BB_GETBUTTONSTATE:PansiChar = 'TabSRMM/ButtonsBar/GetButtonState';
 
 //////////////////////////////////////////////////////////////////////////
 // SetButtonState (local)
@@ -83,7 +83,7 @@ type
     flags     :DWORD;   // BBCF_ flags
   end;
 
-
+const
 //button flags
   BBBF_DISABLED      = $0001;
   BBBF_HIDDEN        = $0002;

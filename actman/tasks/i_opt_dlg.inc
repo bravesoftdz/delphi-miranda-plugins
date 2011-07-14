@@ -1,4 +1,7 @@
 {}
+const
+  settings:HWND = 0;
+
 var
   OldTableProc:pointer;
   onactchanged:THANDLE;
@@ -20,6 +23,8 @@ begin
   EnableWindow(GetDlgItem(Dialog,IDC_TASK_INTERVAL   ),enable);
 //  EnableWindow(GetDlgItem(Dialog,IDC_TASK_IMMEDIATELY),enable);
   EnableWindow(GetDlgItem(Dialog,IDC_TASK_BREAK      ),enable);
+  EnableWindow(GetDlgItem(Dialog,IDC_TASK_EVENT      ),enable);
+  EnableWindow(GetDlgItem(Dialog,IDC_TASK_ONCE       ),enable);
   if not enable then
   begin
     ShowWindow(GetDlgItem(Dialog,IDC_TASK_DAYST),SW_HIDE);
@@ -103,14 +108,14 @@ end;
 
 procedure ShowTaskData(Dialog:HWND; item:integer=-1);
 var
-  li:LV_ITEM;
-  wnd:HWND;
+//  li:LV_ITEM;
+//  wnd:HWND;
   st:TSystemTime;
 begin
   ClearTaskData(Dialog);
 
+{
   wnd:=GetDlgItem(Dialog,IDC_TASK_NAME);
-
   if item<0 then
     li.iItem:=SendMessage(wnd,LVM_GETNEXTITEM,-1,LVNI_FOCUSED)
   else
@@ -119,8 +124,8 @@ begin
   li.mask      :=LVIF_PARAM;
   li.iSubItem  :=0;
   SendMessageW(wnd,LVM_GETITEMW,0,LPARAM(@li));
-
-  with TaskList[li.lParam] do
+ }
+  with TaskList[{li.lParam}LV_GetLParam(GetDlgItem(Dialog,IDC_TASK_NAME),item)] do
   begin
     // flags
 
@@ -385,6 +390,7 @@ begin
   case hMessage of
     WM_CLOSE: begin
       PluginLink^.UnhookEvent(onactchanged);
+      settings:=0;
     end;
 
     WM_INITDIALOG: begin
@@ -406,6 +412,7 @@ begin
       FillTaskList(wnd);
       CheckTaskList(Dialog,false);
       onactchanged:=PluginLink^.HookEvent(ME_ACT_CHANGED,@ActListChange);
+      settings:=Dialog;
     end;
 
     WM_COMMAND: begin
