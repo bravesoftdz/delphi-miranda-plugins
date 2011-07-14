@@ -37,7 +37,6 @@ type
 var
   TaskList:pTaskList = nil;
   MaxTasks:integer = 0;
-  settings:HWND = 0;
 
 procedure TimerProc(wnd:HWND;uMsg:uint;idEvent:uint_ptr;dwTime:dword); stdcall;
 var

@@ -21,6 +21,11 @@ library actman;
 {%File 'hooks\i_options.inc'}
 {%File 'hooks\i_hook.inc'}
 {%File 'hooks\i_opt_dlg.inc'}
+{%File 'ua\i_opt_dlg.inc'}
+{%File 'ua\i_options.inc'}
+{%File 'ua\i_ua.inc'}
+{%File 'ua\i_uaplaces.inc'}
+{%File 'ua\i_uconst.inc'}
 
 uses
   m_api,
@@ -37,6 +42,7 @@ uses
   helpfile,
   question,
   global,
+  ua in 'ua\ua.pas',
   hooks in 'hooks\hooks.pas',
   scheduler in 'tasks\scheduler.pas';
 
@@ -301,6 +307,7 @@ begin
     ptr:=ptr^.Next;
   end;
 
+  CallService(MS_ACT_RUNBYNAME,TWPARAM(AutoStartName),0);
 end;
 
 function Load(link:PPLUGINLINK):int; cdecl;

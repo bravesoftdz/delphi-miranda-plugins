@@ -50,16 +50,16 @@ var
   hIconDLL:THANDLE;
 begin
   result:=true;
-  sid.pszDefaultFile.a:='icons\'+ICOCtrlName;
-//    ConvertFileName(sid.pszDefaultFile.a,buf);
-  PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,wparam(sid.pszDefaultFile),lparam(@buf));
+  sid.szDefaultFile.a:='icons\'+ICOCtrlName;
+//    ConvertFileName(sid.szDefaultFile.a,buf);
+  PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,wparam(sid.szDefaultFile),lparam(@buf));
 
   hIconDLL:=LoadLibraryA(buf);
   if hIconDLL=0 then // not found
   begin
-    sid.pszDefaultFile.a:='plugins\'+ICOCtrlName;
-//      ConvertFileName(sid.pszDefaultFile.a,buf);
-    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,wparam(sid.pszDefaultFile),lparam(@buf));
+    sid.szDefaultFile.a:='plugins\'+ICOCtrlName;
+//      ConvertFileName(sid.szDefaultFile.a,buf);
+    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,wparam(sid.szDefaultFile),lparam(@buf));
     hIconDLL:=LoadLibraryA(buf);
   end;
 
@@ -153,16 +153,16 @@ begin
     sid.cy:=16;
 
     sid.szSection.a     :='WATrack/Frame Controls';
-    sid.pszDefaultFile.a:='icons\'+ICOCtrlName;
-//    ConvertFileName(sid.pszDefaultFile.a,buf);
-    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,wparam(sid.pszDefaultFile),lparam(@buf));
+    sid.szDefaultFile.a:='icons\'+ICOCtrlName;
+//    ConvertFileName(sid.szDefaultFile.a,buf);
+    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,wparam(sid.szDefaultFile),lparam(@buf));
 
     hIconDLL:=LoadLibraryA(buf);
     if hIconDLL=0 then // not found
     begin
-      sid.pszDefaultFile.a:='plugins\'+ICOCtrlName;
-//      ConvertFileName(sid.pszDefaultFile.a,buf);
-      PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,wparam(sid.pszDefaultFile),lparam(@buf));
+      sid.szDefaultFile.a:='plugins\'+ICOCtrlName;
+//      ConvertFileName(sid.szDefaultFile.a,buf);
+      PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,wparam(sid.szDefaultFile),lparam(@buf));
       hIconDLL:=LoadLibraryA(buf);
     end;
 

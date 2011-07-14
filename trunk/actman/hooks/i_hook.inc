@@ -26,7 +26,6 @@ type
 var
   HookList:pHookList = nil;
   MaxHooks:integer = 0;
-  settings:HWND = 0;
   MessageWindow:HWND = 0;
   hHookInOut:THANDLE = 0;
   hHookShutdown:THANDLE = 0;
