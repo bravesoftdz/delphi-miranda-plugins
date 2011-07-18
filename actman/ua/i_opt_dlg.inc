@@ -1,9 +1,6 @@
 {}
 const
   settings:HWND = 0;
-var
-  onactchanged:THANDLE;
-
 type
   tNameRec = record
     name   :PAnsiChar;
@@ -127,9 +124,12 @@ begin
       begin
         if (flags and UAF_MMENUSEP)<>0 then
           CheckDlgButton(Dialog,IDC_UA_SEPARATE,BST_CHECKED);
-        SetDlgItemTextW(Dialog,IDC_UA_POPUPV   ,szMMenuPopup);
-        SetDlgItemTextW(Dialog,IDC_UA_VARNAMESV,szMMenuNameVars);
-        SetDlgItemTextW(Dialog,IDC_UA_SHOWVARV ,szMMenuShowWhenVars);
+        with UAMenuItem[main_menu] do
+        begin
+          SetDlgItemTextW(Dialog,IDC_UA_POPUPV   ,szMenuPopup);
+          SetDlgItemTextW(Dialog,IDC_UA_VARNAMESV,szMenuNameVars);
+          SetDlgItemTextW(Dialog,IDC_UA_SHOWVARV ,szMenuShowWhenVars);
+        end;
       end;
     end;
     3: begin // Contact menu
@@ -137,9 +137,12 @@ begin
       begin
         if (flags and UAF_CMENUSEP)<>0 then
           CheckDlgButton(Dialog,IDC_UA_SEPARATE,BST_CHECKED);
-        SetDlgItemTextW(Dialog,IDC_UA_POPUPV   ,szCMenuPopup);
-        SetDlgItemTextW(Dialog,IDC_UA_VARNAMESV,szCMenuNameVars);
-        SetDlgItemTextW(Dialog,IDC_UA_SHOWVARV ,szCMenuShowWhenVars);
+        with UAMenuItem[contact_menu] do
+        begin
+          SetDlgItemTextW(Dialog,IDC_UA_POPUPV   ,szMenuPopup);
+          SetDlgItemTextW(Dialog,IDC_UA_VARNAMESV,szMenuNameVars);
+          SetDlgItemTextW(Dialog,IDC_UA_SHOWVARV ,szMenuShowWhenVars);
+        end;
       end;
     end;
     4: begin // Tray menu
@@ -147,9 +150,12 @@ begin
       begin
         if (flags and UAF_TMENUSEP)<>0 then
           CheckDlgButton(Dialog,IDC_UA_SEPARATE,BST_CHECKED);
-        SetDlgItemTextW(Dialog,IDC_UA_POPUPV   ,szTMenuPopup);
-        SetDlgItemTextW(Dialog,IDC_UA_VARNAMESV,szTMenuNameVars);
-        SetDlgItemTextW(Dialog,IDC_UA_SHOWVARV ,szTMenuShowWhenVars);
+        with UAMenuItem[tray_menu] do
+        begin
+          SetDlgItemTextW(Dialog,IDC_UA_POPUPV   ,szMenuPopup);
+          SetDlgItemTextW(Dialog,IDC_UA_VARNAMESV,szMenuNameVars);
+          SetDlgItemTextW(Dialog,IDC_UA_SHOWVARV ,szMenuShowWhenVars);
+        end;
       end;
     end;
     5: begin // Hotkey
@@ -167,42 +173,50 @@ var
 begin
   wnd:=GetDlgItem(Dialog,IDC_UA_PLACELIST);
   i:=LV_GetLParam(GetDlgItem(Dialog,IDC_UA_ACTIONLIST),item);
-  with UActionList[i] do
+  if i>=0 then
   begin
-    // make "places" list
-    SendMessage(wnd,LVM_DELETEALLITEMS,0,0);
-    for i:=0 to NumTypes-1 do
+    with UActionList[i] do
     begin
-      with NamesArray[i] do
+      // make "places" list
+      SendMessage(wnd,LVM_DELETEALLITEMS,0,0);
+      for i:=0 to NumTypes-1 do
       begin
-        if enable then // cached ability flag
+        with NamesArray[i] do
         begin
-          li.mask    :=LVIF_TEXT+LVIF_PARAM;
-          li.iSubItem:=0;
-          li.iItem   :=i;
-          li.lParam  :=i;
-          li.pszText :=TranslateW(FastAnsiToWideBuf(name,buf));
-          li.iItem   :=SendMessageW(wnd,LVM_INSERTITEMW,0,LPARAM(@li));
-          ListView_SetCheckState(wnd,li.iItem,(flags and mask)<>0);
+          if enable then // cached ability flag
+          begin
+            li.mask    :=LVIF_TEXT+LVIF_PARAM;
+            li.iSubItem:=0;
+            li.iItem   :=i;
+            li.lParam  :=i;
+            li.pszText :=TranslateW(FastAnsiToWideBuf(name,buf));
+            li.iItem   :=SendMessageW(wnd,LVM_INSERTITEMW,0,LPARAM(@li));
+            ListView_SetCheckState(wnd,li.iItem,(flags and mask)<>0);
+          end;
         end;
       end;
+      ListView_SetItemState(wnd,0,
+        LVIS_FOCUSED or LVIS_SELECTED,
+        LVIS_FOCUSED or LVIS_SELECTED);
+      // show first selected "place"
+      ShowSubAction(Dialog,LV_GetLParam(wnd));
     end;
-    ListView_SetItemState(wnd,0,
-      LVIS_FOCUSED or LVIS_SELECTED,
-      LVIS_FOCUSED or LVIS_SELECTED);
-    // show first selected "place"
-    ShowSubAction(Dialog,LV_GetLParam(wnd));
+  end
+  else
+  begin
+    ClearControls(Dialog);
+    SetupControls(Dialog,-1,-1);
   end;
 end;
 
 procedure SaveAction(Dialog:HWND;item:integer=-1;atype:integer=-1);
 var
-  i,j:integer;
+  i,j,num:integer;
   wnd:HWND;
 begin
   wnd:=GetDlgItem(Dialog,IDC_UA_PLACELIST);
-  i:=LV_GetLParam(GetDlgItem(Dialog,IDC_UA_ACTIONLIST),item);
-  with UActionList[i] do
+  num:=LV_GetLParam(GetDlgItem(Dialog,IDC_UA_ACTIONLIST),item);
+  with UActionList[num] do
   begin
     // main flags
     flags:=flags and not UAF_USING;
@@ -228,9 +242,12 @@ begin
         else
           flags:=flags and not UAF_MMENUSEP;
 
-        mFreeMem(szMMenuPopup       ); szMMenuPopup       :=GetDlgText(Dialog,IDC_UA_POPUPV);
-        mFreeMem(szMMenuNameVars    ); szMMenuNameVars    :=GetDlgText(Dialog,IDC_UA_VARNAMESV);
-        mFreeMem(szMMenuShowWhenVars); szMMenuShowWhenVars:=GetDlgText(Dialog,IDC_UA_SHOWVARV);
+        with UAMenuItem[main_menu] do
+        begin
+          mFreeMem(szMenuPopup       ); szMenuPopup       :=GetDlgText(Dialog,IDC_UA_POPUPV);
+          mFreeMem(szMenuNameVars    ); szMenuNameVars    :=GetDlgText(Dialog,IDC_UA_VARNAMESV);
+          mFreeMem(szMenuShowWhenVars); szMenuShowWhenVars:=GetDlgText(Dialog,IDC_UA_SHOWVARV);
+        end;
       end;
       3: begin // Contact menu
         if IsDlgButtonchecked(Dialog,IDC_UA_SEPARATE)<>BST_UNCHECKED then
@@ -238,9 +255,12 @@ begin
         else
           flags:=flags and not UAF_CMENUSEP;
 
-        mFreeMem(szCMenuPopup       ); szCMenuPopup       :=GetDlgText(Dialog,IDC_UA_POPUPV);
-        mFreeMem(szCMenuNameVars    ); szCMenuNameVars    :=GetDlgText(Dialog,IDC_UA_VARNAMESV);
-        mFreeMem(szCMenuShowWhenVars); szCMenuShowWhenVars:=GetDlgText(Dialog,IDC_UA_SHOWVARV);
+        with UAMenuItem[contact_menu] do
+        begin
+          mFreeMem(szMenuPopup       ); szMenuPopup       :=GetDlgText(Dialog,IDC_UA_POPUPV);
+          mFreeMem(szMenuNameVars    ); szMenuNameVars    :=GetDlgText(Dialog,IDC_UA_VARNAMESV);
+          mFreeMem(szMenuShowWhenVars); szMenuShowWhenVars:=GetDlgText(Dialog,IDC_UA_SHOWVARV);
+        end;
       end;
       4: begin // Tray menu
         if IsDlgButtonchecked(Dialog,IDC_UA_SEPARATE)<>BST_UNCHECKED then
@@ -248,14 +268,20 @@ begin
         else
           flags:=flags and not UAF_TMENUSEP;
 
-        mFreeMem(szTMenuPopup       ); szTMenuPopup       :=GetDlgText(Dialog,IDC_UA_POPUPV);
-        mFreeMem(szTMenuNameVars    ); szTMenuNameVars    :=GetDlgText(Dialog,IDC_UA_VARNAMESV);
-        mFreeMem(szTMenuShowWhenVars); szTMenuShowWhenVars:=GetDlgText(Dialog,IDC_UA_SHOWVARV);
+        with UAMenuItem[tray_menu] do
+        begin
+          mFreeMem(szMenuPopup       ); szMenuPopup       :=GetDlgText(Dialog,IDC_UA_POPUPV);
+          mFreeMem(szMenuNameVars    ); szMenuNameVars    :=GetDlgText(Dialog,IDC_UA_VARNAMESV);
+          mFreeMem(szMenuShowWhenVars); szMenuShowWhenVars:=GetDlgText(Dialog,IDC_UA_SHOWVARV);
+        end;
       end;
       5: begin // Hotkey
         // Settings in Customize/Hotkeys
       end;
     end;
+  //just after Action (not place) changes
+  if item<0 then
+    SaveUA(num);
   end;
 end;
 
@@ -263,9 +289,12 @@ procedure FillActionList(wnd:HWND);
 var
   i:integer;
   li:LV_ITEMW;
+  il:HIMAGELIST;
 begin
+  wnd:=GetDlgItem(wnd,IDC_UA_ACTIONLIST);
   SendMessage(wnd,LVM_DELETEALLITEMS,0,0);
 
+  il:=ImageList_Create(16,16,ILC_COLOR32 or ILC_MASK,0,1);
   for i:=0 to HIGH(UActionList) do
   begin
     li.mask    :=LVIF_TEXT+LVIF_PARAM+LVIF_IMAGE;
@@ -273,8 +302,11 @@ begin
     li.iItem   :=i;
     li.lParam  :=i;
     li.pszText :=UActionList[i].szActDescr;
+    li.iImage:=ImageList_AddIcon(il,
+        HICON(CallService(MS_SKIN2_GETICONBYHANDLE,0,LPARAM(UActionList[i].hIcolibIcon))));
     li.iItem   :=SendMessageW(wnd,LVM_INSERTITEMW,0,LPARAM(@li));
   end;
+  ImageList_Destroy(SendMessage(wnd,LVM_SETIMAGELIST,LVSIL_SMALL,il));
 
   SendMessage(wnd,LVM_SORTITEMS,0,LPARAM(@CompareItem));
 
@@ -283,24 +315,15 @@ begin
     LVIS_FOCUSED or LVIS_SELECTED);
 end;
 
-function ActListChange(wParam:WPARAM;lParam:LPARAM):integer; cdecl;
-begin
-  result:=0;
-  if settings<>0 then
-    FillActionList(GetDlgItem(settings,IDC_UA_ACTIONLIST));
-end;
-
 function DlgProcOpt(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
   wnd:HWND;
   lv:LV_COLUMNW;
-  li:LV_ITEMW;
   i:integer;
 begin
   result:=0;
   case hMessage of
     WM_CLOSE: begin
-      PluginLink^.UnhookEvent(onactchanged);
       settings:=0;
     end;
 
@@ -324,7 +347,8 @@ begin
       lv.cx  :=110;
       SendMessageW(wnd,LVM_INSERTCOLUMNW ,0,tlparam(@lv));
       SendMessageW(wnd,LVM_SETCOLUMNWIDTH,0,LVSCW_AUTOSIZE_USEHEADER);
-      FillActionList(wnd);
+      FillActionList(Dialog);
+      ShowAction(Dialog,-1);
 
 //      if isVarsInstalled then
       begin
@@ -336,7 +360,6 @@ begin
 //        SendDlgItemMessage(Dialog,IDC_UA_SHOWVARH ,BUTTONSETASFLATBTN,0,0);
       end;
       
-      onactchanged:=PluginLink^.HookEvent(ME_ACT_CHANGED,@ActListChange);
       settings:=Dialog;
     end;
 

@@ -1,39 +1,136 @@
 {}
 const
-  opt_ua      :PAnsiChar = 'ACT_UA';
-  opt_count   :PAnsiChar = 'count';
+  opt_ua:PAnsiChar = 'ACT_UA';
 
-  opt_name    :PAnsiChar = 'name';
-  opt_flags   :PAnsiChar = 'flags';
-  opt_action  :PAnsiChar = 'action';
+  opt_Flags:PAnsiChar = 'Flags';
+
+  opt_MMenuPopup       :pAnsiChar = 'MMenuPopup';
+  opt_MMenuNameVars    :pAnsiChar = 'MMenuName';
+  opt_MMenuShowWhenVars:pAnsiChar = 'MMenuVarStr';
+
+  opt_CMenuPopup       :pAnsiChar = 'CMenuPopup';
+  opt_CMenuNameVars    :pAnsiChar = 'CMenuName';
+  opt_CMenuShowWhenVars:pAnsiChar = 'CMenuVarStr';
+
+  opt_TMenuPopup       :pAnsiChar = 'TMenuPopup';
+  opt_TMenuNameVars    :pAnsiChar = 'TMenuName';
+  opt_TMenuShowWhenVars:pAnsiChar = 'TMenuVarStr';
+
+
+procedure DeleteUASettings(idx:integer);
+var
+  setting:array [0..63] of AnsiChar;
+  p:pAnsiChar;
+begin
+  with UActionList[idx] do
+  begin
+    p:=StrEnd(IntToStr(StrCopyE(setting,'Act_'),dwActID));
+    p^:='_'; inc(p);
+
+    StrCopy(p,opt_Flags); DBDeleteSetting(0,opt_UA,setting);
+  
+    StrCopy(p,opt_MMenuPopup       ); DBDeleteSetting(0,opt_UA,setting);
+    StrCopy(p,opt_MMenuNameVars    ); DBDeleteSetting(0,opt_UA,setting);
+    StrCopy(p,opt_MMenuShowWhenVars); DBDeleteSetting(0,opt_UA,setting);
+
+    StrCopy(p,opt_CMenuPopup       ); DBDeleteSetting(0,opt_UA,setting);
+    StrCopy(p,opt_CMenuNameVars    ); DBDeleteSetting(0,opt_UA,setting);
+    StrCopy(p,opt_CMenuShowWhenVars); DBDeleteSetting(0,opt_UA,setting);
+
+    StrCopy(p,opt_TMenuPopup       ); DBDeleteSetting(0,opt_UA,setting);
+    StrCopy(p,opt_TMenuNameVars    ); DBDeleteSetting(0,opt_UA,setting);
+    StrCopy(p,opt_TMenuShowWhenVars); DBDeleteSetting(0,opt_UA,setting);
+  end;
+end;
+
+procedure addSaveUA(setting:pAnsiChar;txt:pWideChar);
+begin
+  if (txt=nil) or (txt^=#0) then DBDeleteSetting(0,opt_UA,setting)
+  else DBWriteUnicode(0,opt_UA,setting,txt);
+end;
+
+procedure SaveUA(idx:integer);
+var
+  setting:array [0..63] of AnsiChar;
+  p:pAnsiChar;
+begin
+  with UActionList[idx] do
+  begin
+    p:=StrEnd(IntToStr(StrCopyE(setting,'Act_'),dwActID));
+    p^:='_'; inc(p);
+
+    StrCopy(p,opt_Flags); DBWriteDWord(0,opt_UA,setting,flags);
+
+    with UAMenuItem[main_menu] do
+    begin
+      StrCopy(p,opt_MMenuPopup       ); addSaveUA(setting,szMenuPopup);
+      StrCopy(p,opt_MMenuNameVars    ); addSaveUA(setting,szMenuNameVars);
+      StrCopy(p,opt_MMenuShowWhenVars); addSaveUA(setting,szMenuShowWhenVars);
+    end;
+
+    with UAMenuItem[contact_menu] do
+    begin
+      StrCopy(p,opt_CMenuPopup       ); addSaveUA(setting,szMenuPopup);
+      StrCopy(p,opt_CMenuNameVars    ); addSaveUA(setting,szMenuNameVars);
+      StrCopy(p,opt_CMenuShowWhenVars); addSaveUA(setting,szMenuShowWhenVars);
+    end;
+
+    with UAMenuItem[tray_menu] do
+    begin
+      StrCopy(p,opt_TMenuPopup       ); addSaveUA(setting,szMenuPopup);
+      StrCopy(p,opt_TMenuNameVars    ); addSaveUA(setting,szMenuNameVars);
+      StrCopy(p,opt_TMenuShowWhenVars); addSaveUA(setting,szMenuShowWhenVars);
+    end;
+
+  end;
+end;
 
 procedure SaveUAs;
-{
 var
-  section:array [0..63] of AnsiChar;
-  p:PAnsiChar;
-  i,amount:integer;
-}
+  i:integer;
 begin
-{
-  DBDeleteModule(opt_tasks);
-  amount:=0;
-  for i:=0 to MaxTasks-1 do
-  begin
-    if (TaskList[i].flags and ACF_ASSIGNED)=0 then
-      continue;
+  for i:=0 to HIGH(UActionList) do
+    SaveUA(i);
+end;
 
-    p:=StrEnd(IntToStr(section,amount));
-    with TaskList[i] do
+function LoadUA(idx:integer):integer;
+var
+  setting:array [0..63] of AnsiChar;
+  p:pAnsiChar;
+begin
+  result:=0;
+  with UActionList[idx] do
+  begin
+    p:=StrEnd(IntToStr(StrCopyE(setting,'Act_'),dwActID));
+    p^:='_'; inc(p);
+
+    StrCopy(p,opt_Flags); flags:=DBReadDWord(0,opt_UA,setting,dword(UAF_SPECIAL));
+    if flags=dword(UAF_SPECIAL) then // no settings
+      exit;
+
+    result:=1;
+
+    with UAMenuItem[main_menu] do
     begin
-      StrCopy(p,opt_flags ); DBWriteDWord  (0,opt_tasks,section,flags);
-      StrCopy(p,opt_name  ); DBWriteUnicode(0,opt_tasks,section,name);
-      StrCopy(p,opt_action); DBWriteDWord  (0,opt_tasks,section,action);
+      StrCopy(p,opt_MMenuPopup       ); szMenuPopup       :=DBReadUnicode(0,opt_UA,setting);
+      StrCopy(p,opt_MMenuNameVars    ); szMenuNameVars    :=DBReadUnicode(0,opt_UA,setting);
+      StrCopy(p,opt_MMenuShowWhenVars); szMenuShowWhenVars:=DBReadUnicode(0,opt_UA,setting);
     end;
-    inc(amount);
+
+    with UAMenuItem[contact_menu] do
+    begin
+      StrCopy(p,opt_CMenuPopup       ); szMenuPopup       :=DBReadUnicode(0,opt_UA,setting);
+      StrCopy(p,opt_CMenuNameVars    ); szMenuNameVars    :=DBReadUnicode(0,opt_UA,setting);
+      StrCopy(p,opt_CMenuShowWhenVars); szMenuShowWhenVars:=DBReadUnicode(0,opt_UA,setting);
+    end;
+
+    with UAMenuItem[tray_menu] do
+    begin
+      StrCopy(p,opt_TMenuPopup       ); szMenuPopup       :=DBReadUnicode(0,opt_UA,setting);
+      StrCopy(p,opt_TMenuNameVars    ); szMenuNameVars    :=DBReadUnicode(0,opt_UA,setting);
+      StrCopy(p,opt_TMenuShowWhenVars); szMenuShowWhenVars:=DBReadUnicode(0,opt_UA,setting);
+    end;
   end;
-  DBWriteByte(0,opt_tasks,opt_count,amount);
-}
 end;
 
 function LoadUAs:integer;
@@ -65,106 +162,3 @@ begin
   end;
 }
 end;
-(*
-int ReadSetting(MyActionItem* ActionItem){
-	DBVARIANT dbv, dbv2;
-	int result = 1;
-	char text[200], *szDest;
-	mir_snprintf(text, 32, "Act%u_", ActionItem->dwActID);
-	szDest = text + strlen(text);
-
-	strcpy(szDest, "Flags");
-	ActionItem->wFlags = DBGetContactSettingWord(NULL, MODULE, text,0);
-
-	strcpy(szDest, "MMenuPopup");
-	if(!DBGetContactSettingTString(NULL, MODULE, text, &dbv)) {
-		_tcscpy(ActionItem->tszMMenuPopup, dbv.ptszVal);
-		DBFreeVariant(&dbv);
-		result++;
-	}
-	strcpy(szDest, "MMenuName");
-	if(!DBGetContactSettingTString(NULL, MODULE, text, &dbv)) {
-		_tcscpy(ActionItem->tszMMenuNameVars, dbv.ptszVal);
-		DBFreeVariant(&dbv);
-		result++;
-	}
-	strcpy(szDest, "MMenuVarStr");
-	if(!DBGetContactSettingTString(NULL, MODULE, text, &dbv2)) {
-		_tcscpy(ActionItem->tszMMenuShowWhenVars, dbv2.ptszVal);
-		DBFreeVariant(&dbv2);
-		result++;
-	}
-	strcpy(szDest, "CMenuName");
-	if(!DBGetContactSettingTString(NULL, MODULE, text, &dbv)) {
-		_tcscpy(ActionItem->tszCMenuNameVars, dbv.ptszVal);
-		DBFreeVariant(&dbv);
-		result++;
-	}
-	strcpy(szDest, "CMenuPopup");
-	if(!DBGetContactSettingTString(NULL, MODULE, text, &dbv)) {
-		_tcscpy(ActionItem->tszCMenuPopup, dbv.ptszVal);
-		DBFreeVariant(&dbv);
-		result++;
-	}
-	strcpy(szDest, "CMenuVarStr");
-	if(!DBGetContactSettingTString(NULL, MODULE, text, &dbv2)) {
-		_tcscpy(ActionItem->tszCMenuShowWhenVars, dbv2.ptszVal);
-		DBFreeVariant(&dbv2);
-		result++;
-	}
-	strcpy(szDest, "TMenuPopup");
-	if(!DBGetContactSettingTString(NULL, MODULE, text, &dbv)) {
-		_tcscpy(ActionItem->tszTMenuPopup, dbv.ptszVal);
-		DBFreeVariant(&dbv);
-		result++;
-	}
-	return result;
-}
-
-void WriteSetting(MyActionItem* ActionItem){
-	char text[200], *szDest;
-	mir_snprintf(text, 32, "Act%u_", ActionItem->dwActID);
-	szDest = text + strlen(text);
-
-	strcpy(szDest, "Flags");
-	if(ActionItem->wFlags == 0)
-		DBDeleteContactSetting(NULL, MODULE, text);
-	else
-		DBWriteContactSettingWord(NULL, MODULE, text, ActionItem->wFlags);
-	strcpy(szDest, "MMenuPopup");
-	if(ActionItem->tszMMenuPopup[0] == 0)
-		DBDeleteContactSetting(NULL, MODULE, text);
-	else
-		DBWriteContactSettingTString(NULL, MODULE, text, ActionItem->tszMMenuPopup);
-	strcpy(szDest, "MMenuName");
-	if(ActionItem->tszMMenuNameVars[0] == 0)
-		DBDeleteContactSetting(NULL, MODULE, text);
-	else
-		DBWriteContactSettingTString(NULL, MODULE, text, ActionItem->tszMMenuNameVars);
-	strcpy(szDest, "MMenuVarStr");
-	if(ActionItem->tszMMenuShowWhenVars[0] == 0)
-		DBDeleteContactSetting(NULL, MODULE, text);
-	else
-		DBWriteContactSettingTString(NULL, MODULE, text, ActionItem->tszMMenuShowWhenVars);
-	strcpy(szDest, "CMenuName");
-	if(ActionItem->tszCMenuNameVars[0] == 0)
-		DBDeleteContactSetting(NULL, MODULE, text);
-	else
-		DBWriteContactSettingTString(NULL, MODULE, text, ActionItem->tszCMenuNameVars);
-	strcpy(szDest, "CMenuPopup");
-	if(ActionItem->tszCMenuPopup[0] == 0)
-		DBDeleteContactSetting(NULL, MODULE, text);
-	else
-		DBWriteContactSettingTString(NULL, MODULE, text, ActionItem->tszCMenuPopup);
-	strcpy(szDest, "CMenuVarStr");
-	if(ActionItem->tszCMenuShowWhenVars[0] == 0)
-		DBDeleteContactSetting(NULL, MODULE, text);
-	else
-		DBWriteContactSettingTString(NULL, MODULE, text, ActionItem->tszCMenuShowWhenVars);
-	strcpy(szDest, "TMenuPopup");
-	if(ActionItem->tszTMenuPopup[0] == 0)
-		DBDeleteContactSetting(NULL, MODULE, text);
-	else
-		DBWriteContactSettingTString(NULL, MODULE, text, ActionItem->tszTMenuPopup);
-}
-*)

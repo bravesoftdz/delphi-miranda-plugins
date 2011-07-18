@@ -1,86 +1,157 @@
 {}
-{}
-const
-  MODULE = 'Actions';
-  ICOLIB_ACTSECTION = 'Actions/Registered actions';
-  ICOLIB_MNUSECTION = 'Actions/Menu icons';
-  SERVICE_WITH_LPARAM_NAME = MODULE+'/CallAction';
-
-type
-  MyActionItem = record
-    flags               :dword;
-    dwActID             :dword;     // action ID
-    wSortIndex          :word;
-    // UseActions/Action_ID
-    szNameID            :pAnsiChar; // uaction ID
-    szActDescr          :pWideChar; // action name
-
-    hIcolibIconOn,
-    hIcolibIconOff      :THANDLE;
-
-    hMTBButton          :THANDLE;   // Modern toolbar button
-    wReggedTabButton    :word;      // TabSRMM button
-
-    hMenuService        :THANDLE;   // common menu service
-    // Main menu item
-    hMainMenuItem       :THANDLE;
-    szMMenuPopup        :pWideChar;
-    szMMenuNameVars     :pWideChar;
-    szMMenuShowWhenVars :pWideChar;
-    hMMenuRoot          :THANDLE;
-    // Contact menu item
-    hContactMenuItem    :THANDLE;
-    szCMenuNameVars     :pWideChar;
-    szCMenuPopup        :pWideChar;
-    szCMenuShowWhenVars :pWideChar;
-    hCMenuRoot          :THANDLE;
-    // Tray menu item
-    hTrayMenuItem       :THANDLE;
-    szTMenuNameVars     :pWideChar;
-    szTMenuPopup        :pWideChar;
-    szTMenuShowWhenVars :pWideChar;
-    hTMenuRoot          :THANDLE;
-  end;
-  tUActionList = array [0..1023] of MyActionItem;
-  pUActionList = ^tUActionList;
-
-const
-  UAF_NONE       = 0;
-
-  UAF_REGHOTKEY  = 1 shl  0; // hotkey
-  UAF_REGMTBB    = 1 shl  1; // modern toolbar
-  UAF_REGMMENU   = 1 shl  2; // main menu
-  UAF_REGCMENU   = 1 shl  3; // contact menu
-  UAF_REGTMENU   = 1 shl  4; // tray menu
-  UAF_REGTABB    = 1 shl  5; // TabSRMM toolbar
-  UAF_USING      = UAF_REGHOTKEY or UAF_REGMTBB or UAF_REGMMENU or UAF_REGCMENU or
-                   UAF_REGTMENU or UAF_REGTABB;
-
-  UAF_MMENUSEP   = 1 shl  6; // main menu separated
-  UAF_CMENUSEP   = 1 shl  7; // contact menu separated
-  UAF_TMENUSEP   = 1 shl  8; // tray menu separated
-  // realtime
-  UAF_HKREGGED   = 1 shl 16; // hotkey registered
-  UAF_DISABLED   = 1 shl 30; // action disabled atm
-
+procedure SetAllActionUsers(var ActionItem:tMyActionItem);
 var
-  UActionList:array of MyActionItem;
-
-function AddUAction:integer;
+  buf:array [0..63] of AnsiChar;
 begin
-  result:=0;
+  if (ActionItem.flags and UAF_REGHOTKEY)<>0 then
+    AddCoreHotkey(ActionItem)
+  else
+    DeleteCoreHotkey(ActionItem);
+
+  if (ActionItem.flags and UAF_REGMTBB)<>0 then
+    AddMTBButton(ActionItem)
+  else
+    DeleteMTBButton(ActionItem);
+
+  if (ActionItem.flags and UAF_REGTABB)<>0 then
+    AddTabBBButton(ActionItem)
+  else
+    DeleteTabBBButton(ActionItem);
+
+  if (ActionItem.flags and UAF_REGMMENU)<>0 then
+    AddMainMenuItem(ActionItem)
+  else
+    DeleteMainMenuItem(ActionItem);
+
+  if (ActionItem.flags and UAF_REGCMENU)<>0 then
+    AddContactMenuItem(ActionItem)
+  else
+    DeleteContactMenuItem(ActionItem);
+
+  if (ActionItem.flags and UAF_REGTMENU)<>0 then
+    AddTrayMenuItem(ActionItem)
+  else
+    DeleteTrayMenuItem(ActionItem);
+
+  if ((ActionItem.flags and (UAF_REGMMENU or UAF_REGCMENU or UAF_REGTMENU))=0) and
+      (ActionItem.hMenuService<>0) then
+  begin
+    PluginLink^.DestroyServiceFunction(ActionItem.hMenuService);
+    ActionItem.hMenuService:=0;
+  end;
+
+  // First run (ok ok, if ppl ask for it....)
+  StrCat(IntToStr(StrCopyE(buf,'Act'),ActionItem.dwActID),'_FirstRun');
+  if DBReadByte(0,opt_UA,buf,0)<>0 then
+  begin
+//!!!    CAllService(,0,ActionItem.dwActID);
+    DBDeleteSetting(0,opt_UA,buf);
+  end;
 end;
 
 procedure DeleteUAction(num:integer);
+var
+  ActionItem:pMyActionItem;
+  buf:array [0..63] of AnsiChar;
 begin
+  DeleteUASettings(num);
+
+  ActionItem:=@UActionList[num];
+
+  DeleteIcolibIcon(ActionItem^);
+
+  if (ActionItem.flags and UAF_REGHOTKEY)<>0 then
+    DeleteCoreHotkey(ActionItem^);
+
+  if (ActionItem.flags and UAF_REGMTBB)<>0 then
+    DeleteMTBButton(ActionItem^);
+
+  if (ActionItem.flags and UAF_REGTABB)<>0 then
+    DeleteTabBBButton(ActionItem^);
+
+  if (ActionItem.flags and UAF_REGMMENU)<>0 then
+    DeleteMainMenuItem(ActionItem^);
+
+  if (ActionItem.flags and UAF_REGCMENU)<>0 then
+    DeleteContactMenuItem(ActionItem^);
+
+  if (ActionItem.flags and UAF_REGTMENU)<>0 then
+    DeleteTrayMenuItem(ActionItem^);
+
+  if ((ActionItem.flags and (UAF_REGMMENU or UAF_REGCMENU or UAF_REGTMENU))=0) and
+      (ActionItem.hMenuService<>0) then
+  begin
+    PluginLink^.DestroyServiceFunction(ActionItem.hMenuService);
+    ActionItem.hMenuService:=0;
+  end;
+
+  StrCat(IntToStr(StrCopyE(buf,'Act'),ActionItem.dwActID),'_FirstRun');
+  DBDeleteSetting(0,opt_UA,buf);
+
+  // Free Memory
+  mFreeMem(ActionItem.szNameID);
+  mFreeMem(ActionItem.szActDescr);
+  
+  with ActionItem.UAMenuItem[main_menu] do
+  begin
+    mFreeMem(szMenuPopup);
+    mFreeMem(szMenuNameVars);
+    mFreeMem(szMenuShowWhenVars);
+  end;
+
+  with ActionItem.UAMenuItem[contact_menu] do
+  begin
+    mFreeMem(szMenuPopup);
+    mFreeMem(szMenuNameVars);
+    mFreeMem(szMenuShowWhenVars);
+  end;
+
+  with ActionItem.UAMenuItem[tray_menu] do
+  begin
+    mFreeMem(szMenuPopup);
+    mFreeMem(szMenuNameVars);
+    mFreeMem(szMenuShowWhenVars);
+  end;
+
+  // compact list
+  if num<HIGH(UActionList) then
+  begin
+    move(UActionList[num+1],UActionList[num],(HIGH(UACtionList)-num)*SizeOf(tMyActionItem));
+  end;
+  SetLength(UActionList,Length(UActionList)-1);
+end;
+
+function AddUAction(idx:integer; ptr:pChain):integer;
+var
+  buf:array [0..127] of AnsiChar;
+begin
+  result:=-1;
+  if idx<0 then idx:=Length(UActionList);
+  if idx=Length(UActionList) then
+    SetLength(UActionList,Length(UActionList)+1);
+
+  FillChar(UActionList[idx],SizeOf(tMyActionItem),0);
+
+  with UActionList[idx] do
+  begin
+    // get Action settings
+    dwActID:=ptr^.id;
+    if (ptr^.flags and ACCF_DISABLED)<>0 then
+      flags:=UAF_DISABLED;
+    StrDupW(szActDescr,ptr^.descr);
+    wSortIndex:=idx;
+    
+    // prepare for work
+    IntToStr(StrCopyE(buf,'Actions/Action_'),ptr^.id);
+    StrDup(szNameID,@buf);
+    AddIcolibIcon(UActionList[idx]);
+  end;
 end;
 
 function CreateUActionList:integer;
 var
   ptr,ptr1:pChain;
   i:integer;
-  buf:array [0..127] of AnsiChar;
-  p:pAnsiChar;
 begin
   result:=CallService(MS_ACT_GETLIST,0,LPARAM(@ptr));
   SetLength(UActionList,result);
@@ -88,26 +159,95 @@ begin
   begin
     ptr1:=ptr;
     inc(pbyte(ptr),4);
-    p:=StrCopyE(StrCopyE(buf,MODULE),'/Action_');
     for i:=0 to result-1 do
     begin
-      FillChar(UActionList[i],SizeOf(MyActionItem),0);
-
-      with UActionList[i] do
-      begin
-        // get Action settings
-        dwActID:=ptr^.id;
-        if (ptr^.flags and ACCF_DISABLED)<>0 then
-          flags:=UAF_DISABLED;
-        StrDupW(szActDescr,ptr^.descr);
-        wSortIndex:=i;
-        
-        // prepare for work
-        IntToStr(p,ptr^.id);
-        StrDup(szNameID,@buf);
-      end;
+      AddUAction(i,ptr);
+      LoadUA(i); // just here coz at list changes for new we don't have settings
+//      SetAllActionUsers(ActItem); // will need to repeat at changes :(
       inc(ptr);
     end;
     CallService(MS_ACT_FREELIST,0,LPARAM(ptr1));
   end;
+end;
+
+function ActListChange(wParam:WPARAM;lParam:LPARAM):integer; cdecl;
+var
+  ptr,ptr1:pChain;
+  idx,i,j,count:integer;
+  bFound:boolean;
+begin
+  result:=0;
+
+  count:=CallService(MS_ACT_GETLIST,0,TLPARAM(@ptr));
+
+  if count>0 then
+  begin
+    ptr1:=ptr;
+    inc(pbyte(ptr),4);
+    if (wParam and (ACTM_NEW or ACTM_RENAME or ACTM_SORT or ACTM_DELETE))<>0 then
+      for i:=0 to count-1 do
+      begin
+        // search corresponding element
+        idx:=-1;
+        for j:=0 to HIGH(UActionList) do
+        begin
+          if UActionList[j].dwActID=ptr^.id then
+          begin
+            idx:=j;
+            break;
+          end;
+        end;
+        // if we have no item in list for this action - then add new one
+        if idx<0 then
+          AddUAction(-1,ptr)
+        else
+        begin
+          if (wParam and ACTM_RENAME)<>0 then
+          begin
+            // check for time economy - no need to change ALL items
+            if StrCmpW(UActionList[idx].szActDescr,ptr^.descr)<>0 then
+            begin
+              mFreeMem(UActionList[idx].szActDescr);
+              StrDupW (UActionList[idx].szActDescr,ptr^.descr);
+            end;
+          end;
+
+          if (wParam and (ACTM_SORT or ACTM_DELETE or ACTM_NEW))<>0 then
+            UActionList[idx].wSortIndex:=i;
+        end;
+        inc(ptr);
+      end;
+  end
+  else
+    ptr1:=nil;
+
+  // now search deleted items
+  if (wParam and ACTM_DELETE)<>0 then
+  begin
+    for j:=HIGH(UActionList) downto 0 do
+    begin
+      bFound:=false;
+      if count>0 then
+      begin
+        ptr:=ptr1;
+        inc(pbyte(ptr),4);
+        for i:=0 to count-1 do
+        begin
+          if UActionList[j].dwActID=ptr^.id then
+          begin
+            bFound:=true;
+            break;
+          end;
+          inc(ptr);
+        end;
+      end;
+      if not bFound then
+        DeleteUAction(j);
+    end;
+  end;
+
+  if count>0 then
+    CallService(MS_ACT_FREELIST,0,TLPARAM(ptr1));
+
+  if settings<>0 then FillActionList(settings);
 end;

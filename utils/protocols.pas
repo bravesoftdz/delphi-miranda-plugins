@@ -79,7 +79,8 @@ const
 type
   pMyProto = ^tMyProto;
   tMyProto = record
-    name    :PAnsiChar;
+    name    :PAnsiChar; // internal account name
+    descr   :PWideChar; // public   account name
 //    xstat   :integer; // old ICQ XStatus
     enabled :integer;
     status  :integer; // mask
@@ -92,6 +93,7 @@ var
   protos:pMyProtos;
   NumProto:cardinal;
   NASPresents:bool;
+  hAccounts:THANDLE;
 
 function FindProto(proto:PAnsiChar):uint_ptr;
 var
@@ -206,7 +208,7 @@ end;
 
 procedure FillProtoList(list:hwnd;withIcons:bool=false);
 var
-  item:TLVITEMA;
+  item:TLVITEMW;
   lvc:TLVCOLUMN;
   i,NewItem:integer;
   cli:PCLIST_INTERFACE;
@@ -239,10 +241,10 @@ begin
   for i:=0 to NumProto do
   begin
     item.iItem:=i;
-    item.pszText:=protos^[i].name;
+    item.pszText:=protos^[i].descr;
     if withIcons and (i>0) then
-      item.iImage:=cli^.pfnIconFromStatusMode(item.pszText,ID_STATUS_ONLINE,0);
-    newItem:=SendMessageA(list,LVM_INSERTITEMA,0,lParam(@item));
+      item.iImage:=cli^.pfnIconFromStatusMode(protos^[i].name,ID_STATUS_ONLINE,0);
+    newItem:=SendMessageW(list,LVM_INSERTITEMW,0,lParam(@item));
     if newItem>=0 then
       ListView_SetCheckState(list,newItem,(protos^[i].enabled and psf_enabled)<>0)
   end;
@@ -374,21 +376,40 @@ begin
   end;
 end;
 
+function AccListChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+var
+  i:integer;
+begin
+  case wParam of
+    PRAC_ADDED: begin
+    end;
+    PRAC_CHANGED: begin
+      i:=FindProto(PPROTOACCOUNT(lParam).szModuleName);
+      if i>0 then
+        protos^[i].descr:=PPROTOACCOUNT(lParam).tszAccountName.w;
+    end;
+    PRAC_REMOVED: begin
+    end;
+  end;
+end;
+
 function CreateProtoList(deepscan:boolean=false):integer;
 var
   protoCount,i:integer;
-  proto:^PPROTOCOLDESCRIPTOR;
+  proto:^PPROTOACCOUNT;
   buf:array [0..127] of AnsiChar;
   flag:integer;
   p:pAnsichar;
 //  hContract:THANDLE;
 begin
-  CallService(MS_PROTO_ENUMPROTOCOLS,wparam(@protoCount),lparam(@proto));
+  CallService(MS_PROTO_ENUMACCOUNTS,wparam(@protoCount),lparam(@proto));
+
   mGetMem(protos,(protoCount+1)*SizeOf(tMyProto)); // 0 - default
   NumProto:=0;
   with protos^[0] do
   begin
     name   :=defproto;
+    descr  :=defproto;
     status :=-1;
     enabled:=-1;
   end;
@@ -400,10 +421,12 @@ begin
       inc(NumProto);
       with protos^[NumProto] do
       begin
-        name   :=proto^^.szName;
-//        xstat  :=-1;
+        name :=proto^^.szModuleName;
+        descr:=proto^^.tszAccountName.w;
+
         enabled:=psf_all;//psf_enabled;
         status :=0;
+//        xstat  :=-1;
         flag:=CallProtoService(name,PS_GETCAPS,PFLAGNUM_2,0);
         if (flag and PF2_ONLINE)    <>0 then status:=status or psf_online;
         if (flag and PF2_INVISIBLE) <>0 then status:=status or psf_invisible;
@@ -459,10 +482,13 @@ begin
   end;
 }
   result:=NumProto;
+
+  hAccounts:=PluginLink^.HookEvent(ME_PROTO_ACCLISTCHANGED,@AccListChanged);
 end;
 
 procedure FreeProtoList;
 begin
+  PluginLink^.UnhookEvent(hAccounts);
   mFreeMem(protos);
   NumProto:=0;
 end;

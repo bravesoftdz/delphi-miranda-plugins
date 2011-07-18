@@ -134,10 +134,13 @@ begin
   ShowWindow(GetDlgItem(Dialog,IDC_IRC_CHANNEL),show);
 
   wnd:=GetDlgItem(Dialog,IDC_PROTOLIST);
-  SendMessage(wnd,CB_SETCURSEL,0,0);
 
-//  SendMessageA(wnd,LVM_GETITEMTEXTA,);
-  ListView_GetItemTextA(wnd,CurProto,0,@buf,SizeOf(buf));
+//!!!!  SendMessage(wnd,CB_SETCURSEL,0,0); //???
+
+//  SendMessageA(wnd,LVM_GETITEMTEXTA,);  	
+//  ListView_GetItemTextA(wnd,CurProto,0,@buf,SizeOf(buf));
+
+  StrCopy(buf,GetProtoName(CurProto));
   StrCat(buf,PS_ICQ_GETCUSTOMSTATUSICON);
   endis:=PluginLink^.ServiceExists(buf)<>0;
 
@@ -402,7 +405,8 @@ begin
             SaveCBExValue(Dialog,true);
             CurProto:=PNMLISTVIEW(lParam)^.iItem;
             SetScreenFull(Dialog);
-            ListView_GetItemTextA(PNMLISTVIEW(lParam)^.hdr.hwndFrom,CurProto,0,@buf,SizeOf(buf));
+//            ListView_GetItemTextA(PNMLISTVIEW(lParam)^.hdr.hwndFrom,CurProto,0,@buf,SizeOf(buf));
+            StrCopy(buf,GetProtoName(CurProto));
             wnd:=GetDlgItem(Dialog,IDC_CBEX);
             FillCBType(Dialog,buf);
             if AddCBEx(wnd,buf)<>0 then

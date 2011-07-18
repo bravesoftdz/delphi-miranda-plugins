@@ -71,7 +71,7 @@ const
   BetaChangelogURL  = nil; //'http://awkward.miranda.im/actman.txt';
 
 var
-  PluginInterfaces:array [0..1] of MUUID;
+  PluginInterfaces:array [0..2] of MUUID;
 
 function MirandaPluginInfoEx(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
 begin
@@ -339,7 +339,8 @@ end;
 function MirandaPluginInterfaces:PMUUID; cdecl;
 begin
   PluginInterfaces[0]:=PluginInfo.uuid;
-  PluginInterfaces[1]:=MIID_LAST;
+  PluginInterfaces[1]:=MIID_USEACTIONS;
+  PluginInterfaces[2]:=MIID_LAST;
   result:=@PluginInterfaces;
 end;
 
