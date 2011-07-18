@@ -18,26 +18,33 @@ uses
 {$include m_actman.inc}
 
 {$include i_uconst.inc}
-{$include i_options.inc}
-{$include i_ua.inc}
+{$include i_uavars.inc}
 {$include i_uaplaces.inc}
+{$include i_options.inc}
 {$include i_opt_dlg.inc}
+{$include i_ua.inc}
 
 // ------------ base interface functions -------------
 
+var
+  onactchanged:THANDLE;
+
 procedure Init;
 begin
+  GetModuleFileNameW(hInstance,szMyPath,MAX_PATH);
 
   CheckPlacesAbility;
   CreateUActionList;
   if LoadUAs=0 then
   begin
   end
-  else
+  else;
+  onactchanged:=PluginLink^.HookEvent(ME_ACT_CHANGED,@ActListChange);
 end;
 
 procedure DeInit;
 begin
+  PluginLink^.UnhookEvent(onactchanged);
 end;
 
 function AddOptionPage(var tmpl:pAnsiChar;var proc:pointer;var name:PAnsiChar):integer;
