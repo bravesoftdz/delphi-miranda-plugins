@@ -56,7 +56,7 @@ begin
     hkd.cbSize          := HOTKEYDESC_SIZE_V1;//SizeOf(hkd);
     hkd.pszName         := ActionItem.szNameID;
     hkd.pszDescription.w:= ActionItem.szActDescr;
-    hkd.pszSection    .w:= 'Actions';
+    hkd.pszSection    .w:= MODULE_NAME;
     hkd.pszService      := SERVICE_WITH_LPARAM_NAME;
     hkd.lParam          := ActionItem.dwActID;
     result:=CallService(MS_HOTKEY_REGISTER,0,LPARAM(@hkd))<>0;
@@ -83,18 +83,6 @@ end;
 
 //----- Common menu functions -----
 
-procedure DeleteMenuItem(var ActionItem:tMyActionItem;mtype:tMenuType;service:pAnsiChar);
-begin
-  with ActionItem.UAMenuItem[mtype] do
-  begin
-    if hMenuItem=0 then exit;
-
-    CallService(service,hMenuItem,0);
-
-    hMenuItem:=0;
-  end;
-end;
-
 function AddRootMenuIcon(szPopupName:pWideChar):THANDLE;
 var
   sid:TSKINICONDESC;
@@ -112,6 +100,33 @@ begin
   WideToAnsi(szPopupName,sid.pszName);
   result:=CallService(MS_SKIN2_ADDICON,0,LPARAM(@sid));
   mFreeMem(sid.pszName);
+end;
+
+function DeletePopup(var ActionItem:tMyActionItem;mtype:tMenuType):boolean;
+var
+  i:integer;
+  hMenuRoot:THANDLE;
+  p:pMyActionItem;
+begin
+  result:=true;
+  hMenuRoot:=ActionItem.UAMenuItem[mtype].hMenuRoot;
+  if hMenuRoot<>0 then
+  begin
+    for i:=0 to HIGH(UActionList) do
+    begin
+      p:=@UActionList[i];
+      if (p<>@ActionItem) and (p.UAMenuItem[mtype].hMenuRoot=hMenuRoot) then
+      begin
+        result:=false;
+        break;
+      end;
+    end;
+  end;
+end;
+
+function SearchPopup():boolean;
+begin
+  result:=true;
 end;
 
 (*
@@ -168,7 +183,7 @@ begin
 end;
 *)
 
-function PreBuildMenu(var ActionItem:tMyActionItem;mtype:tMenuType;hContact:THANDLE=0):int;
+function PreBuildMenu(mtype:tMenuType;hContact:THANDLE=0):int;
 var
   i:integer;
   mi:TCListMenuItem;
@@ -236,12 +251,23 @@ end;
 
 procedure DeleteMainMenuItem(var ActionItem:tMyActionItem);
 begin
-  DeleteMenuItem(ActionItem,main_menu,MS_CLIST_REMOVEMAINMENUITEM);
+  with ActionItem.UAMenuItem[main_menu] do
+  begin
+    if hMenuItem=0 then exit;
+    CallService(MS_CLIST_REMOVEMAINMENUITEM,hMenuItem,0);
+    hMenuItem:=0;
+
+    // if it was last popup menu request
+    if DeletePopup(ActionItem,main_menu) then
+      CallService(MS_CLIST_REMOVEMAINMENUITEM,hMenuRoot,0);
+    hMenuRoot:=0;
+  end;
 end;
 
 function PreBuildMainMenu(wParam:WPARAM;lParam:LPARAM):int;
 begin
   result:=0;
+  PreBuildMenu(main_menu,wParam);
 end;
 
 //----- Contact Menu -----
@@ -253,12 +279,23 @@ end;
 
 procedure DeleteContactMenuItem(var ActionItem:tMyActionItem);
 begin
-  DeleteMenuItem(ActionItem,contact_menu,MS_CLIST_REMOVECONTACTMENUITEM);
+  with ActionItem.UAMenuItem[contact_menu] do
+  begin
+    if hMenuItem=0 then exit;
+    CallService(MS_CLIST_REMOVECONTACTMENUITEM,hMenuItem,0);
+    hMenuItem:=0;
+
+    // if it was last popup menu request
+    if DeletePopup(ActionItem,main_menu) then
+      CallService(MS_CLIST_REMOVECONTACTMENUITEM,hMenuRoot,0);
+    hMenuRoot:=0;
+  end;
 end;
 
 function PreBuildContactMenu(wParam:WPARAM;lParam:LPARAM):int;
 begin
   result:=0;
+  PreBuildMenu(contact_menu,wParam);
 end;
 
 //----- Tray Menu -----
@@ -314,18 +351,67 @@ end;
 
 procedure DeleteTrayMenuItem(var ActionItem:tMyActionItem);
 begin
-  DeleteMenuItem(ActionItem,tray_menu,MS_CLIST_REMOVETRAYMENUITEM);
+  with ActionItem.UAMenuItem[tray_menu] do
+  begin
+    if hMenuItem=0 then exit;
+    CallService(MS_CLIST_REMOVETRAYMENUITEM,hMenuItem,0);
+    hMenuItem:=0;
+
+    // if it was last popup menu request
+    if DeletePopup(ActionItem,main_menu) then
+      CallService(MS_CLIST_REMOVETRAYMENUITEM,hMenuRoot,0);
+    hMenuRoot:=0;
+  end;
 end;
 
 function PreBuildTrayMenu(wParam:WPARAM;lParam:LPARAM):int;
 begin
   result:=0;
+  PreBuildMenu(tray_menu,wParam);
 end;
 
 //----- Modern Toolbar -----
 
 procedure AddMTBButton(var ActionItem:tMyActionItem);
+var
+  mtButton:TBButton;
+  pc,pc1,pc2:pAnsiChar;
 begin
+  if ActionItem.hMTBButton=0 then
+  begin
+    FillChar(mtButton,SizeOf(mtButton),0);
+    mtButton.cbSize  :=SizeOf(mtButton);
+    mtButton.defPos  :=1000;
+    mtButton.tbbFlags:=TBBF_VISIBLE or TBBF_SHOWTOOLTIP;
+
+    mtButton.pszButtonID   :=ActionItem.szNameID;
+    mtButton.pszServiceName:=SERVICE_WITH_LPARAM_NAME;
+    mtButton.lParam        :=ActionItem.dwActID;
+
+    mtButton.hPrimaryIconHandle  :=ActionItem.hIcolibIcon;
+    if (ActionItem.flags and UAF_MTB2STATE)<>0 then
+      mtButton.hSecondaryIconHandle:=ActionItem.hIcolibIconPressed
+    else
+      mtButton.hSecondaryIconHandle:=mtButton.hPrimaryIconHandle;
+
+    WideToAnsi(ActionItem.szActDescr,pc);
+
+    if ActionItem.szMTBTooltip =nil then
+      pc1:=pc
+    else pc1:=ActionItem.szMTBTooltip;
+    if ((ActionItem.flags and UAF_MTB2STATE)=0) or 
+       (ActionItem.szMTBTooltipPressed=nil) then
+      pc2:=pc1
+    else
+      pc2:=ActionItem.szMTBTooltipPressed;
+
+    mtButton.pszButtonName :=pc;
+    mtButton.pszTooltipUp  :=pc1;
+    mtButton.pszTooltipDn  :=pc2;
+
+    ActionItem.hMTBButton:=CallService(MS_TB_ADDBUTTON,0,LPARAM(@mtButton));
+    mFreeMem(pc);
+  end;
 end;
 
 procedure DeleteMTBButton(var ActionItem:tMyActionItem);
@@ -337,26 +423,127 @@ begin
   end;
 end;
 
-function OnMTBLoaded(wParam:WPARAM;lParam:LPARAM):int;
+function OnMTBLoaded(wParam:WPARAM;lParam:LPARAM):int; cdecl;
+var
+  i:integer;
 begin
   result:=0;
+  for i:=HIGH(UActionList) downto 0 do
+  begin
+    if (UActionList[i].flags and UAF_REGMTBB)<>0 then
+      AddMTBButton(UActionList[i]);
+  end;
 end;
 
 //----- TabSRMM Toolbar -----
+
+const
+  TABTOOLBAR_INITPOS = 350;
+
 procedure AddTabBBButton(var ActionItem:tMyActionItem);
+var
+  tabb:BBButton;
 begin
+  if (ActionItem.flags and UAF_TBREGGED)=0 then
+  begin
+    FillChar(tabb,SizeOf(tabb),0);
+    // register Tab ButtonBar button
+    tabb.cbSize       :=SizeOf(tabb);
+    tabb.dwButtonID   :=ActionItem.dwActID;
+    tabb.pszModuleName:=MODULE_NAME;
+    tabb.dwDefPos     :=(TABTOOLBAR_INITPOS+ActionItem.wSortIndex*10) and $7FFF;
+    tabb.iButtonWidth :=0;
+    tabb.hIcon        :=ActionItem.hIcolibIcon;
+    tabb.bbbFlags     :=BBBF_ISIMBUTTON or BBBF_ISLSIDEBUTTON or
+                        BBBF_ISCHATBUTTON or BBBF_ISPUSHBUTTON;
+
+    if ActionItem.szTabBTooltip<>nil then
+      tabb.szTooltip.w:=ActionItem.szTabBTooltip
+    else
+      tabb.szTooltip.w:=ActionItem.szActDescr;
+
+    CallService(MS_BB_ADDBUTTON,0,LPARAM(@tabb));
+    ActionItem.flags:=ActionItem.flags or UAF_TBREGGED;
+  end;
 end;
 
 procedure DeleteTabBBButton(var ActionItem:tMyActionItem);
+var
+  tabb:BBButton;
 begin
+  if (ActionItem.flags and UAF_TBREGGED)<>0 then
+  begin
+    FillChar(tabb,SizeOf(tabb),0);
+    tabb.dwButtonID   :=ActionItem.dwActID;
+    tabb.pszModuleName:=MODULE_NAME;
+    CallService(MS_BB_REMOVEBUTTON,0,LPARAM(@tabb));
+    ActionItem.flags:=ActionItem.flags and not UAF_TBREGGED;
+  end;
 end;
 
-function OnTabBBLoaded(wParam:WPARAM;lParam:LPARAM):int;
+function OnTabButtonPressed(wParam:WPARAM;lParam:LPARAM):int; cdecl;
+var
+  cbcd:pCustomButtonClickData;
+  tabb:BBButton;
+  pc:pWideChar;
+  i:integer;
 begin
-  result:=0;
+  cbcd:=pointer(lParam);
+  if StrCmp(cbcd.pszModule,MODULE_NAME)<>0 then
+  begin
+    result:=0;
+    exit;
+  end;
+  for i:=0 to HIGH(UActionList) do
+  begin
+    with UActionList[i] do
+    begin
+      if cbcd.dwButtonId=dwActID then
+      begin
+        if (flags and UAF_TAB2STATE)<>0 then
+        begin
+          tabb.cbSize       :=SizeOf(tabb);
+          tabb.dwButtonID   :=cbcd.dwButtonId;
+          tabb.pszModuleName:=MODULE_NAME;
+          CallService(MS_BB_GETBUTTONSTATE,cbcd.hContact,TLPARAM(@tabb));
+          if (tabb.bbbFlags and BBSF_PUSHED)<>0 then
+          begin
+            pc:=szTabBTooltipPressed;
+            if pc=nil then pc:=szTabBTooltip;
+            tabb.hIcon:=hIcolibIconPressed;
+          end
+          else
+          begin
+            pc:=szTabBTooltip;
+            tabb.hIcon:=hIcolibIcon;
+          end;
+          if pc=nil then pc:=szActDescr;
+          tabb.szTooltip.w:=pc;
+          tabb.dwDefPos     :=(TABTOOLBAR_INITPOS+wSortIndex*10) and $7FFF;
+          tabb.iButtonWidth :=0;
+          tabb.bbbFlags     :=BBBF_ISIMBUTTON or BBBF_ISLSIDEBUTTON or
+                              BBBF_ISCHATBUTTON or BBBF_ISPUSHBUTTON;
+          CallService(MS_BB_MODIFYBUTTON,0,TLPARAM(@tabb));
+        end;
+        break;
+      end;
+    end;
+  end;
+
+//??  ServiceCallWithFParam(cbcd.hContact,0,cbcd.dwButtonId);
+
+  result:=1;
 end;
 
-function OnTabButtonPressed(wParam:WPARAM;lParam:LPARAM):int;
+function OnTabBBLoaded(wParam:WPARAM;lParam:LPARAM):int; cdecl;
+var
+  i:integer;
 begin
   result:=0;
+  for i:=HIGH(UActionList) downto 0 do
+  begin
+    if (UActionList[i].flags and UAF_REGTABB)<>0 then
+      AddTabBBButton(UActionList[i]);
+  end;
+  hTabBBPressHook:=HookEvent(ME_MSG_BUTTONPRESSED,OnTabButtonPressed);
 end;

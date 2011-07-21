@@ -73,14 +73,15 @@ const
   BBCF_ARROWCLICKED   = 8;
 
 type
-  CustomButtonClickData = record
+  pCustomButtonClickData = ^tCustomButtonClickData;
+  tCustomButtonClickData = record
     cbSize    :int;
-    pt        :TPOINT;  // screen coordinates for menus
-    pszModule :PAnsiChar;   // button owners name 
-    dwButtonId:DWORD;   // registered button ID
-    hwndFrom  :HWND;    // button parents HWND
-    hContact  :THANDLE;	//
-    flags     :DWORD;   // BBCF_ flags
+    pt        :TPOINT;    // screen coordinates for menus
+    pszModule :PAnsiChar; // button owners name 
+    dwButtonId:DWORD;     // registered button ID
+    hwndFrom  :HWND;      // button parents HWND
+    hContact  :THANDLE;   //
+    flags     :DWORD;     // BBCF_ flags
   end;
 
 const

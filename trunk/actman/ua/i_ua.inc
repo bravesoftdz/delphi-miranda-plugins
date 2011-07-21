@@ -44,7 +44,7 @@ begin
   StrCat(IntToStr(StrCopyE(buf,'Act'),ActionItem.dwActID),'_FirstRun');
   if DBReadByte(0,opt_UA,buf,0)<>0 then
   begin
-//!!!    CAllService(,0,ActionItem.dwActID);
+    CAllService(MS_ACT_RUNBYID,ActionItem.dwActID,0);
     DBDeleteSetting(0,opt_UA,buf);
   end;
 end;
@@ -92,6 +92,12 @@ begin
   mFreeMem(ActionItem.szNameID);
   mFreeMem(ActionItem.szActDescr);
   
+  mFreeMem(ActionItem.szMTBTooltip);
+  mFreeMem(ActionItem.szMTBTooltipPressed);
+
+  mFreeMem(ActionItem.szTabBTooltip);
+  mFreeMem(ActionItem.szTabBTooltipPressed);
+
   with ActionItem.UAMenuItem[main_menu] do
   begin
     mFreeMem(szMenuPopup);
@@ -184,6 +190,7 @@ begin
   begin
     ptr1:=ptr;
     inc(pbyte(ptr),4);
+    // maybe add ACTM_RELOAD (as NEW and DELETE) here too?
     if (wParam and (ACTM_NEW or ACTM_RENAME or ACTM_SORT or ACTM_DELETE))<>0 then
       for i:=0 to count-1 do
       begin

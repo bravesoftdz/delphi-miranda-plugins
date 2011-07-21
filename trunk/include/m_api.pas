@@ -187,7 +187,7 @@ type
   THookEventObj                   = function(const str:PAnsiChar;mho:TMIRANDAHOOKOBJ;ptr:pointer):THANDLE; cdecl;
   THookEventObjParam              = function(const str:PAnsiChar;mhop:TMIRANDAHOOKOBJPARAM;ptr:pointer;lParam:LPARAM):THANDLE; cdecl;
   TCreateServiceFunctionObj       = function(const str:PAnsiChar;mso:TMIRANDASERVICEOBJ;ptr:pointer):THANDLE; cdecl;
-  TCreateServiceFunctionObjParam  = function(const str:PAnsiChar;msop:TMIRANDASERVICEOBJPARAM;ptr,ptr2:pointer;lParam:LPARAM):THANDLE; cdecl;
+  TCreateServiceFunctionObjParam  = function(const str:PAnsiChar;msop:TMIRANDASERVICEOBJPARAM;ptr:pointer;lParam:LPARAM):THANDLE; cdecl;
   TKillObjectServices             = procedure(var ptr); 
   TKillObjectEventHooks           = procedure(var ptr);
 

@@ -4,6 +4,12 @@ const
 
   opt_Flags:PAnsiChar = 'Flags';
 
+  opt_MTBTooltip        :pAnsiChar = 'MTBTooltip';
+  opt_MTBTooltipPressed :pAnsiChar = 'MTBTooltipPressed';
+
+  opt_TabBTooltip       :pAnsiChar = 'TabBTooltip';
+  opt_TabBTooltipPressed:pAnsiChar = 'TabBTooltipPressed';
+
   opt_MMenuPopup       :pAnsiChar = 'MMenuPopup';
   opt_MMenuNameVars    :pAnsiChar = 'MMenuName';
   opt_MMenuShowWhenVars:pAnsiChar = 'MMenuVarStr';
@@ -29,6 +35,12 @@ begin
 
     StrCopy(p,opt_Flags); DBDeleteSetting(0,opt_UA,setting);
   
+    StrCopy(p,opt_MTBTooltip        ); DBDeleteSetting(0,opt_UA,setting);
+    StrCopy(p,opt_MTBTooltipPressed ); DBDeleteSetting(0,opt_UA,setting);
+
+    StrCopy(p,opt_TabBTooltip       ); DBDeleteSetting(0,opt_UA,setting);
+    StrCopy(p,opt_TabBTooltipPressed); DBDeleteSetting(0,opt_UA,setting);
+
     StrCopy(p,opt_MMenuPopup       ); DBDeleteSetting(0,opt_UA,setting);
     StrCopy(p,opt_MMenuNameVars    ); DBDeleteSetting(0,opt_UA,setting);
     StrCopy(p,opt_MMenuShowWhenVars); DBDeleteSetting(0,opt_UA,setting);
@@ -43,10 +55,16 @@ begin
   end;
 end;
 
-procedure addSaveUA(setting:pAnsiChar;txt:pWideChar);
+procedure addSaveUA(setting:pAnsiChar;txt:pWideChar); overload;
 begin
   if (txt=nil) or (txt^=#0) then DBDeleteSetting(0,opt_UA,setting)
   else DBWriteUnicode(0,opt_UA,setting,txt);
+end;
+
+procedure addSaveUA(setting:pAnsiChar;txt:pAnsiChar); overload;
+begin
+  if (txt=nil) or (txt^=#0) then DBDeleteSetting(0,opt_UA,setting)
+  else DBWriteString(0,opt_UA,setting,txt);
 end;
 
 procedure SaveUA(idx:integer);
@@ -60,6 +78,12 @@ begin
     p^:='_'; inc(p);
 
     StrCopy(p,opt_Flags); DBWriteDWord(0,opt_UA,setting,flags);
+
+    StrCopy(p,opt_MTBTooltip       ); addSaveUA(setting,szMTBTooltip);
+    StrCopy(p,opt_MTBTooltipPressed); addSaveUA(setting,szMTBTooltipPressed);
+
+    StrCopy(p,opt_TabBTooltip       ); addSaveUA(setting,szTabBTooltip);
+    StrCopy(p,opt_TabBTooltipPressed); addSaveUA(setting,szTabBTooltipPressed);
 
     with UAMenuItem[main_menu] do
     begin
@@ -109,6 +133,12 @@ begin
       exit;
 
     result:=1;
+
+    StrCopy(p,opt_MTBTooltip       ); szMTBTooltip       :=DBReadString(0,opt_UA,setting);
+    StrCopy(p,opt_MTBTooltipPressed); szMTBTooltipPressed:=DBReadString(0,opt_UA,setting);
+                                      
+    StrCopy(p,opt_TabBTooltip       ); szTabBTooltip       :=DBReadUnicode(0,opt_UA,setting);
+    StrCopy(p,opt_TabBTooltipPressed); szTabBTooltipPressed:=DBReadUnicode(0,opt_UA,setting);
 
     with UAMenuItem[main_menu] do
     begin
