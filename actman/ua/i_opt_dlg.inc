@@ -10,7 +10,7 @@ type
   end;
 
 const
-  NumControls = 9;
+  NumControls = 14;
   NumTypes    = 6;
 const
   NamesArray: array [0..NumTypes-1] of tNameRec = (
@@ -22,22 +22,33 @@ const
     (name:'Core Hotkey'         ; service:nil{MS_HOTKEY_REGISTER}       ; mask:UAF_REGHOTKEY));
 
   IDsArray:array [0..NumControls-1] of integer =(
+    // Menu settings controls
     IDC_UA_SEPARATE ,IDC_UA_POPUPT   ,IDC_UA_POPUPV,
     IDC_UA_VARNAMEST,IDC_UA_VARNAMESV,IDC_UA_VARNAMESH,
-    IDC_UA_SHOWVART ,IDC_UA_SHOWVARV ,IDC_UA_SHOWVARH);
+    IDC_UA_SHOWVART ,IDC_UA_SHOWVARV ,IDC_UA_SHOWVARH,
+    // toolbar settings controls
+    IDC_UA_TWOSTATE,IDC_UA_TTNORMALT,IDC_UA_TTNORMALV,IDC_UA_TTPRESSEDT,IDC_UA_TTPRESSEDV
+    );
 
   // Show-hide controls by place type
   SHArray:array [0..NumTypes-1, 0..NumControls-1] of integer = (
-    (SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE),
-    (SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE),
-    (SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW),
-    (SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW),
-    (SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW),
-    (SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE)
+    (SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,
+     SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW),
+    (SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,
+     SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW),
+    (SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,
+     SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE),
+    (SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,
+     SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE),
+    (SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,
+     SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE),
+    (SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,
+     SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE)
     );
   // additional show/hide controls check by Variables installings (1 - need to check)
   SHVarArray:array [0..NumControls-1] of byte = (
-    0,0,0,    0,0,1,    1,1,1);
+    0,0,0,    0,0,1,    1,1,1,
+    0,0,0,0,0);
 
 procedure CheckPlacesAbility;
 var
@@ -114,11 +125,21 @@ begin
   // Show real UA settings
   case aType of
     0: begin // CList modern toolbar
-      // no settings or tooltip name?
+      with UActionList[item] do
+      begin
+        SetDlgItemTextA(Dialog,IDC_UA_TTNORMALV ,szMTBTooltip);
+        SetDlgItemTextA(Dialog,IDC_UA_TTPRESSEDV,szMTBTooltipPressed);
+      end;
     end;
+
     1: begin // TabSRMM toolbar
-      // no settings or tooltip name?
+      with UActionList[item] do
+      begin
+        SetDlgItemTextW(Dialog,IDC_UA_TTNORMALV ,szTabBTooltip);
+        SetDlgItemTextW(Dialog,IDC_UA_TTPRESSEDV,szTabBTooltipPressed);
+      end;
     end;
+
     2: begin // Main menu
       with UActionList[item] do
       begin
@@ -132,6 +153,7 @@ begin
         end;
       end;
     end;
+
     3: begin // Contact menu
       with UActionList[item] do
       begin
@@ -145,6 +167,7 @@ begin
         end;
       end;
     end;
+
     4: begin // Tray menu
       with UActionList[item] do
       begin
@@ -158,6 +181,7 @@ begin
         end;
       end;
     end;
+
     5: begin // Hotkey
       // Settings in Customize/Hotkeys
     end;
@@ -231,11 +255,25 @@ begin
     // custom data
     case atype of
       0: begin // CList modern toolbar
-        // no settings or tooltip name?
+        if IsDlgButtonChecked(Dialog,IDC_UA_TWOSTATE)<>BST_UNCHECKED then
+          flags:=flags or UAF_MTB2STATE
+        else
+          flags:=flags and not UAF_MTB2STATE;
+
+        mFreeMem(szMTBTooltip       ); szMTBTooltip       :=GetDlgText(Dialog,IDC_UA_TTNORMALV ,true);
+        mFreeMem(szMTBTooltipPressed); szMTBTooltipPressed:=GetDlgText(Dialog,IDC_UA_TTPRESSEDV,true);
       end;
+
       1: begin // TabSRMM toolbar
-        // no settings or tooltip name?
+        if IsDlgButtonChecked(Dialog,IDC_UA_TWOSTATE)<>BST_UNCHECKED then
+          flags:=flags or UAF_TAB2STATE
+        else
+          flags:=flags and not UAF_TAB2STATE;
+
+        mFreeMem(szTabBTooltip       ); szTabBTooltip       :=GetDlgText(Dialog,IDC_UA_TTNORMALV);
+        mFreeMem(szTabBTooltipPressed); szTabBTooltipPressed:=GetDlgText(Dialog,IDC_UA_TTPRESSEDV);
       end;
+
       2: begin // Main menu
         if IsDlgButtonchecked(Dialog,IDC_UA_SEPARATE)<>BST_UNCHECKED then
           flags:=flags or UAF_MMENUSEP
@@ -249,6 +287,7 @@ begin
           mFreeMem(szMenuShowWhenVars); szMenuShowWhenVars:=GetDlgText(Dialog,IDC_UA_SHOWVARV);
         end;
       end;
+
       3: begin // Contact menu
         if IsDlgButtonchecked(Dialog,IDC_UA_SEPARATE)<>BST_UNCHECKED then
           flags:=flags or UAF_CMENUSEP
@@ -262,6 +301,7 @@ begin
           mFreeMem(szMenuShowWhenVars); szMenuShowWhenVars:=GetDlgText(Dialog,IDC_UA_SHOWVARV);
         end;
       end;
+
       4: begin // Tray menu
         if IsDlgButtonchecked(Dialog,IDC_UA_SEPARATE)<>BST_UNCHECKED then
           flags:=flags or UAF_TMENUSEP
@@ -275,6 +315,7 @@ begin
           mFreeMem(szMenuShowWhenVars); szMenuShowWhenVars:=GetDlgText(Dialog,IDC_UA_SHOWVARV);
         end;
       end;
+
       5: begin // Hotkey
         // Settings in Customize/Hotkeys
       end;
@@ -371,6 +412,10 @@ begin
 
         BN_CLICKED: begin
           case loword(wParam) of
+            IDC_UA_TWOSTATE: begin
+              EnableWindow(GetDlgItem(Dialog,IDC_UA_TTPRESSEDV),
+                IsDlgButtonChecked(Dialog,IDC_UA_TWOSTATE)<>BST_UNCHECKED);
+            end;
             IDC_UA_VARNAMESH: ShowVarHelp(Dialog,IDC_UA_VARNAMESV);
             IDC_UA_SHOWVARH : ShowVarHelp(Dialog,IDC_UA_SHOWVARV);
           end;

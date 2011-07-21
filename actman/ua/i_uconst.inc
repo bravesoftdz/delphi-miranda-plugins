@@ -5,6 +5,7 @@ const
   IDC_UA_ACTIONLIST = 1025;
   IDC_UA_PLACELIST  = 1026;
 
+  // menu settings
   IDC_UA_SEPARATE   = 1027;
   IDC_UA_POPUPT     = 1028;
   IDC_UA_POPUPV     = 1029;
@@ -17,4 +18,11 @@ const
   IDC_UA_SHOWVARV   = 1034;
   IDC_UA_SHOWVARH   = 1035;
 
+  // toolbar settings
+  IDC_UA_TWOSTATE   = 2027;
+  IDC_UA_TTNORMALT  = 2028;
+  IDC_UA_TTNORMALV  = 2029;
+  IDC_UA_TTPRESSEDT = 2030;
+  IDC_UA_TTPRESSEDV = 2031;
+  
   IDI_ACTION = 101;

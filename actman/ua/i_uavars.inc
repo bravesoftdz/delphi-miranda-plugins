@@ -1,5 +1,7 @@
 {}
 const
+  MODULE_NAME = 'Actions';
+const
   ICOLIB_ACTSECTION = 'Actions/Registered actions';
   ICOLIB_MNUSECTION = 'Actions/Menu icons';
   SERVICE_WITH_LPARAM_NAME = 'Actions/CallAction';
@@ -30,7 +32,11 @@ type
     hIcolibIconPressed  :THANDLE;
 
     hMTBButton          :THANDLE;   // Modern toolbar button
-    wReggedTabButton    :word;      // TabSRMM button
+    szMTBTooltip        :PAnsiChar;
+    szMTBTooltipPressed :PAnsiChar;
+
+    szTabBTooltip       :PWideChar;
+    szTabBTooltipPressed:PWideChar;
 
     hMenuService        :THANDLE;   // common menu service
     UAMenuItem:array [tMenuType] of tUAMenuItem;
@@ -68,11 +74,15 @@ const
   UAF_USING      = UAF_REGHOTKEY or UAF_REGMTBB or UAF_REGMMENU or UAF_REGCMENU or
                    UAF_REGTMENU or UAF_REGTABB;
 
-  UAF_MMENUSEP   = 1 shl  6; // main menu separated
-  UAF_CMENUSEP   = 1 shl  7; // contact menu separated
-  UAF_TMENUSEP   = 1 shl  8; // tray menu separated
+  UAF_MMENUSEP   = 1 shl  8; // main menu separated
+  UAF_CMENUSEP   = 1 shl  9; // contact menu separated
+  UAF_TMENUSEP   = 1 shl 10; // tray menu separated
+
+  UAF_TAB2STATE  = 1 shl 11; // TabSRMM toolbar is 2-state
+  UAF_MTB2STATE  = 1 shl 12; // Modern toolbar is 2-state
   // realtime
   UAF_HKREGGED   = 1 shl 16; // hotkey registered
+  UAF_TBREGGED   = 1 shl 17; // TabSRMM button registered
   UAF_DISABLED   = 1 shl 30; // action disabled atm
 
   UAF_SPECIAL    = 1 shl 31; // for settings read
@@ -81,3 +91,5 @@ var
   UActionList:array of tMyActionItem;
 var
   szMyPath:array [0..MAX_PATH] of WideChar;
+var
+  hTabBBPressHook:THANDLE;
