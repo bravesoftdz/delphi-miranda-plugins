@@ -133,7 +133,7 @@ begin
   ShowWindow(GetDlgItem(Dialog,IDC_IRC_USER   ),show);
   ShowWindow(GetDlgItem(Dialog,IDC_IRC_CHANNEL),show);
 
-  wnd:=GetDlgItem(Dialog,IDC_PROTOLIST);
+//  wnd:=GetDlgItem(Dialog,IDC_PROTOLIST);
 
 //!!!!  SendMessage(wnd,CB_SETCURSEL,0,0); //???
 

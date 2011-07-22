@@ -5,8 +5,9 @@ interface
 
 uses windows,m_api;
 
-// wrappers
+// icons
 function SetButtonIcon(btn:HWND;name:PAnsiChar):HICON;
+function RegisterSingleIcon(resname,ilname,descr,group:PAnsiChar):int;
 
 // others
 
@@ -15,7 +16,6 @@ function ConvertFileName(src:pWideChar;hContact:THANDLE=0):pWideChar; overload;
 function ConvertFileName(src:pAnsiChar;dst:pAnsiChar;hContact:THANDLE=0):pAnsiChar; overload;
 function ConvertFileName(src:pWideChar;dst:pWideChar;hContact:THANDLE=0):pWideChar; overload;
 
-function RegisterSingleIcon(resname,ilname,descr,group:PAnsiChar):int;
 procedure ShowPopupW(text:pWideChar;title:pWideChar=nil);
 function GetAddonFileName(prefix,altname,path:PAnsiChar;ext:PAnsiChar):PAnsiChar;
 function TranslateA2W(sz:PAnsiChar):PWideChar;

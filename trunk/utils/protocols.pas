@@ -380,6 +380,7 @@ function AccListChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
   i:integer;
 begin
+  result:=0;
   case wParam of
     PRAC_ADDED: begin
     end;
