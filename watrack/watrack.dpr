@@ -379,6 +379,17 @@ begin
   begin
     if OldPlayerStatus<>WorkSI.status then
     begin
+      ClearSongInfoData(WorkSI,false); // player info must be empty anyway
+      ClearSongInfoData(SongInfo,true);
+      SongInfo.status:=WAT_PLS_NOTFOUND+WAT_MES_UNKNOWN shl 16;
+
+      PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLAYERSTATUS,
+          WAT_PLS_NOTFOUND+WAT_MES_UNKNOWN shl 16);
+    end;
+
+{
+    if OldPlayerStatus<>WorkSI.status then
+    begin
       PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLAYERSTATUS,
           WAT_PLS_NOTFOUND+WAT_MES_UNKNOWN shl 16);
     end;
@@ -388,6 +399,7 @@ begin
 
     ClearSongInfoData(SongInfo,true);
     SongInfo.status:=WAT_PLS_NOTFOUND+WAT_MES_UNKNOWN shl 16;
+}
 
     if lParam<>0 then
       ppointer(lParam)^:=nil;

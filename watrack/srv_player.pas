@@ -712,6 +712,7 @@ begin
   else
   begin
     PrevPlayerName:=nil;
+    status:=WAT_PLS_NOTFOUND+WAT_MES_UNKNOWN shl 16;
   end;
   PostProcess;
 end;
