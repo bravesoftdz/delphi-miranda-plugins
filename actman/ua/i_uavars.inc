@@ -4,7 +4,9 @@ const
 const
   ICOLIB_ACTSECTION = 'Actions/Registered actions';
   ICOLIB_MNUSECTION = 'Actions/Menu icons';
+
   SERVICE_WITH_LPARAM_NAME = 'Actions/CallAction';
+  MTB_SERVICE_NAME         = 'Actions/MTBAction';
 
 type
   tMenuType = (main_menu,contact_menu,tray_menu);
@@ -16,7 +18,6 @@ type
     szMenuShowWhenVars:pWideChar;
     hMenuRoot         :THANDLE;
     changed           :boolean;
-    pressed           :boolean;
   end;
 type
   pMyActionItem = ^tMyActionItem;
@@ -39,27 +40,7 @@ type
     szTabBTooltipPressed:PWideChar;
 
     hMenuService        :THANDLE;   // common menu service
-    UAMenuItem:array [tMenuType] of tUAMenuItem;
-{
-    // Main menu item
-    hMainMenuItem       :THANDLE;
-    szMMenuPopup        :pWideChar;
-    szMMenuNameVars     :pWideChar;
-    szMMenuShowWhenVars :pWideChar;
-    hMMenuRoot          :THANDLE;
-    // Contact menu item
-    hContactMenuItem    :THANDLE;
-    szCMenuNameVars     :pWideChar;
-    szCMenuPopup        :pWideChar;
-    szCMenuShowWhenVars :pWideChar;
-    hCMenuRoot          :THANDLE;
-    // Tray menu item
-    hTrayMenuItem       :THANDLE;
-    szTMenuNameVars     :pWideChar;
-    szTMenuPopup        :pWideChar;
-    szTMenuShowWhenVars :pWideChar;
-    hTMenuRoot          :THANDLE;
-}
+    UAMenuItem          :array [tMenuType] of tUAMenuItem;
   end;
 
 const
@@ -77,13 +58,14 @@ const
   UAF_MMENUSEP   = 1 shl  8; // main menu separated
   UAF_CMENUSEP   = 1 shl  9; // contact menu separated
   UAF_TMENUSEP   = 1 shl 10; // tray menu separated
+  UAF_2STATE     = 1 shl 11; // Buttons/menu items are 2-state
+  UAF_PRESSED    = 1 shl 12; // Button pressed/menu item selected
 
-  UAF_TAB2STATE  = 1 shl 11; // TabSRMM toolbar is 2-state
-  UAF_MTB2STATE  = 1 shl 12; // Modern toolbar is 2-state
-  // realtime
+  // realtime, no save
   UAF_HKREGGED   = 1 shl 16; // hotkey registered
   UAF_TBREGGED   = 1 shl 17; // TabSRMM button registered
   UAF_DISABLED   = 1 shl 30; // action disabled atm
+  UAF_REALTIME   = UAF_HKREGGED or UAF_TBREGGED or UAF_DISABLED;
 
   UAF_SPECIAL    = 1 shl 31; // for settings read
 
@@ -93,3 +75,5 @@ var
   szMyPath:array [0..MAX_PATH] of WideChar;
 var
   hTabBBPressHook:THANDLE;
+  hServiceWithLParam:THANDLE;
+  hMTBService:THANDLE;

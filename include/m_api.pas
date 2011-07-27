@@ -179,7 +179,7 @@ type
   TCallServiceSync                = function(const AnsiChar: PAnsiChar;wParam: WPARAM; lParam: LPARAM): int_ptr; cdecl;    //v0.3.3+
   TCallFunctionAsync              = function(ptr1,ptr2:pointer):int; cdecl; {stdcall;}  //v0.3.4+
   TSetHookDefaultForHookableEvent = function(Handle:THandle;MIRANDAHOOK: TMIRANDAHOOK):int; cdecl;// v0.3.4 (2004/09/15)
-  TCreateServiceFunctionParam     = function(const AnsiChar:PAnsiChar; MIRANDASERVICEPARAM:TMIRANDASERVICEPARAM): THandle; cdecl;
+  TCreateServiceFunctionParam     = function(const AnsiChar:PAnsiChar; MIRANDASERVICEPARAM:TMIRANDASERVICEPARAM;lParam:LPARAM): THandle; cdecl;
   TNotifyEventHooksDirect         = function(Handle:THANDLE;wParam:WPARAM;lParam:LPARAM):int; cdecl; // v0.7+
   TCallProtoService               = function(const str1:PAnsiChar;const str2:PAnsiChar;wParam:WPARAM;lParam:LPARAM):int_ptr; cdecl; //v0.8+
   TCallContactService             = function(Handle:THANDLE;const str:PAnsiChar;wParam:WPARAM;lParam:LPARAM):int_ptr; cdecl; // v0.8+

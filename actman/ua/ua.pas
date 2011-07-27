@@ -27,24 +27,42 @@ uses
 // ------------ base interface functions -------------
 
 var
+  ontabbtnpressed,
   onactchanged:THANDLE;
+  hPreBuildMMenu,
+  hPreBuildCMenu,
+  hPreBuildTMenu:THANDLE;
 
 procedure Init;
 begin
   GetModuleFileNameW(hInstance,szMyPath,MAX_PATH);
 
+  hServiceWithLParam:=CreateServiceFunction(SERVICE_WITH_LPARAM_NAME,@ServiceCallWithLParam);
+  hMTBService       :=CreateServiceFunction(MTB_SERVICE_NAME        ,@MTBServiceCall);
   CheckPlacesAbility;
   CreateUActionList;
   if LoadUAs=0 then
   begin
   end
   else;
-  onactchanged:=PluginLink^.HookEvent(ME_ACT_CHANGED,@ActListChange);
+  ontabbtnpressed:=PluginLink^.HookEvent(ME_MSG_BUTTONPRESSED,@OnTabButtonPressed);
+  onactchanged   :=PluginLink^.HookEvent(ME_ACT_CHANGED      ,@ActListChange);
+
+  hPreBuildMMenu:=PluginLink^.HookEvent(ME_CLIST_PREBUILDMAINMENU   , PreBuildMainMenu);
+  hPreBuildCMenu:=PluginLink^.HookEvent(ME_CLIST_PREBUILDCONTACTMENU, PreBuildContactMenu);
+  hPreBuildTMenu:=PluginLink^.HookEvent(ME_CLIST_PREBUILDTRAYMENU   , PreBuildTrayMenu);
 end;
 
 procedure DeInit;
 begin
+  PluginLink^.UnhookEvent(hPreBuildMMenu);
+  PluginLink^.UnhookEvent(hPreBuildCMenu);
+  PluginLink^.UnhookEvent(hPreBuildTMenu);
+
+  PluginLink^.UnhookEvent(ontabbtnpressed);
   PluginLink^.UnhookEvent(onactchanged);
+  PluginLink^.DestroyServiceFunction(hServiceWithLParam);
+  PluginLink^.DestroyServiceFunction(hMTBService);
 end;
 
 function AddOptionPage(var tmpl:pAnsiChar;var proc:pointer;var name:PAnsiChar):integer;
