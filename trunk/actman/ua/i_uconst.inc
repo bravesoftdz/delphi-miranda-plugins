@@ -19,10 +19,13 @@ const
   IDC_UA_SHOWVARH   = 1035;
 
   // toolbar settings
-  IDC_UA_TWOSTATE   = 2027;
   IDC_UA_TTNORMALT  = 2028;
   IDC_UA_TTNORMALV  = 2029;
   IDC_UA_TTPRESSEDT = 2030;
   IDC_UA_TTPRESSEDV = 2031;
   
+  // common
+  IDC_UA_COMMON     = 2000;
+  IDC_UA_TWOSTATE   = 2001;
+
   IDI_ACTION = 101;

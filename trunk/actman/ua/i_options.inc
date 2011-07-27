@@ -77,7 +77,7 @@ begin
     p:=StrEnd(IntToStr(StrCopyE(setting,'Act_'),dwActID));
     p^:='_'; inc(p);
 
-    StrCopy(p,opt_Flags); DBWriteDWord(0,opt_UA,setting,flags);
+    StrCopy(p,opt_Flags); DBWriteDWord(0,opt_UA,setting,flags and not UAF_REALTIME);
 
     StrCopy(p,opt_MTBTooltip       ); addSaveUA(setting,szMTBTooltip);
     StrCopy(p,opt_MTBTooltipPressed); addSaveUA(setting,szMTBTooltipPressed);
@@ -132,6 +132,7 @@ begin
     if flags=dword(UAF_SPECIAL) then // no settings
       exit;
 
+    flags:=flags and not UAF_REALTIME;
     result:=1;
 
     StrCopy(p,opt_MTBTooltip       ); szMTBTooltip       :=DBReadString(0,opt_UA,setting);
@@ -191,4 +192,143 @@ begin
     end;
   end;
 }
+end;
+
+procedure SetAllActionUsers(var ActionItem:tMyActionItem);
+var
+  buf:array [0..63] of AnsiChar;
+begin
+  if (ActionItem.flags and UAF_REGHOTKEY)<>0 then
+    AddCoreHotkey(ActionItem)
+  else
+    DeleteCoreHotkey(ActionItem);
+
+  DeleteMTBButton(ActionItem); // no modify command there, just delete, then insert back
+  if (ActionItem.flags and UAF_REGMTBB)<>0 then
+    AddMTBButton(ActionItem);
+
+  if (ActionItem.flags and UAF_REGTABB)<>0 then
+    AddTabBBButton(ActionItem)
+  else
+    DeleteTabBBButton(ActionItem);
+
+  if (ActionItem.flags and UAF_REGMMENU)<>0 then
+  begin
+    if ActionItem.UAMenuItem[main_menu].changed then
+      DeleteMainMenuItem(ActionItem);
+    AddMainMenuItem(ActionItem)
+  end
+  else
+    DeleteMainMenuItem(ActionItem);
+
+  if (ActionItem.flags and UAF_REGCMENU)<>0 then
+  begin
+    if ActionItem.UAMenuItem[contact_menu].changed then
+      DeleteContactMenuItem(ActionItem);
+    AddContactMenuItem(ActionItem)
+  end
+  else
+    DeleteContactMenuItem(ActionItem);
+
+  if (ActionItem.flags and UAF_REGTMENU)<>0 then
+  begin
+    if ActionItem.UAMenuItem[tray_menu].changed then
+      DeleteTrayMenuItem(ActionItem);
+    AddTrayMenuItem(ActionItem)
+  end
+  else
+    DeleteTrayMenuItem(ActionItem);
+
+  if ((ActionItem.flags and (UAF_REGMMENU or UAF_REGCMENU or UAF_REGTMENU))=0) and
+      (ActionItem.hMenuService<>0) then
+  begin
+    PluginLink^.DestroyServiceFunction(ActionItem.hMenuService);
+    ActionItem.hMenuService:=0;
+  end;
+
+  // First run (ok ok, if ppl ask for it....)
+  StrCat(IntToStr(StrCopyE(buf,'Act'),ActionItem.dwActID),'_FirstRun');
+  if DBReadByte(0,opt_UA,buf,0)<>0 then
+  begin
+    CAllService(MS_ACT_RUNBYID,ActionItem.dwActID,0);
+    DBDeleteSetting(0,opt_UA,buf);
+  end;
+end;
+
+procedure DeleteUAction(num:integer);
+var
+  ActionItem:pMyActionItem;
+  buf:array [0..63] of AnsiChar;
+begin
+  DeleteUASettings(num);
+
+  ActionItem:=@UActionList[num];
+
+  DeleteIcolibIcon(ActionItem^);
+
+  if (ActionItem.flags and UAF_REGHOTKEY)<>0 then
+    DeleteCoreHotkey(ActionItem^);
+
+  if (ActionItem.flags and UAF_REGMTBB)<>0 then
+    DeleteMTBButton(ActionItem^);
+
+  if (ActionItem.flags and UAF_REGTABB)<>0 then
+    DeleteTabBBButton(ActionItem^);
+
+  if (ActionItem.flags and UAF_REGMMENU)<>0 then
+    DeleteMainMenuItem(ActionItem^);
+
+  if (ActionItem.flags and UAF_REGCMENU)<>0 then
+    DeleteContactMenuItem(ActionItem^);
+
+  if (ActionItem.flags and UAF_REGTMENU)<>0 then
+    DeleteTrayMenuItem(ActionItem^);
+
+  if ((ActionItem.flags and (UAF_REGMMENU or UAF_REGCMENU or UAF_REGTMENU))=0) and
+      (ActionItem.hMenuService<>0) then
+  begin
+    PluginLink^.DestroyServiceFunction(ActionItem.hMenuService);
+    ActionItem.hMenuService:=0;
+  end;
+
+  StrCat(IntToStr(StrCopyE(buf,'Act'),ActionItem.dwActID),'_FirstRun');
+  DBDeleteSetting(0,opt_UA,buf);
+
+  // Free Memory
+  mFreeMem(ActionItem.szNameID);
+  mFreeMem(ActionItem.szActDescr);
+  
+  mFreeMem(ActionItem.szMTBTooltip);
+  mFreeMem(ActionItem.szMTBTooltipPressed);
+
+  mFreeMem(ActionItem.szTabBTooltip);
+  mFreeMem(ActionItem.szTabBTooltipPressed);
+
+  with ActionItem.UAMenuItem[main_menu] do
+  begin
+    mFreeMem(szMenuPopup);
+    mFreeMem(szMenuNameVars);
+    mFreeMem(szMenuShowWhenVars);
+  end;
+
+  with ActionItem.UAMenuItem[contact_menu] do
+  begin
+    mFreeMem(szMenuPopup);
+    mFreeMem(szMenuNameVars);
+    mFreeMem(szMenuShowWhenVars);
+  end;
+
+  with ActionItem.UAMenuItem[tray_menu] do
+  begin
+    mFreeMem(szMenuPopup);
+    mFreeMem(szMenuNameVars);
+    mFreeMem(szMenuShowWhenVars);
+  end;
+
+  // compact list
+  if num<HIGH(UActionList) then
+  begin
+    move(UActionList[num+1],UActionList[num],(HIGH(UACtionList)-num)*SizeOf(tMyActionItem));
+  end;
+  SetLength(UActionList,Length(UActionList)-1);
 end;
