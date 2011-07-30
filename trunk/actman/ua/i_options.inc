@@ -163,7 +163,7 @@ begin
     end;
   end;
 end;
-
+(*
 function LoadUAs:integer;
 {
 var
@@ -193,7 +193,7 @@ begin
   end;
 }
 end;
-
+*)
 procedure SetAllActionUsers(var ActionItem:tMyActionItem);
 var
   buf:array [0..63] of AnsiChar;

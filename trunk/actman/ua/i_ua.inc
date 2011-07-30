@@ -23,8 +23,6 @@ begin
     IntToStr(StrCopyE(buf,'Actions/Action_'),ptr^.id);
     StrDup(szNameID,@buf);
     AddIcolibIcon (UActionList[idx]);
-    if (flags and UAF_2STATE)<>0 then
-      AddIcolibIconP(UActionList[idx]);
   end;
 end;
 
@@ -43,6 +41,8 @@ begin
     begin
       AddUAction(i,ptr);
       LoadUA(i); // just here coz at list changes for new we don't have settings
+      if (UActionList[i].flags and UAF_2STATE)<>0 then
+        AddIcolibIconP(UActionList[i]);
       SetAllActionUsers(UActionList[i]); // will need to repeat at changes :(
       inc(ptr);
     end;
