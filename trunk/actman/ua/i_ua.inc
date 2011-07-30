@@ -22,7 +22,9 @@ begin
     // prepare for work
     IntToStr(StrCopyE(buf,'Actions/Action_'),ptr^.id);
     StrDup(szNameID,@buf);
-    AddIcolibIcon(UActionList[idx]);
+    AddIcolibIcon (UActionList[idx]);
+    if (flags and UAF_2STATE)<>0 then
+      AddIcolibIconP(UActionList[idx]);
   end;
 end;
 
