@@ -425,6 +425,12 @@ else...
           end;
           //!!!!!!!!
           mi.position:=wSortIndex*10;
+          case mtype of
+            contact_menu: if (flags and UAF_CMENUSEP)<>0 then inc(mi.position,100000);
+            tray_menu   : if (flags and UAF_TMENUSEP)<>0 then inc(mi.position,100000);
+          else
+            if (flags and UAF_MMENUSEP)<>0 then inc(mi.position,100000);
+          end;
           CallService(MS_CLIST_MODIFYMENUITEM,hMenuItem,LPARAM(@mi));
           if mi.szName.w<>szActDescr then
             mFreeMem(mi.szName.w);
@@ -457,7 +463,8 @@ begin
   // add menu item
   clmi:=PrepareMenuItem(ActionItem,main_menu,
       (ActionItem.flags and (UAF_2STATE+UAF_PRESSED))<>(UAF_2STATE+UAF_PRESSED));
-  if UAMenuItem.hMenuRoot=0 then
+
+//  if UAMenuItem.hMenuRoot=0 then
     if (ActionItem.flags and UAF_MMENUSEP)<>0 then
       Inc(clmi.position,100000);
 
@@ -515,7 +522,7 @@ begin
   clmi:=PrepareMenuItem(ActionItem,contact_menu,
       true{!!!(ActionItem.flags and (UAF_2STATE+UAF_PRESSED))<>(UAF_2STATE+UAF_PRESSED)});
 
-  if UAMenuItem.hMenuRoot=0 then
+//  if UAMenuItem.hMenuRoot=0 then
     if (ActionItem.flags and UAF_CMENUSEP)<>0 then
       Inc(clmi.position,100000);
 
@@ -571,7 +578,7 @@ begin
   clmi:=PrepareMenuItem(ActionItem,tray_menu,
       (ActionItem.flags and (UAF_2STATE+UAF_PRESSED))<>(UAF_2STATE+UAF_PRESSED));
 
-  if UAMenuItem.hMenuRoot=0 then
+//  if UAMenuItem.hMenuRoot=0 then
     if (ActionItem.flags and UAF_TMENUSEP)<>0 then
       Inc(clmi.position,100000);
 
