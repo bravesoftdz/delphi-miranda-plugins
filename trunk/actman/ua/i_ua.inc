@@ -130,5 +130,9 @@ begin
   if count>0 then
     CallService(MS_ACT_FREELIST,0,TLPARAM(ptr1));
 
-  if settings<>0 then FillActionList(settings);
+  if settings<>0 then
+  begin
+    FillActionList(settings);
+    ShowAction(settings,-1);
+  end;
 end;

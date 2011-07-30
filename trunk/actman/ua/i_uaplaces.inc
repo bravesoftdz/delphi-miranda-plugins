@@ -374,6 +374,7 @@ begin
       begin
         if hMenuItem<>0 then // it means, we process that item here
         begin
+          mi.szName.w:=nil;
           // Show / hide
           if isVarsInstalled then
           begin
@@ -416,7 +417,6 @@ else...
 
             // new name
             mi.flags:=mi.flags or CMIM_NAME or CMIF_UNICODE;
-            mi.szName.w:=nil;
             if (szMenuNameVars<>nil) and (szMenuNameVars^<>#0) then
               mi.szName.w:=ParseVarString(szMenuNameVars,hContact,extra);
 

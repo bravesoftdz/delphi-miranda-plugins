@@ -106,13 +106,18 @@ end;
 
 // Clear all screen buttons/text fields (reset)
 procedure ClearControls(Dialog:HWND);
+var
+  s:HWND;
 begin
+  s:=settings;
+  settings:=0;
   CheckDlgButton (Dialog,IDC_UA_TWOSTATE ,BST_UNCHECKED);
 
   CheckDlgButton (Dialog,IDC_UA_SEPARATE ,BST_UNCHECKED);
   SetDlgItemTextW(Dialog,IDC_UA_POPUPV   ,nil);
   SetDlgItemTextW(Dialog,IDC_UA_VARNAMESV,nil);
   SetDlgItemTextW(Dialog,IDC_UA_SHOWVARV ,nil);
+  settings:=s;
 end;
 
 procedure ShowSubAction(Dialog:HWND;aType:integer;item:integer=-1);
@@ -201,13 +206,13 @@ var
   buf:array [0..255] of WideChar;
 begin
   wnd:=GetDlgItem(Dialog,IDC_UA_PLACELIST);
+  SendMessage(wnd,LVM_DELETEALLITEMS,0,0);
   i:=LV_GetLParam(GetDlgItem(Dialog,IDC_UA_ACTIONLIST),item);
   if i>=0 then
   begin
     with UActionList[i] do
     begin
       // make "places" list
-      SendMessage(wnd,LVM_DELETEALLITEMS,0,0);
       for i:=0 to NumTypes-1 do
       begin
         with NamesArray[i] do
@@ -259,9 +264,11 @@ var
   i,j,num:integer;
   wnd:HWND;
 begin
+  num:=LV_GetLParam(GetDlgItem(Dialog,IDC_UA_ACTIONLIST),item);
+  if num<0 then exit;
+
   wnd:=GetDlgItem(Dialog,IDC_UA_PLACELIST);
-  num  :=LV_GetLParam(GetDlgItem(Dialog,IDC_UA_ACTIONLIST),item);
-  atype:=LV_GetLParam(GetDlgItem(Dialog,IDC_UA_PLACELIST),atype);
+  atype:=LV_GetLParam(wnd,atype);
 
   with UActionList[num] do
   begin
@@ -418,6 +425,7 @@ begin
     end;
 
     WM_INITDIALOG: begin
+      settings:=0;
       TranslateDialogDefault(Dialog);
 
       wnd:=GetDlgItem(Dialog,IDC_UA_PLACELIST);
@@ -457,36 +465,42 @@ begin
     WM_COMMAND: begin
       case wParam shr 16 of
         EN_CHANGE: begin
-          SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
-          if loword(wParam)=IDC_UA_POPUPV then
-            SetChangedFlag(Dialog);
+          if settings<>0 then
+          begin
+            SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
+            if loword(wParam)=IDC_UA_POPUPV then
+              SetChangedFlag(Dialog);
+          end;
         end;
 
         BN_CLICKED: begin
-          case loword(wParam) of
-            IDC_UA_TWOSTATE: begin
-              SetupControls(Dialog,
-                  LV_GetLParam(GetDlgItem(Dialog,IDC_UA_PLACELIST)),-1);
-{
-              EnableWindow(GetDlgItem(Dialog,IDC_UA_TTPRESSEDV),
-                IsDlgButtonChecked(Dialog,IDC_UA_TWOSTATE)<>BST_UNCHECKED);
-}
-              if IsDlgButtonChecked(Dialog,IDC_UA_TWOSTATE)=BST_UNCHECKED then
-                DeleteIcolibIconP(
-                    UActionList[LV_GetLParam(GetDlgItem(Dialog,IDC_UA_ACTIONLIST),-1)])
-              else
-                AddIcolibIconP(
-                    UActionList[LV_GetLParam(GetDlgItem(Dialog,IDC_UA_ACTIONLIST),-1)]);
+          if settings<>0 then
+          begin
+            case loword(wParam) of
+              IDC_UA_TWOSTATE: begin
+                SetupControls(Dialog,
+                    LV_GetLParam(GetDlgItem(Dialog,IDC_UA_PLACELIST)),-1);
+  {
+                EnableWindow(GetDlgItem(Dialog,IDC_UA_TTPRESSEDV),
+                  IsDlgButtonChecked(Dialog,IDC_UA_TWOSTATE)<>BST_UNCHECKED);
+  }
+                if IsDlgButtonChecked(Dialog,IDC_UA_TWOSTATE)=BST_UNCHECKED then
+                  DeleteIcolibIconP(
+                      UActionList[LV_GetLParam(GetDlgItem(Dialog,IDC_UA_ACTIONLIST),-1)])
+                else
+                  AddIcolibIconP(
+                      UActionList[LV_GetLParam(GetDlgItem(Dialog,IDC_UA_ACTIONLIST),-1)]);
 
-              SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
-            end;
+                SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
+              end;
 
-            IDC_UA_VARNAMESH: ShowVarHelp(Dialog,IDC_UA_VARNAMESV);
-            IDC_UA_SHOWVARH : ShowVarHelp(Dialog,IDC_UA_SHOWVARV);
+              IDC_UA_VARNAMESH: ShowVarHelp(Dialog,IDC_UA_VARNAMESV);
+              IDC_UA_SHOWVARH : ShowVarHelp(Dialog,IDC_UA_SHOWVARV);
 
-            IDC_UA_SEPARATE: begin
-              SetChangedFlag(Dialog);
-              SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
+              IDC_UA_SEPARATE: begin
+                SetChangedFlag(Dialog);
+                SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
+              end;
             end;
           end;
         end;
