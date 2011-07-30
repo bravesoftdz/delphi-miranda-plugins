@@ -329,6 +329,7 @@ begin
     ActMItem:=@ActItem.UAMenuItem[mtype];
 
     if (ActMItem.szMenuPopup<>nil) and
+       (ActMItem.hMenuRoot<>0) and
       ( (ActItem<>@ActionItem) and
         (StrCmpW(ActMItem.szMenuPopup,UAMenuItem.szMenuPopup)=0) ) then
     begin
@@ -342,13 +343,13 @@ begin
   FillChar(clmi,SizeOf(clmi),0);
   clmi.cbSize:=SizeOf(clmi);
   clmi.flags :=CMIF_UNICODE or CMIF_ICONFROMICOLIB;
-  clmi.hIcon :=ActionItem.hIcolibIcon;
 
   if (UAMenuItem.szMenuPopup<>nil) and (UAMenuItem.szMenuPopup^<>#0) then
     clmi.szName.w:=ParseVarString(UAMenuItem.szMenuPopup)
   else
     clmi.szName.w:=ActionItem.szActDescr;
 
+  clmi.hIcon :=AddRootMenuIcon(clmi.szName.w);//ActionItem.hIcolibIcon;
   clmi.position:=ActionItem.wSortIndex*10;
 end;
 

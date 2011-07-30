@@ -531,10 +531,14 @@ begin
             begin
               // which type
               wnd:=GetDlgItem(Dialog,IDC_UA_PLACELIST);
-              if PNMLISTVIEW(lParam)^.iItem=
-                 SendMessage(wnd,LVM_GETNEXTITEM,-1,LVNI_FOCUSED) then // current item
+              if PNMLISTVIEW(lParam)^.iItem<>
+                 SendMessage(wnd,LVM_GETNEXTITEM,-1,LVNI_FOCUSED) then
+                ListView_SetItemState(wnd,PNMLISTVIEW(lParam)^.iItem,
+                    LVIS_FOCUSED or LVIS_SELECTED,
+                    LVIS_FOCUSED or LVIS_SELECTED)
+              else
                 SetupControls(Dialog,LV_GetLParam(wnd,PNMLISTVIEW(lParam)^.iItem),
-                    PNMLISTVIEW(lParam)^.iItem);
+                     PNMLISTVIEW(lParam)^.iItem);
 
               SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
             end;
