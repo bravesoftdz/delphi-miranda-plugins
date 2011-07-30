@@ -41,10 +41,12 @@ begin
   hMTBService       :=CreateServiceFunction(MTB_SERVICE_NAME        ,@MTBServiceCall);
   CheckPlacesAbility;
   CreateUActionList;
+{
   if LoadUAs=0 then
   begin
   end
   else;
+}
   ontabbtnpressed:=PluginLink^.HookEvent(ME_MSG_BUTTONPRESSED,@OnTabButtonPressed);
   onactchanged   :=PluginLink^.HookEvent(ME_ACT_CHANGED      ,@ActListChange);
 
