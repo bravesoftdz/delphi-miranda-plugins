@@ -247,7 +247,7 @@ begin
   end;
 
   // First run (ok ok, if ppl ask for it....)
-  StrCat(IntToStr(StrCopyE(buf,'Act'),ActionItem.dwActID),'_FirstRun');
+  StrCat(IntToStr(StrCopyE(buf,'Act_'),ActionItem.dwActID),'_FirstRun');
   if DBReadByte(0,opt_UA,buf,0)<>0 then
   begin
     CAllService(MS_ACT_RUNBYID,ActionItem.dwActID,0);
@@ -291,7 +291,7 @@ begin
     ActionItem.hMenuService:=0;
   end;
 
-  StrCat(IntToStr(StrCopyE(buf,'Act'),ActionItem.dwActID),'_FirstRun');
+  StrCat(IntToStr(StrCopyE(buf,'Act_'),ActionItem.dwActID),'_FirstRun');
   DBDeleteSetting(0,opt_UA,buf);
 
   // Free Memory

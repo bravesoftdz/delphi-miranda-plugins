@@ -68,10 +68,36 @@ begin
   result:=CallService(MS_ACT_RUNBYID, fParam, wParam);
 end;
 
-function AddIcolibIcon(var ActionItem:tMyActionItem):THANDLE;
+function AddIcolibIconP(var ActionItem:tMyActionItem):THANDLE;
 var
   sid:TSKINICONDESC;
   buf,buf1:array [0..63] of WideChar;
+begin
+  if (ActionItem.hIcolibIconPressed=0) or
+     (ActionItem.hIcolibIconPressed=ActionItem.hIcolibIcon) then
+  begin
+    // add icon for action to icolib
+    fillChar(sid,SizeOf(sid),0);
+    sid.cbSize         :=sizeof(sid);
+    sid.szSection    .w:=ICOLIB_ACTSECTION;
+    sid.szDefaultFile.w:=szMyPath;
+    sid.iDefaultIndex  :=-IDI_ACTION;
+    sid.cx             :=16;
+    sid.cy             :=16;
+    sid.flags          :=SIDF_ALL_UNICODE;
+    // icon "off"
+    StrCopyW(StrCopyEW(buf,ActionItem.szActDescr),' (pressed)');
+    sid.szDescription.w:=@buf;
+    StrCopy(StrCopyE(@buf1,ActionItem.szNameID),'_pressed');
+    sid.pszName        :=@buf1;
+    ActionItem.hIcolibIconPressed:=CallService(MS_SKIN2_ADDICON,0,LPARAM(@sid));
+  end;
+  result:=ActionItem.hIcolibIconPressed;
+end;
+
+function AddIcolibIcon(var ActionItem:tMyActionItem):THANDLE;
+var
+  sid:TSKINICONDESC;
 begin
   if ActionItem.hIcolibIcon=0 then
   begin
@@ -88,21 +114,29 @@ begin
     sid.szDescription.w:=ActionItem.szActDescr;
     sid.pszName        :=ActionItem.szNameID;
     ActionItem.hIcolibIcon:=CallService(MS_SKIN2_ADDICON,0,LPARAM(@sid));
-    result:=ActionItem.hIcolibIcon;
-    // icon "off"
-    StrCopyW(StrCopyEW(buf,ActionItem.szActDescr),' (pressed)');
-    sid.szDescription.w:=@buf;
+  end;
+  result:=ActionItem.hIcolibIcon;
+end;
+
+procedure DeleteIcolibIconP(var ActionItem:tMyActionItem);
+var
+  buf1:array [0..63] of WideChar;
+begin
+  if (ActionItem.hIcolibIconPressed<>0) and
+     (ActionItem.hIcolibIconPressed<>ActionItem.hIcolibIcon) then
+  begin
     StrCopy(StrCopyE(@buf1,ActionItem.szNameID),'_pressed');
-    sid.pszName        :=@buf1;
-    ActionItem.hIcolibIconPressed:=CallService(MS_SKIN2_ADDICON,0,LPARAM(@sid));
-  end
-  else
-    result:=ActionItem.hIcolibIcon;
+    CallService(MS_SKIN2_REMOVEICON,0,LPARAM(@buf1));
+    ActionItem.hIcolibIconPressed:=ActionItem.hIcolibIcon;
+  end;
 end;
 
 procedure DeleteIcolibIcon(var ActionItem:tMyActionItem);
 begin
+  DeleteIcolibIconP(ActionItem);
   CallService(MS_SKIN2_REMOVEICON,0,LPARAM(ActionItem.szNameID));
+  ActionItem.hIcolibIcon       :=0;
+  ActionItem.hIcolibIconPressed:=0;
 end;
 
 //===== Really places =====
@@ -381,6 +415,7 @@ else...
 
             // new name
             mi.flags:=mi.flags or CMIM_NAME or CMIF_UNICODE;
+            mi.szName.w:=nil;
             if (szMenuNameVars<>nil) and (szMenuNameVars^<>#0) then
               mi.szName.w:=ParseVarString(szMenuNameVars,hContact,extra);
 
@@ -516,6 +551,8 @@ var
   clmi:TCListMenuItem;
   UAMenuItem:pUAMenuItem;
 begin
+  if not NamesArray[uaTray].enable then exit;
+
   UAMenuItem:=@ActionItem.UAMenuItem[tray_menu];
   if UAMenuItem.hMenuItem<>0 then exit;
 
@@ -570,6 +607,8 @@ var
   mtButton:TBButton;
   pc,pc1,pc2:pAnsiChar;
 begin
+  if not NamesArray[uaMTB].enable then exit;
+
   if ActionItem.hMTBButton=0 then
   begin
     FillChar(mtButton,SizeOf(mtButton),0);
@@ -670,6 +709,8 @@ procedure AddTabBBButton(var ActionItem:tMyActionItem);
 var
   tabb:BBButton;
 begin
+  if not NamesArray[uaTAB].enable then exit;
+
   if (ActionItem.flags and UAF_TBREGGED)=0 then
   begin
     FillChar(tabb,SizeOf(tabb),0);
@@ -816,5 +857,4 @@ begin
     if (UActionList[i].flags and UAF_REGTABB)<>0 then
       AddTabBBButton(UActionList[i]);
   end;
-  hTabBBPressHook:=HookEvent(ME_MSG_BUTTONPRESSED,OnTabButtonPressed);
 end;

@@ -69,11 +69,36 @@ const
 
   UAF_SPECIAL    = 1 shl 31; // for settings read
 
+type
+  tNameRec = record
+    name   :PAnsiChar;
+    service:PAnsiChar;
+    mask   :dword;
+    enable :boolean;
+  end;
+
+const
+  NumTypes  = 6;
+const
+  uaMTB     = 0;
+  uaTAB     = 1;
+  uaMain    = 2;
+  uaContact = 3;
+  uaTray    = 4;
+  uaHotkey  = 5;
+const
+  NamesArray: array [0..NumTypes-1] of tNameRec = (
+    (name:'CList Modern toolbar'; service:'ToolBar/AddButton'           ; mask:UAF_REGMTBB),
+    (name:'TabSRMM toolbar'     ; service:'TabSRMM/ButtonsBar/AddButton'; mask:UAF_REGTABB),
+    (name:'Main menu'           ; service:nil                           ; mask:UAF_REGMMENU),
+    (name:'Contact menu'        ; service:nil                           ; mask:UAF_REGCMENU),
+    (name:'Tray menu'           ; service:'CList/AddTrayMenuItem'       ; mask:UAF_REGTMENU),
+    (name:'Core Hotkey'         ; service:nil{MS_HOTKEY_REGISTER}       ; mask:UAF_REGHOTKEY));
+
 var
   UActionList:array of tMyActionItem;
 var
   szMyPath:array [0..MAX_PATH] of WideChar;
 var
-  hTabBBPressHook:THANDLE;
   hServiceWithLParam:THANDLE;
   hMTBService:THANDLE;
