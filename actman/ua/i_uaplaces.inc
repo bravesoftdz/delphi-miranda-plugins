@@ -1,5 +1,31 @@
 {}
 
+type
+  tMenuServices = record
+    create :pAnsiChar;
+    destroy:pAnsiChar;
+  end;
+const
+  MenuServices:array [tMenuType] of tMenuServices = (
+    (create:'CList/AddMainMenuItem'{MS_CLIST_ADDMAINMENUITEM   }; destroy:'CList/RemoveMainMenuItem'{MS_CLIST_REMOVEMAINMENUITEM}),
+    (create:'CList/AddContactMenuItem'{MS_CLIST_ADDCONTACTMENUITEM}; destroy:'CList/RemoveContactMenuItem'{MS_CLIST_REMOVECONTACTMENUITEM}),
+    (create:'CList/AddTrayMenuItem'{MS_CLIST_ADDTRAYMENUITEM   }; destroy:'CList/RemoveTrayMenuItem'{MS_CLIST_REMOVETRAYMENUITEM})
+  );
+// separators flag masks
+const
+  SeparatorMasks:array [tMenuType] of cardinal = (
+    UAF_MMENUSEP,UAF_CMENUSEP,UAF_TMENUSEP);
+type
+  tuaMenuRec = record
+//    MenuName :pWideChar;
+    hMenuRoot:HMENU;
+    position :integer;
+  end;
+  tuaMenuRecA = array [tMenuType] of tuaMenuRec;
+
+var
+  arMenuRec: array of tuaMenuRecA;
+
 //===== Support =====
 
 function ServiceCallWithLParam(wParam:WPARAM; lParam:LPARAM):int_ptr; cdecl;
@@ -12,6 +38,7 @@ var
   lflag:integer;
 begin
   if ActionItem.hMTBButton=0 then exit;
+  if (ActionItem.flags and UAF_2STATE)=0 then exit;
 
   lflag:=CallService(MS_TB_GETBUTTONSTATE,ActionItem.hMTBButton,0);
   if lflag=TBST_PUSHED then
@@ -32,6 +59,8 @@ function ServiceCallWithFParam(wParam:WPARAM; lParam:LPARAM; fParam:LPARAM):int_
 var
   local:boolean;
   i:integer;
+  setting:array [0..63] of AnsiChar;
+  p:pAnsiChar;
 begin
   local:=true;
 
@@ -48,14 +77,14 @@ begin
         // sync buttons/menus
         if not local then
         begin
-{?? maybe On Menu Build?
-          if UAMenuItem[main_menu].hMenuItem<>0 then    // (flags and UAF_REGMMENU)<>0
-            SetMenuItemState(UActionList[i],main_menu);
-          if UAMenuItem[contact_menu].hMenuItem<>0 then // (flags and UAF_REGCMENU)<>0
-            SetMenuItemState(UActionList[i],contact_menu);
-          if UAMenuItem[tray_menu].hMenuItem<>0 then    // (flags and UAF_REGTMENU)<>0
-            SetMenuItemState(UActionList[i],tray_menu);
-}
+          // save "pressed" state
+          if (flags and UAF_SAVESTATE)<>0 then
+          begin
+            p:=StrEnd(IntToStr(StrCopyE(setting,'Act_'),dwActID));
+            p^:='_'; inc(p);
+            StrCopy(p,opt_Flags); DBWriteDWord(0,opt_UA,setting,flags and not UAF_REALTIME);
+          end;
+
           if hMTBButton<>0 then                         // (flags and UAF_REGMTBB )<>0
             SetMTBState(UActionList[i]);
           if (flags and UAF_REGTABB)<>0 then;
@@ -177,95 +206,6 @@ begin
 end;
 
 //----- Common menu functions -----
-{
-procedure SetMenuItemState(var ActionItem:tMyActionItem;mtype:tMenuType;state:integer=-1);
-var
-  mi:tClistMenuItem;
-  extra:pWidechar;
-begin
-  if (ActionItem.flags and UAF_2STATE)<>0 then
-  begin
-    if state<0 then // <0 - main/tray menu, not contact related
-    begin
-      if (ActionItem.flags and UAF_PRESSED)=0 then
-        state:=0
-      else
-        state:=CMIF_CHECKED;
-    end;
-
-    FillChar(mi,sizeof(mi),0);
-    mi.cbSize:=sizeof(mi);
-    mi.flags:=CMIM_NAME+CMIM_FLAGS+CMIM_ICON+CMIF_UNICODE+cardinal(state);
-
-    if state=0 then
-    begin
-      mi.hIcon:=ActionItem.hIcolibIcon;
-      extra:='0';
-    end
-    else
-    begin
-      mi.hIcon:=ActionItem.hIcolibIconPressed;
-      extra:='1';
-    end;
-
-    mi.szName.w:=ParseVarString(ActionItem.UAMenuItem[mtype].szMenuNameVars,0,extra);
-
-    with ActionItem.UAMenuItem[mtype] do
-    begin
-      if (szMenuNameVars<>nil) and (szMenuNameVars^<>#0) then
-        mi.szName.w:=ParseVarString(szMenuNameVars,0,extra)
-      else
-        mi.szName.w:=ActionItem.szActDescr;
-
-      CallService(MS_CLIST_MODIFYMENUITEM,hMenuItem,lparam(@mi));
-    end;
-
-    if mi.szName.w<>ActionItem.szActDescr then
-      mFreeMem(mi.szName.w);
-  end;
-end;
-}
-function PrepareMenuItem(var ActionItem:tMyActionItem;mtype:TMenuType;
-    condition:boolean):TCListMenuItem;
-var
-  extra:pWidechar;
-begin
-  FillChar(result,SizeOf(result),0);
-  result.cbSize:=sizeof(result);
-  result.flags:=CMIF_UNICODE or CMIF_ICONFROMICOLIB;
-  if condition then
-  begin
-    result.hIcon:=ActionItem.hIcolibIcon;
-    extra:='0';
-  end
-  else
-  begin
-    result.hIcon:=ActionItem.hIcolibIconPressed;
-    result.flags:=CMIF_UNICODE or CMIF_ICONFROMICOLIB or CMIF_CHECKED;
-    extra:='1';
-  end;
-
-  with ActionItem.UAMenuItem[mtype] do
-  begin
-    if (szMenuNameVars<>nil) and (szMenuNameVars^<>#0) then
-      result.szName.w:=ParseVarString(szMenuNameVars,0,extra)
-    else
-      result.szName.w:=ActionItem.szActDescr;
-
-    if hMenuRoot<>0 then
-    begin
-      result.flags:=result.flags or CMIF_ROOTHANDLE;
-      result.szPopupName.w:=pWideChar(hMenuRoot);
-    end;
-  end;
-
-  result.pszService:=ActionItem.szNameID;
-  if ActionItem.hMenuService=0 then
-    ActionItem.hMenuService:=PluginLink.CreateServiceFunctionParam(
-      result.pszService,@ServiceCallWithFParam,ActionItem.dwActID);
-
-  result.position:=ActionItem.wSortIndex*10;
-end;
 
 function AddRootMenuIcon(szPopupName:pWideChar):THANDLE;
 var
@@ -286,71 +226,183 @@ begin
   mFreeMem(sid.pszName);
 end;
 
-function DeletePopup(var ActionItem:tMyActionItem;mtype:tMenuType):boolean;
+procedure DeleteMenuItem(var ActionItem:tMyActionItem;mtype:tMenuType);
 var
   i:integer;
   hMenuRoot:THANDLE;
   p:pMyActionItem;
 begin
-  result:=true;
+  with ActionItem.UAMenuItem[mtype] do
+  begin
+    if hMenuItem=0 then exit;
+    CallService(MenuServices[mtype].destroy,hMenuItem,0);
+    hMenuItem:=0;
+  end;
+
   hMenuRoot:=ActionItem.UAMenuItem[mtype].hMenuRoot;
   if hMenuRoot<>0 then
   begin
     for i:=0 to HIGH(UActionList) do
     begin
       p:=@UActionList[i];
+      // presents somethere else
       if (p<>@ActionItem) and (p.UAMenuItem[mtype].hMenuRoot=hMenuRoot) then
+        exit;
+    end;
+    // menu array cleanup now?
+    for i:=0 to HIGH(arMenuRec) do
+    begin
+      if arMenuRec[i][mtype].hMenuRoot=hMenuRoot then
       begin
-        result:=false;
+        FillChar(arMenuRec[i][mtype],SizeOf(tuaMenuRec),0);
+//        arMenuRec[i][mtype].hMenuRoot:=0;
         break;
       end;
+    end;
+    CallService(MenuServices[mtype].destroy,hMenuRoot,0);
+    ActionItem.UAMenuItem[mtype].hMenuRoot:=0;
+  end;
+end;
+
+function GetMenuPosition(hMenu:HMENU;mtype:tMenuType):integer;
+var
+  i:integer;
+begin
+  result:=0;
+  for i:=0 to HIGH(arMenuRec) do
+  begin
+    if arMenuRec[i][mtype].hMenuRoot=hMenu then
+    begin
+      inc(arMenuRec[i][mtype].position,100000);
+      result:=arMenuRec[i][mtype].position;
+      break;
     end;
   end;
 end;
 
-function CreatePopup(var ActionItem:tMyActionItem;mtype:tMenuType;
-         var clmi:TCListMenuItem):integer;
+procedure CreateMenuItem(var ActionItem:tMyActionItem;mtype:tMenuType);
 var
   i:integer;
   ActItem:pMyActionItem;
   ActMItem,UAMenuItem:pUAMenuItem;
+  clmi:TCListMenuItem;
+  res:boolean;
+  extra:pWideChar;
 begin
+{}
   UAMenuItem:=@ActionItem.UAMenuItem[mtype];
-  if (UAMenuItem.szMenuPopup=nil) or (UAMenuItem.szMenuPopup^=#0) then
-  begin
-    result:=-1;
-    exit;
-  end;
+  if UAMenuItem.hMenuItem<>0 then exit;
 
-  for i:=0 to HIGH(UActionList) do
+  // create popup menu
+{}{}
+  res:=true;
+  if (UAMenuItem.szMenuPopup<>nil) and (UAMenuItem.szMenuPopup^<>#0) then
   begin
-    // try to find root popup with same name (if we already created one)
-    ActItem :=@UActionList[i];
-    ActMItem:=@ActItem.UAMenuItem[mtype];
-
-    if (ActMItem.szMenuPopup<>nil) and
-       (ActMItem.hMenuRoot<>0) and
-      ( (ActItem<>@ActionItem) and
-        (StrCmpW(ActMItem.szMenuPopup,UAMenuItem.szMenuPopup)=0) ) then
+    res:=false;
+    for i:=0 to HIGH(UActionList) do
     begin
-      UAMenuItem.hMenuRoot:=ActMItem.hMenuRoot;
-      result:=1;
-      exit;
+      // try to find root popup with same name (if we already created one)
+      ActItem :=@UActionList[i];
+      ActMItem:=@ActItem.UAMenuItem[mtype];
+
+      if (ActMItem.szMenuPopup<>nil) and
+         (ActMItem.hMenuRoot<>0) and
+        ( (ActItem<>@ActionItem) and
+          (StrCmpW(ActMItem.szMenuPopup,UAMenuItem.szMenuPopup)=0) ) then
+      begin
+        UAMenuItem.hMenuRoot:=ActMItem.hMenuRoot;
+        res:=true;
+        break;
+      end;
     end;
   end;
-  result:=0;
   // popup menu not found
+  if not res then
+  begin
+    FillChar(clmi,SizeOf(clmi),0);
+    clmi.cbSize:=SizeOf(clmi);
+    clmi.flags :=CMIF_UNICODE or CMIF_ICONFROMICOLIB;
+
+    if (UAMenuItem.szMenuPopup<>nil) and (UAMenuItem.szMenuPopup^<>#0) then
+      clmi.szName.w:=ParseVarString(UAMenuItem.szMenuPopup)
+    else
+      clmi.szName.w:=ActionItem.szActDescr;
+
+    clmi.hIcon   :=AddRootMenuIcon(clmi.szName.w);
+    clmi.position:=ActionItem.wSortIndex*10;
+
+    // position in Root Menu
+    if (ActionItem.flags and SeparatorMasks[mtype])<>0 then
+    begin
+      inc(clmi.position,GetMenuPosition(0,mtype));
+    end;
+
+    UAMenuItem.hMenuRoot:=CallService(MenuServices[mtype].create,0,LPARAM(@clmi));
+    if clmi.szName.w<>ActionItem.szActDescr then
+      mFreeMem(clmi.szName.w);
+
+    for i:=1 to HIGH(arMenuRec) do
+    begin
+      with arMenuRec[i][mtype] do
+        if hMenuRoot=0 then
+        begin
+//          MenuName :=ActionItem.szActDescr;
+          hMenuRoot:=UAMenuItem.hMenuRoot;
+          break;
+        end;
+    end;
+
+  end;
+{}{}
+
+ // Now Menu Item preparing
+{}{}
   FillChar(clmi,SizeOf(clmi),0);
   clmi.cbSize:=SizeOf(clmi);
-  clmi.flags :=CMIF_UNICODE or CMIF_ICONFROMICOLIB;
-
-  if (UAMenuItem.szMenuPopup<>nil) and (UAMenuItem.szMenuPopup^<>#0) then
-    clmi.szName.w:=ParseVarString(UAMenuItem.szMenuPopup)
+  clmi.flags:=CMIF_UNICODE or CMIF_ICONFROMICOLIB;
+  if (ActionItem.flags and (UAF_2STATE+UAF_PRESSED))<>(UAF_2STATE+UAF_PRESSED) then
+  begin
+    clmi.hIcon:=ActionItem.hIcolibIcon;
+    extra:='0';
+  end
   else
-    clmi.szName.w:=ActionItem.szActDescr;
+  begin
+    clmi.hIcon:=ActionItem.hIcolibIconPressed;
+    clmi.flags:=CMIF_UNICODE or CMIF_ICONFROMICOLIB or CMIF_CHECKED;
+    extra:='1';
+  end;
 
-  clmi.hIcon :=AddRootMenuIcon(clmi.szName.w);//ActionItem.hIcolibIcon;
+  with ActionItem.UAMenuItem[mtype] do
+  begin
+    if (szMenuNameVars<>nil) and (szMenuNameVars^<>#0) then
+      clmi.szName.w:=ParseVarString(szMenuNameVars,0,extra)
+    else
+      clmi.szName.w:=ActionItem.szActDescr;
+
+    if hMenuRoot<>0 then
+    begin
+      clmi.flags:=clmi.flags or CMIF_ROOTHANDLE;
+      clmi.szPopupName.w:=pWideChar(hMenuRoot);
+    end;
+  end;
+
+  clmi.pszService:=ActionItem.szNameID;
+  if ActionItem.hMenuService=0 then
+    ActionItem.hMenuService:=PluginLink.CreateServiceFunctionParam(
+      clmi.pszService,@ServiceCallWithFParam,ActionItem.dwActID);
+
   clmi.position:=ActionItem.wSortIndex*10;
+{}{}
+  if (ActionItem.flags and SeparatorMasks[mtype])<>0 then
+  begin
+    inc(clmi.position,GetMenuPosition(UAMenuItem.hMenuRoot,mtype));
+  end;
+
+  UAMenuItem.hMenuItem:=CallService(MenuServices[mtype].create,0,LPARAM(@clmi));
+  if clmi.szName.w<>ActionItem.szActDescr then
+    mFreeMem(clmi.szName.w);
+{}
+
 end;
 
 function PreBuildMenu(mtype:tMenuType;hContact:THANDLE=0):int;
@@ -423,14 +475,7 @@ else...
             if mi.szName.w=nil then
               mi.szName.w:=szActDescr;
           end;
-          //!!!!!!!!
-          mi.position:=wSortIndex*10;
-          case mtype of
-            contact_menu: if (flags and UAF_CMENUSEP)<>0 then inc(mi.position,100000);
-            tray_menu   : if (flags and UAF_TMENUSEP)<>0 then inc(mi.position,100000);
-          else
-            if (flags and UAF_MMENUSEP)<>0 then inc(mi.position,100000);
-          end;
+
           CallService(MS_CLIST_MODIFYMENUITEM,hMenuItem,LPARAM(@mi));
           if mi.szName.w<>szActDescr then
             mFreeMem(mi.szName.w);
@@ -444,48 +489,13 @@ end;
 //----- Main Menu -----
 
 procedure AddMainMenuItem(var ActionItem:tMyActionItem);
-var
-  clmi:TCListMenuItem;
-  UAMenuItem:pUAMenuItem;
 begin
-  UAMenuItem:=@ActionItem.UAMenuItem[main_menu];
-  if UAMenuItem.hMenuItem<>0 then exit;
-
-  // prepare popup menu
-  if CreatePopup(ActionItem,main_menu,clmi)=0 then // need to create, clmi filled
-  begin
-    if (ActionItem.flags and UAF_MMENUSEP)<>0 then
-      Inc(clmi.position,100000);
-    UAMenuItem.hMenuRoot:=CallService(MS_CLIST_ADDMAINMENUITEM,0,LPARAM(@clmi));
-    if clmi.szName.w<>ActionItem.szActDescr then
-      mFreeMem(clmi.szName.w);
-  end;
-  // add menu item
-  clmi:=PrepareMenuItem(ActionItem,main_menu,
-      (ActionItem.flags and (UAF_2STATE+UAF_PRESSED))<>(UAF_2STATE+UAF_PRESSED));
-
-//  if UAMenuItem.hMenuRoot=0 then
-    if (ActionItem.flags and UAF_MMENUSEP)<>0 then
-      Inc(clmi.position,100000);
-
-  UAMenuItem.hMenuItem:=PluginLink^.CallService(MS_CLIST_ADDMAINMENUITEM,0,LPARAM(@clmi));
-  if clmi.szName.w<>ActionItem.szActDescr then
-    mFreeMem(clmi.szName.w);
+  CreateMenuItem(ActionItem,main_menu);
 end;
 
 procedure DeleteMainMenuItem(var ActionItem:tMyActionItem);
 begin
-  with ActionItem.UAMenuItem[main_menu] do
-  begin
-    if hMenuItem=0 then exit;
-    CallService(MS_CLIST_REMOVEMAINMENUITEM,hMenuItem,0);
-    hMenuItem:=0;
-
-    // if it was last popup menu request
-    if DeletePopup(ActionItem,main_menu) then
-      CallService(MS_CLIST_REMOVEMAINMENUITEM,hMenuRoot,0);
-    hMenuRoot:=0;
-  end;
+  DeleteMenuItem(ActionItem,main_menu);
 end;
 
 function PreBuildMainMenu(wParam:WPARAM;lParam:LPARAM):int; cdecl;
@@ -497,53 +507,13 @@ end;
 //----- Contact Menu -----
 
 procedure AddContactMenuItem(var ActionItem:tMyActionItem);
-var
-  clmi:TCListMenuItem;
-  UAMenuItem:pUAMenuItem;
 begin
-  UAMenuItem:=@ActionItem.UAMenuItem[contact_menu];
-  if UAMenuItem.hMenuItem<>0 then exit;
-
-  // create popup menu
-  if CreatePopup(ActionItem,contact_menu,clmi)=0 then // need to create, clmi filled
-  begin
-    if (ActionItem.flags and UAF_CMENUSEP)<>0 then
-      Inc(clmi.position,100000);
-
-    UAMenuItem.hMenuRoot:=CallService(MS_CLIST_ADDCONTACTMENUITEM,0,LPARAM(@clmi));
-    if clmi.szName.w<>ActionItem.szActDescr then
-      mFreeMem(clmi.szName.w);
-  end;
-
-  // add menu item
-  clmi:=PrepareMenuItem(ActionItem,main_menu,
-      (ActionItem.flags and (UAF_2STATE+UAF_PRESSED))<>(UAF_2STATE+UAF_PRESSED));
-
-  clmi:=PrepareMenuItem(ActionItem,contact_menu,
-      true{!!!(ActionItem.flags and (UAF_2STATE+UAF_PRESSED))<>(UAF_2STATE+UAF_PRESSED)});
-
-//  if UAMenuItem.hMenuRoot=0 then
-    if (ActionItem.flags and UAF_CMENUSEP)<>0 then
-      Inc(clmi.position,100000);
-
-  UAMenuItem.hMenuItem:=PluginLink^.CallService(MS_CLIST_ADDCONTACTMENUITEM,0,LPARAM(@clmi));
-  if clmi.szName.w<>ActionItem.szActDescr then
-    mFreeMem(clmi.szName.w);
+  CreateMenuItem(ActionItem,contact_menu);
 end;
 
 procedure DeleteContactMenuItem(var ActionItem:tMyActionItem);
 begin
-  with ActionItem.UAMenuItem[contact_menu] do
-  begin
-    if hMenuItem=0 then exit;
-    CallService(MS_CLIST_REMOVECONTACTMENUITEM,hMenuItem,0);
-    hMenuItem:=0;
-
-    // if it was last popup menu request
-    if DeletePopup(ActionItem,contact_menu) then
-      CallService(MS_CLIST_REMOVECONTACTMENUITEM,hMenuRoot,0);
-    hMenuRoot:=0;
-  end;
+  DeleteMenuItem(ActionItem,contact_menu);
 end;
 
 function PreBuildContactMenu(wParam:WPARAM;lParam:LPARAM):int;  cdecl;
@@ -555,51 +525,13 @@ end;
 //----- Tray Menu -----
 
 procedure AddTrayMenuItem(var ActionItem:tMyActionItem);
-var
-  clmi:TCListMenuItem;
-  UAMenuItem:pUAMenuItem;
 begin
-  if not NamesArray[uaTray].enable then exit;
-
-  UAMenuItem:=@ActionItem.UAMenuItem[tray_menu];
-  if UAMenuItem.hMenuItem<>0 then exit;
-
-  // create popup menu
-  if CreatePopup(ActionItem,tray_menu,clmi)=0 then // need to create, clmi filled
-  begin
-    if (ActionItem.flags and UAF_TMENUSEP)<>0 then
-      Inc(clmi.position,100000);
-
-    UAMenuItem.hMenuRoot:=CallService(MS_CLIST_ADDTRAYMENUITEM,0,LPARAM(@clmi));
-    if clmi.szName.w<>ActionItem.szActDescr then
-      mFreeMem(clmi.szName.w);
-  end;
-
-  clmi:=PrepareMenuItem(ActionItem,tray_menu,
-      (ActionItem.flags and (UAF_2STATE+UAF_PRESSED))<>(UAF_2STATE+UAF_PRESSED));
-
-//  if UAMenuItem.hMenuRoot=0 then
-    if (ActionItem.flags and UAF_TMENUSEP)<>0 then
-      Inc(clmi.position,100000);
-
-  UAMenuItem.hMenuItem:=PluginLink^.CallService(MS_CLIST_ADDTRAYMENUITEM,0,LPARAM(@clmi));
-  if clmi.szName.w<>ActionItem.szActDescr then
-    mFreeMem(clmi.szName.w);
+  CreateMenuItem(ActionItem,tray_menu);
 end;
 
 procedure DeleteTrayMenuItem(var ActionItem:tMyActionItem);
 begin
-  with ActionItem.UAMenuItem[tray_menu] do
-  begin
-    if hMenuItem=0 then exit;
-    CallService(MS_CLIST_REMOVETRAYMENUITEM,hMenuItem,0);
-    hMenuItem:=0;
-
-    // if it was last popup menu request
-    if DeletePopup(ActionItem,tray_menu) then
-      CallService(MS_CLIST_REMOVETRAYMENUITEM,hMenuRoot,0);
-    hMenuRoot:=0;
-  end;
+  DeleteMenuItem(ActionItem,tray_menu);
 end;
 
 function PreBuildTrayMenu(wParam:WPARAM;lParam:LPARAM):int; cdecl;

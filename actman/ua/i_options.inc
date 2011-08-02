@@ -1,9 +1,5 @@
 {}
 const
-  opt_ua:PAnsiChar = 'ACT_UA';
-
-  opt_Flags:PAnsiChar = 'Flags';
-
   opt_MTBTooltip        :pAnsiChar = 'MTBTooltip';
   opt_MTBTooltipPressed :pAnsiChar = 'MTBTooltipPressed';
 
@@ -131,6 +127,9 @@ begin
     StrCopy(p,opt_Flags); flags:=DBReadDWord(0,opt_UA,setting,dword(UAF_SPECIAL));
     if flags=dword(UAF_SPECIAL) then // no settings
       exit;
+    // no need to use previous "pressed" state
+    if (flags and UAF_SAVESTATE)=0 then
+      flags:=flags and not UAF_PRESSED;
 
     flags:=flags and not UAF_REALTIME;
     result:=1;
