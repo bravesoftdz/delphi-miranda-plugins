@@ -30,6 +30,7 @@ var
 
 var
   hendis,
+  hcount,
   hdel: THANDLE;
 
 procedure Init;
@@ -44,6 +45,7 @@ begin
   else
     SetAllTasks;
 
+  hcount:=PluginLink^.CreateServiceFunction(MS_ACT_TASKCOUNT ,@TaskCount);
   hendis:=PluginLink^.CreateServiceFunction(MS_ACT_TASKENABLE,@TaskEnable);
   hdel  :=PluginLink^.CreateServiceFunction(MS_ACT_TASKDELETE,@TaskDelete);
   hevent:=PluginLink^.CreateHookableEvent(ME_ACT_BELL);
@@ -55,6 +57,7 @@ begin
   StopAllTasks;
   PluginLink^.DestroyServiceFunction(hendis);
   PluginLink^.DestroyServiceFunction(hdel);
+  PluginLink^.DestroyServiceFunction(hcount);
   ClearTasks;
 end;
 

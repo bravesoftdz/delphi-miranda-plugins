@@ -61,3 +61,27 @@ begin
     end;
   end;
 end;
+
+function TaskCount(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
+var
+  i,j:integer;
+begin
+  result:=0;
+  if lParam=0 then exit;
+  j:=StrLenW(pWideChar(lParam));
+
+  for i:=0 to MaxTasks-1 do
+  begin
+    with TaskList[i] do
+    begin
+      if (flags and ACF_ASSIGNED)<>0 then
+      begin
+        if StrCmpW(name,pWideChar(lParam),j)=0 then
+        begin
+          result:=count;
+          count:=wParam;
+        end;
+      end;
+    end;
+  end;
+end;
