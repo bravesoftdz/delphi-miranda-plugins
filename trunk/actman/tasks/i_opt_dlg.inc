@@ -386,6 +386,12 @@ begin
       SendMessageW(wnd,LVM_INSERTCOLUMNW ,0,tlparam(@lv));
       SendMessageW(wnd,LVM_SETCOLUMNWIDTH,0,LVSCW_AUTOSIZE_USEHEADER);
 
+      CreateUpDownControl(
+        WS_CHILD+WS_BORDER+WS_VISIBLE+UDS_ARROWKEYS+UDS_SETBUDDYINT+UDS_ALIGNRIGHT,
+        190,112,14,18,
+        Dialog, IDC_TASK_UPDOWN, hInstance, GetDlgItem(Dialog,IDC_TASK_REPEAT),
+        10000, -1, 0);
+
       OldTableProc:=pointer(SetWindowLongPtrW(wnd,GWL_WNDPROC,LONG_PTR(@NewHKTableProc)));
       TranslateDialogDefault(Dialog);
 
