@@ -24,6 +24,9 @@ begin
     StrDup(szNameID,@buf);
     AddIcolibIcon (UActionList[idx]);
   end;
+
+  SetLength(arMenuRec,Length(UActionList)+1);
+  FillChar (arMenuRec[HIGH(arMenuRec)],SizeOf(tuaMenuRecA),0);
 end;
 
 function CreateUActionList:integer;
@@ -33,6 +36,10 @@ var
 begin
   result:=CallService(MS_ACT_GETLIST,0,LPARAM(@ptr));
   SetLength(UActionList,result);
+
+  SetLength(arMenuRec, result+1);
+  FillChar (arMenuRec[0],(result+1)*SizeOf(tuaMenuRecA),0);
+
   if result>0 then
   begin
     ptr1:=ptr;

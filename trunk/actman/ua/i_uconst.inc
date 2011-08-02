@@ -27,5 +27,6 @@ const
   // common
   IDC_UA_COMMON     = 2000;
   IDC_UA_TWOSTATE   = 2001;
+  IDC_UA_SAVSTATE   = 2002;
 
   IDI_ACTION = 101;

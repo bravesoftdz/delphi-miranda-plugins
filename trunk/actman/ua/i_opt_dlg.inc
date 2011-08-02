@@ -2,7 +2,7 @@
 const
   settings:HWND = 0;
 const
-  NumControls = 15;
+  NumControls = 16;
 
   IDsArray:array [0..NumControls-1] of integer =(
     // Menu settings controls
@@ -10,33 +10,33 @@ const
     IDC_UA_VARNAMEST,IDC_UA_VARNAMESV,IDC_UA_VARNAMESH,
     IDC_UA_SHOWVART ,IDC_UA_SHOWVARV ,IDC_UA_SHOWVARH,
     // toolbar settings controls
-    IDC_UA_TWOSTATE ,IDC_UA_COMMON,
+    IDC_UA_TWOSTATE ,IDC_UA_SAVSTATE ,IDC_UA_COMMON,
     IDC_UA_TTNORMALT,IDC_UA_TTNORMALV,IDC_UA_TTPRESSEDT,IDC_UA_TTPRESSEDV
     );
 
   // Show-hide controls by place type
   SHArray:array [0..NumTypes-1, 0..NumControls-1] of integer = (
     (SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,
-     SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW),
+     SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW),
     (SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,
-     SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW),
+     SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW),
     (SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,
-     SW_SHOW,SW_SHOW,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE),
+     SW_SHOW,SW_SHOW,SW_SHOW,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE),
     (SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,
-     SW_SHOW,SW_SHOW,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE),
+     SW_SHOW,SW_SHOW,SW_SHOW,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE),
     (SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW,
-     SW_SHOW,SW_SHOW,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE),
+     SW_SHOW,SW_SHOW,SW_SHOW,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE),
     (SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,
-     SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE)
+     SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE)
     );
   // additional show/hide controls check by Variables installings (1 - need to check)
   SHVarArray:array [0..NumControls-1] of byte = (
     0,0,0,    0,0,1,    1,1,1,
-    0,0,0,0,0,0);
+    0,0,0,0,0,0,0);
   // additional enable/disable controls check (1 - always enable)
   EnDisArray:array [0..NumControls-1] of byte = (
     0,0,0,    0,0,0,    0,0,0,
-    1,1,0,0,0,0);
+    1,1,1,0,0,0,0);
 
 var
   hIC:THANDLE;
@@ -91,6 +91,11 @@ begin
       ShowWindow(wnd,typ);
       EnableWindow(wnd,enable or (EnDisArray[i]<>0));
     end;
+
+    // common settings
+    EnableWindow(GetDlgItem(Dialog,IDC_UA_SAVSTATE),
+        IsDlgButtonChecked(Dialog,IDC_UA_TWOSTATE)<>BST_UNCHECKED);
+
     // personal settings
     case atype of
       uaMTB, uaTAB: begin
@@ -112,6 +117,7 @@ begin
   s:=settings;
   settings:=0;
   CheckDlgButton (Dialog,IDC_UA_TWOSTATE ,BST_UNCHECKED);
+  CheckDlgButton (Dialog,IDC_UA_SAVSTATE ,BST_UNCHECKED);
 
   CheckDlgButton (Dialog,IDC_UA_SEPARATE ,BST_UNCHECKED);
   SetDlgItemTextW(Dialog,IDC_UA_POPUPV   ,nil);
@@ -121,6 +127,8 @@ begin
 end;
 
 procedure ShowSubAction(Dialog:HWND;aType:integer;item:integer=-1);
+var
+  enable:boolean;
 begin
   ClearControls(Dialog);
   SetupControls(Dialog,aType,item);
@@ -130,7 +138,15 @@ begin
 
   // common settings
   if (UActionList[item].flags and UAF_2STATE)<>0 then
+  begin
+    enable:=true;
     CheckDlgButton(Dialog,IDC_UA_TWOSTATE,BST_CHECKED);
+  end
+  else
+    enable:=false;
+  if (UActionList[item].flags and UAF_SAVESTATE)<>0 then
+    CheckDlgButton(Dialog,IDC_UA_SAVSTATE,BST_CHECKED);
+  EnableWindow(GetDlgItem(Dialog,IDC_UA_SAVSTATE),enable);
 
   // Show real UA settings
   case aType of
@@ -200,18 +216,21 @@ end;
 
 procedure ShowAction(Dialog:HWND;item:integer=-1);
 var
-  i:integer;
+  i,j:integer;
   wnd:HWND;
   li:LV_ITEMW;
   buf:array [0..255] of WideChar;
+  lset:HWND;
 begin
   wnd:=GetDlgItem(Dialog,IDC_UA_PLACELIST);
   SendMessage(wnd,LVM_DELETEALLITEMS,0,0);
-  i:=LV_GetLParam(GetDlgItem(Dialog,IDC_UA_ACTIONLIST),item);
-  if i>=0 then
+  j:=LV_GetLParam(GetDlgItem(Dialog,IDC_UA_ACTIONLIST),item);
+  if j>=0 then
   begin
-    with UActionList[i] do
+    with UActionList[j] do
     begin
+      lset:=settings;
+      settings:=0;
       // make "places" list
       for i:=0 to NumTypes-1 do
       begin
@@ -234,6 +253,7 @@ begin
         LVIS_FOCUSED or LVIS_SELECTED);
       // show first selected "place"
       ShowSubAction(Dialog,LV_GetLParam(wnd));
+      settings:=lset;
     end;
   end
   else
@@ -269,7 +289,6 @@ begin
 
   wnd:=GetDlgItem(Dialog,IDC_UA_PLACELIST);
   atype:=LV_GetLParam(wnd,atype);
-
   with UActionList[num] do
   begin
     // main flags
@@ -287,6 +306,11 @@ begin
       flags:=flags or UAF_2STATE
     else
       flags:=flags and not UAF_2STATE;
+
+    if IsDlgButtonChecked(Dialog,IDC_UA_SAVSTATE)<>BST_UNCHECKED then
+      flags:=flags or UAF_SAVESTATE
+    else
+      flags:=flags and not UAF_SAVESTATE;
 
     // custom data
     case atype of
@@ -512,6 +536,7 @@ begin
         PSN_APPLY: begin
           SaveAction(Dialog);
           SaveUAs;
+          FillChar(arMenuRec[0],Length(arMenuRec)*SizeOf(tuaMenuRecA),0);
           for i:=0 to HIGH(UActionList) do
           begin
             SetAllActionUsers(UActionList[i]);
@@ -519,6 +544,7 @@ begin
         end;
 
         LVN_ITEMCHANGED: begin
+          if settings=0 then exit;
           if PNMLISTVIEW(lParam)^.uChanged=LVIF_STATE then
           begin
             i:=(PNMLISTVIEW(lParam)^.uOldState and LVNI_FOCUSED)-

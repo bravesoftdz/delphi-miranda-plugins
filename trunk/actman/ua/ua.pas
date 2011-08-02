@@ -40,13 +40,9 @@ begin
   hServiceWithLParam:=CreateServiceFunction(SERVICE_WITH_LPARAM_NAME,@ServiceCallWithLParam);
   hMTBService       :=CreateServiceFunction(MTB_SERVICE_NAME        ,@MTBServiceCall);
   CheckPlacesAbility;
+
   CreateUActionList;
-{
-  if LoadUAs=0 then
-  begin
-  end
-  else;
-}
+
   ontabbtnpressed:=PluginLink^.HookEvent(ME_MSG_BUTTONPRESSED,@OnTabButtonPressed);
   onactchanged   :=PluginLink^.HookEvent(ME_ACT_CHANGED      ,@ActListChange);
 
@@ -57,6 +53,8 @@ end;
 
 procedure DeInit;
 begin
+  SetLength(arMenuRec,0);
+
   PluginLink^.UnhookEvent(hPreBuildMMenu);
   PluginLink^.UnhookEvent(hPreBuildCMenu);
   PluginLink^.UnhookEvent(hPreBuildTMenu);

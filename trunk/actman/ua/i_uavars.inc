@@ -2,6 +2,10 @@
 const
   MODULE_NAME = 'Actions';
 const
+  opt_ua:PAnsiChar = 'ACT_UA';
+  opt_Flags:PAnsiChar = 'Flags';
+
+const
   ICOLIB_ACTSECTION = 'Actions/Registered actions';
   ICOLIB_MNUSECTION = 'Actions/Menu icons';
 
@@ -44,30 +48,31 @@ type
   end;
 
 const
-  UAF_NONE       = 0;
+  UAF_NONE      = 0;
 
-  UAF_REGHOTKEY  = 1 shl  0; // hotkey
-  UAF_REGMTBB    = 1 shl  1; // modern toolbar
-  UAF_REGMMENU   = 1 shl  2; // main menu
-  UAF_REGCMENU   = 1 shl  3; // contact menu
-  UAF_REGTMENU   = 1 shl  4; // tray menu
-  UAF_REGTABB    = 1 shl  5; // TabSRMM toolbar
-  UAF_USING      = UAF_REGHOTKEY or UAF_REGMTBB or UAF_REGMMENU or UAF_REGCMENU or
-                   UAF_REGTMENU or UAF_REGTABB;
+  UAF_REGHOTKEY = 1 shl  0; // hotkey
+  UAF_REGMTBB   = 1 shl  1; // modern toolbar
+  UAF_REGMMENU  = 1 shl  2; // main menu
+  UAF_REGCMENU  = 1 shl  3; // contact menu
+  UAF_REGTMENU  = 1 shl  4; // tray menu
+  UAF_REGTABB   = 1 shl  5; // TabSRMM toolbar
+  UAF_USING     = UAF_REGHOTKEY or UAF_REGMTBB or UAF_REGMMENU or UAF_REGCMENU or
+                  UAF_REGTMENU or UAF_REGTABB;
 
-  UAF_MMENUSEP   = 1 shl  8; // main menu separated
-  UAF_CMENUSEP   = 1 shl  9; // contact menu separated
-  UAF_TMENUSEP   = 1 shl 10; // tray menu separated
-  UAF_2STATE     = 1 shl 11; // Buttons/menu items are 2-state
-  UAF_PRESSED    = 1 shl 12; // Button pressed/menu item selected
+  UAF_MMENUSEP  = 1 shl  8; // main menu separated
+  UAF_CMENUSEP  = 1 shl  9; // contact menu separated
+  UAF_TMENUSEP  = 1 shl 10; // tray menu separated
+  UAF_2STATE    = 1 shl 11; // Buttons/menu items are 2-state
+  UAF_PRESSED   = 1 shl 12; // Button pressed/menu item selected
+  UAF_SAVESTATE = 1 shl 13; // Save or not "pressed" state
 
   // realtime, no save
-  UAF_HKREGGED   = 1 shl 16; // hotkey registered
-  UAF_TBREGGED   = 1 shl 17; // TabSRMM button registered
-  UAF_DISABLED   = 1 shl 30; // action disabled atm
-  UAF_REALTIME   = UAF_HKREGGED or UAF_TBREGGED or UAF_DISABLED;
+  UAF_HKREGGED  = 1 shl 16; // hotkey registered
+  UAF_TBREGGED  = 1 shl 17; // TabSRMM button registered
+  UAF_DISABLED  = 1 shl 30; // action disabled atm
+  UAF_REALTIME  = UAF_HKREGGED or UAF_TBREGGED or UAF_DISABLED;
 
-  UAF_SPECIAL    = 1 shl 31; // for settings read
+  UAF_SPECIAL   = 1 shl 31; // for settings read
 
 type
   tNameRec = record
