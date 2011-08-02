@@ -36,7 +36,6 @@ FONT 8, "MS Shell Dlg", 0, 0
   CTEXT    "Interval", -1, 220, 98, 76, 14, SS_CENTERIMAGE
   CONTROL  "Interval", IDC_TASK_INTERVAL, "SysDateTimePick32", WS_TABSTOP|$09, 230, 114, 56, 14
 
-//  AUTOCHECKBOX "Start immediately"       , IDC_TASK_IMMEDIATELY, 142, 132, 156, 14
   AUTOCHECKBOX "Break on non-zero result", IDC_TASK_BREAK, 142, 132, 156, 14
   AUTOCHECKBOX "Send event on start time", IDC_TASK_EVENT, 142, 146, 156, 14
   AUTOCHECKBOX "Send event just once"    , IDC_TASK_ONCE , 142, 160, 156, 14

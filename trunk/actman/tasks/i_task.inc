@@ -6,7 +6,6 @@ const
   ACF_DISABLED = $10000000;  // Task disabled
 
   TCF_ABSOLUTE     = $00000001;
-//  TCF_IMMEDIATELY  = $00000002;
   TCF_NONZEROBREAK = $00000004;
   TCF_MAKEEVENT    = $00000008;
   TCF_EVENTONCE    = $00000010;
@@ -40,8 +39,10 @@ var
 
 procedure TimerProc(wnd:HWND;uMsg:uint;idEvent:uint_ptr;dwTime:dword); stdcall;
 var
+  ltime:uint;
   i:integer;
   res:int_ptr;
+  st:tSystemTime;
 begin
   for i:=0 to MaxTasks-1 do
   begin
@@ -55,13 +56,25 @@ begin
             PluginLink^.NotifyEventHooks(hevent,count-curcount,lParam(name));
 
           res:=CallService(MS_ACT_RUNBYID,action,0);
-          dec(curcount);
-          if (curcount<0) or 
-             ((res<>0) and ((flags and TCF_NONZEROBREAK)<>0)) then
+
+          if ((res<>0) and ((flags and TCF_NONZEROBREAK)<>0)) or // non-zero result
+             (count=0) or (curcount=0) then // no need to repeat or all repeats done
           begin
             KillTimer(0,idEvent);
             timer:=0;
             flags:=flags or ACF_DISABLED;
+          end
+          else
+          begin
+            if (count>0) and (count=curcount) then // next timer - repeat interval
+            begin
+              KillTimer(0,idEvent);
+              FileTimeToSystemTime(interval,st);
+              ltime:={st.wMilliseconds+}st.wSecond*1000+st.wMinute*1000*60+st.wHour*60*60*1000;
+              timer:=SetTimer(0,0,ltime,@TimerProc);
+            end;
+            if count>0 then
+              dec(curcount);
           end;
           break;
         end;

@@ -134,6 +134,15 @@ const
   MS_ACT_TASKDELETE:PAnsiChar = 'Actions/TaskDelete';
 
   {
+    Delete task
+    wParam - repeat count
+    lParam - unicode task name
+    Return - old repeat count value
+    Note - works for all tasks with same started name
+  }
+  MS_ACT_TASKCOUNT:PAnsiChar = 'Actions/TaskCount';
+
+  {
     Event for task start
     wParam - counter of call (from 0 to repeat count)
     lParam - unicode task name

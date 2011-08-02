@@ -21,7 +21,6 @@ begin
   EnableWindow(GetDlgItem(Dialog,IDC_TASK_TIME       ),enable);
   EnableWindow(GetDlgItem(Dialog,IDC_TASK_REPEAT     ),enable);
   EnableWindow(GetDlgItem(Dialog,IDC_TASK_INTERVAL   ),enable);
-//  EnableWindow(GetDlgItem(Dialog,IDC_TASK_IMMEDIATELY),enable);
   EnableWindow(GetDlgItem(Dialog,IDC_TASK_BREAK      ),enable);
   EnableWindow(GetDlgItem(Dialog,IDC_TASK_EVENT      ),enable);
   EnableWindow(GetDlgItem(Dialog,IDC_TASK_ONCE       ),enable);
@@ -64,7 +63,6 @@ var
   st:TSystemTime;
 begin
   CheckDlgButton(Dialog,IDC_TASK_ABSOLUTE   ,BST_UNCHECKED);
-//  CheckDlgButton(Dialog,IDC_TASK_IMMEDIATELY,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_TASK_BREAK      ,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_TASK_EVENT      ,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_TASK_ONCE       ,BST_UNCHECKED);
@@ -108,31 +106,16 @@ end;
 
 procedure ShowTaskData(Dialog:HWND; item:integer=-1);
 var
-//  li:LV_ITEM;
-//  wnd:HWND;
   st:TSystemTime;
 begin
   ClearTaskData(Dialog);
 
-{
-  wnd:=GetDlgItem(Dialog,IDC_TASK_NAME);
-  if item<0 then
-    li.iItem:=SendMessage(wnd,LVM_GETNEXTITEM,-1,LVNI_FOCUSED)
-  else
-    li.iItem:=item;
-
-  li.mask      :=LVIF_PARAM;
-  li.iSubItem  :=0;
-  SendMessageW(wnd,LVM_GETITEMW,0,LPARAM(@li));
- }
-  with TaskList[{li.lParam}LV_GetLParam(GetDlgItem(Dialog,IDC_TASK_NAME),item)] do
+  with TaskList[LV_GetLParam(GetDlgItem(Dialog,IDC_TASK_NAME),item)] do
   begin
     // flags
 
     if (flags and TCF_ABSOLUTE)<>0 then
       CheckDlgButton(Dialog,IDC_TASK_ABSOLUTE,BST_CHECKED);
-//    if (flags and TCF_IMMEDIATELY)<>0 then
-//      CheckDlgButton(Dialog,IDC_TASK_IMMEDIATELY,BST_CHECKED);
     if (flags and TCF_NONZEROBREAK)<>0 then
       CheckDlgButton(Dialog,IDC_TASK_BREAK,BST_CHECKED);
     if (flags and TCF_MAKEEVENT)<>0 then
@@ -155,7 +138,7 @@ begin
     end;
     SendDlgItemMessage(Dialog,IDC_TASK_TIME,DTM_SETSYSTEMTIME,GDT_VALID,lParam(@st));
 
-    SetDlgItemInt(Dialog,IDC_TASK_REPEAT,count,false);
+    SetDlgItemInt(Dialog,IDC_TASK_REPEAT,count,true);
 
     FileTimeToSystemTime(interval,st);
     SendDlgItemMessage(Dialog,IDC_TASK_INTERVAL,DTM_SETSYSTEMTIME,GDT_VALID,lParam(@st));
@@ -195,8 +178,6 @@ begin
 
         if IsDlgButtonChecked(Dialog,IDC_TASK_ABSOLUTE)<>BST_UNCHECKED then
           flags:=flags or TCF_ABSOLUTE;
-//        if IsDlgButtonChecked(Dialog,IDC_TASK_IMMEDIATELY)<>BST_UNCHECKED then
-//          flags:=flags or TCF_IMMEDIATELY;
         if IsDlgButtonChecked(Dialog,IDC_TASK_BREAK)<>BST_UNCHECKED then
           flags:=flags or TCF_NONZEROBREAK;
         if IsDlgButtonChecked(Dialog,IDC_TASK_EVENT)<>BST_UNCHECKED then
@@ -221,6 +202,8 @@ begin
         else
           dayoffset:=GetDlgItemInt(Dialog,IDC_TASK_DAYSV,tmp,false);
         SystemTimeToFileTime(st,starttime);
+
+        count:=GetDlgItemInt(Dialog,IDC_TASK_REPEAT,tmp,true);
 
         SendDlgItemMessage(Dialog,IDC_TASK_INTERVAL,DTM_GETSYSTEMTIME,0,lParam(@st));
         SystemTimeToFileTime(st,interval);
