@@ -333,8 +333,8 @@ begin
     clmi.position:=ActionItem.wSortIndex*10;
 
     // position in Root Menu
-    inc(clmi.position,GetMenuPosition(0,mtype),
-        (ActionItem.flags and SeparatorMasks[mtype])<>0);
+    inc(clmi.position,GetMenuPosition(0,mtype,
+        (ActionItem.flags and SeparatorMasks[mtype])<>0));
 
     UAMenuItem.hMenuRoot:=CallService(MenuServices[mtype].create,0,LPARAM(@clmi));
     if clmi.szName.w<>ActionItem.szActDescr then
@@ -392,8 +392,8 @@ begin
 
   clmi.position:=ActionItem.wSortIndex*10;
 {}{}
-  inc(clmi.position,GetMenuPosition(UAMenuItem.hMenuRoot,mtype),
-      (ActionItem.flags and SeparatorMasks[mtype])<>0);
+  inc(clmi.position,GetMenuPosition(UAMenuItem.hMenuRoot,mtype,
+      (ActionItem.flags and SeparatorMasks[mtype])<>0));
 
   UAMenuItem.hMenuItem:=CallService(MenuServices[mtype].create,0,LPARAM(@clmi));
   if clmi.szName.w<>ActionItem.szActDescr then
