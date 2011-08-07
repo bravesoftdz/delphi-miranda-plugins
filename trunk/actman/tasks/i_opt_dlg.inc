@@ -18,7 +18,7 @@ begin
   EnableWindow(GetDlgItem(Dialog,IDC_TASK_ABSOLUTE   ),enable);
   EnableWindow(GetDlgItem(Dialog,IDC_TASK_DATEV      ),enable);
   EnableWindow(GetDlgItem(Dialog,IDC_TASK_DAYSV      ),enable);
-  EnableWindow(GetDlgItem(Dialog,IDC_TASK_TIME       ),enable);
+  EnableWindow(GetDlgItem(Dialog,IDC_TASK_TIMEV      ),enable);
   EnableWindow(GetDlgItem(Dialog,IDC_TASK_REPEAT     ),enable);
   EnableWindow(GetDlgItem(Dialog,IDC_TASK_INTERVAL   ),enable);
   EnableWindow(GetDlgItem(Dialog,IDC_TASK_BREAK      ),enable);
@@ -62,7 +62,7 @@ procedure ClearTaskData(Dialog:HWND);
 var
   st:TSystemTime;
 begin
-  CheckDlgButton(Dialog,IDC_TASK_ABSOLUTE   ,BST_UNCHECKED);
+  SendMessage(GetDlgItem(Dialog,IDC_TASK_ABSOLUTE),CB_SETCURSEL,0,0);
   CheckDlgButton(Dialog,IDC_TASK_BREAK      ,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_TASK_EVENT      ,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_TASK_ONCE       ,BST_UNCHECKED);
@@ -72,7 +72,7 @@ begin
   SetDlgItemInt(Dialog,IDC_TASK_REPEAT,0,false);
 
   FillChar(st,SizeOf(st),0);
-  SendDlgItemMessage(Dialog,IDC_TASK_TIME    ,DTM_SETSYSTEMTIME,GDT_VALID,lParam(@st));
+  SendDlgItemMessage(Dialog,IDC_TASK_TIMEV   ,DTM_SETSYSTEMTIME,GDT_VALID,lParam(@st));
   SendDlgItemMessage(Dialog,IDC_TASK_INTERVAL,DTM_SETSYSTEMTIME,GDT_VALID,lParam(@st));
 {
   ShowWindow(GetDlgItem(Dialog,IDC_TASK_DATET),SW_SHOW);
@@ -82,32 +82,43 @@ begin
 }
 end;
 
-procedure ShowDateType(Dialog:HWND);
+procedure ShowDateType(Dialog:HWND;start:integer);
 var
-  sh1,sh2:integer;
+  sh1,sh2,sh3:integer;
 begin
-  if IsDlgButtonChecked(Dialog,IDC_TASK_ABSOLUTE)<>BST_UNCHECKED then
-  begin
-    SetDlgItemTextW(Dialog,IDC_TASK_ABSOLUTE,TranslateW('Starting from'));
-    sh1:=SW_SHOW;
-    sh2:=SW_HIDE;
-  end
+  case start of
+    1: begin // start after
+      sh1:=SW_HIDE;
+      sh2:=SW_SHOW;
+      sh3:=SW_SHOW;
+    end;
+    2: begin // start from
+      sh1:=SW_SHOW;
+      sh2:=SW_HIDE;
+      sh3:=SW_SHOW;
+    end;
   else
-  begin
-    SetDlgItemTextW(Dialog,IDC_TASK_ABSOLUTE,TranslateW('Starting after'));
-    sh1:=SW_HIDE;
-    sh2:=SW_SHOW;
+    begin
+//    3: begin // start immediately
+      sh1:=SW_HIDE;
+      sh2:=SW_HIDE;
+      sh3:=SW_HIDE;
+    end;
   end;
+
   ShowWindow(GetDlgItem(Dialog,IDC_TASK_DATET),sh1);
   ShowWindow(GetDlgItem(Dialog,IDC_TASK_DATEV),sh1);
   ShowWindow(GetDlgItem(Dialog,IDC_TASK_DAYST),sh2);
   ShowWindow(GetDlgItem(Dialog,IDC_TASK_DAYSV),sh2);
+  ShowWindow(GetDlgItem(Dialog,IDC_TASK_TIMET),sh3);
+  ShowWindow(GetDlgItem(Dialog,IDC_TASK_TIMEV),sh3);
 end;
 
 procedure ShowTaskData(Dialog:HWND; item:integer=-1);
 var
   st:TSystemTime;
   lwnd:HWND;
+  start:integer;
 begin
   lwnd:=settings;
   settings:=0;
@@ -118,8 +129,6 @@ begin
   begin
     // flags
 
-    if (flags and TCF_ABSOLUTE)<>0 then
-      CheckDlgButton(Dialog,IDC_TASK_ABSOLUTE,BST_CHECKED);
     if (flags and TCF_NONZEROBREAK)<>0 then
       CheckDlgButton(Dialog,IDC_TASK_BREAK,BST_CHECKED);
     if (flags and TCF_MAKEEVENT)<>0 then
@@ -133,21 +142,32 @@ begin
     // action
     CB_SelectData(GetDlgItem(Dialog,IDC_TASK_ACTION),action);
     // times
-    FileTimeToSystemTime(starttime,st);
-    if (flags and TCF_ABSOLUTE)<>0 then
+    if (flags and TCF_IMMEDIATELY)<>0 then
+    begin
+      start:=3;
+    end
+    else if (flags and TCF_ABSOLUTE)<>0 then
+    begin
+      start:=2;
       SendDlgItemMessage(Dialog,IDC_TASK_DATEV,DTM_SETSYSTEMTIME,GDT_VALID,lParam(@st))
+    end
     else
     begin
+      start:=1;
       SetDlgItemInt(Dialog,IDC_TASK_DAYSV,dayoffset,false);
     end;
-    SendDlgItemMessage(Dialog,IDC_TASK_TIME,DTM_SETSYSTEMTIME,GDT_VALID,lParam(@st));
+    CB_SelectData(GetDlgItem(Dialog,IDC_TASK_ABSOLUTE),start);
+
+    FileTimeToSystemTime(starttime,st);
+    SendDlgItemMessage(Dialog,IDC_TASK_TIMEV,DTM_SETSYSTEMTIME,GDT_VALID,lParam(@st));
 
     SetDlgItemInt(Dialog,IDC_TASK_REPEAT,count,true);
 
     FileTimeToSystemTime(interval,st);
     SendDlgItemMessage(Dialog,IDC_TASK_INTERVAL,DTM_SETSYSTEMTIME,GDT_VALID,lParam(@st));
   end;
-  ShowDateType(Dialog);
+
+  ShowDateType(Dialog,start);
 
   settings:=lwnd;
 end;
@@ -181,8 +201,6 @@ begin
         if ListView_GetCheckState(wnd,li.iItem)=0 then
           flags:=flags or ACF_DISABLED;
 
-        if IsDlgButtonChecked(Dialog,IDC_TASK_ABSOLUTE)<>BST_UNCHECKED then
-          flags:=flags or TCF_ABSOLUTE;
         if IsDlgButtonChecked(Dialog,IDC_TASK_BREAK)<>BST_UNCHECKED then
           flags:=flags or TCF_NONZEROBREAK;
         if IsDlgButtonChecked(Dialog,IDC_TASK_EVENT)<>BST_UNCHECKED then
@@ -194,18 +212,24 @@ begin
         // action
         action:=CB_GetData(GetDlgItem(Dialog,IDC_TASK_ACTION));
         // times
+        SendDlgItemMessage(Dialog,IDC_TASK_TIMEV,DTM_GETSYSTEMTIME,0,lParam(@st));
 
-        SendDlgItemMessage(Dialog,IDC_TASK_TIME,DTM_GETSYSTEMTIME,0,lParam(@st));
-        if (flags and TCF_ABSOLUTE)<>0 then
-        begin
-          SendDlgItemMessage(Dialog,IDC_TASK_DATEV,DTM_GETSYSTEMTIME,0,lParam(@st1));
-          st.wYear     :=st1.wYear;
-          st.wMonth    :=st1.wMonth;
-          st.wDayOfWeek:=st1.wDayOfWeek;
-          st.wDay      :=st1.wDay;
-        end
-        else
-          dayoffset:=GetDlgItemInt(Dialog,IDC_TASK_DAYSV,tmp,false);
+        case CB_GetData(GetDlgItem(Dialog,IDC_TASK_ABSOLUTE)) of
+          1: begin
+            dayoffset:=GetDlgItemInt(Dialog,IDC_TASK_DAYSV,tmp,false);
+          end;
+          2: begin
+            flags:=flags or TCF_ABSOLUTE;
+            SendDlgItemMessage(Dialog,IDC_TASK_DATEV,DTM_GETSYSTEMTIME,0,lParam(@st1));
+            st.wYear     :=st1.wYear;
+            st.wMonth    :=st1.wMonth;
+            st.wDayOfWeek:=st1.wDayOfWeek;
+            st.wDay      :=st1.wDay;
+          end;
+          3: begin
+            flags:=flags or TCF_IMMEDIATELY;
+          end;
+        end;
         SystemTimeToFileTime(st,starttime);
 
         count:=GetDlgItemInt(Dialog,IDC_TASK_REPEAT,tmp,true);
@@ -303,6 +327,15 @@ begin
     end;
   end;
   result:=CallWindowProc(OldTableProc,Dialog,hMessage,wParam,lParam);
+end;
+
+procedure FillStartTimeList(wnd:HWND);
+begin
+  SendMessage(wnd,CB_RESETCONTENT,0,0);
+  CB_AddStrDataW(wnd,TranslateW('Starting after'   ),1);
+  CB_AddStrDataW(wnd,TranslateW('Starting from'    ),2);
+  CB_AddStrDataW(wnd,TranslateW('Start immediately'),3);
+  SendMessage(wnd,CB_SETCURSEL,0,0);
 end;
 
 procedure FillActionList(wnd:HWND);
@@ -404,6 +437,7 @@ begin
       SetIcons(Dialog);
 
       FillActionList(GetDlgItem(Dialog,IDC_TASK_ACTION));
+      FillStartTimeList(GetDlgItem(Dialog,IDC_TASK_ABSOLUTE));
       FillTaskList(wnd);
       CheckTaskList(Dialog,false);
       onactchanged:=PluginLink^.HookEvent(ME_ACT_CHANGED,@ActListChange);
@@ -412,9 +446,11 @@ begin
 
     WM_COMMAND: begin
       case wParam shr 16 of
+        CBN_SELCHANGE: begin
+          ShowDateType(Dialog,CB_GetData(lParam));
+        end;
+
         EN_CHANGE: begin
-          if settings<>0 then
-            SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
         end;
 
         BN_CLICKED: begin
@@ -426,15 +462,11 @@ begin
               EnableWindow(GetDlgItem(Dialog,IDC_TASK_ONCE),
                 IsDlgButtonChecked(Dialog,IDC_TASK_EVENT)<>BST_UNCHECKED);
             end;
-
-            IDC_TASK_ABSOLUTE: begin
-              ShowDateType(Dialog);
-            end;
           end;
-          if settings<>0 then
-            SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
         end;
       end;
+      if settings<>0 then
+        SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
     end;
 
     WM_NOTIFY: begin

@@ -6,6 +6,7 @@ const
   ACF_DISABLED = $10000000;  // Task disabled
 
   TCF_ABSOLUTE     = $00000001;
+  TCF_IMMEDIATELY  = $00000002;
   TCF_NONZEROBREAK = $00000004;
   TCF_MAKEEVENT    = $00000008;
   TCF_EVENTONCE    = $00000010;
@@ -93,7 +94,13 @@ var
   dif:int64;
 begin
   // Check task time
-  if (task.flags and TCF_ABSOLUTE)<>0 then
+  if (task.flags and TCF_IMMEDIATELY)<>0 then
+  begin
+    FileTimeToSystemTime(task.interval,st);
+    ltime:={st.wMilliseconds+}st.wSecond*1000+st.wMinute*1000*60+
+           st.wHour*60*60*1000;
+  end
+  else if (task.flags and TCF_ABSOLUTE)<>0 then
   begin
     uli1.LowPart :=task.starttime.dwLowDateTime;
     uli1.HighPart:=task.starttime.dwHighDateTime;
@@ -120,6 +127,9 @@ begin
   // set timer
   task.curcount:=task.count;
   task.timer   :=SetTimer(0,0,ltime,@TimerProc);
+
+  if (task.flags and TCF_IMMEDIATELY)<>0 then
+    TimerProc(0,WM_TIMER,task.timer,0);
 end;
 
 procedure SetAllTasks;
