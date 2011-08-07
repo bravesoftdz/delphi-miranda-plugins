@@ -66,12 +66,14 @@ begin
           end
           else
           begin
-            if (count>0) and (count=curcount) then // next timer - repeat interval
+            if (count<>0) and (count=curcount) then // next timer - repeat interval
             begin
               KillTimer(0,idEvent);
               FileTimeToSystemTime(interval,st);
               ltime:={st.wMilliseconds+}st.wSecond*1000+st.wMinute*1000*60+st.wHour*60*60*1000;
               timer:=SetTimer(0,0,ltime,@TimerProc);
+              if count=-1 then
+                curcount:=1;
             end;
             if count>0 then
               dec(curcount);

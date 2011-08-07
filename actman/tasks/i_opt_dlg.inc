@@ -107,7 +107,11 @@ end;
 procedure ShowTaskData(Dialog:HWND; item:integer=-1);
 var
   st:TSystemTime;
+  lwnd:HWND;
 begin
+  lwnd:=settings;
+  settings:=0;
+
   ClearTaskData(Dialog);
 
   with TaskList[LV_GetLParam(GetDlgItem(Dialog,IDC_TASK_NAME),item)] do
@@ -145,6 +149,7 @@ begin
   end;
   ShowDateType(Dialog);
 
+  settings:=lwnd;
 end;
 
 procedure SaveTaskData(Dialog:HWND; item:integer=-1);
@@ -377,6 +382,7 @@ begin
     end;
 
     WM_INITDIALOG: begin
+      settings:=0;
       wnd:=GetDlgItem(Dialog,IDC_TASK_NAME);
       SendMessage(wnd,LVM_SETEXTENDEDLISTVIEWSTYLE,LVS_EX_CHECKBOXES,LVS_EX_CHECKBOXES);
       SendMessage(wnd,LVM_SETUNICODEFORMAT,1,0);
@@ -407,7 +413,8 @@ begin
     WM_COMMAND: begin
       case wParam shr 16 of
         EN_CHANGE: begin
-          SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
+          if settings<>0 then
+            SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
         end;
 
         BN_CLICKED: begin
@@ -424,7 +431,8 @@ begin
               ShowDateType(Dialog);
             end;
           end;
-          SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
+          if settings<>0 then
+            SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
         end;
       end;
     end;
@@ -438,7 +446,8 @@ begin
         end;
 
         DTN_DATETIMECHANGE: begin
-          SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
+          if settings<>0 then
+            SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
         end;
 
         NM_DBLCLK: begin
