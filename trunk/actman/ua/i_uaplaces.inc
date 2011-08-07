@@ -264,7 +264,7 @@ begin
   end;
 end;
 
-function GetMenuPosition(hMenu:HMENU;mtype:tMenuType):integer;
+function GetMenuPosition(hMenu:HMENU;mtype:tMenuType;toset:boolean):integer;
 var
   i:integer;
 begin
@@ -273,7 +273,8 @@ begin
   begin
     if arMenuRec[i][mtype].hMenuRoot=hMenu then
     begin
-      inc(arMenuRec[i][mtype].position,100000);
+      if toset then
+        inc(arMenuRec[i][mtype].position,100000);
       result:=arMenuRec[i][mtype].position;
       break;
     end;
@@ -332,10 +333,8 @@ begin
     clmi.position:=ActionItem.wSortIndex*10;
 
     // position in Root Menu
-    if (ActionItem.flags and SeparatorMasks[mtype])<>0 then
-    begin
-      inc(clmi.position,GetMenuPosition(0,mtype));
-    end;
+    inc(clmi.position,GetMenuPosition(0,mtype),
+        (ActionItem.flags and SeparatorMasks[mtype])<>0);
 
     UAMenuItem.hMenuRoot:=CallService(MenuServices[mtype].create,0,LPARAM(@clmi));
     if clmi.szName.w<>ActionItem.szActDescr then
@@ -393,10 +392,8 @@ begin
 
   clmi.position:=ActionItem.wSortIndex*10;
 {}{}
-  if (ActionItem.flags and SeparatorMasks[mtype])<>0 then
-  begin
-    inc(clmi.position,GetMenuPosition(UAMenuItem.hMenuRoot,mtype));
-  end;
+  inc(clmi.position,GetMenuPosition(UAMenuItem.hMenuRoot,mtype),
+      (ActionItem.flags and SeparatorMasks[mtype])<>0);
 
   UAMenuItem.hMenuItem:=CallService(MenuServices[mtype].create,0,LPARAM(@clmi));
   if clmi.szName.w<>ActionItem.szActDescr then
