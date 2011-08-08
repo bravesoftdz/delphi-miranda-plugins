@@ -22,6 +22,7 @@ library actman;
 {%File 'hooks\i_hook.inc'}
 {%File 'hooks\i_opt_dlg.inc'}
 {%File 'ua\i_opt_dlg.inc'}
+{%File 'ua\i_inoutxm.inc'}
 {%File 'ua\i_options.inc'}
 {%File 'ua\i_ua.inc'}
 {%File 'ua\i_uaplaces.inc'}

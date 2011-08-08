@@ -11,10 +11,6 @@ const
     (create:'CList/AddContactMenuItem'{MS_CLIST_ADDCONTACTMENUITEM}; destroy:'CList/RemoveContactMenuItem'{MS_CLIST_REMOVECONTACTMENUITEM}),
     (create:'CList/AddTrayMenuItem'{MS_CLIST_ADDTRAYMENUITEM   }; destroy:'CList/RemoveTrayMenuItem'{MS_CLIST_REMOVETRAYMENUITEM})
   );
-// separators flag masks
-const
-  SeparatorMasks:array [tMenuType] of cardinal = (
-    UAF_MMENUSEP,UAF_CMENUSEP,UAF_TMENUSEP);
 type
   tuaMenuRec = record
 //    MenuName :pWideChar;
@@ -334,7 +330,7 @@ begin
 
     // position in Root Menu
     inc(clmi.position,GetMenuPosition(0,mtype,
-        (ActionItem.flags and SeparatorMasks[mtype])<>0));
+        (UAMenuItem.menu_opt and UAF_MENUSEP)<>0));
 
     UAMenuItem.hMenuRoot:=CallService(MenuServices[mtype].create,0,LPARAM(@clmi));
     if clmi.szName.w<>ActionItem.szActDescr then
@@ -393,7 +389,7 @@ begin
   clmi.position:=ActionItem.wSortIndex*10;
 {}{}
   inc(clmi.position,GetMenuPosition(UAMenuItem.hMenuRoot,mtype,
-      (ActionItem.flags and SeparatorMasks[mtype])<>0));
+      (UAMenuItem.menu_opt and UAF_MENUSEP)<>0));
 
   UAMenuItem.hMenuItem:=CallService(MenuServices[mtype].create,0,LPARAM(@clmi));
   if clmi.szName.w<>ActionItem.szActDescr then

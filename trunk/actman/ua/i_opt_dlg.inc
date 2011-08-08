@@ -169,10 +169,10 @@ begin
     uaMain: begin // Main menu
       with UActionList[item] do
       begin
-        if (flags and UAF_MMENUSEP)<>0 then
-          CheckDlgButton(Dialog,IDC_UA_SEPARATE,BST_CHECKED);
         with UAMenuItem[main_menu] do
         begin
+          if (menu_opt and UAF_MENUSEP)<>0 then
+            CheckDlgButton(Dialog,IDC_UA_SEPARATE,BST_CHECKED);
           SetDlgItemTextW(Dialog,IDC_UA_POPUPV   ,szMenuPopup);
           SetDlgItemTextW(Dialog,IDC_UA_VARNAMESV,szMenuNameVars);
           SetDlgItemTextW(Dialog,IDC_UA_SHOWVARV ,szMenuShowWhenVars);
@@ -183,10 +183,10 @@ begin
     uaContact: begin // Contact menu
       with UActionList[item] do
       begin
-        if (flags and UAF_CMENUSEP)<>0 then
-          CheckDlgButton(Dialog,IDC_UA_SEPARATE,BST_CHECKED);
         with UAMenuItem[contact_menu] do
         begin
+          if (menu_opt and UAF_MENUSEP)<>0 then
+            CheckDlgButton(Dialog,IDC_UA_SEPARATE,BST_CHECKED);
           SetDlgItemTextW(Dialog,IDC_UA_POPUPV   ,szMenuPopup);
           SetDlgItemTextW(Dialog,IDC_UA_VARNAMESV,szMenuNameVars);
           SetDlgItemTextW(Dialog,IDC_UA_SHOWVARV ,szMenuShowWhenVars);
@@ -197,10 +197,10 @@ begin
     uaTray: begin // Tray menu
       with UActionList[item] do
       begin
-        if (flags and UAF_TMENUSEP)<>0 then
-          CheckDlgButton(Dialog,IDC_UA_SEPARATE,BST_CHECKED);
         with UAMenuItem[tray_menu] do
         begin
+          if (menu_opt and UAF_MENUSEP)<>0 then
+            CheckDlgButton(Dialog,IDC_UA_SEPARATE,BST_CHECKED);
           SetDlgItemTextW(Dialog,IDC_UA_POPUPV   ,szMenuPopup);
           SetDlgItemTextW(Dialog,IDC_UA_VARNAMESV,szMenuNameVars);
           SetDlgItemTextW(Dialog,IDC_UA_SHOWVARV ,szMenuShowWhenVars);
@@ -279,6 +279,19 @@ begin
   UActionList[num].UAMenuItem[mtype].changed:=true;
 end;
 
+procedure SaveMenuSubAction(Dialog:HWND;var MenuItem:tUAMenuItem);
+begin
+  with MenuItem do
+  begin
+    mFreeMem(szMenuPopup       ); szMenuPopup       :=GetDlgText(Dialog,IDC_UA_POPUPV);
+    mFreeMem(szMenuNameVars    ); szMenuNameVars    :=GetDlgText(Dialog,IDC_UA_VARNAMESV);
+    mFreeMem(szMenuShowWhenVars); szMenuShowWhenVars:=GetDlgText(Dialog,IDC_UA_SHOWVARV);
+    menu_opt:=0;
+    if IsDlgButtonchecked(Dialog,IDC_UA_SEPARATE)<>BST_UNCHECKED then
+      menu_opt:=menu_opt or UAF_MENUSEP;
+  end;
+end;
+
 procedure SaveAction(Dialog:HWND;item:integer=-1;atype:integer=-1);
 var
   i,j,num:integer;
@@ -325,45 +338,48 @@ begin
       end;
 
       uaMain: begin // Main menu
-        if IsDlgButtonchecked(Dialog,IDC_UA_SEPARATE)<>BST_UNCHECKED then
-          flags:=flags or UAF_MMENUSEP
-        else
-          flags:=flags and not UAF_MMENUSEP;
-
+        SaveMenuSubAction(Dialog,UAMenuItem[main_menu]);
+{
         with UAMenuItem[main_menu] do
         begin
           mFreeMem(szMenuPopup       ); szMenuPopup       :=GetDlgText(Dialog,IDC_UA_POPUPV);
           mFreeMem(szMenuNameVars    ); szMenuNameVars    :=GetDlgText(Dialog,IDC_UA_VARNAMESV);
           mFreeMem(szMenuShowWhenVars); szMenuShowWhenVars:=GetDlgText(Dialog,IDC_UA_SHOWVARV);
+          menu_opt:=0;
+          if IsDlgButtonchecked(Dialog,IDC_UA_SEPARATE)<>BST_UNCHECKED then
+            menu_opt:=menu_opt or UAF_MENUSEP;
         end;
+}
       end;
 
       uaContact: begin // Contact menu
-        if IsDlgButtonchecked(Dialog,IDC_UA_SEPARATE)<>BST_UNCHECKED then
-          flags:=flags or UAF_CMENUSEP
-        else
-          flags:=flags and not UAF_CMENUSEP;
-
+        SaveMenuSubAction(Dialog,UAMenuItem[contact_menu]);
+{
         with UAMenuItem[contact_menu] do
         begin
           mFreeMem(szMenuPopup       ); szMenuPopup       :=GetDlgText(Dialog,IDC_UA_POPUPV);
           mFreeMem(szMenuNameVars    ); szMenuNameVars    :=GetDlgText(Dialog,IDC_UA_VARNAMESV);
           mFreeMem(szMenuShowWhenVars); szMenuShowWhenVars:=GetDlgText(Dialog,IDC_UA_SHOWVARV);
+          menu_opt:=0;
+          if IsDlgButtonchecked(Dialog,IDC_UA_SEPARATE)<>BST_UNCHECKED then
+            menu_opt:=menu_opt or UAF_MENUSEP;
         end;
+}
       end;
 
       uaTray: begin // Tray menu
-        if IsDlgButtonchecked(Dialog,IDC_UA_SEPARATE)<>BST_UNCHECKED then
-          flags:=flags or UAF_TMENUSEP
-        else
-          flags:=flags and not UAF_TMENUSEP;
-
+        SaveMenuSubAction(Dialog,UAMenuItem[tray_menu]);
+{
         with UAMenuItem[tray_menu] do
         begin
           mFreeMem(szMenuPopup       ); szMenuPopup       :=GetDlgText(Dialog,IDC_UA_POPUPV);
           mFreeMem(szMenuNameVars    ); szMenuNameVars    :=GetDlgText(Dialog,IDC_UA_VARNAMESV);
           mFreeMem(szMenuShowWhenVars); szMenuShowWhenVars:=GetDlgText(Dialog,IDC_UA_SHOWVARV);
+          menu_opt:=0;
+          if IsDlgButtonchecked(Dialog,IDC_UA_SEPARATE)<>BST_UNCHECKED then
+            menu_opt:=menu_opt or UAF_MENUSEP;
         end;
+}
       end;
 
       uaHotkey: begin // Hotkey

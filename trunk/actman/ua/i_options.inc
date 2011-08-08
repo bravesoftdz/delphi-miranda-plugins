@@ -9,14 +9,17 @@ const
   opt_MMenuPopup       :pAnsiChar = 'MMenuPopup';
   opt_MMenuNameVars    :pAnsiChar = 'MMenuName';
   opt_MMenuShowWhenVars:pAnsiChar = 'MMenuVarStr';
+  opt_MMenuOptions     :pAnsiChar = 'MMenuOptions';
 
   opt_CMenuPopup       :pAnsiChar = 'CMenuPopup';
   opt_CMenuNameVars    :pAnsiChar = 'CMenuName';
   opt_CMenuShowWhenVars:pAnsiChar = 'CMenuVarStr';
+  opt_CMenuOptions     :pAnsiChar = 'CMenuOptions';
 
   opt_TMenuPopup       :pAnsiChar = 'TMenuPopup';
   opt_TMenuNameVars    :pAnsiChar = 'TMenuName';
   opt_TMenuShowWhenVars:pAnsiChar = 'TMenuVarStr';
+  opt_TMenuOptions     :pAnsiChar = 'TMenuOptions';
 
 
 procedure DeleteUASettings(idx:integer);
@@ -40,14 +43,17 @@ begin
     StrCopy(p,opt_MMenuPopup       ); DBDeleteSetting(0,opt_UA,setting);
     StrCopy(p,opt_MMenuNameVars    ); DBDeleteSetting(0,opt_UA,setting);
     StrCopy(p,opt_MMenuShowWhenVars); DBDeleteSetting(0,opt_UA,setting);
+    StrCopy(p,opt_MMenuOptions     ); DBDeleteSetting(0,opt_UA,setting);
 
     StrCopy(p,opt_CMenuPopup       ); DBDeleteSetting(0,opt_UA,setting);
     StrCopy(p,opt_CMenuNameVars    ); DBDeleteSetting(0,opt_UA,setting);
     StrCopy(p,opt_CMenuShowWhenVars); DBDeleteSetting(0,opt_UA,setting);
+    StrCopy(p,opt_CMenuOptions     ); DBDeleteSetting(0,opt_UA,setting);
 
     StrCopy(p,opt_TMenuPopup       ); DBDeleteSetting(0,opt_UA,setting);
     StrCopy(p,opt_TMenuNameVars    ); DBDeleteSetting(0,opt_UA,setting);
     StrCopy(p,opt_TMenuShowWhenVars); DBDeleteSetting(0,opt_UA,setting);
+    StrCopy(p,opt_TMenuOptions     ); DBDeleteSetting(0,opt_UA,setting);
   end;
 end;
 
@@ -86,6 +92,7 @@ begin
       StrCopy(p,opt_MMenuPopup       ); addSaveUA(setting,szMenuPopup);
       StrCopy(p,opt_MMenuNameVars    ); addSaveUA(setting,szMenuNameVars);
       StrCopy(p,opt_MMenuShowWhenVars); addSaveUA(setting,szMenuShowWhenVars);
+      StrCopy(p,opt_MMenuOptions     ); DBWriteWord(0,opt_UA,setting,menu_opt);
     end;
 
     with UAMenuItem[contact_menu] do
@@ -93,6 +100,7 @@ begin
       StrCopy(p,opt_CMenuPopup       ); addSaveUA(setting,szMenuPopup);
       StrCopy(p,opt_CMenuNameVars    ); addSaveUA(setting,szMenuNameVars);
       StrCopy(p,opt_CMenuShowWhenVars); addSaveUA(setting,szMenuShowWhenVars);
+      StrCopy(p,opt_CMenuOptions     ); DBWriteWord(0,opt_UA,setting,menu_opt);
     end;
 
     with UAMenuItem[tray_menu] do
@@ -100,6 +108,7 @@ begin
       StrCopy(p,opt_TMenuPopup       ); addSaveUA(setting,szMenuPopup);
       StrCopy(p,opt_TMenuNameVars    ); addSaveUA(setting,szMenuNameVars);
       StrCopy(p,opt_TMenuShowWhenVars); addSaveUA(setting,szMenuShowWhenVars);
+      StrCopy(p,opt_TMenuOptions     ); DBWriteWord(0,opt_UA,setting,menu_opt);
     end;
 
   end;
@@ -145,6 +154,7 @@ begin
       StrCopy(p,opt_MMenuPopup       ); szMenuPopup       :=DBReadUnicode(0,opt_UA,setting);
       StrCopy(p,opt_MMenuNameVars    ); szMenuNameVars    :=DBReadUnicode(0,opt_UA,setting);
       StrCopy(p,opt_MMenuShowWhenVars); szMenuShowWhenVars:=DBReadUnicode(0,opt_UA,setting);
+      StrCopy(p,opt_MMenuOptions     ); menu_opt          :=DBReadWord   (0,opt_UA,setting);
     end;
 
     with UAMenuItem[contact_menu] do
@@ -152,6 +162,7 @@ begin
       StrCopy(p,opt_CMenuPopup       ); szMenuPopup       :=DBReadUnicode(0,opt_UA,setting);
       StrCopy(p,opt_CMenuNameVars    ); szMenuNameVars    :=DBReadUnicode(0,opt_UA,setting);
       StrCopy(p,opt_CMenuShowWhenVars); szMenuShowWhenVars:=DBReadUnicode(0,opt_UA,setting);
+      StrCopy(p,opt_CMenuOptions     ); menu_opt          :=DBReadWord   (0,opt_UA,setting);
     end;
 
     with UAMenuItem[tray_menu] do
@@ -159,6 +170,7 @@ begin
       StrCopy(p,opt_TMenuPopup       ); szMenuPopup       :=DBReadUnicode(0,opt_UA,setting);
       StrCopy(p,opt_TMenuNameVars    ); szMenuNameVars    :=DBReadUnicode(0,opt_UA,setting);
       StrCopy(p,opt_TMenuShowWhenVars); szMenuShowWhenVars:=DBReadUnicode(0,opt_UA,setting);
+      StrCopy(p,opt_TMenuOptions     ); menu_opt          :=DBReadWord   (0,opt_UA,setting);
     end;
   end;
 end;

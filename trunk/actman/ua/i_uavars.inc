@@ -21,6 +21,7 @@ type
     szMenuNameVars    :pWideChar;
     szMenuShowWhenVars:pWideChar;
     hMenuRoot         :THANDLE;
+    menu_opt          :dword;
     changed           :boolean;
   end;
 type
@@ -59,9 +60,6 @@ const
   UAF_USING     = UAF_REGHOTKEY or UAF_REGMTBB or UAF_REGMMENU or UAF_REGCMENU or
                   UAF_REGTMENU or UAF_REGTABB;
 
-  UAF_MMENUSEP  = 1 shl  8; // main menu separated
-  UAF_CMENUSEP  = 1 shl  9; // contact menu separated
-  UAF_TMENUSEP  = 1 shl 10; // tray menu separated
   UAF_2STATE    = 1 shl 11; // Buttons/menu items are 2-state
   UAF_PRESSED   = 1 shl 12; // Button pressed/menu item selected
   UAF_SAVESTATE = 1 shl 13; // Save or not "pressed" state
@@ -73,6 +71,9 @@ const
   UAF_REALTIME  = UAF_HKREGGED or UAF_TBREGGED or UAF_DISABLED;
 
   UAF_SPECIAL   = 1 shl 31; // for settings read
+
+  // menu options
+  UAF_MENUSEP  = 1 shl  0; // menu item separated
 
 type
   tNameRec = record

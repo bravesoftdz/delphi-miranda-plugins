@@ -20,6 +20,7 @@ uses
 {$include i_uconst.inc}
 {$include i_uavars.inc}
 {$include i_uaplaces.inc}
+{.$include i_inoutxm.inc}
 {$include i_options.inc}
 {$include i_opt_dlg.inc}
 {$include i_ua.inc}
