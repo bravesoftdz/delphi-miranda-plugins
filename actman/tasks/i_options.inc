@@ -66,7 +66,7 @@ begin
         StrCopy(p,opt_flags ); flags    :=DBReadDWord  (0,opt_tasks,section);
         StrCopy(p,opt_name  ); name     :=DBReadUnicode(0,opt_tasks,section);
         StrCopy(p,opt_action); action   :=DBReadDWord  (0,opt_tasks,section);
-        StrCopy(p,opt_repeat); count    :=DBReadWord   (0,opt_tasks,section);
+        StrCopy(p,opt_repeat); count    :=Shortint(DBReadWord(0,opt_tasks,section));
         StrCopy(p,opt_days  ); dayoffset:=DBReadByte   (0,opt_tasks,section);
 
         StrCopy(p,opt_time_lo    ); starttime.dwLowDateTime :=DBReadDWord(0,opt_tasks,section);
