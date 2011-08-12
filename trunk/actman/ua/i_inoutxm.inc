@@ -35,6 +35,25 @@ begin
   mFreeMem(res);
 end;
 
+function ExportMenuItems(node:HXML;MenuItem:tUAMenuItem):HXML;
+begin
+  result:=AddChild(node,ioMenuItem,nil);
+  with MenuItem do
+  begin
+  // popup
+    if (szMenuPopup<>nil) and (szMenuPopup^<>#0) then
+      AddAttr(result,ioMenuPopup,szMenuPopup);
+  // name
+    if (szMenuNameVars<>nil) and (szMenuNameVars^<>#0) then
+      AddAttr(result,ioMenuName,szMenuNameVars);
+  // show
+    if (szMenuShowWhenVars<>nil) and (szMenuShowWhenVars^<>#0) then
+      AddAttr(result,ioMenuShow,szMenuShowWhenVars);
+  // separated
+    AddAttrInt(result,ioMenuSeparated,ord((menu_opt AND UAF_MENUSEP)<>0));
+  end;
+end;
+
 procedure WriteUAction(actnode:HXML;id:dword);
 var
   i:integer;
@@ -45,35 +64,57 @@ begin
     begin
 
       // ----- Common -----
-      2-state
-      save state
+      AddAttrInt(actnode,ioTwoState ,ORD((flags and UAF_2STATE   )<>0));
+      AddAttrInt(actnode,ioSaveState,ORD((flags and UAF_SAVESTATE)<>0));
+      sub:=AddChild(actnode,ioRegister,nil);
+      AddAttrInt(sub,ioHotkey     ,ORD((flags and UAF_REGHOTKEY)<>0));
+      AddAttrInt(sub,ioModern     ,ORD((flags and UAF_REGMTBB )<>0));
+      AddAttrInt(sub,ioTabSRMM    ,ORD((flags and UAF_REGTABB )<>0));
+      AddAttrInt(sub,ioMenuMain   ,ORD((flags and UAF_REGMMENU)<>0));
+      AddAttrInt(sub,ioMenuContact,ORD((flags and UAF_REGCMENU)<>0));
+      AddAttrInt(sub,ioMenuTray   ,ORD((flags and UAF_REGTMENU)<>0));
       // ----- Hotkey -----
       // nothing
 
       // ----- Modern CList toolbar -----
-      // tooltips
+      // !!source - ANSI text
+      if (flags and UAF_REGMTBB)<>0 then
+      begin
+        if (szMTBTooltip<>nil) and (szMTBTooltip^<>#0) then
+          AddAttr(actnode,ioMTBTooltip,szMTBTooltip);
+        if (szMTBTooltipPressed<>nil) and (szMTBTooltipPressed^<>#0) then
+          AddAttr(actnode,ioMTBTooltipPressed,szMTBTooltipPressed);
+      end;
 
       // ----- TabSRMM toolbar -----
-      // tooltips
+      if (flags and UAF_REGTABB)<>0 then
+      begin
+        if (szTABTooltip<>nil) and (szTABTooltip^<>#0) then
+          AddAttr(actnode,ioTABTooltip,szTABTooltip);
+        if (szTABTooltipPressed<>nil) and (szTABTooltipPressed^<>#0) then
+          AddAttr(actnode,ioTABTooltipPressed,szTABTooltipPressed);
+      end;
 
       // ----- Main menu -----
-      // popup
-      // name
-      // show
-      // separated
+      if (flags and UAF_REGMMENU)<>0 then
+      begin
+        sub:=ExportMenuItems(actnode,UAMenuItem[main_menu]);
+        AddAttr(sub,ioType,'main');
+      end;
 
       // ----- Contact menu -----
-      // popup
-      // name
-      // show
-      // separated
+      if (flags and UAF_REGCMENU)<>0 then
+      begin
+        sub:=ExportMenuItems(actnode,UAMenuItem[contact_menu]);
+        AddAttr(sub,ioType,'contact');
+      end;
 
       // ----- Tray menu -----
-      // popup
-      // name
-      // show
-      // separated
-
+      if (flags and UAF_REGTMENU)<>0 then
+      begin
+        sub:=ExportMenuItems(actnode,UAMenuItem[tray_menu]);
+        AddAttr(sub,ioType,'tray');
+      end;
       
       break;
     end;

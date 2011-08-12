@@ -13,7 +13,7 @@ const
   MTB_SERVICE_NAME         = 'Actions/MTBAction';
 
 type
-  tMenuType = (main_menu,contact_menu,tray_menu);
+  tMenuType = (main_menu,contact_menu,tray_menu,proto_menu,status_menu);
   pUAMenuItem = ^tUAMenuItem;
   tUAMenuItem = record
     hMenuItem         :THANDLE;
@@ -53,12 +53,9 @@ const
 
   UAF_REGHOTKEY = 1 shl  0; // hotkey
   UAF_REGMTBB   = 1 shl  1; // modern toolbar
-  UAF_REGMMENU  = 1 shl  2; // main menu
-  UAF_REGCMENU  = 1 shl  3; // contact menu
-  UAF_REGTMENU  = 1 shl  4; // tray menu
+
   UAF_REGTABB   = 1 shl  5; // TabSRMM toolbar
-  UAF_USING     = UAF_REGHOTKEY or UAF_REGMTBB or UAF_REGMMENU or UAF_REGCMENU or
-                  UAF_REGTMENU or UAF_REGTABB;
+  UAF_USING     = UAF_REGHOTKEY or UAF_REGMTBB or UAF_REGTABB;
 
   UAF_2STATE    = 1 shl 11; // Buttons/menu items are 2-state
   UAF_PRESSED   = 1 shl 12; // Button pressed/menu item selected
@@ -73,33 +70,45 @@ const
   UAF_SPECIAL   = 1 shl 31; // for settings read
 
   // menu options
-  UAF_MENUSEP  = 1 shl  0; // menu item separated
+  UAF_MENUSEP = 1 shl 1; // menu item separated
+  UAF_MENUUSE = 1 shl 8; // use this menu
 
 type
   tNameRec = record
     name   :PAnsiChar;
     service:PAnsiChar;
     mask   :dword;
+    atype  :word;
     enable :boolean;
   end;
 
 const
-  NumTypes  = 6;
+  NumTypes  = 8;
 const
   uaMTB     = 0;
   uaTAB     = 1;
-  uaMain    = 2;
-  uaContact = 3;
-  uaTray    = 4;
-  uaHotkey  = 5;
+  uaHotkey  = 2;
+  uaMenu    = 3;
+
 const
   NamesArray: array [0..NumTypes-1] of tNameRec = (
-    (name:'CList Modern toolbar'; service:'ToolBar/AddButton'           ; mask:UAF_REGMTBB),
-    (name:'TabSRMM toolbar'     ; service:'TabSRMM/ButtonsBar/AddButton'; mask:UAF_REGTABB),
-    (name:'Main menu'           ; service:nil                           ; mask:UAF_REGMMENU),
-    (name:'Contact menu'        ; service:nil                           ; mask:UAF_REGCMENU),
-    (name:'Tray menu'           ; service:'CList/AddTrayMenuItem'       ; mask:UAF_REGTMENU),
-    (name:'Core Hotkey'         ; service:nil{MS_HOTKEY_REGISTER}       ; mask:UAF_REGHOTKEY));
+    (name:'CList Modern toolbar'; service:'ToolBar/AddButton';
+     mask:UAF_REGMTBB  ; atype:uaMTB),
+    (name:'TabSRMM toolbar'     ; service:'TabSRMM/ButtonsBar/AddButton';
+     mask:UAF_REGTABB  ; atype:uaTAB),
+    (name:'Core Hotkey'         ; service:nil{MS_HOTKEY_REGISTER};
+     mask:UAF_REGHOTKEY; atype:uaHotkey),
+    (name:'Main menu'           ; service:nil;
+     mask:0; atype:uaMenu+(ORD(main_menu   ) shl 8)),
+    (name:'Contact menu'        ; service:nil;
+     mask:0; atype:uaMenu+(ORD(contact_menu) shl 8)),
+    (name:'Tray menu'           ; service:'CList/AddTrayMenuItem';
+     mask:0; atype:uaMenu+(ORD(tray_menu   ) shl 8)),
+    (name:'Protocol menus'      ; service:'CList/AddProtoMenuItem';
+     mask:0; atype:uaMenu+(ORD(proto_menu  ) shl 8)),
+    (name:'Status menu'         ; service:'CList/AddStatusMenuItem';
+     mask:0; atype:uaMenu+(ORD(status_menu ) shl 8))
+    );
 
 var
   UActionList:array of tMyActionItem;

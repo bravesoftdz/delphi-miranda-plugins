@@ -6,26 +6,16 @@ const
   opt_TabBTooltip       :pAnsiChar = 'TabBTooltip';
   opt_TabBTooltipPressed:pAnsiChar = 'TabBTooltipPressed';
 
-  opt_MMenuPopup       :pAnsiChar = 'MMenuPopup';
-  opt_MMenuNameVars    :pAnsiChar = 'MMenuName';
-  opt_MMenuShowWhenVars:pAnsiChar = 'MMenuVarStr';
-  opt_MMenuOptions     :pAnsiChar = 'MMenuOptions';
-
-  opt_CMenuPopup       :pAnsiChar = 'CMenuPopup';
-  opt_CMenuNameVars    :pAnsiChar = 'CMenuName';
-  opt_CMenuShowWhenVars:pAnsiChar = 'CMenuVarStr';
-  opt_CMenuOptions     :pAnsiChar = 'CMenuOptions';
-
-  opt_TMenuPopup       :pAnsiChar = 'TMenuPopup';
-  opt_TMenuNameVars    :pAnsiChar = 'TMenuName';
-  opt_TMenuShowWhenVars:pAnsiChar = 'TMenuVarStr';
-  opt_TMenuOptions     :pAnsiChar = 'TMenuOptions';
-
+  opt_MenuPopup       :pAnsiChar = 'MenuPopup';
+  opt_MenuNameVars    :pAnsiChar = 'MenuName';
+  opt_MenuShowWhenVars:pAnsiChar = 'MenuVarStr';
+  opt_MenuOptions     :pAnsiChar = 'MenuOptions';
 
 procedure DeleteUASettings(idx:integer);
 var
   setting:array [0..63] of AnsiChar;
-  p:pAnsiChar;
+  p,pm:pAnsiChar;
+  lmenu:tMenuType;
 begin
   with UActionList[idx] do
   begin
@@ -40,20 +30,16 @@ begin
     StrCopy(p,opt_TabBTooltip       ); DBDeleteSetting(0,opt_UA,setting);
     StrCopy(p,opt_TabBTooltipPressed); DBDeleteSetting(0,opt_UA,setting);
 
-    StrCopy(p,opt_MMenuPopup       ); DBDeleteSetting(0,opt_UA,setting);
-    StrCopy(p,opt_MMenuNameVars    ); DBDeleteSetting(0,opt_UA,setting);
-    StrCopy(p,opt_MMenuShowWhenVars); DBDeleteSetting(0,opt_UA,setting);
-    StrCopy(p,opt_MMenuOptions     ); DBDeleteSetting(0,opt_UA,setting);
-
-    StrCopy(p,opt_CMenuPopup       ); DBDeleteSetting(0,opt_UA,setting);
-    StrCopy(p,opt_CMenuNameVars    ); DBDeleteSetting(0,opt_UA,setting);
-    StrCopy(p,opt_CMenuShowWhenVars); DBDeleteSetting(0,opt_UA,setting);
-    StrCopy(p,opt_CMenuOptions     ); DBDeleteSetting(0,opt_UA,setting);
-
-    StrCopy(p,opt_TMenuPopup       ); DBDeleteSetting(0,opt_UA,setting);
-    StrCopy(p,opt_TMenuNameVars    ); DBDeleteSetting(0,opt_UA,setting);
-    StrCopy(p,opt_TMenuShowWhenVars); DBDeleteSetting(0,opt_UA,setting);
-    StrCopy(p,opt_TMenuOptions     ); DBDeleteSetting(0,opt_UA,setting);
+    for lmenu:=main_menu to HIGH(tMenuType) do
+    begin
+      pm:=p;
+      pm^:=AnsiChar(ORD(lmenu)+ORD('0')); inc(pm);
+      pm^:='_'; inc(pm);
+      StrCopy(pm,opt_MenuPopup       ); DBDeleteSetting(0,opt_UA,setting);
+      StrCopy(pm,opt_MenuNameVars    ); DBDeleteSetting(0,opt_UA,setting);
+      StrCopy(pm,opt_MenuShowWhenVars); DBDeleteSetting(0,opt_UA,setting);
+      StrCopy(pm,opt_MenuOptions     ); DBDeleteSetting(0,opt_UA,setting);
+    end;
   end;
 end;
 
@@ -72,11 +58,12 @@ end;
 procedure SaveUA(idx:integer);
 var
   setting:array [0..63] of AnsiChar;
-  p:pAnsiChar;
+  p,pm:pAnsiChar;
+  lmenu:tMenuType;
 begin
   with UActionList[idx] do
   begin
-    p:=StrEnd(IntToStr(StrCopyE(setting,'Act_'),dwActID));
+    p:=StrEnd(IntToHex(StrCopyE(setting,'Act_'),dwActID));
     p^:='_'; inc(p);
 
     StrCopy(p,opt_Flags); DBWriteDWord(0,opt_UA,setting,flags and not UAF_REALTIME);
@@ -87,30 +74,19 @@ begin
     StrCopy(p,opt_TabBTooltip       ); addSaveUA(setting,szTabBTooltip);
     StrCopy(p,opt_TabBTooltipPressed); addSaveUA(setting,szTabBTooltipPressed);
 
-    with UAMenuItem[main_menu] do
+    for lmenu:=main_menu to HIGH(tMenuType) do
     begin
-      StrCopy(p,opt_MMenuPopup       ); addSaveUA(setting,szMenuPopup);
-      StrCopy(p,opt_MMenuNameVars    ); addSaveUA(setting,szMenuNameVars);
-      StrCopy(p,opt_MMenuShowWhenVars); addSaveUA(setting,szMenuShowWhenVars);
-      StrCopy(p,opt_MMenuOptions     ); DBWriteWord(0,opt_UA,setting,menu_opt);
+      pm:=p;
+      pm^:=AnsiChar(ORD(lmenu)+ORD('0')); inc(pm);
+      pm^:='_'; inc(pm);
+      with UAMenuItem[lmenu] do
+      begin
+        StrCopy(pm,opt_MenuPopup       ); addSaveUA(setting,szMenuPopup);
+        StrCopy(pm,opt_MenuNameVars    ); addSaveUA(setting,szMenuNameVars);
+        StrCopy(pm,opt_MenuShowWhenVars); addSaveUA(setting,szMenuShowWhenVars);
+        StrCopy(pm,opt_MenuOptions     ); DBWriteWord(0,opt_UA,setting,menu_opt);
+      end;
     end;
-
-    with UAMenuItem[contact_menu] do
-    begin
-      StrCopy(p,opt_CMenuPopup       ); addSaveUA(setting,szMenuPopup);
-      StrCopy(p,opt_CMenuNameVars    ); addSaveUA(setting,szMenuNameVars);
-      StrCopy(p,opt_CMenuShowWhenVars); addSaveUA(setting,szMenuShowWhenVars);
-      StrCopy(p,opt_CMenuOptions     ); DBWriteWord(0,opt_UA,setting,menu_opt);
-    end;
-
-    with UAMenuItem[tray_menu] do
-    begin
-      StrCopy(p,opt_TMenuPopup       ); addSaveUA(setting,szMenuPopup);
-      StrCopy(p,opt_TMenuNameVars    ); addSaveUA(setting,szMenuNameVars);
-      StrCopy(p,opt_TMenuShowWhenVars); addSaveUA(setting,szMenuShowWhenVars);
-      StrCopy(p,opt_TMenuOptions     ); DBWriteWord(0,opt_UA,setting,menu_opt);
-    end;
-
   end;
 end;
 
@@ -125,12 +101,13 @@ end;
 function LoadUA(idx:integer):integer;
 var
   setting:array [0..63] of AnsiChar;
-  p:pAnsiChar;
+  p,pm:pAnsiChar;
+  lmenu:tMenuType;
 begin
   result:=0;
   with UActionList[idx] do
   begin
-    p:=StrEnd(IntToStr(StrCopyE(setting,'Act_'),dwActID));
+    p:=StrEnd(IntToHex(StrCopyE(setting,'Act_'),dwActID));
     p^:='_'; inc(p);
 
     StrCopy(p,opt_Flags); flags:=DBReadDWord(0,opt_UA,setting,dword(UAF_SPECIAL));
@@ -149,29 +126,20 @@ begin
     StrCopy(p,opt_TabBTooltip       ); szTabBTooltip       :=DBReadUnicode(0,opt_UA,setting);
     StrCopy(p,opt_TabBTooltipPressed); szTabBTooltipPressed:=DBReadUnicode(0,opt_UA,setting);
 
-    with UAMenuItem[main_menu] do
+    for lmenu:=main_menu to HIGH(tMenuType) do
     begin
-      StrCopy(p,opt_MMenuPopup       ); szMenuPopup       :=DBReadUnicode(0,opt_UA,setting);
-      StrCopy(p,opt_MMenuNameVars    ); szMenuNameVars    :=DBReadUnicode(0,opt_UA,setting);
-      StrCopy(p,opt_MMenuShowWhenVars); szMenuShowWhenVars:=DBReadUnicode(0,opt_UA,setting);
-      StrCopy(p,opt_MMenuOptions     ); menu_opt          :=DBReadWord   (0,opt_UA,setting);
+      pm:=p;
+      pm^:=AnsiChar(ORD(lmenu)+ORD('0')); inc(pm);
+      pm^:='_'; inc(pm);
+      with UAMenuItem[lmenu] do
+      begin
+        StrCopy(pm,opt_MenuPopup       ); szMenuPopup       :=DBReadUnicode(0,opt_UA,setting);
+        StrCopy(pm,opt_MenuNameVars    ); szMenuNameVars    :=DBReadUnicode(0,opt_UA,setting);
+        StrCopy(pm,opt_MenuShowWhenVars); szMenuShowWhenVars:=DBReadUnicode(0,opt_UA,setting);
+        StrCopy(pm,opt_MenuOptions     ); menu_opt          :=DBReadWord   (0,opt_UA,setting);
+      end;
     end;
 
-    with UAMenuItem[contact_menu] do
-    begin
-      StrCopy(p,opt_CMenuPopup       ); szMenuPopup       :=DBReadUnicode(0,opt_UA,setting);
-      StrCopy(p,opt_CMenuNameVars    ); szMenuNameVars    :=DBReadUnicode(0,opt_UA,setting);
-      StrCopy(p,opt_CMenuShowWhenVars); szMenuShowWhenVars:=DBReadUnicode(0,opt_UA,setting);
-      StrCopy(p,opt_CMenuOptions     ); menu_opt          :=DBReadWord   (0,opt_UA,setting);
-    end;
-
-    with UAMenuItem[tray_menu] do
-    begin
-      StrCopy(p,opt_TMenuPopup       ); szMenuPopup       :=DBReadUnicode(0,opt_UA,setting);
-      StrCopy(p,opt_TMenuNameVars    ); szMenuNameVars    :=DBReadUnicode(0,opt_UA,setting);
-      StrCopy(p,opt_TMenuShowWhenVars); szMenuShowWhenVars:=DBReadUnicode(0,opt_UA,setting);
-      StrCopy(p,opt_TMenuOptions     ); menu_opt          :=DBReadWord   (0,opt_UA,setting);
-    end;
   end;
 end;
 (*
@@ -208,6 +176,8 @@ end;
 procedure SetAllActionUsers(var ActionItem:tMyActionItem);
 var
   buf:array [0..63] of AnsiChar;
+  luse:boolean;
+  lmenu:tMenuType;
 begin
   if (ActionItem.flags and UAF_REGHOTKEY)<>0 then
     AddCoreHotkey(ActionItem)
@@ -223,35 +193,21 @@ begin
   else
     DeleteTabBBButton(ActionItem);
 
-  if (ActionItem.flags and UAF_REGMMENU)<>0 then
+  luse:=false;
+  for lmenu:=main_menu to HIGH(tMenuType) do
   begin
-    if ActionItem.UAMenuItem[main_menu].changed then
-      DeleteMainMenuItem(ActionItem);
-    AddMainMenuItem(ActionItem)
-  end
-  else
-    DeleteMainMenuItem(ActionItem);
+    if (ActionItem.UAMenuItem[lmenu].menu_opt and UAF_MENUUSE)<>0 then
+    begin
+      luse:=true;
+      if ActionItem.UAMenuItem[lmenu].changed then
+        DeleteMenuItem(ActionItem,lmenu);
+      CreateMenuItem(ActionItem,lmenu);
+    end
+    else
+      DeleteMenuItem(ActionItem,lmenu);
+  end;
 
-  if (ActionItem.flags and UAF_REGCMENU)<>0 then
-  begin
-    if ActionItem.UAMenuItem[contact_menu].changed then
-      DeleteContactMenuItem(ActionItem);
-    AddContactMenuItem(ActionItem)
-  end
-  else
-    DeleteContactMenuItem(ActionItem);
-
-  if (ActionItem.flags and UAF_REGTMENU)<>0 then
-  begin
-    if ActionItem.UAMenuItem[tray_menu].changed then
-      DeleteTrayMenuItem(ActionItem);
-    AddTrayMenuItem(ActionItem)
-  end
-  else
-    DeleteTrayMenuItem(ActionItem);
-
-  if ((ActionItem.flags and (UAF_REGMMENU or UAF_REGCMENU or UAF_REGTMENU))=0) and
-      (ActionItem.hMenuService<>0) then
+  if (not luse) and (ActionItem.hMenuService<>0) then
   begin
     PluginLink^.DestroyServiceFunction(ActionItem.hMenuService);
     ActionItem.hMenuService:=0;
@@ -270,6 +226,8 @@ procedure DeleteUAction(num:integer);
 var
   ActionItem:pMyActionItem;
   buf:array [0..63] of AnsiChar;
+  luse:boolean;
+  lmenu:tMenuType;
 begin
   DeleteUASettings(num);
 
@@ -282,21 +240,31 @@ begin
 
   if (ActionItem.flags and UAF_REGMTBB)<>0 then
     DeleteMTBButton(ActionItem^);
+  mFreeMem(ActionItem.szMTBTooltip);
+  mFreeMem(ActionItem.szMTBTooltipPressed);
 
   if (ActionItem.flags and UAF_REGTABB)<>0 then
     DeleteTabBBButton(ActionItem^);
+  mFreeMem(ActionItem.szTabBTooltip);
+  mFreeMem(ActionItem.szTabBTooltipPressed);
 
-  if (ActionItem.flags and UAF_REGMMENU)<>0 then
-    DeleteMainMenuItem(ActionItem^);
+  luse:=false;
+  for lmenu:=main_menu to HIGH(tMenuType) do
+  begin
+    with ActionItem.UAMenuItem[lmenu] do
+    begin
+      if (menu_opt and UAF_MENUUSE)<>0 then
+      begin
+        luse:=true;
+        DeleteMenuItem(ActionItem^,lmenu);
+      end;
+      mFreeMem(szMenuPopup);
+      mFreeMem(szMenuNameVars);
+      mFreeMem(szMenuShowWhenVars);
+    end;
+  end;
 
-  if (ActionItem.flags and UAF_REGCMENU)<>0 then
-    DeleteContactMenuItem(ActionItem^);
-
-  if (ActionItem.flags and UAF_REGTMENU)<>0 then
-    DeleteTrayMenuItem(ActionItem^);
-
-  if ((ActionItem.flags and (UAF_REGMMENU or UAF_REGCMENU or UAF_REGTMENU))=0) and
-      (ActionItem.hMenuService<>0) then
+  if (not luse) and (ActionItem.hMenuService<>0) then
   begin
     PluginLink^.DestroyServiceFunction(ActionItem.hMenuService);
     ActionItem.hMenuService:=0;
@@ -309,33 +277,6 @@ begin
   mFreeMem(ActionItem.szNameID);
   mFreeMem(ActionItem.szActDescr);
   
-  mFreeMem(ActionItem.szMTBTooltip);
-  mFreeMem(ActionItem.szMTBTooltipPressed);
-
-  mFreeMem(ActionItem.szTabBTooltip);
-  mFreeMem(ActionItem.szTabBTooltipPressed);
-
-  with ActionItem.UAMenuItem[main_menu] do
-  begin
-    mFreeMem(szMenuPopup);
-    mFreeMem(szMenuNameVars);
-    mFreeMem(szMenuShowWhenVars);
-  end;
-
-  with ActionItem.UAMenuItem[contact_menu] do
-  begin
-    mFreeMem(szMenuPopup);
-    mFreeMem(szMenuNameVars);
-    mFreeMem(szMenuShowWhenVars);
-  end;
-
-  with ActionItem.UAMenuItem[tray_menu] do
-  begin
-    mFreeMem(szMenuPopup);
-    mFreeMem(szMenuNameVars);
-    mFreeMem(szMenuShowWhenVars);
-  end;
-
   // compact list
   if num<HIGH(UActionList) then
   begin

@@ -1,19 +1,15 @@
 {}
 
-type
-  tMenuServices = record
-    create :pAnsiChar;
-    destroy:pAnsiChar;
-  end;
 const
-  MenuServices:array [tMenuType] of tMenuServices = (
-    (create:'CList/AddMainMenuItem'{MS_CLIST_ADDMAINMENUITEM   }; destroy:'CList/RemoveMainMenuItem'{MS_CLIST_REMOVEMAINMENUITEM}),
-    (create:'CList/AddContactMenuItem'{MS_CLIST_ADDCONTACTMENUITEM}; destroy:'CList/RemoveContactMenuItem'{MS_CLIST_REMOVECONTACTMENUITEM}),
-    (create:'CList/AddTrayMenuItem'{MS_CLIST_ADDTRAYMENUITEM   }; destroy:'CList/RemoveTrayMenuItem'{MS_CLIST_REMOVETRAYMENUITEM})
+  MenuServices:array [tMenuType] of pAnsiChar = (
+    'CList/AddMainMenuItem'   {MS_CLIST_ADDMAINMENUITEM   },
+    'CList/AddContactMenuItem'{MS_CLIST_ADDCONTACTMENUITEM},
+    'CList/AddTrayMenuItem'   {MS_CLIST_ADDTRAYMENUITEM   },
+    'CList/AddProtoMenuItem'  {MS_CLIST_ADDPROTOMENUITEM  },
+    'CList/AddStatusMenuItem' {MS_CLIST_ADDSTATUSMENUITEM }
   );
 type
   tuaMenuRec = record
-//    MenuName :pWideChar;
     hMenuRoot:HMENU;
     position :integer;
   end;
@@ -231,7 +227,7 @@ begin
   with ActionItem.UAMenuItem[mtype] do
   begin
     if hMenuItem=0 then exit;
-    CallService(MenuServices[mtype].destroy,hMenuItem,0);
+    CallService(MO_REMOVEMENUITEM,hMenuItem,0);
     hMenuItem:=0;
   end;
 
@@ -255,7 +251,7 @@ begin
         break;
       end;
     end;
-    CallService(MenuServices[mtype].destroy,hMenuRoot,0);
+    CallService(MO_REMOVEMENUITEM,hMenuRoot,0);
     ActionItem.UAMenuItem[mtype].hMenuRoot:=0;
   end;
 end;
@@ -332,7 +328,7 @@ begin
     inc(clmi.position,GetMenuPosition(0,mtype,
         (UAMenuItem.menu_opt and UAF_MENUSEP)<>0));
 
-    UAMenuItem.hMenuRoot:=CallService(MenuServices[mtype].create,0,LPARAM(@clmi));
+    UAMenuItem.hMenuRoot:=CallService(MenuServices[mtype],0,LPARAM(@clmi));
     if clmi.szName.w<>ActionItem.szActDescr then
       mFreeMem(clmi.szName.w);
 
@@ -391,7 +387,7 @@ begin
   inc(clmi.position,GetMenuPosition(UAMenuItem.hMenuRoot,mtype,
       (UAMenuItem.menu_opt and UAF_MENUSEP)<>0));
 
-  UAMenuItem.hMenuItem:=CallService(MenuServices[mtype].create,0,LPARAM(@clmi));
+  UAMenuItem.hMenuItem:=CallService(MenuServices[mtype],0,LPARAM(@clmi));
   if clmi.szName.w<>ActionItem.szActDescr then
     mFreeMem(clmi.szName.w);
 {}
@@ -479,58 +475,19 @@ else...
   end;
 end;
 
-//----- Main Menu -----
-
-procedure AddMainMenuItem(var ActionItem:tMyActionItem);
-begin
-  CreateMenuItem(ActionItem,main_menu);
-end;
-
-procedure DeleteMainMenuItem(var ActionItem:tMyActionItem);
-begin
-  DeleteMenuItem(ActionItem,main_menu);
-end;
-
 function PreBuildMainMenu(wParam:WPARAM;lParam:LPARAM):int; cdecl;
 begin
-  result:=0;
-  PreBuildMenu(main_menu,wParam);
-end;
-
-//----- Contact Menu -----
-
-procedure AddContactMenuItem(var ActionItem:tMyActionItem);
-begin
-  CreateMenuItem(ActionItem,contact_menu);
-end;
-
-procedure DeleteContactMenuItem(var ActionItem:tMyActionItem);
-begin
-  DeleteMenuItem(ActionItem,contact_menu);
+  result:=PreBuildMenu(main_menu,wParam);
 end;
 
 function PreBuildContactMenu(wParam:WPARAM;lParam:LPARAM):int;  cdecl;
 begin
-  result:=0;
-  PreBuildMenu(contact_menu,wParam);
-end;
-
-//----- Tray Menu -----
-
-procedure AddTrayMenuItem(var ActionItem:tMyActionItem);
-begin
-  CreateMenuItem(ActionItem,tray_menu);
-end;
-
-procedure DeleteTrayMenuItem(var ActionItem:tMyActionItem);
-begin
-  DeleteMenuItem(ActionItem,tray_menu);
+  result:=PreBuildMenu(contact_menu,wParam);
 end;
 
 function PreBuildTrayMenu(wParam:WPARAM;lParam:LPARAM):int; cdecl;
 begin
-  result:=0;
-  PreBuildMenu(tray_menu,wParam);
+  result:=PreBuildMenu(tray_menu,wParam);
 end;
 
 //----- Modern Toolbar -----
