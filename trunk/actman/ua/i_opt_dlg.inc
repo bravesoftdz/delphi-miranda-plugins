@@ -132,55 +132,42 @@ end;
 
 procedure ShowSubAction(Dialog:HWND;aType:integer;item:integer=-1);
 var
-  enable:boolean;
+  UA:pMyActionItem;
 begin
   ClearControls(Dialog);
-  SetupControls(Dialog,aType,item);
 
   // get UAction number
   item:=LV_GetLParam(GetDlgItem(Dialog,IDC_UA_ACTIONLIST),item);
 
+  UA:=@UActionList[item];
+
   // common settings
-  if (UActionList[item].flags and UAF_2STATE)<>0 then
-  begin
-    enable:=true;
+  if (UA.flags and UAF_2STATE)<>0 then
     CheckDlgButton(Dialog,IDC_UA_TWOSTATE,BST_CHECKED);
-  end
-  else
-    enable:=false;
-  if (UActionList[item].flags and UAF_SAVESTATE)<>0 then
+
+  if (UA.flags and UAF_SAVESTATE)<>0 then
     CheckDlgButton(Dialog,IDC_UA_SAVSTATE,BST_CHECKED);
-  EnableWindow(GetDlgItem(Dialog,IDC_UA_SAVSTATE),enable);
 
   // Show real UA settings
   case LoByte(aType) of
     uaMTB: begin // CList modern toolbar
-      with UActionList[item] do
-      begin
-        SetDlgItemTextA(Dialog,IDC_UA_TTNORMALV ,szMTBTooltip);
-        SetDlgItemTextA(Dialog,IDC_UA_TTPRESSEDV,szMTBTooltipPressed);
-      end;
+      SetDlgItemTextA(Dialog,IDC_UA_TTNORMALV ,UA.szMTBTooltip);
+      SetDlgItemTextA(Dialog,IDC_UA_TTPRESSEDV,UA.szMTBTooltipPressed);
     end;
 
     uaTAB: begin // TabSRMM toolbar
-      with UActionList[item] do
-      begin
-        SetDlgItemTextW(Dialog,IDC_UA_TTNORMALV ,szTabBTooltip);
-        SetDlgItemTextW(Dialog,IDC_UA_TTPRESSEDV,szTabBTooltipPressed);
-      end;
+      SetDlgItemTextW(Dialog,IDC_UA_TTNORMALV ,UA.szTabBTooltip);
+      SetDlgItemTextW(Dialog,IDC_UA_TTPRESSEDV,UA.szTabBTooltipPressed);
     end;
 
     uaMenu: begin
-      with UActionList[item] do
+      with UA.UAMenuItem[tMenuType(HiByte(aType))] do
       begin
-        with UAMenuItem[tMenuType(HiByte(aType))] do
-        begin
-          if (menu_opt and UAF_MENUSEP)<>0 then
-            CheckDlgButton(Dialog,IDC_UA_SEPARATE,BST_CHECKED);
-          SetDlgItemTextW(Dialog,IDC_UA_POPUPV   ,szMenuPopup);
-          SetDlgItemTextW(Dialog,IDC_UA_VARNAMESV,szMenuNameVars);
-          SetDlgItemTextW(Dialog,IDC_UA_SHOWVARV ,szMenuShowWhenVars);
-        end;
+        if (menu_opt and UAF_MENUSEP)<>0 then
+          CheckDlgButton(Dialog,IDC_UA_SEPARATE,BST_CHECKED);
+        SetDlgItemTextW(Dialog,IDC_UA_POPUPV   ,szMenuPopup);
+        SetDlgItemTextW(Dialog,IDC_UA_VARNAMESV,szMenuNameVars);
+        SetDlgItemTextW(Dialog,IDC_UA_SHOWVARV ,szMenuShowWhenVars);
       end;
     end;
 
@@ -188,6 +175,7 @@ begin
       // Settings in Customize/Hotkeys
     end;
   end;
+  SetupControls(Dialog,aType,-1);
 end;
 
 function isPlaceActive(idx,place:integer):boolean;
@@ -235,7 +223,7 @@ begin
             li.pszText :=TranslateW(FastAnsiToWideBuf(name,buf));
             li.iItem   :=SendMessageW(wnd,LVM_INSERTITEMW,0,LPARAM(@li));
 
-            ListView_SetCheckState(wnd,li.iItem,isPlaceActive(j,i));
+            ListView_SetCheckState(wnd,li.iItem,isPlaceActive(j,atype));
           end;
         end;
       end;

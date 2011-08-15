@@ -3,7 +3,6 @@ function AddUAction(idx:integer; ptr:pChain):integer;
 var
   buf:array [0..127] of AnsiChar;
 begin
-  result:=-1;
   if idx<0 then idx:=Length(UActionList);
   if idx=Length(UActionList) then
     SetLength(UActionList,Length(UActionList)+1);
@@ -27,6 +26,7 @@ begin
 
   SetLength(arMenuRec,Length(UActionList)+1);
   FillChar (arMenuRec[HIGH(arMenuRec)],SizeOf(tuaMenuRecA),0);
+  result:=idx;
 end;
 
 function CreateUActionList:integer;
