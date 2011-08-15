@@ -54,8 +54,6 @@ var
   setting:array [0..63] of AnsiChar;
   p:pAnsiChar;
 begin
-  local:=true;
-
   for i:=0 to HIGH(UActionList) do
   begin
     with UActionList[i] do
