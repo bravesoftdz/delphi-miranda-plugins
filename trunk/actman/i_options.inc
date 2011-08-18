@@ -56,18 +56,20 @@ begin
     DBWriteDWord  (0,DBBranch,setting,value);
 end;
 
-function SaveActions(section:pAnsiChar;first:integer;var start:integer):integer;
+function SaveActions(section:pAnsiChar;first:integer):integer;
 var
   p,p1:PAnsiChar;
   act:pHKAction;
+  i:integer;
 begin
   result:=0;
   // in: section = "Group#/"
   p1:=StrCopyE(StrEnd(section),opt_actions); // "Group#/Action"
+  i:=1;
   while first<>0 do
   begin
     act:=@ActionList[first];
-    p:=StrEnd(IntToStr(p1,start)); //!!!
+    p:=StrEnd(IntToStr(p1,i)); //!!!
     p^:='/'; inc(p); // "Group#/Action#/"
 
     StrCopy(p,opt_flags ); DBWriteDWord(0,DBBranch,section,act^.flags);
@@ -181,7 +183,7 @@ begin
 
     end;
     inc(result);
-    inc(start);
+    inc(i);
     first:=ActionList^[first].next;
   end;
 end;
@@ -225,9 +227,10 @@ begin
 
         p^:=#0;
     //??
-        num:=SaveActions(section,firstAction,Actions);
+        num:=SaveActions(section,firstAction);
         StrCopy(p,opt_numacts); DBWriteWord(0,DBBranch,section,num);
 
+        inc(Actions,num);
         inc(NumHK);
       end;
     end;
@@ -266,10 +269,9 @@ begin
     StrCopy(p,opt_flags ); Act.flags :=DBReadDWord  (0,DBBranch,section,0);
     if (Act.flags and ACF_ASSIGNED)<>0 then
     begin
-      StrCopy(p,opt_flags2); Act.flags2:=DBReadDWord  (0,DBBranch,section,0);
-      StrCopy(p,opt_descr ); Act.descr :=DBReadUnicode(0,DBBranch,section,nil);
-      StrCopy(p,opt_type ); Act.actionType:=DBReadByte (0,DBBranch,section,ACT_CONTACT);
-//      StrCopy(p,opt_next ); Act.next      :=DBReadWord (0,DBBranch,section,0);
+      StrCopy(p,opt_flags2); Act.flags2    :=DBReadDWord  (0,DBBranch,section,0);
+      StrCopy(p,opt_descr ); Act.descr     :=DBReadUnicode(0,DBBranch,section,nil);
+      StrCopy(p,opt_type  ); Act.actionType:=DBReadByte   (0,DBBranch,section,ACT_CONTACT);
 
       case Act.actionType of
         ACT_CONTACT: begin
@@ -285,8 +287,7 @@ begin
           begin
             StrCopy(p,opt_wparam);
             if (Act.flags and ACF_WPARNUM)<>0 then
-               Act.wparam:=LoadNumValue(section,(Act.flags2 and ACF2_SRV_WPAR)<>0)
-  //              Act.wparam:=DBReadDWord(0,DBBranch,section,0)
+              Act.wparam:=LoadNumValue(section,(Act.flags2 and ACF2_SRV_WPAR)<>0)
             else if (Act.flags and ACF_WSTRUCT)<>0 then
               Act.wparam:=wparam(DBReadUnicode(0,DBBranch,section,nil))
             else if (Act.flags and ACF_WUNICODE)<>0 then
