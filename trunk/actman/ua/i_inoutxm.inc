@@ -110,7 +110,7 @@ end;
 
 function Import(fname:PWideChar;aflags:dword):integer;
 var
-  i,j:integer;
+  i,j,act:integer;
   root,actnode:HXML;
   pcw,res:pWideChar;
   f:THANDLE;
@@ -150,11 +150,26 @@ begin
       inc(pbyte(ptr),4);
       for i:=0 to num-1 do
       begin
-        if StrCmpw(pcw,ptr.descr)=0 then
+        if (ptr.flags and ACCF_IMPORTED)<>0 then
         begin
-          num1:=AddUAction(-1,ptr);
-          ImportUAction(getNthChild(actnode,ioUA,0),UActionList[num1]);
-          break;
+          if StrCmpw(pcw,ptr.descr)=0 then
+          begin
+            // delete old UA for overwrited actions
+            if (ptr.flags and ACCF_OVERLOAD)<>0 then
+            begin
+              for act:=0 to HIGH(UActionList) do
+              begin
+                if ptr.id=UActionList[act].dwActID then
+                begin
+                  DeleteUAction(act);
+                  break;
+                end;
+              end;
+            end;
+            num1:=AddUAction(-1,ptr);
+            ImportUAction(getNthChild(actnode,ioUA,0),UActionList[num1]);
+            break;
+          end;
         end;
         inc(ptr);
       end;

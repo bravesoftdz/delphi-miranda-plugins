@@ -11,6 +11,7 @@ const
   ACF_IMPORT   = ACF_EXPORT; // imported
   ACF_VOLATILE = $04000000;  // don't save in DB
   ACF_PARALLEL = $02000000;  // parallel action work (no wait thread)
+  ACF_OVERLOAD = $01000000;  // imported action overwrite old
 
 // action flags
 const
