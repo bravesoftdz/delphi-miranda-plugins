@@ -548,7 +548,7 @@ begin
     with GroupList[i] do
       if (flags and (ACF_IMPORT or ACF_ASSIGNED))=
                     (ACF_IMPORT or ACF_ASSIGNED) then
-        flags:=flags and not ACF_IMPORT;
+        flags:=flags and not (ACF_IMPORT or ACF_OVERLOAD);
 
   if (fname=nil) or (fname^=#0) then
     exit;
@@ -596,7 +596,10 @@ begin
           with GroupList^[NewGroup(GroupList,MaxGroups)] do
           begin
             if (i>=0) and (oldid<>$FFFFFFFF) then // set old id to keep UseAction setting
+            begin
+              flags:=flags or ACF_IMPORT or ACF_OVERLOAD;
               id:=oldid;
+            end;
             flags:=flags or ACF_IMPORT;
             if StrToInt(getAttrValue(actnode,ioDisabled))=1 then flags:=flags or ACF_DISABLED;
             if StrToInt(getAttrValue(actnode,ioVolatile))=1 then flags:=flags or ACF_VOLATILE;
