@@ -14,6 +14,7 @@ var
   p,p1:PAnsiChar;
   i,amount:integer;
 begin
+  DBDeleteGroup(0,DBBranch,opt_hooks);
   amount:=0;
   p1:=StrCopyE(section,opt_hooks);
   p1^:='/'; inc(p1);

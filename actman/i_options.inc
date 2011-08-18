@@ -198,7 +198,7 @@ var
   Actions:integer;
 begin
 //!!!!!!!!! need to delete by mask only? or sync with other actman modules
-  DBDeleteGroup(0,DBBranch);
+  DBDeleteGroup(0,DBBranch,opt_group);
 //  DBDeleteGroup(0,opt_actions);
   HK:=@GroupList^;
   i:=MaxGroups;

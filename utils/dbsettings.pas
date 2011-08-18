@@ -34,7 +34,7 @@ function DBWriteUnicode(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;
 function DBFreeVariant(dbv:PDBVARIANT):int_ptr;
 function DBDeleteSetting(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar):int_ptr;
 
-function DBDeleteGroup(hContact:THANDLE;szModule:PAnsiChar):int_ptr;
+function DBDeleteGroup(hContact:THANDLE;szModule:PAnsiChar;prefix:pAnsiChar=nil):int_ptr;
 
 function DBDeleteModule(szModule:PAnsiChar):integer; // 0.8.0+
 
@@ -366,12 +366,12 @@ begin
   result:=0;
 end;
 //  hContact = 0
-function DBDeleteGroup(hContact:THANDLE;szModule:PAnsiChar):int_ptr;
+function DBDeleteGroup(hContact:THANDLE;szModule:PAnsiChar;prefix:pAnsiChar=nil):int_ptr;
 var
   ces:TDBCONTACTENUMSETTINGS;
   cgs:TDBCONTACTGETSETTING;
   p:PAnsiChar;
-  num:integer;
+  num,len:integer;
   ptr:pAnsiChar;
 begin
   ces.szModule:=szModule;
@@ -392,10 +392,17 @@ begin
 
   cgs.szModule:=szModule;
   ptr:=p;
+  if (prefix<>nil) and (prefix^<>#0) then
+    len:=StrLen(prefix)
+  else
+    len:=0;
   while ptr^<>#0 do
   begin
-    cgs.szSetting:=ptr;
-    PluginLink^.CallService(MS_DB_CONTACT_DELETESETTING,hContact,lParam(@cgs));
+    if (len=0) or (StrCmp(prefix,ptr,len)=0) then
+    begin
+      cgs.szSetting:=ptr;
+      PluginLink^.CallService(MS_DB_CONTACT_DELETESETTING,hContact,lParam(@cgs));
+    end;
     while ptr^<>#0 do inc(ptr);
     inc(ptr);
   end;
