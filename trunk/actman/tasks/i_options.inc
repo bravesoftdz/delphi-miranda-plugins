@@ -21,7 +21,7 @@ var
   p,p1:PAnsiChar;
   i,amount:integer;
 begin
-//!!  DBDeleteModule(opt_tasks);
+  DBDeleteGroup(0,DBBranch,opt_tasks);
   amount:=0;
   p1:=StrCopyE(section,opt_tasks);
   p1^:='/'; inc(p1);
