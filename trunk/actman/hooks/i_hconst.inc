@@ -14,5 +14,6 @@ const
   IDC_EVENT_HELP    = 1028;
   IDC_HOOK_NEW      = 1029;
   IDC_HOOK_DELETE   = 1030;
+  IDC_HOOK_APPLY    = 1031;
 
-  IDC_DESCR         = 1031;
+  IDC_DESCR         = 1040;

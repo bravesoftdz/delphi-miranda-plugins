@@ -142,6 +142,8 @@ begin
     // action
     CB_SelectData(GetDlgItem(Dialog,IDC_TASK_ACTION),action);
     // times
+    FileTimeToSystemTime(starttime,st);
+
     if (flags and TCF_IMMEDIATELY)<>0 then
     begin
       start:=3;
@@ -158,7 +160,6 @@ begin
     end;
     CB_SelectData(GetDlgItem(Dialog,IDC_TASK_ABSOLUTE),start);
 
-    FileTimeToSystemTime(starttime,st);
     SendDlgItemMessage(Dialog,IDC_TASK_TIMEV,DTM_SETSYSTEMTIME,GDT_VALID,lParam(@st));
 
     SetDlgItemInt(Dialog,IDC_TASK_REPEAT,count,true);

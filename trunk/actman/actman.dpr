@@ -123,6 +123,7 @@ begin
     inc(p);
   end;
   result:=cnt;
+  if lParam=0 then exit;
   if cnt>0 then
   begin
     mGetMem(pc,cnt*SizeOf(tChain)+4);

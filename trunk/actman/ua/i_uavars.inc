@@ -2,8 +2,10 @@
 const
   MODULE_NAME = 'Actions';
 const
-  opt_ua:PAnsiChar = 'ACT_UA';
-  opt_Flags:PAnsiChar = 'Flags';
+  opt_groups:PAnsiChar = 'Group';
+  opt_ua    :PAnsiChar = 'UA';
+  opt_id    :PAnsiChar = 'id';
+  opt_flags :PAnsiChar = 'Flags';
 
 const
   ICOLIB_ACTSECTION = 'Actions/Registered actions';

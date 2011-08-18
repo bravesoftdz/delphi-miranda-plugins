@@ -1,8 +1,8 @@
 {Save/load options}
 
 const
-  opt_main    = 'AWK_Groups';
-  opt_actions = 'AWK_Actions';
+  opt_group   = 'Group';
+  opt_actions = 'Action';
   opt_numacts = 'numactions';
   opt_numhk   = 'numgroups';
   opt_firstAction = 'firstaction';
@@ -45,76 +45,62 @@ const
   opt_msgtext  = 'msgtext';
   opt_boxopts  = 'boxopts';
 
-function ActLoadContact(num:integer):THANDLE;
-var
-  section:array [0..63] of AnsiChar;
-begin
-  result:=LoadContact(opt_actions,IntToStr(section,num));
-end;
 
-function ActSaveContact(hContact:THANDLE;num:integer):integer;
-var
-  section:array [0..63] of AnsiChar;
-begin
-  result:=SaveContact(hContact,opt_actions,IntToStr(section,num));
-end;
+//----- Save settings -----
 
 procedure SaveNumValue(setting:pAnsiChar;value:uint_ptr;isvar:boolean);
 begin
   if isvar then
-    DBWriteUnicode(0,opt_actions,setting,pWideChar(value))
+    DBWriteUnicode(0,DBBranch,setting,pWideChar(value))
   else
-    DBWriteDWord  (0,opt_actions,setting,value);
+    DBWriteDWord  (0,DBBranch,setting,value);
 end;
 
-procedure SaveActions(first:integer;var start:integer);
+function SaveActions(section:pAnsiChar;first:integer;var start:integer):integer;
 var
-  section:array [0..63] of AnsiChar;
-  p:PAnsiChar;
+  p,p1:PAnsiChar;
   act:pHKAction;
-  i:integer;
 begin
+  result:=0;
+  // in: section = "Group#/"
+  p1:=StrCopyE(StrEnd(section),opt_actions); // "Group#/Action"
   while first<>0 do
   begin
     act:=@ActionList[first];
-    p:=StrEnd(IntToStr(section,start));
+    p:=StrEnd(IntToStr(p1,start)); //!!!
+    p^:='/'; inc(p); // "Group#/Action#/"
 
-    StrCopy(p,opt_flags ); DBWriteDWord(0,opt_actions,section,act^.flags);
-    StrCopy(p,opt_flags2); DBWriteDWord(0,opt_actions,section,act^.flags2);
-    StrCopy(p,opt_type  ); DBWriteByte (0,opt_actions,section,act^.actionType);
+    StrCopy(p,opt_flags ); DBWriteDWord(0,DBBranch,section,act^.flags);
+    StrCopy(p,opt_flags2); DBWriteDWord(0,DBBranch,section,act^.flags2);
+    StrCopy(p,opt_type  ); DBWriteByte (0,DBBranch,section,act^.actionType);
     if act^.descr<>nil then
     begin
-      StrCopy(p,opt_descr); DBWriteUnicode(0,opt_actions,section,act^.descr);
+      StrCopy(p,opt_descr); DBWriteUnicode(0,DBBranch,section,act^.descr);
     end;
-    if act^.next=0 then
-      i:=0
-    else
-      i:=start+1;
-    StrCopy(p,opt_next); DBWriteWord(0,opt_actions,section,i);
 
     case act^.actionType of
       ACT_CONTACT: begin
-        ActSaveContact(act^.contact,start);
-//        StrCopy(p,opt_contact); DBWriteDWord(0,opt_actions,section,act^.contact);
+        p^:=#0;
+        SaveContact(act^.contact,DBBranch,section);
       end;
 
       ACT_SERVICE: begin
-        StrCopy(p,opt_service); DBWriteString(0,opt_actions,section,act^.service);
+        StrCopy(p,opt_service); DBWriteString(0,DBBranch,section,act^.service);
 
         if (act^.flags and (ACF_WCURRENT or ACF_WRESULT or ACF_WPARAM))=0 then
         begin
           StrCopy(p,opt_wparam);
           if (act^.flags and ACF_WPARNUM)<>0 then
             SaveNumValue(section,act^.wparam,(act^.flags2 and ACF2_SRV_WPAR)<>0)
-//            DBWriteDWord(0,opt_actions,section,act^.wparam)
+//            DBWriteDWord(0,DBBranch,section,act^.wparam)
           else if act^.wparam<>0 then
           begin
             if (act^.flags and ACF_WSTRUCT)<>0 then
-              DBWriteUnicode(0,opt_actions,section,pWideChar(act^.wparam))
+              DBWriteUnicode(0,DBBranch,section,pWideChar(act^.wparam))
             else if (act^.flags and ACF_WUNICODE)<>0 then
-              DBWriteUnicode(0,opt_actions,section,pWideChar(act^.wparam))
+              DBWriteUnicode(0,DBBranch,section,pWideChar(act^.wparam))
             else
-              DBWriteString(0,opt_actions,section,PAnsiChar(act^.wparam));
+              DBWriteString(0,DBBranch,section,PAnsiChar(act^.wparam));
           end;
         end;
 
@@ -123,75 +109,78 @@ begin
           StrCopy(p,opt_lparam);
           if (act^.flags and ACF_LPARNUM)<>0 then
             SaveNumValue(section,act^.lparam,(act^.flags2 and ACF2_SRV_LPAR)<>0)
-//            DBWriteDWord(0,opt_actions,section,act^.lparam)
+//            DBWriteDWord(0,DBBranch,section,act^.lparam)
           else if act^.lparam<>0 then
           begin
             if (act^.flags and ACF_LSTRUCT)<>0 then
-              DBWriteUnicode(0,opt_actions,section,pWideChar(act^.lparam))
+              DBWriteUnicode(0,DBBranch,section,pWideChar(act^.lparam))
             else if (act^.flags and ACF_LUNICODE)<>0 then
-              DBWriteUnicode(0,opt_actions,section,pWideChar(act^.lparam))
+              DBWriteUnicode(0,DBBranch,section,pWideChar(act^.lparam))
             else
-              DBWriteString(0,opt_actions,section,PAnsiChar(act^.lparam));
+              DBWriteString(0,DBBranch,section,PAnsiChar(act^.lparam));
           end;
         end;
 
       end;
 
       ACT_PROGRAM: begin
-        StrCopy(p,opt_prg ); DBWriteUnicode(0,opt_actions,section,act^.prgname);
-        StrCopy(p,opt_args); DBWriteUnicode(0,opt_actions,section,act^.args);
-        StrCopy(p,opt_time); DBWriteDWord  (0,opt_actions,section,act^.time);
-        StrCopy(p,opt_show); DBWriteDWord  (0,opt_actions,section,act^.show);
+        StrCopy(p,opt_prg ); DBWriteUnicode(0,DBBranch,section,act^.prgname);
+        StrCopy(p,opt_args); DBWriteUnicode(0,DBBranch,section,act^.args);
+        StrCopy(p,opt_time); DBWriteDWord  (0,DBBranch,section,act^.time);
+        StrCopy(p,opt_show); DBWriteDWord  (0,DBBranch,section,act^.show);
       end;
 
       ACT_TEXT: begin
         if (act^.flags and ACF_CLIPBRD)=0 then
         begin
-          StrCopy(p,opt_text); DBWriteUnicode(0,opt_actions,section,act^.text);
+          StrCopy(p,opt_text); DBWriteUnicode(0,DBBranch,section,act^.text);
           if (act^.flags and ACF_FILE)<>0 then
           begin
-            StrCopy(p,opt_file); DBWriteUnicode(0,opt_actions,section,act^.tfile);
+            StrCopy(p,opt_file); DBWriteUnicode(0,DBBranch,section,act^.tfile);
           end;
         end;
       end;
 
       ACT_ADVANCE: begin
-        StrCopy(p,opt_cond   ); DBWriteByte   (0,opt_actions,section,act^.condition);
-        StrCopy(p,opt_value  ); DBWriteDWord  (0,opt_actions,section,act^.value);
-        StrCopy(p,opt_action ); DBWriteByte   (0,opt_actions,section,act^.action);
-        StrCopy(p,opt_operval); DBWriteUnicode(0,opt_actions,section,act^.operval);
-        StrCopy(p,opt_oper   ); DBWriteByte   (0,opt_actions,section,act^.oper);
-        StrCopy(p,opt_mathval); DBWriteDWord  (0,opt_actions,section,act^.mathval);
-        StrCopy(p,opt_varval ); DBWriteUnicode(0,opt_actions,section,act^.varval);
+        StrCopy(p,opt_cond   ); DBWriteByte   (0,DBBranch,section,act^.condition);
+        StrCopy(p,opt_value  ); DBWriteDWord  (0,DBBranch,section,act^.value);
+        StrCopy(p,opt_action ); DBWriteByte   (0,DBBranch,section,act^.action);
+        StrCopy(p,opt_operval); DBWriteUnicode(0,DBBranch,section,act^.operval);
+        StrCopy(p,opt_oper   ); DBWriteByte   (0,DBBranch,section,act^.oper);
+        StrCopy(p,opt_mathval); DBWriteDWord  (0,DBBranch,section,act^.mathval);
+        StrCopy(p,opt_varval ); DBWriteUnicode(0,DBBranch,section,act^.varval);
       end;
 
       ACT_CHAIN: begin
-        StrCopy(p,opt_text); DBWriteDWord(0,opt_actions,section,act^.id);
+        StrCopy(p,opt_text); DBWriteDWord(0,DBBranch,section,act^.id);
       end;
 
       ACT_RW: begin
         if (act^.flags and ACF_NOCNTCT)=0 then
-          ActSaveContact(act^.dbcontact,start);
-//        StrCopy(p,opt_contact); DBWriteDWord (0,opt_actions,section,act^.dbcontact);
-        StrCopy(p,opt_module ); DBWriteString(0,opt_actions,section,act^.dbmodule);
-        StrCopy(p,opt_setting); DBWriteString(0,opt_actions,section,act^.dbsetting);
+        begin
+          p^:=#0;
+          SaveContact(act^.dbcontact,DBBranch,section);
+        end;
+        StrCopy(p,opt_module ); DBWriteString(0,DBBranch,section,act^.dbmodule);
+        StrCopy(p,opt_setting); DBWriteString(0,DBBranch,section,act^.dbsetting);
         StrCopy(p,opt_value  );
         if (act^.flags and ACF_DBUTEXT)=0 then
         begin
           SaveNumValue(section,act^.dbvalue,(act^.flags2 and ACF2_RW_TVAR)<>0);
-//          DBWriteDWord(0,opt_actions,section,act^.dbvalue)
+//          DBWriteDWord(0,DBBranch,section,act^.dbvalue)
         end
         else
-          DBWriteUnicode(0,opt_actions,section,pWideChar(act^.dbvalue));
+          DBWriteUnicode(0,DBBranch,section,pWideChar(act^.dbvalue));
       end;
 
       ACT_MESSAGE: begin
-        StrCopy(p,opt_msgtitle); DBWriteUnicode(0,opt_actions,section,act^.msgtitle);
-        StrCopy(p,opt_msgtext ); DBWriteUnicode(0,opt_actions,section,act^.msgtext);
-        StrCopy(p,opt_boxopts ); DBWriteByte   (0,opt_actions,section,act^.boxopts); //!!
+        StrCopy(p,opt_msgtitle); DBWriteUnicode(0,DBBranch,section,act^.msgtitle);
+        StrCopy(p,opt_msgtext ); DBWriteUnicode(0,DBBranch,section,act^.msgtext);
+        StrCopy(p,opt_boxopts ); DBWriteByte   (0,DBBranch,section,act^.boxopts); //!!
       end;
 
     end;
+    inc(result);
     inc(start);
     first:=ActionList^[first].next;
   end;
@@ -201,64 +190,221 @@ procedure SaveGroups;
 var
   HK:pHKRecord;
   NumHK:integer;
-  i,j:integer;
-  section:array [0..63] of AnsiChar;
-  p:PAnsiChar;
+  i,num:integer;
+  section:array [0..127] of AnsiChar;
+  p,p1:PAnsiChar;
   Actions:integer;
 begin
-  DBDeleteGroup(0,opt_main);
-  DBDeleteGroup(0,opt_actions);
+//!!!!!!!!! need to delete by mask only? or sync with other actman modules
+  DBDeleteGroup(0,DBBranch);
+//  DBDeleteGroup(0,opt_actions);
   HK:=@GroupList^;
   i:=MaxGroups;
   NumHK:=0;
   Actions:=1;
-  DBWriteUnicode(0,opt_main,'CLformat',fCLformat);
-  DBWriteByte   (0,opt_main,'CLfilter',ord(fCLfilter));
+  DBWriteUnicode(0,DBBranch,'CLformat',fCLformat);
+  DBWriteByte   (0,DBBranch,'CLfilter',ord(fCLfilter));
+//  p:=StrCopyE(section,DBBranch);
+//  p^:='/'; inc(p);
+  p1:=StrCopyE(section,opt_group);
   while i>0 do
   begin
     with HK^ do
     begin
       if (flags and (ACF_ASSIGNED or ACF_VOLATILE))=ACF_ASSIGNED then
       begin
-        p:=StrEnd(IntToStr(section,NumHK));
-        StrCopy(p,opt_flags      ); DBWriteDWord(0,opt_main,section,flags);
-        if firstAction=0 then
-          j:=0
-        else
-          j:=Actions;
-        StrCopy(p,opt_firstAction); DBWriteDWord(0,opt_main,section,j);
-        StrCopy(p,opt_id         ); DBWriteDWord(0,opt_main,section,id);
+        p:=StrEnd(IntToStr(p1,NumHK));
+        p^:='/'; inc(p);
 
-        SaveActions(firstAction,Actions);
+        StrCopy(p,opt_id         ); DBWriteDWord(0,DBBranch,section,id);
+        StrCopy(p,opt_flags      ); DBWriteDWord(0,DBBranch,section,flags);
         if descr<>nil then
         begin
-          StrCopy(p,opt_descr); DBWriteUnicode(0,opt_main,section,descr);
+          StrCopy(p,opt_descr    ); DBWriteUnicode(0,DBBranch,section,descr);
         end;
+
+        p^:=#0;
+    //??
+        num:=SaveActions(section,firstAction,Actions);
+        StrCopy(p,opt_numacts); DBWriteWord(0,DBBranch,section,num);
+
         inc(NumHK);
       end;
     end;
     inc(HK);
     dec(i);
   end;
-  DBWriteWord(0,opt_main   ,opt_numhk  ,NumHK);
-  DBWriteWord(0,opt_actions,opt_numacts,Actions-1);
+  DBWriteWord(0,DBBranch,opt_numhk  ,NumHK);
+  DBWriteWord(0,DBBranch,opt_numacts,Actions-1);
 end;
+
+//----- Load settings -----
 
 function LoadNumValue(setting:pAnsiChar;isvar:boolean):uint_ptr;
 begin
   if isvar then
-    result:=uint_ptr(DBReadUnicode(0,opt_actions,setting,nil))
+    result:=uint_ptr(DBReadUnicode(0,DBBranch,setting,nil))
   else
-    result:=DBReadDWord(0,opt_actions,setting);
+    result:=DBReadDWord(0,DBBranch,setting);
 end;
 
-function LoadActions:integer;
+function LoadActions(section:pAnsiChar;count:integer):integer;
 var
-  section:array [0..63] of AnsiChar;
-  p:PAnsiChar;
-  act:pHKAction;
-  i:integer;
+  p,p1:PAnsiChar;
+  act:tHKAction;
+  i,num,oldnum:integer;
 begin
+  result:=0;
+  p1:=StrCopyE(StrEnd(section),opt_actions); // "Group#/Action"
+
+  for i:=1 to count do
+  begin
+    p:=StrEnd(IntToStr(p1,i));
+    p^:='/'; inc(p); // "Group#/Action#/"
+    FillChar(Act,SizeOf(Act),0);
+
+    StrCopy(p,opt_flags ); Act.flags :=DBReadDWord  (0,DBBranch,section,0);
+    if (Act.flags and ACF_ASSIGNED)<>0 then
+    begin
+      StrCopy(p,opt_flags2); Act.flags2:=DBReadDWord  (0,DBBranch,section,0);
+      StrCopy(p,opt_descr ); Act.descr :=DBReadUnicode(0,DBBranch,section,nil);
+      StrCopy(p,opt_type ); Act.actionType:=DBReadByte (0,DBBranch,section,ACT_CONTACT);
+//      StrCopy(p,opt_next ); Act.next      :=DBReadWord (0,DBBranch,section,0);
+
+      case Act.actionType of
+        ACT_CONTACT: begin
+          p^:=#0;
+          Act.contact:=LoadContact(DBBranch,section);
+        end;
+
+        ACT_SERVICE: begin
+          StrCopy(p,opt_service);
+          Act.service:=DBReadString(0,DBBranch,section,nil);
+
+          if (Act.flags and (ACF_WCURRENT or ACF_WRESULT or ACF_WPARAM))=0 then
+          begin
+            StrCopy(p,opt_wparam);
+            if (Act.flags and ACF_WPARNUM)<>0 then
+               Act.wparam:=LoadNumValue(section,(Act.flags2 and ACF2_SRV_WPAR)<>0)
+  //              Act.wparam:=DBReadDWord(0,DBBranch,section,0)
+            else if (Act.flags and ACF_WSTRUCT)<>0 then
+              Act.wparam:=wparam(DBReadUnicode(0,DBBranch,section,nil))
+            else if (Act.flags and ACF_WUNICODE)<>0 then
+              Act.wparam:=wparam(DBReadUnicode(0,DBBranch,section,nil))
+            else
+              Act.wparam:=wparam(DBReadString (0,DBBranch,section,nil));
+          end;
+
+          if (Act.flags and (ACF_LCURRENT or ACF_LRESULT or ACF_LPARAM))=0 then
+          begin
+            StrCopy(p,opt_lparam);
+            if (Act.flags and ACF_LPARNUM)<>0 then
+               Act.lparam:=LoadNumValue(section,(Act.flags2 and ACF2_SRV_LPAR)<>0)
+  //              Act.lparam:=DBReadDWord(0,DBBranch,section,0)
+            else if (Act.flags and ACF_LSTRUCT)<>0 then
+              Act.lparam:=lparam(DBReadUnicode(0,DBBranch,section,nil))
+            else if (Act.flags and ACF_LUNICODE)<>0 then
+              Act.lparam:=lparam(DBReadUnicode(0,DBBranch,section,nil))
+            else
+              Act.lparam:=lparam(DBReadString(0,DBBranch,section,nil));
+          end;
+
+        end;
+
+        ACT_PROGRAM: begin
+          StrCopy(p,opt_prg ); Act.prgname:=DBReadUnicode(0,DBBranch,section,nil);
+          StrCopy(p,opt_args); Act.args   :=DBReadUnicode(0,DBBranch,section,nil);
+          StrCopy(p,opt_time); Act.time   :=DBReadDWord  (0,DBBranch,section,0);
+          StrCopy(p,opt_show); Act.show   :=DBReadDWord  (0,DBBranch,section,SW_SHOW);
+        end;
+
+        ACT_TEXT: begin
+          if (Act.flags and ACF_CLIPBRD)=0 then
+          begin
+            StrCopy(p,opt_text); Act.text:=DBReadUnicode(0,DBBranch,section,nil);
+            if (Act.flags and ACF_FILE)<>0 then
+            begin
+              StrCopy(p,opt_file); Act.tfile:=DBReadUnicode(0,DBBranch,section,nil);
+            end;
+          end;
+        end;
+
+        ACT_ADVANCE: begin
+          StrCopy(p,opt_cond   ); Act.condition:=DBReadByte   (0,DBBranch,section);
+          StrCopy(p,opt_value  ); Act.value    :=DBReadDWord  (0,DBBranch,section);
+          StrCopy(p,opt_action ); Act.action   :=DBReadByte   (0,DBBranch,section);
+          StrCopy(p,opt_oper   ); Act.oper     :=DBReadByte   (0,DBBranch,section);
+          StrCopy(p,opt_mathval); Act.mathval  :=DBReadDWord  (0,DBBranch,section);
+          StrCopy(p,opt_operval); Act.operval  :=DBReadUnicode(0,DBBranch,section);
+          StrCopy(p,opt_varval ); Act.varval   :=DBReadUnicode(0,DBBranch,section);
+        end;
+
+        ACT_CHAIN: begin
+          StrCopy(p,opt_text); Act.id:=DBReadDWord(0,DBBranch,section);
+        end;
+
+        ACT_RW: begin
+          if (Act.flags and ACF_NOCNTCT)=0 then
+          begin
+            p^:=#0;
+            Act.dbcontact:=LoadContact(DBBranch,section);
+          end;
+          StrCopy(p,opt_module ); Act.dbmodule :=DBReadString(0,DBBranch,section);
+          StrCopy(p,opt_setting); Act.dbsetting:=DBReadString(0,DBBranch,section);
+          StrCopy(p,opt_value  );
+
+          if (Act.flags and ACF_DBUTEXT)=0 then
+            Act.dbvalue:=LoadNumValue(section,(Act.flags2 and ACF2_RW_TVAR)<>0)
+          else
+            Act.dbvalue:=uint_ptr(DBReadUnicode(0,DBBranch,section));
+        end;
+
+        ACT_MESSAGE: begin
+          StrCopy(p,opt_msgtitle); Act.msgtitle:=DBReadUnicode(0,DBBranch,section);
+          StrCopy(p,opt_msgtext ); Act.msgtext :=DBReadUnicode(0,DBBranch,section);
+          StrCopy(p,opt_boxopts ); Act.boxopts :=DBReadByte   (0,DBBranch,section);
+        end;
+
+      end;
+      num:=NewAction(ActionList,MaxActions);
+      move(act,ActionList^[num],SizeOf(tHkAction));
+      if i=1 then
+        result:=num
+      else
+        ActionList^[oldnum].next:=num;
+      oldnum:=num;
+    end;
+  end;
+end;
+
+procedure LoadGroups;
+var
+  HK:pHKRecord;
+  i,num:cardinal;
+  p,p1:PAnsiChar;
+  section:array [0..127] of AnsiChar;
+  NumGroups,NumActions:cardinal;
+begin
+{ remove doubling - no need? (called just once)
+  if MaxGroups>0 then
+  begin
+    while MaxGroups>0 do
+    begin
+      FreeGroup(MaxGroups);
+      dec(MaxGroups);
+    end;
+    FreeMem(GroupList);
+  end;
+}  
+  NumGroups:=DBReadWord(0,DBBranch,opt_numhk,HKListPage);
+  if NumGroups<HKListPage then
+    MaxGroups:=HKListPage
+  else
+    MaxGroups:=NumGroups;
+  GetMem  (GroupList ,MaxGroups*SizeOf(tHKRecord));
+  FillChar(GroupList^,MaxGroups*SizeOf(tHKRecord),0);
+
+{ remove doubling - no need? (called just once)
   if MaxActions<>0 then
   begin
     act:=@ActionList[1];
@@ -270,176 +416,42 @@ begin
     end;
     FreeMem(ActionList);
   end;
-
-  result:=DBReadWord(0,opt_actions,opt_numacts,ActListPage);
-  if result<ActListPage then
+}
+  NumActions:=DBReadWord(0,DBBranch,opt_numacts,ActListPage);
+  if NumActions<ActListPage then
     MaxActions:=ActListPage
   else
-    MaxActions:=result+1;
-
+    MaxActions:=NumActions+1;
   GetMem  (ActionList ,MaxActions*SizeOf(tHKAction));
   FillChar(ActionList^,MaxActions*SizeOf(tHKAction),0);
 
-  act:=@ActionList[1];
-  for i:=1 to result do
-  begin
-    p:=StrEnd(IntToStr(section,i));
-    StrCopy(p,opt_flags ); Act^.flags :=DBReadDWord  (0,opt_actions,section,0);
-    StrCopy(p,opt_flags2); Act^.flags2:=DBReadDWord  (0,opt_actions,section,0);
-    StrCopy(p,opt_descr ); Act^.descr :=DBReadUnicode(0,opt_actions,section,nil);
-    if (Act^.flags and ACF_ASSIGNED)<>0 then
-    begin
-      StrCopy(p,opt_type ); Act^.actionType:=DBReadByte (0,opt_actions,section,ACT_CONTACT);
-      StrCopy(p,opt_next ); Act^.next      :=DBReadWord (0,opt_actions,section,0);
-
-      case act^.actionType of
-        ACT_CONTACT: begin
-          act^.contact:=ActLoadContact(i);
-        end;
-
-        ACT_SERVICE: begin
-          StrCopy(p,opt_service);
-          act^.service:=DBReadString(0,opt_actions,section,nil);
-
-          if (act^.flags and (ACF_WCURRENT or ACF_WRESULT or ACF_WPARAM))=0 then
-          begin
-            StrCopy(p,opt_wparam);
-            if (act^.flags and ACF_WPARNUM)<>0 then
-               act^.wparam:=LoadNumValue(section,(act^.flags2 and ACF2_SRV_WPAR)<>0)
-//              act^.wparam:=DBReadDWord(0,opt_actions,section,0)
-            else if (act^.flags and ACF_WSTRUCT)<>0 then
-              act^.wparam:=wparam(DBReadUnicode(0,opt_actions,section,nil))
-            else if (act^.flags and ACF_WUNICODE)<>0 then
-              act^.wparam:=wparam(DBReadUnicode(0,opt_actions,section,nil))
-            else
-              act^.wparam:=wparam(DBReadString (0,opt_actions,section,nil));
-          end;
-
-          if (act^.flags and (ACF_LCURRENT or ACF_LRESULT or ACF_LPARAM))=0 then
-          begin
-            StrCopy(p,opt_lparam);
-            if (act^.flags and ACF_LPARNUM)<>0 then
-               act^.lparam:=LoadNumValue(section,(act^.flags2 and ACF2_SRV_LPAR)<>0)
-//              act^.lparam:=DBReadDWord(0,opt_actions,section,0)
-            else if (act^.flags and ACF_LSTRUCT)<>0 then
-              act^.lparam:=lparam(DBReadUnicode(0,opt_actions,section,nil))
-            else if (act^.flags and ACF_LUNICODE)<>0 then
-              act^.lparam:=lparam(DBReadUnicode(0,opt_actions,section,nil))
-            else
-              act^.lparam:=lparam(DBReadString(0,opt_actions,section,nil));
-          end;
-
-        end;
-
-        ACT_PROGRAM: begin
-          StrCopy(p,opt_prg ); Act^.prgname:=DBReadUnicode(0,opt_actions,section,nil);
-          StrCopy(p,opt_args); Act^.args   :=DBReadUnicode(0,opt_actions,section,nil);
-          StrCopy(p,opt_time); Act^.time   :=DBReadDWord  (0,opt_actions,section,0);
-          StrCopy(p,opt_show); Act^.show   :=DBReadDWord  (0,opt_actions,section,SW_SHOW);
-        end;
-
-        ACT_TEXT: begin
-          if (act^.flags and ACF_CLIPBRD)=0 then
-          begin
-            StrCopy(p,opt_text); Act^.text:=DBReadUnicode(0,opt_actions,section,nil);
-            if (act^.flags and ACF_FILE)<>0 then
-            begin
-              StrCopy(p,opt_file); Act^.tfile:=DBReadUnicode(0,opt_actions,section,nil);
-            end;
-          end;
-        end;
-
-        ACT_ADVANCE: begin
-          StrCopy(p,opt_cond   ); act^.condition:=DBReadByte   (0,opt_actions,section);
-          StrCopy(p,opt_value  ); act^.value    :=DBReadDWord  (0,opt_actions,section);
-          StrCopy(p,opt_action ); act^.action   :=DBReadByte   (0,opt_actions,section);
-          StrCopy(p,opt_oper   ); act^.oper     :=DBReadByte   (0,opt_actions,section);
-          StrCopy(p,opt_mathval); act^.mathval  :=DBReadDWord  (0,opt_actions,section);
-          StrCopy(p,opt_operval); act^.operval  :=DBReadUnicode(0,opt_actions,section);
-          StrCopy(p,opt_varval ); act^.varval   :=DBReadUnicode(0,opt_actions,section);
-        end;
-
-        ACT_CHAIN: begin
-          StrCopy(p,opt_text); act^.id:=DBReadDWord(0,opt_actions,section);
-        end;
-
-        ACT_RW: begin
-          if (act^.flags and ACF_NOCNTCT)=0 then
-            act^.dbcontact:=ActLoadContact(i);
-          StrCopy(p,opt_module ); act^.dbmodule :=DBReadString(0,opt_actions,section);
-          StrCopy(p,opt_setting); act^.dbsetting:=DBReadString(0,opt_actions,section);
-          StrCopy(p,opt_value  );
-
-          if (act^.flags and ACF_DBUTEXT)=0 then
-            act^.dbvalue:=LoadNumValue(section,(act^.flags2 and ACF2_RW_TVAR)<>0)
-          else
-            act^.dbvalue:=uint_ptr(DBReadUnicode(0,opt_actions,section));
-        end;
-
-        ACT_MESSAGE: begin
-          StrCopy(p,opt_msgtitle); act^.msgtitle:=DBReadUnicode(0,opt_actions,section);
-          StrCopy(p,opt_msgtext ); act^.msgtext :=DBReadUnicode(0,opt_actions,section);
-          StrCopy(p,opt_boxopts ); act^.boxopts :=DBReadByte   (0,opt_actions,section);
-        end;
-
-      end;
-    end;
-    inc(act);
-  end;
-end;
-
-procedure LoadGroups;
-var
-  HK:pHKRecord;
-  i:dword;
-  p:PAnsiChar;
-  section:array [0..63] of AnsiChar;
-  NumGroups,NumActions:dword;
-begin
-
-  if MaxGroups>0 then
-  begin
-    while MaxGroups>0 do
-    begin
-      FreeGroup(MaxGroups);
-      dec(MaxGroups);
-    end;
-    FreeMem(GroupList);
-  end;
-  
-  NumGroups:=DBReadWord(0,opt_main,opt_numhk,HKListPage);
-  if NumGroups<HKListPage then
-    MaxGroups:=HKListPage
-  else
-    MaxGroups:=NumGroups;
-  GetMem  (GroupList ,MaxGroups*SizeOf(tHKRecord));
-  FillChar(GroupList^,MaxGroups*SizeOf(tHKRecord),0);
-
-  NumActions:=LoadActions;
-
   HK:=@GroupList^; //??
   i:=0;
+  p1:=StrCopyE(section,opt_group);
   while i<NumGroups do
   begin
-    p:=StrEnd(IntToStr(section,i));
+    p:=StrEnd(IntToStr(p1,i));
+    p^:='/'; inc(p);
+
     StrCopy(p,opt_flags);
     with HK^ do
     begin
-      flags:=DBReadDWord(0,opt_main,section,0{integer(ACF_ASSIGNED or ACF_DISABLED)});
+      flags:=DBReadDWord(0,DBBranch,section,0{integer(ACF_ASSIGNED or ACF_DISABLED)});
       if (flags and ACF_ASSIGNED)<>0 then // not needed in normal cases
       begin
-        StrCopy(p,opt_descr      ); descr      :=DBReadUnicode(0,opt_main,section,nil);
-        StrCopy(p,opt_firstAction); firstAction:=DBReadDWord  (0,opt_main,section,0);
-        StrCopy(p,opt_id         ); id         :=DBReadDWord  (0,opt_main,section);
-        if firstAction>NumActions then
-          firstAction:=0;
+        StrCopy(p,opt_id   ); id   :=DBReadDWord  (0,DBBranch,section);
+        StrCopy(p,opt_descr); descr:=DBReadUnicode(0,DBBranch,section,nil);
         if descr=nil then
           StrDupW(descr,TranslateW('No Description'));
+
+        StrCopy(p,opt_numacts); num:=DBReadWord(0,DBBranch,section);
+        p^:=#0;
+        firstAction:=LoadActions(section,num);
       end;
     end;
     inc(HK);
     inc(i);
   end;
-  fCLfilter:=DBReadByte   (0,opt_main,'CLfilter',0)<>0;
-  fCLformat:=DBReadUnicode(0,opt_main,'CLformat');
+  fCLfilter:=DBReadByte   (0,DBBranch,'CLfilter',0)<>0;
+  fCLformat:=DBReadUnicode(0,DBBranch,'CLformat');
 end;

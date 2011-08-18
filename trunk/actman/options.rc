@@ -313,6 +313,8 @@ IDI_RW      ICON "ico\rw.ico"
 IDI_MESSAGE ICON "ico\message.ico"
 IDI_FORMAT  ICON "ico\format.ico"
 
+IDI_APPLY  ICON "ico\apply.ico"
+
 IDI_VAR_CHECKED   ICON "ico\vcheck.ico"
 IDI_VAR_UNCHECKED ICON "ico\vuncheck.ico"
 

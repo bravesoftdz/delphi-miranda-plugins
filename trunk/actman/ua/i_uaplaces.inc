@@ -70,9 +70,14 @@ begin
           // save "pressed" state
           if (flags and UAF_SAVESTATE)<>0 then
           begin
-            p:=StrEnd(IntToStr(StrCopyE(setting,'Act_'),dwActID));
-            p^:='_'; inc(p);
-            StrCopy(p,opt_Flags); DBWriteDWord(0,opt_UA,setting,flags and not UAF_REALTIME);
+            p:=GetUABranch(setting,dwActID);
+            if p<>nil then
+            begin
+              p:=StrCopyE(p,opt_UA);
+              p^:='/'; inc(p);
+              StrCopy(p,opt_Flags);
+              DBWriteDWord(0,DBBranch,setting,flags and not UAF_REALTIME);
+            end;
           end;
 
           if hMTBButton<>0 then                         // (flags and UAF_REGMTBB )<>0
