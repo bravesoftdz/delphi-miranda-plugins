@@ -11,6 +11,7 @@ const
   opt_MenuShowWhenVars:pAnsiChar = 'MenuVarStr';
   opt_MenuOptions     :pAnsiChar = 'MenuOptions';
 
+{}
 procedure DeleteUASettings(idx:integer);
 var
   setting:array [0..63] of AnsiChar;
@@ -19,40 +20,44 @@ var
 begin
   with UActionList[idx] do
   begin
-    p:=StrEnd(IntToStr(StrCopyE(setting,'Act_'),dwActID));
-    p^:='_'; inc(p);
-
-    StrCopy(p,opt_Flags); DBDeleteSetting(0,opt_UA,setting);
-  
-    StrCopy(p,opt_MTBTooltip        ); DBDeleteSetting(0,opt_UA,setting);
-    StrCopy(p,opt_MTBTooltipPressed ); DBDeleteSetting(0,opt_UA,setting);
-
-    StrCopy(p,opt_TabBTooltip       ); DBDeleteSetting(0,opt_UA,setting);
-    StrCopy(p,opt_TabBTooltipPressed); DBDeleteSetting(0,opt_UA,setting);
-
-    for lmenu:=main_menu to HIGH(tMenuType) do
+    p:=GetUABranch(setting,dwActID);
+    if p<>nil then
     begin
-      pm:=p;
-      pm^:=AnsiChar(ORD(lmenu)+ORD('0')); inc(pm);
-      pm^:='_'; inc(pm);
-      StrCopy(pm,opt_MenuPopup       ); DBDeleteSetting(0,opt_UA,setting);
-      StrCopy(pm,opt_MenuNameVars    ); DBDeleteSetting(0,opt_UA,setting);
-      StrCopy(pm,opt_MenuShowWhenVars); DBDeleteSetting(0,opt_UA,setting);
-      StrCopy(pm,opt_MenuOptions     ); DBDeleteSetting(0,opt_UA,setting);
+      p:=StrCopyE(p,opt_UA);
+      p^:='/'; inc(p);
+
+      StrCopy(p,opt_Flags); DBDeleteSetting(0,DBBranch,setting);
+    
+      StrCopy(p,opt_MTBTooltip        ); DBDeleteSetting(0,DBBranch,setting);
+      StrCopy(p,opt_MTBTooltipPressed ); DBDeleteSetting(0,DBBranch,setting);
+
+      StrCopy(p,opt_TabBTooltip       ); DBDeleteSetting(0,DBBranch,setting);
+      StrCopy(p,opt_TabBTooltipPressed); DBDeleteSetting(0,DBBranch,setting);
+
+      for lmenu:=main_menu to HIGH(tMenuType) do
+      begin
+        pm:=p;
+        pm^:=AnsiChar(ORD(lmenu)+ORD('0')); inc(pm);
+        pm^:='_'; inc(pm);
+        StrCopy(pm,opt_MenuPopup       ); DBDeleteSetting(0,DBBranch,setting);
+        StrCopy(pm,opt_MenuNameVars    ); DBDeleteSetting(0,DBBranch,setting);
+        StrCopy(pm,opt_MenuShowWhenVars); DBDeleteSetting(0,DBBranch,setting);
+        StrCopy(pm,opt_MenuOptions     ); DBDeleteSetting(0,DBBranch,setting);
+      end;
     end;
   end;
 end;
 
 procedure addSaveUA(setting:pAnsiChar;txt:pWideChar); overload;
 begin
-  if (txt=nil) or (txt^=#0) then DBDeleteSetting(0,opt_UA,setting)
-  else DBWriteUnicode(0,opt_UA,setting,txt);
+  if (txt=nil) or (txt^=#0) then DBDeleteSetting(0,DBBranch,setting)
+  else DBWriteUnicode(0,DBBranch,setting,txt);
 end;
 
 procedure addSaveUA(setting:pAnsiChar;txt:pAnsiChar); overload;
 begin
-  if (txt=nil) or (txt^=#0) then DBDeleteSetting(0,opt_UA,setting)
-  else DBWriteString(0,opt_UA,setting,txt);
+  if (txt=nil) or (txt^=#0) then DBDeleteSetting(0,DBBranch,setting)
+  else DBWriteString(0,DBBranch,setting,txt);
 end;
 
 procedure SaveUA(idx:integer);
@@ -63,28 +68,32 @@ var
 begin
   with UActionList[idx] do
   begin
-    p:=StrEnd(IntToHex(StrCopyE(setting,'Act_'),dwActID));
-    p^:='_'; inc(p);
-
-    StrCopy(p,opt_Flags); DBWriteDWord(0,opt_UA,setting,flags and not UAF_REALTIME);
-
-    StrCopy(p,opt_MTBTooltip       ); addSaveUA(setting,szMTBTooltip);
-    StrCopy(p,opt_MTBTooltipPressed); addSaveUA(setting,szMTBTooltipPressed);
-
-    StrCopy(p,opt_TabBTooltip       ); addSaveUA(setting,szTabBTooltip);
-    StrCopy(p,opt_TabBTooltipPressed); addSaveUA(setting,szTabBTooltipPressed);
-
-    for lmenu:=main_menu to HIGH(tMenuType) do
+    p:=GetUABranch(setting,dwActID);
+    if p<>nil then
     begin
-      pm:=p;
-      pm^:=AnsiChar(ORD(lmenu)+ORD('0')); inc(pm);
-      pm^:='_'; inc(pm);
-      with UAMenuItem[lmenu] do
+      p:=StrCopyE(p,opt_UA);
+      p^:='/'; inc(p);
+
+      StrCopy(p,opt_Flags); DBWriteDWord(0,DBBranch,setting,flags and not UAF_REALTIME);
+
+      StrCopy(p,opt_MTBTooltip       ); addSaveUA(setting,szMTBTooltip);
+      StrCopy(p,opt_MTBTooltipPressed); addSaveUA(setting,szMTBTooltipPressed);
+
+      StrCopy(p,opt_TabBTooltip       ); addSaveUA(setting,szTabBTooltip);
+      StrCopy(p,opt_TabBTooltipPressed); addSaveUA(setting,szTabBTooltipPressed);
+
+      for lmenu:=main_menu to HIGH(tMenuType) do
       begin
-        StrCopy(pm,opt_MenuPopup       ); addSaveUA(setting,szMenuPopup);
-        StrCopy(pm,opt_MenuNameVars    ); addSaveUA(setting,szMenuNameVars);
-        StrCopy(pm,opt_MenuShowWhenVars); addSaveUA(setting,szMenuShowWhenVars);
-        StrCopy(pm,opt_MenuOptions     ); DBWriteWord(0,opt_UA,setting,menu_opt);
+        pm:=p;
+        pm^:=AnsiChar(ORD(lmenu)+ORD('0')); inc(pm);
+        pm^:='_'; inc(pm);
+        with UAMenuItem[lmenu] do
+        begin
+          StrCopy(pm,opt_MenuPopup       ); addSaveUA(setting,szMenuPopup);
+          StrCopy(pm,opt_MenuNameVars    ); addSaveUA(setting,szMenuNameVars);
+          StrCopy(pm,opt_MenuShowWhenVars); addSaveUA(setting,szMenuShowWhenVars);
+          StrCopy(pm,opt_MenuOptions     ); DBWriteWord(0,DBBranch,setting,menu_opt);
+        end;
       end;
     end;
   end;
@@ -107,39 +116,42 @@ begin
   result:=0;
   with UActionList[idx] do
   begin
-    p:=StrEnd(IntToHex(StrCopyE(setting,'Act_'),dwActID));
-    p^:='_'; inc(p);
-
-    StrCopy(p,opt_Flags); flags:=DBReadDWord(0,opt_UA,setting,dword(UAF_SPECIAL));
-    if flags=dword(UAF_SPECIAL) then // no settings
-      exit;
-    // no need to use previous "pressed" state
-    if (flags and UAF_SAVESTATE)=0 then
-      flags:=flags and not UAF_PRESSED;
-
-    flags:=flags and not UAF_REALTIME;
-    result:=1;
-
-    StrCopy(p,opt_MTBTooltip       ); szMTBTooltip       :=DBReadString(0,opt_UA,setting);
-    StrCopy(p,opt_MTBTooltipPressed); szMTBTooltipPressed:=DBReadString(0,opt_UA,setting);
-                                      
-    StrCopy(p,opt_TabBTooltip       ); szTabBTooltip       :=DBReadUnicode(0,opt_UA,setting);
-    StrCopy(p,opt_TabBTooltipPressed); szTabBTooltipPressed:=DBReadUnicode(0,opt_UA,setting);
-
-    for lmenu:=main_menu to HIGH(tMenuType) do
+    p:=GetUABranch(setting,dwActID);
+    if p<>nil then
     begin
-      pm:=p;
-      pm^:=AnsiChar(ORD(lmenu)+ORD('0')); inc(pm);
-      pm^:='_'; inc(pm);
-      with UAMenuItem[lmenu] do
+      p:=StrCopyE(p,opt_UA);
+      p^:='/'; inc(p);
+
+      StrCopy(p,opt_Flags); flags:=DBReadDWord(0,DBBranch,setting,dword(UAF_SPECIAL));
+      if flags=dword(UAF_SPECIAL) then // no settings
+        exit;
+      // no need to use previous "pressed" state
+      if (flags and UAF_SAVESTATE)=0 then
+        flags:=flags and not UAF_PRESSED;
+
+      flags:=flags and not UAF_REALTIME;
+      result:=1;
+
+      StrCopy(p,opt_MTBTooltip       ); szMTBTooltip       :=DBReadString(0,DBBranch,setting);
+      StrCopy(p,opt_MTBTooltipPressed); szMTBTooltipPressed:=DBReadString(0,DBBranch,setting);
+                                        
+      StrCopy(p,opt_TabBTooltip       ); szTabBTooltip       :=DBReadUnicode(0,DBBranch,setting);
+      StrCopy(p,opt_TabBTooltipPressed); szTabBTooltipPressed:=DBReadUnicode(0,DBBranch,setting);
+
+      for lmenu:=main_menu to HIGH(tMenuType) do
       begin
-        StrCopy(pm,opt_MenuPopup       ); szMenuPopup       :=DBReadUnicode(0,opt_UA,setting);
-        StrCopy(pm,opt_MenuNameVars    ); szMenuNameVars    :=DBReadUnicode(0,opt_UA,setting);
-        StrCopy(pm,opt_MenuShowWhenVars); szMenuShowWhenVars:=DBReadUnicode(0,opt_UA,setting);
-        StrCopy(pm,opt_MenuOptions     ); menu_opt          :=DBReadWord   (0,opt_UA,setting);
+        pm:=p;
+        pm^:=AnsiChar(ORD(lmenu)+ORD('0')); inc(pm);
+        pm^:='_'; inc(pm);
+        with UAMenuItem[lmenu] do
+        begin
+          StrCopy(pm,opt_MenuPopup       ); szMenuPopup       :=DBReadUnicode(0,DBBranch,setting);
+          StrCopy(pm,opt_MenuNameVars    ); szMenuNameVars    :=DBReadUnicode(0,DBBranch,setting);
+          StrCopy(pm,opt_MenuShowWhenVars); szMenuShowWhenVars:=DBReadUnicode(0,DBBranch,setting);
+          StrCopy(pm,opt_MenuOptions     ); menu_opt          :=DBReadWord   (0,DBBranch,setting);
+        end;
       end;
     end;
-
   end;
 end;
 (*
@@ -175,7 +187,8 @@ end;
 *)
 procedure SetAllActionUsers(var ActionItem:tMyActionItem);
 var
-  buf:array [0..63] of AnsiChar;
+  setting:array [0..63] of AnsiChar;
+  p:pAnsiChar;
   luse:boolean;
   lmenu:tMenuType;
 begin
@@ -214,18 +227,26 @@ begin
   end;
 
   // First run (ok ok, if ppl ask for it....)
-  StrCat(IntToStr(StrCopyE(buf,'Act_'),ActionItem.dwActID),'_FirstRun');
-  if DBReadByte(0,opt_UA,buf,0)<>0 then
+  p:=GetUABranch(setting,ActionItem.dwActID);
+  if p<>nil then
   begin
-    CAllService(MS_ACT_RUNBYID,ActionItem.dwActID,0);
-    DBDeleteSetting(0,opt_UA,buf);
+    p:=StrCopyE(p,opt_UA);
+    p^:='/'; inc(p);
+    StrCopy(p,'_FirstRun');
+    if DBReadByte(0,DBBranch,setting,0)<>0 then
+    begin
+      CAllService(MS_ACT_RUNBYID,ActionItem.dwActID,0);
+      DBDeleteSetting(0,DBBranch,setting);
+    end;
   end;
+
 end;
 
 procedure DeleteUAction(num:integer);
 var
   ActionItem:pMyActionItem;
-  buf:array [0..63] of AnsiChar;
+  setting:array [0..63] of AnsiChar;
+  p:pAnsiChar;
   luse:boolean;
   lmenu:tMenuType;
 begin
@@ -270,8 +291,14 @@ begin
     ActionItem.hMenuService:=0;
   end;
 
-  StrCat(IntToStr(StrCopyE(buf,'Act_'),ActionItem.dwActID),'_FirstRun');
-  DBDeleteSetting(0,opt_UA,buf);
+  p:=GetUABranch(setting,ActionItem.dwActID);
+  if p<>nil then
+  begin
+    p:=StrCopyE(p,opt_UA);
+    p^:='/'; inc(p);
+    StrCopy(p,'_FirstRun');
+    DBDeleteSetting(0,DBBranch,setting);
+  end;
 
   // Free Memory
   mFreeMem(ActionItem.szNameID);

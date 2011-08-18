@@ -1560,12 +1560,12 @@ begin
               begin
                 mFreeMem(fCLformat);
                 fCLformat:=GetDlgText(Dialog,IDC_EDIT_FORMAT);
-                DBWriteUnicode(0,opt_main,'CLformat',fCLformat);
+                DBWriteUnicode(0,DBBranch,'CLformat',fCLformat);
               end
               else
               begin
                 fCLfilter:=IsDlgButtonChecked(Dialog,IDC_CNT_FILTER)<>BST_UNCHECKED;
-                DBWriteByte(0,opt_main,'CLfilter',ord(fCLfilter));
+                DBWriteByte(0,DBBranch,'CLfilter',ord(fCLfilter));
               end;
 // Saving and restoring contact after list rebuild
               wnd:=GetDlgItem(Dialog,IDC_CONTACTLIST);

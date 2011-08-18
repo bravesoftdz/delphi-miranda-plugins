@@ -3,6 +3,7 @@ const
   etHK  = 1; // Groups  changed
   etACT = 2; // Actions changed
 const
+  ACI_APPLY  :PAnsiChar = 'ACI_Apply';
   ACI_NEW    :PAnsiChar = 'ACI_New';
   ACI_UP     :PAnsiChar = 'ACI_Up';
   ACI_DOWN   :PAnsiChar = 'ACI_Down';
@@ -74,6 +75,7 @@ begin
   sid.flags      :=SIDF_UNICODE;
   sid.szSection.w:='Actions';
 
+  RegisterIcon(IDI_APPLY  ,ACI_APPLY  ,'Apply');
   RegisterIcon(IDI_NEW    ,ACI_NEW    ,'New');
   RegisterIcon(IDI_DELETE ,ACI_DELETE ,'Delete');
   RegisterIcon(IDI_UP     ,ACI_UP     ,'Up');

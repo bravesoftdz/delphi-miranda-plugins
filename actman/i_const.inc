@@ -26,6 +26,7 @@ const
   IDI_VAR_CHECKED   = 1041;
   IDI_VAR_UNCHECKED = 1042;
   IDI_FORMAT        = 1043;
+  IDI_APPLY         = 1044;
 
   // Structure editor
   IDC_DATA_FULL     = 2001;

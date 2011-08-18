@@ -7,6 +7,7 @@ var
 
 const
   ACI_NEW    :PAnsiChar = 'ACI_New';
+  ACI_APPLY  :PAnsiChar = 'ACI_Apply';
   ACI_DELETE :PAnsiChar = 'ACI_Delete';
 
 procedure CheckHookList(wnd:HWND);
@@ -257,6 +258,10 @@ begin
   ti.lpszText:=TranslateW('New');
   SetButtonIcon(ti.uId,ACI_NEW);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,LPARAM(@ti));
+  ti.uId     :=GetDlgItem(Dialog,IDC_HOOK_APPLY);
+  ti.lpszText:=TranslateW('Apply');
+  SetButtonIcon(ti.uId,ACI_APPLY);
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,LPARAM(@ti));
   ti.uId     :=GetDlgItem(Dialog,IDC_HOOK_DELETE);
   ti.lpszText:=TranslateW('Delete');
   SetButtonIcon(ti.uId,ACI_DELETE);
@@ -344,6 +349,7 @@ begin
             IDC_EVENT_HELP : ;
             IDC_HOOK_NEW   : NewHook(Dialog);
             IDC_HOOK_DELETE: DeleteHook(Dialog);
+            IDC_HOOK_APPLY : SaveHookData(Dialog);
           end;
         end;
       end;

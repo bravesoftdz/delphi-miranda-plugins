@@ -292,10 +292,6 @@ begin
   begin
     // main flags
     flags:=flags and not UAF_USING;
-    for i:=0 to SendMessage(wnd,LVM_GETITEMCOUNT,0,0)-1 do
-    begin
-      SetPlaceActive(num,LV_GetLParam(wnd,i),ListView_GetCheckState(wnd,i)<>0);
-    end;
     // common section
     if IsDlgButtonChecked(Dialog,IDC_UA_TWOSTATE)<>BST_UNCHECKED then
       flags:=flags or UAF_2STATE
@@ -324,6 +320,10 @@ begin
       uaHotkey: begin // Hotkey
         // Settings in Customize/Hotkeys
       end;
+    end;
+    for i:=0 to SendMessage(wnd,LVM_GETITEMCOUNT,0,0)-1 do
+    begin
+      SetPlaceActive(num,LV_GetLParam(wnd,i),ListView_GetCheckState(wnd,i)<>0);
     end;
   //just after Action (not place) changes
   if item<0 then

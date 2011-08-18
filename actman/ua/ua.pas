@@ -19,6 +19,29 @@ uses
 
 {$include i_uconst.inc}
 {$include i_uavars.inc}
+
+// in - Action ID, out - action (group) number
+function GetUABranch(setting:pAnsiChar;id:cardinal):pAnsiChar;
+var
+  i:integer;
+  p,p1:pAnsiChar;
+begin
+  result:=nil;
+  p1:=StrCopyE(setting,opt_groups);
+  for i:=0 to CallService(MS_ACT_GETLIST,0,0)-1 do
+  begin
+    p:=StrEnd(IntToStr(p1,i));
+    p^:='/'; inc(p);
+    StrCopy(p,opt_id);
+    if DBReadDword(0,DBBranch,setting)=id then
+    begin
+      p^:=#0;
+      result:=p;
+      break;
+    end;
+  end;
+end;
+
 {$include i_uaplaces.inc}
 {$include i_options.inc}
 {$include i_opt_dlg.inc}
@@ -65,6 +88,7 @@ begin
 
   PluginLink^.UnhookEvent(ontabbtnpressed);
   PluginLink^.UnhookEvent(onactchanged);
+  PluginLink^.UnhookEvent(iohook);
   PluginLink^.DestroyServiceFunction(hServiceWithLParam);
   PluginLink^.DestroyServiceFunction(hMTBService);
 end;
