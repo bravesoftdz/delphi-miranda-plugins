@@ -79,7 +79,7 @@ begin
   result:=@PluginInfo;
   PluginInfo.cbSize     :=SizeOf(TPLUGININFOEX);
   PluginInfo.shortName  :='Action manager';
-  PluginInfo.version    :=$0001010A;
+  PluginInfo.version    :=$00020001;
   PluginInfo.description:='Plugin for manage hotkeys to open contact window, insert text, '+
                           'run program and call services';
   PluginInfo.author     :='Awkward';
