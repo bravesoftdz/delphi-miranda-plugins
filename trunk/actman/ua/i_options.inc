@@ -74,7 +74,8 @@ begin
       p:=StrCopyE(p,opt_UA);
       p^:='/'; inc(p);
 
-      StrCopy(p,opt_Flags); DBWriteDWord(0,DBBranch,setting,flags and not UAF_REALTIME);
+      StrCopy(p,opt_Flags); DBWriteDWord(0,DBBranch,setting,
+          flags and not (UAF_REALTIME OR UAF_SPECIAL));
 
       StrCopy(p,opt_MTBTooltip       ); addSaveUA(setting,szMTBTooltip);
       StrCopy(p,opt_MTBTooltipPressed); addSaveUA(setting,szMTBTooltipPressed);
@@ -122,9 +123,13 @@ begin
       p:=StrCopyE(p,opt_UA);
       p^:='/'; inc(p);
 
-      StrCopy(p,opt_Flags); flags:=DBReadDWord(0,DBBranch,setting,dword(UAF_SPECIAL));
+      StrCopy(p,opt_Flags);
+      flags:=DBReadDWord(0,DBBranch,setting,dword(UAF_SPECIAL));
       if flags=dword(UAF_SPECIAL) then // no settings
+      begin
+        flags:=0;
         exit;
+      end;
       // no need to use previous "pressed" state
       if (flags and UAF_SAVESTATE)=0 then
         flags:=flags and not UAF_PRESSED;
@@ -192,32 +197,44 @@ var
   luse:boolean;
   lmenu:tMenuType;
 begin
-  if (ActionItem.flags and UAF_REGHOTKEY)<>0 then
-    AddCoreHotkey(ActionItem)
-  else
-    DeleteCoreHotkey(ActionItem);
+  if NamesArray[uaHotkey].enable then
+  begin
+    if (ActionItem.flags and UAF_REGHOTKEY)<>0 then
+      AddCoreHotkey(ActionItem)
+    else
+      DeleteCoreHotkey(ActionItem);
+  end;
 
-  DeleteMTBButton(ActionItem); // no modify command there, just delete, then insert back
-  if (ActionItem.flags and UAF_REGMTBB)<>0 then
-    AddMTBButton(ActionItem);
+  if NamesArray[uaMTB].enable then
+  begin
+    DeleteMTBButton(ActionItem); // no modify command there, just delete, then insert back
+    if (ActionItem.flags and UAF_REGMTBB)<>0 then
+      AddMTBButton(ActionItem);
+  end;
 
-  if (ActionItem.flags and UAF_REGTABB)<>0 then
-    AddTabBBButton(ActionItem)
-  else
-    DeleteTabBBButton(ActionItem);
+  if NamesArray[uaTAB].enable then
+  begin
+    if (ActionItem.flags and UAF_REGTABB)<>0 then
+      AddTabBBButton(ActionItem)
+    else
+      DeleteTabBBButton(ActionItem);
+  end;
 
   luse:=false;
   for lmenu:=main_menu to HIGH(tMenuType) do
   begin
-    if (ActionItem.UAMenuItem[lmenu].menu_opt and UAF_MENUUSE)<>0 then
+    if NamesArray[uaMenu+ORD(lmenu)].enable then
     begin
-      luse:=true;
-      if ActionItem.UAMenuItem[lmenu].changed then
+      if (ActionItem.UAMenuItem[lmenu].menu_opt and UAF_MENUUSE)<>0 then
+      begin
+        luse:=true;
+        if ActionItem.UAMenuItem[lmenu].changed then
+          DeleteMenuItem(ActionItem,lmenu);
+        CreateMenuItem(ActionItem,lmenu);
+      end
+      else
         DeleteMenuItem(ActionItem,lmenu);
-      CreateMenuItem(ActionItem,lmenu);
-    end
-    else
-      DeleteMenuItem(ActionItem,lmenu);
+    end;
   end;
 
   if (not luse) and (ActionItem.hMenuService<>0) then
