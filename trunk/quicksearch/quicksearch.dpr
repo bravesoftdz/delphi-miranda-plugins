@@ -196,8 +196,6 @@ var
 begin
   PluginLink^.UnhookEvent(onloadhook);
 
-  Langpack_register;
-
   if DetectHKManager<>HKMT_CORE then
     InitHotKeys;
 
@@ -247,6 +245,7 @@ begin
   Result:=0;
   PluginLink:=pointer(link);
   InitMMI;
+  Langpack_register;
   opthook   :=PluginLink^.HookEvent(ME_OPT_INITIALISE      ,@OnOptInitialise);
   onloadhook:=PluginLink^.HookEvent(ME_SYSTEM_MODULESLOADED,@OnModulesLoaded);
   loadopt_db(true);

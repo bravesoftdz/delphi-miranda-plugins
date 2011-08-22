@@ -501,7 +501,6 @@ var
 begin
    PluginLink^.UnhookEvent(onloadhook);
 
-  Langpack_register;
   if PluginLink^.ServiceExists(MS_UPDATE_REGISTER)<>0 then
   begin
     with upd do
@@ -657,6 +656,7 @@ begin
   result:=0;
   PluginLink:=Pointer(link);
   InitMMI;
+  Langpack_register;
 
   DisablePlugin:=dsPermanent;
 
