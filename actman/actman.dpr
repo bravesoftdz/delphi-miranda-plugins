@@ -269,8 +269,6 @@ begin
   Result:=0;
   PluginLink^.UnhookEvent(onloadhook);
 
-  Langpack_register;
-
   LoadGroups;
   InitHelpFile;
   RegisterIcons;
@@ -317,6 +315,7 @@ begin
   Result:=0;
   PluginLink:=Pointer(link);
   InitMMI;
+  Langpack_register;
 
   hHookChanged:=PluginLink^.CreateHookableEvent(ME_ACT_CHANGED);
   hevinout    :=PluginLink^.CreateHookableEvent(ME_ACT_INOUT);

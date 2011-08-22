@@ -47,9 +47,18 @@ begin
   CallService(MS_TB_SETBUTTONSTATE,ActionItem.hMTBButton,lflag);
 end;
 
+function IsLocalItem(const UAItem:tMyActionItem):boolean;
+begin
+  result:=(UAItem.UAMenuItem[main_menu  ].hMenuItem=0) and
+          (UAItem.UAMenuItem[tray_menu  ].hMenuItem=0) and
+          (UAItem.UAMenuItem[proto_menu ].hMenuItem=0) and
+          (UAItem.UAMenuItem[status_menu].hMenuItem=0) and
+          (UAItem.hMTBButton=0);
+end;
+
 function ServiceCallWithFParam(wParam:WPARAM; lParam:LPARAM; fParam:LPARAM):int_ptr; cdecl;
 var
-  local:boolean;
+//  local:boolean;
   i:integer;
   setting:array [0..63] of AnsiChar;
   p:pAnsiChar;
@@ -60,12 +69,11 @@ begin
       if dwActID=cardinal(fParam) then
       begin
         flags:=flags xor UAF_PRESSED;
-        local:=(UAMenuItem[main_menu].hMenuItem=0) and // (flags and UAF_REGMMENU)=0
-               (UAMenuItem[tray_menu].hMenuItem=0) and // (flags and UAF_REGTMENU)=0
-               (hMTBButton=0);                         // (flags and UAF_REGMTBB )=0
-        
         // sync buttons/menus
-        if not local then
+        if IsLocalItem(UActionList[i]) then
+        begin
+        end
+        else
         begin
           // save "pressed" state
           if (flags and UAF_SAVESTATE)<>0 then
@@ -80,8 +88,9 @@ begin
             end;
           end;
 
-          if hMTBButton<>0 then                         // (flags and UAF_REGMTBB )<>0
+          if hMTBButton<>0 then
             SetMTBState(UActionList[i]);
+
           if (flags and UAF_REGTABB)<>0 then;
         end;
 
@@ -439,9 +448,9 @@ begin
           if (mi.flags and CMIF_HIDDEN)=0 then
           begin
 {
-        local:=(UAMenuItem[main_menu].hMenuItem=0) and // (flags and UAF_REGMMENU)=0
-               (UAMenuItem[tray_menu].hMenuItem=0) and // (flags and UAF_REGTMENU)=0
-               (hMTBButton=0);                         // (flags and UAF_REGMTBB )=0
+        local:=(UAMenuItem[main_menu].hMenuItem=0) and
+               (UAMenuItem[tray_menu].hMenuItem=0) and
+               (hMTBButton=0);
 if not local then UAF_PRESSED analized
 else...
 }

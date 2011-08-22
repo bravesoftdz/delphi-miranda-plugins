@@ -33,7 +33,6 @@ function OnModulesLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
   Result:=0;
   PluginLink^.UnhookEvent(onloadhook);
-  Langpack_register;
   CreateFrame(0);
 end;
 
@@ -41,6 +40,7 @@ function Load(link:PPLUGINLINK):int; cdecl;
 begin
   PluginLink:=Pointer(link);
   InitMMI;
+  Langpack_register;
 
   onloadhook:=PluginLink^.HookEvent(ME_SYSTEM_MODULESLOADED,@OnModulesLoaded);
 
