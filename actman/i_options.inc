@@ -65,6 +65,7 @@ begin
   result:=0;
   // in: section = "Group#/"
   p1:=StrCopyE(StrEnd(section),opt_actions); // "Group#/Action"
+  DBDeleteGroup(0,DBBranch,section);
   i:=1;
   while first<>0 do
   begin
@@ -197,17 +198,15 @@ var
   p,p1:PAnsiChar;
   Actions:integer;
 begin
-//!!!!!!!!! need to delete by mask only? or sync with other actman modules
-  DBDeleteGroup(0,DBBranch,opt_group);
-//  DBDeleteGroup(0,opt_actions);
+// even if crap in settings, skip on read
+//  DBDeleteGroup(0,DBBranch,opt_group);
   HK:=@GroupList^;
   i:=MaxGroups;
   NumHK:=0;
   Actions:=1;
   DBWriteUnicode(0,DBBranch,'CLformat',fCLformat);
   DBWriteByte   (0,DBBranch,'CLfilter',ord(fCLfilter));
-//  p:=StrCopyE(section,DBBranch);
-//  p^:='/'; inc(p);
+
   p1:=StrCopyE(section,opt_group);
   while i>0 do
   begin
@@ -218,12 +217,13 @@ begin
         p:=StrEnd(IntToStr(p1,NumHK));
         p^:='/'; inc(p);
 
-        StrCopy(p,opt_id         ); DBWriteDWord(0,DBBranch,section,id);
-        StrCopy(p,opt_flags      ); DBWriteDWord(0,DBBranch,section,flags);
+        StrCopy(p,opt_id   ); DBWriteDWord(0,DBBranch,section,id);
+        StrCopy(p,opt_flags); DBWriteDWord(0,DBBranch,section,flags);
+        StrCopy(p,opt_descr);
         if descr<>nil then
-        begin
-          StrCopy(p,opt_descr    ); DBWriteUnicode(0,DBBranch,section,descr);
-        end;
+          DBWriteUnicode (0,DBBranch,section,descr)
+        else
+          DBDeleteSetting(0,DBBranch,section);
 
         p^:=#0;
     //??

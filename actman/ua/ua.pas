@@ -42,6 +42,9 @@ begin
   end;
 end;
 
+var
+  amLink:tActionLink;
+
 {$include i_uaplaces.inc}
 {$include i_options.inc}
 {$include i_opt_dlg.inc}
@@ -100,9 +103,6 @@ begin
   proc:=@DlgProcOpt;
   name:='Use Actions';
 end;
-
-var
-  amLink:tActionLink;
 
 procedure InitLink;
 begin
