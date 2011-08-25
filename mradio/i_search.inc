@@ -83,10 +83,14 @@ var
   pc,buf:PAnsiChar;
   csr:CUSTOMSEARCHRESULTS;
   columns:array [0..3] of TCHAR;
+  i:integer;
 begin
-  mGetMem(buf,32768);
+  i:=GetFSize(ini);
+  if i=0 then
+    i:=32767;
+  mGetMem(buf,i+1);
   buf^:=#0;
-  GetPrivateProfileSectionNamesA(buf,32768,ini);
+  GetPrivateProfileSectionNamesA(buf,i,ini);
   pc:=buf;
 
   columns[0].w:='Station Name';
