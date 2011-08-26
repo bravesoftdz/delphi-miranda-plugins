@@ -125,7 +125,7 @@ begin
   FillChar(filter,SizeOf(filter),0);
   StrCopy(ini,storage);
 
-  filter.lStation:=Name;
+  StrDup(filter.lStation,Name);
   if filter.lStation<>nil then
     CharLowerA(filter.lStation);
 
