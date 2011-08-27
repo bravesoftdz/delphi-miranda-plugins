@@ -63,17 +63,17 @@ begin
           csr.nFieldCount:=4;
           csr.szFields   :=@columns;
           ProtoBroadcastAck(PluginName,0,ACKTYPE_SEARCH,ACKRESULT_SEARCHRESULT,AckHandle,lparam(@csr));
+
+          mFreeMem(columns[0].w);
+          mFreeMem(columns[1].w);
+          mFreeMem(columns[2].w);
+          mFreeMem(columns[3].w);
         end;
       end;
       mFreeMem(csr.psr.nick);
       mFreeMem(csr.psr.firstname);
       mFreeMem(csr.psr.lastname);
       mFreeMem(csr.psr.email);
-
-      mFreeMem(columns[0].w);
-      mFreeMem(columns[1].w);
-      mFreeMem(columns[2].w);
-      mFreeMem(columns[3].w);
     end;
   end;
 end;
