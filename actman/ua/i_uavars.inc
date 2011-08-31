@@ -42,6 +42,7 @@ type
     hMTBButton          :THANDLE;   // Modern toolbar button
     szMTBTooltip        :PAnsiChar;
     szMTBTooltipPressed :PAnsiChar;
+    szMTBShowWhenVars   :pWideChar;
 
     szTabBTooltip       :PWideChar; // TabSRMM toolbar button
     szTabBTooltipPressed:PWideChar;

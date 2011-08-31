@@ -2,6 +2,7 @@
 const
   opt_MTBTooltip        :pAnsiChar = 'MTBTooltip';
   opt_MTBTooltipPressed :pAnsiChar = 'MTBTooltipPressed';
+  opt_MTBShowWhenVars   :pAnsiChar = 'MTBVarStr';
 
   opt_TabBTooltip       :pAnsiChar = 'TabBTooltip';
   opt_TabBTooltipPressed:pAnsiChar = 'TabBTooltipPressed';
@@ -30,6 +31,7 @@ begin
     
       StrCopy(p,opt_MTBTooltip        ); DBDeleteSetting(0,DBBranch,setting);
       StrCopy(p,opt_MTBTooltipPressed ); DBDeleteSetting(0,DBBranch,setting);
+      StrCopy(p,opt_MTBShowWhenVars   ); DBDeleteSetting(0,DBBranch,setting);
 
       StrCopy(p,opt_TabBTooltip       ); DBDeleteSetting(0,DBBranch,setting);
       StrCopy(p,opt_TabBTooltipPressed); DBDeleteSetting(0,DBBranch,setting);
@@ -79,6 +81,7 @@ begin
 
       StrCopy(p,opt_MTBTooltip       ); addSaveUA(setting,szMTBTooltip);
       StrCopy(p,opt_MTBTooltipPressed); addSaveUA(setting,szMTBTooltipPressed);
+      StrCopy(p,opt_MTBShowWhenVars  ); addSaveUA(setting,szMTBShowWhenVars);
 
       StrCopy(p,opt_TabBTooltip       ); addSaveUA(setting,szTabBTooltip);
       StrCopy(p,opt_TabBTooltipPressed); addSaveUA(setting,szTabBTooltipPressed);
@@ -137,8 +140,9 @@ begin
       flags:=flags and not UAF_REALTIME;
       result:=1;
 
-      StrCopy(p,opt_MTBTooltip       ); szMTBTooltip       :=DBReadString(0,DBBranch,setting);
-      StrCopy(p,opt_MTBTooltipPressed); szMTBTooltipPressed:=DBReadString(0,DBBranch,setting);
+      StrCopy(p,opt_MTBTooltip       ); szMTBTooltip       :=DBReadString (0,DBBranch,setting);
+      StrCopy(p,opt_MTBTooltipPressed); szMTBTooltipPressed:=DBReadString (0,DBBranch,setting);
+      StrCopy(p,opt_MTBShowWhenVars  ); szMTBShowWhenVars  :=DBReadUnicode(0,DBBranch,setting);
                                         
       StrCopy(p,opt_TabBTooltip       ); szTabBTooltip       :=DBReadUnicode(0,DBBranch,setting);
       StrCopy(p,opt_TabBTooltipPressed); szTabBTooltipPressed:=DBReadUnicode(0,DBBranch,setting);
@@ -280,6 +284,7 @@ begin
     DeleteMTBButton(ActionItem^);
   mFreeMem(ActionItem.szMTBTooltip);
   mFreeMem(ActionItem.szMTBTooltipPressed);
+  mFreeMem(ActionItem.szMTBShowWhenVars);
 
   if (ActionItem.flags and UAF_REGTABB)<>0 then
     DeleteTabBBButton(ActionItem^);
