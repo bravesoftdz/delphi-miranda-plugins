@@ -47,55 +47,92 @@ begin
   CallService(MS_TB_SETBUTTONSTATE,ActionItem.hMTBButton,lflag);
 end;
 
+procedure SetTABState(hContact:THANDLE;var ActionItem:tMyActionItem;pressed:integer);
+var
+  tabb:BBButton;
+  pc:pWideChar;
+begin
+  FillChar(tabb,SizeOf(tabb),0);
+  tabb.cbSize       :=SizeOf(tabb);
+  tabb.dwButtonID   :=ActionItem.dwActID;
+  tabb.pszModuleName:=MODULE_NAME;
+
+  if pressed<>0 then
+  begin
+    pc:=ActionItem.szTabBTooltipPressed;
+    if pc=nil then pc:=ActionItem.szTabBTooltip;
+    tabb.hIcon:=ActionItem.hIcolibIconPressed;
+    tabb.bbbFlags:=BBSF_PUSHED;
+  end
+  else
+  begin
+    pc:=ActionItem.szTabBTooltip;
+    tabb.hIcon:=ActionItem.hIcolibIcon;
+    tabb.bbbFlags:=BBSF_RELEASED;
+  end;
+  if pc=nil then pc:=ActionItem.szActDescr;
+  tabb.szTooltip.w:=pc;
+  CallService(MS_BB_SETBUTTONSTATE,hContact,TLPARAM(@tabb));
+end;
+
 function IsLocalItem(const UAItem:tMyActionItem):boolean;
 begin
-  result:=(UAItem.UAMenuItem[main_menu  ].hMenuItem=0) and
-          (UAItem.UAMenuItem[tray_menu  ].hMenuItem=0) and
-          (UAItem.UAMenuItem[proto_menu ].hMenuItem=0) and
-          (UAItem.UAMenuItem[status_menu].hMenuItem=0) and
-          (UAItem.hMTBButton=0);
+  result:=((UAItem.flags and UAF_GLOBAL)=0) and
+     (UAItem.UAMenuItem[main_menu  ].hMenuItem=0) and
+     (UAItem.UAMenuItem[tray_menu  ].hMenuItem=0) and
+     (UAItem.UAMenuItem[proto_menu ].hMenuItem=0) and
+     (UAItem.UAMenuItem[status_menu].hMenuItem=0) and
+     (UAItem.hMTBButton=0);
 end;
 
 function ServiceCallWithFParam(wParam:WPARAM; lParam:LPARAM; fParam:LPARAM):int_ptr; cdecl;
 var
-//  local:boolean;
   i:integer;
   setting:array [0..63] of AnsiChar;
   p:pAnsiChar;
+  cnt:THANDLE;
 begin
   for i:=0 to HIGH(UActionList) do
   begin
     with UActionList[i] do
       if dwActID=cardinal(fParam) then
-      begin
-        flags:=flags xor UAF_PRESSED;
-        // sync buttons/menus
-        if IsLocalItem(UActionList[i]) then
+        if (flags and UAF_2STATE)<>0 then
         begin
-        end
-        else
-        begin
-          // save "pressed" state
-          if (flags and UAF_SAVESTATE)<>0 then
+          flags:=flags xor UAF_PRESSED;
+          // sync buttons/menus
+          if IsLocalItem(UActionList[i]) then
           begin
-            p:=GetUABranch(setting,dwActID);
-            if p<>nil then
+  //          if (flags and UAF_SAVESTATE)<>0 then
             begin
-              p:=StrCopyE(p,opt_UA);
-              p^:='/'; inc(p);
-              StrCopy(p,opt_Flags);
-              DBWriteDWord(0,DBBranch,setting,flags and not UAF_REALTIME);
+              DBWriteByte(lastContact,opt_ua,szNameID,ORD(flags and UAF_PRESSED));
+              cnt:=lastContact;
             end;
+          end
+          else
+          begin
+            // save "pressed" state
+            if (flags and UAF_SAVESTATE)<>0 then
+            begin
+              p:=GetUABranch(setting,dwActID);
+              if p<>nil then
+              begin
+                p:=StrCopyE(p,opt_UA);
+                p^:='/'; inc(p);
+                StrCopy(p,opt_Flags);
+                DBWriteDWord(0,DBBranch,setting,flags and not UAF_REALTIME);
+              end;
+            end;
+
+            if hMTBButton<>0 then
+              SetMTBState(UActionList[i]);
+
+            cnt:=0;
           end;
+          if (flags and UAF_REGTABB)<>0 then
+            SetTABState(cnt,UActionList[i],ORD(flags and UAF_PRESSED));
 
-          if hMTBButton<>0 then
-            SetMTBState(UActionList[i]);
-
-          if (flags and UAF_REGTABB)<>0 then;
+          break;
         end;
-
-        break;
-      end;
   end;
 
   result:=CallService(MS_ACT_RUNBYID, fParam, wParam);
@@ -447,25 +484,40 @@ begin
           // (popup can be used by many items, keep unchanged)
           if (mi.flags and CMIF_HIDDEN)=0 then
           begin
-{
-        local:=(UAMenuItem[main_menu].hMenuItem=0) and
-               (UAMenuItem[tray_menu].hMenuItem=0) and
-               (hMTBButton=0);
-if not local then UAF_PRESSED analized
-else...
-}
             //!!!! icon (check for contact menu)
             mi.flags:=mi.flags or CMIM_ICON or CMIM_FLAGS or CMIF_ICONFROMICOLIB;
-            if (flags and (UAF_2STATE+UAF_PRESSED))=(UAF_2STATE+UAF_PRESSED) then
+
+            if (mtype=contact_menu) and IsLocalItem(UActionList[i]) then
             begin
-              mi.flags:=mi.flags or CMIF_CHECKED;
-              mi.hIcon:=hIcolibIconPressed;
-              extra:='1';
+              lastContact:=hContact;
+              if ((flags and UAF_2STATE)<>0) and
+                 (DBReadByte(hContact,opt_ua,szNameID)<>0) then
+              begin
+                mi.flags:=mi.flags or CMIF_CHECKED;
+                mi.hIcon:=hIcolibIconPressed;
+                extra:='1';
+                flags:=flags or UAF_PRESSED;
+              end
+              else
+              begin
+                flags:=flags and not UAF_PRESSED;
+                extra:='0';
+              end;
+
             end
             else
             begin
-              mi.hIcon:=hIcolibIcon;
-              extra:='0';
+              if (flags and (UAF_2STATE+UAF_PRESSED))=(UAF_2STATE+UAF_PRESSED) then
+              begin
+                mi.flags:=mi.flags or CMIF_CHECKED;
+                mi.hIcon:=hIcolibIconPressed;
+                extra:='1';
+              end
+              else
+              begin
+                mi.hIcon:=hIcolibIcon;
+                extra:='0';
+              end;
             end;
 
             // new name
@@ -655,36 +707,6 @@ begin
   end;
 end;
 
-procedure SetTABState(var ActionItem:tMyActionItem;state:integer);
-var
-  tabb:BBButton;
-  pc:pWideChar;
-begin
-  FillChar(tabb,SizeOf(tabb),0);
-  tabb.cbSize       :=SizeOf(tabb);
-  tabb.dwButtonID   :=ActionItem.dwActID;
-  tabb.pszModuleName:=MODULE_NAME;
-  CallService(MS_BB_GETBUTTONSTATE,0,TLPARAM(@tabb));
-
-  if (tabb.bbbFlags and BBSF_PUSHED)<>0 then
-  begin
-    pc:=ActionItem.szTabBTooltipPressed;
-    if pc=nil then pc:=ActionItem.szTabBTooltip;
-    tabb.hIcon:=ActionItem.hIcolibIconPressed;
-  end
-  else
-  begin
-    pc:=ActionItem.szTabBTooltip;
-    tabb.hIcon:=ActionItem.hIcolibIcon;
-  end;
-  if pc=nil then pc:=ActionItem.szActDescr;
-  tabb.szTooltip.w:=pc;
-  tabb.bbbFlags     :=BBBF_ISIMBUTTON or BBBF_ISLSIDEBUTTON or
-                      BBBF_ISCHATBUTTON or BBBF_ISPUSHBUTTON;
-  tabb.dwDefPos    :=(TABTOOLBAR_INITPOS+ActionItem.wSortIndex*10) and $7FFF;
-  CallService(MS_BB_MODIFYBUTTON,0,TLPARAM(@tabb));
-end;
-
 function OnTabButtonPressed(wParam:WPARAM;lParam:LPARAM):int; cdecl;
 var
   cbcd:pCustomButtonClickData;
@@ -692,18 +714,18 @@ var
   pc:pWideChar;
   i:integer;
 begin
+  result:=0;
   cbcd:=pointer(lParam);
   if StrCmp(cbcd.pszModule,MODULE_NAME)<>0 then
-  begin
-    result:=0;
     exit;
-  end;
+
   for i:=0 to HIGH(UActionList) do
   begin
     with UActionList[i] do
     begin
       if cbcd.dwButtonId=dwActID then
       begin
+{
         FillChar(tabb,SizeOf(tabb),0);
         tabb.cbSize       :=SizeOf(tabb);
         tabb.dwButtonID   :=cbcd.dwButtonId;
@@ -711,21 +733,27 @@ begin
         if (flags and UAF_2STATE)<>0 then
         begin
           CallService(MS_BB_GETBUTTONSTATE,cbcd.hContact,TLPARAM(@tabb));
-          if (tabb.bbbFlags and BBSF_PUSHED)<>0 then
+          if IsLocalItem(UActionList[i]) then
           begin
-            pc:=szTabBTooltipPressed;
-            if pc=nil then pc:=szTabBTooltip;
-            tabb.hIcon:=hIcolibIconPressed;
+            if DBReadByte(hContact,opt_ua,szNameID)<>0 then
           end
           else
           begin
-            pc:=szTabBTooltip;
-            tabb.hIcon:=hIcolibIcon;
-          end;
-          if pc=nil then pc:=szActDescr;
-          tabb.szTooltip.w:=pc;
-          tabb.bbbFlags     :=BBBF_ISIMBUTTON or BBBF_ISLSIDEBUTTON or
-                              BBBF_ISCHATBUTTON or BBBF_ISPUSHBUTTON;
+            if (tabb.bbbFlags and BBSF_PUSHED)<>0 then
+            begin
+              pc:=szTabBTooltipPressed;
+              if pc=nil then pc:=szTabBTooltip;
+              tabb.hIcon:=hIcolibIconPressed;
+            end
+            else
+            begin
+              pc:=szTabBTooltip;
+              tabb.hIcon:=hIcolibIcon;
+            end;
+            if pc=nil then pc:=szActDescr;
+            tabb.szTooltip.w:=pc;
+            tabb.bbbFlags     :=BBBF_ISIMBUTTON or BBBF_ISLSIDEBUTTON or
+                                BBBF_ISCHATBUTTON or BBBF_ISPUSHBUTTON;
         end
         else
         begin
@@ -735,18 +763,18 @@ begin
           tabb.bbbFlags     :=BBBF_ISIMBUTTON or BBBF_ISLSIDEBUTTON or
                               BBBF_ISCHATBUTTON;
         end;
+
         tabb.iButtonWidth:=0;
         tabb.dwDefPos    :=(TABTOOLBAR_INITPOS+wSortIndex*10) and $7FFF;
         CallService(MS_BB_MODIFYBUTTON,0,TLPARAM(@tabb));
-
+}
+        ServiceCallWithFParam(cbcd.hContact,0,cbcd.dwButtonId);
+        result:=1;
         break;
       end;
     end;
   end;
 
-  ServiceCallWithFParam(cbcd.hContact,0,cbcd.dwButtonId);
-
-  result:=1;
 end;
 
 function OnTabBBLoaded(wParam:WPARAM;lParam:LPARAM):int; cdecl;
