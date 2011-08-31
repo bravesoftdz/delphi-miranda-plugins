@@ -29,4 +29,6 @@ const
   IDC_UA_TWOSTATE   = 2001;
   IDC_UA_SAVSTATE   = 2002;
 
+  IDC_UA_GLOBAL     = 2003;
+
   IDI_ACTION = 101;

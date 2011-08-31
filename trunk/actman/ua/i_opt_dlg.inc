@@ -2,7 +2,7 @@
 const
   settings:HWND = 0;
 const
-  NumControls = 16;
+  NumControls = 17;
 
   IDsArray:array [0..NumControls-1] of integer =(
     // Menu settings controls
@@ -11,44 +11,45 @@ const
     IDC_UA_SHOWVART ,IDC_UA_SHOWVARV ,IDC_UA_SHOWVARH,
     IDC_UA_TWOSTATE ,IDC_UA_SAVSTATE ,IDC_UA_COMMON,
     // toolbar settings controls
-    IDC_UA_TTNORMALT,IDC_UA_TTNORMALV,IDC_UA_TTPRESSEDT,IDC_UA_TTPRESSEDV
+    IDC_UA_TTNORMALT,IDC_UA_TTNORMALV,IDC_UA_TTPRESSEDT,IDC_UA_TTPRESSEDV,
+    IDC_UA_GLOBAL
     );
 
   // Show-hide controls by place type
   SHArray:array [0..NumTypes-1, 0..NumControls-1] of integer = (
     // CList Modern toolbar
     (SW_HIDE,SW_HIDE,SW_HIDE, SW_HIDE,SW_HIDE,SW_HIDE, SW_SHOW,SW_SHOW,SW_SHOW,
-     SW_SHOW,SW_SHOW,SW_SHOW, SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW),
+     SW_SHOW,SW_SHOW,SW_SHOW, SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW, SW_HIDE),
     // TabSRMM toolbar
     (SW_HIDE,SW_HIDE,SW_HIDE, SW_HIDE,SW_HIDE,SW_HIDE, SW_HIDE,SW_HIDE,SW_HIDE,
-     SW_SHOW,SW_SHOW,SW_SHOW, SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW),
+     SW_SHOW,SW_SHOW,SW_SHOW, SW_SHOW,SW_SHOW,SW_SHOW,SW_SHOW, SW_SHOW),
     // Core Hotkey
     (SW_HIDE,SW_HIDE,SW_HIDE, SW_HIDE,SW_HIDE,SW_HIDE, SW_HIDE,SW_HIDE,SW_HIDE,
-     SW_HIDE,SW_HIDE,SW_HIDE, SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE),
+     SW_HIDE,SW_HIDE,SW_HIDE, SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE, SW_HIDE),
     // Main menu
     (SW_SHOW,SW_SHOW,SW_SHOW, SW_SHOW,SW_SHOW,SW_SHOW, SW_SHOW,SW_SHOW,SW_SHOW,
-     SW_SHOW,SW_SHOW,SW_SHOW, SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE),
+     SW_SHOW,SW_SHOW,SW_SHOW, SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE, SW_HIDE),
     // Contact menu
     (SW_SHOW,SW_SHOW,SW_SHOW, SW_SHOW,SW_SHOW,SW_SHOW, SW_SHOW,SW_SHOW,SW_SHOW,
-     SW_SHOW,SW_SHOW,SW_SHOW, SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE),
+     SW_SHOW,SW_SHOW,SW_SHOW, SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE, SW_SHOW),
     // Tray menu
     (SW_SHOW,SW_SHOW,SW_SHOW, SW_SHOW,SW_SHOW,SW_SHOW, SW_SHOW,SW_SHOW,SW_SHOW,
-     SW_SHOW,SW_SHOW,SW_SHOW, SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE),
+     SW_SHOW,SW_SHOW,SW_SHOW, SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE, SW_HIDE),
     // Protocol menu
     (SW_SHOW,SW_SHOW,SW_SHOW, SW_SHOW,SW_SHOW,SW_SHOW, SW_SHOW,SW_SHOW,SW_SHOW,
-     SW_SHOW,SW_SHOW,SW_SHOW, SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE),
+     SW_SHOW,SW_SHOW,SW_SHOW, SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE, SW_HIDE),
     // Status menu
     (SW_SHOW,SW_SHOW,SW_SHOW, SW_SHOW,SW_SHOW,SW_SHOW, SW_SHOW,SW_SHOW,SW_SHOW,
-     SW_SHOW,SW_SHOW,SW_SHOW, SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE)
+     SW_SHOW,SW_SHOW,SW_SHOW, SW_HIDE,SW_HIDE,SW_HIDE,SW_HIDE, SW_HIDE)
     );
   // additional show/hide controls check by Variables installings (1 - need to check)
   SHVarArray:array [0..NumControls-1] of byte = (
     0,0,0,    0,0,1,    1,1,1,
-    0,0,0,0,0,0,0);
+    0,0,0,0,0,0,0, 0);
   // additional enable/disable controls check (1 - always enable)
   EnDisArray:array [0..NumControls-1] of byte = (
     0,0,0,    0,0,0,    0,0,0,
-    1,1,1,0,0,0,0);
+    1,1,1,0,0,0,0, 1);
 
 var
   hIC:THANDLE;
@@ -95,7 +96,7 @@ begin
 
     for i:=0 to NumControls-1 do
     begin
-      typ:=SHArray[LoByte(atype)][i];
+      typ:=SHArray[LoByte(atype)+HiByte(atype)][i];
       if typ=SW_SHOW then
         if (SHVarArray[i]<>0) and (not IsVarsInstalled) then
           typ:=SW_HIDE;
@@ -155,6 +156,9 @@ begin
 
   if (UA.flags and UAF_SAVESTATE)<>0 then
     CheckDlgButton(Dialog,IDC_UA_SAVSTATE,BST_CHECKED);
+
+  if (UA.flags and UAF_GLOBAL)=0 then
+    CheckDlgButton(Dialog,IDC_UA_GLOBAL,BST_CHECKED);
 
   // Show real UA settings
   case LoByte(aType) of
@@ -311,6 +315,11 @@ begin
       flags:=flags or UAF_SAVESTATE
     else
       flags:=flags and not UAF_SAVESTATE;
+
+    if IsDlgButtonChecked(Dialog,IDC_UA_GLOBAL)=BST_UNCHECKED then
+      flags:=flags or UAF_GLOBAL
+    else
+      flags:=flags and not UAF_GLOBAL;
 
     // custom data
     case LoByte(atype) of
