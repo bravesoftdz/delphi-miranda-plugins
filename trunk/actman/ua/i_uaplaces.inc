@@ -560,11 +560,31 @@ procedure AddMTBButton(var ActionItem:tMyActionItem);
 var
   mtButton:TBButton;
   pc,pc1,pc2:pAnsiChar;
+  res:boolean;
+  p:pWideChar;
 begin
   if not NamesArray[uaMTB].enable then exit;
 
   if ActionItem.hMTBButton=0 then
   begin
+    // Add or not
+    if isVarsInstalled then
+    begin
+      if (ActionItem.szMTBShowWhenVars<>nil) and (ActionItem.szMTBShowWhenVars^<>#0) then
+      begin
+        p:=ParseVarString(ActionItem.szMTBShowWhenVars);
+        if p<>nil then
+        begin
+          res:=StrCmpW(p,'1')<>0;
+          mFreeMem(p);
+        end
+        else
+          res:=true;
+        if res then
+          exit;
+      end;
+    end;
+
     FillChar(mtButton,SizeOf(mtButton),0);
     mtButton.cbSize  :=SizeOf(mtButton);
     mtButton.defPos  :=1000;
