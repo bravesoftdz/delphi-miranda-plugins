@@ -8,11 +8,11 @@ const
   opt_flags :PAnsiChar = 'Flags';
 
 const
-  ICOLIB_ACTSECTION = 'Actions/Registered actions';
-  ICOLIB_MNUSECTION = 'Actions/Menu icons';
+  ICOLIB_ACTSECTION = MODULE_NAME+'/Registered actions';
+  ICOLIB_MNUSECTION = MODULE_NAME+'/Menu icons';
 
-  SERVICE_WITH_LPARAM_NAME = 'Actions/CallAction';
-  MTB_SERVICE_NAME         = 'Actions/MTBAction';
+  SERVICE_WITH_LPARAM_NAME = MODULE_NAME+'/CallAction';
+  MTB_SERVICE_NAME         = MODULE_NAME+'/MTBAction';
 
 type
   tMenuType = (main_menu,contact_menu,tray_menu,proto_menu,status_menu);
@@ -31,7 +31,7 @@ type
   tMyActionItem = record
     flags               :dword;
     dwActID             :dword;     // action ID
-    wSortIndex          :word;
+    wSortIndex          :word;      // list/menu/toolbar order
     // UseActions/Action_ID
     szNameID            :pAnsiChar; // uaction ID
     szActDescr          :pWideChar; // action name
@@ -43,9 +43,10 @@ type
     szMTBTooltip        :PAnsiChar;
     szMTBTooltipPressed :PAnsiChar;
 
-    szTabBTooltip       :PWideChar;
+    szTabBTooltip       :PWideChar; // TabSRMM toolbar button
     szTabBTooltipPressed:PWideChar;
 
+    lastContact         :THANDLE;   // for contact menu
     hMenuService        :THANDLE;   // common menu service
     UAMenuItem          :array [tMenuType] of tUAMenuItem;
   end;
@@ -62,6 +63,7 @@ const
   UAF_2STATE    = 1 shl 11; // Buttons/menu items are 2-state
   UAF_PRESSED   = 1 shl 12; // Button pressed/menu item selected
   UAF_SAVESTATE = 1 shl 13; // Save or not "pressed" state
+  UAF_GLOBAL    = 1 shl 14; // not contact related even if in contact menu only
 
   // realtime, no save
   UAF_HKREGGED  = 1 shl 16; // hotkey registered
