@@ -91,6 +91,7 @@ var
   setting:array [0..63] of AnsiChar;
   p:pAnsiChar;
   cnt:THANDLE;
+  state:integer;
 begin
   for i:=0 to HIGH(UActionList) do
   begin
@@ -98,18 +99,20 @@ begin
       if dwActID=cardinal(fParam) then
         if (flags and UAF_2STATE)<>0 then
         begin
-          flags:=flags xor UAF_PRESSED;
           // sync buttons/menus
           if IsLocalItem(UActionList[i]) then
           begin
   //          if (flags and UAF_SAVESTATE)<>0 then
             begin
-              DBWriteByte(lastContact,opt_ua,szNameID,ORD(flags and UAF_PRESSED));
+              state:=DBReadByte(lastContact,opt_ua,szNameID);
+              state:=state xor 1;
+              DBWriteByte(lastContact,opt_ua,szNameID,state);
               cnt:=lastContact;
             end;
           end
           else
           begin
+            flags:=flags xor UAF_PRESSED;
             // save "pressed" state
             if (flags and UAF_SAVESTATE)<>0 then
             begin
@@ -127,9 +130,10 @@ begin
               SetMTBState(UActionList[i]);
 
             cnt:=0;
+            state:=ORD(flags and UAF_PRESSED);
           end;
           if (flags and UAF_REGTABB)<>0 then
-            SetTABState(cnt,UActionList[i],ORD(flags and UAF_PRESSED));
+            SetTABState(cnt,UActionList[i],state);
 
           break;
         end;
