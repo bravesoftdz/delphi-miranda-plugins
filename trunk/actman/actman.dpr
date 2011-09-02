@@ -165,7 +165,7 @@ begin
     inc(p);
   end;
   if result>0 then
-    result:=ActionStarter(result,lParam,p^.id);
+    result:=ActionStarter(result,lParam,p);
 end;
 
 function ActRunGroup(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
@@ -185,7 +185,7 @@ begin
     inc(p);
   end;
   if result>0 then
-    result:=ActionStarter(result,lParam,p^.id);
+    result:=ActionStarter(result,lParam,p);
 end;
 
 function ActRunParam(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
@@ -225,9 +225,9 @@ begin
   if result>0 then
   begin
     if (PAct_Param(lParam)^.flags and ACTP_WAIT)=0 then
-      result:=ActionStarter    (result,PAct_Param(lParam)^.wParam,p^.id,PAct_Param(lParam)^.lParam)
+      result:=ActionStarter    (result,PAct_Param(lParam)^.wParam,p,PAct_Param(lParam)^.lParam)
     else
-      result:=ActionStarterWait(result,PAct_Param(lParam)^.wParam,p^.id,PAct_Param(lParam)^.lParam);
+      result:=ActionStarterWait(result,PAct_Param(lParam)^.wParam,p,PAct_Param(lParam)^.lParam);
   end;
 end;
 

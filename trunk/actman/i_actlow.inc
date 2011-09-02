@@ -551,11 +551,11 @@ end;
 type
   pActStartData = ^tActStartData;
   tActStartData = record
-    event  :THANDLE;
-    action :dword;
-    param  :dword;
-    groupid:dword;
-    last   :dword;
+    event :THANDLE;
+    action:dword;
+    param :dword;
+    group :PHKRecord;
+    last  :dword;
   end;
 
 function ThDoAction(arg:pActStartData):dword; //stdcall;
@@ -563,13 +563,20 @@ var
   ltmp:uint_ptr;
 begin
   ltmp:=arg^.last;
-  if arg^.groupid<>0 then
-    PluginLink^.NotifyEventHooks(hevaction,arg^.groupid,0); // started
+
+  if arg^.group<>nil then
+  begin
+    PluginLink^.NotifyEventHooks(hevaction,arg^.group.id,0); // started
+    arg^.group.flags:=arg^.group.flags or ACF_USEDNOW;
+  end;
 
   result:=DoAction(arg^.action,arg^.param,ltmp,rtInt);
 
-  if arg^.groupid<>0 then
-    PluginLink^.NotifyEventHooks(hevaction,arg^.groupid,1); // finished
+  if arg^.group<>nil then
+  begin
+    arg^.group.flags:=arg^.group.flags and not ACF_USEDNOW;
+    PluginLink^.NotifyEventHooks(hevaction,arg^.group.id,1); // finished
+  end;
 
   if arg^.event<>0 then
   begin
@@ -583,35 +590,35 @@ begin
   end;
 end;
 
-function ActionStarterWait(action:dword;aparam:dword=0;groupid:dword=0;alast:dword=0):integer;
+function ActionStarterWait(action:dword;aparam:dword=0;group:PHKRecord=nil;alast:dword=0):integer;
 var
   tmp:pActStartData;
   res:uint_ptr;
 begin
   mGetMem(tmp,SizeOf(tActStartData));
-  tmp^.action :=action;
-  tmp^.param  :=aparam;
-  tmp^.groupid:=groupid;
-  tmp^.last   :=alast;
-  tmp^.event  :=CreateEvent(nil,FALSE,FALSE,nil);
+  tmp^.action:=action;
+  tmp^.param :=aparam;
+  tmp^.group :=group;
+  tmp^.last  :=alast;
+  tmp^.event :=CreateEvent(nil,FALSE,FALSE,nil);
   CloseHandle(BeginThread(nil,0,@ThDoAction,tmp,0,res));
   WaitForSingleObjectEx(tmp.event,INFINITE,true);
   CloseHandle(tmp^.event);
   result:=tmp^.last;
 end;
 
-function ActionStarter(action:dword;aparam:dword=0;groupid:dword=0;alast:dword=0):integer;
+function ActionStarter(action:dword;aparam:dword=0;group:PHKRecord=nil;alast:dword=0):integer;
 var
   tmp:pActStartData;
   res:uint_ptr;
 begin
   result:=0;
   mGetMem(tmp,SizeOf(tActStartData));
-  tmp^.action :=action;
-  tmp^.param  :=aparam;
-  tmp^.groupid:=groupid;
-  tmp^.last   :=alast;
-  tmp^.event  :=0;
+  tmp^.action:=action;
+  tmp^.param :=aparam;
+  tmp^.group :=group;
+  tmp^.last  :=alast;
+  tmp^.event :=0;
   CloseHandle(BeginThread(nil,0,@ThDoAction,tmp,0,res));
 end;
 
