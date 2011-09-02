@@ -500,6 +500,7 @@ begin
               end
               else
               begin
+                mi.hIcon:=hIcolibIcon;
                 flags:=flags and not UAF_PRESSED;
                 extra:='0';
               end;
