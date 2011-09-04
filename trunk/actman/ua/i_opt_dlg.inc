@@ -142,7 +142,10 @@ end;
 procedure ShowSubAction(Dialog:HWND;aType:integer;item:integer=-1);
 var
   UA:pMyActionItem;
+  s:HWND;
 begin
+  s:=settings;
+  settings:=0;
   ClearControls(Dialog);
 
   // get UAction number
@@ -189,6 +192,7 @@ begin
     end;
   end;
   SetupControls(Dialog,aType,-1);
+  settings:=s;
 end;
 
 function isPlaceActive(idx,place:integer):boolean;
