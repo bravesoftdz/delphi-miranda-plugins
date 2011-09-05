@@ -11,6 +11,8 @@ type
 const
   AckHandle = 427;
 
+// Since mRadio is unicode version only now, translate all strings to Wide
+// coz f*cking jinn will set unicode flag in any cases
 procedure LoadOneStation(ini,section:PAnsiChar;const filter:TMySearchFilter);
 var
   buf:array [0..511] of AnsiChar;
@@ -26,7 +28,8 @@ begin
     begin
       FillChar(csr,SizeOf(csr),0);
       csr.psr.cbSize:=SizeOf(csr.psr);
-      StrDup(csr.psr.firstname.a,buf);
+      csr.psr.Flags:=PSR_UNICODE;
+      ANSItoWide(buf,csr.psr.firstname.w,MirandaCP);
       GetPrivateProfileStringA(section,'Bitrate','0',buf,SizeOf(buf),ini);
       bitrate:=StrToInt(buf);
       if (bitrate<>0) and (filter.lbitrate<>0) then
@@ -39,13 +42,13 @@ begin
         l:=true;
       if l then
       begin
-        StrDup(csr.psr.email.a,buf);
+        ANSItoWide(buf,csr.psr.email.w,MirandaCP);
         GetPrivateProfileStringA(section,'Name',section,buf,SizeOf(buf),ini);
-        StrDup(csr.psr.nick.a,buf);
+        ANSItoWide(buf,csr.psr.nick.w,MirandaCP);
         if (filter.lStation=nil) or (StrPos(CharLowerA(@buf),filter.lStation)<>nil) then
         begin
           GetPrivateProfileStringA(section,'Genre','unknown',buf,SizeOf(buf),ini);
-          StrDup(csr.psr.lastname.a,buf);
+          ANSItoWide(buf,csr.psr.lastname.w,MirandaCP);
           if (filter.lGenre<>nil) and (StrPos(CharLowerA(@buf),filter.lGenre)=nil) then
             l:=false;
         end
@@ -53,23 +56,18 @@ begin
           l:=false;
         if l then
         begin
-          ANSItoWide(csr.psr.nick.a     ,columns[0].w,MirandaCP); // Station name
-          // maybe use FastAnsiToWide?
-          ANSItoWide(csr.psr.firstname.a,columns[1].w,MirandaCP); // URL
-          ANSItoWide(csr.psr.lastname.a ,columns[2].w,MirandaCP); // Genre
-          ANSItoWide(csr.psr.email.a    ,columns[3].w,MirandaCP); // Bitrate
+          columns[0].w:=csr.psr.nick.w;      // Station name
+          columns[1].w:=csr.psr.firstname.w; // URL
+          columns[2].w:=csr.psr.lastname.w;  // Genre
+          columns[3].w:=csr.psr.email.w;     // Bitrate
 
           csr.nSize      :=SizeOf(csr);
           csr.nFieldCount:=4;
           csr.szFields   :=@columns;
           ProtoBroadcastAck(PluginName,0,ACKTYPE_SEARCH,ACKRESULT_SEARCHRESULT,AckHandle,lparam(@csr));
-
-          mFreeMem(columns[0].w);
-          mFreeMem(columns[1].w);
-          mFreeMem(columns[2].w);
-          mFreeMem(columns[3].w);
         end;
       end;
+      // initial value - nil, so we don't worry
       mFreeMem(csr.psr.nick);
       mFreeMem(csr.psr.firstname);
       mFreeMem(csr.psr.lastname);
@@ -294,7 +292,8 @@ begin
         lurl:=id.w
       else
         lurl:=firstname.w;
-      if (flags and PSR_UNICODE)=0 then
+// eally, not PSR_UNICODE but PALF_TEMPORARY here
+//!!      if (flags and PSR_UNICODE)=0 then
         lurl:=FastAnsiToWideBuf(pAnsiChar(lurl),@buf);
 
       if lurl<>nil then
@@ -335,14 +334,15 @@ begin
           l:=false;
           if nick.w=nil then
             p:=lurl
-          else if (flags and PSR_UNICODE)=0 then
+          else //!!if (flags and PSR_UNICODE)=0 then
           begin
             l:=true;
             AnsiToWide(nick.a,p,MirandaCP);
 //            p:=FastAnsiToWideBuf(nick.a,@buf)
           end
-          else
+;{!!          else
             p:=nick.w;
+}
           DBWriteUnicode(hContact,strCList  ,optMyHandle,p);
           DBWriteUnicode(hContact,PluginName,optNick    ,p);
           if l then
@@ -351,9 +351,11 @@ begin
           // Bitrate
           if email.a<>nil then
           begin
+{!!
             if (flags and PSR_UNICODE)<>0 then
               pc:=FastWideToAnsiBuf(email.w,@buf)
             else
+}
               pc:=email.a;
             DBWriteWord  (hContact,PluginName,optAge    ,StrToInt(pc));
             DBWriteString(hContact,PluginName,optBitrate,pc);
@@ -362,10 +364,10 @@ begin
           // Genre
           if lastname.a<>nil then
           begin
-            if (flags and PSR_UNICODE)<>0 then
+{!!            if (flags and PSR_UNICODE)<>0 then
               pc:=FastWideToAnsiBuf(lastname.w,@buf)
             else
-              pc:=lastname.a;
+}              pc:=lastname.a;
             DBWriteString(hContact,PluginName,optGenre   ,pc);
             DBWriteString(hContact,PluginName,optLastName,pc);
           end;
