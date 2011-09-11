@@ -23,6 +23,7 @@ type
     name      :PWideChar; // name for task
     action    :dword;     // assigned action
     // maybe tSystemTime is better? but harder to save
+    intdays,              // interval,days
     dayoffset :integer;   //!! offset, days
     starttime,            // task starttime
     interval  :TFileTime; // interval for repeat
@@ -30,6 +31,7 @@ type
 
     timer     :uint_ptr;  // (runtime) timer handle
     curcount  :integer;   // (runtime) repeat count
+    lastcall  :TFileTime; // last timer event time
   end;
   pTaskList = ^tTaskList;
   tTaskList  = array [0..1023] of tTaskRec;
@@ -55,6 +57,9 @@ begin
           if ((flags and TCF_MAKEEVENT)<>0) and
             (((flags and TCF_EVENTONCE) =0) or (curcount=count)) then
             PluginLink^.NotifyEventHooks(hevent,count-curcount,lParam(name));
+
+          GetLocalTime(st);
+          SystemTimeToFileTime(st,lastcall);
 
           res:=CallService(MS_ACT_RUNBYID,action,0);
 

@@ -166,6 +166,7 @@ begin
 
     FileTimeToSystemTime(interval,st);
     SendDlgItemMessage(Dialog,IDC_TASK_INTERVAL,DTM_SETSYSTEMTIME,GDT_VALID,lParam(@st));
+    SetDlgItemInt(Dialog,IDC_TASK_INTDAYS,intdays,false);
   end;
 
   ShowDateType(Dialog,start);
@@ -237,6 +238,7 @@ begin
 
         SendDlgItemMessage(Dialog,IDC_TASK_INTERVAL,DTM_GETSYSTEMTIME,0,lParam(@st));
         SystemTimeToFileTime(st,interval);
+        intdays:=GetDlgItemInt(Dialog,IDC_TASK_INTDAYS,tmp,false);
       end;
     end;
   end;
