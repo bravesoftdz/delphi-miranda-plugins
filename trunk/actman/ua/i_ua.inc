@@ -141,5 +141,15 @@ begin
   begin
     FillActionList(settings);
     ShowAction(settings,-1);
+    SendMessage(GetParent(settings),PSM_CHANGED,0,0);
+  end
+  else
+  begin
+    SaveUAs;
+    FillChar(arMenuRec[0],Length(arMenuRec)*SizeOf(tuaMenuRecA),0);
+    for i:=0 to HIGH(UActionList) do
+    begin
+      SetAllActionUsers(UActionList[i]);
+    end;
   end;
 end;

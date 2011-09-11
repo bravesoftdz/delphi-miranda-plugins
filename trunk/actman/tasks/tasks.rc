@@ -30,11 +30,12 @@ FONT 8, "MS Shell Dlg", 0, 0
   
   GROUPBOX "Repeat" , -1, 138, 88, 164, 88
 
-  CTEXT    "Repeat, times", -1, 140, 98, 76, 14, SS_CENTERIMAGE
-  EDITTEXT IDC_TASK_REPEAT, 158, 114, 40, 14
+  CTEXT    "Repeat, times", -1, 140, 98, 70, 14, SS_CENTERIMAGE
+  EDITTEXT IDC_TASK_REPEAT, 155, 114, 40, 14
 
-  CTEXT    "Interval", -1, 220, 98, 76, 14, SS_CENTERIMAGE
-  CONTROL  "Interval", IDC_TASK_INTERVAL, "SysDateTimePick32", WS_TABSTOP|$09, 230, 114, 56, 14
+  CTEXT    "Interval", -1, 212, 98, 84, 14, SS_CENTERIMAGE
+  EDITTEXT IDC_TASK_INTDAYS, 212, 114, 24, 14
+  CONTROL  "Interval", IDC_TASK_INTERVAL, "SysDateTimePick32", WS_TABSTOP|$09, 240, 114, 56, 14
 
   AUTOCHECKBOX "Break on non-zero result", IDC_TASK_BREAK, 142, 132, 156, 14
   AUTOCHECKBOX "Send event on start time", IDC_TASK_EVENT, 142, 146, 156, 14

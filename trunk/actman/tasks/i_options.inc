@@ -9,11 +9,14 @@ const
   opt_action  :PAnsiChar = 'action';
   opt_repeat  :PAnsiChar = 'repeat';
   opt_days    :PAnsiChar = 'dayoffset';
+  opt_intdays :PAnsiChar = 'intdays';
 
   opt_time_lo    :PAnsiChar = 'starttime_lo';
   opt_time_hi    :PAnsiChar = 'starttime_hi';
   opt_interval_lo:PAnsiChar = 'interval_lo';
   opt_interval_hi:PAnsiChar = 'interval_hi';
+  opt_lastcall_lo:PAnsiChar = 'lastcall_lo';
+  opt_lastcall_hi:PAnsiChar = 'lastcall_hi';
 
 procedure SaveTasks;
 var
@@ -45,6 +48,9 @@ begin
       StrCopy(p,opt_time_hi    ); DBWriteDWord(0,DBBranch,section,starttime.dwHighDateTime);
       StrCopy(p,opt_interval_lo); DBWriteDWord(0,DBBranch,section,interval .dwLowDateTime);
       StrCopy(p,opt_interval_hi); DBWriteDWord(0,DBBranch,section,interval .dwHighDateTime);
+      StrCopy(p,opt_intdays    ); DBWriteByte (0,DBBranch,section,intdays);
+      StrCopy(p,opt_lastcall_lo); DBWriteDWord(0,DBBranch,section,lastcall .dwLowDateTime);
+      StrCopy(p,opt_lastcall_hi); DBWriteDWord(0,DBBranch,section,lastcall .dwHighDateTime);
     end;
     inc(amount);
   end;
@@ -83,6 +89,9 @@ begin
         StrCopy(p,opt_time_hi    ); starttime.dwHighDateTime:=DBReadDWord(0,DBBranch,section);
         StrCopy(p,opt_interval_lo); interval .dwLowDateTime :=DBReadDWord(0,DBBranch,section);
         StrCopy(p,opt_interval_hi); interval .dwHighDateTime:=DBReadDWord(0,DBBranch,section);
+        StrCopy(p,opt_intdays    ); intdays:=DBReadByte(0,DBBranch,section);
+        StrCopy(p,opt_lastcall_lo); lastcall .dwLowDateTime :=DBReadDWord(0,DBBranch,section);
+        StrCopy(p,opt_lastcall_hi); lastcall .dwHighDateTime:=DBReadDWord(0,DBBranch,section);
         // filetime to systemtime if needs
       end;
     end;
