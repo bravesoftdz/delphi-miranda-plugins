@@ -1691,7 +1691,7 @@ begin
               i:=AddGroup(Dialog,NewGroup(NewGroupList,NewMaxGroups));
               if i>=0 then
               begin
-                ChMask:=ChMask or ACTM_NEW;
+                ChMask:=ChMask or ACTM_NEW or ACTM_SORT;
                 EnableWindow(GetDlgItem(Dialog,IDC_ACTION_GROUP),true);
                 EnableWindow(GetDlgItem(Dialog,IDC_GROUP_DELETE),true);
                 EnableWindow(GetDlgItem(Dialog,IDC_ACTION_NEW  ),true);
@@ -1705,7 +1705,7 @@ begin
               begin
                 if ListView_GetItemState(wnd,i,LVIS_SELECTED)<>0 then
                 begin
-                  ChMask:=ChMask or ACTM_DELETE;
+                  ChMask:=ChMask or ACTM_DELETE or ACTM_SORT;
 
                   with NewGroupList^[LV_GetLParam(wnd,i)] do
                   begin
