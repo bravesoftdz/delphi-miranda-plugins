@@ -100,18 +100,13 @@ type
     Duration:dword;
   end;
 
-function correct(val:dword):dword; register; assembler;
-asm
-  bswap eax
-end;
-
 procedure ReadAtom(f:THANDLE;var atom:mp4Atom);
 begin
   BlockRead(f,atom.len,4);
   if atom.len>0 then
   begin
     BlockRead(f,atom.name,4);
-    atom.len:=correct(atom.len);
+    atom.len:=bswap(atom.len);
   end
   else
   begin
@@ -128,7 +123,7 @@ begin
   begin
     atom.name:=pdword(p)^;
     inc(p,4);
-    atom.len:=correct(atom.len);
+    atom.len:=bswap(atom.len);
   end
   else
   begin
@@ -181,7 +176,7 @@ var
 begin
   len:=pdword(p)^;
   inc(p,4);
-  len:=correct(len);
+  len:=bswap(len);
   if len>0 then
     inc(p,4); // 'data'
   inc(p,4); // type?
@@ -197,7 +192,7 @@ begin
   end
   else
   begin
-    result:=correct(pdword(p)^);
+    result:=bswap(pdword(p)^);
     inc(p,4);
   end;
 end;
@@ -210,7 +205,7 @@ var
 begin
   len:=pdword(p)^;
   inc(p,4);
-  len:=correct(len);
+  len:=bswap(len);
   if len>0 then
     inc(p,4); // 'data'
   inc(p,4); // type?
@@ -256,7 +251,7 @@ begin
           if size>0 then
           begin
             ZDecompressBuf(PAnsiChar(p)+4,size-SizeOf(mp4Atom),
-                pointer(pn),size,correct(pdword(p)^));
+                pointer(pn),size,bswap(pdword(p)^));
             mFreeMem(buf);
             buf:=pn;
             p:=buf;
@@ -269,7 +264,7 @@ begin
         if atom.name=at_mvhd then
         begin
           if pmvhd(p)^.TimeScale<>0 then
-            Info.total:=correct(pmvhd(p)^.Duration) div correct(pmvhd(p)^.TimeScale);
+            Info.total:=bswap(pmvhd(p)^.Duration) div bswap(pmvhd(p)^.TimeScale);
         end;
         if atom.name=at_udta then
         begin
@@ -313,7 +308,7 @@ begin
             p:=par;
             if SetTree(atom,p,'stbl.stsd',par)>0 then
             begin
-              Info.khz:=(correct(pastsd(p)^.Samplerate) shr 16) div 1000;
+              Info.khz:=(bswap(pastsd(p)^.Samplerate) shr 16) div 1000;
               Info.channels:=swap(pastsd(p)^.ChannelCount);
             end;
             p:=par;

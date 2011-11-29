@@ -13,7 +13,7 @@ function SelectDirectory(Caption:PWideChar;var Directory:PWideChar;
 implementation
 uses common,shlobj,activex;
 
-{$IFNDEF DELPHI7_UP}
+{$IFNDEF DELPHI_7_UP}
 const
   BIF_NEWDIALOGSTYLE = $0040;
 {$ENDIF}

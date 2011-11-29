@@ -1,3 +1,8 @@
+{$include compilers.inc}
+{$IFDEF COMPILER_16_UP}
+  {$WEAKLINKRTTI ON}
+  {.$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
+{$ENDIF}
 {$IMAGEBASE $13500000}
 //{$IFDEF WIN64}{$A8}{$ENDIF}
 library Translate;

@@ -143,7 +143,7 @@ begin
     exit;
   f:=Append(fname);
 //  if dword(f)=INVALID_HANDLE_VALUE then f:=Rewrite(fname);
-  if dword(f)=INVALID_HANDLE_VALUE then exit;
+  if f=THANDLE(INVALID_HANDLE_VALUE) then exit;
   FillChar(buf,SizeOf(buf),0);
   lp:=@buf;
   buf[0]:='1'; buf[1]:=DelimChar; inc(lp,2); // count
@@ -161,7 +161,7 @@ begin
   AppendStr(si^.album ,lp);
 
   lp^:=#$0D; inc(lp); lp^:=#$0A;
-  BlockWrite(f,buf,lp-@buf+1);
+  BlockWrite(f,buf,lp-PAnsiChar(@buf)+1);
   CloseHandle(f);
 end;
 
@@ -173,7 +173,7 @@ var
   i:integer;
 begin
   f:=Rewrite(fname);
-  if dword(f)=INVALID_HANDLE_VALUE then
+  if f=THANDLE(INVALID_HANDLE_VALUE) then
     exit;
   for i:=0 to aCells^.count-1 do
   begin
@@ -191,7 +191,7 @@ begin
       AppendStr(Album ,lp);
 
       lp^:=#$0D; inc(lp); lp^:=#$0A;
-      BlockWrite(f,buf,lp-@buf+1);
+      BlockWrite(f,buf,lp-PAnsiChar(@buf)+1);
     end;
   end;
   CloseHandle(f);
@@ -303,7 +303,7 @@ var
   f:THANDLE;
   i,cnt:integer;
   FirstCell,CurCell,Cell:pStatCell;
-  lRec:WIN32_FIND_DATAA;
+  lRec:TWin32FindDataA;//WIN32_FIND_DATAA;
   h:THANDLE;
   p,p1,p2:PAnsiChar;
   ls,buf:PAnsiChar;
@@ -312,14 +312,14 @@ begin
   result:=nil;
   buffer:=nil;
   h:=FindFirstFileA(fname,lRec);
-  if dword(h)=INVALID_HANDLE_VALUE then
+  if h=THANDLE(INVALID_HANDLE_VALUE) then
     exit;
   i:=lRec.nFileSizeLow;
   FindClose(h);
   if i<22 then
     Exit;
   f:=Reset(fname);
-  if dword(f)=INVALID_HANDLE_VALUE then
+  if f=THANDLE(INVALID_HANDLE_VALUE) then
     exit;
   mGetMem(buffer,i+1);
   p:=buffer;
@@ -466,7 +466,7 @@ end;
 
 function PackLog(wParam:WPARAM;lParam:LPARAM):integer;cdecl;
 var
-  res:dword;
+  res:{$IFDEF COMPILER_16_UP}Longword{$ELSE}uint_ptr{$ENDIF};
 begin
   result:=0;
   CloseHandle(BeginThread(nil,0,@ThPackLog,nil,0,res));
@@ -548,7 +548,7 @@ begin
       FillChar(mi,sizeof(mi),0);
       mi.cbSize:=sizeof(mi);
       mi.flags :=CMIM_FLAGS+flag;
-      CallService(MS_CLIST_MODIFYMENUITEM,hMenuReport,dword(@mi));
+      CallService(MS_CLIST_MODIFYMENUITEM,hMenuReport,tlparam(@mi));
     end;
   end;
 end;
@@ -561,8 +561,8 @@ begin
   FillChar(mi,SizeOf(mi),0);
   mi.cbSize:=sizeof(mi);
   mi.flags :=CMIM_ICON;
-  mi.hIcon :=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnReport));
-  CallService(MS_CLIST_MODIFYMENUITEM,hMenuReport,dword(@mi));
+  mi.hIcon :=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnReport));
+  CallService(MS_CLIST_MODIFYMENUITEM,hMenuReport,tlparam(@mi));
 end;
 
 // ------------ base interface functions -------------
@@ -597,7 +597,7 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(BTN_REPORT),IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoBtnReport;
   sid.szDescription.a:='Create Report';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+  PluginLink^.CallService(MS_SKIN2_ADDICON,0,tlparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
   sic:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
 
@@ -605,7 +605,7 @@ begin
   mi.cbSize       :=sizeof(mi);
   mi.flags        :=0;
   mi.szPopupName.a:=PluginShort;
-  mi.hIcon        :=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnReport));
+  mi.hIcon        :=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnReport));
   mi.szName.a     :='Create WATrack report';
   mi.pszService   :=MS_WAT_MAKEREPORT;
   mi.popupPosition:=MenuReportPos;

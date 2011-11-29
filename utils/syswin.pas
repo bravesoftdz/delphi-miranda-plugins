@@ -39,7 +39,16 @@ implementation
 
 uses
   {$IFNDEF FPC}shellapi,{$ENDIF}
-  common,messages,psapi;
+{$IFDEF COMPILER_16_UP}
+  WinAPI.PsApi,
+{$ELSE}
+  psapi,
+{$ENDIF}
+  common,messages;
+
+{$IFDEF COMPILER_16_UP}
+type  pqword = ^int64;
+{$ENDIF}
 
 function ExecuteWaitW(AppPath:pWideChar; CmdLine:pWideChar=nil; DfltDirectory:PWideChar=nil;
          Show:DWORD=SW_SHOWNORMAL; TimeOut:DWORD=0; ProcID:PDWORD=nil):dword;
@@ -583,6 +592,7 @@ var
   hThread:THANDLE;
   rec:trec;
 //  dummy:longint;
+  res:{$IFDEF COMPILER_16_UP}Longword{$ELSE}uint_ptr{$ENDIF};
 begin
   result:=nil;
 {
@@ -606,7 +616,7 @@ begin
   end
   else
   begin
-    hThread:=BeginThread(nil,0,@GetName,@rec,0,{$IFNDEF WIN64}pdword{$ELSE}pqword{$ENDIF}(nil)^);
+    hThread:=BeginThread(nil,0,@GetName,@rec,0,res);
     if WaitForSingleObject(hThread,timeout)=WAIT_TIMEOUT then
     begin
       TerminateThread(hThread,0);

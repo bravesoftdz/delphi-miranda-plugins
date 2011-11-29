@@ -8,7 +8,7 @@ begin
     f:=INVALID_HANDLE_VALUE
   else
     f:=Reset(fname);
-  if dword(f)=INVALID_HANDLE_VALUE then
+  if f=THANDLE(INVALID_HANDLE_VALUE) then
     result:=0
   else
   begin
@@ -187,7 +187,7 @@ begin
     end;
     ptr:=TmplBuf;
     fout:=Rewrite(report);
-    if dword(fout)=INVALID_HANDLE_VALUE then
+    if fout=THANDLE(INVALID_HANDLE_VALUE) then
       exit;
     mGetMem(outbuf,bufsize);
     outpos:=outbuf;

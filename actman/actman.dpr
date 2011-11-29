@@ -1,3 +1,8 @@
+{$include compilers.inc}
+{$IFDEF COMPILER_16_UP}
+  {$WEAKLINKRTTI ON}
+  {.$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
+{$ENDIF}
 {$IMAGEBASE $13200000}
 library actman;
 {%ToDo 'actman.todo'}
@@ -127,7 +132,8 @@ begin
   if cnt>0 then
   begin
     mGetMem(pc,cnt*SizeOf(tChain)+4);
-    {$IFDEF WIN64}pqword{$ELSE}pdword{$ENDIF}(lParam)^:=uint_ptr(pc);
+    puint_ptr(lParam)^:=uint_ptr(pc);
+//    {$IFDEF WIN64}pqword{$ELSE}pdword{$ENDIF}(lParam)^:=uint_ptr(pc);
     pdword(pc)^:=SizeOf(TChain);
     inc(PByte(pc),4);
 
@@ -145,7 +151,8 @@ begin
     end;
   end
   else
-    {$IFDEF WIN64}pqword{$ELSE}pdword{$ENDIF}(lParam)^:=0;
+    puint_ptr(lParam)^:=0;
+//    {$IFDEF WIN64}pqword{$ELSE}pdword{$ENDIF}(lParam)^:=0;
 end;
 
 function ActRun(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
@@ -275,7 +282,7 @@ begin
   
   opthook      :=PluginLink^.HookEvent(ME_OPT_INITIALISE ,@OnOptInitialise);
   hHookShutdown:=PluginLink^.HookEvent(ME_SYSTEM_SHUTDOWN{ME_SYSTEM_OKTOEXIT},@PreShutdown);
-  PluginLink^.NotifyEventHooks(hHookChanged,integer(ACTM_LOADED),0);
+  PluginLink^.NotifyEventHooks(hHookChanged,twparam(ACTM_LOADED),0);
 
   if PluginLink^.ServiceExists(MS_UPDATE_REGISTER)<>0 then
   begin

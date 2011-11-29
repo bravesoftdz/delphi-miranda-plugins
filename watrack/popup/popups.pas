@@ -290,7 +290,7 @@ end;
 
 procedure ShowPopup(si:pSongInfo);
 var
-  res:uint_ptr;
+  res:{$IFDEF COMPILER_16_UP}Longword{$ELSE}uint_ptr{$ENDIF};
 begin
   CloseHandle(BeginThread(nil,0,@ThShowPopup,si,0,res));
 end;

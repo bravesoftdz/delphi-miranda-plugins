@@ -68,8 +68,9 @@ type
     height          :dword;
     dummy           :dword; // 0
   end;
-const
-  VorbisStream:array [0..5] of byte = ($76,$6F,$72,$62,$69,$73); // 'vorbis'
+
+//const VorbisStream:array [0..5] of byte = ($76,$6F,$72,$62,$69,$73); // 'vorbis'
+
 type
   tOGGInfo = packed record
     version   :dword;
@@ -366,11 +367,6 @@ begin
   CloseHandle(f);
 end;
 
-function Revert(value:dword):dword; register; assembler;
-asm
-  bswap eax;
-end;
-
 function ReadfLaC(var Info:tSongInfo):boolean; cdecl;
 var
   f:THANDLE;
@@ -427,15 +423,15 @@ Info.kbps:=trunc(FileSize(f)*8/1000);
             GetMem(buf,size);
             BlockRead(f,buf^,size);
             ptr:=buf;
-            id:=Revert(pdword(ptr)^);
+            id:=bswap(pdword(ptr)^);
             case id of
               0,3,4,6: begin
                 inc(ptr,4);
-                id:=Revert(pdword(ptr)^); // mime size
+                id:=bswap(pdword(ptr)^); // mime size
                 inc(ptr,4);
                 flag:=GetImageType(nil,ptr);
                 inc(ptr,id+4*5); // width, height, depth etc.
-                id:=Revert(pdword(ptr)^); // image size
+                id:=bswap(pdword(ptr)^); // image size
                 inc(ptr,4);
                 if flag=0 then
                   flag:=GetImageType(pByte(ptr));

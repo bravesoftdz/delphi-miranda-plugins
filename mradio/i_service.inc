@@ -102,7 +102,7 @@ end;
 function Service_GetAwayMsg(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
   ccs:PCCSDATA;
-  res:uint_ptr;
+  res:{$IFDEF COMPILER_16_UP}Longword{$ELSE}uint_ptr{$ENDIF};
 begin
   ccs:=PCCSDATA(lParam);
   if (ccs^.hContact<>0) and (PluginStatus=ID_STATUS_ONLINE) and

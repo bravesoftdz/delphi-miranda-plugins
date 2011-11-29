@@ -39,6 +39,8 @@ const
 {$include i_expkey.inc}
 
 function WATReplaceText(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
+var
+  p:pWideChar;
 begin
   if (lParam<>0) and (pWideChar(lParam)^<>#0) then
   begin
@@ -47,7 +49,11 @@ begin
     else
       result:=int_ptr(ReplaceAll(pWideChar(lParam)));
     if (result<>0) and (pWideChar(result)^=#0) then
-      mFreeMem(PWideChar(result));
+    begin
+      p:=PWideChar(result);
+      mFreeMem(p);
+      result:=0;
+    end;
   end
   else
     result:=0;

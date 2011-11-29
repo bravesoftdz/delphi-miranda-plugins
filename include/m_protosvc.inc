@@ -23,6 +23,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 {$IFNDEF M_PROTOSVC}
 {$DEFINE M_PROTOSVC}
 
+{ *****  Unicode Services note   ********
+******************************************
+
+Only new style protocols (Miranda 0.9+) with m_iVersion set to 2 or higher
+support Unicode services documented below, all other support only ANSI. 
+
+For all other that do not support Unicode services, Miranda core will 
+convert Unicode to ANSI and call the appropriate service.
+}
+
 type
 //  PFNAMECHAR = ^FNAMECHAR;
 //#if MIRANDA_VER >= 0x0900

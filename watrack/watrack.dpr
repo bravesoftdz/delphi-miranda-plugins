@@ -1,15 +1,19 @@
-{$IMAGEBASE $13000000}
 {$include compilers.inc}
+{$IFDEF COMPILER_16_UP}
+  {$WEAKLINKRTTI ON}
+  {.$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
+{$ENDIF}
+{$IMAGEBASE $13000000}
 library WATrack;
 uses
-  {$IFNDEF FPC}fastmm4,{$ENDIF}
+//  {$IFNDEF FPC}{$IFNDEF COMPILER_15_UP}fastmm4,{$ENDIF}{$ENDIF}
   m_api,dbsettings,activex,winampapi,
   Windows,messages,commctrl,//uxtheme,
   srv_format,srv_player,wat_api,wrapper,
   common,syswin,HlpDlg,mirutils
   ,global,waticons,io,macros
   ,lastfm    in 'lastfm\lastfm.pas'
-  ,statlog   in 'stat\statlog.pas'
+//  ,statlog   in 'stat\statlog.pas'
   ,popups    in 'popup\popups.pas'
   ,proto     in 'proto\proto.pas'
   ,status    in 'status\status.pas'

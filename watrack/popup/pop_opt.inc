@@ -20,8 +20,6 @@ const
   opt_PopText     :PAnsiChar = 'popup/poptext';
   opt_PopUpButtons:PAnsiChar = 'popup/usebuttons';
 
-  opt_popuptitle:PAnsiChar = 'template/popuptitle';
-  opt_popuptext :PAnsiChar = 'template/popuptext';
   spref = 'strings/';
 
 function GetModStatus:integer;

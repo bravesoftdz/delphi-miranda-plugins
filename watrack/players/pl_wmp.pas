@@ -6,7 +6,7 @@ interface
 
 implementation
 uses windows,common,messages,srv_player,wat_api
-  {$IFDEF DELPHI7_UP}
+  {$IFDEF DELPHI_7_UP}
   ,variants
   {$ENDIF}
   {$IFDEF KOL_MCK}
