@@ -16,7 +16,7 @@ type
     0:  (
         hwnd: HWND;
         message: UINT;
-        wParam: WPARAM;
+        wParam: {$IFDEF _DXE2}Integer{$ELSE}WPARAM{$ENDIF};
         lParam: LPARAM;
         time: DWORD;
         pt: TPoint;

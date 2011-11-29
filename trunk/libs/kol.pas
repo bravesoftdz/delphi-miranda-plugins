@@ -14,7 +14,7 @@
   Key Objects Library (C) 2000 by Vladimir Kladov.
 
 ****************************************************************
-* VERSION 3.14159265358979
+* VERSION 3.16
 ****************************************************************
 
   K.O.L. - is a set of objects and functions to create small programs
@@ -70,8 +70,6 @@
 {$IFDEF WIN} {$IFDEF GDI}
   {$DEFINE WIN_GDI}
 {$ENDIF GDI} {$ENDIF WIN}
-
-{$INCLUDE delphidef.inc}
 
 {$IFDEF WIN_GDI}
   //test
@@ -717,7 +715,7 @@ type
   {* }
 
    PPointerList = ^TPointerList;
-   TPointerList = array[0..MaxInt div 4 - 1] of Pointer;
+   TPointerList = array[0..MaxInt div SizeOf(Pointer) - 1] of Pointer;
 
   TObjectMethod = procedure of object;
   {* }
@@ -2432,7 +2430,7 @@ function Color2Color15( Color: TColor ): WORD;
 
 var    // New TFont instances are intialized with the values in this structure:
   DefFont: TGDIFont = (
-     Height: 0;
+     Height: -11;
      Width: 0;
      Escapement: 0;
      Orientation: 0;
@@ -2450,7 +2448,7 @@ var    // New TFont instances are intialized with the values in this structure:
              #0, #0, #0, #0, #0, #0, #0, #0, #0, #0, #0, #0, #0, #0, #0, #0, #0,
              #0, #0, #0, #0, #0, #0, #0, #0, #0 );
      {$ELSE}
-     Name: 'System';
+     Name: 'Tahoma';
      {$ENDIF}
   );
   DefFontColor: TColor = clWindowText;
@@ -11560,6 +11558,8 @@ var _AnsiCompareStrNoCaseA: function(S1, S2: PAnsiChar): Integer =
 {* The same, but for PChar ANSI strings }
 function AnsiCompareTextA( const S1, S2: AnsiString ): Integer;
 {* }
+function CompareAnsiCase( const S1, S2: PAnsiChar ): Integer;
+function CompareAnsiNoCase( const S1, S2: PAnsiChar ): Integer;
 
 {$IFDEF WIN}
 {$IFNDEF _FPC}
@@ -12435,6 +12435,8 @@ procedure SortArray( const Data: Pointer; const uNElem: Dword;
 {* Like SortData, but faster and allows to sort only contigous arrays of
    dwords (or integers or pointers occupying for 4 bytes for each item. }
 {$ENDIF}
+
+procedure SwapStrListExItems( const Sender: Pointer; const e1, e2: DWORD );
 
 procedure SwapListItems( const L: Pointer; const e1, e2: DWORD );
 {* Use this function as the last parameter for SortData call when a PList
@@ -15930,13 +15932,14 @@ end;
 
 function TObj.VmtAddr: Pointer;
 asm
-       MOV    EAX, [EAX - 4]
+       //MOV    EAX, [EAX - 4]
+       MOV    EAX, [EAX]
 end;
 
 function TObj.InstanceSize: Integer;
 asm
-       MOV    EAX, [EAX]
-       MOV    EAX,[EAX-4]
+       //MOV    EAX, [EAX]
+       MOV    EAX, [EAX-4]
 end;
 
 {$IFDEF OLD_FREE}
@@ -25418,7 +25421,7 @@ function Time2StrFmt( const Fmt: KOLString; D: TDateTime ): KOLString;
 var ST: TSystemTime;
     lpFmt: PKOLChar;
 begin
-  if D < 1 then D := D + 1;
+  if D < 1 then D := D + 700000;
   DateTime2SystemTime( D, ST );
   lpFmt := nil;
   if Fmt <> '' then lpFmt := PKOLChar( Fmt );
@@ -25468,14 +25471,15 @@ var h12, hAM: Boolean;
   function GetMonth( const fmt: KOLString; var S: PKOLChar ): Integer;
   var SD: TSystemTime;
       M: Integer;
-      C, MonthStr: KOLString;
+      MonthStr: KOLString;
   begin
     GetSystemTime( SD );
+    SD.wDay := 1;
     for M := 1 to 12 do
     begin
       SD.wMonth := M;
-      C := SystemDate2Str( SD, LOCALE_USER_DEFAULT, dfLongDate, PKOLChar( fmt + '/dd/yyyy/' ) );
-      MonthStr := Parse( C, '/' );
+      MonthStr := SystemDate2Str( SD, LOCALE_USER_DEFAULT, dfLongDate, PKOLChar( fmt {+ '/dd/yyyy/'} ) );
+      //MonthStr := Parse( C, '/' ); //++ -- by GMax
       if AnsiCompareStrNoCase( MonthStr, Copy( S, 1, Length( MonthStr ) ) ) = 0 then
       begin
         Inc( S, Length( MonthStr ) );
@@ -34278,8 +34282,8 @@ asm
         MOV      ECX, [EDX].TEvents.fOnResize.TMethod.Code
         MOV      EAX, [EDX].TEvents.fOnResize.TMethod.Data
         {$ELSE}
-        MOV      ECX, [EDX].TControl.fOnResize.TMethod.Code
-        MOV      EAX, [EDX].TControl.fOnResize.TMethod.Data
+        MOV      ECX, [EDX].TControl.EV.fOnResize.TMethod.Code
+        MOV      EAX, [EDX].TControl.EV.fOnResize.TMethod.Data
         {$ENDIF}
         {$IFDEF  NIL_EVENTS}
         JECXZ    @@ret_true1
@@ -34445,7 +34449,7 @@ asm
         MOV      EAX, [EDX].TControl.EV
         MOV      ECX, [EAX].TEvents.fOnDropDown.TMethod.Code
         {$ELSE}
-        MOV      ECX, [EDX].TControl.fOnDropDown.TMethod.Code
+        MOV      ECX, [EDX].TControl.EV.fOnDropDown.TMethod.Code
         {$ENDIF}
         {$IFDEF  NIL_EVENTS}
         JECXZ    @@ret_z
@@ -34453,7 +34457,7 @@ asm
         {$IFDEF  EVENTS_DYNAMIC}
         MOV      EAX, [EAX].TEvents.fOnDropDown.TMethod.Data
         {$ELSE}
-        MOV      EAX, [EDX].TControl.fOnDropDown.TMethod.Data
+        MOV      EAX, [EDX].TControl.EV.fOnDropDown.TMethod.Data
         {$ENDIF}
         CALL     ECX
 @@ret_z:
@@ -43303,7 +43307,7 @@ begin
         begin
             p := ItemPtrs[ i ];
             inc( p, L );
-            while (p^ <> #0) and (p^ <= ' ') do inc( p );
+/// WTF?? Dufa            while (p^ <> #0) and (p^ <= ' ') do inc( p );
             if  p^ = fNameDelim then
             begin
                 Result := i; exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
@@ -57906,6 +57910,7 @@ begin
           Sender.EV.FOnHide( Sender );
     end;
   end;
+  Sender.UpdateWndStyles;
   Result := FALSE;
 end;
 
