@@ -366,11 +366,7 @@ begin
       end;
       3: begin
         move(tag^,Frm,SizeOf(Frm));
-        asm
-          mov   eax,Frm.Size
-          bswap eax
-          mov   Frm.Size,eax
-        end;
+        Frm.Size:=bswap(Frm.Size);
         inc(tag,SizeOf(TID3v2FrameHdr));
       end;
       4: begin

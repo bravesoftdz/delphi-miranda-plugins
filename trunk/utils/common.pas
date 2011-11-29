@@ -56,6 +56,8 @@ const
   SIGN_REVERSEBOM = $FFFE;
   SIGN_UTF8       = $BFBBEF;
 
+function BSwap(value:dword):dword;
+
 function Encode(dst,src:pAnsiChar):PAnsiChar;
 function Decode(dst,src:pAnsiChar):PAnsiChar;
 function GetTextFormat(Buffer:pByte;sz:cardinal):integer;
@@ -67,7 +69,7 @@ function IIF(cond:bool;ret1,ret2:Extended ):Extended;  overload;
 function IIF(cond:bool;ret1,ret2:tDateTime):tDateTime; overload;
 function IIF(cond:bool;ret1,ret2:pointer  ):pointer;   overload;
 function IIF(cond:bool;ret1,ret2:string   ):string;    overload;
-{$IFNDEF DELPHI7_UP}
+{$IFNDEF DELPHI_7_UP}
 function IIF(cond:bool;ret1,ret2:variant  ):variant;   overload;
 {$ENDIF}
 
@@ -137,6 +139,7 @@ function StrIndexW(const aStr, aSubStr: PWideChar):integer;
 
 procedure FillWord(var buf;count:cardinal;value:word); register;
 function CompareMem(P1, P2: Pointer; Length: Integer): Boolean;
+
 function Min(a,b:integer):integer;
 function Max(a,b:integer):integer;
 
@@ -194,6 +197,23 @@ function isPathAbsolute(path:PAnsiChar):boolean; overload;
 
 implementation
 
+function BSwap(value:dword):dword;
+  {$IFNDEF WIN64}
+begin
+  asm
+    mov   eax,value
+    bswap eax
+    mov   result,eax
+  end;
+  {$ELSE}
+begin
+  result:=((value and $000000FF) shl 6) +
+          ((value and $0000FF00) shl 2) +
+          ((value and $00FF0000) shr 2) +
+          ((value and $FF000000) shr 6);
+  {$ENDIF}
+end;
+
 function Encode(dst,src:pAnsiChar):PAnsiChar;
 begin
   while src^<>#0 do
@@ -220,7 +240,7 @@ begin
     if (src^='%') and ((src+1)^ in sHexNum) and ((src+2)^ in sHexNum) then
     begin
       inc(src);
-      dst^:=chr(HexToInt(src,2));
+      dst^:=AnsiChar(HexToInt(src,2));
       inc(src);
     end
     else
@@ -376,7 +396,7 @@ function IIF(cond:bool;ret1,ret2:string):string; overload;
 begin
   if cond then result:=ret1 else result:=ret2;
 end;
-{$IFNDEF DELPHI7_UP}
+{$IFNDEF DELPHI_7_UP}
 function IIF(cond:bool;ret1,ret2:variant):variant; overload;
 begin
   if cond then result:=ret1 else result:=ret2;
@@ -739,7 +759,8 @@ begin
   result:=dst;
 end;
 
-procedure FillWord(var buf;count:cardinal;value:word); register; assembler;
+procedure FillWord(var buf;count:cardinal;value:word); register;
+{$IFNDEF WIN64}assembler;
 {
   PUSH EDI 
   MOV EDI, ECX // Move Value To Write 
@@ -766,7 +787,19 @@ asm
   pop  edi
 }
 end;
-
+{$ELSE}
+var
+  ptr:pword;
+  i:integer;
+begin
+  ptr:=pword(buf);
+  for i:=0 to count-1 do
+  begin
+    ptr^:=value;
+    inc(ptr);
+  end;
+end;
+{$ENDIF}
 // from SysUtils
 { Delphi 7.0
 function CompareMem(P1, P2: Pointer; Length: Integer): Boolean; assembler;
@@ -857,8 +890,25 @@ asm
 end;
 {$ELSE}
 function CompareMem(P1, P2: Pointer; Length: Integer): Boolean;
+  {$IFNDEF COMPILER_16_UP}
 begin
   result:=CompareByte(P1,P2,Length)=0;
+  {$ELSE}
+var
+  i:integer;
+begin
+  for i:=0 to Length-1 do
+  begin
+    if pByte(p1)^<>pbyte(p2)^ then
+    begin
+      result:=false;
+      exit;
+    end;
+    inc(pbyte(p1));
+    inc(pbyte(p2));
+  end;
+  result:=true;
+  {$ENDIF}
 end; 
 {$ENDIF}
 

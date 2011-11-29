@@ -172,7 +172,7 @@ end;
 
 function Service_SearchBasic(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
-  res:uint_ptr;
+  res:{$IFDEF COMPILER_16_UP}Longword{$ELSE}uint_ptr{$ENDIF};
 begin
   if lParam=0 then
     result:=0
@@ -186,7 +186,7 @@ end;
 
 function Service_SearchByAdvanced(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
-  res:uint_ptr;
+  res:{$IFDEF COMPILER_16_UP}Longword{$ELSE}uint_ptr{$ENDIF};
 begin
   if lParam=0 then
     result:=0

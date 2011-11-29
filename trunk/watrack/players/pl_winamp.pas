@@ -96,7 +96,7 @@ var
   pid:dword;
   op:THANDLE;
   buf:array [0..1023] of AnsiChar;
-  tmp:dword;
+  tmp:{$IFDEF FPC}LongWord{$ELSE}ulong_ptr{$ENDIF};
 begin
   result:=nil;
   if (flags and WAT_OPT_IMPLANTANT)<>0 then

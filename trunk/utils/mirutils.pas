@@ -33,7 +33,7 @@ function LoadContact(group,setting:PAnsiChar):THANDLE;
 function SaveContact(hContact:THANDLE;group,setting:PAnsiChar):integer;
 
 function SetCListSelContact(hContact:THANDLE):THANDLE;
-function GetCListSelContact:THANDLE; {$IFDEF DELPHI10_UP}inline;{$ENDIF}
+function GetCListSelContact:THANDLE; {$IFDEF DELPHI_10_UP}inline;{$ENDIF}
 function GetContactProtoAcc(hContact:THANDLE):PAnsiChar;
 function  IsMirandaUser(hContact:THANDLE):integer; // >0=Miranda; 0=Not miranda; -1=unknown
 procedure ShowContactDialog(hContact:THANDLE;DblClk:boolean=true;anystatus:boolean=true);
@@ -411,11 +411,14 @@ begin
     else
     begin
       uid:=pAnsiChar(CallProtoService(proto,PS_GETCAPS,PFLAG_UNIQUEIDSETTING,0));
-      if DBReadSetting(hContact,proto,uid,@cws)=0 then
+      if uid<>pAnsiChar(CALLSERVICE_NOTFOUND) then
       begin
-        StrCopy(p,opt_cuid); DBWriteSetting(0,group,section,@cws);
-        DBFreeVariant(@cws);
-        result:=1;
+        if DBReadSetting(hContact,proto,uid,@cws)=0 then
+        begin
+          StrCopy(p,opt_cuid); DBWriteSetting(0,group,section,@cws);
+          DBFreeVariant(@cws);
+          result:=1;
+        end;
       end;
     end;
     if result<>0 then

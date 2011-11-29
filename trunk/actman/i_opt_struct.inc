@@ -716,7 +716,7 @@ end;
 procedure CheckList(Dialog:HWND; num:integer=-1);
 begin
   if num<0 then
-    num:=SendDlgItemMessage(Dialog,IDC_DATA_FULL,LVM_GETNEXTITEM,-1,LVNI_FOCUSED);
+    num:=SendDlgItemMessage(Dialog,IDC_DATA_FULL,LVM_GETNEXTITEM,WPARAM(-1),LVNI_FOCUSED);
   EnableWindow(GetDlgItem(Dialog,IDC_DATA_UP),num>0);
   EnableWindow(GetDlgItem(Dialog,IDC_DATA_DOWN),
       (num+1)<SendDlgItemMessage(Dialog,IDC_DATA_FULL,LVM_GETITEMCOUNT,0,0));

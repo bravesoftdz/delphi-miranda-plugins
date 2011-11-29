@@ -593,7 +593,7 @@ end;
 function ActionStarterWait(action:dword;aparam:dword=0;group:PHKRecord=nil;alast:dword=0):integer;
 var
   tmp:pActStartData;
-  res:uint_ptr;
+  res:{$IFDEF COMPILER_16_UP}Longword{$ELSE}uint_ptr{$ENDIF};
 begin
   mGetMem(tmp,SizeOf(tActStartData));
   tmp^.action:=action;
@@ -610,7 +610,7 @@ end;
 function ActionStarter(action:dword;aparam:dword=0;group:PHKRecord=nil;alast:dword=0):integer;
 var
   tmp:pActStartData;
-  res:uint_ptr;
+  res:{$IFDEF COMPILER_16_UP}Longword{$ELSE}uint_ptr{$ENDIF};
 begin
   result:=0;
   mGetMem(tmp,SizeOf(tActStartData));

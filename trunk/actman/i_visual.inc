@@ -703,7 +703,7 @@
         end;
 
         ACT_SERVICE: begin
-          if SendDlgItemMessageA(Dialog,IDC_EDIT_SERVICE,CB_SELECTSTRING,-1,tlparam(service))<>CB_ERR then
+          if SendDlgItemMessageA(Dialog,IDC_EDIT_SERVICE,CB_SELECTSTRING,twparam(-1),tlparam(service))<>CB_ERR then
             ReloadService
           else
             SetDlgItemTextA(Dialog,IDC_EDIT_SERVICE,service);
@@ -957,7 +957,7 @@
           case action and ADV_ACT_POST of
             ADV_ACT_BREAK: ButtonOn(IDC_FLAG_BREAK);
             ADV_ACT_JUMP : begin
-              SendDlgItemMessageW(Dialog,IDC_ADV_VAL2,CB_SELECTSTRING,-1,tlparam(operval));
+              SendDlgItemMessageW(Dialog,IDC_ADV_VAL2,CB_SELECTSTRING,twparam(-1),tlparam(operval));
               ButtonOn(IDC_FLAG_JUMP);
               bb:=true;
             end;
@@ -970,9 +970,9 @@
         ACT_CHAIN: begin
 //          FillChainList(Dialog);
           if (flags and ACF_BYNAME)<>0 then
-            SendDlgItemMessageW(Dialog,IDC_GROUP_LIST,CB_SELECTSTRING,-1,tlparam(actname))
+            SendDlgItemMessageW(Dialog,IDC_GROUP_LIST,CB_SELECTSTRING,twparam(-1),tlparam(actname))
           else
-            SendDlgItemMessageW(Dialog,IDC_GROUP_LIST,CB_SELECTSTRING,-1,tlparam(GetGroupName(id)));
+            SendDlgItemMessageW(Dialog,IDC_GROUP_LIST,CB_SELECTSTRING,twparam(-1),tlparam(GetGroupName(id)));
         end;
 
         ACT_RW: begin

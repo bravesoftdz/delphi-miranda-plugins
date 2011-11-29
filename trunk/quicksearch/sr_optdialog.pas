@@ -383,7 +383,7 @@ begin
         end;
         ST_CONTACTINFO: begin
           i:=int_ptr(setcnftype2str(setting_cnftype));
-          SendDlgItemMessageW(dialog,IDC_C_CNFTYPE,CB_SELECTSTRING,-1,i);
+          SendDlgItemMessageW(dialog,IDC_C_CNFTYPE,CB_SELECTSTRING,twparam(-1),i);
         end;
       else
         SetDlgItemTextA(dialog,IDC_E_MODULE,module_name);
@@ -392,7 +392,7 @@ begin
 
       v:=settype2str(setting_type);
       SetDlgItemTextW(dialog,IDC_E_TITLE,title);
-      SendDlgItemMessageW(dialog,IDC_C_VARTYPE,CB_SELECTSTRING,-1,tlparam(v));
+      SendDlgItemMessageW(dialog,IDC_C_VARTYPE,CB_SELECTSTRING,twparam(-1),tlparam(v));
       mFreeMem(v);
     end;
   end
@@ -408,8 +408,8 @@ begin
     SetDlgItemTextW(dialog,IDC_E_MODULE,v);
     SetDlgItemTextW(dialog,IDC_E_VAR   ,v);
     SetDlgItemTextW(dialog,IDC_E_LPAR  ,v);
-    SendDlgItemMessageW(dialog,IDC_C_VARTYPE,CB_SELECTSTRING,-1,lparam(v));
-    SendDlgItemMessageW(dialog,IDC_C_CNFTYPE,CB_SELECTSTRING,-1,lparam(v));
+    SendDlgItemMessageW(dialog,IDC_C_VARTYPE,CB_SELECTSTRING,twparam(-1),tlparam(v));
+    SendDlgItemMessageW(dialog,IDC_C_CNFTYPE,CB_SELECTSTRING,twparam(-1),tlparam(v));
   end;
 end;
 

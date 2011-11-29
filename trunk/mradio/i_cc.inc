@@ -96,7 +96,7 @@ const
   PlayStatus:int_ptr=RD_STATUS_NOSTATION;
   doRecord:boolean=false;
 var
-  res:uint_ptr;
+  res:{$IFDEF COMPILER_16_UP}Longword{$ELSE}uint_ptr{$ENDIF};
   tmpbuf,buf1:array [0..MAX_PATH-1] of WideChar;
   plFile:pWideChar;
   plLocal:boolean;

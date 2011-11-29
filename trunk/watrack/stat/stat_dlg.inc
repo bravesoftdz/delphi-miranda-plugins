@@ -46,7 +46,7 @@ begin
   EnableWindow(GetDlgItem(Dlg,IDC_AUTOSORT) ,enable);
 end;
 
-function DlgProcOptions(Dialog:HWnd; hMessage,wParam,lParam:DWord):integer; stdcall;
+function DlgProcOptions(Dialog:HWnd; hMessage:dword;wParam:WPARAM;lParam:LPARAM):LRESULT; stdcall;
 const
   changed:boolean=false;
 var
@@ -148,7 +148,7 @@ begin
             if ShowDlg(buf,TmplName) then
             begin
               f:=Rewrite(buf);
-              if dword(f)=INVALID_HANDLE_VALUE then
+              if f=THANDLE(INVALID_HANDLE_VALUE) then
                 err('Can''t create file')
               else
               begin
@@ -165,7 +165,7 @@ begin
             GetDlgItemTextA(Dialog,IDC_REPNAME,buf1,511);
             GetDlgItemTextA(Dialog,IDC_TMPLNAME,buf,511);
             SetReportMask(Dialog);
-            PluginLink^.CallService(MS_WAT_MAKEREPORT,dword(@buf),dword(@buf1));
+            PluginLink^.CallService(MS_WAT_MAKEREPORT,TWPARAM(@buf),TLPARAM(@buf1));
           end;
         end;
       end;
@@ -185,7 +185,7 @@ begin
         if buf[0]<>#0 then
         begin
           buf1[0]:=#0;
-          PluginLink^.CallService(MS_UTILS_PATHTORELATIVE,dword(@buf),dword(@buf1));
+          PluginLink^.CallService(MS_UTILS_PATHTORELATIVE,TWPARAM(@buf),TLPARAM(@buf1));
           StrDup(StatName,buf1);
         end;
 
@@ -194,7 +194,7 @@ begin
         if buf[0]<>#0 then
         begin
           buf1[0]:=#0;
-          PluginLink^.CallService(MS_UTILS_PATHTORELATIVE,dword(@buf),dword(@buf1));
+          PluginLink^.CallService(MS_UTILS_PATHTORELATIVE,TWPARAM(@buf),TLPARAM(@buf1));
           StrDup(ReportName,buf1);
         end;
 
@@ -203,7 +203,7 @@ begin
         if buf[0]<>#0 then
         begin
           buf1[0]:=#0;
-          PluginLink^.CallService(MS_UTILS_PATHTORELATIVE,dword(@buf),dword(@buf1));
+          PluginLink^.CallService(MS_UTILS_PATHTORELATIVE,TWPARAM(@buf),TLPARAM(@buf1));
           StrDup(TmplName,buf1);
         end;
 

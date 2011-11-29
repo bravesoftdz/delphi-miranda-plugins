@@ -290,7 +290,7 @@ begin
         flags2:=flags2 or ACF2_SRV_WPAR;
       if StrToInt(getAttrValue(sub,ioHex))=1 then
         flags2:=flags2 or ACF2_SRV_WHEX;
-      flags:=flags or ReadParam(sub,wparam,(flags2 and ACF2_SRV_WPAR)<>0);
+      flags:=flags or ReadParam(sub,int_ptr(wparam),(flags2 and ACF2_SRV_WPAR)<>0);
 
       sub:=getNthChild(actnode,ioLParam,0);
       if StrToInt(getAttrValue(sub,ioVariables))=1 then

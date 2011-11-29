@@ -45,11 +45,17 @@ type
     iStatus       :int;
     iDesiredStatus:int;
     iXStatus      :int;
-    iVersion      :int;
+    iVersion      :int;  // version 2 or higher designate support of Unicode services
+{
     bOldProto     :Bool;
     szPhysName    :PAnsiChar;
     szProtoName   :PAnsiChar;
     tszUserName   :TChar;
+}
+    tszUserName   :TChar;
+    szProtoName   :PAnsiChar;
+    szModuleName  :PAnsiChar;
+
     reserved      :array [0..39] of dword;
 
     AddToList       :function(intf:PPROTO_INTERFACE;flags:int; var psr:TPROTOSEARCHRESULT):THANDLE; cdecl;

@@ -103,11 +103,7 @@ begin
   while FilePos(f)<fsize do
   begin
     BlockRead(f,chunk,SizeOf(chunk));
-    asm
-      mov   eax,chunk.Len
-      bswap eax
-      mov   chunk.Len,eax
-    end;
+    chunk.len:=bswap(chunk.len);
     if (not (AnsiChar(chunk.ID and $FF) in ['A'..'Z','a'..'z','.'])) or
       (chunk.Len<SizeOf(chunk)) then
       break;
@@ -280,20 +276,12 @@ begin
       Skip(f,chunk.Len-SizeOf(chunk));
 {
     BlockRead(f,chunk,SizeOf(chunk)); //RJMD
-    asm
-      mov   eax,chunk.Len
-      bswap eax
-      mov   chunk.Len,eax
-    end;
+    chunk.len:=bswap(chunk.len);
     BlockRead(f,tmplong,4);
 
 
     BlockRead(f,chunk,SizeOf(chunk)); //RMJE
-    asm
-      mov   eax,chunk.Len
-      bswap eax
-      mov   chunk.Len,eax
-    end;
+    chunk.len:=bswap(chunk.len);
 }
     end
     else

@@ -113,11 +113,7 @@ begin
       if (sign and $01000000)<>0 then
       begin
         BlockRead(f,frames,4);
-        asm
-          mov   eax,frames
-          bswap eax
-          mov   frames,eax
-        end;
+        frames:=bswap(frames);
         hdr.length:=Round((1152/hdr.samplerate)*frames/(4-hdr.Version)); //!
       end;
     end;

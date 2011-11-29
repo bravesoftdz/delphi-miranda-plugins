@@ -1,3 +1,8 @@
+{$include compilers.inc}
+{$IFDEF COMPILER_16_UP}
+  {$WEAKLINKRTTI ON}
+  {.$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
+{$ENDIF}
 {$IMAGEBASE $13100000}
 library quicksearch;
 
