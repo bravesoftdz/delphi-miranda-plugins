@@ -160,7 +160,7 @@ begin
   for i:=0 to k do
   begin
     item.iItem:=i;
-    SendMessage(hwndList,LVM_GETITEM,0,LPARAM(@item));
+    SendMessageA(hwndList,LVM_GETITEMA,0,LPARAM(@item));
     j:=FindFormat(item.pszText);
     if j<>WAT_RES_NOTFOUND then // always?
     begin
