@@ -134,7 +134,7 @@ begin
     p:=@fmtLink^[i];
     item.pszText:=@p^.ext;
     item.lParam := p^.flags;
-    newItem:=SendMessage(hwndList,LVM_INSERTITEM,0,LPARAM(@item));
+    newItem:=SendMessageA(hwndList,LVM_INSERTITEMA,0,LPARAM(@item));
     if newItem>=0 then
     begin
       if (p^.flags and WAT_OPT_DISABLED)=0 then
