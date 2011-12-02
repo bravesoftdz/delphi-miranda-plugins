@@ -792,7 +792,7 @@ var
   ptr:pword;
   i:integer;
 begin
-  ptr:=pword(buf);
+  ptr:=pword(@buf);
   for i:=0 to count-1 do
   begin
     ptr^:=value;
