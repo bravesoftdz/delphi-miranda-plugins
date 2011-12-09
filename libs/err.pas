@@ -468,7 +468,7 @@ type
     nChars: Integer;
   end;
 
-function EnumStringModules(Instance: Longint; Data: Pointer): Boolean;
+function EnumStringModules(Instance: THANDLE; Data: Pointer): Boolean;
 begin
   with PStrData(Data)^ do
   begin

@@ -702,7 +702,7 @@ begin
     FillChar(fi,SizeOf(fi),0);
     fi.flags :=LVFI_PARAM;
     fi.lParam:=num;
-    result:=SendMessage(grid,LVM_FINDITEM,-1,lparam(@fi));
+    result:=SendMessage(grid,LVM_FINDITEM,wparam(-1),lparam(@fi));
   end
   else
     result:=num;
@@ -841,7 +841,7 @@ begin
       vars[5]:=liston;
       vars[6]:=online;
     end;
-    wvsprintfw(buf,'%s (%s): %u (%u); %s %u (%u)',@vars);
+    wvsprintfw(buf,'%ls (%ls): %u (%u); %ls %u (%u)',@vars);
     SendMessageW(StatusBar,SB_SETTIPTEXTW,i,lparam(@buf));
   end;
 
@@ -1975,7 +1975,7 @@ begin
       begin
         li.statemask:=LVIS_SELECTED;
         li.state:=0;
-        SendMessage(grid,LVM_SETITEMSTATE,-1,tlparam(@li));
+        SendMessage(grid,LVM_SETITEMSTATE,twparam(-1),tlparam(@li));
         ListView_SetItemState(grid,next,LVIS_FOCUSED or LVIS_SELECTED,
             LVIS_FOCUSED or LVIS_SELECTED);
   //      ListView_EnsureVisible(grid,next,false);
