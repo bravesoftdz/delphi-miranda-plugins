@@ -29,8 +29,8 @@ type
 //    FAction:integer;
 
     procedure setactive(const Value: boolean);
-    function PrepareClassname(aControl: PControl): String;
-    function UniqueName(aName: String; flags:cardinal): String;
+    function PrepareClassname(aControl: PControl): KOLString;
+    function UniqueName(aName: KOLString; flags:cardinal): KOLString;
     procedure SetCurrent(const Value: pControl);
     procedure InternalControlChange(sender:pObj);
     procedure Setspacing(Space:cardinal = 8);
@@ -41,7 +41,7 @@ type
     procedure DoChar( Sender: PControl; var Key: KOLChar; Shift: DWORD);
   public
     destructor destroy;virtual;
-    procedure Connect(aName: String; aControl: pControl; flags:cardinal=0);
+    procedure Connect(aName: KOLString; aControl: pControl; flags:cardinal=0);
     procedure DisConnect(aControl: pControl);
     procedure Paintgrid(sender:pControl;DC:HDC);
 
@@ -350,7 +350,7 @@ begin
   fOwner.Invalidate;
 end;
 
-procedure TDesigner.Connect(aName: String; aControl: pControl; flags:cardinal=0);
+procedure TDesigner.Connect(aName: KOLString; aControl: pControl; flags:cardinal=0);
 begin
   if (IndexOfObj(aControl) = -1) then
   begin
@@ -380,7 +380,7 @@ end;
 function TDesigner.GetFlags(aControl:pControl):cardinal;
 var
   idx,dummy:integer;
-  tmpstr:string;
+  tmpstr:KOLString;
 begin
   idx:=IndexOfObj(aControl);
   tmpstr:=Items[idx];
@@ -470,10 +470,10 @@ end;
   // It's not a beauty but it works.
   // (A severe case of programming 48 hours without sleep)
 
-function TDesigner.UniqueName(aName: String; flags:cardinal): String;
+function TDesigner.UniqueName(aName: KOLString; flags:cardinal): KOLString;
 var
   I, J: Integer;
-  T: String;
+  T: KOLString;
 begin
   // Strip obj_ prefix and all other prefix+underscores from
   // subclassname property: 'obj_BUTTON' becomes 'Button'
@@ -509,7 +509,7 @@ begin
 end;
 
 // This is probably not complete yet.
-function TDesigner.PrepareClassName(aControl: PControl): String;
+function TDesigner.PrepareClassName(aControl: PControl): KOLString;
 begin
   Result := aControl.subclassname;
   with aControl^ do

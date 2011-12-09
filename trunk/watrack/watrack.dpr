@@ -6,7 +6,8 @@
 {$IMAGEBASE $13000000}
 library WATrack;
 uses
-  {$IFNDEF FPC}fastmm4,{$ENDIF}
+  // FastMM not compatible with FPC, internal for delphi xe
+  {$IFNDEF COMPILER_16_UP}{$IFNDEF FPC}fastmm4,{$ENDIF}{$ENDIF}
   m_api,dbsettings,activex,winampapi,
   Windows,messages,commctrl,//uxtheme,
   srv_format,srv_player,wat_api,wrapper,
@@ -181,6 +182,7 @@ var
   OldPlayerStatus:integer;
   stat:integer;
   newplayer:bool;
+b:array [0..31] of widechar;
 begin
   result:=WAT_RES_NOTFOUND;
   if DisablePlugin=dsPermanent then
@@ -302,8 +304,9 @@ begin
       // just when music presents
       if stat=WAT_PLS_NORMAL then
       begin
+messagebox(0,'get changing info','',0);
         GetChangingInfo(WorkSI,flags);
-
+messagebox(0,WorkSI.mfile,inttohex(b,result),0);
         // full info requires
         // "no music" case blocked
         if (result=WAT_RES_NEWFILE) or           // new file
@@ -313,7 +316,9 @@ begin
            isContainer(WorkSI.mfile))) then      // ... or container like CUE
         begin
           // requirement: old artist/title for remote files
+messagebox(0,'get info','',0);
           stat:=GetInfo(WorkSI,flags);
+messagebox(0,'get info','OK',0);
 
           // covers
           if (WorkSI.cover=nil) or (WorkSI.cover^=#0) then
