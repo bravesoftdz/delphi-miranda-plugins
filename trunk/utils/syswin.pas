@@ -418,7 +418,8 @@ end;
 //----- work with handles -----
 function GetProcessHandleCount(hProcess:THANDLE;var pdwHandleCount:dword):bool; stdcall; external 'kernel32.dll';
 
-function NtQueryObject(ObjectHandle:THANDLE;ObjectInformationClass:dword;ObjectInformation:pointer;Length:ulong;var ResultLength:longint):cardinal; stdcall; external 'ntdll.dll';
+function NtQueryObject(ObjectHandle:THANDLE;ObjectInformationClass:integer;
+         ObjectInformation:pointer;Length:ulong;var ResultLength:longint):cardinal; stdcall; external 'ntdll.dll';
 
 const
   ObjectNameInformation = 1; // +4 bytes
@@ -563,27 +564,44 @@ const
   MaxHandle = $2000;
 
 type
-  prec = ^trec;
+  ptrec = ^trec;
   trec = record
     handle:thandle;
     fname:pWideChar;
   end;
 
-function GetName(param:pointer):dword; //stdcall;
+type
+  pint_ptr  = ^int_ptr;
+
+function GetName(param:pointer):integer; //stdcall;
 const
   BufSize = $800;
+  // depends of record align
+  offset=SizeOf(Pointer) div 2; // 4 for win64, 2 for win32
 var
   TmpBuf:array [0..BufSize-1] of WideChar;
 var
   dummy:longint;
+  size:integer;
+  pc:pWideChar;
 begin
   result:=0;
 
-  if NTQueryObject(prec(param)^.handle,ObjectNameInformation,
+  if NTQueryObject(ptrec(param)^.handle,ObjectNameInformation,
      @TmpBuf,BufSize*SizeOf(WideChar),dummy)=0 then
   begin
-    GetMem(prec(param)^.fname,(lstrlenw(TmpBuf)-3)*SizeOf(WideChar));
-    StrCopyW(prec(param)^.fname,TmpBuf+4);
+    // UNICODE_STRING: 2b - length, 2b - maxlen, (align), next - pWideChar
+    size:=pword(@TmpBuf)^; // length in bytes
+    if size>=0 then
+    begin
+      GetMem(ptrec(param)^.fname,size+SizeOf(WideChar)); // length in bytes
+
+      pc:=pWideChar(pint_ptr(@tmpbuf[offset])^);
+      move(pc^,ptrec(param)^.fname^,size); // can be without zero
+      pword(pAnsiChar(ptrec(param)^.fname)+size)^:=0;
+    end
+    else
+      ptrec(param)^.fname:=nil;
   end;
 end;
 
@@ -631,9 +649,9 @@ function GetFileFromWnd(wnd:HWND;Filter:FFWFilterProc;
          flags:dword=gffdMultiThread+gffdOld;timeout:cardinal=ThreadTimeout):pWideChar;
 var
   hProcess,h:THANDLE;
-  pid:dword;
-  i:cardinal;
-  c:thandle;
+  pid:THANDLE;
+  i:THANDLE;
+  c:THANDLE;
   Handles:dword;
   pc:pWideChar;
 begin
@@ -646,7 +664,8 @@ begin
   harcnt:=0;
   if GetProcessHandleCount(pid,handles) then
   begin
-    Handles:=Handles*SizeOf(THANDLE);
+    Handles:=Handles*4; // count no matter, check "every 4th" handle
+//    Handles:=Handles*SizeOf(THANDLE);
     hProcess:=GetCurrentProcess;
     i:=SIZEOF(THANDLE); // skip first
 
@@ -672,10 +691,12 @@ begin
       end
       else
       begin
-        inc(handles,SizeOf(THANDLE)); //????skip empty number and non-duplicates
+//        inc(handles,SizeOf(THANDLE)); //????skip empty number and non-duplicates
+        inc(handles,4); //????skip empty number and non-duplicates
         if Handles>MaxHandle then break; //file not found
       end;
-      inc(i,SizeOf(THANDLE));
+      inc(i,4);
+//!!      inc(i,SizeOf(THANDLE));
       if i>Handles then
         break;
     end;

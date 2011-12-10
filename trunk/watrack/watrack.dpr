@@ -182,7 +182,6 @@ var
   OldPlayerStatus:integer;
   stat:integer;
   newplayer:bool;
-b:array [0..31] of widechar;
 begin
   result:=WAT_RES_NOTFOUND;
   if DisablePlugin=dsPermanent then
@@ -304,9 +303,7 @@ begin
       // just when music presents
       if stat=WAT_PLS_NORMAL then
       begin
-messagebox(0,'get changing info','',0);
         GetChangingInfo(WorkSI,flags);
-messagebox(0,WorkSI.mfile,inttohex(b,result),0);
         // full info requires
         // "no music" case blocked
         if (result=WAT_RES_NEWFILE) or           // new file
@@ -316,9 +313,7 @@ messagebox(0,WorkSI.mfile,inttohex(b,result),0);
            isContainer(WorkSI.mfile))) then      // ... or container like CUE
         begin
           // requirement: old artist/title for remote files
-messagebox(0,'get info','',0);
           stat:=GetInfo(WorkSI,flags);
-messagebox(0,'get info','OK',0);
 
           // covers
           if (WorkSI.cover=nil) or (WorkSI.cover^=#0) then
@@ -417,7 +412,7 @@ messagebox(0,'get info','OK',0);
   giused:=0;
 end;
 
-function PressButton(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function PressButton(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
   flags:integer;
 begin
@@ -446,7 +441,7 @@ begin
     result:=1
   else
     result:=0;
-  if (wParam<0) or (wParam=MenuDisablePos) then
+  if (integer(wParam)<0) or (wParam=MenuDisablePos) then
   begin
     if result=0 then
       wParam:=1

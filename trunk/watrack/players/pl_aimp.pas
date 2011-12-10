@@ -50,12 +50,12 @@ type
     nGenreLen   :dword;
     nTitleLen   :dword;
     //
-    sAlbum      :dword_ptr;
-    sArtist     :dword_ptr;
-    sDate       :dword_ptr;
-    sFileName   :dword_ptr;
-    sGenre      :dword_ptr;
-    sTitle      :dword_ptr;
+    sAlbum      :dword; // size of pointer for 32 bit system
+    sArtist     :dword;
+    sDate       :dword;
+    sFileName   :dword;
+    sGenre      :dword;
+    sTitle      :dword;
   end;
 
 function Check(wnd:HWND;flags:integer):HWND;cdecl;
@@ -149,8 +149,8 @@ begin
       with PAIMP2FileInfo(pStr)^ do
       begin
         StrDupW(result,
-          pWideChar(PAnsiChar(pStr)+SizeOf(TAIMP2FileInfo))+
-             nAlbumLen+nArtistLen+nDateLen,
+          pWideChar(PAnsiChar(pStr)+SizeOf(TAIMP2FileInfo)+
+             (nAlbumLen+nArtistLen+nDateLen)*SizeOf(WideChar)),
           nFileNameLen);
           // Delete rest index (like "filename.cue:3")
           pw :=StrRScanW(result,':');

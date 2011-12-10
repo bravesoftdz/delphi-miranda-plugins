@@ -13,7 +13,7 @@ function LoadFromFile(fname:PAnsiChar):integer;
 function ProcessPlayerLink:integer;
 
 function ServicePlayer(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
-function SendCommand  (wParam:WPARAM;lParam:LPARAM;flags:integer):integer;
+function SendCommand  (wParam:WPARAM;lParam:LPARAM;flags:integer):int_ptr;
 
 procedure ClearPlayers;
 
@@ -737,7 +737,7 @@ begin
   end;
 end;
 
-function SendCommand(wParam:WPARAM;lParam:LPARAM;flags:integer):integer;
+function SendCommand(wParam:WPARAM;lParam:LPARAM;flags:integer):int_ptr;
 var
   dummy:bool;
   wnd:HWND;
