@@ -22,11 +22,11 @@ const
 {$include pop_opt.inc}
 
 const
-  MainTmpl = 'artist: %s'#13#10'title: "%s"'#13#10'album: "%s"'#13#10+
-    'genre: %s'#13#10'comment: %s'#13#10'year: %s'#13#10'track: %u'#13#10+
-    'bitrate: %ukbps %s'#13#10'samplerate: %uKHz'#13#10+
-    'channels: %u'#13#10'length: %s'#13#10'player: "%s" v.%s';
-  AddTmpl = #13#10'file: "%s"'#13#10'size: %u bytes';
+  MainTmpl = 'artist: %ls'#13#10'title: "%ls"'#13#10'album: "%ls"'#13#10+
+    'genre: %ls'#13#10'comment: %ls'#13#10'year: %ls'#13#10'track: %u'#13#10+
+    'bitrate: %ukbps %ls'#13#10'samplerate: %uKHz'#13#10+
+    'channels: %u'#13#10'length: %ls'#13#10'player: "%ls" v.%ls';
+  AddTmpl = #13#10'file: "%ls"'#13#10'size: %u bytes';
 
 procedure ShowMusicInfo(si:pSongInfo);
 var
@@ -488,6 +488,7 @@ begin
   if aSetDisable then
     SetModStatus(0);
 
+  CallService(MS_CLIST_REMOVEMAINMENUITEM,hMenuItem,0);
   PluginLink^.UnhookEvent(plStatusHook);
   PluginLink^.DestroyServiceFunction(ssmi);
   PluginLink^.UnhookEvent(sic);
