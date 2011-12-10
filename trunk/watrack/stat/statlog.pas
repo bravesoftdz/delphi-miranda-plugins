@@ -618,6 +618,7 @@ begin
   if aSetDisable then
     SetModStatus(0);
 
+  CallService(MS_CLIST_REMOVEMAINMENUITEM,hMenuReport,0);
   PluginLink^.UnhookEvent(plStatusHook);
   PluginLink^.UnhookEvent(sic);
   PluginLink^.DestroyServiceFunction(hPackLog);

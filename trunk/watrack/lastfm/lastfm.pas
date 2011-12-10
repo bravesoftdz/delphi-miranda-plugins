@@ -269,6 +269,7 @@ begin
   else
     PluginLink^.DestroyServiceFunction(slastinf);
 
+  CallService(MS_CLIST_REMOVEMAINMENUITEM,hMenuLast,0);
   PluginLink^.DestroyServiceFunction(slast);
   PluginLink^.UnhookEvent(plStatusHook);
   PluginLink^.UnhookEvent(sic);
