@@ -49,12 +49,15 @@ type
 // C translations
 type
 {$IFNDEF FPC}
-  size_t    = integer;
+  {$IFDEF WIN32}
+  // delphi 64 must have these types anyway
   int_ptr   = integer;
   uint_ptr  = cardinal;
+  {$ENDIF}
   long      = longint;
   plong     = ^long;
   DWORD_PTR = ULONG_PTR;
+  size_t    = ULONG_PTR;
 {$ENDIF}
   pint_ptr  = ^int_ptr;
   puint_ptr = ^uint_ptr;
