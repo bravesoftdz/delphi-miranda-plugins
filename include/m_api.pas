@@ -53,6 +53,7 @@ type
   // delphi 64 must have these types anyway
   int_ptr   = integer;
   uint_ptr  = cardinal;
+  
   {$ENDIF}
   long      = longint;
   plong     = ^long;
@@ -61,7 +62,7 @@ type
 {$ENDIF}
   pint_ptr  = ^int_ptr;
   puint_ptr = ^uint_ptr;
-  time_t    = DWORD;
+  time_t    = ulong;
   int       = integer;
 //  uint     = Cardinal;
 //  pint     = ^int;
@@ -71,7 +72,7 @@ type
   TWPARAM   = WPARAM;
 
 // My definitions
-  TWNDPROC = function (Dialog:HWnd; hMessage, wParam:WPARAM;lParam:LPARAM):integer; cdecl;
+  TWNDPROC = function (Dialog:HWnd; hMessage:uint; wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 
 type
   PTChar = ^TChar;
@@ -86,7 +87,24 @@ const
 {$include m_system.inc}
 const
   mmi:TMM_INTERFACE=(
-    cbSize :SizeOf(TMM_INTERFACE));
+    cbSize :SizeOf(TMM_INTERFACE);
+    malloc :nil;
+    realloc:nil;
+    free   :nil;
+// if MIRANDA_VER >= 0x0600
+    calloc :nil;
+    strdup :nil;
+    wstrdup:nil;
+// if MIRANDA_VER >= 0x0700
+    mir_snprintf  :nil;
+    mir_sntprintf :nil;
+    mir_vsnprintf :nil;
+    mir_vsntprintf:nil;
+
+    mir_a2u_cp:nil;
+    mir_a2u   :nil;
+    mir_u2a_cp:nil;
+    mir_u2a   :nil);
 
 {-- start newpluginapi --}
 const

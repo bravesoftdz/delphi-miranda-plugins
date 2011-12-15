@@ -1,4 +1,3 @@
-{.$DEFINE USE_MMI}
 {$INCLUDE compilers.inc}
 unit common;
 
@@ -6,7 +5,7 @@ interface
 
 uses
 windows
-{$IFDEF USE_MMI}
+{$IFDEF Miranda}
 ,m_api
 {$ENDIF}
 ;
@@ -930,7 +929,7 @@ end;
 
 function mGetMem(var dst;size:integer):pointer;
 begin
-{$IFDEF USE_MMI}
+{$IFDEF Miranda}
   if @mmi.malloc<>nil then
     pointer(dst):=mmi.malloc(size)
   else
@@ -943,7 +942,7 @@ procedure mFreeMem(var ptr);
 begin
   if pointer(ptr)<>nil then
   begin
-{$IFDEF USE_MMI}
+{$IFDEF Miranda}
     if @mmi.free<>nil then
       mmi.free(pointer(ptr))
     else
@@ -955,7 +954,7 @@ end;
 
 function mReallocMem(var dst; size:integer):pointer;
 begin
-{$IFDEF USE_MMI}
+{$IFDEF Miranda}
   if @mmi.malloc<>nil then
     pointer(dst):=mmi.realloc(pointer(dst),size)
   else

@@ -23,10 +23,10 @@ const
 
 const
   MainTmpl = 'artist: %ls'#13#10'title: "%ls"'#13#10'album: "%ls"'#13#10+
-    'genre: %ls'#13#10'comment: %ls'#13#10'year: %ls'#13#10'track: %u'#13#10+
-    'bitrate: %ukbps %ls'#13#10'samplerate: %uKHz'#13#10+
-    'channels: %u'#13#10'length: %ls'#13#10'player: "%ls" v.%ls';
-  AddTmpl = #13#10'file: "%ls"'#13#10'size: %u bytes';
+    'genre: %ls'#13#10'comment: %ls'#13#10'year: %ls'#13#10'track: %lu'#13#10+
+    'bitrate: %lukbps %ls'#13#10'samplerate: %luKHz'#13#10+
+    'channels: %lu'#13#10'length: %ls'#13#10'player: "%ls" v.%ls';
+  AddTmpl = #13#10'file: "%ls"'#13#10'size: %lu bytes';
 
 procedure ShowMusicInfo(si:pSongInfo);
 var
@@ -58,15 +58,15 @@ begin
     lvars[12]:=uint_ptr(player);
     lvars[13]:=uint_ptr(txtver);
   end;
-  StrCopyW(Tmpl,MainTmpl);
+  StrCopyW(Tmpl,TranslateW(MainTmpl));
   if PopUpFile=BST_CHECKED then
   begin
     lvars[14]:=uint_ptr(si^.mfile);
     lvars[15]:=si^.fsize;
-    StrCatW(Tmpl,AddTmpl);
+    StrCatW(Tmpl,TranslateW(AddTmpl));
   end;
 
-  wvsprintfw(buf,TranslateW(Tmpl),@lvars);
+  wvsprintfw(buf,Tmpl,@lvars);
   MessageBoxW(0,buf,PluginName,MB_OK);
   mFreeMem(buf);
 end;
