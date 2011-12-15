@@ -345,7 +345,7 @@ end;
 
 function BuildLastSeenTime(cont:THANDLE;modulename:PAnsiChar):PWideChar;
 var
-  vars:array [0..4] of integer;
+  vars:array [0..4] of uint_ptr;
 begin
   vars[2]:=DBReadWord(cont,modulename,'Year',0);
   if vars[2]<>0 then
@@ -355,7 +355,7 @@ begin
     vars[0]:=DBReadWord(cont,modulename,'Day'    ,0);
     vars[3]:=DBReadWord(cont,modulename,'Hours'  ,0);
     vars[4]:=DBReadWord(cont,modulename,'Minutes',0);
-    wvsprintfw(result,'%.2u.%.2u.%.4u - %.2u:%.2u',@vars);
+    wvsprintfw(result,'%.2lu.%.2lu.%.4lu - %.2lu:%.2lu',@vars);
   end
   else
     result:=nil;
@@ -755,7 +755,7 @@ var
   aPartPos:array [0..63 ] of integer;
   buf     :array [0..255] of WideChar;
   fmtstr  :array [0..255] of WideChar;
-  vars    :array [0..6  ] of int_ptr;
+  vars    :array [0..6  ] of uint_ptr;
   all:integer;
   i,j:integer;
   p:PWideChar;
@@ -764,7 +764,7 @@ var
   icon:HICON;
   protocnt:integer;
 begin
-  StrCopyW(@fmtstr,TranslateW('%u users found (%u) Online: %u'));
+  StrCopyW(@fmtstr,TranslateW('%lu users found (%lu) Online: %lu'));
   vars[0]:=SBData[0].found;
   vars[1]:=Length(FlagBuf);
   vars[2]:=SBData[0].online;
@@ -786,7 +786,7 @@ begin
   SendMessageW(StatusBar,SB_SETPARTS,protocnt+2,lparam(@aPartPos));
   SendMessageW(StatusBar,SB_SETTEXTW,0,lparam(@buf));
 
-  vars[4]:=int_ptr(TranslateW('Online'));
+  vars[4]:=uint_ptr(TranslateW('Online'));
 
   for i:=1 to protocnt do
   begin
@@ -819,15 +819,15 @@ begin
     if (SBData[i].flags and QSF_ACCDEL)<>0 then
     begin
       buf [0]:='!';
-      vars[1]:=int_ptr(TranslateW('deleted'));
+      vars[1]:=uint_ptr(TranslateW('deleted'));
     end
     else if (SBData[i].flags and QSF_ACCOFF)<>0 then
     begin
       buf [0]:='?';
-      vars[1]:=int_ptr(TranslateW('off'));
+      vars[1]:=uint_ptr(TranslateW('off'));
     end
     else
-      vars[1]:=int_ptr(TranslateW('active'));
+      vars[1]:=uint_ptr(TranslateW('active'));
 
     IntToStr(pWideChar(@buf[2]),SBData[i].found);
     StrEndW(buf)^:=' ';
@@ -841,7 +841,7 @@ begin
       vars[5]:=liston;
       vars[6]:=online;
     end;
-    wvsprintfw(buf,'%ls (%ls): %u (%u); %ls %u (%u)',@vars);
+    wvsprintfw(buf,'%ls (%ls): %lu (%lu); %ls %lu (%lu)',@vars);
     SendMessageW(StatusBar,SB_SETTIPTEXTW,i,lparam(@buf));
   end;
 
@@ -904,10 +904,10 @@ var
   lpatptr:PWideChar;
 begin
   numpattern:=0;
+  mFreeMem(patstr);
   if (pattern<>nil) and (pattern^<>#0) then
   begin
     wasquote:=false;
-    mFreeMem(patstr);
     StrDupW(patstr,pattern);
     lpatptr:=patstr;
     repeat
@@ -946,10 +946,6 @@ begin
         if numpattern=maxpattern then break;
       end;
     until lpatptr^=#0;
-  end
-  else
-  begin
-    mFreeMem(patstr);
   end;
 end;
 
@@ -1091,6 +1087,9 @@ begin
 
   Sort;
   UpdateSB;
+
+  AdvancedFilter; //!!
+  
   ListView_SetItemState(grid,0,LVIS_FOCUSED or LVIS_SELECTED,
     LVIS_FOCUSED or LVIS_SELECTED);
 end;
@@ -2342,7 +2341,11 @@ begin
         SetDlgItemTextW(Dialog,IDC_E_SEARCHTEXT,pattern)
       end
       else
+      begin
+        buf[0]:=#0;
+        SetDlgItemTextW(Dialog,IDC_E_SEARCHTEXT,@buf);
         FillGrid;
+      end;
 
       TranslateDialogDefault(dialog);
 

@@ -24,6 +24,7 @@ type
     descr:pWideChar;
     id   :dword;
     flags:dword; // ACCF_* flags
+    order:dword;
   end;
 
 const

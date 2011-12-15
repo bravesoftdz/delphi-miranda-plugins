@@ -258,12 +258,16 @@ function DBWriteString(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;
          val:PAnsiChar;enc:integer=DBVT_ASCIIZ):int_ptr;
 var
   cws:TDBCONTACTWRITESETTING;
+  p:dword;
 begin
   cws.szModule     :=szModule;
   cws.szSetting    :=szSetting;
   cws.value._type  :=enc;
   if val=nil then
-    val:='';
+  begin
+    p:=0;
+    val:=@p;
+  end;
   cws.value.szVal.a:=Val;
   Result:=PluginLink^.CallService(MS_DB_CONTACT_WRITESETTING,hContact,lParam(@cws));
 end;
@@ -301,54 +305,6 @@ begin
   cgs.szSetting:=szSetting;
   Result:=PluginLink^.CallService(MS_DB_CONTACT_DELETESETTING,hContact,lParam(@cgs));
 end;
-{
-type
-  pdbenumrec = ^dbenumrec;
-  dbenumrec = record
-    num:integer;
-    ptr:PAnsiChar;
-  end;
-function EnumSettingsProc(const szSetting:PAnsiChar;lParam:LPARAM):int; cdecl;
-begin
-  with pdbenumrec(lParam)^ do
-  begin
-    lstrcpya(ptr,szSetting);
-    while ptr^<>#0 do inc(ptr);
-    inc(ptr);
-    inc(num);
-  end;
-  result:=0;
-end;
-//  hContact = 0
-function DBDeleteGroup(hContact:THANDLE;szModule:PAnsiChar):integer;
-var
-  ces:TDBCONTACTENUMSETTINGS;
-  cgs:TDBCONTACTGETSETTING;
-  p:PAnsiChar;
-  rec:dbenumrec;
-begin
-  GetMem(p,65520);
-  rec.num   :=0;
-  rec.ptr   :=p;
-  ces.pfnEnumProc:=@EnumSettingsProc;
-  ces.szModule   :=szModule;
-  ces.lParam     :=integer(@rec);
-  ces.ofsSettings:=0;
-  result:=PluginLink^.CallService(MS_DB_CONTACT_ENUMSETTINGS,hContact,dword(@ces));
-  cgs.szModule :=szModule;
-  rec.ptr:=p;
-  with rec do
-    while num>0 do
-    begin
-      dec(num);
-      cgs.szSetting:=ptr;
-      PluginLink^.CallService(MS_DB_CONTACT_DELETESETTING,hContact,lParam(@cgs));
-      while ptr^<>#0 do inc(ptr);
-      inc(ptr);
-    end;
-  FreeMem(p);
-end;
-}
 
 type
   ppchar = ^pAnsiChar;
@@ -365,7 +321,7 @@ begin
   inc(pint_ptr(lParam)^,lstrlena(szSetting)+1);
   result:=0;
 end;
-//  hContact = 0
+
 function DBDeleteGroup(hContact:THANDLE;szModule:PAnsiChar;prefix:pAnsiChar=nil):int_ptr;
 var
   ces:TDBCONTACTENUMSETTINGS;
