@@ -10024,8 +10024,7 @@ const
   MsgBufferSize = 65536;
   MaxLineLength = 512;
   {Write the UTF-8 BOM in Delphi versions that support UTF-8 conversion.}
-  LogStateHeaderMsg = {$ifdef BCB6OrDelphi7AndUp}#$EF#$BB#$BF{$endif}
-    + 'FastMM State Capture:'#13#10'---------------------'#13#10#13#10;
+  LogStateHeaderMsg = {$ifdef BCB6OrDelphi7AndUp}#$EF#$BB#$BF+{$endif}'FastMM State Capture:'#13#10'---------------------'#13#10#13#10;
   LogStateAllocatedMsg = 'K Allocated'#13#10;
   LogStateOverheadMsg = 'K Overhead'#13#10;
   LogStateEfficiencyMsg = '% Efficiency'#13#10#13#10'Usage Detail:'#13#10;
@@ -10057,7 +10056,7 @@ begin
       {Do the final InsertionSort pass.}
       InsertionSortLogNodes(@LPLogInfo.Nodes[0], LPLogInfo.NodeCount - 1);
       {Create the output file}
-      LFileHandle := CreateFile(PChar(AFilename), GENERIC_READ or GENERIC_WRITE, 0,
+      LFileHandle := CreateFileA(PAnsiChar(AFilename), GENERIC_READ or GENERIC_WRITE, 0,
         nil, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
       if LFileHandle <> INVALID_HANDLE_VALUE then
       begin
