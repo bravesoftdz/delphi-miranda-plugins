@@ -116,16 +116,16 @@ type
   end;
 var
   eq:array [0..9] of tEQRec = (
-    (param:(fCenter:80   ;fBandwidth:18);text:'80'),
-    (param:(fCenter:170  ;fBandwidth:18);text:'170'),
-    (param:(fCenter:310  ;fBandwidth:18);text:'310'),
-    (param:(fCenter:600  ;fBandwidth:18);text:'600'),
-    (param:(fCenter:1000 ;fBandwidth:18);text:'1k'),
-    (param:(fCenter:3000 ;fBandwidth:18);text:'3k'),
-    (param:(fCenter:6000 ;fBandwidth:18);text:'6k'),
-    (param:(fCenter:12000;fBandwidth:18);text:'12k'),
-    (param:(fCenter:14000;fBandwidth:18);text:'14k'),
-    (param:(fCenter:16000;fBandwidth:18);text:'16k'));
+    (fx:0;wnd:0;param:(fCenter:80   ;fBandwidth:18;fGain:0);text:'80'),
+    (fx:0;wnd:0;param:(fCenter:170  ;fBandwidth:18;fGain:0);text:'170'),
+    (fx:0;wnd:0;param:(fCenter:310  ;fBandwidth:18;fGain:0);text:'310'),
+    (fx:0;wnd:0;param:(fCenter:600  ;fBandwidth:18;fGain:0);text:'600'),
+    (fx:0;wnd:0;param:(fCenter:1000 ;fBandwidth:18;fGain:0);text:'1k'),
+    (fx:0;wnd:0;param:(fCenter:3000 ;fBandwidth:18;fGain:0);text:'3k'),
+    (fx:0;wnd:0;param:(fCenter:6000 ;fBandwidth:18;fGain:0);text:'6k'),
+    (fx:0;wnd:0;param:(fCenter:12000;fBandwidth:18;fGain:0);text:'12k'),
+    (fx:0;wnd:0;param:(fCenter:14000;fBandwidth:18;fGain:0);text:'14k'),
+    (fx:0;wnd:0;param:(fCenter:16000;fBandwidth:18;fGain:0);text:'16k'));
 const
   IcoBtnSettings:PAnsiChar = 'Radio_Setting';
   IcoBtnOn      :PAnsiChar = 'Radio_On';

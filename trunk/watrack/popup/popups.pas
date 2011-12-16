@@ -470,7 +470,7 @@ begin
   end;
 
   plStatusHook:=PluginLink^.HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);
-
+(*
   // get info button
   FillChar(ttb,SizeOf(ttb),0);
   ttb.cbSize :=SizeOf(ttb);
@@ -481,6 +481,7 @@ begin
   ttb.pszServiceDown:=MS_WAT_SHOWMUSICINFO;
   ttb.name          :='Music Info';
   ttbInfo:=CallService(MS_TTB_ADDBUTTON,wparam(@ttb),0);
+*)
 end;
 
 procedure DeInitProc(aSetDisable:boolean);

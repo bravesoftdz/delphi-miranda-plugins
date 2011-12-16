@@ -23,4 +23,4 @@ var
   plStatusHook:THANDLE;
   PopupPresent:Bool;
   opthook:THANDLE;
-  ttbInfo:THANDLE;
+//  ttbInfo:THANDLE;

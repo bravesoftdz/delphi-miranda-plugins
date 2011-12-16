@@ -98,21 +98,21 @@ const
 const
   NamesArray: array [0..NumTypes-1] of tNameRec = (
     (name:'CList Modern toolbar'; service:'ToolBar/AddButton';
-     mask:UAF_REGMTBB  ; atype:uaMTB),
+     mask:UAF_REGMTBB  ; atype:uaMTB; enable:false),
     (name:'TabSRMM toolbar'     ; service:'TabSRMM/ButtonsBar/AddButton';
-     mask:UAF_REGTABB  ; atype:uaTAB),
+     mask:UAF_REGTABB  ; atype:uaTAB; enable:false),
     (name:'Core Hotkey'         ; service:nil{MS_HOTKEY_REGISTER};
-     mask:UAF_REGHOTKEY; atype:uaHotkey),
+     mask:UAF_REGHOTKEY; atype:uaHotkey; enable:false),
     (name:'Main menu'           ; service:nil;
-     mask:0; atype:uaMenu+(ORD(main_menu   ) shl 8)),
+     mask:0; atype:uaMenu+(ORD(main_menu   ) shl 8); enable:false),
     (name:'Contact menu'        ; service:nil;
-     mask:0; atype:uaMenu+(ORD(contact_menu) shl 8)),
+     mask:0; atype:uaMenu+(ORD(contact_menu) shl 8); enable:false),
     (name:'Tray menu'           ; service:'CList/AddTrayMenuItem';
-     mask:0; atype:uaMenu+(ORD(tray_menu   ) shl 8)),
+     mask:0; atype:uaMenu+(ORD(tray_menu   ) shl 8); enable:false),
     (name:'Protocol menus'      ; service:'CList/AddProtoMenuItem';
-     mask:0; atype:uaMenu+(ORD(proto_menu  ) shl 8)),
+     mask:0; atype:uaMenu+(ORD(proto_menu  ) shl 8); enable:false),
     (name:'Status menu'         ; service:'CList/AddStatusMenuItem';
-     mask:0; atype:uaMenu+(ORD(status_menu ) shl 8))
+     mask:0; atype:uaMenu+(ORD(status_menu ) shl 8); enable:false)
     );
 
 var

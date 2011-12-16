@@ -735,8 +735,8 @@ end;
 function OnTabButtonPressed(wParam:WPARAM;lParam:LPARAM):int; cdecl;
 var
   cbcd:pCustomButtonClickData;
-  tabb:BBButton;
-  pc:pWideChar;
+//  tabb:BBButton;
+//  pc:pWideChar;
   i:integer;
 begin
   result:=0;
