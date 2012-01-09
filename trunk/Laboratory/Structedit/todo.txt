@@ -1,0 +1,31 @@
+
+register icons,
+wm_size
+seticons
+
+dialog translation
+
+miranda buttons
+
+next arg position = current position + (position mod sizeof(next arg))
+
+strings: {$IFDEF Miranda}
+  miranda memmgr
+  compiler memmgr
+
+<align>|[<key>]<type> [<alias>] [value]|
+array: <len> <value>
+<key>=<script> -> b.arr
+b.arr 12 
+
+TranslateBlob:
+in=UTF8/ANSI
+out=data/ANSI/CharUTF8toWide
+
+before structure - record:
+  type
+  length
+  offset
+for result return
+
+вариант - посимвольное заполнение ([#0,]' ','|')

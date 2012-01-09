@@ -535,6 +535,8 @@ begin
   p:=StrEnd(profilepath);
   p^:='\'; inc(p);
   p^:=#0;
+  filename[0]:=#0;
+  altfilename[0]:=#0;
   if prefix<>nil then
   begin
     StrCopy(filename,prefix);
@@ -554,7 +556,10 @@ begin
   end;
   if result=nil then
   begin
-    StrCat(profilepath,filename);
+    if filename[0]<>#0 then
+      StrCat(profilepath,filename)
+    else
+      StrCat(profilepath,altfilename);
     StrDup(result,profilepath);
   end;
 end;
