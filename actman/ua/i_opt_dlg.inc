@@ -407,7 +407,7 @@ begin
     li.iItem   :=i;
     li.iImage:=ImageList_AddIcon(il,
         HICON(CallService(MS_SKIN2_GETICONBYHANDLE,0,TLPARAM(UActionList[i].hIcolibIcon))));
-    SendMessage(wnd,LVM_SETITEM,0,TLPARAM(@li));
+    SendMessageW(wnd,LVM_SETITEM,0,TLPARAM(@li));
   end;
   ImageList_Destroy(SendMessage(wnd,LVM_SETIMAGELIST,LVSIL_SMALL,il));
 //!!refresh?
@@ -499,6 +499,7 @@ begin
               IDC_UA_VARNAMESH: ShowVarHelp(Dialog,IDC_UA_VARNAMESV);
               IDC_UA_SHOWVARH : ShowVarHelp(Dialog,IDC_UA_SHOWVARV);
 
+//???              IDC_UA_SAVSTATE,
               IDC_UA_GLOBAL: SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
 
               IDC_UA_SEPARATE: begin

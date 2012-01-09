@@ -1,4 +1,7 @@
 {$INCLUDE compilers.inc}
+{$IFDEF Miranda}
+  {.$DEFINE Use_MMI}
+{$ENDIF}
 unit common;
 
 interface
@@ -9,6 +12,8 @@ windows
 ,m_api
 {$ENDIF}
 ;
+
+procedure ShowDump(ptr:pbyte;len:integer);
 
 Const {- Character sets -}
   sBinNum   = ['0'..'1'];
@@ -91,11 +96,11 @@ function WideToANSI(src:PWideChar;var dst:PAnsiChar;cp:dword=CP_ACP):PAnsiChar;
 function ANSIToWide(src:PAnsiChar;var dst:PWideChar;cp:dword=CP_ACP):PWideChar;
 function ANSIToUTF8(src:PAnsiChar;var dst:PAnsiChar;cp:dword=CP_ACP):PAnsiChar;
 function UTF8toANSI(src:PAnsiChar;var dst:PAnsiChar;cp:dword=CP_ACP):PAnsiChar;
-function UTF8toWide(src:PAnsiChar;var dst:PWideChar;len:cardinal=dword(-1)):PWideChar;
+function UTF8toWide(src:PAnsiChar;var dst:PWideChar;len:cardinal=cardinal(-1)):PWideChar;
 function WidetoUTF8(src:PWideChar;var dst:PAnsiChar):PAnsiChar;
 
-function FastWideToAnsiBuf(src:PWideChar;dst:PAnsiChar;len:cardinal=dword(-1)):PAnsiChar;
-function FastAnsiToWideBuf(src:PAnsiChar;dst:PWideChar;len:cardinal=dword(-1)):PWideChar;
+function FastWideToAnsiBuf(src:PWideChar;dst:PAnsiChar;len:cardinal=cardinal(-1)):PAnsiChar;
+function FastAnsiToWideBuf(src:PAnsiChar;dst:PWideChar;len:cardinal=cardinal(-1)):PWideChar;
 function FastWideToAnsi   (src:PWideChar;var dst:PAnsiChar):PAnsiChar;
 function FastAnsiToWide   (src:PAnsiChar;var dst:PWideChar):PWideChar;
 
@@ -113,8 +118,8 @@ function StrReplace (src,SubStr,NewStr:PAnsiChar):PAnsiChar;
 function StrReplaceW(src,SubStr,NewStr:pWideChar):PWideChar;
 function CharReplace (dst:pAnsiChar;old,new:AnsiChar):PAnsiChar;
 function CharReplaceW(dst:pWideChar;old,new:WideChar):PWideChar;
-function StrCmp (a,b:PAnsiChar;n:cardinal=$FFFFFFFF):integer;
-function StrCmpW(a,b:PWideChar;n:cardinal=$FFFFFFFF):integer;
+function StrCmp (a,b:PAnsiChar;n:cardinal=0):integer;
+function StrCmpW(a,b:PWideChar;n:cardinal=0):integer;
 function StrEnd (const a:PAnsiChar):PAnsiChar;
 function StrEndW(const a:PWideChar):PWideChar;
 function StrScan (src:PAnsiChar;c:AnsiChar):PAnsiChar;
@@ -677,7 +682,7 @@ begin
   end;
 end;
 
-function UTF8toWide(src:PAnsiChar; var dst:PWideChar; len:cardinal=dword(-1)):PWideChar;
+function UTF8toWide(src:PAnsiChar; var dst:PWideChar; len:cardinal=cardinal(-1)):PWideChar;
 var
   w:word;
   p:PWideChar;
@@ -929,7 +934,7 @@ end;
 
 function mGetMem(var dst;size:integer):pointer;
 begin
-{$IFDEF Miranda}
+{$IFDEF Use_MMI}
   if @mmi.malloc<>nil then
     pointer(dst):=mmi.malloc(size)
   else
@@ -942,7 +947,7 @@ procedure mFreeMem(var ptr);
 begin
   if pointer(ptr)<>nil then
   begin
-{$IFDEF Miranda}
+{$IFDEF UseMMI}
     if @mmi.free<>nil then
       mmi.free(pointer(ptr))
     else
@@ -954,7 +959,7 @@ end;
 
 function mReallocMem(var dst; size:integer):pointer;
 begin
-{$IFDEF Miranda}
+{$IFDEF Use_MMI}
   if @mmi.malloc<>nil then
     pointer(dst):=mmi.realloc(pointer(dst),size)
   else
@@ -1367,7 +1372,7 @@ begin
   end;
 end;
 
-function StrCmp(a,b:PAnsiChar;n:cardinal=$FFFFFFFF):integer; // CompareString
+function StrCmp(a,b:PAnsiChar;n:cardinal=0):integer; // CompareString
 begin
   result:=0;
   if (a=nil) and (b=nil) then
@@ -1377,18 +1382,17 @@ begin
     result:=-1;
     exit;
   end;
-  while n>0 do
-  begin
+  repeat
     result:=ord(a^)-ord(b^);
     if (result<>0) or (a^=#0) then
       break;
     inc(a);
     inc(b);
     dec(n);
-  end;
+  until n=0;
 end;
 
-function StrCmpW(a,b:PWideChar;n:cardinal=$FFFFFFFF):integer;
+function StrCmpW(a,b:PWideChar;n:cardinal=0):integer;
 begin
   result:=0;
   if (a=nil) and (b=nil) then
@@ -1398,15 +1402,14 @@ begin
     result:=-1;
     exit;
   end;
-  while n>0 do
-  begin
+  repeat
     result:=ord(a^)-ord(b^);
     if (result<>0) or (a^=#0) then
       break;
     inc(a);
     inc(b);
     dec(n);
-  end;
+  until n=0;
 end;
 
 function StrEnd(const a:PAnsiChar):PAnsiChar;
@@ -2153,7 +2156,7 @@ begin
   end;
 end;
 
-function FastWideToAnsiBuf(src:PWideChar;dst:PAnsiChar;len:cardinal=dword(-1)):PAnsiChar;
+function FastWideToAnsiBuf(src:PWideChar;dst:PAnsiChar;len:cardinal=cardinal(-1)):PAnsiChar;
 begin
   result:=dst;
   if src<>nil then
@@ -2188,7 +2191,7 @@ begin
   result:=dst;
 end;
 
-function FastAnsiToWideBuf(src:PAnsiChar;dst:PWideChar;len:cardinal=dword(-1)):PWideChar;
+function FastAnsiToWideBuf(src:PAnsiChar;dst:PWideChar;len:cardinal=cardinal(-1)):PWideChar;
 begin
   result:=dst;
   if src<>nil then
@@ -2235,6 +2238,24 @@ begin
           (StrPos(path,'://')<>nil);
 end;
 
+procedure ShowDump(ptr:pbyte;len:integer);
+var
+  buf: array of ansichar;
+  i:integer;
+  p:pAnsiChar;
+  p1:pByte;
+begin
+  SetLength(buf,len*3+1);
+  p:=@buf[0];
+  p1:=ptr;
+  for i:=0 to len-1 do
+  begin
+    IntToHex(p,p1^,2);
+    inc(p,2);
+    inc(p1);
+  end;
+  messageboxa(0,@buf[0],'',0);
+end;
 begin
   CheckSystem;
 end.
