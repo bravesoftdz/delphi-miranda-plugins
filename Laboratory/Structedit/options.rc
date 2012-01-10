@@ -10,7 +10,7 @@ FONT 8, "MS Shell Dlg", 0, 0
 {
   CONTROL ""      , IDC_DATA_FULL, "SysListView32",
                     WS_BORDER | WS_TABSTOP |
-                    LVS_SHOWSELALWAYS |// LVS_NOCOLUMNHEADER |
+                    LVS_SHOWSELALWAYS | LVS_EDITLABELS | // LVS_NOCOLUMNHEADER |
                     LVS_SINGLESEL | LVS_REPORT,
                     2,  2, 160, 180, WS_EX_CONTROLPARENT
 #ifdef Miranda
