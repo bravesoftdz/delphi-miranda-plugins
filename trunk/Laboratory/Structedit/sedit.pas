@@ -183,7 +183,7 @@ begin
 
   zeromemory(@lv,sizeof(lv));
   lv.mask:=LVCF_TEXT or LVCF_WIDTH;
-  lv.cx  :=72; lv.pszText:={$IFDEF Miranda}TranslateW{$ENDIF}('alias');
+  lv.cx  :=22; lv.pszText:={$IFDEF Miranda}TranslateW{$ENDIF}('alias');
   SendMessageW(list,LVM_INSERTCOLUMNW,col_alias,lparam(@lv)); // alias
   lv.cx  :=62; lv.pszText:={$IFDEF Miranda}TranslateW{$ENDIF}('type');
   SendMessageW(list,LVM_INSERTCOLUMNW,col_type ,lparam(@lv)); // type
@@ -246,6 +246,9 @@ var
   p,pc:pAnsiChar;
   pw:pWideChar;
   lscript:boolean;
+  {$IFDEF Miranda}
+  mmi:boolean;
+  {$ENDIF}
 begin
   if txt^=char_return then
   begin
@@ -260,7 +263,15 @@ begin
   end
   else
     lscript:=false;
-
+{$IFDEF Miranda}
+  if txt^=char_mmi then
+  begin
+    inc(txt);
+    mmi:=true;
+  end
+  else
+    mmi:=false;
+{$ENDIF}
   // element name
   pc:=txt;
   llen:=0;
@@ -299,12 +310,21 @@ begin
   li.pszText :=@tmp1;
   SendMessageW(list,LVM_SETITEMW,0,lparam(@li));
 
+  llen:=0;
   if lscript then
   begin
-    li.iSubItem:=col_flag;
-    li.pszText :='*';
-    SendMessageW(list,LVM_SETITEMW,0,lparam(@li));
+    tmp1[llen]:=char_script; inc(llen);
   end;
+  {$IFDEF Miranda}
+  if mmi then
+  begin
+    tmp1[llen]:=char_mmi; inc(llen);
+  end;
+  {$ENDIF}
+  tmp1[llen]:=#0;
+  li.iSubItem:=col_flag;
+  li.pszText :=@tmp1;
+  SendMessageW(list,LVM_SETITEMW,0,lparam(@li));
 
   // next - alias, starting from letter
   // start: points to separator or space
@@ -386,11 +406,7 @@ begin
       end;
     end;
   end;
-{
-  li.pszText :=@tmp;
-  li.iSubItem:=col_type;
-  SendMessageW(list,LVM_SETITEMW,0,lparam(@li));
-}
+
   i:=StructElems[i].typ+(j shl 16);
   LV_SetLParam(list,i,item);
 
@@ -400,6 +416,8 @@ end;
 
 // Fill table by structure
 procedure FillLVStruct(list:HWND;txt:PAnsiChar);
+var
+  p:pansiChar;
 begin
   txt:=StrScan(txt,char_separator)+1;
   while txt^<>#0 do
@@ -419,74 +437,125 @@ end;
 function GetLVRow(var dst:pAnsiChar;list:HWND;item:integer):integer;
 var
   li:TLVITEMW;
-  buf:array [0..31] of AnsiChar;
-  ofs:integer;
+  buf:array [0..63] of WideChar;
+  pc:pWideChar;
+  len:integer;
 begin
-  ofs:=2;
   li.iItem:=item;
   
-  li.mask      :=LVIF_TEXT;
-  li.iSubItem  :=col_flag;
-  li.cchTextMax:=32;
-  li.pszText   :=@buf[1];
-  if SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li))>0 then
-  begin
-    dec(ofs);
-    buf[ofs]:=char_script;
-  end;
-
-  li.mask      :=LVIF_TEXT or LVIF_PARAM or LVIF_STATE;
-  li.cchTextMax:=HIGH(buf);
-  li.iSubItem  :=col_type;
-  li.pszText   :=@buf[2];
+  // result value check and element type
+  li.mask      :=LVIF_PARAM or LVIF_STATE;
+  li.iSubItem  :=0;
   li.stateMask :=LVIS_STATEIMAGEMASK;
   SendMessageW(list,LVM_GETITEMW,item,lparam(@li));
   result:=loword(li.lParam);
   if (li.state shr 12)>1 then // "return" value
   begin
-    dec(ofs);
-    buf[ofs]:=char_return;
+    dst^:=char_return;
+    inc(dst);
   end;
 
-  dst:=StrCopyE(dst,@buf[ofs]);
+  // variables script check
+  li.mask      :=LVIF_TEXT;
+  li.iSubItem  :=col_flag;
+  li.cchTextMax:=32;
+  li.pszText   :=@buf;
+  if SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li))>0 then
+  begin
+    if StrScanW(buf,char_script)<>nil then
+    begin
+      dst^:=char_script;
+      inc(dst);
+    end;
+    {$IFDEF Miranda}
+    if StrScanW(buf,char_mmi)<>nil then
+    begin
+      dst^:=char_mmi;
+      inc(dst);
+    end;
+    {$ENDIF}
+  end;
+{
+  // type text (can skip and use type code)
+  li.mask      :=LVIF_TEXT;
+  li.cchTextMax:=HIGH(buf);
+  li.pszText   :=@buf; 
+  li.iSubItem  :=col_type;
+  SendMessageW(list,LVM_GETITEMTEXTW,item,lparam(@li));
+  dst:=StrEnd(FastWideToAnsiBuf(@buf,dst));
+}
+  dst:=StrCopyE(dst,StructElems[result].short);
+  // alias
+  li.mask      :=LVIF_TEXT;
+  li.cchTextMax:=HIGH(buf);
+  li.pszText   :=@buf; 
 
-  case loword(li.lParam) of
+  li.iSubItem  :=col_alias;
+  if SendMessageW(list,LVM_GETITEMTEXTW,item,lparam(@li))>0 then
+  begin
+    dst:=' '; inc(dst);
+    pc:=@buf;
+    while pc^<>#0 do
+    begin
+      dst^:=AnsiChar(pc^); inc(dst); inc(pc);
+    end;
+  end;
+
+  case result of
     SST_LAST,SST_PARAM: exit;
 
     SST_BYTE,SST_WORD,SST_DWORD,
     SST_QWORD,SST_NATIVE: begin
       li.iSubItem  :=col_data;
       li.cchTextMax:=32;
-      li.pszText   :=@buf;
+      li.pszText   :=@buf;        
       if SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li))>0 then
       begin
         dst^:=' '; inc(dst);
+        pc:=@buf;
+        while pc^<>#0 do
+        begin
+          dst^:=AnsiChar(pc^); inc(dst); inc(pc);
+        end;
 //        StrCopyW(dst,buf);
       end;
     end;
 
     SST_BARR,SST_WARR,SST_BPTR,SST_WPTR: begin
-      dst^:=' '; inc(dst);
-      ofs:=hiword(li.lParam);
+//      dst^:=' '; inc(dst);
+      len:=hiword(li.lParam);
 
       li.iSubItem  :=col_len;
       li.cchTextMax:=32;
-//      li.pszText   :=dst;
-      if SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li))=0 then
-        IntToStr(dst,ofs);
-
-      if ofs>0 then
+      li.pszText   :=@buf;
+      if SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li))>0 then
       begin
-        dst:=StrEnd(dst);
+        dst^:=' '; inc(dst);
+        pc:=@buf;
+        while pc^<>#0 do
+        begin
+          dst^:=AnsiChar(pc^); inc(dst); inc(pc);
+        end;
+      end
+      else
+        IntToStr(dst,len);
+
+      if len>0 then
+      begin
+//        dst:=StrEnd(dst);
         dst^:=' '; inc(dst);
         li.iSubItem  :=col_data;
-        li.cchTextMax:=ofs+1;
-//        li.pszText   :=dst;
+        li.cchTextMax:=len+1;
+        mGetMem(pc,(len+1)*SizeOf(WideChar));
+        li.pszText   :=pc;
         SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li));
+        WideToUTF8(pc,dst);
+        dst:=StrEnd(dst);
+        mFreeMem(pc);
       end;
     end;
   end;
-  dst:=StrEnd(dst);
+//  dst:=StrEnd(dst);
 end;
 
 function SaveStructure(list:HWND;align:integer):pAnsiChar;
@@ -608,10 +677,20 @@ begin
   if b then
   begin
     li.iSubItem:=col_flag;
+
     if SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li))>0 then
-      CheckDlgButton(Dialog,IDC_DATA_VARS,BST_CHECKED)
-    else
-      CheckDlgButton(Dialog,IDC_DATA_VARS,BST_UNCHECKED);
+    begin
+      if StrScanW(p,char_script)<>nil then
+        CheckDlgButton(Dialog,IDC_DATA_VARS,BST_CHECKED)
+      else
+        CheckDlgButton(Dialog,IDC_DATA_VARS,BST_UNCHECKED);
+      {$IFDEF Miranda}
+      if StrScanW(p,char_mmi)<>nil then
+        CheckDlgButton(Dialog,IDC_DATA_MMI,BST_CHECKED)
+      else
+        CheckDlgButton(Dialog,IDC_DATA_MMI,BST_UNCHECKED);
+      {$ENDIF}
+    end;
     
     li.iSubItem:=col_data;
     SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li));
@@ -637,31 +716,38 @@ end;
 // Fill table row by data from edit fields
 procedure FillLVRow(Dialog:hwnd;list:HWND;item:integer);
 var
-  i,j:integer;
+  ltype,j,idx:integer;
   wnd:HWND;
   buf:array [0..63] of WideChar;
   tmp:pWideChar;
 begin
   wnd:=GetDlgItem(Dialog,IDC_DATA_TYPE);
-  i:=SendMessage(wnd,CB_GETITEMDATA,SendMessage(wnd,CB_GETCURSEL,0,0),0);
+  ltype:=SendMessage(wnd,CB_GETITEMDATA,SendMessage(wnd,CB_GETCURSEL,0,0),0);
   j:=0;
   while j<MaxStructTypes do
   begin
-    if StructElems[j].typ=i then break;
+    if StructElems[j].typ=ltype then break;
     inc(j);
   end;
 
   LV_SetItemW(list,FastAnsiToWideBuf(StructElems[j].short,buf),item,col_type);
 
+  idx:=0;
   if IsDlgButtonChecked(Dialog,IDC_DATA_VARS)<>BST_UNCHECKED then
-    tmp:='*'
-  else
-    tmp:=nil;
-
-  LV_SetItemW(list,tmp,item,col_flag);
+  begin
+    buf[idx]:=char_script; inc(idx);
+  end;
+{$IFDEF Miranda}
+  if IsDlgButtonChecked(Dialog,IDC_DATA_MMI)<>BST_UNCHECKED then
+  begin
+    buf[idx]:=char_mmi; inc(idx);
+  end;
+{$ENDIF}
+  buf[idx]:=#0;
+  LV_SetItemW(list,@buf,item,col_flag);
   
   tmp:=nil;
-  case i of
+  case ltype of
     SST_LAST,SST_PARAM: begin
     end;
     SST_BYTE,SST_WORD,SST_DWORD: begin
@@ -677,12 +763,12 @@ begin
       LV_SetItemW(list,tmp,item,col_data);
 
       j:=StrLenW(tmp) shl 16;
-      if (i=SST_WARR) or (i=SST_WPTR) then j:=j*2;
-      i:=i or j;
+      if (ltype=SST_WARR) or (ltype=SST_WPTR) then j:=j*2;
+      ltype:=ltype or j;
     end;
   end;
   mFreeMem(tmp);
-  LV_SetLParam(list,i,item);
+  LV_SetLParam(list,ltype,item);
 end;
 
 function StructEdit(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
@@ -792,7 +878,7 @@ begin
               EnableWindow(GetDlgItem(Dialog,IDC_DATA_LEN ),b1);
 {$IFDEF Miranda}
               if i IN [SST_BPTR,SST_WPTR] then
-                ShowWindow(GetDlgItem(Dialog,IDC_DATA_MMI),SW_SHOW);
+                ShowWindow(GetDlgItem(Dialog,IDC_DATA_MMI),SW_SHOW)
               else
                 ShowWindow(GetDlgItem(Dialog,IDC_DATA_MMI),SW_HIDE);
 {$ENDIF}
@@ -913,6 +999,27 @@ begin
               end;
             end;
           end;
+
+          LVN_ENDLABELEDITW: begin
+            with PLVDISPINFO(lParam)^ do
+            begin
+              if item.pszText<>nil then
+              begin
+                item.mask:=LVIF_TEXT;
+                SendMessageW(hdr.hWndFrom,LVM_SETITEMW,0,tlparam(@item));
+                result:=1;
+              end;
+            end;
+          end;
+
+          NM_DBLCLK: begin
+            if PNMListView(lParam)^.iItem>=0 then
+            begin
+              SendMessage(PNMHdr(lParam)^.hWndFrom,LVM_EDITLABEL,
+                          PNMListView(lParam)^.iItem,0);
+            end;
+          end;
+
         end;
       end;
     end;

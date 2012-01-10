@@ -10,6 +10,9 @@ const
   char_hex       = '$';
   char_return    = '*';
   char_script    = '%';
+{$IFDEF Miranda}
+  char_mmi       = '&';
+{$ENDIF}
 const
   SST_BYTE    = 0;
   SST_WORD    = 1;
@@ -118,14 +121,16 @@ var
 begin
   if txt^=char_return then inc(txt);
   if txt^=char_script then inc(txt);
-
+{$IFDEF Miranda}
+  if txt^=char_mmi then inc(txt);
+{$ENDIF}
   // element name
   pc:=txt;
   llen:=0;
   repeat
     inc(pc);
     inc(llen);
-  until (pc^=' ') or (pc^=char_separator);
+  until pc^ IN [#0,' ',char_separator];
 
   // recogninze data type
   i:=0;
@@ -266,6 +271,7 @@ var
 {$IFDEF Miranda}
   buf:array [0..31] of WideChar;
   pLast: pWideChar;
+  lmmi:boolean;
 {$ENDIF}
   align:integer;
   code,alen,ofs:integer;
@@ -341,9 +347,19 @@ begin
     else
       pLast:=pWideChar(alast);
     // in value must be converted to unicode
-    value:=ParseVarString(value,aparam,pLast);
+//!!    value:=ParseVarString(value,aparam,pLast);
 {$ENDIF}
+      inc(pc);
     end;
+{$IFDEF Miranda}
+    if pc^=char_mmi then
+    begin
+      lmmi:=true;
+      inc(pc);
+    end
+    else
+    lmmi:=false;
+{$ENDIF}
 
     AdjustSize(int_ptr(res),len,align);
     case i of
@@ -379,6 +395,11 @@ begin
           pint_ptr(res)^:=0
         else
         begin
+{$IFDEF Miranda}
+          if lmmi then
+            lsrc:=mmi.malloc(len+SizeOf(AnsiChar));
+          else
+{$ENDIF}
           mGetMem (lsrc ,len+SizeOf(AnsiChar));
           FillChar(lsrc^,len+SizeOf(AnsiChar),0);
           TranslateBlob(pByte(lsrc),value,true);
@@ -391,6 +412,11 @@ begin
           pint_ptr(res)^:=0
         else
         begin
+{$IFDEF Miranda}
+          if lmmi then
+            lsrc:=mmi.malloc(len+SizeOf(WideChar));
+          else
+{$ENDIF}
           mGetMem (lsrc ,len+SizeOf(WideChar));
           FillChar(lsrc^,len+SizeOf(WideChar),0);
           TranslateBlob(pByte(lsrc),value,false);

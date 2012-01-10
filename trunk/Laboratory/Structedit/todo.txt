@@ -1,3 +1,8 @@
+MMI support+-
+check size for warr and w.ptr
+
+->script parsing in structure making
+->utf to wide char conversion
 
 register icons,
 wm_size
