@@ -430,7 +430,7 @@ end;
 
 function Translate(sz: PAnsiChar): PAnsiChar;
 function Translatew(sz: PWideChar): PWideChar;
-function TranslateString(const sz: string): string;
+function TranslateString(const sz: AnsiString): AnsiString;
 function TranslateDialogDefault(hwndDlg: THandle): int_ptr;
 function TranslateMenu(hMenu: HMENU): int_ptr;
 function Langpack_PCharToTChar(astr:PAnsiChar):int_ptr;
@@ -456,9 +456,10 @@ begin
   Result := PAnsiChar(PluginLink^.CallService(MS_LANGPACK_TRANSLATESTRING, hLangpack, lParam(sz)));
 end;
 
-function TranslateString(const sz:string):string;
+function TranslateString(const sz:AnsiString):AnsiString;
 begin
-  Result:=string(PAnsiChar(PluginLink^.CallService(MS_LANGPACK_TRANSLATESTRING,hLangpack,lparam(@sz))));
+  Result:=AnsiString(PAnsiChar(
+    PluginLink^.CallService(MS_LANGPACK_TRANSLATESTRING,hLangpack,lparam(@sz))));
 end;
 
 function TranslateDialogDefault(hwndDlg: THandle): int_ptr;

@@ -59,7 +59,7 @@ begin
     inc(i);
   until ws[i]=#0;
   ws[i]:='.';
-  IntToStr(ws+i+1,Info^.fps mod 100);
+  IntToStr(pWideChar(@ws[i+1]),Info^.fps mod 100);
   Replace(ls,mn_fps    ,ws);
   Replace(ls,mn_txtver ,Info^.txtver);
   Replace(ls,mn_height ,IntToStr(ws,Info^.height));

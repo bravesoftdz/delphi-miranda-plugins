@@ -1,6 +1,8 @@
 {special tab: parts settings}
 
 function DlgProcOptions0(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):LRESULT; stdcall;
+const
+  hasApply:boolean=false;
 var
   i:integer;
   ptr:pwModule;
@@ -9,7 +11,40 @@ var
 begin
   result:=0;
   case hMessage of
+    WM_DESTROY: begin
+      if hasApply then
+      begin
+        ptr:=ModuleLink;
+        while ptr<>nil do
+        begin
+          if ptr^.ModuleName<>nil then
+          begin
+            i:=SendMessageW(ptr^.Button,BM_GETCHECK,0,0);
+            if (i=BST_CHECKED) xor (ptr^.ModuleStat<>0) then
+            begin
+              if i=BST_CHECKED then
+              begin
+                ptr^.ModuleStat:=1;
+                if @ptr^.Init<>nil then
+                  ptr^.Init(false);
+              end
+              else
+              begin
+                ptr^.ModuleStat:=0;
+                if @ptr^.DeInit<>nil then
+                  ptr^.DeInit(true);
+              end;
+            end;
+//            if ptr^.ModuleStat then
+          end;
+          ptr:=ptr^.Next;
+        end;
+      end;
+    end;
+
     WM_INITDIALOG: begin
+
+      hasApply:=false;
 
       ptr:=ModuleLink;
       i:=0;
@@ -46,31 +81,7 @@ begin
     WM_NOTIFY: begin
       if integer(PNMHdr(lParam)^.code)=PSN_APPLY then
       begin
-        ptr:=ModuleLink;
-        while ptr<>nil do
-        begin
-          if ptr^.ModuleName<>nil then
-          begin
-            i:=SendMessageW(ptr^.Button,BM_GETCHECK,0,0);
-            if (i=BST_CHECKED) xor (ptr^.ModuleStat<>0) then
-            begin
-              if i=BST_CHECKED then
-              begin
-                ptr^.ModuleStat:=1;
-                if @ptr^.Init<>nil then
-                  ptr^.Init(false);
-              end
-              else
-              begin
-                ptr^.ModuleStat:=0;
-                if @ptr^.DeInit<>nil then
-                  ptr^.DeInit(true);
-              end;
-            end;
-//            if ptr^.ModuleStat then
-          end;
-          ptr:=ptr^.Next;
-        end;
+        hasApply:=true;
       end;
     end;
   else

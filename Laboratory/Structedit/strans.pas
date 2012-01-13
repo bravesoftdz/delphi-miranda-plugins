@@ -412,6 +412,7 @@ begin
           pint_ptr(res)^:=0
         else
         begin
+          len:=len*SizeOf(WideChar); //?????
 {$IFDEF Miranda}
           if lmmi then
             lsrc:=mmi.malloc(len+SizeOf(WideChar));
@@ -477,6 +478,9 @@ var
   value,lsrc:pAnsiChar;
   p,pc:pAnsiChar;
   align:integer;
+{$IFDEF Miranda}
+  lmmi:boolean;
+{$ENDIF}
 begin
   if (descr=nil) or (descr^=#0) then
     exit;
@@ -495,11 +499,29 @@ begin
     p:=StrScan(lsrc,char_separator);
     if p<>nil then p^:=#0;
 
-    typ:=GetOneElement(pc,len,value);
+    typ:=GetOneElement(lsrc,len,value);
+
+    if lsrc^=char_return then inc(lsrc);
+    if lsrc^=char_script then inc(lsrc);
+{$IFDEF Miranda}
+    if lsrc^=char_mmi then
+    begin
+      lmmi:=true;
+      inc(lsrc);
+    end
+    else
+    lmmi:=false;
+{$ENDIF}
+    
     AdjustSize(summ,len,align);
     case typ of
       SST_BPTR,SST_WPTR: begin
         value:=pAnsiChar(pint_ptr(pAnsiChar(struct)+summ)^);
+{$IFDEF Miranda}
+        if lmmi then
+          mmi.Free(value);
+        else
+{$ENDIF}
         mFreeMem(value);
         len:=SizeOf(pointer)+(SizeOf(pointer) shl 16);
       end;

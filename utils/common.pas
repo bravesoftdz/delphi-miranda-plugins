@@ -99,6 +99,10 @@ function UTF8toANSI(src:PAnsiChar;var dst:PAnsiChar;cp:dword=CP_ACP):PAnsiChar;
 function UTF8toWide(src:PAnsiChar;var dst:PWideChar;len:cardinal=cardinal(-1)):PWideChar;
 function WidetoUTF8(src:PWideChar;var dst:PAnsiChar):PAnsiChar;
 
+function CharWideToUTF8(src:WideChar;var dst:pAnsiChar):integer;
+function CharUTF8ToWide(src:pAnsiChar):WideChar;
+function CharUTF8Len(src:pAnsiChar):integer;
+
 function FastWideToAnsiBuf(src:PWideChar;dst:PAnsiChar;len:cardinal=cardinal(-1)):PAnsiChar;
 function FastAnsiToWideBuf(src:PAnsiChar;dst:PWideChar;len:cardinal=cardinal(-1)):PWideChar;
 function FastWideToAnsi   (src:PWideChar;var dst:PAnsiChar):PAnsiChar;
@@ -680,6 +684,67 @@ begin
       inc(result);
     end;
   end;
+end;
+
+function CharWideToUTF8(src:WideChar;var dst:pAnsiChar):integer;
+begin
+  if src<#$0080 then
+  begin
+    dst^:=AnsiChar(src);
+    result:=1;
+  end
+  else if src<#$0800 then
+  begin
+    dst^:=AnsiChar($C0 or (ord(src) shr 6));
+    inc(dst);
+    dst^:=AnsiChar($80 or (ord(src) and $3F));
+    result:=2;
+  end
+  else
+  begin
+    dst^:=AnsiChar($E0 or (ord(src) shr 12));
+    inc(dst);
+    dst^:=AnsiChar($80 or ((ord(src) shr 6) and $3F));
+    inc(dst);
+    dst^:=AnsiChar($80 or (ord(src) and $3F));
+    result:=3;
+  end;
+  inc(dst); dst^:=#0;
+end;
+
+function CharUTF8ToWide(src:pAnsiChar):WideChar;
+var
+  w:word;
+begin
+  if ord(src^)<$80 then
+    w:=ord(src^)
+  else if (ord(src^) and $E0)=$E0 then
+  begin
+    w:=(ord(src^) and $1F) shl 12;
+    inc(src);
+    w:=w or (((ord(src^))and $3F) shl 6);
+    inc(src);
+    w:=w or (ord(src^) and $3F);
+  end
+  else
+  begin
+    w:=(ord(src^) and $3F) shl 6;
+    inc(src);
+    w:=w or (ord(src^) and $3F);
+  end;
+  result:=WideChar(w);
+end;
+
+function CharUTF8Len(src:pAnsiChar):integer;
+begin
+{!!}
+  if (ord(src^) and $80)=0 then
+    result:=1
+  else if (ord(src^) and $E0)=$E0 then
+    result:=3
+  else
+    result:=2;
+{}
 end;
 
 function UTF8toWide(src:PAnsiChar; var dst:PWideChar; len:cardinal=cardinal(-1)):PWideChar;
