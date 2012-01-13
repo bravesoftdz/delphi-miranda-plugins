@@ -1296,7 +1296,7 @@ Type
      PSHCOLUMNINFO = ^SHCOLUMNINFO;
      SHCOLUMNINFO = record
           scid : SHCOLUMNID;                                                { OUT the unique identifier of this column}
-          vt : VARTYPE;                                                     { OUT the native type of the data return}
+          vt : TVarType;                                                    { OUT the native type of the data return}
           fmt : DWORD;                                                      { OUT this listview format (LVCFMT_LEFT}
           cChars : UINT;                                                    { OUT the default width of the column,}
           csFlags : DWORD;                                                  { OUT SHCOLSTATE flags }
@@ -1987,7 +1987,7 @@ Type
         function ProfferService(const guid:TGUID;psp:IServiceProvider;var pdwcookie:DWORD):HRESULT;StdCall;
         function RevokeService(dwCookie:DWORD):HRESULT;StdCall;
         end;
-(*
+{
     IPropertyUI = interface(IUnknown)
         ['{757a7d9f-919a-4118-99d7-dbb208c8cc66}']
         function ParsePropertyName(pszName:LPCWSTR; pfmtid:pFMTID; ppid:pPROPID; pchEaten:pULONG):HRESULT;StdCall;
@@ -1999,7 +1999,7 @@ Type
         function FormatForDisplay(const fmtid:FMTID; pid:PROPID; pvar:pPROPVARIANT; flags:PROPERTYUI_FORMAT_FLAGS;wszText:LPWSTR;cchText:DWORD):HRESULT;StdCall;
         function GetHelpInfo(const fmtid:FMTID; pid:PROPID; pwszHelpFile:LPWSTR; cch:DWORD; puHelpID:pUINT):HRESULT;StdCall;   
         end;
-*)
+}
     ICategoryProvider =interface(IUnknown)
         ['{9af64809-5864-4c26-a720-c1f78c086ee3}']
         function CanCategorizeOnSCID(pscid:pSHCOLUMNID):HRESULT;StdCall;

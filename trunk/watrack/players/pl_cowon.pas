@@ -185,9 +185,9 @@ var
 begin
   i:=StrLenW(IntToStr(s,ver shr 16));
   s[i]:='.';
-  i:=integer(StrLenW(IntToStr(s+i+1,(ver shr 8) and $FF)))+i+1;
+  i:=integer(StrLenW(IntToStr(pWideChar(@s[i+1]),(ver shr 8) and $FF)))+i+1;
   s[i]:='.';
-  IntToStr(s+i+1,ver and $FF);
+  IntToStr(pWideChar(@s[i+1]),ver and $FF);
   StrDupW(result,PWideChar(@s));
 end;
 

@@ -1,0 +1,17 @@
+comobj
+activex
+variants
+sysutils
+syscont
+windirs
+rtconsts
+typinfo
+math
+varutils
+classes
+
+comconst
+ole2
+registry
+inifiles
+contnrs

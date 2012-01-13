@@ -1,5 +1,10 @@
+<<<<<<< .mine
++-MMI support
++-check size for warr and w.ptr
+=======
 MMI support+-
 check size for warr and w.ptr
+>>>>>>> .r203
 
 ->script parsing in structure making
 ->utf to wide char conversion
