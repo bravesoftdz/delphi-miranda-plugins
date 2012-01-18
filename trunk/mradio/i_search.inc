@@ -320,7 +320,7 @@ begin
       else if loword(wParam)=IDC_BN_INIPATH then
       begin
         if ShowDlg(@buf,storage,'*.ini'#0'*.ini'#0#0) then
-          SetDlgItemText(Dialog,IDC_CUSTOMINI,@buf);
+          SetDlgItemTextA(Dialog,IDC_CUSTOMINI,@buf);
       end;
     end;
   end;
@@ -473,7 +473,7 @@ begin
 
           SetStatus(hContact,ID_STATUS_OFFLINE);
 
-          SetAvatar(hContact);
+//          SetAvatar(hContact);
 
           CallService(MS_IGNORE_IGNORE,hContact,IGNOREEVENT_USERONLINE{IGNOREEVENT_ALL});
           result:=hContact;
