@@ -233,7 +233,7 @@ end;
 
 function PreShutdown(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
-  buf:array [0..MAX_LEN-1];
+  buf:array [0..MAX_PATH-1] of AnsiChar;
   fdata:WIN32_FIND_DATAA;
   p:pAnsiChar;
   fi:THANDLE;
@@ -282,15 +282,15 @@ begin
 
   //delete cover files
   buf[0]:=#0;
-  GetTempPathA(MAXLEN,buf);
-  p:=StrEndA(buf);
-  StrCopyA(p,'mrAvt*.*');
+  GetTempPathA(MAX_PATH,buf);
+  p:=StrEnd(buf);
+  StrCopy(p,'mrAvt*.*');
 
   fi:=FindFirstFileA(buf,fdata);
   if fi<>THANDLE(INVALID_HANDLE_VALUE) then
   begin
     repeat
-      StrCopyA(p,fdata.cFileName);
+      StrCopy(p,fdata.cFileName);
       DeleteFileA(buf);
     until not FindNextFileA(fi,fdata);
     FindClose(fi);
