@@ -232,6 +232,11 @@ begin
 end;
 
 function PreShutdown(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+var
+  buf:array [0..MAX_LEN-1];
+  fdata:WIN32_FIND_DATAA;
+  p:pAnsiChar;
+  fi:THANDLE;
 begin
   CallService(MS_RADIO_COMMAND,MRC_STOP,1);
   UnRegisterHotKey;
@@ -274,6 +279,22 @@ begin
   mFreeMem(StatusTmpl);
   mFreeMem(basspath);
   FreePresets;
+
+  //delete cover files
+  buf[0]:=#0;
+  GetTempPathA(MAXLEN,buf);
+  p:=StrEndA(buf);
+  StrCopyA(p,'mrAvt*.*');
+
+  fi:=FindFirstFileA(buf,fdata);
+  if fi<>THANDLE(INVALID_HANDLE_VALUE) then
+  begin
+    repeat
+      StrCopyA(p,fdata.cFileName);
+      DeleteFileA(buf);
+    until not FindNextFileA(fi,fdata);
+    FindClose(fi);
+  end;
 
   result:=0;
 end;

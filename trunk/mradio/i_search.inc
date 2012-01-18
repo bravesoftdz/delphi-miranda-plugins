@@ -1,4 +1,104 @@
 {search station code}
+
+procedure SetAvatar(hContact:THANDLE);
+var
+  success:boolean;
+  local:boolean;
+  fname:pAnsiChar;
+  url:pWideChar;
+  buf,buf1,buf2:array [0..MAX_PATH-1] of AnsiChar;
+  ext:array [0..15] of AnsiChar;
+  section:pAnsiChar;
+  pc:pAnsiChar;
+  i:integer;
+begin
+  // get url
+  url:=DBReadUnicode(hContact,PluginName,optStationURL);
+  // translate to ansi
+  FastWideToAnsiBuf(url,buf);
+  mFreeMem(url);
+
+  // search in INI
+    // section list
+  i:=GetFSize(storage);
+  if i=0 then
+    i:=32767;
+  mGetMem(pc,i+1);
+  pc^:=#0;
+  GetPrivateProfileSectionNamesA(pc,i,storage);
+  section:=pc;
+
+  while section^<>#0 do
+  begin
+    // read url
+    GetPrivateProfileStringA(section,'URL','',buf1,SizeOf(buf1),storage);
+    // compare
+    if StrCmp(@buf,@buf1)=0 then
+      break;
+
+    while section^<>#0 do inc(section);
+    inc(section);
+  end;
+  mFreeMem(pc);
+{
+  fast search: read INI to memory, search URL, trace back to "]", mark
+  trace back to "[" (with #10"[" check) 
+
+  search "=<url>"
+  [found = check for "URL"/"url"]
+  scan back  for #10"[" or <start>"["
+}
+
+  if section^<>#0 then
+  begin
+    // get avatar link
+    buf[0]:=#0;
+    GetPrivateProfileStringA(section,'Avatar','',buf,SizeOf(buf),storage);
+
+    if buf[0]<>#0 then
+    begin
+//      success:=false;
+      local:=StrPos(buf,'://')=nil;
+      if local then
+      begin
+        fname:=@buf;
+        // translate to absolute
+//        PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,wparam(@buf),lparam(@buf1));
+        success:=FileExists(fname);
+      end
+      else
+      begin
+        // download file
+{
+        GetTempPathA(MAX_PATH,pAnsiChar(@buf1));
+        pc:=extract(pAnsiChar(@buf),true);
+        StrCat(pAnsiChar(@buf1),pc);
+        mFreeMem(pc);
+}
+        //mrAvt
+
+        GetExt(pAnsiChar(@buf),pAnsiChar(@ext));
+        GetTempPathA(MAX_PATH,pAnsiChar(@buf2));
+        GetTempFileNameA(pAnsiChar(@buf2),'mrAvt',GetCurrentTime,pAnsiChar(@buf1));
+        ChangeExt(pAnsiChar(@buf1),PAnsiChar(@ext));
+        //
+        fname:=@buf1;
+        success:=GetFile(pAnsiChar(@buf),fname);
+      end;
+
+      if success then
+      begin
+        CallService(MS_AV_SETAVATAR,hContact,LPARAM(fname));
+        if not local then
+        begin
+// Delete on PreShutdown;
+//          DeleteFileA(fname);
+        end;
+      end;
+    end;
+  end;
+end;
+
 type
   TMySearchFilter = record
     lStation,
@@ -325,7 +425,6 @@ begin
         if hContact<>0 then
         begin
           CallService(MS_PROTO_ADDTOCONTACT,hContact,tlparam(PluginName));
-
           // URL
           DBWriteUnicode(hContact,PluginName,optStationURL,lurl);
           DBWriteUnicode(hContact,PluginName,optFirstName ,lurl);
@@ -373,6 +472,9 @@ begin
           end;
 
           SetStatus(hContact,ID_STATUS_OFFLINE);
+
+          SetAvatar(hContact);
+
           CallService(MS_IGNORE_IGNORE,hContact,IGNOREEVENT_USERONLINE{IGNOREEVENT_ALL});
           result:=hContact;
         end;
