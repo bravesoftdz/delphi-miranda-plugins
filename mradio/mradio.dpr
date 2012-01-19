@@ -232,11 +232,13 @@ begin
 end;
 
 function PreShutdown(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+{
 var
   buf:array [0..MAX_PATH-1] of AnsiChar;
   fdata:WIN32_FIND_DATAA;
   p:pAnsiChar;
   fi:THANDLE;
+}
 begin
   CallService(MS_RADIO_COMMAND,MRC_STOP,1);
   UnRegisterHotKey;
@@ -279,7 +281,7 @@ begin
   mFreeMem(StatusTmpl);
   mFreeMem(basspath);
   FreePresets;
-
+{
   //delete cover files
   buf[0]:=#0;
   GetTempPathA(MAX_PATH,buf);
@@ -295,7 +297,7 @@ begin
     until not FindNextFileA(fi,fdata);
     FindClose(fi);
   end;
-
+}
   result:=0;
 end;
 

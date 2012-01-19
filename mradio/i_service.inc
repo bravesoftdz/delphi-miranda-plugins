@@ -10,7 +10,7 @@ begin
     PFLAGNUM_3:
       result:=PF2_ONLINE;// or PF2_INVISIBLE or PF2_SHORTAWAY;
     PFLAGNUM_4:
-      result:=PF4_NOCUSTOMAUTH;
+      result:=PF4_NOCUSTOMAUTH or PF4_AVATARS;
     PFLAG_UNIQUEIDTEXT:
       result:=int_ptr(Translate('Radio station URL'));
     PFLAG_UNIQUEIDSETTING:

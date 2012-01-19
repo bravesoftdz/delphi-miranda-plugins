@@ -19,7 +19,6 @@ begin
   mFreeMem(url);
 
   // search in INI
-    // section list
   i:=GetFSize(storage);
   if i=0 then
     i:=32767;
@@ -30,9 +29,7 @@ begin
 
   while section^<>#0 do
   begin
-    // read url
     GetPrivateProfileStringA(section,'URL','',buf1,SizeOf(buf1),storage);
-    // compare
     if StrCmp(@buf,@buf1)=0 then
       break;
 
@@ -40,14 +37,6 @@ begin
     inc(section);
   end;
   mFreeMem(pc);
-{
-  fast search: read INI to memory, search URL, trace back to "]", mark
-  trace back to "[" (with #10"[" check) 
-
-  search "=<url>"
-  [found = check for "URL"/"url"]
-  scan back  for #10"[" or <start>"["
-}
 
   if section^<>#0 then
   begin
@@ -57,14 +46,20 @@ begin
 
     if buf[0]<>#0 then
     begin
-//      success:=false;
+      // Here we trying to get Avatar chache directory
+      // (create it if needs)
+      // and copy (load) owr avatars there
+      // in : buf = source avatar path
+      // out: fname = destination (file name in cache)
+      // rule for name is?..
+
+
       local:=StrPos(buf,'://')=nil;
       if local then
       begin
         fname:=@buf;
-        // translate to absolute
-//        PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,wparam(@buf),lparam(@buf1));
         success:=FileExists(fname);
+        // need to copy this file to avatar cache
       end
       else
       begin
@@ -87,14 +82,7 @@ begin
       end;
 
       if success then
-      begin
         CallService(MS_AV_SETAVATAR,hContact,LPARAM(fname));
-        if not local then
-        begin
-// Delete on PreShutdown;
-//          DeleteFileA(fname);
-        end;
-      end;
     end;
   end;
 end;
