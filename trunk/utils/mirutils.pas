@@ -994,6 +994,7 @@ begin
     end
     else
     begin
+      result:=pAnsiChar(resp^.resultCode and $0FFF);
     end;
     CallService(MS_NETLIB_FREEHTTPREQUESTSTRUCT,0,lparam(resp));
   end;

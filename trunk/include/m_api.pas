@@ -377,6 +377,7 @@ var
   {$include m_help.inc}
   {$include m_proto_listeningto.inc}
   {$include m_msg_buttonsbar.inc}
+  {$include m_libJSON.inc}
 {$define M_API_UNIT}
   {$include m_helpers.inc}
   {$include m_clistint.inc}

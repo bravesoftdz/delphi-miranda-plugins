@@ -456,7 +456,7 @@ var
   artist,title:PAnsiChar;
   oldartist,oldtitle:pAnsiChar;
   ppc,pc:pAnsiChar;
-  lcp:integer;
+  idx,lcp:integer;
   needtofree:Boolean;
   CurDescrW:PWideChar;
   old:boolean;
@@ -625,6 +625,23 @@ begin
             break;
           while meta^<>#0 do inc(meta); inc(meta);
         end;
+
+        if (not gotartist) and gottitle then
+        begin
+          pc:=StrPos(title,' - ');
+          if pc=nil then
+            pc:=StrScan(title,'-');
+          if pc<>nil then
+          begin
+            needtofree:=true;
+            StrDup(artist,title,pc-title);
+            if pc^=' ' then
+              idx:=3
+            else
+              idx:=1;
+            StrDup(title,pc+idx);
+          end;
+        end;
         buf[0]:=#0;
       end;
     end;
@@ -724,9 +741,54 @@ begin
   else if doLoop=BST_UNCHECKED then CallService(MS_RADIO_COMMAND,MRC_STOP,0);
 end;
 
-function OpenURL(url:PWideChar):dword;// stdcall;
+type
+  tICYField = record
+    name  :PAnsiChar;
+    branch:PAnsiChar;
+    option:PAnsiChar;
+  end;
+const
+  NumICYFields = 4;
+  ICYFields: array [0..NumIcyFields-1] of tICYField = (
+    (name:'icy-name:'      ; branch:'CList'     ; option:'MyHandle'),
+    (name:'icy-genre:'     ; branch:cPluginName ; option:'Genre'),
+    (name:'icy-br:'        ; branch:cPluginName ; option:'Bitrate'),
+    (name:'icy-description'; branch:cPluginName ; option:'About')
+  );
+
+procedure ProcessStationData;
 var
   icy:PAnsiChar;
+  i,len:integer;
+begin
+  // get the broadcast name and bitrate
+  icy:=BASS_ChannelGetTags(chan,BASS_TAG_ICY);
+  if icy=nil then
+    icy:=BASS_ChannelGetTags(chan,BASS_TAG_HTTP); // no ICY tags, try HTTP
+  if icy<>nil then
+  begin
+    while icy^<>#0 do
+    begin
+      for i:=0 to NumICYFields-1 do
+      begin
+        with ICYFields[i] do
+        begin
+          len:=StrLen(name);
+          if StrCmp(icy,name,len)=0 then
+          begin
+            if DBReadStringLength(ActiveContact,branch,option)=0 then
+              DBWriteString(ActiveContact,branch,option,icy+len);
+            break;
+          end;
+        end;
+      end;
+      while icy^<>#0 do inc(icy); inc(icy);
+    end;
+  end;
+end;
+
+function OpenURL(url:PWideChar):dword;// stdcall;
+var
   Len,Progress:DWORD;
   flags:dword;
   i:integer;
@@ -848,32 +910,7 @@ begin
       mFreeMem(url);
 {$ENDIF}
 
-      // get the broadcast name and bitrate
-      icy:=BASS_ChannelGetTags(chan,BASS_TAG_ICY);
-      if icy=nil then
-        icy:=BASS_ChannelGetTags(chan,BASS_TAG_HTTP); // no ICY tags, try HTTP
-      if icy<>nil then
-      begin
-        while icy^<>#0 do
-        begin
-          if StrCmp(icy,'icy-name:',9)=0 then
-          begin
-            if DBReadStringLength(ActiveContact,strCList,optMyHandle)=0 then
-              DBWriteString(ActiveContact,strCList,optMyHandle,icy+9);
-          end
-          else if StrCmp(icy,'icy-genre:',10)=0 then
-          begin
-            if DBReadStringLength(ActiveContact,PluginName,optGenre)=0 then
-              DBWriteString(ActiveContact,PluginName,optGenre,icy+10);
-          end
-          else if StrCmp(icy,'icy-br:',7)=0 then
-          begin
-            if DBReadStringLength(ActiveContact,PluginName,optBitrate)=0 then
-              DBWriteString(ActiveContact,PluginName,optBitrate,icy+7);
-          end;
-          while icy^<>#0 do inc(icy); inc(icy);
-        end;
-      end;
+      ProcessStationData; // process ICY-headers
 
      // get the stream title and set sync for subsequent titles
       DoMeta(nil,BASS_TAG_META);

@@ -1725,15 +1725,16 @@ end;
 
 function Extract(s:PAnsiChar;name:Boolean=true):PAnsiChar;
 var
-  i,j:integer;
+  i:integer;
 begin
   i:=StrLen(s)-1;
-  j:=i;
+//  j:=i;
   while (i>=0) and ((s[i]<>'\') and (s[i]<>'/')) do dec(i);
   if name then
   begin
-    mGetMem(result,(j-i+1));
-    StrCopy(result,s+i+1);
+    StrDup(result,s+i+1);
+//    mGetMem(result,(j-i+1));
+//    StrCopy(result,s+i+1);
   end
   else
   begin
@@ -1743,15 +1744,16 @@ end;
 
 function ExtractW(s:pWideChar;name:Boolean=true):pWideChar;
 var
-  i,j:integer;
+  i:integer;
 begin
   i:=StrLenW(s)-1;
-  j:=i;
+//  j:=i;
   while (i>=0) and ((s[i]<>'\') and (s[i]<>'/')) do dec(i);
   if name then
   begin
-    mGetMem(result,(j-i+1)*SizeOf(WideChar));
-    StrCopyW(result,s+i+1);
+    StrDupW(result,s+i+1);
+//    mGetMem(result,(j-i+1)*SizeOf(WideChar));
+//    StrCopyW(result,s+i+1);
   end
   else
   begin

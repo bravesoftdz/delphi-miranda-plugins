@@ -20,7 +20,9 @@ uses
 {$include i_vars.inc}
 
 const
-  PluginName:PAnsiChar = 'mRadio';
+  cPluginName = 'mRadio';
+const
+  PluginName:PAnsiChar = cPluginName;
 
 var
   PluginInterfaces:array [0..1] of MUUID;
