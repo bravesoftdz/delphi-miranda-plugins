@@ -334,8 +334,9 @@
   begin
     wnd:=GetDlgItem(Dialog,IDC_EDIT_SERVICE);
     SendMessageA(wnd,CB_GETLBTEXT,SendMessage(wnd,CB_GETCURSEL,0,0),tlparam(@buf));
+    ApiCard.Service:=@buf;
 
-    pc:=FillParams(buf,GetDlgItem(Dialog,IDC_EDIT_WPAR),'wparam');
+    pc:=ApiCard.FillParams(GetDlgItem(Dialog,IDC_EDIT_WPAR),true);
     if pc<>nil then
     begin
       if GetDlgItemTextA(Dialog,IDC_EDIT_WPAR,buf1,SizeOf(buf1))>0 then
@@ -347,7 +348,7 @@
         end;
       mFreeMem(pc);
     end;
-    pc:=FillParams(buf,GetDlgItem(Dialog,IDC_EDIT_LPAR),'lparam');
+    pc:=ApiCard.FillParams(GetDlgItem(Dialog,IDC_EDIT_LPAR),false);
     if pc<>nil then
     begin
       if GetDlgItemTextA(Dialog,IDC_EDIT_LPAR,buf1,SizeOf(buf1))>0 then
@@ -360,7 +361,7 @@
       mFreeMem(pc);
     end;
 
-    pc:=GetResultType(buf);
+    pc:=ApiCard.ResultType;
     i:=sresInt;
     if pc<>nil then
     begin
@@ -390,9 +391,7 @@
     end;
     CB_SelectData(Dialog,IDC_SRV_RESULT,i);
 
-    if helpwindow<>0 then
-      SendMessage(helpwindow,WM_UPDATEHELP,0,tlparam(@buf));
-
+//    ApiCard.Show;
   end;
 
   procedure SelectActionType(group:dword);

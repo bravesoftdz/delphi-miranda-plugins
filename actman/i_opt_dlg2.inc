@@ -33,8 +33,6 @@ const
   ptStruct  = 6;
 
 var
-  helpwindow:hwnd;
-var
   wstruct,lstruct:pWideChar;
   DontReact:bool;
   OldGroupTableProc,
@@ -490,14 +488,11 @@ function DlgProcOpt2(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lres
           TranslateW('Contacts'),0);
 }
       end;
-      hlpService: if not IsWindow(helpwindow) then
-      begin
-        helpwindow:=CreateDialogW(hInstance,MAKEINTRESOURCEW(IDD_HELP),
-           Dialog,@ServiceHelpDlg);
-
+      hlpService: begin
         buf:=GetDlgText(Dialog,IDC_EDIT_SERVICE,true);
-        SendMessage(helpwindow,WM_UPDATEHELP,0,tlparam(buf));
+        ApiCard.Service:=buf;
         mFreeMem(buf);
+        ApiCard.Show;
       end;
       hlpProgram: begin
         MessageBoxW(0,
@@ -1296,12 +1291,14 @@ begin
   result:=0;
   case hMessage of
     WM_DESTROY: begin
+      ApiCard.Free;
       SetCancel;
       mFreeMem(wstruct);
       mFreeMem(lstruct);
     end;
 
     WM_INITDIALOG: begin
+      ApiCard:=CreateServiceCard(Dialog);
       wstruct:=nil;
       lstruct:=nil;
       SetStart;
@@ -1325,7 +1322,7 @@ begin
       MakeDataTypeList  (GetDlgItem(Dialog,IDC_RW_DATATYPE));
 
       // service list for RunService
-      FillServiceList(GetDlgItem(Dialog,IDC_EDIT_SERVICE));
+      ApiCard.FillList(GetDlgItem(Dialog,IDC_EDIT_SERVICE));
       // contact list for ContactMessage
       FillContactList(GetDlgItem(Dialog,IDC_CONTACTLIST),fCLfilter,fCLformat);
       // action type combobox
@@ -1345,7 +1342,6 @@ begin
         EnableWindow(GetDlgItem(Dialog,IDC_GROUP_IMPORT),false);
       end;
       
-      helpwindow:=0;
       OldActTableProc  :=pointer(SetWindowLongPtrW(wnd,GWL_WNDPROC,long_ptr(@NewActTableProc)));
       OldGroupTableProc:=pointer(SetWindowLongPtrW(GetDlgItem(Dialog,IDC_ACTION_GROUP),
             GWL_WNDPROC,long_ptr(@NewGroupTableProc)));
