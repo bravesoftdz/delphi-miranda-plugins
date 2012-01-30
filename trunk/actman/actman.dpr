@@ -45,8 +45,8 @@ uses
   mirutils,
   syswin,
   base64,
-  helpfile,
   question,
+  mApiCardC,
   global,
   ua in 'ua\ua.pas',
   hooks in 'hooks\hooks.pas',
@@ -277,7 +277,6 @@ begin
   PluginLink^.UnhookEvent(onloadhook);
 
   LoadGroups;
-  InitHelpFile;
   RegisterIcons;
   
   opthook      :=PluginLink^.HookEvent(ME_OPT_INITIALISE ,@OnOptInitialise);

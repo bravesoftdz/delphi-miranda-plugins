@@ -2,7 +2,6 @@
 const
   // dialogs
   IDD_ACTION        = 1025;
-  IDD_HELP          = 1026;
   IDD_STRUCTURE     = 1027;
   IDD_ASK           = 1028;
 
@@ -212,12 +211,6 @@ const
   IDC_RW_TVAR  = 3010;
   IDC_MSG_TTL  = 3011;
   IDC_MSG_TXT  = 3012;
-
-// Help dialog
-  IDC_HLP_SERVICE = 1025;
-  IDC_HLP_RETURN  = 1026;
-  IDC_HLP_EFFECT  = 1027;
-  IDC_HLP_PLUGIN  = 1028;
 
 // Question
   IDC_ASK    = 1025;

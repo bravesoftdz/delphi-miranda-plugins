@@ -4,6 +4,7 @@ const
 var
   OldTableProc:pointer;
   onactchanged:THANDLE;
+  ApiCard:tmApiCard;
 
 const
   ACI_NEW    :PAnsiChar = 'ACI_New';
@@ -75,25 +76,6 @@ begin
   ListView_SetItemState(wnd,0,
     LVIS_FOCUSED or LVIS_SELECTED,
     LVIS_FOCUSED or LVIS_SELECTED);
-end;
-
-procedure FillEventList(wnd:HWND);
-var
-  buf:array [0..8191] of AnsiChar;
-  p:PAnsiChar;
-begin
-  SendMessage(wnd,CB_RESETCONTENT,0,0);
-
-  buf[0]:=#0;
-  GetPrivateProfileSectionNamesA(buf,SizeOf(buf),'plugins\events.ini'); // sections
-  p:=@buf;
-  while p^<>#0 do
-  begin
-    SendMessageA(wnd,CB_ADDSTRING,0,lparam(p));
-    while p^<>#0 do inc(p); inc(p);
-  end;
-
-  SendMessage(wnd,CB_SETCURSEL,-1,0);
 end;
 
 procedure FillActionList(wnd:HWND);
@@ -248,8 +230,12 @@ begin
   ti.hwnd    :=dialog;
   ti.hinst   :=hInstance;
 
-  ti.uId     :=GetDlgItem(Dialog,IDC_EVENT_HELP);
   ti.lpszText:=TranslateW('Help');
+  ti.uId     :=GetDlgItem(Dialog,IDC_EVENT_HELP);
+  SendMessage(ti.uId,BM_SETIMAGE,IMAGE_ICON,
+      CallService(MS_SKIN_LOADICON,SKINICON_OTHER_HELP,0));
+  SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,LPARAM(@ti));
+  ti.uId     :=GetDlgItem(Dialog,IDC_EVENT_CHELP);
   SendMessage(ti.uId,BM_SETIMAGE,IMAGE_ICON,
       CallService(MS_SKIN_LOADICON,SKINICON_OTHER_HELP,0));
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,LPARAM(@ti));
@@ -279,11 +265,15 @@ begin
   result:=0;
   case hMessage of
     WM_CLOSE: begin
+      ApiCard.Free;
+
       PluginLink^.UnhookEvent(onactchanged);
       settings:=0;
     end;
 
     WM_INITDIALOG: begin
+      ApiCard:=CreateEventCard(Dialog);
+
       wnd:=GetDlgItem(Dialog,IDC_HOOKLIST);
       SendMessage(wnd,LVM_SETUNICODEFORMAT,1,0);
       FillChar(lv,SizeOf(lv),0);
@@ -304,7 +294,7 @@ begin
 
       SetIcons(Dialog);
 
-      FillEventList (GetDlgItem(Dialog,IDC_EVENTLIST));
+      ApiCard.FillList(GetDlgItem(Dialog,IDC_EVENTLIST));
       FillActionList(GetDlgItem(Dialog,IDC_ACTIONLIST));
       FillHookList(wnd);
       ShowHookData(Dialog);
@@ -313,7 +303,11 @@ begin
       settings:=Dialog;
     end;
 
-    WM_HELP: ;
+    WM_HELP: begin
+      ApiCard.Show;
+//      if InitHelpFile('plugins\events.ini') then
+//        ShowCard(Dialog,'CList/PreBuildContactMenu');
+    end;
 
     WM_RESETHOOKS:begin
       FillHookList(GetDlgItem(Dialog,IDC_HOOKLIST));
@@ -329,15 +323,27 @@ begin
       end;
 
       case wParam shr 16 of
-        CBN_EDITCHANGE,
-        CBN_SELCHANGE: begin
+        CBN_EDITCHANGE: begin
           case loword(wParam) of
             IDC_EVENTLIST: begin
-              tmp:=GetDlgText(Dialog,IDC_EVENTLIST,true);
-              buf[0]:=#0;
-              if (tmp<>nil) and (tmp^<>#0) then
-                GetPrivateProfileStringA(tmp,'descr','',buf,SizeOf(buf),'plugins\events.ini');
-              SetDlgItemTextA(Dialog,IDC_DESCR,@buf);
+              tmp :=GetDlgText(Dialog,IDC_EVENTLIST,true);
+              ApiCard.Event:=tmp;
+              mFreeMem(tmp);
+              tmp:=ApiCard.Description;
+              SetDlgItemTextA(Dialog,IDC_DESCR,Translate(tmp));
+              mFreeMem(tmp);
+            end;
+          end;
+        end;
+
+        CBN_SELENDOK: begin
+          case loword(wParam) of
+            IDC_EVENTLIST: begin
+              i:=SendMessage(LOWORD(lParam),CB_GETCURSEL,0,0);
+              SendMessageA(LOWORD(lParam),CB_GETLBTEXT,i,TLPARAM(@buf));
+              ApiCard.Event:=@buf;
+              tmp:=ApiCard.Description;
+              SetDlgItemTextA(Dialog,IDC_DESCR,Translate(tmp));
               mFreeMem(tmp);
             end;
           end;
@@ -346,6 +352,7 @@ begin
 
         BN_CLICKED: begin
           case loword(wParam) of
+            IDC_EVENT_CHELP: ;
             IDC_EVENT_HELP : ;
             IDC_HOOK_NEW   : NewHook(Dialog);
             IDC_HOOK_DELETE: DeleteHook(Dialog);

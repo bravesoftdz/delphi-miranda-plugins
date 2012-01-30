@@ -27,3 +27,5 @@ var
 var
   fCLfilter:boolean   = true;
   fCLformat:pWideChar = nil;
+var
+  ApiCard:tmApiCard;

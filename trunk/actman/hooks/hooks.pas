@@ -11,7 +11,7 @@ implementation
 uses
   windows, commctrl, messages,
   mirutils, common, dbsettings, io, m_api, wrapper,
-  global;
+  global, mApiCardC;
 
 {$R hooks.res}
 
