@@ -1,10 +1,7 @@
-<<<<<<< .mine
+вариант - оставить как было, указатели строк на исходный буфер, [с хранением длины цепочки]
+
 +-MMI support
 +-check size for warr and w.ptr
-=======
-MMI support+-
-check size for warr and w.ptr
->>>>>>> .r203
 
 ->script parsing in structure making
 ->utf to wide char conversion
@@ -14,19 +11,11 @@ wm_size
 seticons
 
 dialog translation
-
 miranda buttons
 
 next arg position = current position + (position mod sizeof(next arg))
 
-strings: {$IFDEF Miranda}
-  miranda memmgr
-  compiler memmgr
-
-<align>|[<key>]<type> [<alias>] [value]|
-array: <len> <value>
-<key>=<script> -> b.arr
-b.arr 12 
+<align>|[<key>]<type> [(<type alias>)] [<alias>] [arr.len] [value]|
 
 TranslateBlob:
 in=UTF8/ANSI
@@ -37,5 +26,8 @@ before structure - record:
   length
   offset
 for result return
-
-вариант - посимвольное заполнение ([#0,]' ','|')
+=====
+разделитель-пробел - добавить табуляцию?
+разделитель полей - добавить CRLF и #0?
+----------
+предусмотреть \| и \\ ?
