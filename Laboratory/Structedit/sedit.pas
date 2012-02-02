@@ -5,7 +5,7 @@ interface
 
 uses windows;
 
-function EditStructure(struct:pAnsiChar;parent:HWND=0):pWideChar;
+function EditStructure(struct:pAnsiChar;parent:HWND=0):pAnsiChar;
 
 implementation
 
@@ -238,66 +238,22 @@ begin
 end;
 
 // fill table line by data from structure
-procedure FillLVLine(list:HWND;item:integer;txt:pAnsiChar);
+procedure FillLVLine(list:HWND;item:integer;const element:tOneElement);
 var
   tmp1:array [0..31] of WideChar;
   li:TLVITEMW;
-  i,j,llen:integer;
+  i,llen:integer;
   p,pc:pAnsiChar;
   pw:pWideChar;
-  lscript:boolean;
-  {$IFDEF Miranda}
-  mmi:boolean;
-  {$ENDIF}
 begin
-  if txt^=char_return then
-  begin
-    inc(txt);
+  if (element.flags and EF_RETURN)<>0 then
     ListView_SetCheckState(list,item,true);
-  end;
-
-  if txt^=char_script then
-  begin
-    inc(txt);
-    lscript:=true;
-  end
-  else
-    lscript:=false;
-{$IFDEF Miranda}
-  if txt^=char_mmi then
-  begin
-    inc(txt);
-    mmi:=true;
-  end
-  else
-    mmi:=false;
-{$ENDIF}
-  // element name
-  pc:=txt;
-  llen:=0;
-  repeat
-    inc(pc);
-    inc(llen);
-  until pc^ IN [#0,' ',char_separator];
-
-  // recogninze data type
-  i:=0;
-  while i<MaxStructTypes do
-  begin
-    if StrCmp(txt,StructElems[i].short,llen)=0 then //!!
-      break;
-    inc(i);
-  end;
-  if i>=MaxStructTypes then
-  begin
-    exit;
-  end;
 
   li.iItem:=item;
-  j:=0;
   li.mask:=LVIF_TEXT;
 
-  p:=StructElems[i].short;
+  // type
+  p:=StructElems[element.etype].short;
   llen:=0;
   while p^<>#0 do
   begin
@@ -310,13 +266,14 @@ begin
   li.pszText :=@tmp1;
   SendMessageW(list,LVM_SETITEMW,0,lparam(@li));
 
+  // flags
   llen:=0;
-  if lscript then
+  if (element.flags and EF_SCRIPT)<>0 then
   begin
     tmp1[llen]:=char_script; inc(llen);
   end;
   {$IFDEF Miranda}
-  if mmi then
+  if (element.flags and EF_MMI)<>0 then
   begin
     tmp1[llen]:=char_mmi; inc(llen);
   end;
@@ -326,35 +283,30 @@ begin
   li.pszText :=@tmp1;
   SendMessageW(list,LVM_SETITEMW,0,lparam(@li));
 
-  // next - alias, starting from letter
-  // start: points to separator or space
-  if not (pc^ in [#0,char_separator]) then
+  // alias
+  if element.alias[0]<>#0 then
   begin
-    inc(pc); // skip space
-    llen:=0;
-    if pc^ in sIdFirst then
+    pc:=@element.alias;
+    while pc^<>#0 do
     begin
-      repeat
-        tmp1[llen]:=WideChar(pc^);
-        inc(llen);
-        inc(pc);
-      until (pc^=' ') or (pc^=char_separator);
-      tmp1[llen]:=#0;
-      li.iSubItem:=col_alias;
-      li.pszText :=@tmp1;
-      SendMessageW(list,LVM_SETITEMW,0,lparam(@li));
+      tmp1[llen]:=WideChar(pc^);
+      inc(llen);
+      inc(pc);
     end;
+    tmp1[llen]:=#0;
+    li.iSubItem:=col_alias;
+    li.pszText :=@tmp1;
+    SendMessageW(list,LVM_SETITEMW,0,lparam(@li));
   end;
 
-  if pc^=' ' then inc(pc); // points to value or nothing if no args
-  case StructElems[i].typ of
+  case element.etype of
     SST_LAST,SST_PARAM: ;
 
     SST_BYTE,SST_WORD,SST_DWORD,
     SST_QWORD,SST_NATIVE: begin
-      // pc points to number or char_separator
+      pc:=@element.svalue;
       llen:=0;
-      while pc^ in sNum do
+      while pc^<>#0 do
       begin
         tmp1[llen]:=WideChar(pc^);
         inc(llen);
@@ -371,34 +323,17 @@ begin
 
     SST_BARR,SST_WARR,SST_BPTR,SST_WPTR: begin
       // like for numbers, array length
-      llen:=0;
-      j:=0;
-      while pc^ in sNum do
+      if element.len>0 then //??
       begin
-        j:=j*10+(ORD(pc^)-ORD('0'));
-        tmp1[llen]:=WideChar(pc^);
-        inc(llen);
-        inc(pc);
-      end;
-      if llen>0 then //??
-      begin
-        tmp1[llen]:=#0;
+        IntToStr(tmp1,element.len);
         li.iSubItem:=col_len;
         li.pszText :=@tmp1;
         SendMessageW(list,LVM_SETITEMW,0,lparam(@li));
       end;
 
-      if pc^=' ' then
+      if element.text<>nil then
       begin
-        inc(pc);
-        p:=pc;
-        llen:=0;
-        while (p^<>char_separator) and (p^<>#0) do
-        begin
-          inc(p);
-          inc(llen);
-        end;
-        UTF8ToWide(pc,pw,llen);
+        UTF8ToWide(element.text,pw);
         li.iSubItem:=col_data;
         li.pszText :=pw;
         SendMessageW(list,LVM_SETITEMW,0,lparam(@li));
@@ -407,7 +342,7 @@ begin
     end;
   end;
 
-  i:=StructElems[i].typ+(j shl 16);
+  i:=element.etype+(element.len shl 16);
   LV_SetLParam(list,i,item);
 
   ListView_SetItemState(list,item,LVIS_FOCUSED or LVIS_SELECTED,
@@ -418,12 +353,15 @@ end;
 procedure FillLVStruct(list:HWND;txt:PAnsiChar);
 var
   p:pansiChar;
+  element:tOneElement;
 begin
   txt:=StrScan(txt,char_separator)+1;
   while txt^<>#0 do
   begin
     p:=StrScan(txt,char_separator);
-    FillLVLine(list,InsertLVLine(list),txt);
+    GetOneElement(txt,element,false);
+    FillLVLine(list,InsertLVLine(list),element);
+    FreeElement(element);
 
     if p=nil then break;
     txt:=p+1;
@@ -439,6 +377,7 @@ var
   li:TLVITEMW;
   buf:array [0..63] of WideChar;
   pc:pWideChar;
+  pc1:pAnsiChar;
   len:integer;
 begin
   li.iItem:=item;
@@ -493,7 +432,7 @@ begin
   li.iSubItem  :=col_alias;
   if SendMessageW(list,LVM_GETITEMTEXTW,item,lparam(@li))>0 then
   begin
-    dst:=' '; inc(dst);
+    dst^:=' '; inc(dst);
     pc:=@buf;
     while pc^<>#0 do
     begin
@@ -508,7 +447,7 @@ begin
     SST_QWORD,SST_NATIVE: begin
       li.iSubItem  :=col_data;
       li.cchTextMax:=32;
-      li.pszText   :=@buf;        
+      li.pszText   :=@buf;
       if SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li))>0 then
       begin
         dst^:=' '; inc(dst);
@@ -543,14 +482,18 @@ begin
       if len>0 then
       begin
 //        dst:=StrEnd(dst);
-        dst^:=' '; inc(dst);
         li.iSubItem  :=col_data;
         li.cchTextMax:=len+1;
         mGetMem(pc,(len+1)*SizeOf(WideChar));
         li.pszText   :=pc;
         SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li));
-        WideToUTF8(pc,dst);
-        dst:=StrEnd(dst);
+        if pc^<>#0 then
+        begin
+          dst^:=' '; inc(dst);
+          WideToUTF8(pc,pc1);
+          dst:=StrCopyE(dst,pc1);
+          mFreeMem(pc1);
+        end;
         mFreeMem(pc);
       end;
     end;
@@ -948,7 +891,6 @@ begin
               EndDialog(Dialog,int_ptr(
                   SaveStructure(GetDlgItem(Dialog,IDC_DATA_FULL),
                     CB_GetData(GetDlgItem(Dialog,IDC_DATA_ALIGN))
-//!!                  IsDlgButtonChecked(Dialog,IDC_DATA_PACKED)<>BST_UNCHECKED
                   )));
             end;
 
@@ -1028,11 +970,11 @@ begin
   end;
 end;
 
-function EditStructure(struct:pAnsiChar;parent:HWND=0):pWideChar;
+function EditStructure(struct:pAnsiChar;parent:HWND=0):pAnsiChar;
 begin
   InitCommonControls;
 
-  result:=pWidechar(DialogBoxParamW(hInstance,MAKEINTRESOURCEW(IDD_STRUCTURE),
+  result:=pAnsiChar(DialogBoxParamW(hInstance,MAKEINTRESOURCEW(IDD_STRUCTURE),
                  parent,@StructEdit,LPARAM(struct)));
 (*
   result:=pointer(CreateDialogParamW(hInstance,MAKEINTRESOURCEW(IDD_STRUCTURE),

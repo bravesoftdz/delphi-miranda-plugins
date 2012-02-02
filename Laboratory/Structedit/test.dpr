@@ -10,7 +10,11 @@ var
 
 procedure CloseClick(Dummy:Pointer;Sender:PControl);
 begin
-  EditStructure('0|byte|word 1|b.arr 13 as$DF|w.ptr 100|param|native|', form.GetWindowHandle);
+  MessageboxA(0,
+  EditStructure(
+    '0|byte|word (wchar) wAliasExample 1|b.arr (char[]) 13 as$DF|w.ptr 100|param|native',
+    form.GetWindowHandle),
+    '',0);
 end;
 
 begin

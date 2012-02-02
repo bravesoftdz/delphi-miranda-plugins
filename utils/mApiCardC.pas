@@ -94,14 +94,17 @@ var
   tmp:pWideChar;
   paramname:pAnsiChar;
 begin
-  result:=nil;
   if INIFile[0]=#0 then
+  begin
+    result:=nil;
     exit;
+  end;
   if wparam then
     paramname:='wparam'
   else
     paramname:='lparam';
   GetPrivateProfileStringA(@current,paramname,'',buf,SizeOf(buf),@INIFile);
+  StrDup(result,@buf);
   SendMessage(wnd,CB_RESETCONTENT,0,0);
   if buf[0]<>#0 then
   begin
