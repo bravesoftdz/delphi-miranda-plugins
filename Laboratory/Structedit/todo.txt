@@ -1,4 +1,7 @@
-вариант - оставить как было, указатели строк на исходный буфер, [с хранением длины цепочки]
+в редакторе убрать столбец флагов. но останетс€ вопрос, где их хранить
+проверить: длина в таблице (выделение пам€ти) и в параметре (длина текста)
+lParam = длина текста в Ѕј…“ј’
+при тринсл€ции длина в символах
 
 +-MMI support
 +-check size for warr and w.ptr
@@ -12,8 +15,6 @@ seticons
 
 dialog translation
 miranda buttons
-
-next arg position = current position + (position mod sizeof(next arg))
 
 <align>|[<key>]<type> [(<type alias>)] [<alias>] [arr.len] [value]|
 
@@ -31,3 +32,4 @@ for result return
 разделитель полей - добавить CRLF и #0?
 ----------
 предусмотреть \| и \\ ?
+=============
