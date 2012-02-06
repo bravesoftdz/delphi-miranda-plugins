@@ -38,6 +38,22 @@ const
 var
   OldLVProc:pointer;
 
+function GetTypeIndex(etype:integer):integer;
+var
+  j:integer;
+begin
+  j:=0;
+  while j<MaxStructTypes do
+  begin
+    if StructElems[j].typ=etype then break;
+    inc(j);
+  end;
+  if j<MaxStructTypes then
+    result:=j
+  else
+    result:=SST_UNKNOWN;
+end;
+
 procedure InsertString(wnd:HWND;num:dword;str:PAnsiChar);
 var
   buf:array [0..127] of WideChar;
@@ -253,7 +269,7 @@ begin
   li.mask:=LVIF_TEXT;
 
   // type
-  p:=StructElems[element.etype].short;
+  p:=StructElems[GetTypeIndex(element.etype)].short;
   llen:=0;
   while p^<>#0 do
   begin
@@ -387,7 +403,9 @@ begin
   li.iSubItem  :=0;
   li.stateMask :=LVIS_STATEIMAGEMASK;
   SendMessageW(list,LVM_GETITEMW,item,lparam(@li));
-  result:=loword(li.lParam);
+  result:=loword(li.lParam); // element type
+  len   :=hiword(li.lParam); // array/pointer length
+
   if (li.state shr 12)>1 then // "return" value
   begin
     dst^:=char_return;
@@ -423,7 +441,7 @@ begin
   SendMessageW(list,LVM_GETITEMTEXTW,item,lparam(@li));
   dst:=StrEnd(FastWideToAnsiBuf(@buf,dst));
 }
-  dst:=StrCopyE(dst,StructElems[result].short);
+  dst:=StrCopyE(dst,StructElems[GetTypeIndex(result)].short);
   // alias
   li.mask      :=LVIF_TEXT;
   li.cchTextMax:=HIGH(buf);
@@ -461,9 +479,7 @@ begin
     end;
 
     SST_BARR,SST_WARR,SST_BPTR,SST_WPTR: begin
-//      dst^:=' '; inc(dst);
-      len:=hiword(li.lParam);
-
+      // length
       li.iSubItem  :=col_len;
       li.cchTextMax:=32;
       li.pszText   :=@buf;
@@ -477,7 +493,7 @@ begin
         end;
       end
       else
-        IntToStr(dst,len);
+        dst:=StrEnd(IntToStr(dst,len));
 
       if len>0 then
       begin
@@ -490,6 +506,7 @@ begin
         if pc^<>#0 then
         begin
           dst^:=' '; inc(dst);
+//!!!! Unicode to UTF8 = ok, Ansi to Ansi = ?
           WideToUTF8(pc,pc1);
           dst:=StrCopyE(dst,pc1);
           mFreeMem(pc1);
@@ -664,17 +681,14 @@ var
   buf:array [0..63] of WideChar;
   tmp:pWideChar;
 begin
+  // type
   wnd:=GetDlgItem(Dialog,IDC_DATA_TYPE);
   ltype:=SendMessage(wnd,CB_GETITEMDATA,SendMessage(wnd,CB_GETCURSEL,0,0),0);
-  j:=0;
-  while j<MaxStructTypes do
-  begin
-    if StructElems[j].typ=ltype then break;
-    inc(j);
-  end;
+  j:=GetTypeIndex(ltype);
 
   LV_SetItemW(list,FastAnsiToWideBuf(StructElems[j].short,buf),item,col_type);
 
+  // flags
   idx:=0;
   if IsDlgButtonChecked(Dialog,IDC_DATA_VARS)<>BST_UNCHECKED then
   begin
@@ -689,14 +703,17 @@ begin
   buf[idx]:=#0;
   LV_SetItemW(list,@buf,item,col_flag);
   
+  // values
   tmp:=nil;
   case ltype of
     SST_LAST,SST_PARAM: begin
     end;
+
     SST_BYTE,SST_WORD,SST_DWORD: begin
       tmp:=GetDlgText(Dialog,IDC_DATA_EDIT);
       LV_SetItemW(list,tmp,item,col_data);
     end;
+
     SST_BARR,SST_WARR,SST_BPTR,SST_WPTR: begin
 
       SendDlgItemMessageW(Dialog,IDC_DATA_LEN,WM_GETTEXT,15,lparam(@buf));

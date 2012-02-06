@@ -176,10 +176,13 @@ type
 // and uses it to perform sort/search operations, this results
 // in much better performance as no compare function calls needed 
 // Incredibly useful for Hash Tables
-#define NumericKeySort (FSortFunc)(void*) -1
-#define HandleKeySort  (FSortFunc)(void*) -2
-
 }
+const
+  NumericKeySort = {TFSortFunc}(pointer(-1));
+  HandleKeySort  = {TFSortFunc}(pointer(-2));
+  PtrKeySort     = {TFSortFunc}(pointer(-3));
+
+type
   PSortedList = ^TSortedList;
   TSortedList = record
     items    : ^pointer;
@@ -191,13 +194,13 @@ type
   PLIST_INTERFACE = ^TLIST_INTERFACE;
   TLIST_INTERFACE = record
     cbSize        :int;
-    List_Create   :function (para1:int; para2:int):PSortedList;cdecl;
-    List_Destroy  :procedure(para1:PSortedList);cdecl;
-    List_Find     :function (para1:PSortedList; para2:pointer):pointer;cdecl;
-    List_GetIndex :function (para1:PSortedList; para2:pointer; para3:Pint):int;cdecl;
-    List_Insert   :function (para1:PSortedList; para2:pointer; para3:int):int;cdecl;
-    List_Remove   :function (para1:PSortedList; para2:int):int;cdecl;
-    List_IndexOf  :function (para1:PSortedList; para2:pointer):int;cdecl;
+    List_Create   :function (limit:int; increment:int):PSortedList;cdecl;
+    List_Destroy  :procedure(list:PSortedList);cdecl;
+    List_Find     :function (list:PSortedList; value:pointer):pointer;cdecl;
+    List_GetIndex :function (list:PSortedList; value:pointer; index:Pint):int;cdecl;
+    List_Insert   :function (list:PSortedList; value:pointer; index:int):int;cdecl;
+    List_Remove   :function (list:PSortedList; index:int):int;cdecl;
+    List_IndexOf  :function (list:PSortedList; value:pointer):int;cdecl;
 // if MIRANDA_VER >= 0x0600
     List_InsertPtr:function (list:PSortedList; p:pointer):int;cdecl;
     List_RemovePtr:function (list:PSortedList; p:pointer):int;cdecl;

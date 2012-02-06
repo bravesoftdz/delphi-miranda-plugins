@@ -215,7 +215,6 @@ begin
           inc(pc1);
           inc(pc);
         until (pc^=')') or (pc^=' ') or (pc^=char_separator);
-  //      res.talias[i]:=#0;
         if pc^=')' then inc(pc);
       end;
     end;
@@ -233,7 +232,6 @@ begin
           inc(pc1);
           inc(pc);
         until (pc^=' ') or (pc^=char_separator);
-  //      res.alias[i]:=#0;
       end;
     end;
 
@@ -244,7 +242,6 @@ begin
       SST_LAST,SST_PARAM: ;
 
       SST_BYTE,SST_WORD,SST_DWORD,SST_QWORD,SST_NATIVE: begin
-//        if not SizeOnly then
         begin
           if (res.flags and EF_SCRIPT)=0 then
           begin
