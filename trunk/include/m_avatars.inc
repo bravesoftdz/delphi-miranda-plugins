@@ -68,6 +68,21 @@ const
   AVS_NOTREADY        = 4096;
 
 type
+  PavatarCacheEntryW = ^TavatarCacheEntryW;
+  TavatarCacheEntryW = record
+    cbSize      : DWORD;    // set to sizeof(struct)
+    hContact    : THANDLE;  // contacts handle, 0, if it is a protocol avatar
+    hbmPic      : HBITMAP;  // bitmap handle of the picture itself
+    dwFlags     : DWORD;    // see above for flag values
+    bmHeight    : long;     // bitmap dimensions
+    bmWidth     : long;
+    t_lastAccess: DWORD;    // last access time (currently unused, but plugins should still
+                            // use it whenever they access the avatar. may be
+                            // used in the future to implement cache expiration
+    lpDIBSection: pointer;
+    szFilename  : array[0..MAX_PATH-1] of WideChar; // filename of the avatar (absolute path)
+  end;
+
   PavatarCacheEntry = ^TavatarCacheEntry;
   TavatarCacheEntry = record
     cbSize      : DWORD;    // set to sizeof(struct)
@@ -237,6 +252,14 @@ const
   ME_AV_AVATARCHANGED:PAnsiChar = 'SV_Avatars/AvatarChanged';
 
 type
+  TContactAvatarChangedNotificationW = record
+    cbSize  :int;     // sizeof()
+    hContact:THANDLE; // this might have to be set by the caller too
+    format  :int;     // PA_FORMAT_*
+    filename:array [0..MAX_PATH-1] of WideChar; // full path to filename which contains the avatar
+    hash    :array [0..127] of WideChar;        // avatar hash (always an empty string by now)
+  end;
+
   TContactAvatarChangedNotification = record
     cbSize  :int;     // sizeof()
     hContact:THANDLE; // this might have to be set by the caller too
@@ -319,14 +342,16 @@ const
   lParam=(const AnsiChar *)Avatar file name or NULL to remove the avatar
   return=0 for sucess
 }
-  PS_SETMYAVATAR = '/SetMyAvatar';
+  PS_SETMYAVATAR  = '/SetMyAvatar';
+  PS_SETMYAVATARW = '/SetMyAvatarW';
 
 {
   wParam=Buffer to file name
   lParam=(int)Buffer size
   return=0 for sucess
 }
-  PS_GETMYAVATAR = '/GetMyAvatar';
+  PS_GETMYAVATAR  = '/GetMyAvatar';
+  PS_GETMYAVATARW = '/GetMyAvatarW';
 
   PIP_NONE   = 0;
   PIP_SQUARE = 1;

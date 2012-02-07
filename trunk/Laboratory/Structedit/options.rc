@@ -2,7 +2,7 @@
 
 LANGUAGE 0,0
 
-IDD_STRUCTURE DIALOGEX 0, 0, 332,184, 0
+IDD_STRUCTURE DIALOGEX 0, 0, 348,184, 0
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_VISIBLE | WS_THICKFRAME
 CAPTION "Structure Editor"
 //EXSTYLE  WS_EX_CONTROLPARENT
@@ -24,29 +24,23 @@ FONT 8, "MS Shell Dlg", 0, 0
   PUSHBUTTON "Down"  ,IDC_DATA_DOWN  ,166,40,16,16, BS_ICON | BS_FLAT
   PUSHBUTTON "Delete",IDC_DATA_DELETE,166,60,16,16, BS_ICON | BS_FLAT
 #endif
-  COMBOBOX                   IDC_DATA_TYPE   , 186,  2, 142, 96, CBS_DROPDOWNLIST | WS_VSCROLL
-  EDITTEXT                   IDC_DATA_LEN    , 186, 18,  32, 11
-  LTEXT        "Data length"  ,-1            , 222, 18, 106, 11, SS_CENTERIMAGE
-  EDITTEXT                      IDC_DATA_EDIT, 186, 32, 142, 11, ES_AUTOHSCROLL
-  AUTOCHECKBOX "Use Variables", IDC_DATA_VARS, 186, 45, 142, 14
+
+  RTEXT    "Data align",IDC_DATA_SALGN, 186, 2, 86, 14, SS_CENTERIMAGE
+  COMBOBOX IDC_DATA_ALIGN , 274, 2, 72, 56, CBS_DROPDOWNLIST | WS_VSCROLL
+  CONTROL  "", IDC_DATA_SEP, "STATIC", SS_ETCHEDHORZ, 186, 20, 160, 2
+
+  COMBOBOX                      IDC_DATA_TYPE, 186,  24, 160, 96, CBS_DROPDOWNLIST | WS_VSCROLL
+  EDITTEXT                      IDC_DATA_LEN , 186,  40,  40, 11
+  LTEXT        "Data length"  , -1           , 230,  40, 116, 11, SS_CENTERIMAGE
+  EDITTEXT                      IDC_DATA_EDIT, 186,  55, 160, 82, ES_MULTILINE | ES_AUTOVSCROLL
 #ifdef Miranda
-  AUTOCHECKBOX "Use MMI", IDC_DATA_MMI, 186, 45, 142, 14
+  AUTOCHECKBOX "Use Variables", IDC_DATA_VARS, 186, 138, 160, 14
+  AUTOCHECKBOX "Use MMI"      , IDC_DATA_MMI , 186, 152, 142, 14
 #endif
 
-  DEFPUSHBUTTON   "&Change", IDC_DATA_CHANGE, 186, 62,  46, 14//, WS_GROUP
-  PUSHBUTTON      "&OK"    , IDOK           , 234, 62,  46, 14
-  PUSHBUTTON      "C&ancel", IDCANCEL       , 282, 62,  46, 14
-
-  RTEXT    "Data align",-1, 166, 78, 86, 14, SS_CENTERIMAGE
-  COMBOBOX IDC_DATA_ALIGN , 256, 78, 72, 56, CBS_DROPDOWNLIST | WS_VSCROLL
-//  AUTOCHECKBOX "Packed structure", IDC_DATA_PACKED, 166, 78, 162, 14
-
-  CTEXT "Use Byte array/pointer for ANSI strings\n"\
-        "Use Word array/pointer for Unicode strings\n\n"\
-        "$## replaces by byte with hex value ##\n"\
-        "$#### replaces by word with hex value #### (for Unicode strings only)\n\n"\
-        "All data length calculating in bytes",
-        IDC_DATA_HELP,166,94,162,88
+  DEFPUSHBUTTON   "&Change", IDC_DATA_CHANGE, 186, 168,  46, 14//, WS_GROUP
+  PUSHBUTTON      "&OK"    , IDOK           , 250, 168,  46, 14
+  PUSHBUTTON      "C&ancel", IDCANCEL       , 300, 168,  46, 14
 
 }
 

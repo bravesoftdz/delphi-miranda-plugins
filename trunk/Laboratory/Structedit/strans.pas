@@ -58,8 +58,14 @@ const
     (typ:SST_WARR  ; short:'w.arr' ; full:'Word Array'),
     (typ:SST_BPTR  ; short:'b.ptr' ; full:'Pointer to bytes'),
     (typ:SST_WPTR  ; short:'w.ptr' ; full:'Pointer to words'),
+{$IFDEF Miranda}
     (typ:SST_LAST  ; short:'last'  ; full:'Last result'),
-    (typ:SST_PARAM ; short:'param' ; full:'Parameter'));
+    (typ:SST_PARAM ; short:'param' ; full:'Parameter')
+{$ELSE}
+    (typ:SST_LAST  ; short:'last'  ; full:'Parameter 1'),
+    (typ:SST_PARAM ; short:'param' ; full:'Parameter 2')
+{$ENDIF}
+  );
 
 
 type

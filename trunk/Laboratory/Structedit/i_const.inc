@@ -25,3 +25,5 @@ const
   IDC_DATA_ALIGN    = 2014;
   IDC_DATA_MMI      = 2015;
 
+  IDC_DATA_SALGN    = 2016;
+  IDC_DATA_SEP      = 2017;

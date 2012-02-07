@@ -404,6 +404,15 @@ const
   PA_FORMAT_XML     = 7;
 
 type
+  PPROTO_AVATAR_INFORMATIONW = ^TPROTO_AVATAR_INFORMATIONW;
+  TPROTO_AVATAR_INFORMATIONW = record
+    cbSize  : int;     // sizeof()
+    hContact: THANDLE; // this might have to be set by the caller too
+    format  : int;     // PA_FORMAT_*
+    // full path to filename which contains the avatar
+    filename: array[0..(MAX_PATH)-1] of WideChar;
+  end;
+
   PPROTO_AVATAR_INFORMATION = ^TPROTO_AVATAR_INFORMATION;
   TPROTO_AVATAR_INFORMATION = record
     cbSize  : int;     // sizeof()
@@ -428,6 +437,7 @@ const
  Note:
  Version: 0.3.4+ (2004/09/13)
 }
-  PS_GETAVATARINFO = '/GetAvatarInformation';
+  PS_GETAVATARINFO  = '/GetAvatarInformation';
+  PS_GETAVATARINFOW = '/GetAvatarInformationW';
 
 {$ENDIF}

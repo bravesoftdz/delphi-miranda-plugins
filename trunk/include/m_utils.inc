@@ -279,7 +279,8 @@ const
                followed by more filters and their descriptive texts -- end with double NULL(0)
                e.g. *.bmp' #0 'All bitmaps' #0 '*.*' #0 'All Files' #0 #0
   }
-  MS_UTILS_GETBITMAPFILTERSTRINGS:PAnsiChar = 'Utils/GetBitmapFilterStrings';
+  MS_UTILS_GETBITMAPFILTERSTRINGS :PAnsiChar = 'Utils/GetBitmapFilterStrings';
+  MS_UTILS_GETBITMAPFILTERSTRINGSW:PAnsiChar = 'Utils/GetBitmapFilterStringsW';
 
   {
     wParam : pszPath

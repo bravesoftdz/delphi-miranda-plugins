@@ -149,7 +149,7 @@ begin
     with FrameCtrl^ do
     begin
       MinWidth :=80;
-      MinHeight:=30;
+      MinHeight:=20;
       Anchor(true,true,true,true);
 //      OnMessage:=TOnMessage(MakeMethod(nil, @MyEraseFrame));
       OnEraseBkGnd:=TOnPaint(MakeMethod(nil, @MyEraseFrame));
