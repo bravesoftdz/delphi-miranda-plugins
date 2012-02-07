@@ -29,7 +29,7 @@ unit m_api;
 interface
 
 uses
-  Windows, FreeImage;
+  Windows;//, FreeImage;
 
 // often used
 const

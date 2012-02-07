@@ -340,7 +340,9 @@ typedef struct _tagFI_interface {
     int      (*FI_BmpFilterResizeBitmap)(WPARAM wParam,LPARAM lParam);      // more generic resizer for avatar images
     void     (*FI_CorrectBitmap32Alpha)(HBITMAP hBitmap, BOOL force);       // corrects broken images (when all alpha values are 0)
 
-    BYTE  reserved[200];            // future usage
+    FIMULTIBITMAP *(DLL_CALLCONV *FI_OpenMultiBitmapU)(FREE_IMAGE_FORMAT fif, const wchar_t *filename, BOOL create_new, BOOL read_only, BOOL keep_cache_in_memory FI_DEFAULT(FALSE), int flags FI_DEFAULT(0));
+
+    void*   reserved[49];            // future usage
 } FI_INTERFACE;
 *)
 {
@@ -437,10 +439,11 @@ type
   FIF_SGI     = 28
 );}
   TIMGSRVC_MEMIO = record
-    iLen:cardinal;         // length of the buffer
-    pBuf:pointer;          // the buffer itself (you are responsible for allocating and free'ing it)
-    fif:FREE_IMAGE_FORMAT; // -1 to detect the format or one of the FIF_* image format constant. Make sure to provide the right one.
-    flags:dword;           // flags to pass to FreeImage_LoadFromMem()  (see freeimage docs)
+    iLen:cardinal; // length of the buffer
+    pBuf:pointer;  // the buffer itself (you are responsible for allocating and free'ing it)
+    fif:integer;   // FREE_IMAGE_FORMAT,-1 to detect the format or one of the FIF_* image
+                   // format constant. Make sure to provide the right one.
+    flags:dword;   // flags to pass to FreeImage_LoadFromMem()  (see freeimage docs)
   end;
   _tagIMGSRVC_MEMIO = TIMGSRVC_MEMIO;
 
@@ -476,9 +479,9 @@ type
     cbSize:dword;
     szName:TChar;
     hbm:HBITMAP;
-    dib:PFIBITMAP;
+    dib:pointer; // PFIBITMAP
     dwMask:dword;
-    fif:FREE_IMAGE_FORMAT;
+    fif:integer; // FREE_IMAGE_FORMAT
   end;
   _tagIMGSRVC_INFO = TIMGSRVC_INFO;
 
