@@ -147,6 +147,8 @@ begin
         else
           lmod:=2;
       end;
+    else
+      lmod:=2;
     end;
     rest:=summ mod lmod;
     if rest>0 then
@@ -175,8 +177,8 @@ begin
   begin
     case txt^ of
       char_return: res.flags:=res.flags or EF_RETURN;
-      char_script: res.flags:=res.flags or EF_SCRIPT;
 {$IFDEF Miranda}
+      char_script: res.flags:=res.flags or EF_SCRIPT;
       char_mmi   : res.flags:=res.flags or EF_MMI;
 {$ENDIF}
     end;
@@ -252,14 +254,16 @@ begin
           if (res.flags and EF_SCRIPT)=0 then
           begin
             pc1:=@res.svalue;
-            // what if script there?
             while not (pc^ in [#0,char_separator]) do // pc^ in sNum
             begin
               pc1^:=pc^;
               inc(pc1);
               inc(pc);
             end;
-            res.value:=StrToInt(res.svalue);
+            if res.svalue[0]=char_hex then
+              res.value:=HexToInt(res.svalue)
+            else
+              res.value:=StrToInt(res.svalue);
           end
           else
           begin
@@ -279,7 +283,6 @@ begin
           // skip space
           if pc^=' ' then inc(pc);
 
-          // what if script there?
           if not (pc^ in [#0,char_separator]) then
           begin
             txt:=pc;
@@ -499,6 +502,9 @@ begin
         pLast:=IntToStr(buf,alast)
       else
         pLast:=pWideChar(alast);
+      // BPTR,BARR - Ansi
+      // WPTR,WARR - Unicode
+      // BYTE,WORD,DWORD,QWORD,NATIVE - ???
       // in value must be converted to unicode/ansi but not UTF8
   //!!    value:=ParseVarString(value,aparam,pLast);
       case element.etype of

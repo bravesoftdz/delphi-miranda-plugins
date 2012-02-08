@@ -563,6 +563,7 @@ begin
   case urc^.wId of
     IDC_DATA_FULL:   result:=RD_ANCHORX_WIDTH or RD_ANCHORY_HEIGHT;
     IDC_DATA_EDIT:   result:=RD_ANCHORX_RIGHT or RD_ANCHORY_HEIGHT;
+    IDC_DATA_EDTN:   result:=RD_ANCHORX_RIGHT or RD_ANCHORY_TOP;
     IDC_DATA_VARS:   result:=RD_ANCHORX_RIGHT or RD_ANCHORY_BOTTOM;
     IDC_DATA_MMI:    result:=RD_ANCHORX_RIGHT or RD_ANCHORY_BOTTOM;
     IDC_DATA_TYPE:   result:=RD_ANCHORX_RIGHT or RD_ANCHORY_TOP;
@@ -625,9 +626,12 @@ var
   i:dword;
   p:array [0..1023] of WideChar;
   b,b1:boolean;
+  idcshow,idchide:integer;
   li:TLVITEMW;
 begin
   i:=loword(LV_GetLParam(list,item));
+  idcshow:=IDC_DATA_EDIT;
+  idchide:=IDC_DATA_EDTN;
 
   CB_SelectData(GetDlgItem(Dialog,IDC_DATA_TYPE),i);
   case i of
@@ -638,6 +642,8 @@ begin
 
     SST_BYTE,SST_WORD,SST_DWORD,
     SST_QWORD,SST_NATIVE: begin
+      idchide:=IDC_DATA_EDIT;
+      idcshow:=IDC_DATA_EDTN;
       b :=true;
       b1:=false;
     end;
@@ -659,7 +665,14 @@ begin
     if SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li))>0 then
     begin
       if StrScanW(p,char_script)<>nil then
-        CheckDlgButton(Dialog,IDC_DATA_VARS,BST_CHECKED)
+      begin
+        CheckDlgButton(Dialog,IDC_DATA_VARS,BST_CHECKED);
+        if i IN [SST_BYTE,SST_WORD,SST_DWORD,SST_QWORD,SST_NATIVE] then
+        begin
+          idchide:=IDC_DATA_EDTN;
+          idcshow:=IDC_DATA_EDIT;
+        end;
+      end
       else
         CheckDlgButton(Dialog,IDC_DATA_VARS,BST_UNCHECKED);
 
@@ -675,7 +688,8 @@ begin
   end
   else
     p[0]:=#0;
-  SetDlgItemTextW(Dialog,IDC_DATA_EDIT,p);
+  SetDlgItemTextW(Dialog,idchide,'');
+  SetDlgItemTextW(Dialog,idcshow,p);
 
   if b1 then
   begin
@@ -686,7 +700,10 @@ begin
     p[0]:=#0;
   SetDlgItemTextW(Dialog,IDC_DATA_LEN,p);
 
-  EnableWindow(GetDlgItem(Dialog,IDC_DATA_EDIT),b);
+  ShowWindow(GetDlgItem(Dialog,idcshow),SW_SHOW);
+  ShowWindow(GetDlgItem(Dialog,idchide),SW_HIDE);
+
+  EnableWindow(GetDlgItem(Dialog,idcshow),b);
   EnableWindow(GetDlgItem(Dialog,IDC_DATA_LEN ),b1);
 {$IFDEF Miranda}
   EnableWindow(GetDlgItem(Dialog,IDC_DATA_VARS),b);
@@ -696,7 +713,10 @@ end;
 // Fill table row by data from edit fields
 procedure FillLVRow(Dialog:hwnd;list:HWND;item:integer);
 var
-  ltype,j,idx:integer;
+  ltype,j,idc:integer;
+{$IFDEF Miranda}
+  idx:integer;
+{$ENDIF}
   wnd:HWND;
   buf:array [0..63] of WideChar;
   tmp:pWideChar;
@@ -730,8 +750,16 @@ begin
     SST_LAST,SST_PARAM: begin
     end;
 
-    SST_BYTE,SST_WORD,SST_DWORD: begin
-      tmp:=GetDlgText(Dialog,IDC_DATA_EDIT);
+    SST_BYTE,SST_WORD,SST_DWORD,
+    SST_QWORD,SST_NATIVE: begin
+{$IFDEF Miranda}
+      if IsDlgButtonChecked(Dialog,IDC_DATA_VARS)<>BST_UNCHECKED then
+        idc:=IDC_DATA_EDIT
+      else
+{$ENDIF}
+        idc:=IDC_DATA_EDTN;
+
+      tmp:=GetDlgText(Dialog,idc);
       LV_SetItemW(list,tmp,item,col_data);
     end;
 
@@ -759,6 +787,7 @@ var
   li:TLVITEMW;
   b,b1:boolean;
 {$IFDEF Miranda}
+  idchide,idcshow:integer;
   urd:TUTILRESIZEDIALOG;
 {$ELSE}
   rc,rc1:TRECT;
@@ -818,12 +847,13 @@ begin
       GetWindowRect(wnd,rc1);
       SetWindowPos(wnd,0,0,0,rc1.right-rc1.left, rc.bottom-rc1.top-8,
           SWP_NOMOVE or SWP_NOZORDER or SWP_SHOWWINDOW);
-
+(*
       wnd:=GetDlgItem(Dialog,IDC_DATA_HELP);
       GetWindowRect(wnd,rc1);
       SetWindowPos(wnd,0,0,0,rc.right-rc1.left-8, rc.bottom-rc1.top-8,
           SWP_NOMOVE or SWP_NOZORDER or SWP_SHOWWINDOW);
       InvalidateRect(wnd,nil,true);
+*)
 {$ENDIF}
     end;
 
@@ -869,6 +899,26 @@ begin
 
         BN_CLICKED: begin
           case loword(wParam) of
+{$IFDEF Miranda}
+            IDC_DATA_VARS: begin
+              i:=CB_GetData(GetDlgItem(Dialog,IDC_DATA_TYPE));
+              if i IN [SST_BYTE,SST_WORD,SST_DWORD,SST_QWORD,SST_NATIVE] then
+              begin
+                if IsDlgButtonChecked(Dialog,IDC_DATA_VARS)<>BST_UNCHECKED then
+                begin
+                  idchide:=IDC_DATA_EDTN;
+                  idcshow:=IDC_DATA_EDIT;
+                end
+                else
+                begin
+                  idchide:=IDC_DATA_EDIT;
+                  idcshow:=IDC_DATA_EDTN;
+                end;
+                ShowWindow(GetDlgItem(Dialog,idcshow),SW_SHOW);
+                ShowWindow(GetDlgItem(Dialog,idchide),SW_HIDE);
+              end;
+            end;
+{$ENDIF}
             IDC_DATA_NEW: begin
               wnd:=GetDlgItem(Dialog,IDC_DATA_FULL);
               i:=InsertLVLine(wnd);
