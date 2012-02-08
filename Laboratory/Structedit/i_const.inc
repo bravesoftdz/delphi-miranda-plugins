@@ -27,3 +27,4 @@ const
 
   IDC_DATA_SALGN    = 2016;
   IDC_DATA_SEP      = 2017;
+  IDC_DATA_EDTN     = 2018;

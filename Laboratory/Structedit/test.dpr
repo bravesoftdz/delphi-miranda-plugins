@@ -4,17 +4,16 @@ uses sedit,kol,strans,
 
 var
   CloseButton,form:PControl;
+  pc:pAnsiChar;
 
 {$i i_const.inc}
 {.$i i_opt_Struct.inc}
 
 procedure CloseClick(Dummy:Pointer;Sender:PControl);
 begin
-  MessageboxA(0,
-  EditStructure(
-    '0|byte|word (wchar) wAliasExample 1|b.arr (char[]) 13 as$DF|w.ptr 100|param|native',
-    form.GetWindowHandle),
-    '',0);
+
+  pc:=EditStructure(pc,form.GetWindowHandle);
+  MessageboxA(0,pc,'',0);
 end;
 
 begin
@@ -29,5 +28,6 @@ begin
     .Anchor(false,true,true,false)
   ;
   CloseButton.OnClick:=TOnEvent(MakeMethod(nil,@CloseClick));
+  pc:='0|byte|word (wchar) wAliasExample 1|b.arr (char[]) 13 as$DF|w.ptr 100|param|native';
   run(form);
 end.

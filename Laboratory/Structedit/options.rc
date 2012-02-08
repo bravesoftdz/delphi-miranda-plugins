@@ -32,7 +32,9 @@ FONT 8, "MS Shell Dlg", 0, 0
   COMBOBOX                      IDC_DATA_TYPE, 186,  24, 160, 96, CBS_DROPDOWNLIST | WS_VSCROLL
   EDITTEXT                      IDC_DATA_LEN , 186,  40,  40, 11
   LTEXT        "Data length"  , -1           , 230,  40, 116, 11, SS_CENTERIMAGE
-  EDITTEXT                      IDC_DATA_EDIT, 186,  55, 160, 82, ES_MULTILINE | ES_AUTOVSCROLL
+  EDITTEXT                      IDC_DATA_EDIT, 186,  55, 160, 82, 
+                                ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN
+  EDITTEXT                      IDC_DATA_EDTN, 186,  55, 160, 11
 #ifdef Miranda
   AUTOCHECKBOX "Use Variables", IDC_DATA_VARS, 186, 138, 160, 14
   AUTOCHECKBOX "Use MMI"      , IDC_DATA_MMI , 186, 152, 142, 14
