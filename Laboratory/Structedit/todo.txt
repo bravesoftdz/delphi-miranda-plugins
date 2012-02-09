@@ -32,3 +32,5 @@ miranda buttons
 ----------
 предусмотреть \| и \\ ?
 =============
+element.len = data size or value length
+hiword(lParam) = text(value) length
