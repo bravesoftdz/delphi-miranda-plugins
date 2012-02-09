@@ -3,7 +3,7 @@ unit strans;
 
 interface
 
-uses windows;
+uses windows{$IFDEF Miranda}, m_api{$ENDIF};
 // <align>|[<key>]<type> [(<type alias>)] [<alias>] [arr.len] [value]|
 const
   char_separator = '|';
@@ -102,7 +102,7 @@ procedure FreeStructure(var struct);
 
 implementation
 
-uses common{$IFDEF Miranda}, m_api, mirutils{$ENDIF};
+uses common{$IFDEF Miranda}, mirutils{$ENDIF};
 
 type
   pint_ptr = ^int_ptr;
@@ -309,67 +309,156 @@ begin
   end;
 end;
 
-procedure TranslateBlob(dst:pByte;src:pAnsiChar;isbyte:boolean);
+// within translation need to check array size limit
+// "limit" = array size, elements, not bytes!
+procedure TranslateBlob(dst:pByte;element:tOneElement);
 var
-  buf:array [0..7] of AnsiChar;
+  datatype:integer;
+  clen,len:integer;
+  src:pAnsiChar;
+  srcw:pWideChar absolute src;
+  buf:array [0..9] of AnsiChar;
+  bufw:array [0..4] of WideChar absolute buf;
 begin
   if src=nil then exit;
 
-  pint64(@buf)^:=0;
-  if isbyte then
+  if element.etype in [SST_WARR,SST_WPTR] then
   begin
-    dst^:=0;
-    while src^<>#0 do
-    begin
-      if (src^=char_hex) and ((src+1)^ in sHexNum) and ((src+2)^ in sHexNum) then
-      begin
-        buf[0]:=(src+1)^;
-        buf[1]:=(src+2)^;
-        inc(src,2+1);
-        dst^:=HexToInt(buf);
-      end
-      else
-      begin
-        dst^:=ord(src^);
-        inc(src);
-      end;
-      inc(dst);
-    end;
+    if (element.flags and EF_SCRIPT)<>0 then
+      datatype:=2  // Wide to Wide (if script done)
+    else
+      datatype:=1; // UTF to Wide
   end
-  else // u
-  begin
-    pword(dst)^:=0;
-    while (src^<>#0) and (src^<>char_separator) do
-    begin
-      if (src^=char_hex) and
-         ((src+1)^ in sHexNum) and
-         ((src+2)^ in sHexNum) then
+  else // Ansi to Ansi
+    datatype:=0;
+
+  pint64(@buf)^:=0;
+
+  src:=element.text;
+  case datatype of
+    0: begin // Ansi source for ansi
+      len:=StrLen(src);
+      if (element.len<>0) and (element.len<len) then
+        len:=element.len;
+
+      if StrScan(src,char_hex)=nil then
       begin
-        buf[0]:=(src+1)^;
-        buf[1]:=(src+2)^;
-        if ((src+3)^ in sHexNum) and
-           ((src+4)^ in sHexNum) then
-        begin
-          buf[2]:=(src+3)^;
-          buf[3]:=(src+4)^;
-          pWord(dst)^:=HexToInt(buf);
-          inc(src,4+1);
-          inc(dst,2);
-        end
-        else
-        begin
-          dst^:=HexToInt(buf);
-          inc(dst);
-          inc(src,2+1);
-        end;
+        move(src^,dst^,len);
       end
       else
       begin
-        pWideChar(dst)^:=CharUTF8ToWide(src);
-        inc(src,CharUTF8Len(src));
-        inc(dst,2);
+        while (src^<>#0) and (len>0) do
+        begin
+          if (src^=char_hex) and ((src+1)^ in sHexNum) and ((src+2)^ in sHexNum) then
+          begin
+            buf[0]:=(src+1)^;
+            buf[1]:=(src+2)^;
+            inc(src,2+1);
+            dst^:=HexToInt(buf);
+          end
+          else
+          begin
+            dst^:=ord(src^);
+            inc(src);
+          end;
+          inc(dst);
+          dec(len);
+        end;
       end;
     end;
+
+    1: begin // UTF8 source for unicode
+      // char_hex not found in UTF8 as Ansi - no reason to check as UTF8
+      // right, if char_hex is in ASCI7 only
+{
+      if StrScan(src,char_hex)=nil then
+      begin
+        // convert UTF8 to Wide without zero
+      end
+      else
+}
+      begin
+        len:=element.len;
+        while (src^<>#0) and (len>0) do
+        begin
+          if (src^=char_hex) and
+             ((src+1)^ in sHexNum) and
+             ((src+2)^ in sHexNum) then
+          begin
+            buf[0]:=(src+1)^;
+            buf[1]:=(src+2)^;
+            if ((src+3)^ in sHexNum) and
+               ((src+4)^ in sHexNum) then
+            begin
+              buf[2]:=(src+3)^;
+              buf[3]:=(src+4)^;
+              pWord(dst)^:=HexToInt(buf);
+              inc(src,4+1);
+              inc(dst,2);
+            end
+            else
+            begin
+              buf[2]:=#0;
+              dst^:=HexToInt(buf);
+              inc(dst);
+              inc(src,2+1);
+            end;
+          end
+          else
+          begin
+            pWideChar(dst)^:=CharUTF8ToWide(src,@clen);
+            inc(src,clen{CharUTF8Len(src)});
+            inc(dst,2);
+            dec(len);
+          end;
+        end;
+      end;
+    end;
+{$IFDEF Miranda}
+    2: begin // Unicode source for unicode
+      len:=StrLenW(srcw);
+      if (element.len<>0) and (element.len<len) then
+        len:=element.len;
+
+      if StrScanW(srcw,char_hex)=nil then
+      begin
+        move(srcw^,dst^,len*SizeOf(WideChar));
+      end
+      else
+      begin
+        while (srcw^<>#0) and (len>0) do
+        begin
+          if (srcw^=char_hex) and
+             (ord(srcw[1])<255) and (AnsiChar(srcw[1]) in sHexNum) and
+             (ord(srcw[2])<255) and (AnsiChar(srcw[2]) in sHexNum) then
+          begin
+            bufw[0]:=srcw[1];
+            bufw[1]:=srcw[2];
+            if (ord(srcw[3])<255) and (AnsiChar(srcw[3]) in sHexNum) and
+               (ord(srcw[4])<255) and (AnsiChar(srcw[4]) in sHexNum) then
+            begin
+              bufw[2]:=srcw[3];
+              bufw[3]:=srcw[4];
+              pWord(dst)^:=HexToInt(bufw);
+              inc(src,4);
+            end
+            else
+            begin
+              bufw[2]:=#0;
+              dst^:=HexToInt(bufw);
+              dec(dst);
+              inc(srcw,2);
+            end;
+          end
+          else
+            pWideChar(dst)^:=srcw^;
+          inc(srcw);
+          inc(dst,2);
+          dec(len);
+        end;
+      end;
+    end;
+{$ENDIF}
   end;
 end;
 
@@ -400,7 +489,7 @@ var
 {$IFDEF Miranda}
   buf:array [0..31] of WideChar;
   pLast: pWideChar;
-  value:pAnsiChar;
+  valuein,value:pWideChar;
 {$ENDIF}
   amount,align:integer;
   lmod,code,alen,ofs:integer;
@@ -506,8 +595,11 @@ begin
       // WPTR,WARR - Unicode
       // BYTE,WORD,DWORD,QWORD,NATIVE - ???
       // in value must be converted to unicode/ansi but not UTF8
-  //!!    value:=ParseVarString(value,aparam,pLast);
+      UTF8ToWide(element.text,valuein);
+      value:=ParseVarString(valuein,aparam,pLast);
+      mFreeMem(valuein);
       case element.etype of
+        // Numbers - just get number values
         SST_BYTE,
         SST_WORD,
         SST_DWORD,
@@ -520,13 +612,19 @@ begin
           element.value:=StrToInt(value);
           mFreeMem(value);
         end;
+        // Byte strings - replace Ansi value
         SST_BARR,
+        SST_BPTR: begin
+          mFreeMem(element.text);
+          WideToAnsi(value,pAnsiChar(element.text),MirandaCP);
+          mFreeMem(value);
+        end;
+        // Wide strings - replace UTF8 by Wide
         SST_WARR,
-        SST_BPTR,
         SST_WPTR: begin
         // really, need to translate Wide to UTF8 again?
         mFreeMem(element.text);
-        element.text:=value; //??
+        element.text:=value;
         end;
       end;
 {$ENDIF}
@@ -561,40 +659,56 @@ begin
         pint_ptr(res)^:=element.value;
       end;
       SST_BARR: begin
-        TranslateBlob(pByte(res),element.text,true);
+        TranslateBlob(pByte(res),element);
       end;
       SST_WARR: begin
-        TranslateBlob(pByte(res),element.text,false);
+        TranslateBlob(pByte(res),element);
       end;
       SST_BPTR: begin
+        if element.len=0 then
+          element.len:=StrLen(element.text);
+
         if element.len=0 then
           pint_ptr(res)^:=0
         else
         begin
+          inc(element.len); // with Zero at the end
 {$IFDEF Miranda}
           if (element.flags and EF_MMI)<>0 then
-            lsrc:=mmi.malloc(element.len+SizeOf(AnsiChar))
+            lsrc:=mmi.malloc(element.len*SizeOf(AnsiChar))
           else
 {$ENDIF}
-          mGetMem (lsrc ,element.len+SizeOf(AnsiChar));
-          FillChar(lsrc^,element.len+SizeOf(AnsiChar),0);
-          TranslateBlob(pByte(lsrc),element.text,true);
+          mGetMem (lsrc ,element.len*SizeOf(AnsiChar));
+          FillChar(lsrc^,element.len*SizeOf(AnsiChar),0);
+          TranslateBlob(pByte(lsrc),element);
           pint_ptr(res)^:=uint_ptr(lsrc);
         end;
       end;
       SST_WPTR: begin
         if element.len=0 then
+        begin
+{$IFDEF Miranda}
+          if (element.flags and EF_SCRIPT)<>0 then
+            element.len:=StrLenW(element.text)
+          else
+{$ENDIF}
+          element.len:=UTF8Len(element.text);
+        end;
+
+        if element.len=0 then
           pint_ptr(res)^:=0
         else
         begin
+          inc(element.len); // with Zero at the end
 {$IFDEF Miranda}
           if (element.flags and EF_MMI)<>0 then
-            lsrc:=mmi.malloc(element.len*SizeOf(WideChar)+SizeOf(WideChar))
+            lsrc:=mmi.malloc(element.len*SizeOf(WideChar))
           else
 {$ENDIF}
-          mGetMem (lsrc ,element.len*SizeOf(WideChar)+SizeOf(WideChar));
-          FillChar(lsrc^,element.len*SizeOf(WideChar)+SizeOf(WideChar),0);
-          TranslateBlob(pByte(lsrc),element.text,false);
+          mGetMem (lsrc ,element.len*SizeOf(WideChar));
+          FillChar(lsrc^,element.len*SizeOf(WideChar),0);
+//!!!!! variables script gives unicode, need to recognize it
+          TranslateBlob(pByte(lsrc),element);
           pint_ptr(res)^:=uint_ptr(lsrc);
         end;
       end;

@@ -322,24 +322,40 @@ begin
   end;
 
   case element.etype of
-    SST_LAST,SST_PARAM: ;
+    SST_LAST,SST_PARAM: begin
+      llen:=0;
+    end;
 
     SST_BYTE,SST_WORD,SST_DWORD,
     SST_QWORD,SST_NATIVE: begin
-      pc:=@element.svalue;
-      llen:=0;
-      while pc^<>#0 do
+{$IFDEF Miranda}
+      if (element.flags and EF_SCRIPT)<>0 then
       begin
-        tmp1[llen]:=WideChar(pc^);
-        inc(llen);
-        inc(pc);
-      end;
-      if llen>0 then //??
-      begin
-        tmp1[llen]:=#0;
         li.iSubItem:=col_data;
-        li.pszText :=@tmp1;
+        UTF8ToWide(element.text,pw);
+        llen:=StrLenW(pw);
+        li.pszText :=pw;
         SendMessageW(list,LVM_SETITEMW,0,lparam(@li));
+        mFreeMem(pw);
+      end
+      else
+{$ENDIF}
+      begin
+        pc:=@element.svalue;
+        llen:=0;
+        while pc^<>#0 do
+        begin
+          tmp1[llen]:=WideChar(pc^);
+          inc(llen);
+          inc(pc);
+        end;
+        if llen>0 then //??
+        begin
+          tmp1[llen]:=#0;
+          li.iSubItem:=col_data;
+          li.pszText :=@tmp1;
+          SendMessageW(list,LVM_SETITEMW,0,lparam(@li));
+        end;
       end;
     end;
 
@@ -356,7 +372,11 @@ begin
       if element.text<>nil then
       begin
         li.iSubItem:=col_data;
-        if element.etype in [SST_WARR,SST_WPTR] then
+        if (element.etype in [SST_WARR,SST_WPTR])
+{$IFDEF Miranda}
+           or ((element.flags and EF_SCRIPT)<>0)
+{$ENDIF}
+        then
         begin
           UTF8ToWide(element.text,pw);
         end
@@ -365,13 +385,14 @@ begin
           AnsiToWide(element.text,pw);
         end;
         li.pszText :=pw;
+        llen:=StrLenW(pw);
         SendMessageW(list,LVM_SETITEMW,0,lparam(@li));
         mFreeMem(pw);
       end;
     end;
   end;
 
-  i:=element.etype+(element.len shl 16);
+  i:=element.etype+(llen shl 16);
   LV_SetLParam(list,i,item);
 
   ListView_SetItemState(list,item,LVIS_FOCUSED or LVIS_SELECTED,
@@ -408,6 +429,7 @@ var
   pc:pWideChar;
   pc1:pAnsiChar;
   len:integer;
+  isScript:boolean;
 begin
   li.iItem:=item;
   
@@ -417,7 +439,7 @@ begin
   li.stateMask :=LVIS_STATEIMAGEMASK;
   SendMessageW(list,LVM_GETITEMW,item,lparam(@li));
   result:=loword(li.lParam); // element type
-  len   :=hiword(li.lParam); // array/pointer length
+  len   :=hiword(li.lParam); // text length
 
   if (li.state shr 12)>1 then // "return" value
   begin
@@ -430,12 +452,14 @@ begin
   li.iSubItem  :=col_flag;
   li.cchTextMax:=32;
   li.pszText   :=@buf;
+  isScript:=false;
   if SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li))>0 then
   begin
     if StrScanW(buf,char_script)<>nil then
     begin
       dst^:=char_script;
       inc(dst);
+      isScript:=true;
     end;
 
     if StrScanW(buf,char_mmi)<>nil then
@@ -478,16 +502,36 @@ begin
     SST_QWORD,SST_NATIVE: begin
       li.iSubItem  :=col_data;
       li.cchTextMax:=32;
+{$IFDEF Miranda}
+      if isScript then
+      begin
+        mGetMem(pc,(len+1)*SizeOf(WideChar));
+        li.pszText:=pc;
+      end
+      else
+{$ENDIF}
       li.pszText   :=@buf;
       if SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li))>0 then
       begin
         dst^:=' '; inc(dst);
-        pc:=@buf;
-        while pc^<>#0 do
+{$IFDEF Miranda}
+        if isScript then
         begin
-          dst^:=AnsiChar(pc^); inc(dst); inc(pc);
-        end;
+          WideToUTF8(pc,pc1);
+          dst:=StrCopyE(dst,pc1);
+          mFreeMem(pc1);
+          mFreeMem(pc);
+        end
+        else
+{$ENDIF}
+        begin
+          pc:=@buf;
+          while pc^<>#0 do
+          begin
+            dst^:=AnsiChar(pc^); inc(dst); inc(pc);
+          end;
 //        StrCopyW(dst,buf);
+        end;
       end;
     end;
 
@@ -519,10 +563,15 @@ begin
         if pc^<>#0 then
         begin
           dst^:=' '; inc(dst);
-          if result in [SST_WARR,SST_WPTR] then
+          if (result in [SST_WARR,SST_WPTR])
+{$IFDEF Miranda}
+            or isScript
+{$ENDIF}
+           then
             WideToUTF8(pc,pc1)
           else
             WideToAnsi(pc,pc1);
+
           dst:=StrCopyE(dst,pc1);
           mFreeMem(pc1);
         end;
@@ -624,12 +673,15 @@ end;
 procedure FillLVData(Dialog:HWND;list:HWND;item:integer);
 var
   i:dword;
-  p:array [0..1023] of WideChar;
+  p:pWideChar;
   b,b1:boolean;
   idcshow,idchide:integer;
   li:TLVITEMW;
+  len:integer;
 begin
-  i:=loword(LV_GetLParam(list,item));
+  len:=LV_GetLParam(list,item);
+  i  :=loword(len);
+  len:=hiword(len);
   idcshow:=IDC_DATA_EDIT;
   idchide:=IDC_DATA_EDTN;
 
@@ -656,8 +708,10 @@ begin
     b :=false;
     b1:=false;
   end;
-  li.cchTextMax:=HIGH(p)+1;
-  li.pszText   :=@p;
+  
+  mGetMem(p,(len+1)*SizeOf(WideChar));
+  li.cchTextMax:=len;
+  li.pszText   :=p;
   if b then
   begin
 {$IFDEF Miranda}
@@ -699,6 +753,8 @@ begin
   else
     p[0]:=#0;
   SetDlgItemTextW(Dialog,IDC_DATA_LEN,p);
+
+  mFreeMem(p);
 
   ShowWindow(GetDlgItem(Dialog,idcshow),SW_SHOW);
   ShowWindow(GetDlgItem(Dialog,idchide),SW_HIDE);
@@ -748,6 +804,7 @@ begin
   tmp:=nil;
   case ltype of
     SST_LAST,SST_PARAM: begin
+      j:=0;
     end;
 
     SST_BYTE,SST_WORD,SST_DWORD,
@@ -760,6 +817,7 @@ begin
         idc:=IDC_DATA_EDTN;
 
       tmp:=GetDlgText(Dialog,idc);
+      j:=StrLenW(tmp);
       LV_SetItemW(list,tmp,item,col_data);
     end;
 
@@ -769,13 +827,11 @@ begin
       LV_SetItemW(list,buf,item,col_len);
 
       tmp:=GetDlgText(Dialog,IDC_DATA_EDIT);
+      j:=StrLenW(tmp);
       LV_SetItemW(list,tmp,item,col_data);
-
-      j:=StrLenW(tmp) shl 16;
-      if (ltype=SST_WARR) or (ltype=SST_WPTR) then j:=j*2;
-      ltype:=ltype or j;
     end;
   end;
+  ltype:=ltype or (j shl 16);
   mFreeMem(tmp);
   LV_SetLParam(list,ltype,item);
 end;
