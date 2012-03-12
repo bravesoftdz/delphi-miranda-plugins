@@ -1974,7 +1974,7 @@ begin
           h:=PluginLink^.CallService(MS_FP_GETCLIENTICON,tlparam(@buf),1);
           ListView_GetSubItemRect(grid,lplvcd^.nmcd.dwItemSpec,lplvcd^.iSubItem,LVIR_ICON,@rc);
           DrawIconEx(lplvcd^.nmcd.hdc,rc.left+1,rc.top,h,16,16,0,0,DI_NORMAL);
-          DestroyIcon(h);
+//??????          DestroyIcon(h);
         end;
         result:=CDRF_SKIPDEFAULT;
       end;

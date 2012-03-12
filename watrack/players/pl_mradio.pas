@@ -6,7 +6,6 @@ interface
 
 implementation
 uses m_api,dbsettings,windows,common,srv_player,wat_api,io;
-{$i player_ico.inc}
 
 const
   strUnknown:PwideChar = 'Unknown';
@@ -332,7 +331,7 @@ var
 procedure InitLink;
 begin
   if plRec.Icon=0 then
-    plRec.Icon:=LoadImage(hInstance,MAKEINTRESOURCE(ICO_MRADIO),IMAGE_ICON,16,16,0);
+    plRec.Icon:=LoadImage(hInstance,'ICO_MRADIO',IMAGE_ICON,16,16,0);
 
   LocalPlayerLink.Next:=PlayerLink;
   LocalPlayerLink.This:=@plRec;

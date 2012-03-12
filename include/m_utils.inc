@@ -312,7 +312,7 @@ const
   Creates a directory tree (even more than one directories levels are missing) 0.7.0+
   wParam=0 (unused)
   lParam=pszPath - directory to be created
-  Always returns 0
+  Returns 0 on success error code otherwise
   Unicode version is available since 0.7.0
 }
   MS_UTILS_CREATEDIRTREE :PAnsiChar = 'Utils/CreateDirTree';

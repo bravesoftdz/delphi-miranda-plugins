@@ -341,6 +341,20 @@ const
 }
   MS_WAT_PLAYER:PAnsiChar = 'WATrack/Player';
 
+// --------- MyShows.ru ---------
+
+{
+  Toggle MyShows scrobbling status
+  wParam,lParam=0
+  Returns: previous state
+}
+const
+  MS_WAT_MYSHOWS:pAnsiChar = 'WATrack/MyShows';
+
+
+const
+  MS_WAT_MYSHOWSINFO:pAnsiChar = 'WATrack/MyShowsInfo';
+
 // --------- Last FM  ---------
 
 {

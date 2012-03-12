@@ -475,7 +475,7 @@ end;
 
 function TranslateMenu(hMenu: HMENU): int_ptr;
 begin
-  result := PluginLink^.CallService(MS_LANGPACK_TRANSLATEMENU,LPARAM(hMenu),hLangpack);
+  result := PluginLink^.CallService(MS_LANGPACK_TRANSLATEMENU,WPARAM(hMenu),hLangpack);
 end;
 
 function Langpack_PCharToTChar(astr:PAnsiChar):int_ptr;

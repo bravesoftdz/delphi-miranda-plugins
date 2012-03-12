@@ -199,7 +199,7 @@ begin
   sid.cy:=16;
   sid.szSection.a:='WATrack';
 
-  sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_LAST),IMAGE_ICON,16,16,0);
+  sid.hDefaultIcon   :=LoadImage(hInstance,'IDI_LAST',IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoLastFM;
   sid.szDescription.a:='LastFM';
   PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
@@ -231,7 +231,7 @@ var
 
 function InitProc(aGetStatus:boolean=false):integer;
 begin
-  slastinf:=PluginLink^.CreateServiceFunction(MS_WAT_LASTFMInfo,@SrvLastFMInfo);
+  slastinf:=PluginLink^.CreateServiceFunction(MS_WAT_LASTFMINFO,@SrvLastFMInfo);
   if aGetStatus then
   begin
     if GetModStatus=0 then

@@ -14,7 +14,7 @@
   Key Objects Library (C) 2000 by Vladimir Kladov.
 
 ****************************************************************
-* VERSION 3.16
+* VERSION 3.17
 ****************************************************************
 
   K.O.L. - is a set of objects and functions to create small programs
@@ -70,6 +70,8 @@
 {$IFDEF WIN} {$IFDEF GDI}
   {$DEFINE WIN_GDI}
 {$ENDIF GDI} {$ENDIF WIN}
+
+{$INCLUDE delphidef.inc}
 
 {$IFDEF WIN_GDI}
   //test
@@ -715,7 +717,7 @@ type
   {* }
 
    PPointerList = ^TPointerList;
-   TPointerList = array[0..MaxInt div SizeOf(Pointer) - 1] of Pointer;
+   TPointerList = array[0..MaxInt div 4 - 1] of Pointer;
 
   TObjectMethod = procedure of object;
   {* }
@@ -1902,6 +1904,12 @@ type
     property LineValue[ Idx: Integer ]: KOLWideString read GetLineValue write SetLineValue;
     property NameDelimiter: WideChar read fNameDelim write fNameDelim;
     procedure OptimizeForRead;
+  protected // ++++++++++++++ by rdnks
+    procedure SetValue(const AName, Value: KOLWideString);
+    function GetValue(const AName: KOLWideString): KOLWideString;
+  public
+    function IndexOfName(AName: KOLWideString): Integer;
+    property Values[const AName: KOLWideString]: KOLWideString read GetValue write SetValue;
   end;
 
   PWStrListEx = ^TWStrListEx;
@@ -2430,7 +2438,7 @@ function Color2Color15( Color: TColor ): WORD;
 
 var    // New TFont instances are intialized with the values in this structure:
   DefFont: TGDIFont = (
-     Height: -11;
+     Height: 0;
      Width: 0;
      Escapement: 0;
      Orientation: 0;
@@ -2448,7 +2456,7 @@ var    // New TFont instances are intialized with the values in this structure:
              #0, #0, #0, #0, #0, #0, #0, #0, #0, #0, #0, #0, #0, #0, #0, #0, #0,
              #0, #0, #0, #0, #0, #0, #0, #0, #0 );
      {$ELSE}
-     Name: 'Tahoma';
+     Name: 'System';
      {$ENDIF}
   );
   DefFontColor: TColor = clWindowText;
@@ -11558,8 +11566,6 @@ var _AnsiCompareStrNoCaseA: function(S1, S2: PAnsiChar): Integer =
 {* The same, but for PChar ANSI strings }
 function AnsiCompareTextA( const S1, S2: AnsiString ): Integer;
 {* }
-function CompareAnsiCase( const S1, S2: PAnsiChar ): Integer;
-function CompareAnsiNoCase( const S1, S2: PAnsiChar ): Integer;
 
 {$IFDEF WIN}
 {$IFNDEF _FPC}
@@ -11727,10 +11733,9 @@ const KOI8_Rus: array[ #$C0..#$FF ] of AnsiChar = (
       );
 
 function StrPCopy(Dest: PAnsiChar; const Source: Ansistring): PAnsiChar;
-{* Copyes Pascal-style string into null-terminaed one. }
+{* Copyes string into null-terminated. }
 function StrLCopy(Dest: PAnsiChar; const Source: PAnsiChar; MaxLen: Cardinal): PAnsiChar;
-{* Copyes first MaxLen characters of Pascal-style string into
-   null-terminated one. }
+{* Copyes first MaxLen characters of the Source string into null-terminated Dest. }
 
 function DelimiterLast( const Str, Delimiters: KOLString ): Integer;
 {* Returns index of the last of delimiters given by same named parameter
@@ -11956,11 +11961,15 @@ function Str2DateTimeFmt( const sFmtStr, sS: KOLString ): TDateTime;
    E.g., 'D, yyyy/MM/dd h:mm:ss'.
    See also Str2DateTimeShort function.
   }
+function Str2TimeFmt(const sFmtStr, sS: KOLString): TDateTime;
+{* Same as above but for time only }
 function Str2DateTimeShort( const S: KOLString ): TDateTime;
 {* Restores date and time from string correspondently to current user locale. }
 function Str2DateTimeShortEx( const S: KOLString ): TDateTime;
 {* Like Str2DateTimeShort above, but uses locale defined date and time
-   separators to avoid recognizing time as a date in some cases.
+   separators to avoid recognizing time as a date in some cases.}
+function Str2TimeShort(const S: KOLString): TDateTime;
+{* Like Str2DateTimeShort but for time only.
 |<hr>
 
   <R File and directory routines>
@@ -12435,8 +12444,6 @@ procedure SortArray( const Data: Pointer; const uNElem: Dword;
 {* Like SortData, but faster and allows to sort only contigous arrays of
    dwords (or integers or pointers occupying for 4 bytes for each item. }
 {$ENDIF}
-
-procedure SwapStrListExItems( const Sender: Pointer; const e1, e2: DWORD );
 
 procedure SwapListItems( const L: Pointer; const e1, e2: DWORD );
 {* Use this function as the last parameter for SortData call when a PList
@@ -25599,6 +25606,11 @@ begin
   SystemTime2DateTime( ST, Result );
 end;
 
+function Str2TimeFmt(const sFmtStr, sS: KOLString): TDateTime;
+begin
+    Result := Frac(Str2DateTimeFmt( 'y/M/d ' + sFmtStr, '2000/1/1 ' + sS ));
+end;
+
 var FmtBuf: PKOLChar;
     DateSeparator : KOLChar = #0; // + ECM
 
@@ -25636,9 +25648,14 @@ begin
   Result := Str2DateTimeFmt( FmtStr + ' ' + FmtStr2, S );
 end;
 
+function Str2TimeShort(const S: KOLString): TDateTime;
+begin
+   Result := Frac( Str2DateTimeShort( Date2StrFmt( '', Now ) + ' ' + S ) );
+end;
+
 // + ECM
 function Str2DateTimeShortEx( const S: KOLString ): TDateTime;
-var St: KOLString;
+var
   Buff: Array[0..1] of KOLChar;
 begin
   if DateSeparator = #0 then
@@ -25646,10 +25663,11 @@ begin
     if GetLocaleInfo(GetThreadLocale,LOCALE_SDATE,Buff,2) > 0 then
       DateSeparator := Buff[0];
   end;
-  St := S;
   if Pos(DateSeparator,S) = 0 then
-    St := '0.0.0 '+S;
-  Result := Str2DateTimeShort(St);
+    //St := '0.0.0 '+S;
+    Result := Str2TimeShort(S)
+  else
+    Result := Str2DateTimeShort(S);
 end;
 
 ///////////////////////////////////////////////////////////////////////
@@ -35703,6 +35721,7 @@ begin
                LogFileOutput( GetStartDir + 'es_debug.txt',
                               'DESTROYING HWND:' + Int2Str( I ) );
              {$ENDIF}
+             (* -- moved to WM_NCDESTROY -- VK + Alexey Kirov, 23.02.2012
              {$IFnDEF SMALLER_CODE}
                  {$IFDEF USE_PROP}
                  SetProp( I, ID_SELF, 0 );
@@ -35710,6 +35729,7 @@ begin
                  SetWindowLong( I, GWL_USERDATA, 0 );
                  {$ENDIF}
              {$ENDIF}
+             *)
                DestroyWindow( I );
            end;
          end;
@@ -36552,6 +36572,7 @@ begin
                        end;
                        Default;
                      end;
+                   (*
                    {$IFDEF USE_PROP}
                    WM_NCDESTROY:
                              begin
@@ -36559,23 +36580,33 @@ begin
                                //RefDec;
                              end;
                    {$ENDIF}
-                   WM_DESTROY:
-                             begin
-                               {$IFDEF USE_FLAGS} include( fFlagsG2, G2_BeginDestroying );
-                               {$ELSE} fBeginDestroying := TRUE; {$ENDIF}
-                               {$IFDEF SAFE_CODE}
-                                       (*{$IFDEF USE_PROP}
-                                       PropInt[ ID_SELF ] := 0;
-                                       {$ELSE}
-                                       SetWindowLong( fHandle, GWL_USERDATA, 0 );
-                                       {$ENDIF}*)
+                   *)
+                   WM_NCDESTROY:
+                       {$IFnDEF SMALLER_CODE}
+                       if  fHandle = Msg.hwnd then
+                       {$ENDIF}
+                       begin
+                           {$IFnDEF SMALLER_CODE}
+                               {$IFDEF USE_PROP}
+                               RemoveProp( fHandle, ID_SELF ); //********* Added By M.Gerasimov
+                               {$ELSE}
+                               SetWindowLong( fHandle, GWL_USERDATA, 0 ); // VK + Alexey Kirov, 23.02.2012
                                {$ENDIF}
-                               Default;
-                               {$IFDEF INPACKAGE}
-                               LogOK;
-                               {$ENDIF INPACKAGE}
-                               Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
-                             end;
+                           {$ENDIF} //-------------------------------------------
+                           Default;
+                           Exit;
+                       end;
+                   WM_DESTROY:
+                       {$IFnDEF SMALLER_CODE}
+                       if  fHandle = Msg.hwnd then
+                       {$ENDIF}
+                       begin
+                           {$IFDEF USE_FLAGS} include( fFlagsG2, G2_BeginDestroying );
+                           {$ELSE} fBeginDestroying := TRUE; {$ENDIF}
+                           Default;
+                           {$IFDEF INPACKAGE} LogOK; {$ENDIF INPACKAGE}
+                           Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
+                       end;
                    WM_SIZE:  begin
                                 {$IFDEF INPACKAGE}
                                 Log( 'WM_SIZE >>> Default' );
@@ -43307,7 +43338,7 @@ begin
         begin
             p := ItemPtrs[ i ];
             inc( p, L );
-/// WTF?? Dufa            while (p^ <> #0) and (p^ <= ' ') do inc( p );
+            while (p^ <> #0) and (p^ <= ' ') do inc( p );
             if  p^ = fNameDelim then
             begin
                 Result := i; exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
@@ -44309,6 +44340,48 @@ begin
     if  fList <> nil then
         fList.OptimizeForRead;
     {$ENDIF}
+end;
+
+function TWStrList.IndexOfName(AName: KOLWideString): Integer;
+var i: Integer;
+   L: Integer;
+   fCount: integer;
+begin
+   Result:=-1;
+   L := Length( AName );
+   if L > 0 then
+   begin
+     AName := WLowerCase( AName ) + fNameDelim;
+     Inc( L );
+     fCount := GetCount - 1;
+     for i := 0 to fCount do
+     begin
+       if _WStrLComp( PWideChar( WLowerCase( ItemPtrs[ i ] ) ), PWideChar( AName ), L ) = 0 then
+       begin
+         Result:=i; exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>}
+       end;
+     end;
+   end;
+end;
+ 
+procedure TWStrList.SetValue(const AName, Value: KOLWideString);
+var
+ I: Integer;
+begin
+ I := IndexOfName(AName);
+ if i=-1
+ then Add( AName + fNameDelim + Value )
+ else Items[i] := AName + fNameDelim + Value;
+end;
+
+function TWStrList.GetValue(const AName: KOLWideString): KOLWideString;
+var
+ i: Integer;
+begin
+ I := IndexOfName(AName);
+ if I >= 0
+ then Result := Copy(Items[i], Length(AName) + 2, Length(Items[i])-Length(AName)-1)
+ else Result := '';
 end;
 
 { TWStrListEx }

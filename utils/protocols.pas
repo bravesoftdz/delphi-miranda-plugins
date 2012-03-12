@@ -92,7 +92,6 @@ type
 var
   protos:pMyProtos;
   NumProto:cardinal;
-  NASPresents:bool;
   hAccounts:THANDLE;
 
 function FindProto(proto:PAnsiChar):uint_ptr;
@@ -460,10 +459,6 @@ begin
     inc(proto);
   end;
 
-  if PluginLink^.ServiceExists(MS_NAS_SETSTATEA)<>0 then
-    NASPresents:=true
-  else
-    NASPresents:=false;
 {
   if deepscan then
   begin
@@ -504,7 +499,7 @@ begin
     result:=-1;
   if txt<>PAnsiChar(-1) then
   begin
-    if not NASPresents then
+    if PluginLink^.ServiceExists(MS_NAS_SETSTATEA)=0 then
       result:=CallProtoService(proto,PS_SETAWAYMSG,abs(status),lparam(txt))
     else
     begin

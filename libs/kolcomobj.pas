@@ -30,18 +30,18 @@ type
   protected
     function CountObject(Created: Boolean): Integer; virtual; abstract;
     function CountFactory(Created: Boolean): Integer; virtual; abstract;
-    function GetHelpFileName: string; virtual; abstract;
-    function GetServerFileName: string; virtual; abstract;
-    function GetServerKey: string; virtual; abstract;
-    function GetServerName: string; virtual; abstract;
+    function GetHelpFileName: AnsiString; virtual; abstract;
+    function GetServerFileName: AnsiString; virtual; abstract;
+    function GetServerKey: AnsiString; virtual; abstract;
+    function GetServerName: AnsiString; virtual; abstract;
     function GetStartSuspended: Boolean; virtual; abstract;
     function GetTypeLib: ITypeLib; virtual; abstract;
-    procedure SetHelpFileName(const Value: string); virtual; abstract;
+    procedure SetHelpFileName(const Value: AnsiString); virtual; abstract;
   public
-    property HelpFileName: string read GetHelpFileName write SetHelpFileName;
-    property ServerFileName: string read GetServerFileName;
-    property ServerKey: string read GetServerKey;
-    property ServerName: string read GetServerName;
+    property HelpFileName: AnsiString read GetHelpFileName write SetHelpFileName;
+    property ServerFileName: AnsiString read GetServerFileName;
+    property ServerKey: AnsiString read GetServerKey;
+    property ServerName: AnsiString read GetServerName;
     property TypeLib: ITypeLib read GetTypeLib;
     property StartSuspended: Boolean read GetStartSuspended;
   end;
@@ -186,8 +186,8 @@ type
     FComServer: TComServerObject;
     FComClass: TClass;
     FClassID: TGUID;
-    FClassName: string;
-    FDescription: string;
+    FClassName: AnsiString;
+    FDescription: AnsiString;
     FErrorIID: TGUID;
     FInstancing: TClassInstancing;
     FLicString: WideString;
@@ -196,7 +196,7 @@ type
     FSupportsLicensing: Boolean;
     FThreadingModel: TThreadingModel;
   protected
-    function GetProgID: string; virtual;
+    function GetProgID: AnsiString; virtual;
     function GetLicenseString: WideString; virtual;
     function HasMachineLicense: Boolean; virtual;
     function ValidateUserLicense(const LicStr: WideString): Boolean; virtual;
@@ -215,20 +215,20 @@ type
       const iid: TIID; const bstrKey: WideString; out vObject): HResult; stdcall;
   public
     constructor Create(ComServer: TComServerObject; ComClass: TComClass;
-      const ClassID: TGUID; const ClassName, Description: string;
+      const ClassID: TGUID; const ClassName, Description: AnsiString;
       Instancing: TClassInstancing; ThreadingModel: TThreadingModel {= tmSingle} );
     destructor Destroy; override;
     function CreateComObject(const Controller: IUnknown): TComObject; virtual;
     procedure RegisterClassObject;
     procedure UpdateRegistry(Register: Boolean); virtual;
     property ClassID: TGUID read FClassID;
-    property ClassName: string read FClassName;
+    property ClassName: AnsiString read FClassName;
     property ComClass: TClass read FComClass;
     property ComServer: TComServerObject read FComServer;
-    property Description: string read FDescription;
+    property Description: AnsiString read FDescription;
     property ErrorIID: TGUID read FErrorIID write FErrorIID;
     property LicString: WideString read FLicString write FLicString;
-    property ProgID: string read GetProgID;
+    property ProgID: AnsiString read GetProgID;
     property Instancing: TClassInstancing read FInstancing;
     property ShowErrors: Boolean read FShowErrors write FShowErrors;
     property SupportsLicensing: Boolean read FSupportsLicensing write FSupportsLicensing;
@@ -370,20 +370,20 @@ type
   private
     FErrorCode: HRESULT;
   public
-    constructor Create(const Message: string; ErrorCode: HRESULT;
+    constructor Create(const Message: AnsiString; ErrorCode: HRESULT;
       HelpContext: Integer);
     property ErrorCode: HRESULT read FErrorCode write FErrorCode;
   end;}
 
   EOleException = EOleSysError; { class(EOleSysError)
   private
-    FSource: string;
-    FHelpFile: string;
+    FSource: AnsiString;
+    FHelpFile: AnsiString;
   public
-    constructor Create(const Message: string; ErrorCode: HRESULT;
-      const Source, HelpFile: string; HelpContext: Integer);
-    property HelpFile: string read FHelpFile write FHelpFile;
-    property Source: string read FSource write FSource;
+    constructor Create(const Message: AnsiString; ErrorCode: HRESULT;
+      const Source, HelpFile: AnsiString; HelpContext: Integer);
+    property HelpFile: AnsiString read FHelpFile write FHelpFile;
+    property Source: AnsiString read FSource write FSource;
   end;}
 
   EOleRegistrationError = EOleError; { class(EOleError);}
@@ -415,17 +415,17 @@ procedure DispatchInvokeError(Status: Integer; const ExcepInfo: TExcepInfo);
 
 function CreateComObject(const ClassID: TGUID): IUnknown;
 function CreateRemoteComObject(const MachineName: WideString; const ClassID: TGUID): IUnknown;
-function CreateOleObject(const ClassName: string): IDispatch;
-function GetActiveOleObject(const ClassName: string): IDispatch;
+function CreateOleObject(const ClassName: AnsiString): IDispatch;
+function GetActiveOleObject(const ClassName: AnsiString): IDispatch;
 
 procedure OleError(ErrorCode: HResult);
 procedure OleCheck(Result: HResult);
 
-function StringToGUID(const S: string): TGUID;
-function GUIDToString(const ClassID: TGUID): string;
+function StringToGUID(const S: AnsiString): TGUID;
+function GUIDToString(const ClassID: TGUID): AnsiString;
 
-function ProgIDToClassID(const ProgID: string): TGUID;
-function ClassIDToProgID(const ClassID: TGUID): string;
+function ProgIDToClassID(const ProgID: AnsiString): TGUID;
+function ClassIDToProgID(const ClassID: TGUID): AnsiString;
 
 procedure CreateRegKey(const Key, ValueName, Value: KOLstring);
 procedure DeleteRegKey(const Key: KOLstring);
@@ -936,7 +936,7 @@ end;
 function TComObject.SafeCallException(ExceptObject: TObject;
   ExceptAddr: Pointer): HResult;
 var
-  Msg: string;
+  Msg: AnsiString;
   Handled: Integer;
 begin
   Handled := 0;
@@ -1011,7 +1011,7 @@ end;
 
 constructor TComObjectFactory.Create(ComServer: TComServerObject;
   ComClass: TComClass; const ClassID: TGUID; const ClassName,
-  Description: string; Instancing: TClassInstancing;
+  Description: AnsiString; Instancing: TClassInstancing;
   ThreadingModel: TThreadingModel);
 begin
   IsMultiThread := IsMultiThread or (ThreadingModel <> tmSingle);
@@ -1043,7 +1043,7 @@ begin
   Result := TComClass(FComClass).CreateFromFactory(Self, Controller);
 end;
 
-function TComObjectFactory.GetProgID: string;
+function TComObjectFactory.GetProgID: AnsiString;
 begin
   if FClassName <> '' then
     Result := FComServer.ServerName + '.' + FClassName else
@@ -1063,10 +1063,10 @@ end;
 
 procedure TComObjectFactory.UpdateRegistry(Register: Boolean);
 const
-  ThreadStrs: array[TThreadingModel] of string =
+  ThreadStrs: array[TThreadingModel] of AnsiString =
     ('', 'Apartment', 'Free', 'Both');
 var
-  ClassID, ProgID, ServerKeyName, ShortFileName: string;
+  ClassID, ProgID, ServerKeyName, ShortFileName: AnsiString;
 begin
   if FInstancing = ciInternal then Exit;
   ClassID := GUIDToString(FClassID);
@@ -1310,7 +1310,7 @@ end;
 
 procedure TTypedComObjectFactory.UpdateRegistry(Register: Boolean);
 var
-  ClassKey: string;
+  ClassKey: AnsiString;
   TypeLib: ITypeLib;
   TLibAttr: PTLibAttr;
 begin
@@ -1511,7 +1511,7 @@ const
   atTypeMask = $7F;
   atByRef    = $80;
 
-{function TrimPunctuation(const S: string): string;
+{function TrimPunctuation(const S: AnsiString): AnsiString;
 var
   P: PChar;
 begin
@@ -1526,10 +1526,10 @@ end;}
 
 { EOleSysError }
 
-{constructor EOleSysError.Create(const Message: string;
+{constructor EOleSysError.Create(const Message: AnsiString;
   ErrorCode: HRESULT; HelpContext: Integer);
 var
-  S: string;
+  S: AnsiString;
 begin
   S := Message;
   if S = '' then
@@ -1543,8 +1543,8 @@ end;}
 
 { EOleException }
 
-{constructor EOleException.Create(const Message: string; ErrorCode: HRESULT;
-  const Source, HelpFile: string; HelpContext: Integer);
+{constructor EOleException.Create(const Message: AnsiString; ErrorCode: HRESULT;
+  const Source, HelpFile: AnsiString; HelpContext: Integer);
 begin
   inherited Create(TrimPunctuation(Message), ErrorCode, HelpContext);
   FSource := Source;
@@ -1566,16 +1566,16 @@ begin
   if not Succeeded(Result) then OleError(Result);
 end;
 
-{ Convert a string to a GUID }
+{ Convert a AnsiString to a GUID }
 
-function StringToGUID(const S: string): TGUID;
+function StringToGUID(const S: AnsiString): TGUID;
 begin
   OleCheck(CLSIDFromString(PWideChar(WideString(S)), Result));
 end;
 
-{ Convert a GUID to a string }
+{ Convert a GUID to a AnsiString }
 
-function GUIDToString(const ClassID: TGUID): string;
+function GUIDToString(const ClassID: TGUID): AnsiString;
 var
   P: PWideChar;
 begin
@@ -1586,14 +1586,14 @@ end;
 
 { Convert a programmatic ID to a class ID }
 
-function ProgIDToClassID(const ProgID: string): TGUID;
+function ProgIDToClassID(const ProgID: AnsiString): TGUID;
 begin
   OleCheck(CLSIDFromProgID(PWideChar(WideString(ProgID)), Result));
 end;
 
 { Convert a class ID to a programmatic ID }
 
-function ClassIDToProgID(const ClassID: TGUID): string;
+function ClassIDToProgID(const ClassID: TGUID): AnsiString;
 var
   P: PWideChar;
 begin
@@ -1691,7 +1691,7 @@ begin
   Result := MQI.itf;
 end;
 
-function CreateOleObject(const ClassName: string): IDispatch;
+function CreateOleObject(const ClassName: AnsiString): IDispatch;
 var
   ClassID: TCLSID;
 begin
@@ -1700,7 +1700,7 @@ begin
     CLSCTX_LOCAL_SERVER, IDispatch, Result));
 end;
 
-function GetActiveOleObject(const ClassName: string): IDispatch;
+function GetActiveOleObject(const ClassName: AnsiString): IDispatch;
 var
   ClassID: TCLSID;
   Unknown: IUnknown;
@@ -1834,7 +1834,7 @@ type
   TVarArg = array[0..3] of DWORD;
   TStringDesc = record
     BStr: PWideChar;
-    PStr: PString;
+    PStr: pAnsiString;
   end;
 var
   I, J, K, ArgType, ArgCount, StrCount, DispID, InvKind, Status: Integer;
@@ -1869,13 +1869,13 @@ begin
             with Strings[StrCount] do
               if VarFlag <> 0 then
               begin
-                BStr := StringToOleStr(PString(ParamPtr^)^);
-                PStr := PString(ParamPtr^);
+                BStr := StringToOleStr(pAnsiString(ParamPtr^)^);
+                PStr := pAnsiString(ParamPtr^);
                 ArgPtr^[0] := varOleStr or varByRef;
                 ArgPtr^[2] := Integer(@BStr);
               end else
               begin
-                BStr := StringToOleStr(PString(ParamPtr)^);
+                BStr := StringToOleStr(pAnsiString(ParamPtr)^);
                 PStr := nil;
                 ArgPtr^[0] := varOleStr;
                 ArgPtr^[2] := Integer(BStr);
@@ -1896,7 +1896,7 @@ begin
             begin
               with Strings[StrCount] do
               begin
-                BStr := StringToOleStr(string(PVarData(ParamPtr^)^.VString));
+                BStr := StringToOleStr(AnsiString(PVarData(ParamPtr^)^.VString));
                 PStr := nil;
                 ArgPtr^[0] := varOleStr;
                 ArgPtr^[2] := Integer(BStr);
@@ -1964,7 +1964,7 @@ end;
 
 { Call GetIDsOfNames method on the given IDispatch interface }
 
-procedure GetIDsOfNames(const Dispatch: IDispatch; Names: PChar;
+procedure GetIDsOfNames(const Dispatch: IDispatch; Names: PAnsiChar;
   NameCount: Integer; DispIDs: PDispIDList);
 
   procedure RaiseNameException;
@@ -1977,7 +1977,7 @@ type
   TNamesArray = array[0..0] of PWideChar;
 var
   N, SrcLen, DestLen: Integer;
-  Src: PChar;
+  Src: PAnsiChar;
   Dest: PWideChar;
   NameRefs: PNamesArray;
   StackTop: Pointer;
