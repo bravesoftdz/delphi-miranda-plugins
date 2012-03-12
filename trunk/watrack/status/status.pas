@@ -44,6 +44,9 @@ end;
 
 // ------------ base interface functions -------------
 
+var
+  mStatus:twModule;
+
 function InitProc(aGetStatus:boolean=false):integer;
 begin
   if aGetStatus then
@@ -64,6 +67,8 @@ begin
   hINS:=PluginLink^.CreateServiceFunction(MS_WAT_INSERT,@InsertProc);
   reghotkey;
   plStatusHook:=PluginLink^.HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);
+
+//  mStatus.ModuleStat:=1;
 
 //  if PluginLink^.ServiceExists(MS_LISTENINGTO_GETPARSEDTEXT)<>0 then
 //    hLTo:=PluginLink^.CreateServiceFunction(MS_LISTENINGTO_GETPARSEDTEXT,@ListenProc);
@@ -86,6 +91,8 @@ begin
   PluginLink^.UnhookEvent(plStatusHook);
   FreeProtoList;
   FreeTemplates;
+
+//  mStatus.ModuleStat:=0;
 end;
 
 function AddOptionsPage(var tmpl:pAnsiChar;var proc:pointer;var name:PAnsiChar):integer;
@@ -119,9 +126,6 @@ begin
   result:=count;
 end;
 
-var
-  mStatus:twModule;
-
 procedure Init;
 begin
   mStatus.Next      :=ModuleLink;
@@ -129,6 +133,7 @@ begin
   mStatus.DeInit    :=@DeInitProc;
   mStatus.AddOption :=@AddOptionsPage;
   mStatus.ModuleName:='Statuses';
+//  mStatus.ModuleStat:=0;
   ModuleLink        :=@mStatus;
 end;
 

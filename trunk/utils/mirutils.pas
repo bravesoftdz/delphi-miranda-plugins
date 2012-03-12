@@ -38,8 +38,8 @@ function GetContactProtoAcc(hContact:THANDLE):PAnsiChar;
 function  IsMirandaUser(hContact:THANDLE):integer; // >0=Miranda; 0=Not miranda; -1=unknown
 procedure ShowContactDialog(hContact:THANDLE;DblClk:boolean=true;anystatus:boolean=true);
 function  FindContactHandle(proto:pAnsiChar;const dbv:TDBVARIANT;is_chat:boolean=false):THANDLE;
-function  WndToContact(wnd:hwnd):integer; overload;
-function  WndToContact:integer; overload;
+function  WndToContact(wnd:hwnd):THANDLE; overload;
+function  WndToContact:THANDLE; overload;
 function  GetContactStatus(hContact:THANDLE):integer;
 // -2 - deleted account, -1 - disabled account, 0 - hidden
 // 1 - metacontact, 2 - submetacontact, positive - active
@@ -151,7 +151,6 @@ begin
 end;
 
 const
-  IsVars:integer=-1;
   MirCP:integer=-1;
 const
   HKManager:integer=-1;
@@ -172,9 +171,7 @@ end;
 
 function isVarsInstalled:bool;
 begin
-  if IsVars<0 then
-    IsVars:=PluginLink^.ServiceExists(MS_VARS_FORMATSTRING);
-  result:=IsVars<>0;
+  result:=PluginLink^.ServiceExists(MS_VARS_FORMATSTRING)<>0;
 end;
 
 function ParseVarString(astr:pAnsiChar;aContact:THANDLE=0;extra:pAnsiChar=nil):pAnsiChar;
@@ -429,9 +426,9 @@ begin
   end;
 end;
 
-function WndToContact(wnd:hwnd):integer; overload;
+function WndToContact(wnd:hwnd):THANDLE; overload;
 var
-  hContact:integer;
+  hContact:THANDLE;
   mwid:TMessageWindowInputData;
   mwod:TMessageWindowOutputData;
 begin
@@ -459,7 +456,7 @@ begin
   result:=0;
 end;
 
-function WndToContact:integer; overload;
+function WndToContact:THANDLE; overload;
 var
   wnd:HWND;
 begin

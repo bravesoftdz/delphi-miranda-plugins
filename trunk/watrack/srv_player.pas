@@ -58,7 +58,7 @@ implementation
 
 uses
   shellapi,CommCtrl
-  ,appcmdapi,io,syswin,wrapper,srv_format,winampapi;
+  ,appcmdapi,io,syswin,wrapper,srv_format,winampapi, msninfo;
 
 type
   pPlyArray = ^tPlyArray;
@@ -1144,6 +1144,7 @@ var
   oldartist,oldtitle:pWideChar;
   fname:pWideChar;
   remote:boolean;
+  lmsnInfo:pMSNInfo;
 begin
   result:=WAT_RES_OK;
   remote:=StrPosW(dst.mfile,'://')<>nil;
@@ -1168,6 +1169,16 @@ begin
         fname:=nil
       else
         fname:=mfile;
+
+      lmsnInfo:=GetMSNInfo;
+
+      if lmsnInfo<>nil then
+      begin
+        if artist=NIL then StrDupW(artist,lmsnInfo.msnArtist);
+        if title =NIL then StrDupW(title ,lmsnInfo.msnTitle);
+        if album =NIL then StrDupW(album ,lmsnInfo.msnAlbum);
+      end;
+
       if artist=NIL then artist:=DefGetArtist(plwnd,fname,wndtext);
       if title =NIL then title :=DefGetTitle (plwnd,fname,wndtext);
     end;

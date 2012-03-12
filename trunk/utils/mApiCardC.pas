@@ -391,6 +391,6 @@ begin
 end;
 
 
-initialization
-finalization
+//initialization
+//finalization
 end.

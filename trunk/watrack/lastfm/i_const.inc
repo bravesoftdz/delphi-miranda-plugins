@@ -15,5 +15,3 @@ const
   IDC_DATA_TAGS   = 1044;
   IDC_DATA_INFO   = 1045;
   IDC_ALT         = 1046;
-
-  IDI_LAST = 1024;

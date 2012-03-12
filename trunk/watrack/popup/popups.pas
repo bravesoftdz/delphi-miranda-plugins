@@ -406,7 +406,7 @@ end;
 function InitProc(aGetStatus:boolean=false):integer;
 var
   mi:TCListMenuItem;
-  ttb:TTBButtonV2;
+//  ttb:TTBButtonV2;
   sid:TSKINICONDESC;
 begin
   if aGetStatus then

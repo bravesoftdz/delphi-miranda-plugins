@@ -43,7 +43,7 @@ Unit CommCtrl;
 Interface
 
 {$Mode ObjFPC}
-Uses CTypes,Types,Windows;
+Uses Windows,CTypes;
 
 // --------------------
 
@@ -1446,6 +1446,7 @@ CONST
 {$ENDIF}
 
 {$ELSE}
+CONST
          TOOLBARCLASSNAME               = 'ToolbarWindow';
 {$ENDIF}
 

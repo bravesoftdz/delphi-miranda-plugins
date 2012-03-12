@@ -12,7 +12,8 @@ uses
   Windows,messages,commctrl,//uxtheme,
   srv_format,srv_player,wat_api,wrapper,
   common,syswin,HlpDlg,mirutils
-  ,global,waticons,io,macros
+  ,global,waticons,io,macros, msninfo
+//  ,myshows   in 'myshows\myshows.pas'
   ,lastfm    in 'lastfm\lastfm.pas'
   ,statlog   in 'stat\statlog.pas'
   ,popups    in 'popup\popups.pas'
@@ -570,8 +571,9 @@ begin
   if DisablePlugin=dsPermanent then
     CallService(MS_WAT_PLUGINSTATUS,1,0);
 
-  result:=0;
+  StartMSNHook;
 
+  result:=0;
 end;
 
 procedure FreeVariables;
@@ -608,6 +610,7 @@ var
   p:PWideChar;
   ptr:pwModule;
 begin
+  StopMSNHook;
 
   PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLAYERSTATUS,WAT_PLS_NOTFOUND);
 
@@ -643,7 +646,7 @@ begin
   StrCopyW(p,'wat_cover.*');
 
   fi:=FindFirstFileW(buf,fdata);
-  if dword(fi)<>INVALID_HANDLE_VALUE then
+  if fi<>THANDLE(INVALID_HANDLE_VALUE) then
   begin
     repeat
       StrCopyW(p,fdata.cFileName);

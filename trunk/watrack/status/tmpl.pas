@@ -252,10 +252,11 @@ var
   i:integer;
 begin
   NumTemplates:=GetNumProto;
-  i:=SizeOf(tStrTemplate)*(NumTemplates+1) div 2;
+  // Size in bytes
+  i:=SizeOf(tStrTemplate)*(NumTemplates+1);
   mGetMem(StrTemplates,i);
-//!!!!!!!!!!!!!!
-  Fillword(StrTemplates^,i,dubtmpl);
+  //  size in words
+  Fillword(StrTemplates^,i div 2,dubtmpl);
   LoadTemplates;
 end;
 

@@ -100,7 +100,7 @@ function UTF8toWide(src:PAnsiChar;var dst:PWideChar;len:cardinal=cardinal(-1)):P
 function WidetoUTF8(src:PWideChar;var dst:PAnsiChar):PAnsiChar;
 
 function CharWideToUTF8(src:WideChar;var dst:pAnsiChar):integer;
-function CharUTF8ToWide(src:pAnsiChar):WideChar;
+function CharUTF8ToWide(src:pAnsiChar;pin:pinteger=nil):WideChar;
 function CharUTF8Len(src:pAnsiChar):integer;
 
 function FastWideToAnsiBuf(src:PWideChar;dst:PAnsiChar;len:cardinal=cardinal(-1)):PAnsiChar;
@@ -712,12 +712,16 @@ begin
   inc(dst); dst^:=#0;
 end;
 
-function CharUTF8ToWide(src:pAnsiChar):WideChar;
+function CharUTF8ToWide(src:pAnsiChar;pin:pinteger=nil):WideChar;
 var
+  cnt:integer;
   w:word;
 begin
   if ord(src^)<$80 then
-    w:=ord(src^)
+  begin
+    w:=ord(src^);
+    cnt:=1;
+  end
   else if (ord(src^) and $E0)=$E0 then
   begin
     w:=(ord(src^) and $1F) shl 12;
@@ -725,13 +729,17 @@ begin
     w:=w or (((ord(src^))and $3F) shl 6);
     inc(src);
     w:=w or (ord(src^) and $3F);
+    cnt:=3;
   end
   else
   begin
     w:=(ord(src^) and $3F) shl 6;
     inc(src);
     w:=w or (ord(src^) and $3F);
+    cnt:=2;
   end;
+  if pin<>nil then
+    pin^:=cnt;
   result:=WideChar(w);
 end;
 

@@ -419,7 +419,7 @@ end;
 
 procedure TDesigner.DoChar( Sender: PControl; var Key: KOLChar; Shift: DWORD);
 begin
-   messagebox(0,'444','',0);
+//   messagebox(0,'444','',0);
 end;
 
 procedure TDesigner.DoKeyUp(Sender: PControl; var Key: Integer; Shift: DWORD);
@@ -446,7 +446,7 @@ var
   i:integer;
 begin
 //   if Key = VK_TAB then
-   messagebox(0,'333','',0);
+//   messagebox(0,'333','',0);
 
    if Key = VK_DELETE then
    begin
