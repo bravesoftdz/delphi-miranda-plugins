@@ -33,11 +33,11 @@ begin
     ppc:='something wrong!';
   end;
   StrCopy(StrCopyE(buf,'MyShows: '),Translate(ppc));
-  //!!!!
+  
   if PluginLink^.ServiceExists(MS_POPUP_SHOWMESSAGE)<>0 then
     CallService(MS_POPUP_SHOWMESSAGE,TLPARAM(@buf),SM_WARNING)
   else
-    MessageBoxW(0,TranslateW('MyShows: something wrong!'),'ERROR',MB_ICONERROR)
+    MessageBoxA(0,@buf,'ERROR',MB_ICONERROR)
 end;
 
 function GetMD5Str(digest:TMD5Hash; buf:pAnsiChar):PAnsiChar;
@@ -122,37 +122,52 @@ begin
   result:=dst;
 end;
 
+function SendMSRequest(request:pAnsiChar;doShowError:boolean):pAnsiChar;
+begin
+  result:=SendRequest(request,REQUEST_GET);
+  if int_ptr(result)<$0FFF then
+  begin
+//!!    if int_ptr(result)=401 then
+    begin
+      Handshake(msh_login,msh_password);
+
+      result:=SendRequest(request,REQUEST_GET);
+    end;
+    if (int_ptr(result)<$0FFF) and doShowError then
+      ShowError(int_ptr(result));
+  end;
+end;
+
 function Scrobble:integer;
 var
   si:pSongInfoA;
   buf:array [0..511] of AnsiChar;
   request:array [0..511] of AnsiChar;
   res,pc:PAnsiChar;
-  epId:pAnsiChar;
+  shId,epId:pAnsiChar;
   json:TJSONSERVICEINTERFACE;
   jn,jroot:PJSONNODE;
 begin
   result:=-1;
 
-//  json:=nil;
-
   si:=pointer(CallService(MS_WAT_RETURNGLOBAL,WAT_INF_UTF8,0));
   Encode(buf,Si.mfile);
   pc:=Extract(buf,true);
-  // Поиск эпизодов по файлу
-  // API_URL+'shows/search/file/?q='+fname
+
+  // Episode search by filename
   StrCopy(StrCopyE(request,API_URL+'shows/search/file/?q='),pc);
   mFreeMem(pc);
   res:=SendRequest(request,REQUEST_GET);
   if (res<>nil) and (int_ptr(res)>$0FFF) then
   begin
     CallService(MS_JSON_GETINTERFACE,wparam(@json),0);
-//    if json=nil then exit;
+
     jroot:=json.parse(res);
+
     jn:=json.get(jroot,'show');
+    shId:=json.as_string(json.get(jn,'id'));
+
     jn:=json.get(jn,'episodes');
-    //??
-    //jn:=json.get(jn,'id');
     epId:=json.name(json.at(jn,0));
 {
 kinopoiskId
@@ -160,37 +175,26 @@ image
 ruTitle
 episodes:{:{id:
 }
-//    epId:=
   end
-  else if res<>nil then
-    ShowError(int_ptr(res))
   else
+  begin
+    if res<>nil then
+      ShowError(int_ptr(res));
     exit;
+  end;
+
+  // Show mark as "watching"
+  StrCopy(StrCopyE(StrCopyE(request,API_URL+'profile/shows/'),shId),'/watching');
+  SendMSRequest(request,false);
+  json.free(shId);
+
+  // Episode check
+  StrCopy(StrCopyE(request,API_URL+'profile/episodes/check/'),epId);
+//  StrCopy(request,API_URL+'profile/shows/');
+  SendMSRequest(request,true);
+  json.free(epId);
 
   json.delete_(jroot);
-
-  // Отмечание эпизода
-  // API_URL+'profile/episodes/check/'+epId
-  StrCopy(StrCopyE(request,API_URL+'profile/episodes/check/'),epId);
-
-  res:=SendRequest(request,REQUEST_GET);
-  if (res<>nil) and (int_ptr(res)>$0FFF) then
-  begin
-//    jn:=json.parse(res);
-  end
-  else //if res<>nil then
-  begin
-    Handshake(msh_login,msh_password);
-    res:=SendRequest(request,REQUEST_GET);
-    if (res<>nil) and (int_ptr(res)>$0FFF) then
-    begin
-  //    jn:=json.parse(res);
-    end
-    else if res<>nil then
-      ShowError(int_ptr(res));
-  end;
-  // json.free(epId);
-
 end;
 
 (*

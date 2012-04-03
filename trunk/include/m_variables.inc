@@ -113,6 +113,7 @@ type
   end;
 
 const
+//  FORMATINFOV2_SIZE = (SizeOf(int)*4+SizeOf(pointer)*2 + SizeOf(THANDLE));
   {$IFNDEF WIN64}
   FORMATINFOV2_SIZE = 28;
   {$ELSE}

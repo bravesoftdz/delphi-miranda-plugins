@@ -227,7 +227,7 @@ var
 begin
   FillChar(filter,SizeOf(filter),0);
   ini1[0]:=#0;
-  GetDlgItemText(wnd,IDC_CUSTOMINI,@ini1,SizeOf(ini1));
+  GetDlgItemTextA(wnd,IDC_CUSTOMINI,@ini1,SizeOf(ini1));
   if ini1[0]=#0 then
     StrCopy(ini,storage)
   else

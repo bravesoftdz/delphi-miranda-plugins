@@ -46,6 +46,7 @@ end;
 {$i i_myshows_api.inc}
 
 function ThScrobble(param:LPARAM):dword; //stdcall;
+{
 var
   count:integer;
   npisok:bool;
@@ -55,10 +56,12 @@ begin
   while count>0 do
   begin
     if Scrobble>=0 then break;
-//!!    HandShake(msh_login,msh_password, count=1); // just last time
     dec(count);
   end;
   if count=0 then ;
+}
+begin
+  Scrobble;
   result:=0;
 end;
 
@@ -94,12 +97,15 @@ begin
       // need to use half of movie len if presents
       if msh_on=0 then
       begin
-        if pSongInfo(lParam).width>0 then // for video only
+        if PluginLink^.ServiceExists(MS_JSON_GETINTERFACE)<>0 then
         begin
-          timervalue:=5000;//(pSongInfo(lParam).total div 2)*1000; // to msec
-          if timervalue=0 then
-            timervalue:=DefTimerValue;
-          hTimer:=SetTimer(0,0,timervalue,@TimerProc)
+          if pSongInfo(lParam).width>0 then // for video only
+          begin
+            timervalue:=5000;//(pSongInfo(lParam).total div 2)*1000; // to msec
+            if timervalue=0 then
+              timervalue:=DefTimerValue;
+            hTimer:=SetTimer(0,0,timervalue,@TimerProc)
+          end;
         end;
       end;
     end;
