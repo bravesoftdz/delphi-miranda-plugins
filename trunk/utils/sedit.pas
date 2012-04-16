@@ -9,7 +9,8 @@ function EditStructure(struct:pAnsiChar;parent:HWND=0):pAnsiChar;
 
 implementation
 
-uses io,messages, commctrl, common, wrapper, strans{$IFDEF Miranda}, m_api, mirutils{$ENDIF};
+uses io,messages, commctrl, common, wrapper, strans
+  {$IFDEF Miranda}, m_api, mirutils, memini{$ENDIF};
 {
   <STE_* set> <len> <data>
 }
@@ -22,6 +23,10 @@ const
   ACI_UP     :PAnsiChar = 'ACI_Up';
   ACI_DOWN   :PAnsiChar = 'ACI_Down';
   ACI_DELETE :PAnsiChar = 'ACI_Delete';
+
+const
+  API_STRUCT_FILE = 'plugins\services.ini';
+  namespace = 'Structure';
 {$ENDIF}
 
 type
@@ -41,6 +46,7 @@ const
 {$ENDIF}
 var
   OldLVProc:pointer;
+  storage:pointer;
 
 function GetTypeIndex(etype:integer):integer;
 var
@@ -405,6 +411,7 @@ var
   p:pansiChar;
   element:tOneElement;
 begin
+  SendMessage(list,LVM_DELETEALLITEMS,0,0);
   txt:=StrScan(txt,char_separator)+1;
   while txt^<>#0 do
   begin
@@ -828,6 +835,29 @@ begin
   LV_SetLParam(list,ltype,item);
 end;
 
+{$IFDEF Miranda}
+procedure FillTemplates(wnd:HWND);
+var
+  p,pp:pAnsiChar;
+  i:integer;
+begin
+  SendMessage(wnd,CB_RESETCONTENT,0,0);
+
+  p:=GetSectionList(storage,namespace);
+  pp:=p;
+  i:=0;
+  while p^<>#0 do
+  begin
+    CB_AddStrData(wnd,p,Integer(SearchSection(storage,p,namespace)), i);
+//    SendMessageA(wnd,CB_ADDSTRING,0,lparam(p));
+
+    while p^<>#0 do inc(p); inc(p);
+    inc(i);
+  end;
+  FreeMem(pp);
+end;
+{$ENDIF}
+
 function StructEdit(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
   wnd:HWND;
@@ -835,6 +865,7 @@ var
   li:TLVITEMW;
   b,b1:boolean;
   idchide,idcshow:integer;
+  pc:pAnsiChar;
 {$IFDEF Miranda}
   urd:TUTILRESIZEDIALOG;
 {$ELSE}
@@ -848,6 +879,8 @@ begin
 {$IFDEF Miranda}
       TranslateDialogDefault(Dialog);
       RegisterIcons;
+      storage:=OpenStorage(API_STRUCT_FILE);
+      FillTemplates(GetDlgItem(Dialog,IDC_DATA_TMPL));
 {$ENDIF}
       wnd:=GetDlgItem(Dialog,IDC_DATA_FULL);
       MakeLVStructList(wnd);
@@ -912,6 +945,10 @@ begin
 
         CBN_SELENDOK{CBN_SELCHANGE}:  begin
           case loword(wParam) of
+{$IFDEF Miranda}
+            IDC_DATA_TMPL: begin
+            end;
+{$ENDIF}
             IDC_DATA_TYPE: begin
               i:=CB_GetData(lParam);
               case i of
@@ -977,6 +1014,20 @@ begin
         BN_CLICKED: begin
           case loword(wParam) of
 {$IFDEF Miranda}
+            IDC_DATA_INFO: begin
+            end;
+
+            IDC_DATA_PASTE: begin
+              wnd:=GetDlgItem(Dialog,IDC_DATA_TMPL);
+              pc:=GetParamSectionStr(pointer(CB_GetData(wnd)),'full',nil);
+              if pc=nil then
+                pc:=GetParamSectionStr(pointer(CB_GetData(wnd)),'short',nil);
+              if pc<>nil then
+              begin
+                FillLVStruct(GetDlgItem(Dialog,IDC_DATA_FULL),pc); // fill lv with current structure
+              end;
+            end;
+
             IDC_DATA_VARS: begin
               i:=CB_GetData(GetDlgItem(Dialog,IDC_DATA_TYPE));
               if i IN [SST_BYTE,SST_WORD,SST_DWORD,SST_QWORD,SST_NATIVE] then

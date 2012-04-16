@@ -1,5 +1,5 @@
 {service insertion code}
-unit mApiCardC;
+unit mApiCardM;
 
 interface
 
@@ -13,7 +13,7 @@ type
     procedure SetCurrentService(item:pAnsiChar);
   public
     constructor Create(fname:pAnsiChar; lparent:HWND=0);
-//    procedure Free;
+    procedure Free;
     procedure FillList(combo:HWND; mode:integer=0);
 
     function FillParams(wnd:HWND{;item:pAnsiChar};wparam:boolean):pAnsiChar;
@@ -24,8 +24,9 @@ type
     property Service    :pAnsiChar write SetCurrentService;
     property Event      :pAnsiChar write SetCurrentService;
   private
-    current: array [0..127] of AnsiChar;
-    IniFile: array [0..511] of AnsiChar;
+    storage:pointer;
+    current:pointer;
+    namespace: array [0.. 63] of AnsiChar;
     parent,
     HelpWindow:HWND;
     isServiceHelp:boolean;
@@ -38,7 +39,7 @@ function CreateEventCard  (parent:HWND=0):tmApiCard;
 
 implementation
 
-uses common,io,m_api,mirutils;
+uses common,io,m_api,mirutils,memini;
 
 {$r mApiCard.res}
 
@@ -51,21 +52,19 @@ const
   BufSize = 2048;
 
 const
+  ApiHlpFile = 'plugins\services.ini';
+{
   ServiceHlpFile = 'plugins\services.ini';
   EventsHlpFile  = 'plugins\events.ini';
-{
-procedure tmApiCard.Free;
-begin
-end;
 }
 function tmApiCard.GetResultType:pAnsiChar;
 var
   buf:array [0..2047] of AnsiChar;
   p:pAnsiChar;
 begin
-  if INIFile[0]<>#0 then
+  if storage<>nil then
   begin
-    GetPrivateProfileStringA(@current,'return','',buf,SizeOf(buf),@INIFile);
+    StrCopy(buf,GetParamSectionStr(current,'return',''));
     p:=@buf;
     while p^ in sWordOnly do inc(p);
     p^:=#0;
@@ -76,13 +75,10 @@ begin
 end;
 
 function tmApiCard.GetDescription:pAnsiChar;
-var
-  buf:array [0..2047] of AnsiChar;
 begin
-  if INIFile[0]<>#0 then
+  if storage<>nil then
   begin
-    GetPrivateProfileStringA(@current,'descr','',buf,SizeOf(buf),@INIFile);
-    StrDup(result,@buf);
+    StrDup(result,GetParamSectionStr(current,'descr',''));
   end
   else
     result:=nil;
@@ -97,7 +93,7 @@ var
   tmp:pWideChar;
   paramname:pAnsiChar;
 begin
-  if INIFile[0]=#0 then
+  if storage<>nil then
   begin
     result:=nil;
     exit;
@@ -106,8 +102,10 @@ begin
     paramname:='wparam'
   else
     paramname:='lparam';
-  GetPrivateProfileStringA(@current,paramname,'',buf,SizeOf(buf),@INIFile);
+
+  StrCopy(buf,GetParamSectionStr(current,paramname,''));
   StrDup(result,@buf);
+
   SendMessage(wnd,CB_RESETCONTENT,0,0);
   if buf[0]<>#0 then
   begin
@@ -154,34 +152,32 @@ procedure tmApiCard.FillList(combo:hwnd; mode:integer=0);
 var
   buf:array [0..8191] of AnsiChar;
   tmpbuf:array [0..127] of AnsiChar;
-  p,pc:PAnsiChar;
+  p,pp,pc:PAnsiChar;
 begin
-  if INIFile[0]<>#0 then
+  if storage<>nil then
   begin
-    SendMessage(combo,CB_RESETCONTENT,-1,0);
+    SendMessage(combo,CB_RESETCONTENT,0,0);
     buf[0]:=#0;
-    GetPrivateProfileSectionNamesA(@buf,SizeOf(buf),@INIFile); // sections
-    p:=@buf;
+    p:=GetSectionList(storage,namespace);
+    pp:=p;
     while p^<>#0 do
     begin
       case mode of
         1: begin // just constant name
-          GetPrivateProfileStringA(p,'alias','',tmpbuf,127,@INIFile);
-          pc:=@tmpbuf;
+          pc:=GetParamStr(storage,p,'alias','',namespace);
         end;
         2: begin // value (name)
           pc:=StrCopyE(tmpbuf,p);
           pc^:=' '; inc(pc);
           pc^:='('; inc(pc);
-          GetPrivateProfileStringA(p,'alias','',pc,63,@INIFile);
-          pc:=StrEnd(tmpbuf);
+          pc:=StrCopyE(pc,GetParamStr(storage,p,'alias','',namespace));
           pc^:=')'; inc(pc);
           pc^:=#0;
           pc:=@tmpbuf;
         end;
         3: begin // name 'value'
-          GetPrivateProfileStringA(p,'alias','',tmpbuf,127,@INIFile);
-          pc:=StrEnd(tmpbuf);
+          pc:=@tmpbuf;
+          pc:=StrCopyE(pc,GetParamStr(storage,p,'alias','',namespace));
           pc^:=' '; inc(pc);
           pc^:=''''; inc(pc);
           pc:=StrCopyE(pc,p);
@@ -195,6 +191,7 @@ begin
       SendMessageA(combo,CB_ADDSTRING,0,lparam(pc));
       while p^<>#0 do inc(p); inc(p);
     end;
+    FreeMem(pp);
     SendMessage(combo,CB_SETCURSEL,-1,0);
   end;
 end;
@@ -234,31 +231,27 @@ begin
     WM_UPDATEHELP: begin
       with tmApiCard(lParam) do
       begin
-        if (INIFile[0]<>#0) and (lParam<>0) then
+        if (storage<>nil) and (lParam<>0) then
         begin
           GetMem(buf,BufSize);
           GetMem(tmp,BufSize*SizeOf(WideChar));
-          SetDlgItemTextA(Dialog,IDC_HLP_SERVICE,@current);
 
-          GetPrivateProfileStringA(@current,'alias','',buf,BufSize,@INIFile);
-          SetDlgItemTextA(Dialog,IDC_HLP_ALIAS,buf);
+          SetDlgItemTextA(Dialog,IDC_HLP_SERVICE,GetSectionName(current));
 
-          GetPrivateProfileStringA(@current,'return','Undefined',buf,BufSize,@INIFile);
-          p:=buf;
-          // skip result type
-  //        while p^ in sWordOnly do inc(p); if (p<>@buf) and (p^<>#0) then inc(p);
-          FastAnsiToWideBuf(p,tmp);
+          SetDlgItemTextA(Dialog,IDC_HLP_ALIAS,
+              GetParamSectionStr(current,'alias',''));
+          
+          FastAnsiToWideBuf(GetParamSectionStr(current,'return','Undefined'),tmp);
           SetDlgItemTextW(Dialog,IDC_HLP_RETURN,TranslateW(tmp));
 
-          GetPrivateProfileStringA(@current,'descr','Undefined',buf,BufSize,@INIFile);
-          FastAnsiToWideBuf(buf,tmp);
+          FastAnsiToWideBuf(GetParamSectionStr(current,'descr','Undefined'),tmp);
           SetDlgItemTextW(Dialog,IDC_HLP_EFFECT,TranslateW(tmp));
 
-          GetPrivateProfileStringA(@current,'plugin','',buf,BufSize,@INIFile);
-          FastAnsiToWideBuf(buf,tmp);
+          FastAnsiToWideBuf(GetParamSectionStr(current,'plugin',''),tmp);
           SetDlgItemTextW(Dialog,IDC_HLP_PLUGIN,TranslateW(tmp));
+
           // Parameters
-          GetPrivateProfileStringA(@current,'wparam','0',buf,BufSize,@INIFile);
+          StrCopy(buf,GetParamSectionStr(current,'wparam','0'));
           if StrScan(buf,'|')<>nil then
           begin
             ShowWindow(GetDlgItem(Dialog,IDC_HLP_WPARAML),SW_SHOW);
@@ -273,7 +266,7 @@ begin
             SetDlgItemTextW(Dialog,IDC_HLP_WPARAM,TranslateW(tmp));
           end;
 
-          GetPrivateProfileStringA(@current,'lparam','0',buf,BufSize,@INIFile);
+          StrCopy(buf,GetParamSectionStr(current,'lparam','0'));
           if StrScan(buf,'|')<>nil then
           begin
             ShowWindow(GetDlgItem(Dialog,IDC_HLP_LPARAML),SW_SHOW);
@@ -312,7 +305,7 @@ end;
 
 procedure tmApiCard.SetCurrentService(item:pAnsiChar);
 begin
-  StrCopy(@current,item);
+  current:=SearchSection(storage,item,namespace);
 end;
 
 procedure tmApiCard.Update(item:pAnsiChar=nil);
@@ -357,17 +350,18 @@ begin
 //  if title<>nil then
 //    SendMessageW(HelpWindow,WM_SETTEXT,0,TranslateW(title));
 
-  Update(@current);
+  Update(current);
 end;
 
 constructor tmApiCard.Create(fname:pAnsiChar; lparent:HWND=0);
+var
+  IniFile: array [0..511] of AnsiChar;
 begin
   inherited Create;
 
   StrCopy(@IniFile,fname);
-  current[0]:=#0;
   HelpWindow:=0;
-
+  current:=nil;
   if fname<>nil then
   begin
     ConvertFileName(fname,@INIFile);
@@ -379,18 +373,27 @@ begin
     end;
     parent:=lparent;
   end;
+  storage:=OpenStorage(@IniFile);
+end;
+
+procedure tmApiCard.Free;
+begin
+  CloseStorage(storage);
+  inherited Free;
 end;
 
 function CreateServiceCard(parent:HWND=0):tmApiCard;
 begin
-  result:=tmApiCard.Create(ServiceHlpFile,parent);
+  result:=tmApiCard.Create(ApiHlpFile,parent);
   result.isServiceHelp:=true;
+  StrCopy(result.namespace,'Service');
 end;
 
 function CreateEventCard(parent:HWND=0):tmApiCard;
 begin
-  result:=tmApiCard.Create(EventsHlpFile,parent);
+  result:=tmApiCard.Create(ApiHlpFile,parent);
   result.isServiceHelp:=false;
+  StrCopy(result.namespace,'Event');
 end;
 
 
