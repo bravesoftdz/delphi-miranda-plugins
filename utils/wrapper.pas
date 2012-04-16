@@ -211,10 +211,10 @@ function CB_AddStrData(cb:HWND;astr:pAnsiChar;data:integer=0;idx:integer=-1):HWN
 begin
   result:=cb;
   if idx<0 then
-    idx:=SendMessage(cb,CB_ADDSTRING,0,lparam(astr))
+    idx:=SendMessageA(cb,CB_ADDSTRING,0,lparam(astr))
   else
-    idx:=SendMessage(cb,CB_INSERTSTRING,idx,lparam(astr));
-  SendMessage(cb,CB_SETITEMDATA,idx,data);
+    idx:=SendMessageA(cb,CB_INSERTSTRING,idx,lparam(astr));
+  SendMessageA(cb,CB_SETITEMDATA,idx,data);
 end;
 
 function CB_AddStrDataW(cb:HWND;astr:pWideChar;data:integer=0;idx:integer=-1):HWND;

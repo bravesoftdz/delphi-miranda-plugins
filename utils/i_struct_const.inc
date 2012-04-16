@@ -28,3 +28,7 @@ const
   IDC_DATA_SALGN    = 2016;
   IDC_DATA_SEP      = 2017;
   IDC_DATA_EDTN     = 2018;
+
+  IDC_DATA_TMPL     = 2019;
+  IDC_DATA_INFO     = 2020;
+  IDC_DATA_PASTE    = 2021;
