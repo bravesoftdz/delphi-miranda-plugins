@@ -1,7 +1,7 @@
 {resource constants}
 const
   // dialogs
-  IDD_HELP        = 1126;
+//  IDD_HELP        = 1126;
 
 // Help dialog
   IDC_HLP_SERVICE = 1025;
