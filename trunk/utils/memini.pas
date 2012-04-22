@@ -124,7 +124,7 @@ end;
 function ProcessParamValue(var start:pAnsiChar):pAnsiChar;
 var
   lineend,eol,dst,bov:pAnsiChar;
-  multiline:boolean;
+  multiline,crlf:boolean;
 begin
 
   dst:=start;
@@ -132,6 +132,7 @@ begin
   result:=nil;
   repeat
     multiline:=false;
+    crlf     :=false;
     // skip starting spaces
     while start^ in [#9,' '] do inc(start);
 
@@ -149,10 +150,18 @@ begin
 
     if lineend^=line_separator then // multiline or part of value
     begin
-      dec(lineend);
-      if lineend^ in [#9,' '] then // multiline
+      if (lineend-1)^ in [#9,' '] then // multiline
       begin
-        multiline := true;
+        dec(lineend);
+        multiline:=true;
+        while lineend^ in [#9,' '] do dec(lineend);
+      end
+      // double separator = multiline + crlf saving
+      else if ((lineend-1)^=line_separator) and ((lineend-2)^ in [#9,' ']) then
+      begin
+        dec(lineend,2);
+        multiline:=true;
+        crlf     :=true;
         while lineend^ in [#9,' '] do dec(lineend);
       end;
     end;
@@ -172,6 +181,13 @@ begin
       dst^:=start^;
       inc(dst);
       inc(start);
+    end;
+    if crlf then
+    begin
+      dst^:=#13;
+      inc(dst);
+      dst^:=#10;
+      inc(dst);
     end;
     start:=eol;
     while start^ in [#10,#13] do inc(start);

@@ -34,6 +34,8 @@ const
   IDC_DATA_INFO     = 2020;
   IDC_DATA_PASTE    = 2021;
 
+  IDC_DATA_SLEN     = 2022;
+
   // Structure helper
   IDC_HLP_NAME      = 2030;
   IDC_HLP_PLUGIN    = 2031;

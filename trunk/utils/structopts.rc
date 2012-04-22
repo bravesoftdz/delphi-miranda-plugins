@@ -39,7 +39,7 @@ FONT 8, "MS Shell Dlg", 0, 0
 
   COMBOBOX                      IDC_DATA_TYPE, 186,  24, 160, 96, CBS_DROPDOWNLIST | WS_VSCROLL
   EDITTEXT                      IDC_DATA_LEN , 186,  40,  40, 11
-  LTEXT        "Data length"  , -1           , 230,  40, 116, 11, SS_CENTERIMAGE
+  LTEXT        "Data length"  , IDC_DATA_SLEN, 230,  40, 116, 11, SS_CENTERIMAGE
   EDITTEXT                      IDC_DATA_EDIT, 186,  55, 160, 82, 
                                 ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN
   EDITTEXT                      IDC_DATA_EDTN, 186,  55, 160, 11
