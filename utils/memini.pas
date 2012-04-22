@@ -6,6 +6,8 @@ function OpenStorage(fname:pAnsiChar):pointer;
 procedure CloseStorage(storage:pointer);
 
 function GetSectionList(storage:pointer;namespace:pAnsiChar=nil):pAnsiChar;
+procedure FreeSectionList(ptr:pAnsiChar);
+
 function GetParamStr(storage:pointer;section,param:pAnsiChar;default:pAnsiChar=nil;
          namespace:pAnsiChar=nil):pAnsiChar;
 function GetParamInt(storage:pointer;section,param:pAnsiChar;default:integer=0;
@@ -121,7 +123,6 @@ end;
 // pointers: start of value, start of current line, end of value in line, end of current line
 function ProcessParamValue(var start:pAnsiChar):pAnsiChar;
 var
-  quotes:integer;
   lineend,eol,dst,bov:pAnsiChar;
   multiline:boolean;
 begin
@@ -338,6 +339,11 @@ begin
     end;
     pc^:=#0;
   end;
+end;
+
+procedure FreeSectionList(ptr:pAnsiChar);
+begin
+  FreeMem(ptr);
 end;
 
 function SearchSection(storage:pointer;section:pAnsiChar;namespace:pAnsiChar=nil):pointer;

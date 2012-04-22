@@ -58,7 +58,7 @@ implementation
 
 uses
   shellapi,CommCtrl
-  ,appcmdapi,io,syswin,wrapper,srv_format,winampapi, msninfo;
+  ,appcmdapi,io,syswin,wrapper,srv_format,winampapi,msninfo,memini;
 
 type
   pPlyArray = ^tPlyArray;
@@ -511,52 +511,44 @@ begin
   end;
 end;
 
-function GetField(fname,section:PAnsiChar;fieldname:PAnsiChar):PAnsiChar;
-var
-  strbuf:array [0..255] of AnsiChar;
-begin
-  GetPrivateProfileStringA(section,fieldname,'',strbuf,SizeOf(strbuf),fname);
-  if strbuf[0]<>#0 then
-    StrDup(result,strbuf)
-  else
-    result:=nil;
-end;
-
 function LoadFromFile(fname:PAnsiChar):integer;
 var
-  buf:array [0..buflen-1] of AnsiChar;
-  urlbuf:array [0..255] of AnsiChar;
-  notesbuf:array [0..255] of AnsiChar;
+  buf:pAnsiChar;
   ptr:PAnsiChar;
   NumPlayers:integer;
   pcell:pTmplCell;
   rec:TPlayerCell;
-  pc:pAnsiChar;
+  st,sec:pointer;
 begin
-  GetPrivateProfileSectionNamesA(buf,SizeOf(buf),fname);
+  result:=0;
+  st:=OpenStorage(fname);
+  if st=nil then exit;
+
+  buf:=GetSectionList(st);
+  ptr:=buf;
   NumPlayers:=0;
-  ptr:=@buf;
   while ptr^<>#0 do
   begin
+    sec:=SearchSection(st,ptr);
+
     FillChar(rec,SizeOf(rec),0);
 
     GetMem(pcell,SizeOf(tTmplCell));
-    pcell^.p_class  :=GetField(fname,ptr,'class'  );
-    pcell^.p_text   :=GetField(fname,ptr,'text'   );
-    pcell^.p_class1 :=GetField(fname,ptr,'class1' );
-    pcell^.p_text1  :=GetField(fname,ptr,'text1'  );
-    pcell^.p_file   :=GetField(fname,ptr,'file'   );
-    pc:=GetField(fname,ptr,'prefix' ); AnsiToWide(pc,pcell^.p_prefix ); mFreeMem(pc);
-    pc:=GetField(fname,ptr,'postfix'); AnsiToWide(pc,pcell^.p_postfix); mFreeMem(pc);
+    StrDup(pcell^.p_class ,GetParamSectionStr(sec,'class' ));
+    StrDup(pcell^.p_text  ,GetParamSectionStr(sec,'text'  ));
+    StrDup(pcell^.p_class1,GetParamSectionStr(sec,'class1'));
+    StrDup(pcell^.p_text1 ,GetParamSectionStr(sec,'text1' ));
+    StrDup(pcell^.p_file  ,GetParamSectionStr(sec,'file'  ));
 
-    GetPrivateProfileStringA(ptr,'url','',urlbuf,SizeOf(urlbuf),fname);
-    rec.URL  :=@urlbuf;
+    AnsiToWide(GetParamSectionStr(sec,'prefix' ),pcell^.p_prefix );
+    AnsiToWide(GetParamSectionStr(sec,'postfix'),pcell^.p_postfix);
+
+    rec.URL  :=GetParamSectionStr(sec,'url');
     rec.Desc :=ptr;
-    rec.flags:=GetPrivateProfileIntA(ptr,'flags',0,fname) or WAT_OPT_TEMPLATE;
+    rec.flags:=GetParamSectionInt(sec,'flags') or WAT_OPT_TEMPLATE;
     rec.Check:=pointer(pcell);
-    GetPrivateProfileStringA(ptr,'notes','',notesbuf,SizeOf(notesbuf),fname);
-    if notesbuf[0]<>#0 then
-      UTF8ToWide(@notesbuf,rec.Notes);
+
+    UTF8ToWide(GetParamSectionStr(sec,'notes'),rec.Notes);
 
     ServicePlayer(WAT_ACT_REGISTER,lparam(@rec));
 
@@ -564,6 +556,9 @@ begin
     while ptr^<>#0 do inc(ptr);
     inc(ptr);
   end;
+
+  FreeSectionList(buf);
+  CloseStorage(st);
   result:=NumPlayers;
 end;
 

@@ -210,7 +210,7 @@ begin
     WM_CLOSE: begin
       card:=tmApiCard(GetWindowLongPtr(Dialog,GWLP_USERDATA{DWLP_USER}));
       card.HelpWindow:=0;
-      DestroyWindow(Dialog);
+      DestroyWindow(Dialog); //??
     end;
 
     WM_INITDIALOG: begin
@@ -327,7 +327,7 @@ var
 begin
   if HelpWindow=0 then
   begin
-    HelpWindow:=CreateDialogW(hInstance,MAKEINTRESOURCEW(IDD_HELP),
+    HelpWindow:=CreateDialogW(hInstance,'IDD_MAPIHELP',//MAKEINTRESOURCEW(IDD_HELP),
                 parent,@ServiceHelpDlg);
     if HelpWindow<>0 then
     begin
