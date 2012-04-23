@@ -31,7 +31,6 @@ const
   optMyHandle   :PAnsiChar = 'MyHandle';
   optGenre      :PAnsiChar = 'Genre';
   optBitrate    :PAnsiChar = 'Bitrate';
-  optAbout      :PAnsiChar = 'About';
   // UserInfo compatibility
   optFirstName  :PAnsiChar = 'FirstName';
   optNick       :PAnsiChar = 'Nick';

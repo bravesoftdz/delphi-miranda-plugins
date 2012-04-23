@@ -46,8 +46,10 @@ uses
   syswin,
   base64,
   question,
-  mApiCardC,
+  mApiCardM,
   global,
+  sedit,
+  strans,
   ua in 'ua\ua.pas',
   hooks in 'hooks\hooks.pas',
   scheduler in 'tasks\scheduler.pas';

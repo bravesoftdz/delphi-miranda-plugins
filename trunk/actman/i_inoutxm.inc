@@ -104,22 +104,28 @@ const
   imp_append = 5;
 
 function ReadStruct(act:HXML):int_ptr;
+{
 var
   child,i:integer;
   tmp:pWideChar;
   sub:HXML;
   typ:pWideChar;
+}
 begin
+  result:=0;
+(*
   mGetMem (tmp ,32768);
   FillChar(tmp^,32768,0);
   result:=int_ptr(tmp);
   with xmlparser do
   begin
+{
     typ:=getAttrValue(act,ioPacked);
     if (typ<>nil) and (typ^<>#0) and (typ^<>'0') then
     begin
       tmp^:=char_packed; inc(tmp);
     end;
+}
     child:=0;
     repeat
       sub:=getNextChild(act,ioItem,@child);
@@ -160,6 +166,7 @@ begin
     until false;
     dec(tmp); tmp^:=#0;
   end;
+*)
 end;
 
 function ReadParam(act:HXML; var param:int_ptr;isvar:boolean):dword;
@@ -632,23 +639,27 @@ end;
 //--------------------------
 
 procedure WriteStruct(node:HXML;struct:PWideChar);
-var
+{var
   sub:HXML;
   ppc,value,lsrc,p,pc:pWideChar;
   i,len:integer;
-  typ:dword;
+  typ:integer;
+}
 begin
+(*
   if struct=nil then exit;
 
   mGetMem(pc,4096);
   lsrc:=pWideChar(struct);
   with xmlparser do
   begin
+{
     if lsrc^=char_packed then
     begin
       AddAttrInt(node,ioPacked,1);
       inc(lsrc);
     end;
+}
     while lsrc^<>#0 do
     begin
       sub:=AddChild(node,ioItem,nil);
@@ -696,6 +707,7 @@ begin
     end;
   end;
   mFreeMem(pc);
+*)
 end;
 
 procedure WriteParam(node:HXML;flags,param:int_ptr;flags2:integer);

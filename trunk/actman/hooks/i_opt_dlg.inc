@@ -305,8 +305,6 @@ begin
 
     WM_HELP: begin
       ApiCard.Show;
-//      if InitHelpFile('plugins\events.ini') then
-//        ShowCard(Dialog,'CList/PreBuildContactMenu');
     end;
 
     WM_RESETHOOKS:begin

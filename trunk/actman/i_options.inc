@@ -99,7 +99,7 @@ begin
           else if act^.wparam<>0 then
           begin
             if (act^.flags and ACF_WSTRUCT)<>0 then
-              DBWriteUnicode(0,DBBranch,section,pWideChar(act^.wparam))
+              DBWriteUTF8(0,DBBranch,section,pAnsiChar(act^.wparam))
             else if (act^.flags and ACF_WUNICODE)<>0 then
               DBWriteUnicode(0,DBBranch,section,pWideChar(act^.wparam))
             else
@@ -116,7 +116,7 @@ begin
           else if act^.lparam<>0 then
           begin
             if (act^.flags and ACF_LSTRUCT)<>0 then
-              DBWriteUnicode(0,DBBranch,section,pWideChar(act^.lparam))
+              DBWriteUTF8(0,DBBranch,section,pAnsiChar(act^.lparam))
             else if (act^.flags and ACF_LUNICODE)<>0 then
               DBWriteUnicode(0,DBBranch,section,pWideChar(act^.lparam))
             else
@@ -260,6 +260,7 @@ begin
   result:=0;
   p1:=StrCopyE(StrEnd(section),opt_actions); // "Group#/Action"
 
+  oldnum:=0;
   for i:=1 to count do
   begin
     p:=StrEnd(IntToStr(p1,i));
@@ -289,7 +290,7 @@ begin
             if (Act.flags and ACF_WPARNUM)<>0 then
               Act.wparam:=LoadNumValue(section,(Act.flags2 and ACF2_SRV_WPAR)<>0)
             else if (Act.flags and ACF_WSTRUCT)<>0 then
-              Act.wparam:=wparam(DBReadUnicode(0,DBBranch,section,nil))
+              Act.wparam:=wparam(DBReadUTF8(0,DBBranch,section,nil))
             else if (Act.flags and ACF_WUNICODE)<>0 then
               Act.wparam:=wparam(DBReadUnicode(0,DBBranch,section,nil))
             else
@@ -303,7 +304,7 @@ begin
                Act.lparam:=LoadNumValue(section,(Act.flags2 and ACF2_SRV_LPAR)<>0)
   //              Act.lparam:=DBReadDWord(0,DBBranch,section,0)
             else if (Act.flags and ACF_LSTRUCT)<>0 then
-              Act.lparam:=lparam(DBReadUnicode(0,DBBranch,section,nil))
+              Act.lparam:=lparam(DBReadUTF8(0,DBBranch,section,nil))
             else if (Act.flags and ACF_LUNICODE)<>0 then
               Act.lparam:=lparam(DBReadUnicode(0,DBBranch,section,nil))
             else

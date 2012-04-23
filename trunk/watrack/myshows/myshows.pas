@@ -22,7 +22,7 @@ var
   slastinf:THANDLE;
   slast:THANDLE;
 const
-  msh_lang    :integer=0;
+//  msh_lang    :integer=0;
   msh_on      :integer=0;
   hMenuMyShows:HMENU = 0;
   msh_login   :pAnsiChar=nil;
@@ -131,7 +131,7 @@ begin
       FillChar(mi,sizeof(mi),0);
       mi.cbSize:=sizeof(mi);
       mi.flags :=CMIM_FLAGS+flag;
-      CallService(MS_CLIST_MODIFYMENUITEM,hMenuMyShows,dword(@mi));
+      CallService(MS_CLIST_MODIFYMENUITEM,hMenuMyShows,tlParam(@mi));
     end;
     
     WAT_EVENT_PLAYERSTATUS: begin
@@ -158,14 +158,15 @@ begin
   FillChar(mi,SizeOf(mi),0);
   mi.cbSize:=sizeof(mi);
   mi.flags :=CMIM_ICON;
-  mi.hIcon :=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoMyShows));
-  CallService(MS_CLIST_MODIFYMENUITEM,hMenuMyShows,dword(@mi));
+  mi.hIcon :=PluginLink^.CallService(MS_SKIN2_GETICON,0,tLParam(IcoMyShows));
+  CallService(MS_CLIST_MODIFYMENUITEM,hMenuMyShows,tlParam(@mi));
 end;
 
 function SrvMyShowsInfo(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 //var
 //  data:tMyShowsInfo;
 begin
+  result:=0;
 {
   case wParam of
     0: result:=GetArtistInfo(data,lParam);
@@ -199,7 +200,7 @@ begin
       hTimer:=0;
     end;
   end;
-  CallService(MS_CLIST_MODIFYMENUITEM,hMenuMyShows,dword(@mi));
+  CallService(MS_CLIST_MODIFYMENUITEM,hMenuMyShows,tlParam(@mi));
   result:=ord(not odd(msh_on));
 end;
 
@@ -217,18 +218,18 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,'IDI_MYSHOWS',IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoMyShows;
   sid.szDescription.a:='MyShows';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,dword(@sid));
+  PluginLink^.CallService(MS_SKIN2_ADDICON,0,tlParam(@sid));
   DestroyIcon(sid.hDefaultIcon);
   
   FillChar(mi, sizeof(mi), 0);
   mi.cbSize       :=sizeof(mi);
   mi.szPopupName.a:=PluginShort;
 
-  mi.hIcon        :=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoMyShows));
+  mi.hIcon        :=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlParam(IcoMyShows));
   mi.szName.a     :='Disable scrobbling';
   mi.pszService   :=MS_WAT_MYSHOWS;
   mi.popupPosition:=500050000;
-  hMenuMyShows:=PluginLink^.CallService(MS_CLIST_ADDMAINMENUITEM,0,dword(@mi));
+  hMenuMyShows:=PluginLink^.CallService(MS_CLIST_ADDMAINMENUITEM,0,tlParam(@mi));
 end;
 
 // ------------ base interface functions -------------
@@ -267,7 +268,7 @@ begin
   if md5.cbSize=0 then
   begin
     md5.cbSize:=SizeOf(TMD5_INTERFACE);
-    if (CallService(MS_SYSTEM_GET_MD5I,0,dword(@md5))<>0) then
+    if (CallService(MS_SYSTEM_GET_MD5I,0,tlParam(@md5))<>0) then
     begin
     end;
   end;

@@ -787,7 +787,6 @@ var
   aPartPos:array [0..63 ] of integer;
   buf     :array [0..255] of WideChar;
   fmtstr  :array [0..255] of WideChar;
-  vars    :array [0..6  ] of uint_ptr;
   all:integer;
   i,j:integer;
   p,pc,po,pd,poff,pa:PWideChar;

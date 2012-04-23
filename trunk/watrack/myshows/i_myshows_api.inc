@@ -35,7 +35,7 @@ begin
   StrCopy(StrCopyE(buf,'MyShows: '),Translate(ppc));
   
   if PluginLink^.ServiceExists(MS_POPUP_SHOWMESSAGE)<>0 then
-    CallService(MS_POPUP_SHOWMESSAGE,TLPARAM(@buf),SM_WARNING)
+    CallService(MS_POPUP_SHOWMESSAGE,TWPARAM(@buf),SM_WARNING)
   else
     MessageBoxA(0,@buf,'ERROR',MB_ICONERROR)
 end;
@@ -91,7 +91,7 @@ begin
   res:=SendRequest(request,REQUEST_GET);
   if res<>nil then
   begin
-    if int_ptr(res)<$0FFF then
+    if uint_ptr(res)<$0FFF then
     begin
       ShowError(int_ptr(res));
     end
@@ -125,7 +125,7 @@ end;
 function SendMSRequest(request:pAnsiChar;doShowError:boolean):pAnsiChar;
 begin
   result:=SendRequest(request,REQUEST_GET);
-  if int_ptr(result)<$0FFF then
+  if uint_ptr(result)<$0FFF then
   begin
 //!!    if int_ptr(result)=401 then
     begin
@@ -133,7 +133,7 @@ begin
 
       result:=SendRequest(request,REQUEST_GET);
     end;
-    if (int_ptr(result)<$0FFF) and doShowError then
+    if (uint_ptr(result)<$0FFF) and doShowError then
       ShowError(int_ptr(result));
   end;
 end;
@@ -158,7 +158,7 @@ begin
   StrCopy(StrCopyE(request,API_URL+'shows/search/file/?q='),pc);
   mFreeMem(pc);
   res:=SendRequest(request,REQUEST_GET);
-  if (res<>nil) and (int_ptr(res)>$0FFF) then
+  if (res<>nil) and (uint_ptr(res)>$0FFF) then
   begin
     CallService(MS_JSON_GETINTERFACE,wparam(@json),0);
 
