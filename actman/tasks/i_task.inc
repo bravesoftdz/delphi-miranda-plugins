@@ -1,7 +1,5 @@
 {}
 const
-  HWND_MESSAGE = HWND(-3);
-const
   ACF_ASSIGNED = $80000000;  // Task assigned
   ACF_DISABLED = $10000000;  // Task disabled
 

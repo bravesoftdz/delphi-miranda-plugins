@@ -74,7 +74,7 @@ CONST CommCtrlDLL = 'comctl32.dll';
 {$endif win64}
 
 {$DEFINE WIN32_WINNT=0}                     // NO XP
-{$DEFINE __IStream_INTERFACE_DEFINED__}  // lpstream defined in activex afaik.
+{.$DEFINE __IStream_INTERFACE_DEFINED__}  // lpstream defined in activex afaik.
 
 // Sanity check in source. Not translated:
 //if (WIN32_IE < $0400) && defined(WIN32_WINNT) && (WIN32_WINNT >= $0500)}

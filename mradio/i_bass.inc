@@ -882,7 +882,6 @@ begin
       url[4]:=']';
       url[5]:=' ';
 {$ENDIF}
-      progress:=0;
       repeat
         if CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_GET)=RD_STATUS_ABORT then
         begin

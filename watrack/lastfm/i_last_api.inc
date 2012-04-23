@@ -64,7 +64,7 @@ begin
   StrReplace(request,'<auth>'      ,buf);
 
   res:=SendRequest(request,REQUEST_GET);
-  if (res<>nil) and (int_ptr(res)>$0FFF) then
+  if (res<>nil) and (uint_ptr(res)>$0FFF) then
   begin
     if StrCmp(CharReplace(res,#10,#0),'OK')=0 then
     begin
@@ -129,10 +129,10 @@ begin
     pc:=StrCopyE(pc,'&b='); pc:=encode(pc,si^.album);
     pc:=StrCopyE(pc,'&n=');
     if si^.track<>0 then
-      pc:=StrCopyE(pc,IntToStr(buf,si^.track));
+      {pc:=}StrCopyE(pc,IntToStr(buf,si^.track));
 
     res:=SendRequest(np_url,REQUEST_POST,args);
-    if (res<>nil) and (int_ptr(res)>$0FFF) then
+    if (res<>nil) and (uint_ptr(res)>$0FFF) then
     begin
       if StrCmp(CharReplace(res,#10,#0),'OK')=0 then
         result:=1
@@ -179,10 +179,10 @@ begin
     pc:=StrCopyE(pc,'&b[0]='); pc:=encode(pc,si^.album);
     pc:=StrCopyE(pc,'&n[0]=');
     if si^.track<>0 then
-      pc:=StrCopyE(pc,IntToStr(buf,si^.track));
+      {pc:=}StrCopyE(pc,IntToStr(buf,si^.track));
 
     res:=SendRequest(sub_url,REQUEST_POST,args);
-    if (res<>nil) and (int_ptr(res)>$0FFF) then
+    if (res<>nil) and (uint_ptr(res)>$0FFF) then
     begin
       if StrCmp(CharReplace(res,#10,#0),'OK')=0 then
         result:=1
@@ -296,7 +296,7 @@ begin
   if lang<>0 then
     StrCopyE(StrCopyE(pc,'&lang='),pAnsiChar(@lang));
   res:=SendRequest(request,REQUEST_GET);
-  if (res<>nil) and (int_ptr(res)>$0FFF) then
+  if (res<>nil) and (uint_ptr(res)>$0FFF) then
   begin
     UTF8ToWide(res,pcw);
     mFreeMem(res);

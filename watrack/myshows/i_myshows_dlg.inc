@@ -22,8 +22,8 @@ end;
 function DlgProcOptions(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
   tmp:longbool;
-  bmp,wnd:HWND;
-  lang:integer;
+//  bmp,wnd:HWND;
+//  lang:integer;
 //  data:tMyShowsInfo;
 begin
   result:=0;

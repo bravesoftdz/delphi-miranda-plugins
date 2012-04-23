@@ -22,6 +22,9 @@ implementation
 uses windows, messages, common;
 
 const
+  HWND_MESSAGE = HWND(-3);
+
+const
   MSNClassName = 'MsnMsgrUIManager';
 const
   hMSNWindow:THANDLE = 0;

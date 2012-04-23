@@ -239,14 +239,14 @@ begin
   end;
   mFreeMem(lpath);
 end;
-
+{
 function MakeStructure(txt:pWideChar;aparam,alast:LPARAM;
          var code,alen:integer;var ofs:int_ptr; restype:integer=rtInt):pointer; forward;
 procedure FreeStructure(var struct;descr:pWideChar); forward;
-
+}
 function RunService(act:pHKAction;LastResult,Param:LPARAM;var restype:dword):uint_ptr;
 var
-  res,ofs:int_ptr;
+  res:int_ptr;
   buf:array [0..255] of AnsiChar;
   cc:integer;
   lservice:pAnsiChar;
@@ -285,7 +285,7 @@ begin
       code:=-1;
       if (flags and ACF_WSTRUCT)<>0 then
       begin
-        lwparam:=twParam(MakeStructure(pWideChar(lwparam),Param,LastResult,code,len,ofs,restype))
+        lwparam:=twParam(MakeStructure(pAnsiChar(lwparam),Param,LastResult,restype))
       end
       else if (flags and ACF_WPARAM)<>0 then
       begin
@@ -318,7 +318,7 @@ begin
 
       if (flags and ACF_LSTRUCT)<>0 then
       begin
-        llparam:=tlParam(MakeStructure(pWideChar(llparam),Param,LastResult,code,len,ofs,restype))
+        llparam:=tlParam(MakeStructure(pAnsiChar(llparam),Param,LastResult,restype))
       end
       else if (flags and ACF_LPARAM)<>0 then
       begin
@@ -371,9 +371,9 @@ begin
 
       if (flags and ACF_WSTRUCT)<>0 then
       begin
-        if ((flags and ACF_STRUCT)<>0) and (code>=0) then
+        if (flags and ACF_STRUCT)<>0 then
         begin
-          inc(ofs,lwparam);
+          result:=GetStructureResult(lwparam,@code,@len);
           case code of
             SST_LAST: begin
               result:=LastResult;
@@ -382,16 +382,8 @@ begin
               result:=Param;
               restype:=rtInt;
             end;
-            SST_BYTE: begin
-              result:=pByte(ofs)^;
-              restype:=rtInt;
-            end;
-            SST_WORD: begin
-              result:=pWord(ofs)^;
-              restype:=rtInt;
-            end;
-            SST_DWORD: begin
-              result:=pDWord(ofs)^;
+            SST_BYTE,SST_WORD,SST_DWORD,
+            SST_QWORD,SST_NATIVE: begin
               restype:=rtInt;
             end;
             SST_BARR: begin
@@ -399,7 +391,7 @@ begin
               mGetMem(pAnsiChar(res),len+1);
               StrCopy(pAnsiChar(res),pAnsiChar(ofs),len);
 }
-              StrDup(pAnsiChar(res),pAnsiChar(ofs),len);
+              StrDup(pAnsiChar(res),pAnsiChar(result),len);
               AnsiToWide(pAnsiChar(res),PWideChar(result),MirandaCP);
               mFreeMem(pAnsiChar(res));
               restype:=rtWide;
@@ -410,21 +402,21 @@ begin
               len:= len div 2;
               StrCopyW(pWideChar(result),pWideChar(ofs),len);
 }
-              StrDupW(pWideChar(result),pWideChar(ofs),len div 2);
+              StrDupW(pWideChar(result),pWideChar(result),len);
               restype:=rtWide;
             end;
             SST_BPTR: begin
-              AnsiToWide(pAnsiChar(puint_ptr(ofs)^),pWideChar(result),MirandaCP);
+              AnsiToWide(pAnsiChar(result),pWideChar(result),MirandaCP);
               restype:=rtWide;
             end;
             SST_WPTR: begin
-              StrDupW(pWideChar(result),pWideChar(puint_ptr(ofs)^));
+              StrDupW(pWideChar(result),pWideChar(result));
               restype:=rtWide;
             end;
           end;
         end;
-        code:=-1;
-        FreeStructure(lwparam,pWideChar(wparam));
+        code:=SST_UNKNOWN;
+        FreeStructure(lwparam);
         res:=result;
       end
       else if (flags2 and ACF2_SRV_WPAR)<>0 then
@@ -437,9 +429,9 @@ begin
 
       if (flags and ACF_LSTRUCT)<>0 then
       begin
-        if ((flags and ACF_STRUCT)<>0) and (code>=0) then
+        if (flags and ACF_STRUCT)<>0 then
         begin
-          inc(ofs,llparam);
+          result:=GetStructureResult(llparam,@code,@len);
           case code of
             SST_LAST: begin
               result:=LastResult;
@@ -448,16 +440,8 @@ begin
               result:=Param;
               restype:=rtInt;
             end;
-            SST_BYTE: begin
-              result:=pByte(ofs)^;
-              restype:=rtInt;
-            end;
-            SST_WORD: begin
-              result:=pWord(ofs)^;
-              restype:=rtInt;
-            end;
-            SST_DWORD: begin
-              result:=pDWord(ofs)^;
+            SST_BYTE,SST_WORD,SST_DWORD,
+            SST_QWORD,SST_NATIVE: begin
               restype:=rtInt;
             end;
             SST_BARR: begin
@@ -465,7 +449,7 @@ begin
               mGetMem(pAnsiChar(res),len+1);
               StrCopy(pAnsiChar(res),pAnsiChar(ofs),len);
 }
-              StrDup(pAnsiChar(res),pAnsiChar(ofs),len);
+              StrDup(pAnsiChar(res),pAnsiChar(result),len);
               AnsiToWide(pAnsiChar(res),PWideChar(result),MirandaCP);
               mFreeMem(pAnsiChar(res));
               restype:=rtWide;
@@ -476,21 +460,21 @@ begin
               len:= len div 2;
               StrCopyW(pWideChar(result),pWideChar(ofs),len);
 }
-              StrDupW(pWideChar(result),pWideChar(ofs),len div 2);
+              StrDupW(pWideChar(result),pWideChar(result),len);
               restype:=rtWide;
             end;
             SST_BPTR: begin
-              AnsiToWide(pAnsiChar(puint_ptr(ofs)^),pWideChar(result),MirandaCP);
+              AnsiToWide(pAnsiChar(result),pWideChar(result),MirandaCP);
               restype:=rtWide;
             end;
             SST_WPTR: begin
-              StrDupW(pWideChar(result),pWideChar(puint_ptr(ofs)^));
+              StrDupW(pWideChar(result),pWideChar(result));
               restype:=rtWide;
             end;
           end;
         end;
-        code:=-1;
-        FreeStructure(llparam,pWideChar(lparam));
+        code:=SST_UNKNOWN;
+        FreeStructure(llparam);
         res:=result;
       end
       else if (flags2 and ACF2_SRV_LPAR)<>0 then

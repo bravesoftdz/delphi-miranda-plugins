@@ -160,6 +160,11 @@ begin
   result:=summ;
 end;
 
+procedure SkipSpace(var txt:pAnsiChar); {$IFDEF FPC}inline;{$ENDIF}
+begin
+  while (txt^ in [' ',#9]) do inc(txt);
+end;
+
 function GetOneElement(txt:pAnsiChar;var res:tOneElement;
                        SizeOnly:boolean;num:integer=0):integer;
 var
@@ -172,6 +177,7 @@ begin
   begin
   end;
 
+  SkipSpace(txt);
   // process flags
   while not (txt^ in sWordOnly) do
   begin
@@ -185,13 +191,14 @@ begin
     inc(txt);
   end;
 
+  SkipSpace(txt);
   // element type
   pc:=txt;
   llen:=0;
   repeat
     inc(pc);
     inc(llen);
-  until pc^ IN [#0,' ',char_separator];
+  until pc^ IN [#0,#9,' ',char_separator];
   // recogninze data type
   i:=0;
   while i<MaxStructTypes do
@@ -212,28 +219,30 @@ begin
   if (not SizeOnly) or (result in [SST_WARR,SST_BARR,SST_WPTR,SST_BPTR]) then
   begin
     // type alias, inside parentheses
+    SkipSpace(pc);
     if not (pc^ in [#0,char_separator]) then
     begin
-      if ((pc+1)^='(') and ((pc+2)^ in sIdFirst) then
+      if (pc^='(') and ((pc+1)^ in sIdFirst) then
       begin
-        inc(pc,2); // skip space and parenthesis
+        inc(pc); // skip space and parenthesis
         pc1:=@res.talias;
         repeat
           pc1^:=pc^;
           inc(pc1);
           inc(pc);
-        until (pc^=')') or (pc^=' ') or (pc^=char_separator);
+        until (pc^=')'){ or (pc^=' ')} or (pc^=char_separator);
         if pc^=')' then inc(pc);
       end;
     end;
 
     // alias, starting from letter
     // start: points to separator or space
+    SkipSpace(pc);
     if not (pc^ in [#0,char_separator]) then
     begin
-      if (pc+1)^ in sIdFirst then
+      if pc^ in sIdFirst then
       begin
-        inc(pc); // skip space
+//        inc(pc); // skip space
         pc1:=@res.alias;
         repeat
           pc1^:=pc^;
@@ -245,7 +254,8 @@ begin
 
     // next - values
     // if has empty simple value, then points to next element but text-to-number will return 0 anyway
-    if pc^=' ' then inc(pc); // points to value or nothing if no args
+//    if pc^=' ' then inc(pc); // points to value or nothing if no args
+    SkipSpace(pc);
     case result of
       SST_LAST,SST_PARAM: ;
 
@@ -254,40 +264,61 @@ begin
           if (res.flags and EF_SCRIPT)=0 then
           begin
             pc1:=@res.svalue;
-            while not (pc^ in [#0,char_separator]) do // pc^ in sNum
+            if pc^=char_hex then
             begin
-              pc1^:=pc^;
-              inc(pc1);
               inc(pc);
-            end;
-            if res.svalue[0]=char_hex then
+              while pc^ in sHexNum do
+              begin
+                pc1^:=pc^;
+                inc(pc1);
+                inc(pc);
+              end;
               res.value:=HexToInt(res.svalue)
+            end
             else
+            begin
+              while pc^ in sNum do
+              begin
+                pc1^:=pc^;
+                inc(pc1);
+                inc(pc);
+              end;
               res.value:=StrToInt(res.svalue);
+            end;
           end
           else
           begin
             txt:=pc;
+            //!!
             while not (pc^ in [#0,char_separator]) do inc(pc);
-            StrDup(pAnsiChar(res.text),txt,pc-txt);
+            if txt<>pc then
+              StrDup(pAnsiChar(res.text),txt,pc-txt)
+            else
+              res.text:=nil;
           end;
         end;
       end;
 
       SST_BARR,SST_WARR,SST_BPTR,SST_WPTR: begin
+        // if pc^ in sNum then
         res.len:=StrToInt(pc);
         if not SizeOnly then
         begin
           while pc^ in sNum do inc(pc);
 
           // skip space
-          if pc^=' ' then inc(pc);
+//          if pc^=' ' then inc(pc);
+          SkipSpace(pc);
 
+          //!!
           if not (pc^ in [#0,char_separator]) then
           begin
             txt:=pc;
             while not (pc^ in [#0,char_separator]) do inc(pc);
-            StrDup(pAnsiChar(res.text),txt,pc-txt);
+            if txt<>pc then
+              StrDup(pAnsiChar(res.text),txt,pc-txt)
+            else
+              res.text:=nil;
           end;
         end;
       end;
@@ -320,7 +351,7 @@ var
   buf:array [0..9] of AnsiChar;
   bufw:array [0..4] of WideChar absolute buf;
 begin
-  if src=nil then exit;
+  if element.text=nil then exit;
 
   if element.etype in [SST_WARR,SST_WPTR] then
   begin

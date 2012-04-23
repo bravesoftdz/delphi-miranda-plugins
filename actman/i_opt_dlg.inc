@@ -185,7 +185,7 @@ begin
 }
 end;
 
-{$include i_opt_struct.inc}
+{.$include i_opt_struct.inc}
 {$include i_opt_dlg2.inc}
 
 function OnOptInitialise(wParam:WPARAM;lParam:LPARAM):int;cdecl;

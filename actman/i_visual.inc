@@ -343,7 +343,8 @@
         case FixParam(@buf1,IDC_FLAG_WPAR) of
           ptStruct: begin
             mFreeMem(wstruct);
-            AnsiToWide(StrScan(pc,'|')+1,wstruct,MirandaCP);
+            StrDup(wstruct,StrScan(pc,'|')+1);
+//            AnsiToWide(StrScan(pc,'|')+1,wstruct,MirandaCP);
           end;
         end;
       mFreeMem(pc);
@@ -355,7 +356,8 @@
         case FixParam(@buf1,IDC_FLAG_LPAR) of
           ptStruct: begin
             mFreeMem(lstruct);
-            AnsiToWide(StrScan(pc,'|')+1,lstruct,MirandaCP);
+            StrDup(lstruct,StrScan(pc,'|')+1);
+//            AnsiToWide(StrScan(pc,'|')+1,lstruct,MirandaCP);
           end;
         end;
       mFreeMem(pc);
@@ -765,7 +767,7 @@
             SHControl(IDC_EDIT_WPAR,SW_HIDE);
             SHControl(IDC_WSTRUCT  ,SW_SHOW);
             mFreeMem(wstruct);
-            StrDupW(wstruct,PWideChar(wparam));
+            StrDup(wstruct,PAnsiChar(wparam));
           end
           else if (flags and ACF_WUNICODE)<>0 then
           begin
@@ -812,7 +814,7 @@
             SHControl(IDC_EDIT_LPAR,SW_HIDE);
             SHControl(IDC_LSTRUCT  ,SW_SHOW);
             mFreeMem(lstruct);
-            StrDupW(lstruct,PWideChar(lparam));
+            StrDup(lstruct,PAnsiChar(lparam));
           end
           else if (flags and ACF_LUNICODE)<>0 then
           begin

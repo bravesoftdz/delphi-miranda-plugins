@@ -150,34 +150,34 @@ end;
 
 procedure tmApiCard.FillList(combo:hwnd; mode:integer=0);
 var
-  buf:array [0..8191] of AnsiChar;
   tmpbuf:array [0..127] of AnsiChar;
   p,pp,pc:PAnsiChar;
 begin
   if storage<>nil then
   begin
     SendMessage(combo,CB_RESETCONTENT,0,0);
-    buf[0]:=#0;
     p:=GetSectionList(storage,namespace);
     pp:=p;
     while p^<>#0 do
     begin
       case mode of
         1: begin // just constant name
-          pc:=GetParamStr(storage,p,'alias','',namespace);
+          pc:=GetParamStr(storage,p,'alias',nil,namespace);
+          if pc=nil then
+            pc:=p;
         end;
         2: begin // value (name)
           pc:=StrCopyE(tmpbuf,p);
           pc^:=' '; inc(pc);
           pc^:='('; inc(pc);
-          pc:=StrCopyE(pc,GetParamStr(storage,p,'alias','',namespace));
+          pc:=StrCopyE(pc,GetParamStr(storage,p,'alias',nil,namespace));
           pc^:=')'; inc(pc);
           pc^:=#0;
           pc:=@tmpbuf;
         end;
         3: begin // name 'value'
           pc:=@tmpbuf;
-          pc:=StrCopyE(pc,GetParamStr(storage,p,'alias','',namespace));
+          pc:=StrCopyE(pc,GetParamStr(storage,p,'alias',nil,namespace));
           pc^:=' '; inc(pc);
           pc^:=''''; inc(pc);
           pc:=StrCopyE(pc,p);
@@ -191,7 +191,7 @@ begin
       SendMessageA(combo,CB_ADDSTRING,0,lparam(pc));
       while p^<>#0 do inc(p); inc(p);
     end;
-    FreeMem(pp);
+    FreeSectionList(pp);
     SendMessage(combo,CB_SETCURSEL,-1,0);
   end;
 end;

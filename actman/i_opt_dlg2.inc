@@ -33,7 +33,7 @@ const
   ptStruct  = 6;
 
 var
-  wstruct,lstruct:pWideChar;
+  wstruct,lstruct:pAnsiChar;
   DontReact:bool;
   OldGroupTableProc,
   OldActTableProc:pointer;
@@ -800,7 +800,7 @@ function DlgProcOpt2(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lres
             end;
             ptStruct: begin
               flags:=flags or ACF_WSTRUCT;
-              StrDupW(pWideChar(wparam),wstruct);
+              StrDup(pAnsiChar(wparam),wstruct);
             end;
             ptUnicode: begin
               flags:=flags or ACF_WUNICODE;
@@ -828,7 +828,7 @@ function DlgProcOpt2(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lres
             end;
             ptStruct: begin
               flags:=flags or ACF_LSTRUCT;
-              StrDupW(pWideChar(lparam),lstruct);
+              StrDup(pAnsiChar(lparam),lstruct);
             end;
             ptUnicode: begin
               flags:=flags or ACF_LUNICODE;
@@ -1282,7 +1282,7 @@ function DlgProcOpt2(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lres
 var
   wnd,wnd1,wnd2:HWND;
   i,j:int_ptr;
-  pw:pWideChar;
+  pc:pAnsiChar;
   li:LV_ITEMW;
   lv:LV_COLUMNW;
   b:boolean;
@@ -1624,22 +1624,22 @@ begin
 
             IDC_WSTRUCT, IDC_LSTRUCT: begin
               if loword(wParam)=IDC_WSTRUCT then
-                pw:=wstruct
+                pc:=wstruct
               else
-                pw:=lstruct;
-              j:=DialogBoxParamW(hInstance,MAKEINTRESOURCEW(IDD_STRUCTURE),
-                 Dialog,@StructEdit,TLPARAM(pw));
+                pc:=lstruct;
+//!!!!
+              pAnsiChar(j):=EditStructure(pAnsiChar(pc),Dialog);
               if j<>0 then
               begin
                 ChMask:=ChMask or ACTM_ACT or ACTM_ACTS;
                 SetChanged(Dialog,etACT);
-                mFreeMem(pWideChar(pw));
-                pw:=pWideChar(j);
+                mFreeMem(pAnsiChar(pc));
+                pc:=pAnsiChar(j);
 
                 if loword(wParam)=IDC_WSTRUCT then
-                  wstruct:=pw
+                  wstruct:=pc
                 else
-                  lstruct:=pw;
+                  lstruct:=pc;
               end;
             end;
 

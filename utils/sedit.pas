@@ -9,8 +9,8 @@ function EditStructure(struct:pAnsiChar;parent:HWND=0):pAnsiChar;
 
 implementation
 
-uses io,messages, commctrl, common, wrapper, strans
-  {$IFDEF Miranda}, m_api, mirutils, memini{$ENDIF};
+uses io,messages, commctrl, common, wrapper, strans, memini
+  {$IFDEF Miranda}, m_api, mirutils{$ENDIF};
 {
   <STE_* set> <len> <data>
 }
@@ -415,7 +415,8 @@ var
   element:tOneElement;
 begin
   SendMessage(list,LVM_DELETEALLITEMS,0,0);
-  txt:=StrScan(txt,char_separator)+1;
+  if txt^ in sNum then
+    txt:=StrScan(txt,char_separator)+1;
   while txt^<>#0 do
   begin
     p:=StrScan(txt,char_separator);
@@ -439,7 +440,7 @@ var
   pc:pWideChar;
   pc1:pAnsiChar;
   len:integer;
-  isScript:boolean;
+  {$IFDEF Miranda}isScript:boolean;{$ENDIF}
 begin
   li.iItem:=item;
   
@@ -695,7 +696,8 @@ var
   b,b1:boolean;
   idcshow,idchide:integer;
   li:TLVITEMW;
-  vflag,mflag,len:integer;
+  {$IFDEF Miranda}vflag,mflag,{$ENDIF}
+  len:integer;
   wnd:HWND;
 begin
   len:=LV_GetLParam(list,item);
@@ -846,7 +848,7 @@ begin
 end;
 
 {$IFDEF Miranda}
-procedure FillTemplates(wnd:HWND);
+procedure FillTemplates(wnd:HWND;storage:pointer);
 var
   p,pp:pAnsiChar;
   i:integer;
@@ -858,12 +860,12 @@ begin
   i:=0;
   while p^<>#0 do
   begin
-    CB_AddStrData(wnd,p,Integer(SearchSection(storage,p,namespace)), i);
+    CB_AddStrData(wnd,p,int_ptr(SearchSection(storage,p,namespace)), i);
 
     while p^<>#0 do inc(p); inc(p);
     inc(i);
   end;
-  FreeMem(pp);
+  FreeSectionList(pp);
 end;
 {$ENDIF}
 
@@ -924,7 +926,9 @@ begin
     end;
 
     WM_INITDIALOG: begin
+{$IFDEF Miranda}
       TranslateDialogDefault(Dialog);
+{$ENDIF}
       result:=1;
 
       if lParam<>0 then
@@ -934,7 +938,7 @@ begin
         SetDlgItemTextA(Dialog,IDC_HLP_PLUGIN,GetParamSectionStr(pointer(lParam),'plugin'));
 
         FastAnsiToWide(GetParamSectionStr(pointer(lParam),'descr','Undefined'),tmp);
-        SetDlgItemTextW(Dialog,IDC_HLP_DESCR,TranslateW(tmp));
+        SetDlgItemTextW(Dialog,IDC_HLP_DESCR,{$IFDEF Miranda}TranslateW{$ENDIF}(tmp));
         mFreeMem(tmp);
 
         pc:=GetParamSectionStr(pointer(lParam),'full',nil);
@@ -967,8 +971,8 @@ var
   li:TLVITEMW;
   b,b1:boolean;
   idchide,idcshow:integer;
-  pc:pAnsiChar;
 {$IFDEF Miranda}
+  pc:pAnsiChar;
   urd:TUTILRESIZEDIALOG;
 {$ELSE}
   rc,rc1:TRECT;
@@ -977,13 +981,17 @@ begin
   result:=0;
   case hMessage of
 
+    WM_DESTROY: begin
+      CloseStorage(storage);
+    end;
+
     WM_INITDIALOG: begin
       result:=1;
 {$IFDEF Miranda}
       TranslateDialogDefault(Dialog);
       RegisterIcons;
       storage:=OpenStorage(API_STRUCT_FILE);
-      FillTemplates(GetDlgItem(Dialog,IDC_DATA_TMPL));
+      FillTemplates(GetDlgItem(Dialog,IDC_DATA_TMPL),storage);
 {$ENDIF}
       wnd:=GetDlgItem(Dialog,IDC_DATA_FULL);
       MakeLVStructList(wnd);
@@ -1292,13 +1300,10 @@ function EditStructure(struct:pAnsiChar;parent:HWND=0):pAnsiChar;
 begin
   InitCommonControls;
 
-  result:=pAnsiChar(DialogBoxParamW(hInstance,'IDD_STRUCTURE',//MAKEINTRESOURCEW(IDD_STRUCTURE),
-                 parent,@StructEdit,LPARAM(struct)));
-(*
-  result:=pointer(CreateDialogParamW(hInstance,MAKEINTRESOURCEW(IDD_STRUCTURE),
-      parent,@StructEdit,TLPARAM(struct)));
-*)
-  if int_ptr(result)=int_ptr(-1) then
+  result:=pAnsiChar(uint_ptr(DialogBoxParamW(hInstance,'IDD_STRUCTURE',
+                 parent,@StructEdit,LPARAM(struct))));
+
+  if uint_ptr(result)=uint_ptr(-1) then
     result:=nil;
 end;
 
