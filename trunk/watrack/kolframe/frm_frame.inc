@@ -40,7 +40,7 @@ end;
 
 procedure FrameTimerProc(wnd:HWND;uMsg:uint;idEvent:uint_ptr;dwTime:dword); stdcall;
 var
-  psi:PSongInfo;
+  psi:pSongInfo;
   D:PWATFrameData;
 begin
   D:=FrameCtrl.CustomData;

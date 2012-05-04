@@ -126,16 +126,16 @@ begin
     WAT_EVENT_NEWTRACK: begin
       // cover
       if D.UseCover then
-        if (PSongInfo(lParam)^.Cover<>nil) and (PSongInfo(lParam)^.Cover^<>#0) then
+        if (pSongInfo(lParam)^.Cover<>nil) and (pSongInfo(lParam)^.Cover^<>#0) then
         begin
-          GetShortPathNameW(PSongInfo(lParam)^.Cover,bufw,SizeOf(bufw));
+          GetShortPathNameW(pSongInfo(lParam)^.Cover,bufw,SizeOf(bufw));
           WideToAnsi(bufw,Cover);
           FrameCtrl.RefreshPicture(Cover);
           mFreeMem(Cover);
         end;
 
       // trackbar
-      TrackbarSetRange(D.Trackbar,D.UpdInterval,PSongInfo(lParam)^.total);
+      TrackbarSetRange(D.Trackbar,D.UpdInterval,pSongInfo(lParam)^.total);
 
       if (D.UpdTimer=0) and (D.UpdInterval>0) then
         D.UpdTimer:=SetTimer(0,0,D.UpdInterval,@FrameTimerProc);
@@ -147,7 +147,7 @@ begin
     end;
 
     WAT_EVENT_NEWPLAYER: begin
-      SetFrameTitle(PSongInfo(lParam)^.player,PSongInfo(lParam)^.icon);
+      SetFrameTitle(pSongInfo(lParam)^.player,pSongInfo(lParam)^.icon);
       // new player must call "no music" at least, so we have chance to show frame
     end;
 

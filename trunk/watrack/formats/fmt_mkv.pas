@@ -184,7 +184,7 @@ begin
       mGetMem(ls,len+1);
       move(ptr^,ls^,len);
       ls[len]:=#0;
-      ANSItoWide(ls,Info.title);
+      AnsiToWide(ls,Info.title);
       mFreeMem(ls);
       inc(ptr,len);
     end
@@ -223,9 +223,9 @@ procedure InitLink;
 begin
   LocalFormatLink.Next:=FormatLink;
 
-  LocalFormatLink.this.proc :=@ReadMKV;
-  LocalFormatLink.this.ext  :='MKV';
-  LocalFormatLink.this.flags:=WAT_OPT_VIDEO;
+  LocalFormatLink.This.proc :=@ReadMKV;
+  LocalFormatLink.This.ext  :='MKV';
+  LocalFormatLink.This.flags:=WAT_OPT_VIDEO;
 
   FormatLink:=@LocalFormatLink;
 end;

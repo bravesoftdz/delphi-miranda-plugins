@@ -88,7 +88,7 @@ begin
       li.mask     :=LVIF_PARAM+LVIF_TEXT;
       li.iItem    :=SendMessage(list,LVM_GETNEXTITEM,-1,LVNI_FOCUSED)+1;
       li.iSubItem :=0;
-      li.lParam   :=HKNum;
+      li.lParam   :=HKnum;
       if descr=nil then
         li.pszText:=NoDescription
       else
@@ -289,7 +289,7 @@ begin
   FillChar(ti,SizeOf(ti),0);
   ti.cbSize  :=sizeof(TOOLINFO);
   ti.uFlags  :=TTF_IDISHWND or TTF_SUBCLASS;
-  ti.hwnd    :=dialog;
+  ti.hwnd    :=Dialog;
   ti.hinst   :=hInstance;
 
   ti.uId     :=GetDlgItem(Dialog,IDC_ACTION_HELP);

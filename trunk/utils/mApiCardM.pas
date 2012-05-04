@@ -13,7 +13,7 @@ type
     procedure SetCurrentService(item:pAnsiChar);
   public
     constructor Create(fname:pAnsiChar; lparent:HWND=0);
-    procedure Free;
+    destructor Free;
     procedure FillList(combo:HWND; mode:integer=0);
 
     function FillParams(wnd:HWND{;item:pAnsiChar};wparam:boolean):pAnsiChar;
@@ -127,7 +127,7 @@ begin
         if pp^<>#0 then
         begin
           bufw[j]:=' '; bufw[j+1]:='-'; bufw[j+2]:=' '; inc(j,3);
-          FastANSItoWideBuf(pp+1,tmp);
+          FastAnsitoWideBuf(pp+1,tmp);
           StrCopyW(bufw+j,TranslateW(tmp));
           SendMessageW(wnd,CB_ADDSTRING,0,lparam(@bufw));
         end
@@ -136,7 +136,7 @@ begin
       end
       else
       begin
-        FastANSItoWideBuf(p,tmp);
+        FastAnsitoWideBuf(p,tmp);
         SendMessageW(wnd,CB_ADDSTRING,0,lparam(TranslateW(tmp)));
         if (p=@buf) and (lstrcmpia(p,'structure')=0) then
           break;
@@ -367,7 +367,7 @@ begin
     ConvertFileName(fname,@INIFile);
   //  PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,
   //    dword(PAnsiChar(ServiceHlpFile)),dword(INIFile));
-    if GetFSize(PAnsiChar(@INIFile))=0 then
+    if GetFSize(pAnsiChar(@INIFile))=0 then
     begin
       INIFile[0]:=#0;
     end;
@@ -376,10 +376,10 @@ begin
   storage:=OpenStorage(@IniFile);
 end;
 
-procedure tmApiCard.Free;
+destructor tmApiCard.Free;
 begin
   CloseStorage(storage);
-  inherited Free;
+//  inherited;
 end;
 
 function CreateServiceCard(parent:HWND=0):tmApiCard;

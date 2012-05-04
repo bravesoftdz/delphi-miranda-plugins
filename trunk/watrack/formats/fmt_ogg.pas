@@ -140,15 +140,15 @@ begin
       ls[alen-1]:=#0;
       value:=ls+alen;
 
-      if      (Info.Title  =nil) and (lstrcmpia(ls,'TITLE'  )=0) then UTF8toWide(value,Info.Title)
-      else if (Info.Artist =nil) and (lstrcmpia(ls,'ARTIST' )=0) then UTF8toWide(value,Info.Artist)
-      else if (Info.Album  =nil) and (lstrcmpia(ls,'ALBUM'  )=0) then UTF8toWide(value,Info.Album)
-      else if (Info.Genre  =nil) and (lstrcmpia(ls,'GENRE'  )=0) then UTF8toWide(value,Info.Genre)
-      else if (Info.Year   =nil) and (lstrcmpia(ls,'DATE'   )=0) then UTF8toWide(value,Info.Year)
-      else if (Info.Comment=nil) and (lstrcmpia(ls,'COMMENT')=0) then UTF8toWide(value,Info.Comment)
-      else if (Info.Lyric  =nil) and (lstrcmpia(ls,'LYRICS' )=0) then UTF8toWide(value,Info.Lyric)
+      if      (Info.title  =nil) and (lstrcmpia(ls,'TITLE'  )=0) then UTF8ToWide(value,Info.title)
+      else if (Info.artist =nil) and (lstrcmpia(ls,'ARTIST' )=0) then UTF8ToWide(value,Info.artist)
+      else if (Info.album  =nil) and (lstrcmpia(ls,'ALBUM'  )=0) then UTF8ToWide(value,Info.album)
+      else if (Info.genre  =nil) and (lstrcmpia(ls,'GENRE'  )=0) then UTF8ToWide(value,Info.genre)
+      else if (Info.year   =nil) and (lstrcmpia(ls,'DATE'   )=0) then UTF8ToWide(value,Info.year)
+      else if (Info.comment=nil) and (lstrcmpia(ls,'COMMENT')=0) then UTF8ToWide(value,Info.comment)
+      else if (Info.lyric  =nil) and (lstrcmpia(ls,'LYRICS' )=0) then UTF8ToWide(value,Info.lyric)
 
-      else if (Info.Track=0) and (lstrcmpia(ls,'TRACKNUMBER')=0) then Info.Track:=StrToInt(value)
+      else if (Info.track=0) and (lstrcmpia(ls,'TRACKNUMBER')=0) then Info.track:=StrToInt(value)
 
       else if (cover=nil) and (lstrcmpia(ls,'COVERART')=0) then clen:=Base64Decode(value,cover)
       else if  lstrcmpia(ls,'COVERARTMIME')=0 then ext:=GetImageType(nil,value);
@@ -165,7 +165,7 @@ begin
     if ext<>0 then
     begin
       FastAnsiToWideBuf(PAnsiChar(@ext),pWideChar(@extw));
-      Info.Cover:=SaveTemporaryW(cover,clen,PWideChar(@extw));
+      Info.cover:=SaveTemporaryW(cover,clen,PWideChar(@extw));
     end;
     mFreeMem(cover);
   end;
@@ -225,7 +225,7 @@ begin
   CloseHandle(f);
 end;
 
-function Compare(sign:array of byte):integer;
+function Compare(const sign:array of byte):integer;
 type
   conv=packed record
     d:dword;w:word;
@@ -288,10 +288,10 @@ begin
         begin
           case Compare(tmp.sign) of
             strmOGG: begin
-              BlockRead(f,OggInfo,SizeOf(OGGInfo));
+              BlockRead(f,OGGInfo,SizeOf(OGGInfo));
               if integer(OGGInfo.nominal)>0 then
                 Info.kbps    :=OGGInfo.nominal div 1000;
-              Info.khz     :=OGGInfo.Samplerate;
+              Info.khz     :=OGGInfo.samplerate;
               Info.channels:=OGGInfo.Channels;
               done:=done or 1;
             end;
@@ -394,7 +394,7 @@ begin
         0: begin
           if flag=0 then
           begin
-            BlockRead(f,Frm,SizeOf(frm));
+            BlockRead(f,frm,SizeOf(frm));
           //samplerate eg.44100
             Info.khz:=((frm.heap[0] shl 12)+(frm.heap[1] shl 4)+(frm.heap[2] shr 4));
             Info.channels:=((frm.heap[2] and $F) shr 1)+1;
@@ -418,25 +418,25 @@ Info.kbps:=trunc(FileSize(f)*8/1000);
           FreeMem(buf);
         end;
         6: begin
-          if Info.Cover=nil then
+          if Info.cover=nil then
           begin
             GetMem(buf,size);
             BlockRead(f,buf^,size);
             ptr:=buf;
-            id:=bswap(pdword(ptr)^);
+            id:=BSwap(pdword(ptr)^);
             case id of
               0,3,4,6: begin
                 inc(ptr,4);
-                id:=bswap(pdword(ptr)^); // mime size
+                id:=BSwap(pdword(ptr)^); // mime size
                 inc(ptr,4);
                 flag:=GetImageType(nil,ptr);
                 inc(ptr,id+4*5); // width, height, depth etc.
-                id:=bswap(pdword(ptr)^); // image size
+                id:=BSwap(pdword(ptr)^); // image size
                 inc(ptr,4);
                 if flag=0 then
                   flag:=GetImageType(pByte(ptr));
                 FastAnsiToWideBuf(PAnsiChar(@flag),pWideChar(@data64));
-                Info.Cover:=SaveTemporaryW(ptr,id,PWideChar(@data64));
+                Info.cover:=SaveTemporaryW(ptr,id,PWideChar(@data64));
               end;
             end;
             FreeMem(buf);
@@ -470,49 +470,49 @@ procedure InitLink;
 begin
   LocalFormatLinkOGG.Next:=FormatLink;
 
-  LocalFormatLinkOGG.this.proc :=@ReadOGG;
-  LocalFormatLinkOGG.this.ext  :='OGG';
-  LocalFormatLinkOGG.this.flags:=0;
+  LocalFormatLinkOGG.This.proc :=@ReadOGG;
+  LocalFormatLinkOGG.This.ext  :='OGG';
+  LocalFormatLinkOGG.This.flags:=0;
 
   FormatLink:=@LocalFormatLinkOGG;
 
   LocalFormatLinkOGA.Next:=FormatLink;
 
-  LocalFormatLinkOGA.this.proc :=@ReadOGG;
-  LocalFormatLinkOGA.this.ext  :='OGA';
-  LocalFormatLinkOGA.this.flags:=0;
+  LocalFormatLinkOGA.This.proc :=@ReadOGG;
+  LocalFormatLinkOGA.This.ext  :='OGA';
+  LocalFormatLinkOGA.This.flags:=0;
 
   FormatLink:=@LocalFormatLinkOGA;
 
   LocalFormatLinkOGM.Next:=FormatLink;
 
-  LocalFormatLinkOGM.this.proc :=@ReadOGG;
-  LocalFormatLinkOGM.this.ext  :='OGM';
-  LocalFormatLinkOGM.this.flags:=WAT_OPT_VIDEO;
+  LocalFormatLinkOGM.This.proc :=@ReadOGG;
+  LocalFormatLinkOGM.This.ext  :='OGM';
+  LocalFormatLinkOGM.This.flags:=WAT_OPT_VIDEO;
 
   FormatLink:=@LocalFormatLinkOGM;
 
   LocalFormatLinkSPX.Next:=FormatLink;
 
-  LocalFormatLinkSPX.this.proc :=@ReadSPX;
-  LocalFormatLinkSPX.this.ext  :='SPX';
-  LocalFormatLinkSPX.this.flags:=0;
+  LocalFormatLinkSPX.This.proc :=@ReadSPX;
+  LocalFormatLinkSPX.This.ext  :='SPX';
+  LocalFormatLinkSPX.This.flags:=0;
 
   FormatLink:=@LocalFormatLinkSPX;
 
   LocalFormatLinkFLA.Next:=FormatLink;
 
-  LocalFormatLinkFLA.this.proc :=@ReadfLaC;
-  LocalFormatLinkFLA.this.ext  :='FLA';
-  LocalFormatLinkFLA.this.flags:=0;
+  LocalFormatLinkFLA.This.proc :=@ReadfLaC;
+  LocalFormatLinkFLA.This.ext  :='FLA';
+  LocalFormatLinkFLA.This.flags:=0;
 
   FormatLink:=@LocalFormatLinkFLA;
 
   LocalFormatLinkFLAC.Next:=FormatLink;
 
-  LocalFormatLinkFLAC.this.proc :=@ReadfLaC;
-  LocalFormatLinkFLAC.this.ext  :='FLAC';
-  LocalFormatLinkFLAC.this.flags:=0;
+  LocalFormatLinkFLAC.This.proc :=@ReadfLaC;
+  LocalFormatLinkFLAC.This.ext  :='FLAC';
+  LocalFormatLinkFLAC.This.flags:=0;
 
   FormatLink:=@LocalFormatLinkFLAC;
 end;

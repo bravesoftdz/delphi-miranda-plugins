@@ -50,22 +50,20 @@ const
       (code:ACT_RW     ; id:IDI_RW     ; icon:ACI_RW     ; text:'Profile'),
       (code:ACT_MESSAGE; id:IDI_MESSAGE; icon:ACI_MESSAGE; text:'MessageBox'));
 
+procedure RegisterIcon(var sid:TSKINICONDESC;id:uint_ptr;name:PAnsiChar;descr:PAnsiChar);
+var
+  buf:array [0..63] of WideChar;
+begin
+  sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(id),IMAGE_ICON,16,16,0);
+  sid.pszName        :=name;
+  sid.szDescription.w:=FastAnsiToWideBuf(descr,buf);
+  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  DestroyIcon(sid.hDefaultIcon);
+end;
+
 procedure RegisterIcons;
 var
   sid:TSKINICONDESC;
-
-  procedure RegisterIcon(id:uint_ptr;name:PAnsiChar;descr:PAnsiChar);
-  var
-    buf:array [0..63] of WideChar;
-  begin
-    sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(id),IMAGE_ICON,16,16,0);
-    sid.pszName        :=name;
-    sid.szDescription.w:=FastAnsiToWideBuf(descr,buf);
-    PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
-    DestroyIcon(sid.hDefaultIcon);
-  end;
-
-var
   i:integer;
 begin
   FillChar(sid,SizeOf(TSKINICONDESC),0);
@@ -75,26 +73,26 @@ begin
   sid.flags      :=SIDF_UNICODE;
   sid.szSection.w:='Actions';
 
-  RegisterIcon(IDI_APPLY  ,ACI_APPLY  ,'Apply');
-  RegisterIcon(IDI_NEW    ,ACI_NEW    ,'New');
-  RegisterIcon(IDI_DELETE ,ACI_DELETE ,'Delete');
-  RegisterIcon(IDI_UP     ,ACI_UP     ,'Up');
-  RegisterIcon(IDI_DOWN   ,ACI_DOWN   ,'Down');
-  RegisterIcon(IDI_RELOAD ,ACI_RELOAD ,'Reload');
-  RegisterIcon(IDI_TEST   ,ACI_TEST   ,'Test');
-  RegisterIcon(IDI_IMPORT ,ACI_IMPORT ,'Import');
-  RegisterIcon(IDI_EXPORT ,ACI_EXPORT ,'Export');
+  RegisterIcon(sid,IDI_APPLY  ,ACI_APPLY  ,'Apply');
+  RegisterIcon(sid,IDI_NEW    ,ACI_NEW    ,'New');
+  RegisterIcon(sid,IDI_DELETE ,ACI_DELETE ,'Delete');
+  RegisterIcon(sid,IDI_UP     ,ACI_UP     ,'Up');
+  RegisterIcon(sid,IDI_DOWN   ,ACI_DOWN   ,'Down');
+  RegisterIcon(sid,IDI_RELOAD ,ACI_RELOAD ,'Reload');
+  RegisterIcon(sid,IDI_TEST   ,ACI_TEST   ,'Test');
+  RegisterIcon(sid,IDI_IMPORT ,ACI_IMPORT ,'Import');
+  RegisterIcon(sid,IDI_EXPORT ,ACI_EXPORT ,'Export');
 
-  RegisterIcon(IDI_FORMAT ,ACI_FORMAT ,'Contact list format');
+  RegisterIcon(sid,IDI_FORMAT ,ACI_FORMAT ,'Contact list format');
 
   for i:=0 to ACT_MAXTYPE-1 do
     with ActIds[i] do
-      RegisterIcon(id,icon,text);
+      RegisterIcon(sid,id,icon,text);
 
   sid.cx:=8;
   sid.cy:=8;
-  RegisterIcon(IDI_VAR_CHECKED  ,ACI_VAR_CHECKED  ,'Use Variables');
-  RegisterIcon(IDI_VAR_UNCHECKED,ACI_VAR_UNCHECKED,'Don''t use Variables');
+  RegisterIcon(sid,IDI_VAR_CHECKED  ,ACI_VAR_CHECKED  ,'Use Variables');
+  RegisterIcon(sid,IDI_VAR_UNCHECKED,ACI_VAR_UNCHECKED,'Don''t use Variables');
 end;
 
 procedure SetStart;
@@ -128,7 +126,7 @@ begin
   begin
 
     DestroyGroups(GroupList,MaxGroups);
-    wnd:=GetDlgItem(dialog,IDC_ACTION_GROUP);
+    wnd:=GetDlgItem(Dialog,IDC_ACTION_GROUP);
     j:=SendMessageW(wnd,LVM_GETITEMCOUNT,0,0);
     MaxGroups:=j;
     if j>0 then
@@ -141,7 +139,7 @@ begin
       begin
         li.iItem:=i;
         SendMessageW(wnd,LVM_GETITEMW,0,lparam(@li)); // GetLParam(wnd,i);
-        move(NewGroupList^[li.lParam],GroupList^[i],SizeOf(THKRecord));
+        move(NewGroupList^[li.lParam],GroupList^[i],SizeOf(tHKRecord));
         li.lParam:=i;
         SendMessageW(wnd,LVM_SETITEMW,0,lparam(@li));
       end;

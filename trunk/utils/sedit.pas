@@ -79,21 +79,20 @@ begin
 end;
 
 {$IFDEF Miranda}
+procedure RegisterIcon(var sid:TSKINICONDESC;id,name:PAnsiChar;descr:PAnsiChar);
+var
+  buf:array [0..63] of WideChar;
+begin
+  sid.hDefaultIcon   :=LoadImageA(hInstance,id,IMAGE_ICON,16,16,0);
+  sid.pszName        :=name;
+  sid.szDescription.w:=FastAnsiToWideBuf(descr,buf);
+  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  DestroyIcon(sid.hDefaultIcon);
+end;
+
 procedure RegisterIcons;
 var
   sid:TSKINICONDESC;
-
-  procedure RegisterIcon(id,name:PAnsiChar;descr:PAnsiChar);
-  var
-    buf:array [0..63] of WideChar;
-  begin
-    sid.hDefaultIcon   :=LoadImageA(hInstance,id,IMAGE_ICON,16,16,0);
-    sid.pszName        :=name;
-    sid.szDescription.w:=FastAnsiToWideBuf(descr,buf);
-    PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
-    DestroyIcon(sid.hDefaultIcon);
-  end;
-
 begin
   if PluginLink^.CallService(MS_SKIN2_GETICON,0,LPARAM(ACI_NEW))<>0 then
     exit;
@@ -105,10 +104,10 @@ begin
   sid.flags      :=SIDF_UNICODE;
   sid.szSection.w:='Actions';
 
-  RegisterIcon('IDI_NEW'    ,ACI_NEW    ,'New');
-  RegisterIcon('IDI_DELETE' ,ACI_DELETE ,'Delete');
-  RegisterIcon('IDI_UP'     ,ACI_UP     ,'Up');
-  RegisterIcon('IDI_DOWN'   ,ACI_DOWN   ,'Down');
+  RegisterIcon(sid,'IDI_NEW'    ,ACI_NEW    ,'New');
+  RegisterIcon(sid,'IDI_DELETE' ,ACI_DELETE ,'Delete');
+  RegisterIcon(sid,'IDI_UP'     ,ACI_UP     ,'Up');
+  RegisterIcon(sid,'IDI_DOWN'   ,ACI_DOWN   ,'Down');
 end;
 {$ENDIF}
 procedure SetDataButtonIcons(Dialog:HWND);
@@ -730,7 +729,7 @@ begin
     b1:=false;
   end;
   SetDlgItemTextW(Dialog,IDC_DATA_LEN,@buf);
-  
+
   p:=@buf;
   li.cchTextMax:=15;
   li.pszText   :=@buf;
@@ -739,6 +738,7 @@ begin
 {$IFDEF Miranda}
     li.iSubItem:=col_flag;
     vflag:=BST_UNCHECKED;
+    i:=SW_HIDE;
     mflag:=BST_UNCHECKED;
     if SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li))>0 then
     begin
@@ -746,6 +746,7 @@ begin
       begin
         b1:=true;
         vflag:=BST_CHECKED;
+        i:=SW_SHOW;
 
         idchide:=IDC_DATA_EDTN;
         idcshow:=IDC_DATA_EDIT;
@@ -754,6 +755,7 @@ begin
       if StrScanW(p,char_mmi)<>nil then
         mflag:=BST_CHECKED;
     end;
+    ShowWindow(GetDlgItem(Dialog,IDC_VAR_HELP),i);
     CheckDlgButton(Dialog,IDC_DATA_VARS,vflag);
     CheckDlgButton(Dialog,IDC_DATA_MMI ,mflag);
 {$ENDIF}
@@ -848,24 +850,26 @@ begin
 end;
 
 {$IFDEF Miranda}
-procedure FillTemplates(wnd:HWND;storage:pointer);
+procedure FillTemplates(wnd:HWND;lstorage:pointer);
 var
   p,pp:pAnsiChar;
   i:integer;
 begin
   SendMessage(wnd,CB_RESETCONTENT,0,0);
 
-  p:=GetSectionList(storage,namespace);
+  p:=GetSectionList(lstorage,namespace);
   pp:=p;
   i:=0;
   while p^<>#0 do
   begin
-    CB_AddStrData(wnd,p,int_ptr(SearchSection(storage,p,namespace)), i);
+    CB_AddStrData(wnd,p,int_ptr(SearchSection(lstorage,p,namespace)), i);
 
     while p^<>#0 do inc(p); inc(p);
     inc(i);
   end;
   FreeSectionList(pp);
+  if i>0 then
+    SendMessage(wnd,CB_SETCURSEL,0,0);
 end;
 {$ENDIF}
 
@@ -982,7 +986,9 @@ begin
   case hMessage of
 
     WM_DESTROY: begin
+{$IFDEF Miranda}
       CloseStorage(storage);
+{$ENDIF}
     end;
 
     WM_INITDIALOG: begin
@@ -992,6 +998,9 @@ begin
       RegisterIcons;
       storage:=OpenStorage(API_STRUCT_FILE);
       FillTemplates(GetDlgItem(Dialog,IDC_DATA_TMPL),storage);
+      if isVarsInstalled then
+        SendDlgItemMessage(Dialog,IDC_VAR_HELP,BM_SETIMAGE,IMAGE_ICON,
+          CallService(MS_VARS_GETSKINITEM,0,VSI_HELPICON));
 {$ENDIF}
       wnd:=GetDlgItem(Dialog,IDC_DATA_FULL);
       MakeLVStructList(wnd);
@@ -1138,7 +1147,18 @@ begin
               end;
             end;
 
+            IDC_VAR_HELP: begin
+              ShowVarHelp(Dialog,IDC_DATA_EDIT);
+            end;
             IDC_DATA_VARS: begin
+              if (not isVarsInstalled) or
+                 (IsDlgbuttonChecked(Dialog,IDC_DATA_VARS)=BST_UNCHECKED) then
+                idcshow:=SW_HIDE
+              else
+                idcshow:=SW_SHOW;
+              ShowWindow(GetDlgItem(Dialog,IDC_VAR_HELP),idcshow);
+
+
               i:=CB_GetData(GetDlgItem(Dialog,IDC_DATA_TYPE));
               if i IN [SST_BYTE,SST_WORD,SST_DWORD,SST_QWORD,SST_NATIVE] then
               begin

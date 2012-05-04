@@ -119,9 +119,9 @@ begin
               p:=GetUABranch(setting,dwActID);
               if p<>nil then
               begin
-                p:=StrCopyE(p,opt_UA);
+                p:=StrCopyE(p,opt_ua);
                 p^:='/'; inc(p);
-                StrCopy(p,opt_Flags);
+                StrCopy(p,opt_flags);
                 DBWriteDWord(0,DBBranch,setting,flags and not UAF_REALTIME);
               end;
             end;

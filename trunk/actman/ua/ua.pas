@@ -1,4 +1,4 @@
-unit UA;
+unit ua;
 
 interface
 
@@ -33,7 +33,7 @@ begin
     p:=StrEnd(IntToStr(p1,i));
     p^:='/'; inc(p);
     StrCopy(p,opt_id);
-    if DBReadDword(0,DBBranch,setting)=id then
+    if DBReadDWord(0,DBBranch,setting)=id then
     begin
       p^:=#0;
       result:=p;
@@ -106,9 +106,9 @@ end;
 
 procedure InitLink;
 begin
-  amLink.next     :=ActionLink;
+  amLink.Next     :=ActionLink;
   amLink.Init     :=@Init;
-  amLink.DeInit   :=@Deinit;
+  amLink.DeInit   :=@DeInit;
   amLink.AddOption:=@AddOptionPage;
   ActionLink      :=@amLink;
 end;

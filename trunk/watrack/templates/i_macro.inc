@@ -7,7 +7,7 @@ var
   p:PAnsiChar;
 begin
   p:=StrCopyE(buf,'alias/');
-  for i:=0 to NumVars-1 do
+  for i:=0 to numvars-1 do
   begin
 //    if vars[i].alias<>nil then
       DBWriteUnicode(0,PluginShort,IntToStr(p,i),vars[i].alias);
@@ -21,7 +21,7 @@ var
   p:PAnsiChar;
 begin
   p:=StrCopyE(buf,'alias/');
-  for i:=0 to NumVars-1 do
+  for i:=0 to numvars-1 do
     vars[i].alias:=DBReadUnicode(0,PluginShort,IntToStr(p,i),nil);
 end;
 
@@ -29,7 +29,7 @@ procedure FreeAliases;
 var
   i:integer;
 begin
-  for i:=0 to NumVars-1 do
+  for i:=0 to numvars-1 do
     mFreeMem(vars[i].alias);
 end;
 

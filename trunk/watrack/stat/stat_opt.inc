@@ -21,7 +21,7 @@ end;
 
 procedure SetModStatus(stat:integer);
 begin
-  DBWriteByte(0,PluginShort,opt_modStatus,stat);
+  DBWriteByte(0,PluginShort,opt_ModStatus,stat);
 end;
 
 procedure loadstat;
@@ -48,7 +48,7 @@ begin
   DBWriteByte  (0,PluginShort,opt_RunReport  ,RunReport);
   DBWriteByte  (0,PluginShort,opt_Direction  ,Direction);
   DBWriteByte  (0,PluginShort,opt_SortMode   ,SortMode);
-  DBWriteword  (0,PluginShort,opt_ReportItem ,ReportItems);
+  DBWriteWord  (0,PluginShort,opt_ReportItem ,ReportItems);
   DBWriteWord  (0,PluginShort,opt_ReportMask ,ReportMask);
   DBWriteByte  (0,PluginShort,opt_AutoSort   ,AutoSort);
 //  DBWriteDWord (0,PluginShort,opt_LastSort   ,LastSort);

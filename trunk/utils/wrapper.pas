@@ -9,7 +9,7 @@ function CreateHiddenWindow(proc:pointer=nil):HWND;
 
 function DoInitCommonControls(dwICC:DWORD):boolean;
 
-function GetScreenRect():TRect;
+function GetScreenRect:TRect;
 procedure SnapToScreen(var rc:TRect;dx:integer=0;dy:integer=0{;
           minw:integer=240;minh:integer=100});
 
@@ -31,7 +31,7 @@ Procedure ListView_GetItemTextA(hwndLV:hwnd;i:WPARAM;iSubItem:integer;pszText:Po
 Procedure ListView_GetItemTextW(hwndLV:hwnd;i:WPARAM;iSubItem:integer;pszText:Pointer;cchTextMax:integer);
 function  LV_GetLParam  (list:HWND;item:integer=-1):lresult;
 function  LV_SetLParam  (list:HWND;lParam:LPARAM;item:integer=-1):lresult;
-function  LV_ItemAtPos(wnd:HWND;Pt:TPOINT;var SubItem:dword):Integer; overload;
+function  LV_ItemAtPos(wnd:HWND;pt:TPOINT;var SubItem:dword):Integer; overload;
 function  LV_ItemAtPos(wnd:HWND;x,y:integer;var SubItem:dword):Integer; overload;
 procedure LV_SetItem (handle:hwnd;str:PAnsiChar;item:integer;subitem:integer=0);
 procedure LV_SetItemW(handle:hwnd;str:PWideChar;item:integer;subitem:integer=0);
@@ -84,7 +84,7 @@ begin
       hiddenwindow:=0
   end;
 
-  result:=DefWindowProcW(wnd,msg,wparam,lparam);
+  result:=DefWindowProcW(wnd,msg,wParam,lParam);
 end;
 
 function CreateHiddenWindow(proc:pointer=nil):HWND;
@@ -127,7 +127,7 @@ begin
   result:=InitCommonControlsEx(ICC);
 end;
 
-function GetScreenRect():TRect;
+function GetScreenRect:TRect;
 begin
   result.left  := GetSystemMetrics( SM_XVIRTUALSCREEN  );
   result.top   := GetSystemMetrics( SM_YVIRTUALSCREEN  );
@@ -204,7 +204,10 @@ function CB_GetData(cb:HWND;idx:integer=-1):lresult;
 begin
   if idx<0 then
     idx:=SendMessage(cb,CB_GETCURSEL,0,0);
-  result:=SendMessage(cb,CB_GETITEMDATA,idx,0);
+  if idx<0 then
+    result:=0
+  else
+    result:=SendMessage(cb,CB_GETITEMDATA,idx,0);
 end;
 
 function CB_AddStrData(cb:HWND;astr:pAnsiChar;data:integer=0;idx:integer=-1):HWND;
@@ -354,8 +357,8 @@ function LV_ItemAtPos(wnd:HWND;Pt:TPOINT;var SubItem:dword):Integer;
 var
   HTI:LV_HITTESTINFO;
 begin
-  HTI.pt.x := Pt.X;
-  HTI.pt.y := Pt.Y;
+  HTI.pt.x := pt.X;
+  HTI.pt.y := pt.Y;
   SendMessage(wnd,LVM_SUBITEMHITTEST,0,lparam(@HTI));
   Result :=HTI.iItem;
   if @SubItem<>nil then

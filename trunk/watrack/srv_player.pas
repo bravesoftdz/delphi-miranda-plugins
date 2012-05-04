@@ -47,8 +47,8 @@ procedure CopyTrackInfo   (const src:tSongInfo;var dst:tSongInfo);
 type
   pwPlayer = ^twPlayer;
   twPlayer = record
-    this:pPlayerCell;
-    next:pwPlayer;
+    This:pPlayerCell;
+    Next:pwPlayer;
   end;
 
 const
@@ -152,7 +152,7 @@ begin
     i:=0;
     j:=PlyNum;
     repeat
-      if not param(tmp^[i].desc,lParam) then break;
+      if not param(tmp^[i].Desc,lParam) then break;
       inc(i);
     until i=j;
     FreeMem(tmp);
@@ -233,7 +233,7 @@ begin
     i:=0;
     while i<PlyNum do
     begin
-      if lstrcmpia(plyLink^[i].desc,desc)=0 then
+      if lstrcmpia(plyLink^[i].Desc,desc)=0 then
       begin
         result:=i;
         exit;
@@ -259,7 +259,7 @@ procedure DefFillPlayerList(hwndList:hwnd);
 var
   item:LV_ITEMA;
   lvc:TLVCOLUMN;
-  i,NewItem:integer;
+  i,newItem:integer;
 
   il:HIMAGELIST; //!!
 begin
@@ -355,7 +355,7 @@ begin
   case LoWord(wParam) of
 
     WAT_ACT_REGISTER: begin
-      p:=FindPlayer(pPlayerCell(lParam)^.desc);
+      p:=FindPlayer(pPlayerCell(lParam)^.Desc);
       if (p=WAT_RES_NOTFOUND) or ((wParam and WAT_ACT_REPLACE)<>0) then
       begin
         if (p<>WAT_RES_NOTFOUND) and ((plyLink^[p].flags and WAT_OPT_ONLYONE)<>0) then
@@ -394,19 +394,19 @@ begin
             plyLink^[p].Notes:=pPlayerCell(lParam)^.Notes;
 
 // doubling description
-          i:=StrLen(pPlayerCell(lParam)^.desc)+1;
-          GetMem(plyLink^[p].desc,i);
-          move(pPlayerCell(lParam)^.desc^,plyLink^[p].desc^,i);
+          i:=StrLen(pPlayerCell(lParam)^.Desc)+1;
+          GetMem(plyLink^[p].Desc,i);
+          move(pPlayerCell(lParam)^.Desc^,plyLink^[p].Desc^,i);
 
 // doubling url
 
-          if pPlayerCell(lParam)^.url<>nil then
+          if pPlayerCell(lParam)^.URL<>nil then
           begin
             with plyLink^[p] do
             begin
-              i:=StrLen(pPlayerCell(lParam)^.url)+1;
+              i:=StrLen(pPlayerCell(lParam)^.URL)+1;
               GetMem(URL,i);
-              move(pPlayerCell(lParam)^.url^,URL^,i);
+              move(pPlayerCell(lParam)^.URL^,URL^,i);
             end;
           end
           else
@@ -429,11 +429,11 @@ begin
           flags:=pPlayerCell(lParam)^.flags;
           if URL<>nil then
             flags:=flags or WAT_OPT_HASURL;
-          if pPlayerCell(lParam)^.icon<>0 then
+          if pPlayerCell(lParam)^.Icon<>0 then
           begin
             if icon<>0 then
               DestroyIcon(icon);
-            icon:=CopyIcon(pPlayerCell(lParam)^.icon);
+            icon:=CopyIcon(pPlayerCell(lParam)^.Icon);
           end;
           Init     :=pPlayerCell(lParam)^.Init;
           DeInit   :=pPlayerCell(lParam)^.DeInit;
@@ -457,7 +457,7 @@ begin
         dec(PlyNum);
         if plyLink^[p].DeInit<>nil then
           tDeInitProc(plyLink^[p].DeInit);
-        FreeMem(plyLink^[p].desc);
+        FreeMem(plyLink^[p].Desc);
         if (plyLink^[p].flags and WAT_OPT_TEMPLATE)<>0 then
           ClearTemplate(pTmplCell(plyLink^[p].Check));
         if p<PlyNum then // not last
@@ -517,7 +517,7 @@ var
   ptr:PAnsiChar;
   NumPlayers:integer;
   pcell:pTmplCell;
-  rec:TPlayerCell;
+  rec:tPlayerCell;
   st,sec:pointer;
 begin
   result:=0;
@@ -1008,7 +1008,7 @@ begin
       ClearPlayerInfo(dst,false);
       AnsiToWide(plyLink^[0].Desc,dst.player);
       dst.plwnd:=result;
-      FastANSIToWide(plyLink^[0].URL,dst.url);
+      FastAnsiToWide(plyLink^[0].URL,dst.url);
       if plyLink^[0].icon<>0 then
         dst.icon:=CopyIcon(plyLink^[0].icon)
       else if result<>0 then
@@ -1199,7 +1199,7 @@ begin
       begin
         if DeInit<>nil then
           tDeInitProc(DeInit);
-        FreeMem(desc);
+        FreeMem(Desc);
         if URL<>nil then
           FreeMem(URL);
         if icon<>0 then

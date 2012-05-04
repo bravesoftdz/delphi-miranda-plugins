@@ -48,7 +48,7 @@ function GetInfo(var SongInfo:tSongInfo;flags:integer):integer;cdecl;
 begin
   result:=0;
   if (flags and WAT_OPT_CHANGES)<>0 then
-    SongInfo.time:=getElapsedTime(SongInfo.plwnd);
+    SongInfo.time:=GetElapsedTime(SongInfo.plwnd);
 end;
 
 const

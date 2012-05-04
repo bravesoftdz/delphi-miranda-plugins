@@ -1,8 +1,9 @@
-unit memINI;
+unit memini;
 
 interface
 
 function OpenStorage(fname:pAnsiChar):pointer;
+function OpenStorageBuf(buf:pAnsiChar):pointer;
 procedure CloseStorage(storage:pointer);
 
 function GetSectionList(storage:pointer;namespace:pAnsiChar=nil):pAnsiChar;
@@ -50,7 +51,7 @@ type
   pStorage = ^tStorage;
   tStorage = record
     Name     :pAnsiChar; // filename
-    Buffer   :pAnsiChar; // source (INI) text
+    buffer   :pAnsiChar; // source (INI) text
 
     numsect  :integer;
     arSection: array of tSection;
@@ -201,7 +202,7 @@ procedure TranslateData(data:pStorage);
 var
   pc2,pc1,pc:pAnsiChar;
 begin
-  pc:=data^.Buffer;
+  pc:=data^.buffer;
   data.numsect:=0;
   while pc^<>#0 do
   begin
@@ -257,6 +258,20 @@ begin
     end;
   end;
 
+end;
+
+function OpenStorageBuf(buf:pAnsiChar):pointer;
+begin
+  result:=nil;
+  if (buf<>nil) and (buf^<>#0) then
+  begin
+    GetMem(result,SizeOf(tStorage));
+    FillChar(result^,SizeOf(tStorage),0);
+
+    StrDup(pStorage(result)^.buffer,buf);
+
+    TranslateData(pStorage(result));
+  end;
 end;
 
 function OpenStorage(fname:pAnsiChar):pointer;

@@ -39,7 +39,7 @@ end;
 
 function NewPlStatus(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
-  si:PSongInfo;
+  si:pSongInfo;
   i,j:integer;
   xstat:integer;
   txt,title:pWideChar;
@@ -130,7 +130,7 @@ begin
             if (txt=nil) or (txt^=#0) then
               ls:=nil
             else
-              WideToANSI(txt,ls,UserCP);
+              WideToAnsi(txt,ls,UserCP);
             SetStatus(proto,-status,ls);
             mFreeMem(ls);
             mFreeMem(txt);

@@ -88,7 +88,7 @@ var
   frames:longint;
 begin
   pos:=FilePos(f);
-  hdr.length:=0;
+  hdr.Length:=0;
   if hdr.Version=3 then
   begin
     if hdr.Channel=3 then
@@ -106,15 +106,15 @@ begin
 //calculate length
   if hdr.isVBR then
   begin
-    if hdr.samplerate<>0 then
+    if hdr.Samplerate<>0 then
     begin
 //      Seek(f,pos+36);
       BlockRead(f,sign,4);
       if (sign and $01000000)<>0 then
       begin
         BlockRead(f,frames,4);
-        frames:=bswap(frames);
-        hdr.length:=Round((1152/hdr.samplerate)*frames/(4-hdr.Version)); //!
+        frames:=BSwap(frames);
+        hdr.Length:=Round((1152/hdr.Samplerate)*frames/(4-hdr.Version)); //!
       end;
     end;
   end
@@ -165,17 +165,15 @@ begin
       Exit;
   TranslateFrameHdr(l,hdr);
   CheckVBR(f,hdr);
-  with Info,hdr do
-  begin
-    kbps :=Bitrate;
-    khz  :=Samplerate div 1000;
-    total:=Length;
-    if Channel=3 then
-      channels:=1
-    else
-      channels:=2;
-    vbr:=ord(IsVBR);
-  end;
+  Info.kbps :=hdr.Bitrate;
+  Info.khz  :=hdr.Samplerate div 1000;
+  Info.total:=hdr.Length;
+  if hdr.Channel=3 then
+    Info.channels:=1
+  else
+    Info.channels:=2;
+  Info.vbr:=ord(hdr.isVBR);
+
   ReadAPEv2(f,Info);
   ReadID3v1(f,Info);
   CloseHandle(f);
@@ -190,68 +188,66 @@ const
 type
   l2b=array [0..3] of byte;
 
+function ReadDWord(var p:pAnsiChar;endptr:pAnsiChar):integer;
+begin
+  if (p+4)<endptr then
+  begin
+    result:=pDWord(p)^;
+    inc(p,4);
+  end
+  else
+    result:=-1;
+end;
+
+function ReadWord(var p:pAnsiChar;endptr:pAnsiChar):integer;
+begin
+  if (p+2)<endptr then
+  begin
+    result:=pWord(p)^;
+    inc(p,2);
+  end
+  else
+    result:=-1;
+end;
+
+function ReadByte(var p:pAnsiChar;endptr:pAnsiChar):integer;
+begin
+  if p<endptr then
+  begin
+    result:=pByte(p)^;
+    inc(p);
+  end
+  else
+    result:=-1;
+end;
+
+function ChunkRead(var p:pAnsiChar;endptr:pAnsiChar):integer;
+var
+  i:integer;
+begin
+  repeat
+    if ReadByte(p,endptr)=0 then
+      if ReadByte(p,endptr)=0 then
+      begin
+        repeat
+          i:=ReadByte(p,endptr);
+        until i<>0;
+        if i=1 then
+        begin
+          result:=ReadByte(p,endptr) or $100;
+          exit;
+        end;
+      end;
+  until p>=endptr;
+  result:=0;
+end;
+
 const
   BufSize = 256*1024;
 
 function ReadMPG(var Info:tSongInfo):boolean; cdecl;
 var
   endptr,buf,p:PAnsiChar;
-
-  function ReadDWord:integer;
-  begin
-    if (p+4)<endptr then
-    begin
-      result:=pDWord(p)^;
-      inc(p,4);
-    end
-    else
-      result:=-1;
-  end;
-
-  function ReadWord:integer;
-  begin
-    if (p+2)<endptr then
-    begin
-      result:=pWord(p)^;
-      inc(p,2);
-    end
-    else
-      result:=-1;
-  end;
-
-  function ReadByte:integer;
-  begin
-    if p<endptr then
-    begin
-      result:=pByte(p)^;
-      inc(p);
-    end
-    else
-      result:=-1;
-  end;
-
-  function ChunkRead:integer;
-  var
-    i:integer;
-  begin
-    repeat
-      if ReadByte=0 then
-        if ReadByte=0 then
-        begin
-          repeat
-            i:=ReadByte;
-          until i<>0;
-          if i=1 then
-          begin
-            result:=ReadByte or $100;
-            exit;
-          end;
-        end;
-    until p>=endptr;
-    result:=0;
-  end;
-
-var
   f:THANDLE;
   BlockType:integer;
   l:dword;
@@ -275,13 +271,13 @@ begin
 //  FrmCnt:=0;
   while (flag<>0) and (p<endptr) do
   begin
-    BlockType:=ChunkRead;
+    BlockType:=ChunkRead(p,endptr);
     case BlockType of
       $1BA: begin // pack
         if (flag and mpgVersion)<>0 then
         begin
           flag:=flag and not mpgVersion;
-          if (ReadByte and $C0)=$40 then
+          if (ReadByte(p,endptr) and $C0)=$40 then
             Info.codec:=$3247504D  // MPG2
           else
             Info.codec:=$4745504D; // MPEG
@@ -290,10 +286,10 @@ begin
       $1B3: begin // Video
         if (flag and mpgVideo)<>0 then
         begin
-          l:=ReadDWord;
+          l:=ReadDWord(p,endptr);
           flag:=flag and not mpgVideo;
           Info.width :=((l2b(l)[1] and $F0) shr 4)+(l2b(l)[0] shl 4);
-          Info.Height:=((l2b(l)[1] and $0F) shl 8)+l2b(l)[2];
+          Info.height:=((l2b(l)[1] and $0F) shl 8)+l2b(l)[2];
           case l2b(l)[3] and $F of
             1: Info.fps:=2397;
             2: Info.fps:=2400;
@@ -330,16 +326,16 @@ begin
       end;
 }
       $1C0: begin // audio
-        w:=swap(ReadWord);
+        w:=swap(ReadWord(p,endptr));
         if flag and mpgAudio<>0 then
         begin
           flag:=flag and not mpgAudio;
-          b:=ReadByte;
+          b:=ReadByte(p,endptr);
           dec(w);
           if (b and $C0)=$80 then
           begin
-            b:=ReadByte;
-            l:=ReadByte;
+            b:=ReadByte(p,endptr);
+            l:=ReadByte(p,endptr);
             dec(w,2);
             if (b and $80)<>0 then
             begin
@@ -365,12 +361,12 @@ begin
             begin
               dec(w);
               if w=0 then break;
-              b:=ReadByte;
+              b:=ReadByte(p,endptr);
             end;
             if (b and $40)<>0 then
             begin
               inc(p);
-              b:=ReadByte;
+              b:=ReadByte(p,endptr);
               dec(w,2);
             end;
             if (b and $20)<>0 then
@@ -384,11 +380,11 @@ begin
               end;
             end;
           end;
-          l:=ReadDWord;
-          Version:=(l2b(l)[1] and $18) shr 3;
-          Layer  :=(l2b(l)[1] and $06) shr 1;
-          Info.kbps    :=btable[Version and 1][Layer-1][l2b(l)[2] shr 4];
-          Info.khz     :=(stable[Version][(l2b(l)[2] and $0C) shr 2]) div 1000;
+          l:=ReadDWord(p,endptr);
+          version:=(l2b(l)[1] and $18) shr 3;
+          layer  :=(l2b(l)[1] and $06) shr 1;
+          Info.kbps    :=btable[version and 1][layer-1][l2b(l)[2] shr 4];
+          Info.khz     :=(stable[version][(l2b(l)[2] and $0C) shr 2]) div 1000;
           Info.channels:=l2b(l)[3] shr 6;
           if Info.channels=3 then
             Info.channels:=1
@@ -417,7 +413,7 @@ begin
 //??      $1E0,
       $1E1..$1EF, // video
       $1BB{,$1BD},$1BE,$1BF: begin // system,private,padding,private
-        inc(p,swap(ReadWord));
+        inc(p,swap(ReadWord(p,endptr)));
       end;
     end;
   end;
@@ -436,25 +432,25 @@ procedure InitLink;
 begin
   LocalFormatLinkMP3.Next:=FormatLink;
 
-  LocalFormatLinkMP3.this.proc :=@ReadMP3;
-  LocalFormatLinkMP3.this.ext  :='MP3';
-  LocalFormatLinkMP3.this.flags:=0;
+  LocalFormatLinkMP3.This.proc :=@ReadMP3;
+  LocalFormatLinkMP3.This.ext  :='MP3';
+  LocalFormatLinkMP3.This.flags:=0;
 
   FormatLink:=@LocalFormatLinkMP3;
 
   LocalFormatLinkMPG.Next:=FormatLink;
 
-  LocalFormatLinkMPG.this.proc :=@ReadMPG;
-  LocalFormatLinkMPG.this.ext  :='MPG';
-  LocalFormatLinkMPG.this.flags:=WAT_OPT_VIDEO;
+  LocalFormatLinkMPG.This.proc :=@ReadMPG;
+  LocalFormatLinkMPG.This.ext  :='MPG';
+  LocalFormatLinkMPG.This.flags:=WAT_OPT_VIDEO;
 
   FormatLink:=@LocalFormatLinkMPG;
 
   LocalFormatLinkMPEG.Next:=FormatLink;
 
-  LocalFormatLinkMPEG.this.proc :=@ReadMPG;
-  LocalFormatLinkMPEG.this.ext  :='MPEG';
-  LocalFormatLinkMPEG.this.flags:=WAT_OPT_VIDEO;
+  LocalFormatLinkMPEG.This.proc :=@ReadMPG;
+  LocalFormatLinkMPEG.This.ext  :='MPEG';
+  LocalFormatLinkMPEG.This.flags:=WAT_OPT_VIDEO;
 
   FormatLink:=@LocalFormatLinkMPEG;
 end;

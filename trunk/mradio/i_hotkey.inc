@@ -20,7 +20,7 @@ begin
     result:=CallService(MS_RADIO_COMMAND,lParam,0);
 end;
 
-procedure RegisterHotKey();
+procedure RegisterHotKey;
 var
   hkrec:HOTKEYDESC;
 begin
@@ -51,7 +51,7 @@ begin
   CallService(MS_HOTKEY_REGISTER,0,lparam(@hkrec));
 end;
 
-procedure UnregisterHotKey();
+procedure UnregisterHotKey;
 begin
   CallService(MS_HOTKEY_UNREGISTER,0,lparam(HKN_PLAYPAUSE));
   CallService(MS_HOTKEY_UNREGISTER,0,lparam(HKN_STOP));

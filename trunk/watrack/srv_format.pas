@@ -28,8 +28,8 @@ function EnumFormats(param:MusEnumProc;lParam:LPARAM):bool;
 type
   pwFormat = ^twFormat;
   twFormat = record
-    this:tMusicFormat;
-    next:pwFormat;
+    This:tMusicFormat;
+    Next:pwFormat;
   end;
 
 const
@@ -60,7 +60,7 @@ begin
   ptr:=FormatLink;
   while ptr<>nil do
   begin
-    RegisterFormat(@ptr.this.ext,ptr.this.proc,ptr.this.flags);
+    RegisterFormat(@ptr.This.ext,ptr.This.proc,ptr.This.flags);
     inc(result);
     ptr:=ptr^.Next;
   end;
@@ -115,7 +115,7 @@ procedure DefFillFormatList(hwndList:hwnd);
 var
   item:LV_ITEMA;
   lvc:LV_COLUMN;
-  NewItem:integer;
+  newItem:integer;
   i:integer;
   p:pMusicFormat;
 begin
@@ -309,7 +309,7 @@ begin
     WAT_ACT_REGISTER: begin
       if @pMusicFormat(lParam)^.proc=nil then
         exit;
-      p:=FindFormat(pMusicFormat(lParam)^.Ext);
+      p:=FindFormat(pMusicFormat(lParam)^.ext);
       if (p=WAT_RES_NOTFOUND) or ((wParam and WAT_ACT_REPLACE)<>0) then
       begin
         if (p<>WAT_RES_NOTFOUND) and ((fmtLink^[p].flags and WAT_OPT_ONLYONE)<>0) then

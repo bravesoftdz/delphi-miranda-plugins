@@ -102,7 +102,7 @@ var
   extw:int64;
   aSize:dword;
 begin
-  if Info.Cover<>nil then exit;
+  if Info.cover<>nil then exit;
   case ptr^ of
     #0,#3,#4,#6: ;
   else
@@ -116,7 +116,7 @@ begin
 
   if extw=0 then
     extw:=GetImageTypeW(pByte(ptr));
-  Info.Cover:=SaveTemporaryW(ptr,aSize,pWideChar(@extw));
+  Info.cover:=SaveTemporaryW(ptr,aSize,pWideChar(@extw));
 end;
 
 procedure ReadHdrExtended(ptr:PAnsiChar;size:dword;var Info:tSongInfo);
@@ -131,7 +131,7 @@ begin
   size:=pdword(ptr)^; inc(ptr,4);
   while size>0 do
   begin
-    if Info.Cover<>nil then break;
+    if Info.cover<>nil then break;
     lsize:=ReadGUID(ptr,tmpguid);
     dec(size,lsize+SizeOf(tGUID)+SizeOf(tSize));
     if CompareGUID(tmpguid^,ASF_Metadata_Library_Object) then
@@ -181,7 +181,7 @@ begin
         inc(ptr);
         tmp:=pdword(ptr)^; inc(ptr,4);
         mGetMem(ls2,tmp);
-        Info.Lyric:=ls2;
+        Info.lyric:=ls2;
         ls1:=pWideChar(ptr);
         inc(ptr,tmp);
         while ls1^<>#0 do // description
@@ -225,22 +225,22 @@ begin
       tmp:=ReadWMATagStr1(ls1,ptr);
       if tmp=-1 then
       begin
-        Info.Track:=StrToInt(ls1)+1;
+        Info.track:=StrToInt(ls1)+1;
         mFreeMem(ls1);
       end
       else
-        Info.Track:=tmp;
+        Info.track:=tmp;
     end
     else if lstrcmpiw(ls,'WM/TrackNumber')=0 then
     begin
       tmp:=ReadWMATagStr1(ls1,ptr);
       if tmp=-1 then
       begin
-        Info.Track:=StrToInt(ls1);
+        Info.track:=StrToInt(ls1);
         mFreeMem(ls1);
       end
       else
-        Info.Track:=tmp;
+        Info.track:=tmp;
     end
     else if lstrcmpiw(ls,'WM/Picture')=0 then
     begin
@@ -335,7 +335,7 @@ type
     RatingLength     :word;
   end;
 var
-  cont:PContent;
+  cont:pContent;
 begin
   cont:=pointer(ptr);
   inc(ptr,SizeOf(tContent));
@@ -410,25 +410,25 @@ procedure InitLink;
 begin
   LocalFormatLinkWMA.Next:=FormatLink;
 
-  LocalFormatLinkWMA.this.proc :=@ReadWMA;
-  LocalFormatLinkWMA.this.ext  :='WMA';
-  LocalFormatLinkWMA.this.flags:=0;
+  LocalFormatLinkWMA.This.proc :=@ReadWMA;
+  LocalFormatLinkWMA.This.ext  :='WMA';
+  LocalFormatLinkWMA.This.flags:=0;
 
   FormatLink:=@LocalFormatLinkWMA;
 
   LocalFormatLinkWMV.Next:=FormatLink;
 
-  LocalFormatLinkWMV.this.proc :=@ReadWMA;
-  LocalFormatLinkWMV.this.ext  :='WMV';
-  LocalFormatLinkWMV.this.flags:=WAT_OPT_VIDEO;
+  LocalFormatLinkWMV.This.proc :=@ReadWMA;
+  LocalFormatLinkWMV.This.ext  :='WMV';
+  LocalFormatLinkWMV.This.flags:=WAT_OPT_VIDEO;
 
   FormatLink:=@LocalFormatLinkWMV;
 
   LocalFormatLinkASF.Next:=FormatLink;
 
-  LocalFormatLinkASF.this.proc :=@ReadWMA;
-  LocalFormatLinkASF.this.ext  :='ASF';
-  LocalFormatLinkASF.this.flags:=WAT_OPT_VIDEO;
+  LocalFormatLinkASF.This.proc :=@ReadWMA;
+  LocalFormatLinkASF.This.ext  :='ASF';
+  LocalFormatLinkASF.This.flags:=WAT_OPT_VIDEO;
 
   FormatLink:=@LocalFormatLinkASF;
 end;

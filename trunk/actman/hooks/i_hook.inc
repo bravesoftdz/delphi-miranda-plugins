@@ -111,7 +111,7 @@ end;
 function HookWndProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
   p:pHookRec;
-  ap:TAct_Param;
+  ap:tAct_Param;
 begin
   result:=0;
   case hMessage of
@@ -120,7 +120,7 @@ begin
       if p<>nil then
       begin
         ap.flags :=ACTP_WAIT;
-        ap.id    :=p^.action;
+        ap.Id    :=p^.action;
         ap.wParam:=wParam;
         ap.lParam:=lParam;
         result:=CallService(MS_ACT_RUNPARAMS,0,TLPARAM(@ap));

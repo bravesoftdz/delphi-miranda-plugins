@@ -76,26 +76,26 @@ function ReturnInfo(enc:WPARAM;cp:LPARAM=CP_ACP):pointer;
 begin
   if enc<>WAT_INF_UNICODE then
   begin
-    ClearSongInfoData(TSongInfo(SongInfoA),true);
+    ClearSongInfoData(tSongInfo(SongInfoA),true);
     move(SongInfo,SongInfoA,SizeOf(tSongInfo));
     with SongInfoA do
     begin
-      FastWideToANSI(SongInfo.url,url);
+      FastWideToAnsi(SongInfo.url,url);
       if enc=WAT_INF_ANSI then
       begin
-        WideToANSI(SongInfo.artist ,artist ,cp);
-        WideToANSI(SongInfo.title  ,title  ,cp);
-        WideToANSI(SongInfo.album  ,album  ,cp);
-        WideToANSI(SongInfo.genre  ,genre  ,cp);
-        WideToANSI(SongInfo.comment,comment,cp);
-        WideToANSI(SongInfo.year   ,year   ,cp);
-        WideToANSI(SongInfo.mfile  ,mfile  ,cp);
-        WideToANSI(SongInfo.wndtext,wndtext,cp);
-        WideToANSI(SongInfo.player ,player ,cp);
-        WideToANSI(SongInfo.txtver ,txtver ,cp);
-        WideToANSI(SongInfo.lyric  ,lyric  ,cp);
-        WideToANSI(SongInfo.cover  ,cover  ,cp);
-        WideToANSI(SongInfo.url    ,url    ,cp);
+        WideToAnsi(SongInfo.artist ,artist ,cp);
+        WideToAnsi(SongInfo.title  ,title  ,cp);
+        WideToAnsi(SongInfo.album  ,album  ,cp);
+        WideToAnsi(SongInfo.genre  ,genre  ,cp);
+        WideToAnsi(SongInfo.comment,comment,cp);
+        WideToAnsi(SongInfo.year   ,year   ,cp);
+        WideToAnsi(SongInfo.mfile  ,mfile  ,cp);
+        WideToAnsi(SongInfo.wndtext,wndtext,cp);
+        WideToAnsi(SongInfo.player ,player ,cp);
+        WideToAnsi(SongInfo.txtver ,txtver ,cp);
+        WideToAnsi(SongInfo.lyric  ,lyric  ,cp);
+        WideToAnsi(SongInfo.cover  ,cover  ,cp);
+        WideToAnsi(SongInfo.url    ,url    ,cp);
       end
       else
       begin
@@ -131,7 +131,7 @@ end;
 function WATGetFileInfo(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
 //  si:TSongInfo;
-  dst:PSongInfo;
+  dst:pSongInfo;
   extw:array [0..7] of WideChar;
   f:THANDLE;
   p:PWideChar;
@@ -579,7 +579,7 @@ end;
 procedure FreeVariables;
 begin
   ClearSongInfoData(SongInfo ,true);
-  ClearSongInfoData(TSongInfo(SongInfoA),true);
+  ClearSongInfoData(tSongInfo(SongInfoA),true);
   ClearSongInfoData(WorkSI   ,false); // not necessary really
   mFreeMem(CoverPaths);
   ClearFormats;

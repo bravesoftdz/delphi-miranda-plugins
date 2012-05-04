@@ -97,7 +97,7 @@ begin
     end;
     UM_FREEPLUGINDATA: begin
       h:=0;
-      h:=CallService(MS_POPUP_GETPLUGINDATA,wnd,h);
+      h:=CallService(MS_POPUP_GETPLUGINDATA,Wnd,h);
       if h<>0 then
         DeleteObject(h);
       result:=0;
@@ -147,7 +147,7 @@ var
   title,descr:pWideChar;
   flag:dword;
   ppd2:PPOPUPDATA2;
-  icon:HICON;
+  Icon:HICON;
   sec:integer;
   cb,ct:TCOLORREF;
   line:boolean;
@@ -164,8 +164,8 @@ begin
 
   if (descr<>nil) or (title<>nil) then
   begin
-    if si^.Icon<>0 then
-      Icon:=si^.Icon
+    if si^.icon<>0 then
+      Icon:=si^.icon
     else
       Icon:=LoadSkinnedIcon(SKINICON_OTHER_MIRANDA);
     if PopUpDelay<0 then
@@ -224,7 +224,7 @@ begin
 
         if si.cover<>nil then
         begin
-          if isFreeImagePresent then
+          if IsFreeImagePresent then
             hbmAvatar:=CallService(MS_IMG_LOAD,wparam(si.cover),IMGL_WCHAR)
           else
             hbmAvatar:=0;
@@ -288,7 +288,7 @@ begin
   end;
 end;
 
-procedure ShowPopup(si:pSongInfo);
+procedure ShowPopUp(si:pSongInfo);
 var
   res:{$IFDEF COMPILER_16_UP}Longword{$ELSE}uint_ptr{$ENDIF};
 begin
@@ -319,6 +319,7 @@ var
 begin
   if DisablePlugin=dsPermanent then
     exit;
+  FillChar(hkrec,SizeOf(hkrec),0);
   with hkrec do
   begin
     cbSize          :=HOTKEYDESC_SIZE_V1;
@@ -326,7 +327,6 @@ begin
     pszDescription.a:='WATrack popup hotkey';
     pszSection.a    :=PluginName;
     pszService      :=MS_WAT_SHOWMUSICINFO;
-    lParam          :=0;
     DefHotKey:=((HOTKEYF_ALT or HOTKEYF_CONTROL) shl 8) or VK_F7 or HKF_MIRANDA_LOCAL;
   end;
   CallService(MS_HOTKEY_REGISTER,0,lparam(@hkrec));
@@ -421,7 +421,7 @@ begin
     SetModStatus(1);
   result:=1;
 
-  ssmi:=PluginLink^.CreateServiceFunction(MS_WAT_SHOWMUSICINFO,@OpenPopup);
+  ssmi:=PluginLink^.CreateServiceFunction(MS_WAT_SHOWMUSICINFO,@OpenPopUp);
 
   FillChar(sid,SizeOf(TSKINICONDESC),0);
   sid.cbSize:=SizeOf(TSKINICONDESC);
@@ -494,7 +494,7 @@ begin
   PluginLink^.DestroyServiceFunction(ssmi);
   PluginLink^.UnhookEvent(sic);
 
-  FreePopup;
+  freepopup;
 
   if PopupPresent then
   begin

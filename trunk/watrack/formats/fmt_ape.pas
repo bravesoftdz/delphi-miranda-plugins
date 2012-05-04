@@ -85,9 +85,9 @@ begin
     blocks:=0
   else
     blocks:=(hdr1.nTotalFrames-1)*hdr1.nBlocksPerFrame+hdr1.nFinalFrameBlocks;
-  Info.khz     :=hdr1.nSamplerate div 1000;
-  if hdr1.nSamplerate<>0 then
-    Info.total :=blocks div hdr1.nSamplerate;
+  Info.khz     :=hdr1.nSampleRate div 1000;
+  if hdr1.nSampleRate<>0 then
+    Info.total :=blocks div hdr1.nSampleRate;
   Info.channels:=hdr1.nChannels;
 //  Info.kbps:=Info.khz*deep*Info.channels/1152
 //  Info.kbps:=(blocks*Info.channels*hdr1.nBitsPerSample) div (Info.total*8000);
@@ -125,9 +125,9 @@ procedure InitLink;
 begin
   LocalFormatLink.Next:=FormatLink;
 
-  LocalFormatLink.this.proc :=@ReadAPE;
-  LocalFormatLink.this.ext  :='APE';
-  LocalFormatLink.this.flags:=0;
+  LocalFormatLink.This.proc :=@ReadAPE;
+  LocalFormatLink.This.ext  :='APE';
+  LocalFormatLink.This.flags:=0;
 
   FormatLink:=@LocalFormatLink;
 end;

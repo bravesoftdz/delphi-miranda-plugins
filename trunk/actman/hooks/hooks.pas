@@ -1,4 +1,4 @@
-unit Hooks;
+unit hooks;
 
 interface
 
@@ -61,9 +61,9 @@ var
 
 procedure InitLink;
 begin
-  amLink.next     :=ActionLink;
+  amLink.Next     :=ActionLink;
   amLink.Init     :=@Init;
-  amLink.DeInit   :=@Deinit;
+  amLink.DeInit   :=@DeInit;
   amLink.AddOption:=@AddOptionPage;
   ActionLink      :=@amLink;
 end;

@@ -78,9 +78,9 @@ procedure InitLink;
 begin
   LocalFormatLink.Next:=FormatLink;
 
-  LocalFormatLink.this.proc :=@ReadMPC;
-  LocalFormatLink.this.ext  :='MPC';
-  LocalFormatLink.this.flags:=0;
+  LocalFormatLink.This.proc :=@ReadMPC;
+  LocalFormatLink.This.ext  :='MPC';
+  LocalFormatLink.This.flags:=0;
 
   FormatLink:=@LocalFormatLink;
 end;

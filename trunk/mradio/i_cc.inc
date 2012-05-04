@@ -76,6 +76,7 @@ begin
     DBDeleteSetting(ActiveContact,strCList,optStatusMsg);
 end;
 
+{$IFDEF Debug}
 procedure log(a,b:lparam);
 var
   f:thandle;
@@ -90,6 +91,7 @@ begin
   p:=#13#10; BlockWrite(f,p^,StrLen(p));
   CloseHandle(f);
 end;
+{$ENDIF}
 
 function ControlCenter(code:WPARAM;arg:LPARAM):int_ptr; cdecl;
 const
@@ -103,7 +105,9 @@ var
   artist,title:pWideChar;
 begin
   result:=0;
-//  log(code,arg);
+{$IFDEF Debug}
+  log(code,arg);
+{$ENDIF}
   case code of
     MRC_PLAY : begin
       // play new station?
@@ -116,29 +120,29 @@ begin
         ActiveContact:=arg;
         RemoteSong:=StrPosW(ActiveURLw,'://')<>nil;
 
-        if IsPlaylist(ActiveURLw)<>0 then
+        if isPlaylist(ActiveURLw)<>0 then
         begin
 
           if RemoteSong then
           begin
             GetTempPathW(MAX_PATH,tmpbuf);
             GetTempFileNameW(tmpbuf,'mr',GetCurrentTime,buf1);
-            if not GetFile(ActiveURLw,buf1,hNetlib) then
+            if not GetFile(ActiveURLw,buf1,hNetLib) then
             begin
               exit;
             end;
             plFile:=@buf1;
-            PlLocal:=false;
+            plLocal:=false;
           end
           else
           begin
-            plFile:=ActiveuRLw;
-            PlLocal:=true;
+            plFile:=ActiveURLw;
+            plLocal:=true;
           end;
 
           plist:=CreatePlaylist(plFile);
           if not plLocal then
-            DeleteFileW(PlFile);
+            DeleteFileW(plFile);
 
           if plist<>nil then
           begin
@@ -171,7 +175,7 @@ begin
           begin
             if GetWorkOfflineStatus<>0 then
             begin
-              Error('Can''t connect to net. Please, clear ''Work offline'' option in Internet settings');
+              BassError('Can''t connect to net. Please, clear ''Work offline'' option in Internet settings');
               ControlCenter(MRC_STATUS,RD_STATUS_NOSTATION);
               exit;
             end;
@@ -255,7 +259,7 @@ begin
         if Assigned(plist) then
         begin
           DBWriteWord(ActiveContact,PluginName,optCurElement,plist.Track);
-          plist.free;
+          plist.Free;
           plist:=nil;
         end;
         ControlCenter(MRC_STATUS,RD_STATUS_STOPPED);

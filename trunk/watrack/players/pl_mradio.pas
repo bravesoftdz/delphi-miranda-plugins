@@ -43,7 +43,7 @@ const
   // next command is for users
   RD_STATUS_GET        = 6;   // to get current status
 const
-  PrevFile:PWideChar=nil;
+  prevfile:PWideChar=nil;
 
 function ClearmRadio:integer; cdecl;
 begin
@@ -54,7 +54,7 @@ begin
     ChangesHook:=0;
     CurrentStation:=THANDLE(-1);
   end;
-  mFreeMem(PrevFile);
+  mFreeMem(prevfile);
 end;
 
 function SettingsChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -222,7 +222,7 @@ begin
       RD_STATUS_PAUSED : result:=WAT_MES_PAUSED;
       RD_STATUS_STOPPED: begin
         result:=WAT_MES_STOPPED;
-        mFreeMem(PrevFile);
+        mFreeMem(prevfile);
       end;
       RD_STATUS_NOSTATION,
       RD_STATUS_ABORT  : result:=WAT_MES_UNKNOWN;
@@ -261,7 +261,7 @@ begin
       begin
         lfile:=GetFileName(plwnd,flags);
         isRemote:=StrPosW(lfile,'://')<>nil;
-        if (PrevFile=nil) or isRemote or (StrCmpW(PrevFile,lfile)<>0) then
+        if (prevfile=nil) or isRemote or (StrCmpW(prevfile,lfile)<>0) then
         begin
           ClearTrackInfo(SongInfo,false);
           mfile:=lfile;

@@ -51,7 +51,7 @@ begin
   else
     result:=0;
   if (flags and WAT_OPT_CHANGES)<>0 then
-    SongInfo.wndText:=GetDlgText(SongInfo.plwnd);
+    SongInfo.wndtext:=GetDlgText(SongInfo.plwnd);
 end;
 
 function Command(wnd:HWND;cmd:integer;value:integer):integer;cdecl;

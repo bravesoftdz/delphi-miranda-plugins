@@ -420,7 +420,7 @@ begin
           begin
             Item.iItem:=PNMLISTVIEW(lParam)^.iItem;
             Item.mask:=LVIF_PARAM;
-            SendMessageA(PNMLISTVIEW(lParam)^.hdr.hwndFrom,LVM_GETITEMA,0,tlparam(@item));
+            SendMessageA(PNMLISTVIEW(lParam)^.hdr.hwndFrom,LVM_GETITEMA,0,tlparam(@Item));
 //            ListView_GetItemA(PNMLISTVIEW(lParam)^.hdr.hwndFrom,Item);
             CurStatus:=GetStatusNum(Item.lParam);
             RedrawFields(Dialog);

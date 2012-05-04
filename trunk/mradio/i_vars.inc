@@ -1,6 +1,4 @@
 {used variables}
-const
-  RecBufSize = 16384;
 
 {$include m_radio.inc}
 
@@ -11,7 +9,7 @@ const
   optEQ_OFF     :PAnsiChar = 'eqoff';
   optStatusMsg  :PAnsiChar = 'StatusMsg';
   optCurElement :PAnsiChar = 'LastPlayed';
-  optPlay1st    :PAnsiChar = 'PlayFromFirst'; 
+  optPlayFirst  :PAnsiChar = 'PlayFromFirst'; 
   optActiveURL  :PAnsiChar = 'ActiveURL';
   optContRec    :PAnsiChar = 'ContRec';
   optLoop       :PAnsiChar = 'Loop';
@@ -106,7 +104,7 @@ const
   Inited:boolean=false;
 const
   StatusTmpl:pWideChar = nil;
-  Proxy:pAnsiChar = nil;
+  proxy:pAnsiChar = nil;
 type
   tEQRec = record
     fx    :HFX;
@@ -138,7 +136,7 @@ const
   hRecord      :THANDLE = 0;
   chan         :HSTREAM = 0;
   ActiveContact:THANDLE = 0;
-  ActiveURLW   :PWideChar = nil;
+  ActiveURLw   :PWideChar = nil;
 
 type
   TEAXItem = record

@@ -29,8 +29,8 @@ type
 type
   pCells = ^tCells;
   tCells = record
-    count:integer;
-    cells:array [0..1] of pStatCell
+    Count:integer;
+    Cells:array [0..1] of pStatCell
   end;
 
 const
@@ -129,7 +129,7 @@ begin
   result:=dst;
 end;
 
-procedure AppendStat(fname:PAnsiChar;si:PSongInfo);
+procedure AppendStat(fname:PAnsiChar;si:pSongInfo);
 var
   f:THANDLE;
   MyTime:TSYSTEMTIME;
@@ -146,7 +146,7 @@ begin
   if f=THANDLE(INVALID_HANDLE_VALUE) then exit;
   FillChar(buf,SizeOf(buf),0);
   lp:=@buf;
-  buf[0]:='1'; buf[1]:=DelimChar; inc(lp,2); // count
+  buf[0]:='1'; buf[1]:=DelimChar; inc(lp,2); // Count
 
   GetLocalTime(MyTime);
   IntToStr(lp,PackTime(MyTime),9);
@@ -175,7 +175,7 @@ begin
   f:=Rewrite(fname);
   if f=THANDLE(INVALID_HANDLE_VALUE) then
     exit;
-  for i:=0 to aCells^.count-1 do
+  for i:=0 to aCells^.Count-1 do
   begin
     lp:=@buf;
     with aCells^.Cells[i]^ do
@@ -208,10 +208,10 @@ end;
 procedure ClearStatCells(aCells:pCells);
 begin
   with aCells^ do
-    while count>0 do
+    while Count>0 do
     begin
-      dec(count);
-      mFreeMem(cells[count]);
+      dec(Count);
+      mFreeMem(Cells[Count]);
     end;
   mFreeMem(aCells);
 end;
@@ -259,17 +259,17 @@ begin
   end;
 end;
 
-procedure Resort(var Root:pCells;sort:integer;direction:integer=smDirect);
+function SwapProc(var Root:pCells;First,Second:integer):integer;
+var
+  p:pStatCell;
+begin
+  p:=Root^.Cells[First];
+  Root^.Cells[First]:=Root^.Cells[Second];
+  Root^.Cells[Second]:=p;
+  result:=0;
+end;
 
-  function SwapProc(First,Second:integer):integer;
-  var
-    p:pStatCell;
-  begin
-    p:=Root^.cells[First];
-    Root^.cells[First]:=Root^.cells[Second];
-    Root^.cells[Second]:=p;
-    result:=0;
-  end;
+procedure Resort(var Root:pCells;sort:integer;adirection:integer=smDirect);
 
   function CompareProc(First,Second:integer):integer;
   begin
@@ -281,15 +281,15 @@ procedure Resort(var Root:pCells;sort:integer;direction:integer=smDirect);
 var
   i,j,gap:longint;
 begin
-  gap:=Root^.count shr 1;
+  gap:=Root^.Count shr 1;
   while gap>0 do
   begin
-    for i:=gap to Root^.count-1 do
+    for i:=gap to Root^.Count-1 do
     begin
       j:=i-gap;
       while (j>=0) and (CompareProc(j,UInt(j+gap))>0) do
       begin
-        SwapProc(j,UInt(j+gap));
+        SwapProc(Root,j,UInt(j+gap));
         dec(j,gap);
       end;
     end;
@@ -340,7 +340,7 @@ begin
     begin
       ls:=p1;
 // skip duplicates one-by-one
-      while ls^<>DelimChar do inc(ls); inc(ls); // count
+      while ls^<>DelimChar do inc(ls); inc(ls); // Count
       while ls^<>DelimChar do inc(ls); inc(ls); // time
       while ls^<>DelimChar do inc(ls); inc(ls); // length
       if StrCmp(buf,ls)<>0 then
@@ -368,12 +368,12 @@ begin
   if cnt>0 then
   begin
     mGetMem(arr,SizeOf(integer)+cnt*SizeOf(pStatCell));
-    arr^.count:=cnt;
+    arr^.Count:=cnt;
     CurCell:=FirstCell;
     i:=0;
     while CurCell<>nil do
     begin
-      arr^.cells[i]:=CurCell;
+      arr^.Cells[i]:=CurCell;
       CurCell:=CurCell.next;
       inc(i);
     end;
@@ -382,10 +382,10 @@ begin
     Resort(arr,stArtist);
 
     i:=1;
-    Cell:=arr^.cells[0];
-    while i<arr^.count do
+    Cell:=arr^.Cells[0];
+    while i<arr^.Count do
     begin
-      with arr^.cells[i]^ do
+      with arr^.Cells[i]^ do
         if (lstrcmpia(Cell^.Artist,Artist)=0) and
            (lstrcmpia(Cell^.Title,Title)=0) and
            (lstrcmpia(Cell^.Album,Album)=0) then
@@ -393,20 +393,20 @@ begin
           if Cell^.LastTime<LastTime then
             Cell^.LastTime:=LastTime;
           inc(Cell^.Count,Count);
-          dec(arr^.count);
-          if i<arr^.count then
-            move(arr^.cells[i+1],arr^.cells[i],SizeOf(pStatCell)*(arr^.count-i));
+          dec(arr^.Count);
+          if i<arr^.Count then
+            move(arr^.Cells[i+1],arr^.Cells[i],SizeOf(pStatCell)*(arr^.Count-i));
           continue;
         end
         else
-          Cell:=arr^.cells[i];
+          Cell:=arr^.Cells[i];
       inc(i);
     end;
 
   end;
 end;
 
-procedure SortFile(fname:PAnsiChar;mode:integer;direction:integer);
+procedure SortFile(fname:PAnsiChar;mode:integer;adirection:integer);
 var
   Root:pCells;
   buf:PAnsiChar;
@@ -418,8 +418,8 @@ begin
   Root:=BuildTree(buf1,buf);
   if Root<>nil then
   begin
-    if (mode<>stArtist) or (direction<>smDirect) then
-      Resort(Root,mode,direction);
+    if (mode<>stArtist) or (adirection<>smDirect) then
+      Resort(Root,mode,adirection);
     OutputStat(buf1,Root);
     ClearStatCells(Root);
   end;
@@ -461,7 +461,7 @@ begin
     fname:=PAnsiChar(wParam);
   ConvertFileName(fname,log);
 //  PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,dword(fname),dword(@log));
-  AppendStat(log,PSongInfo(lParam));
+  AppendStat(log,pSongInfo(lParam));
 end;
 
 function PackLog(wParam:WPARAM;lParam:LPARAM):integer;cdecl;
@@ -525,7 +525,7 @@ begin
     WAT_EVENT_NEWTRACK: begin
       if (StatName<>nil) and (StatName[0]<>#0) then
       begin
-        AppendStat(StatName,PSongInfo(lParam));
+        AppendStat(StatName,pSongInfo(lParam));
         if AutoSort>0 then
         begin
           CurTime:=GetCurrentTime;
@@ -533,7 +533,7 @@ begin
           begin
             SortFile(StatName,SortMode,Direction);  //PackLog(0,0);
             LastSort:=CurTime;
-            DBWriteDWord(0,PluginShort,opt_lastsort,LastSort);
+            DBWriteDWord(0,PluginShort,opt_LastSort,LastSort);
           end;
         end;
       end;

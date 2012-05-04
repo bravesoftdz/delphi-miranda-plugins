@@ -101,7 +101,7 @@ begin
       if enc=0 then
       begin
         StrDup(buf,ptr,alen);
-        ANSItoWide(buf,dst)
+        AnsiToWide(buf,dst)
         mFreeMem(buf);
       end
       else
@@ -109,7 +109,7 @@ begin
 }
       StrDup(buf,ptr,alen);
       if enc=0 then
-        ANSItoWide(buf,dst)
+        AnsiToWide(buf,dst)
       else
         UTF8ToWide(buf,dst);
       mFreeMem(buf);
@@ -197,7 +197,7 @@ begin
       end;
       org:=PAnsiChar(dst);
       if enc=0 then
-        ANSItoWide(org,dst)
+        AnsiToWide(org,dst)
       else
         UTF8ToWide(org,dst);
       mFreeMem(org);
@@ -312,12 +312,12 @@ var
   i:cardinal;
   dst:PAnsiChar;
 begin
-  mGetMem(result,frm.size);
-  if unsync or ((frm.flags and $0200)<>0) then
+  mGetMem(result,frm.Size);
+  if Unsync or ((frm.Flags and $0200)<>0) then
   begin
     dst:=result;
     i:=0;
-    while i<frm.size do
+    while i<frm.Size do
     begin
       dst^:=src^;
       inc(src);
@@ -332,8 +332,8 @@ begin
   end
   else
   begin
-    move(src^,result^,frm.size);
-    inc(src,frm.size);
+    move(src^,result^,frm.Size);
+    inc(src,frm.Size);
   end;
 end;
 
@@ -362,18 +362,18 @@ begin
         Frm.Flags:=0;
         Frm.ID:=FrmOld.ID[0]+(FrmOld.ID[1] shl 8)+(FrmOld.ID[2] shl 16);
         Frm.Size:=(FrmOld.Size[0] shl 16)+(FrmOld.Size[1] shl 8)+FrmOld.Size[2];
-        inc(tag,SizeOf(TID3v2FrameHdrOld));
+        inc(tag,SizeOf(tID3v2FrameHdrOld));
       end;
       3: begin
         move(tag^,Frm,SizeOf(Frm));
-        Frm.Size:=bswap(Frm.Size);
-        inc(tag,SizeOf(TID3v2FrameHdr));
+        Frm.Size:=BSwap(Frm.Size);
+        inc(tag,SizeOf(tID3v2FrameHdr));
       end;
       4: begin
         move(tag^,Frm,SizeOf(Frm));
         Frm.Size:=ID3v2_Correct(Frm.Size);
-        inc(tag,SizeOf(TID3v2FrameHdr));
-        if (Frm.flags and $0100)<>0 then
+        inc(tag,SizeOf(tID3v2FrameHdr));
+        if (Frm.Flags and $0100)<>0 then
         begin
           Frm.Size:=ID3v2_Correct(pdword(tag)^);
           inc(tag,4);
@@ -405,82 +405,82 @@ begin
         if fArtist<(enc+10) then
         begin
           fArtist:=enc+10;
-          mFreeMem(Info.Artist);
-          ID3v2_ReadTagStr(Info.Artist,buf,Frm.Size);
+          mFreeMem(Info.artist);
+          ID3v2_ReadTagStr(Info.artist,buf,Frm.Size);
         end
       end;
       frmTIT2,frmTT2: begin
         if fTitle<(enc+10) then
         begin
           fTitle:=enc+10;
-          mFreeMem(Info.Title);
-          ID3v2_ReadTagStr(Info.Title,buf,Frm.Size);
+          mFreeMem(Info.title);
+          ID3v2_ReadTagStr(Info.title,buf,Frm.Size);
         end
       end;
       frmTALB,frmTAL: begin
         if fAlbum<(enc+10) then
         begin
           fAlbum:=enc+10;
-          mFreeMem(Info.Album);
-          ID3v2_ReadTagStr(Info.Album,buf,Frm.Size);
+          mFreeMem(Info.album);
+          ID3v2_ReadTagStr(Info.album,buf,Frm.Size);
         end
       end;
       frmTYER,frmTDRC,frmTYE: begin
-        if Info.Year<>nil then
-          mFreeMem(Info.Year);
-        ID3v2_ReadTagStr(Info.Year,buf,Frm.Size);
+        if Info.year<>nil then
+          mFreeMem(Info.year);
+        ID3v2_ReadTagStr(Info.year,buf,Frm.Size);
       end;
 
       frmTOPE,frmTPE2,frmTOA,frmTPE4: begin
         if fArtist<enc then
         begin
           fArtist:=enc;
-          mFreeMem(Info.Artist);
-          ID3v2_ReadTagStr(Info.Artist,buf,Frm.Size);
+          mFreeMem(Info.artist);
+          ID3v2_ReadTagStr(Info.artist,buf,Frm.Size);
         end;
       end;
       frmTIT1,frmTIT3,frmTT1: begin
         if fTitle<enc then
         begin
           fTitle:=enc;
-          mFreeMem(Info.Title);
-          ID3v2_ReadTagStr(Info.Title,buf,Frm.Size);
+          mFreeMem(Info.title);
+          ID3v2_ReadTagStr(Info.title,buf,Frm.Size);
         end;
       end;
       frmTOAL: begin
         if fAlbum<enc then
         begin
           fAlbum:=enc;
-          mFreeMem(Info.Album);
-          ID3v2_ReadTagStr(Info.Album,buf,Frm.Size);
+          mFreeMem(Info.album);
+          ID3v2_ReadTagStr(Info.album,buf,Frm.Size);
         end;
       end;
       frmTORY: begin
-        if Info.Year=nil then ID3v2_ReadTagStr(Info.Year,buf,Frm.Size);
+        if Info.year=nil then ID3v2_ReadTagStr(Info.year,buf,Frm.Size);
       end;
 
       frmTCON,frmTCO: begin
-        if Info.Genre=nil then
+        if Info.genre=nil then
         begin
-          ID3v2_ReadTagStr(Info.Genre,buf,Frm.Size);
+          ID3v2_ReadTagStr(Info.genre,buf,Frm.Size);
 
-          if Info.Genre<>nil then
-            if Info.Genre[0]='(' then
+          if Info.genre<>nil then
+            if Info.genre[0]='(' then
             begin
-              tmp:=StrScanW(Info.Genre,')')-Info.Genre+1;
-              if tmp=integer(StrLenW(Info.Genre)) then
+              tmp:=StrScanW(Info.genre,')')-Info.genre+1;
+              if tmp=integer(StrLenW(Info.genre)) then
               begin
-                ls:=GenreName(StrToInt(Info.Genre+1));
-                mFreeMem(Info.Genre);
-                Info.Genre:=ls;
+                ls:=GenreName(StrToInt(Info.genre+1));
+                mFreeMem(Info.genre);
+                Info.genre:=ls;
               end
               else if tmp>0 then
-                StrCopyW(Info.Genre,Info.Genre+tmp);
+                StrCopyW(Info.genre,Info.genre+tmp);
             end;
         end;
       end;
       frmCOMM,frmCOM: begin //!!
-        if Info.Comment=nil then
+        if Info.comment=nil then
         begin
           ptr:=buf;
           inc(ptr,3+1); // language
@@ -495,14 +495,14 @@ begin
             inc(ptr,2);
           end;
           dec(Frm.Size,ptr-buf);
-          ID3v2_ReadTagStr1(Info.Comment,ptr,Frm.Size,ord(buf^));
+          ID3v2_ReadTagStr1(Info.comment,ptr,Frm.Size,ord(buf^));
         end;
       end;
       frmTRCK,frmTRK: begin
-        if Info.Track=0 then
+        if Info.track=0 then
         begin
           ID3v2_ReadTagStr(ls,buf,Frm.Size);
-          Info.Track:=StrToInt(ls);
+          Info.track:=StrToInt(ls);
           mFreeMem(ls);
         end;
       end;
@@ -521,10 +521,7 @@ begin
   if TagHdr.ID=TAG2Sign then
   begin
     TagHdr.TagSize:=ID3v2_Correct(TagHdr.TagSize);
-    if (TagHdr.Flags and $80)<>0 then
-      Unsync:=true
-    else
-      Unsync:=false;
+    Unsync:=(TagHdr.Flags and $80)<>0;
     result:=TagHdr.TagSize;
 //    if TagHdr.Version>2 then
     begin

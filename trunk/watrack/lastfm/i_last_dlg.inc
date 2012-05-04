@@ -27,7 +27,7 @@ begin
   SetDlgItemTextW(dlg,IDC_DATA_INFO  ,'');
 end;
 
-procedure ClearData(data:tLastFMInfo);
+procedure ClearData(var data:tLastFMInfo);
 begin
   mFreeMem(data.artist);
   mFreeMem(data.album);

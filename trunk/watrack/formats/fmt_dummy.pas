@@ -34,9 +34,9 @@ procedure InitLink;
 begin
   LocalFormatLinkCUE.Next:=FormatLink;
 
-  LocalFormatLinkCUE.this.proc :=@ReadDummy;
-  LocalFormatLinkCUE.this.ext  :='CUE';
-  LocalFormatLinkCUE.this.flags:=WAT_OPT_CONTAINER;
+  LocalFormatLinkCUE.This.proc :=@ReadDummy;
+  LocalFormatLinkCUE.This.ext  :='CUE';
+  LocalFormatLinkCUE.This.flags:=WAT_OPT_CONTAINER;
 
   FormatLink:=@LocalFormatLinkCUE;
 end;

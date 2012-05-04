@@ -54,13 +54,13 @@ const
   QSF_SUBMETA = $0080; // contact is part of metacontact
 
 type
-  PQSRec = ^QSRec;
-  QSRec = record // cell
+  pQSRec = ^tQSRec;
+  tQSRec = record // cell
     text:PWideChar;
     data:uint_ptr;
   end;
-  PQSFRec = ^QSFRec;
-  QSFRec = record // row
+  pQSFRec = ^tQSFRec;
+  tQSFRec = record // row
     contact:THANDLE;
     proto  :uint_ptr;
     flags  :dword;
@@ -70,8 +70,8 @@ type
   end;
 var
   colorhook:THANDLE;
-  MainBuf:array of array of QSRec;
-  FlagBuf:array of QSFRec;
+  MainBuf:array of array of tQSRec;
+  FlagBuf:array of tQSFRec;
   LastMeta:integer;
   tstrMale,
   tstrFemale,
@@ -94,7 +94,7 @@ const
   TIMERID_HOVER = 10;
 const
   TTShowed:bool=false;
-  TTinstalled:bool = false;
+  TTInstalled:bool = false;
 
 const
   bkg_norm:pAnsiChar = 'Normal background';
@@ -143,7 +143,7 @@ begin
   end;
   result:=-1;
 end;
-
+{
 procedure SwitchOrder(var src,dst:array of dword);
 var
   i:integer;
@@ -153,11 +153,11 @@ begin
     dst[src[i]]:=i;
   end;
 end;
-
+}
 procedure ShiftColumns(item,shift:integer); // item - table item, order - new screen order
 var
   i,col:integer;
-  buf:QSRec;
+  buf:tQSRec;
   lsize,lshift:integer;
 begin
   col:=-1;
@@ -179,11 +179,11 @@ begin
   shift:=col-item;
 
   col:=colorder[item];
-  lsize:=sizeof(QSRec)*abs(shift);
+  lsize:=sizeof(tQSRec)*abs(shift);
   lshift:=item+shift;
   if shift>0 then
   begin
-    for i:=0 to HIGH(Mainbuf) do
+    for i:=0 to HIGH(MainBuf) do
     begin
       buf:=MainBuf[i,item];
       move(MainBuf[i,item+1],MainBuf[i,item],lsize);
@@ -194,7 +194,7 @@ begin
   end
   else // shift<0
   begin
-    for i:=0 to HIGH(Mainbuf) do
+    for i:=0 to HIGH(MainBuf) do
     begin
       buf:=MainBuf[i,item];
       move(MainBuf[i,lshift],MainBuf[i,lshift+1],lsize);
@@ -311,22 +311,6 @@ begin
   CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
 end;
 
-function int2stra(i:integer):PAnsiChar;
-var
-  buf:array [0..31] of AnsiChar;
-begin
-  IntToStr(buf,i);
-  StrDup(result,buf);
-end;
-
-function int2hexa(i:integer):PAnsiChar;
-var
-  buf:array [0..31] of AnsiChar;
-begin
-  IntToHex(buf,i);
-  StrDup(result,buf);
-end;
-
 function int2strw(i:integer):PWideChar;
 var
   buf:array [0..31] of WideChar;
@@ -370,7 +354,7 @@ begin
     pc^:=':'; inc(pc);
     IntToStr(pc,DBReadWord(cont,modulename,'Minutes',0),2);
 
-    StrDupw(result,@buf);
+    StrDupW(result,@buf);
   end
   else
     result:=nil;
@@ -511,15 +495,15 @@ begin
   end;
 end;
 
-procedure LoadOneItem(hContact:THANDLE;num:integer;proto:integer; var res:QSRec);
+procedure LoadOneItem(hContact:THANDLE;num:integer;proto:integer; var res:tQSRec);
 var
   cni:TCONTACTINFO;
   dbei:TDBEVENTINFO;
-  hDBEvent:cardinal;
+  hDbEvent:cardinal;
   tmp:int_ptr;
   protov:PAnsiChar;
 begin
-  FillChar(res,SizeOf(QSRec),0);
+  FillChar(res,SizeOf(tQSRec),0);
   res.data:=dword(-1);
   res.text:=nil;
   with qsopt.columns[num] do
@@ -654,7 +638,7 @@ end;
 function CompareItem(lParam1,lParam2:LPARAM;SortType:LPARAM):int; stdcall;
 var
   typ1,typ2:boolean;
-  res1,res2:PQSRec;
+  res1,res2:pQSRec;
   i1,i2:uint_ptr;
 begin
   result:=0;
@@ -780,7 +764,7 @@ type
     online:cardinal; // clist online
     liston:cardinal; // pattern online
   end;
-  tSBData = array [0..63] of TSBDataRecord;
+  tSBData = array [0..63] of tSBDataRecord;
 
 procedure DrawSBW(const SBData:tSBData);
 var
@@ -1154,7 +1138,7 @@ var
   i:integer;
   tmpstr:array [0..63] of AnsiChar;
 begin
-  FillChar(FlagBuf[num],SizeOf(QSFRec),0);
+  FillChar(FlagBuf[num],SizeOf(tQSFRec),0);
   with FlagBuf[num] do
   begin
     contact:=hContact;
@@ -1165,7 +1149,7 @@ begin
     case i of
       -2: flags:=flags or QSF_ACCDEL;  // deleted account
       -1: flags:=flags or QSF_ACCOFF;  // disabled account
-      0 : ; // hidden contact
+//      0 : ; // hidden contact
       1 : flags:=flags or QSF_META;    // metacontact
       2 : flags:=flags or QSF_SUBMETA; // subMetacontact
     end;
@@ -1372,9 +1356,6 @@ begin
     FillGrid;
 end;
 
-const
-  ContactBufSize = 1024;
-
 function IsColumnMinimized(num:integer):bool;
 begin
   result:=ListView_GetColumnWidth(grid,num)<=10;
@@ -1486,7 +1467,7 @@ var
   ics:TICQ_CUSTOM_STATUS;
 
   info:TCLCINFOTIP;
-//  qsr:QSRec;
+//  qsr:tQSRec;
   tmpCursor:TPOINT;
 begin
   result:=0;
@@ -1593,7 +1574,7 @@ begin
       if wParam=TIMERID_HOVER then
       begin
 				KillTimer(Dialog,TIMERID_HOVER);
-				if GetForegroundWindow<>MainWnd then exit;
+				if GetForegroundWindow<>mainwnd then exit;
         i:=LV_GetLParam(grid,OldHItem);
         FillChar(info,SizeOf(info),0);
         with info do
@@ -1680,7 +1661,7 @@ end;
           begin
             cbSize:=SizeOf(TI);
             uFlags:=TTF_SUBCLASS+TTF_IDISHWND;
-            hWnd  :=MainWnd;
+            hWnd  :=mainwnd;
             uId   :=Dialog;
             hInst :=0;
           end;
@@ -1760,7 +1741,7 @@ end;
     end;
 
   end;
-  result:=CallWindowProc(OldLVProc,dialog,hMessage,wParam,lParam);
+  result:=CallWindowProc(OldLVProc,Dialog,hMessage,wParam,lParam);
 end;
 
 procedure ColumnClick(wnd:HWND;num:integer);
@@ -1842,7 +1823,7 @@ begin
       MakeColumnMenu;
     end;
   end;
-  result:=CallWindowProc(OldProc,dialog,hMessage,wParam,lParam);
+  result:=CallWindowProc(OldProc,Dialog,hMessage,wParam,lParam);
 end;
 
 procedure SetCellColor(lplvcd:PNMLVCUSTOMDRAW;idx:integer);
@@ -2008,9 +1989,9 @@ begin
           VK_NEXT,VK_PRIOR: begin
             perpage:=ListView_GetCountPerPage(grid);
             if wParam=VK_NEXT then
-              next:=min(current+perpage,count)
+              next:=Min(current+perpage,count)
             else
-              next:=max(current-perpage,0);
+              next:=Max(current-perpage,0);
           end;
           VK_UP: begin
             if current>0 then
@@ -2039,7 +2020,7 @@ begin
       end;
     end;
   end;
-  result:=CallWindowProc(OldEditProc,dialog,hMessage,wParam,lParam);
+  result:=CallWindowProc(OldEditProc,Dialog,hMessage,wParam,lParam);
 end;
 
 function ShowContactMenu(wnd:HWND;hContact:THANDLE):HMENU;
@@ -2129,7 +2110,7 @@ begin
   lvcol.cx        :=width;
   SendMessageW(handle,LVM_INSERTCOLUMNW,num,lparam(@lvcol));
 end;
-
+{
 // from zero!!
 function GetNthByMask(const arr:tcolumnarray; num:cardinal; mask:dword):tcolumnitem;
 var
@@ -2149,7 +2130,7 @@ begin
   end;
   result:=arr[0];
 end;
-
+}
 function ColorReload(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
   result:=0;
@@ -2289,7 +2270,7 @@ begin
 
       StatusBar:=0;
       DeleteObject(gridbrush);
-      GetWindowRect(dialog,rc);
+      GetWindowRect(Dialog,rc);
 
       CopyRect(qsopt.grrect,rc);
 
@@ -2333,11 +2314,11 @@ begin
       if sortcolup=0 then
         sortcolup:=LoadImageA(tmph,PAnsiChar(239),IMAGE_BITMAP,0,0,LR_LOADMAP3DCOLORS);
 
-      SetWindowTextW(dialog,'Quick Search');
+      SetWindowTextW(Dialog,'Quick Search');
 
       StatusBar:=GetDlgItem(Dialog,IDC_STATUSBAR);
 
-      smenu:=GetSystemMenu(dialog,false);
+      smenu:=GetSystemMenu(Dialog,false);
       InsertMenu (smenu,5,MF_BYPOSITION or MF_SEPARATOR,0,nil);
       InsertMenuW(smenu,6,MF_BYPOSITION or MF_STRING,
         IDM_STAYONTOP,TranslateW('Stay on Top'));
@@ -2345,31 +2326,31 @@ begin
       if qsopt.stayontop then
       begin
         CheckMenuItem(smenu,IDM_STAYONTOP,MF_BYCOMMAND or MF_CHECKED);
-        SetWindowPos(dialog,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE or SWP_NOSIZE);
+        SetWindowPos(Dialog,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE or SWP_NOSIZE);
       end;
       AdvFilter:=0;
       if qsopt.showoffline then
       begin
-        CheckDlgButton(dialog,IDC_CH_SHOWOFFLINE,ORD(qsopt.showoffline));
-        AdvFilter:=AdvFilter or flt_Show_offline;
+        CheckDlgButton(Dialog,IDC_CH_SHOWOFFLINE,ORD(qsopt.showoffline));
+        AdvFilter:=AdvFilter or flt_show_offline;
       end;
 
       if qsopt.colorize then
-        CheckDlgButton(dialog,IDC_CH_COLORIZE,ORD(qsopt.colorize));
+        CheckDlgButton(Dialog,IDC_CH_COLORIZE,ORD(qsopt.colorize));
 
       gridbrush:=CreateSolidBrush(RGB(222,230,235));
 
-      mainwnd:=dialog;
+      mainwnd:=Dialog;
       tmp:=GetWindowLongPtrW(Dialog,GWL_EXSTYLE);
       if qsopt.usetoolstyle then
         tmp:=tmp or WS_EX_TOOLWINDOW
       else
         tmp:=tmp and not WS_EX_TOOLWINDOW;
-      SetWindowLongPtrW(dialog,GWL_EXSTYLE,tmp);
+      SetWindowLongPtrW(Dialog,GWL_EXSTYLE,tmp);
 
-      SendMessage(dialog,WM_SETICON,ICON_SMALL,//LoadIcon(hInstance,PAnsiChar(IDI_QS))
+      SendMessage(Dialog,WM_SETICON,ICON_SMALL,//LoadIcon(hInstance,PAnsiChar(IDI_QS))
         PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(QS_QS)));
-      grid:=GetDlgItem(dialog,IDC_LIST);
+      grid:=GetDlgItem(Dialog,IDC_LIST);
 
       ListView_SetImageList(grid,
          PluginLink^.CallService(MS_CLIST_GETICONSIMAGELIST,0,0),LVSIL_SMALL);
@@ -2380,10 +2361,10 @@ begin
       SendMessage(grid,LVM_SETEXTENDEDLISTVIEWSTYLE,0,tmp);
 
       OldLVProc  :=pointer(SetWindowLongPtrW(grid,GWL_WNDPROC,LONG_PTR(@NewLVProc)));
-      OldEditProc:=pointer(SetWindowLongPtrW(GetDlgItem(dialog,IDC_E_SEARCHTEXT),
+      OldEditProc:=pointer(SetWindowLongPtrW(GetDlgItem(Dialog,IDC_E_SEARCHTEXT),
          GWL_WNDPROC,LONG_PTR(@NewEditProc)));
 
-      oldproc:=pointer(SetWindowLongPtrW(
+      OldProc:=pointer(SetWindowLongPtrW(
           SendMessage(grid,LVM_GETHEADER,0,0),
           GWL_WNDPROC,LONG_PTR(@NewLVHProc)));
 
@@ -2402,11 +2383,11 @@ begin
         FillGrid;
       end;
 
-      TranslateDialogDefault(dialog);
+      TranslateDialogDefault(Dialog);
 
       SnapToScreen(qsopt.grrect);
       with qsopt.grrect do
-        MoveWindow(dialog,left,top,right-left,bottom-top,false);
+        MoveWindow(Dialog,left,top,right-left,bottom-top,false);
 
       with TI do
       begin
@@ -2462,15 +2443,15 @@ begin
           h:=MF_BYCOMMAND or MF_CHECKED;
           w:=HWND_TOPMOST;
         end;
-        CheckMenuItem(GetSystemMenu(dialog,false),IDM_STAYONTOP,h);
-        SetWindowPos(dialog,w,0,0,0,0,SWP_NOMOVE or SWP_NOSIZE);
+        CheckMenuItem(GetSystemMenu(Dialog,false),IDM_STAYONTOP,h);
+        SetWindowPos(Dialog,w,0,0,0,0,SWP_NOMOVE or SWP_NOSIZE);
         qsopt.stayontop:=not qsopt.stayontop;
         exit;
       end;
     end;
 
     WM_CONTEXTMENU: begin
-      if wParam=tWPARAM(GetDlgItem(dialog,IDC_LIST)) then
+      if wParam=tWPARAM(GetDlgItem(Dialog,IDC_LIST)) then
       begin
         w:=ListView_GetSelectedCount(grid);
         if w>1 then
@@ -2552,7 +2533,7 @@ begin
 
       case wParam shr 16 of
         CBN_SELCHANGE: begin
-          AdvFilter:=(AdvFilter and not $FF) or cardinal(CB_GetData(LParam));
+          AdvFilter:=(AdvFilter and not $FF) or cardinal(CB_GetData(lParam));
           AdvancedFilter;
         end;
 
@@ -2568,7 +2549,7 @@ begin
         BN_CLICKED: begin
           case loword(wParam) of
             IDC_CH_SHOWOFFLINE: begin
-              qsopt.showoffline:=IsDlgButtonChecked(dialog,IDC_CH_SHOWOFFLINE)<>BST_UNCHECKED;
+              qsopt.showoffline:=IsDlgButtonChecked(Dialog,IDC_CH_SHOWOFFLINE)<>BST_UNCHECKED;
               if qsopt.showoffline then
                 AdvFilter:=AdvFilter or flt_show_offline
               else
@@ -2577,7 +2558,7 @@ begin
             end;
 
             IDC_CH_COLORIZE: begin
-              qsopt.colorize:=IsDlgButtonChecked(dialog,IDC_CH_COLORIZE)<>BST_UNCHECKED;
+              qsopt.colorize:=IsDlgButtonChecked(Dialog,IDC_CH_COLORIZE)<>BST_UNCHECKED;
               RedrawWindow(grid,nil,0,RDW_INVALIDATE);
             end;
 
@@ -2588,7 +2569,7 @@ begin
               FillGrid;
             end;
 
-            IDCANCEL: CloseSRWindow();
+            IDCANCEL: CloseSrWindow();
           end;
         end;
       end;
@@ -2602,7 +2583,7 @@ begin
         NM_CUSTOMDRAW: begin
           if PNMHdr(lParam)^.hwndFrom=grid then
           begin
-            SetWindowLongPtrW(dialog,DWL_MSGRESULT,ProcessCustomDraw(lParam));
+            SetWindowLongPtrW(Dialog,DWL_MSGRESULT,ProcessCustomDraw(lParam));
             result:=1;
           end;
         end;
@@ -2679,7 +2660,7 @@ begin
     li.iItem   :=row;
     li.iSubItem:=0;
     li.mask    :=LVIF_IMAGE;
-    li.iImage  :=pic;//PluginLink^.CallService(MS_CLIST_GETCONTACTICON,hContact,0);
+    li.iImage  :=Pic;//PluginLink^.CallService(MS_CLIST_GETCONTACTICON,hContact,0);
     SendMessage(grid,LVM_SETITEM,0,lparam(@li));
   end;
 end;
@@ -2820,7 +2801,7 @@ end;
 procedure WndChangeColumns(code:integer;column:integer=-1);
 var
   i,col:integer;
-  coldata:QSRec;
+  coldata:tQSRec;
 //  lcol:array of integer;
   incr:integer;
 begin
@@ -2877,7 +2858,7 @@ begin
         begin
           mFreeMem(MainBuf[i,column].text);
           if column<qsopt.numcolumns then
-            move(MainBuf[i,column+1],MainBuf[i,column],SizeOf(QSRec));
+            move(MainBuf[i,column+1],MainBuf[i,column],SizeOf(tQSRec));
         end;
         SetLength(MainBuf,Length(MainBuf),qsopt.numcolumns); //!!!!
         // index

@@ -76,9 +76,9 @@ begin
     cbBlob   :=size;
     flags    :=flag;
     if time<>0 then
-      timestamp:=time
+      Timestamp:=time
     else
-      timestamp:=GetCurrentTime;
+      Timestamp:=GetCurrentTime;
   end;
   PluginLink^.CallService(MS_DB_EVENT_ADD,hContact,lparam(@dbeo));
 end;
@@ -173,7 +173,7 @@ begin
         mGetMem(ss,BufSize*SizeOf(pWideChar));
         FillChar(ss^,BufSize*SizeOf(pWideChar),0);
         if ccs^.wParam=0 then
-          ANSIToWide(PAnsiChar(ccs^.lParam),uns,UserCP);
+          AnsiToWide(PAnsiChar(ccs^.lParam),uns,UserCP);
         StrCopyW(ss,uns);
         if ccs^.wParam=0 then
           mFreeMem(uns);
@@ -182,7 +182,7 @@ begin
         if StrPos(ss,'{')<>nil then
           FormatToBBW(ss);
         s:=PWideChar(ccs^.lParam);
-        WideToANSI(ss,p,UserCP);
+        WideToAnsi(ss,p,UserCP);
         if ccs^.wParam=0 then
         begin
           ccs^.lParam:=dword(p);
@@ -222,16 +222,15 @@ var
   textpos:PWideChar;
   pc:PAnsiChar;
   isNewRequest:bool;
-  si:PSongInfo;
+  si:pSongInfo;
 begin
   ccs:=PCCSDATA(lParam);
   result:=0;
   mGetMem(buf,bufsize);
-  if StrCmp(PPROTORECVEVENT(ccs^.lParam)^.szMessage,
-     wpRequestNew,Length(wpRequestNew))=0 then
-    isNewRequest:=true
-  else
-    isNewRequest:=false;
+
+  isNewRequest:=StrCmp(PPROTORECVEVENT(ccs^.lParam)^.szMessage,
+     wpRequestNew,Length(wpRequestNew))=0;
+
   if isNewRequest or 
      (StrCmp(PPROTORECVEVENT(ccs^.lParam)^.szMessage,
              wpRequest,Length(wpRequest))=0) then
@@ -249,7 +248,7 @@ begin
     begin
       if (HistMask and hmInRequest)<>0 then
         AddEvent(ccs^.hContact,EVENTTYPE_WAT_REQUEST,DBEF_READ,nil,0,
-                PPROTORECVEVENT(ccs^.lParam)^.timestamp);
+                PPROTORECVEVENT(ccs^.lParam)^.Timestamp);
       if GetContactStatus(ccs^.hContact)<>ID_STATUS_OFFLINE then
       begin
 //!! Request Answer
@@ -267,9 +266,9 @@ begin
             begin
               FillChar(buf^,bufsize,0);
               si:=pSongInfo(CallService(MS_WAT_RETURNGLOBAL,0,0));
-              StrCopyW(buf   ,si^.artist); curpos:=strendw(buf)+1;
-              StrCopyW(curpos,si^.title);  curpos:=strendw(curpos)+1;
-              StrCopyW(curpos,si^.album);  curpos:=strendw(curpos)+1;
+              StrCopyW(buf   ,si^.artist); curpos:=StrEndW(buf)+1;
+              StrCopyW(curpos,si^.title);  curpos:=StrEndW(curpos)+1;
+              StrCopyW(curpos,si^.album);  curpos:=StrEndW(curpos)+1;
             end
             else
               curpos:=buf;
@@ -278,7 +277,7 @@ begin
             s:=PWideChar(PluginLink^.CallService(MS_WAT_REPLACETEXT,0,tlparam(ProtoText)));
             textpos:=StrCopyW(curpos,s);
             mFreeMem(s);
-            curpos:=strendw(curpos)+1;
+            curpos:=StrEndW(curpos)+1;
           end;
         end
         else
@@ -325,7 +324,7 @@ begin
     begin
       if (HistMask and hmIRequest)<>0 then
         AddEvent(ccs^.hContact,EVENTTYPE_WAT_REQUEST,DBEF_READ,nil,0,
-                 PPROTORECVEVENT(ccs^.lParam)^.timestamp);
+                 PPROTORECVEVENT(ccs^.lParam)^.Timestamp);
       if (HistMask and hmISend)<>0 then
       begin
 //!! Request Error Answer
@@ -341,7 +340,7 @@ begin
         if (HistMask and hmOutError)<>0 then
         begin
           AddEvent(ccs^.hContact,EVENTTYPE_WAT_ERROR,DBEF_SENT,nil,0,
-                   PPROTORECVEVENT(ccs^.lParam)^.timestamp);
+                   PPROTORECVEVENT(ccs^.lParam)^.Timestamp);
         end;
       end;
     end;
@@ -365,7 +364,7 @@ begin
     if (HistMask and hmInInfo)<>0 then
       AddEvent(ccs^.hContact,EVENTTYPE_WAT_ANSWER,DBEF_READ,
           base64.pbDecoded,base64.cbDecoded,
-          PPROTORECVEVENT(ccs^.lParam)^.timestamp);
+          PPROTORECVEVENT(ccs^.lParam)^.Timestamp);
 //  Action
 
     StrCopyW(buf,TranslateW('Music Info from '));
@@ -379,7 +378,7 @@ begin
   begin
     if (HistMask and hmInError)<>0 then
       AddEvent(ccs^.hContact,EVENTTYPE_WAT_ERROR,DBEF_READ,nil,0,
-               PPROTORECVEVENT(ccs^.lParam)^.timestamp);
+               PPROTORECVEVENT(ccs^.lParam)^.Timestamp);
 {
     AnsiToWide(PAnsiChar(CallService(MS_CLIST_GETCONTACTDISPLAYNAME,ccs^.hContact,0)),s);
     StrCopyW(buf,s);

@@ -45,7 +45,7 @@ begin
   if (fname<>nil) and (fname^<>#0) then
   begin
     cds.dwData:=LAC_FILE_OPEN;
-    WideToANSI(fname,PAnsiChar(cds.lpData));
+    WideToAnsi(fname,PAnsiChar(cds.lpData));
     cds.cbData:=StrLen(PAnsiChar(cds.lpData))+1;
     SendMessage(wnd,WM_COPYDATA,0,lparam(@cds));
     mFreeMem(cds.lpData);

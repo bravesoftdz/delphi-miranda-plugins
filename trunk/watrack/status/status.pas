@@ -61,7 +61,7 @@ begin
     SetModStatus(1);
   result:=1;
 
-  loadopt;
+  LoadOpt;
   CreateProtoList;
   CreateTemplates;
   hINS:=PluginLink^.CreateServiceFunction(MS_WAT_INSERT,@InsertProc);

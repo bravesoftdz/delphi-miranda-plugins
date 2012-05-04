@@ -126,7 +126,7 @@ begin
   FillChar(act^,SizeOf(act^),0);
 end;
 
-procedure FreeActions(list:pActList;idx:dword);
+procedure FreeActions(list:pActList;idx:cardinal);
 begin
   while idx<>0 do
     idx:=FreeAction(@list^[idx]);
@@ -240,7 +240,7 @@ begin
   end;
 end;
 
-function CloneActions(idx:dword):pointer;
+function CloneActions(idx:cardinal):pointer;
 var
   i,count:integer;
   aList:pHKAction;
@@ -268,13 +268,13 @@ begin
     result:=nil;
 end;
 
-function DoAction(action:dword;aparam:dword;var last:uint_ptr;restype:dword):dword;
+function DoAction(action:dword;aparam:LPARAM;var last:uint_ptr;restype:dword):integer;
 var
   tmpact,act,act_org:pHKAction;
   val,prelast:uint_ptr;
   b:boolean;
   i:integer;
-  lcontact:dword;
+  lContact:THANDLE;
   buf:array [0..31] of WideChar;
   tmpc,tmpc1,tmpc2,tmpcv1,tmpcv2:pWideChar;
   oldrestype:integer;
@@ -392,7 +392,7 @@ begin
                       if restype=rtInt then
                        last:=uint_ptr(IntToStr(buf,last));
 
-                      pWideChar(last):=ParseVarString(varval,lcontact,pWideChar(last));
+                      pWideChar(last):=ParseVarString(varval,lContact,pWideChar(last));
 
                       if (flags and ACF_VARASINT)<>0 then
                       begin
@@ -553,12 +553,12 @@ type
   tActStartData = record
     event :THANDLE;
     action:dword;
-    param :dword;
-    group :PHKRecord;
-    last  :dword;
+    param :LPARAM;
+    group :pHKRecord;
+    last  :LPARAM;
   end;
 
-function ThDoAction(arg:pActStartData):dword; //stdcall;
+function ThDoAction(arg:pActStartData):integer; //stdcall;
 var
   ltmp:uint_ptr;
 begin
@@ -590,7 +590,7 @@ begin
   end;
 end;
 
-function ActionStarterWait(action:dword;aparam:dword=0;group:PHKRecord=nil;alast:dword=0):integer;
+function ActionStarterWait(action:dword;aparam:LPARAM=0;group:pHKRecord=nil;alast:LPARAM=0):LPARAM;
 var
   tmp:pActStartData;
   res:{$IFDEF COMPILER_16_UP}Longword{$ELSE}uint_ptr{$ENDIF};
@@ -607,7 +607,7 @@ begin
   result:=tmp^.last;
 end;
 
-function ActionStarter(action:dword;aparam:dword=0;group:PHKRecord=nil;alast:dword=0):integer;
+function ActionStarter(action:dword;aparam:dword=0;group:pHKRecord=nil;alast:dword=0):integer;
 var
   tmp:pActStartData;
   res:{$IFDEF COMPILER_16_UP}Longword{$ELSE}uint_ptr{$ENDIF};
@@ -622,9 +622,9 @@ begin
   CloseHandle(BeginThread(nil,0,@ThDoAction,tmp,0,res));
 end;
 
-procedure ReallocActionList(var ActList:pActList;var MaxAct:dword);
+procedure ReallocActionList(var ActList:pActList;var MaxAct:cardinal);
 var
-  i:dword;
+  i:cardinal;
   tmp:pActList;
 begin
   i:=(MaxAct+ActListPage)*SizeOf(tHKAction);
@@ -639,9 +639,9 @@ begin
   inc(MaxAct,ActListPage);
 end;
 
-function NewAction(var ActList:pActList;var maxAct:dword):dword;
+function NewAction(var ActList:pActList;var MaxAct:cardinal):cardinal;
 var
-  i:dword;
+  i:cardinal;
   pAct:pHKAction;
 begin
   i:=1;
@@ -672,9 +672,9 @@ begin
   ActList^[result].flags     :=ACF_ASSIGNED;
 end;
 
-procedure ReallocHKList(var HKList:pHKList;var MaxHK:dword);
+procedure ReallocHKList(var HKList:pHKList;var MaxHK:cardinal);
 var
-  i:dword;
+  i:cardinal;
   tmp:pHKList;
 begin
   i:=(MaxHK+HKListPage)*SizeOf(tHKRecord);
@@ -710,9 +710,9 @@ begin
 end;
 
 // Root,Size,MaxCount(Page,flag)
-function NewGroup(var HKList:pHKList;var MaxHK:dword):dword;
+function NewGroup(var HKList:pHKList;var MaxHK:cardinal):cardinal;
 var
-  i:dword;
+  i:cardinal;
   pHK:pHKRecord;
 begin
   i:=0;
@@ -734,7 +734,7 @@ begin
   InitGroupValue(@HKList^[result]);
 end;
 
-procedure FreeGroup(num:integer);
+procedure FreeGroup(num:cardinal);
 begin
   with GroupList^[num] do
   begin
@@ -764,14 +764,14 @@ end;
 
 procedure DestroyGroups(HKList:pHKList;count:integer);
 var
-  phk:pHKRecord;
+  pHK:pHKRecord;
 begin
-  phk:=@HKList^;
+  pHK:=@HKList^;
   while count>0 do
   begin
-    if (phk^.flags and ACF_ASSIGNED)<>0 then
-      mFreeMem(phk^.descr);
-    inc(phk);
+    if (pHK^.flags and ACF_ASSIGNED)<>0 then
+      mFreeMem(pHK^.descr);
+    inc(pHK);
     dec(count);
   end;
   FreeMem(HKList);
@@ -831,8 +831,8 @@ begin
   with GroupList^[result] do
   begin
     if (wParam and ACCF_CLEAR)<>0 then
-      flags:=flags and not (dword(wParam) and ACCF_FLAGS)
+      flags:=flags and not (uint_ptr(wParam) and ACCF_FLAGS)
     else
-      flags:=flags or      (dword(wParam) and ACCF_FLAGS);
+      flags:=flags or      (uint_ptr(wParam) and ACCF_FLAGS);
   end;
 end;

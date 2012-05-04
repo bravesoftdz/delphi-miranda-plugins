@@ -42,7 +42,7 @@ type
     index_no     :byte;  // track sub-index (0 if not used, like now)
     total_samples:dword; // for entire file (-1 if unknown)
     block_index  :dword; // index of first sample in block (to file begin)
-    block_samples:dword; // # samples in this block
+    block_samples:dword; // # samples in This block
     flags        :dword; // various flags for id and decoding
     crc          :dword; // crc for actual decoded data
   end;
@@ -126,17 +126,17 @@ procedure InitLink;
 begin
   LocalFormatLinkWAV.Next:=FormatLink;
 
-  LocalFormatLinkWAV.this.proc :=@ReadWAV;
-  LocalFormatLinkWAV.this.ext  :='WAV';
-  LocalFormatLinkWAV.this.flags:=0;
+  LocalFormatLinkWAV.This.proc :=@ReadWAV;
+  LocalFormatLinkWAV.This.ext  :='WAV';
+  LocalFormatLinkWAV.This.flags:=0;
 
   FormatLink:=@LocalFormatLinkWAV;
 
   LocalFormatLinkWV.Next:=FormatLink;
 
-  LocalFormatLinkWV.this.proc :=@ReadWAV;
-  LocalFormatLinkWV.this.ext  :='WV';
-  LocalFormatLinkWV.this.flags:=0;
+  LocalFormatLinkWV.This.proc :=@ReadWAV;
+  LocalFormatLinkWV.This.ext  :='WV';
+  LocalFormatLinkWV.This.flags:=0;
 
   FormatLink:=@LocalFormatLinkWV;
 end;

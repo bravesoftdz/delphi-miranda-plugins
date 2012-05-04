@@ -72,7 +72,7 @@ function IIF(cond:bool;ret1,ret2:pWideChar):pWideChar; overload;
 function IIF(cond:bool;ret1,ret2:Extended ):Extended;  overload;
 function IIF(cond:bool;ret1,ret2:tDateTime):tDateTime; overload;
 function IIF(cond:bool;ret1,ret2:pointer  ):pointer;   overload;
-function IIF(cond:bool;ret1,ret2:string   ):string;    overload;
+function IIF(cond:bool;const ret1,ret2:string):string; overload;
 {$IFNDEF DELPHI_7_UP}
 function IIF(cond:bool;ret1,ret2:variant  ):variant;   overload;
 {$ENDIF}
@@ -80,8 +80,8 @@ function IIF(cond:bool;ret1,ret2:variant  ):variant;   overload;
 function GetImageType (buf:pByte;mime:PAnsiChar=nil):dword;
 function GetImageTypeW(buf:pByte;mime:PWideChar=nil):int64;
 
-procedure CopyToClipboard(txt:pointer; ansi:bool);
-function  PasteFromClipboard(ansi:boolean;cp:dword=CP_ACP):pointer;
+procedure CopyToClipboard(txt:pointer; Ansi:bool);
+function  PasteFromClipboard(Ansi:boolean;cp:dword=CP_ACP):pointer;
 
 function  mGetMem (var dst;size:integer):pointer;
 procedure mFreeMem(var ptr);
@@ -92,12 +92,12 @@ function WideToCombo(src:PWideChar;var dst;cp:integer=CP_ACP):integer;
 
 function ChangeUnicode(str:PWideChar):PWideChar;
 function UTF8Len(src:PAnsiChar):integer;
-function WideToANSI(src:PWideChar;var dst:PAnsiChar;cp:dword=CP_ACP):PAnsiChar;
-function ANSIToWide(src:PAnsiChar;var dst:PWideChar;cp:dword=CP_ACP):PWideChar;
-function ANSIToUTF8(src:PAnsiChar;var dst:PAnsiChar;cp:dword=CP_ACP):PAnsiChar;
-function UTF8toANSI(src:PAnsiChar;var dst:PAnsiChar;cp:dword=CP_ACP):PAnsiChar;
-function UTF8toWide(src:PAnsiChar;var dst:PWideChar;len:cardinal=cardinal(-1)):PWideChar;
-function WidetoUTF8(src:PWideChar;var dst:PAnsiChar):PAnsiChar;
+function WideToAnsi(src:PWideChar;var dst:PAnsiChar;cp:dword=CP_ACP):PAnsiChar;
+function AnsiToWide(src:PAnsiChar;var dst:PWideChar;cp:dword=CP_ACP):PWideChar;
+function AnsiToUTF8(src:PAnsiChar;var dst:PAnsiChar;cp:dword=CP_ACP):PAnsiChar;
+function UTF8ToAnsi(src:PAnsiChar;var dst:PAnsiChar;cp:dword=CP_ACP):PAnsiChar;
+function UTF8ToWide(src:PAnsiChar;var dst:PWideChar;len:cardinal=cardinal(-1)):PWideChar;
+function WideToUTF8(src:PWideChar;var dst:PAnsiChar):PAnsiChar;
 
 function CharWideToUTF8(src:WideChar;var dst:pAnsiChar):integer;
 function CharUTF8ToWide(src:pAnsiChar;pin:pinteger=nil):WideChar;
@@ -151,7 +151,7 @@ function CompareMem(P1, P2: Pointer; Length: Integer): Boolean;
 function Min(a,b:integer):integer;
 function Max(a,b:integer):integer;
 
-function Timestamp(Year,Month,Day:cardinal;Hour:cardinal=0;Min:cardinal=0;Sec:cardinal=0):dword;
+function Timestamp(Year,Month,Day:cardinal;Hour:cardinal=0;Minute:cardinal=0;Sec:cardinal=0):dword;
 function GetCurrentTime:dword;
 
 function TimeToInt(stime:PAnsiChar):integer; overload;
@@ -196,9 +196,9 @@ function  GetPairChar(ch:AnsiChar):AnsiChar; overload;
 function  GetPairChar(ch:WideChar):WideChar; overload;
 
 type
-  lSortProc = function (First,Second:integer):integer;
+  tSortProc = function (First,Second:integer):integer;
   {0=equ; 1=1st>2nd; -1=1st<2nd }
-procedure ShellSort(size:integer;Compare,Swap:lSortProc);
+procedure ShellSort(size:integer;Compare,Swap:tSortProc);
 
 function isPathAbsolute(path:pWideChar):boolean; overload;
 function isPathAbsolute(path:PAnsiChar):boolean; overload;
@@ -322,7 +322,7 @@ begin
 				end;
 			end
 		end;
-		inc(buffer);
+		inc(Buffer);
 	until false;
 	result:= not ((Octets>0) or Ascii);
 end;
@@ -400,7 +400,7 @@ function IIF(cond:bool;ret1,ret2:pointer):pointer; overload;
 begin
   if cond then result:=ret1 else result:=ret2;
 end;
-function IIF(cond:bool;ret1,ret2:string):string; overload;
+function IIF(cond:bool;const ret1,ret2:string):string; overload;
 begin
   if cond then result:=ret1 else result:=ret2;
 end;
@@ -464,14 +464,14 @@ begin
   end;
 end;
 
-procedure CopyToClipboard(txt:pointer; ansi:bool);
+procedure CopyToClipboard(txt:pointer; Ansi:bool);
 var
   s:pointer;
   fh:THANDLE;
 begin
   if pointer(txt)=nil then
     exit;
-  if ansi then 
+  if Ansi then 
   begin
     if PAnsiChar(txt)^=#0 then exit
   end
@@ -480,7 +480,7 @@ begin
 
   if OpenClipboard(0) then
   begin
-    if ansi then
+    if Ansi then
     begin
       fh:=GlobalAlloc(GMEM_MOVEABLE+GMEM_DDESHARE,(StrLen(PAnsiChar(txt))+1));
       s:=GlobalLock(fh);
@@ -495,7 +495,7 @@ begin
     end;
     GlobalUnlock(fh);
     EmptyClipboard;
-    if ansi then
+    if Ansi then
       SetClipboardData(CF_TEXT,fh)
     else
       SetClipboardData(CF_UNICODETEXT,fh);
@@ -503,14 +503,15 @@ begin
   end;
 end;
 
-function PasteFromClipboard(ansi:boolean;cp:dword=CP_ACP):pointer;
+function PasteFromClipboard(Ansi:boolean;cp:dword=CP_ACP):pointer;
 var
   p:pWideChar;
   fh:tHandle;
 begin
+  result:=nil;
   if OpenClipboard(0) then
   begin
-    if not ansi then
+    if not Ansi then
     begin
       fh:=GetClipboardData(CF_UNICODETEXT);
       if fh<>0 then
@@ -599,7 +600,7 @@ begin
   end;
 end;
 
-function WideToANSI(src:PWideChar;var dst:PAnsiChar; cp:dword=CP_ACP):PAnsiChar;
+function WideToAnsi(src:PWideChar;var dst:PAnsiChar; cp:dword=CP_ACP):PAnsiChar;
 var
   len,l:integer;
 begin
@@ -619,7 +620,7 @@ begin
   dst:=result;
 end;
 
-function ANSIToWide(src:PAnsiChar;var dst:PWideChar; cp:dword=CP_ACP):PWideChar;
+function AnsiToWide(src:PAnsiChar;var dst:PWideChar; cp:dword=CP_ACP):PWideChar;
 var
   len,l:integer;
 begin
@@ -639,7 +640,7 @@ begin
   dst:=result;
 end;
 
-function ANSIToUTF8(src:PAnsiChar;var dst:PAnsiChar;cp:dword=CP_ACP):PAnsiChar;
+function AnsiToUTF8(src:PAnsiChar;var dst:PAnsiChar;cp:dword=CP_ACP):PAnsiChar;
 var
   tmp:PWideChar;
 begin
@@ -657,7 +658,7 @@ begin
       inc(src,3);
     while src^<>#0 do
     begin
-      if (ord(src^) and $80)=0 then
+      if      (ord(src^) and $80)=0 then
       else if (ord(src^) and $E0)=$E0 then
         inc(src,2)
       else
@@ -675,7 +676,7 @@ begin
   begin
     while src^<>#0 do
     begin
-      if src^<#$0080 then
+      if      src^<#$0080 then
       else if src^<#$0800 then
         inc(result)
       else
@@ -755,7 +756,7 @@ begin
 {}
 end;
 
-function UTF8toWide(src:PAnsiChar; var dst:PWideChar; len:cardinal=cardinal(-1)):PWideChar;
+function UTF8ToWide(src:PAnsiChar; var dst:PWideChar; len:cardinal=cardinal(-1)):PWideChar;
 var
   w:word;
   p:PWideChar;
@@ -793,7 +794,7 @@ begin
   result:=dst;
 end;
 
-function UTF8toANSI(src:PAnsiChar;var dst:PAnsiChar;cp:dword=CP_ACP):PAnsiChar;
+function UTF8ToAnsi(src:PAnsiChar;var dst:PAnsiChar;cp:dword=CP_ACP):PAnsiChar;
 var
   tmp:pWideChar;
 begin
@@ -1068,7 +1069,7 @@ begin
   result:=buf;
 end;
 
-procedure ShellSort(size:integer;Compare,Swap:lSortProc);
+procedure ShellSort(size:integer;Compare,Swap:tSortProc);
 var
   i,j,gap:longint;
 begin
@@ -1575,21 +1576,21 @@ end;
 
 function StrCat(Dest: PAnsiChar; const Source: PAnsiChar): PAnsiChar;
 begin
-  if dest<>nil then
+  if Dest<>nil then
     StrCopy(StrEnd(Dest), Source);
   Result := Dest;
 end;
 
 function StrCatW(Dest: PWideChar; const Source: PWideChar): PWideChar;
 begin
-  if dest<>nil then
+  if Dest<>nil then
     StrCopyW(StrEndW(Dest), Source);
   Result := Dest;
 end;
 
 function StrCatE(Dest: PAnsiChar; const Source: PAnsiChar): PAnsiChar;
 begin
-  if dest<>nil then
+  if Dest<>nil then
     result:=StrCopyE(StrEnd(Dest), Source)
   else
     result:=nil;
@@ -1597,7 +1598,7 @@ end;
 
 function StrCatEW(Dest: PWideChar; const Source: PWideChar): PWideChar;
 begin
-  if dest<>nil then
+  if Dest<>nil then
     result:=StrCopyEW(StrEndW(Dest), Source)
   else
     result:=nil;
@@ -1777,7 +1778,7 @@ begin
   dst^:=#0;
   if fname<>nil then
   begin
-    pc:=strendw(fname)-1;
+    pc:=StrEndW(fname)-1;
     while (pc>fname) and ((pc^='"') or (pc^=' ')) do dec(pc);
     ppc:=pc+1;
     while (pc>fname) and (pc^<>'.') do
@@ -1862,9 +1863,9 @@ begin
   Result:=(Year mod 4=0) and ((Year mod 100<>0) or (Year mod 400=0));
 end;
 
-function EncodeTime(Hour, Min, Sec: cardinal): TDateTime;
+function EncodeTime(Hour, Minute, Sec: cardinal): TDateTime;
 begin
-  result := (Hour*3600 + Min*60 + Sec) / 86400;
+  result := (Hour*3600 + Minute*60 + Sec) / 86400;
 end;
 
 function EncodeDate(Year, Month, Day: cardinal):TDateTime;
@@ -1883,15 +1884,15 @@ begin
   result := Year * 365 + Year div 4 - Year div 100 + Year div 400 + Day - DateDelta;
 end;
 
-function Timestamp(Year,Month,Day:cardinal;Hour:cardinal=0;Min:cardinal=0;Sec:cardinal=0):dword;
+function Timestamp(Year,Month,Day:cardinal;Hour:cardinal=0;Minute:cardinal=0;Sec:cardinal=0):dword;
 var
   t:tDateTime;
 begin
   t := EncodeDate(Year, Month, Day);
   if t >= 0 then
-    t := t + EncodeTime(Hour, Min, Sec)
+    t := t + EncodeTime(Hour, Minute, Sec)
   else
-    t := t - EncodeTime(Hour, Min, Sec);
+    t := t - EncodeTime(Hour, Minute, Sec);
   result:=Round((t - UnixDateDelta) * 86400)
 end;
 
@@ -1905,27 +1906,27 @@ end;
 
 function TimeToInt(stime:PAnsiChar):integer;
 var
-  hour,min,sec,len,i:integer;
+  hour,minute,sec,len,i:integer;
 begin
   len:=StrLen(stime);
   i:=0;
-  sec :=0;
-  min :=0;
-  hour:=0;
+  sec   :=0;
+  minute:=0;
+  hour  :=0;
   while i<len do
   begin
     if (stime[i]<'0') or (stime[i]>'9') then
     begin
-      if min>0 then
-        hour:=min;
-      min:=sec;
+      if minute>0 then
+        hour:=minute;
+      minute:=sec;
       sec:=0;
     end
     else
       sec:=sec*10+ord(stime[i])-ord('0');
     inc(i);
   end;
-  result:=hour*3600+min*60+sec;
+  result:=hour*3600+minute*60+sec;
 end;
 
 function TimeToInt(stime:PWideChar):integer;
@@ -1937,7 +1938,7 @@ end;
 
 function IntToTime(dst:PAnsiChar;time:integer):PAnsiChar;
 var
-  day,hour,min,sec:array [0..7] of AnsiChar;
+  day,hour,minute,sec:array [0..7] of AnsiChar;
   d,h:integer;
 begin
   result:=dst;
@@ -1959,23 +1960,23 @@ begin
   if h>0 then
   begin
     IntToStr(hour,h);
-    IntToStr(min,(time div 60),2);
+    IntToStr(minute,(time div 60),2);
     dst^:=hour[0]; inc(dst);
     if hour[1]<>#0 then
     begin
       dst^:=hour[1]; inc(dst);
     end;
     dst^:=':';    inc(dst);
-    dst^:=min[0]; inc(dst);
-    dst^:=min[1]; inc(dst);
+    dst^:=minute[0]; inc(dst);
+    dst^:=minute[1]; inc(dst);
   end
   else
   begin
-    IntToStr(min,time div 60);
-    dst^:=min[0]; inc(dst);
-    if min[1]<>#0 then
+    IntToStr(minute,time div 60);
+    dst^:=minute[0]; inc(dst);
+    if minute[1]<>#0 then
     begin
-      dst^:=min[1]; inc(dst);
+      dst^:=minute[1]; inc(dst);
     end;
   end;
   dst^:=':';    inc(dst);
@@ -2307,7 +2308,7 @@ begin
           (StrPosW(path,'://')<>nil);
 end;
 
-function isPathAbsolute(path:PAnsiChar):boolean;
+function isPathAbsolute(path:pAnsiChar):boolean;
 begin
   result:=((path[1]=':') and (path[2]='\')) or ((path[0]='\') {and (path[1]='\')}) or
           (StrPos(path,'://')<>nil);
@@ -2315,7 +2316,7 @@ end;
 
 procedure ShowDump(ptr:pbyte;len:integer);
 var
-  buf: array of ansichar;
+  buf: array of Ansichar;
   i:integer;
   p:pAnsiChar;
   p1:pByte;

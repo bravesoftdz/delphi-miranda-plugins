@@ -57,7 +57,7 @@ begin
 //        result:=false;
     end
 
-    else if (WinampWindow=0) and (StrCmp(s,Winampclass)=0) then
+    else if (WinampWindow=0) and (StrCmp(s,WinampClass)=0) then
     begin
       WinampWindow:=awnd;
     end;

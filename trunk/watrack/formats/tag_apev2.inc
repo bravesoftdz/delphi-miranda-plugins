@@ -1,13 +1,13 @@
 {APE tag}
 {$IFDEF Interface}
-function ReadAPEv2(Buf:PAnsiChar;var Info:tSongInfo;count:integer=0):longint; overload;
+function ReadAPEv2(buf:PAnsiChar;var Info:tSongInfo;count:integer=0):longint; overload;
 function ReadAPEv2(f:THANDLE;var Info:tSongInfo):longint; overload;
 {$ELSE}
 const
   APESign  = 'APETAGEX';
 type
-  pAPEHeader = ^TAPEHeader;
-  TAPEHeader = packed record
+  pAPEHeader = ^tAPEHeader;
+  tAPEHeader = packed record
     ID:array [0..7] of AnsiChar;
     Version:dword;
     TagSize:dword; //footer + all items
@@ -25,7 +25,7 @@ begin
       AnsiToWide(buf,dst);
 end;
 
-function ReadAPEv2(Buf:PAnsiChar;var Info:tSongInfo;count:integer=0):longint;
+function ReadAPEv2(buf:PAnsiChar;var Info:tSongInfo;count:integer=0):longint;
 var
   APE:pAPEHeader;
   len:integer;
@@ -37,7 +37,7 @@ var
 //  extw:array [0..7] of WideChar;
 begin
   result:=0;
-  APE:=pointer(Buf);
+  APE:=pointer(buf);
   if APE.ID=APESign then
   begin
     inc(buf,SizeOf(tAPEHeader));
@@ -59,7 +59,7 @@ begin
     else if lstrcmpia(key,'COMMENT')=0 then ReadAPEValue(buf,Info.comment,APE.Version)
     else if lstrcmpia(key,'GENRE'  )=0 then ReadAPEValue(buf,Info.genre  ,APE.Version)
     else if lstrcmpia(key,'YEAR'   )=0 then ReadAPEValue(buf,Info.year   ,APE.Version)
-    else if lstrcmpia(key,'TRACK'  )=0 then if Info.Track=0 then Info.Track:=StrToInt(buf)
+    else if lstrcmpia(key,'TRACK'  )=0 then if Info.track=0 then Info.track:=StrToInt(buf)
     else if lstrcmpia(key,'LYRICS' )=0 then ReadAPEValue(buf,Info.lyric  ,APE.Version)
     //!! must preserve multipart lyric
     else if (lstrcmpia(key,'Cover Art (Front)')=0) or
@@ -83,7 +83,7 @@ begin
           cf:=ReWrite(PAnsiChar(@buf1));
           BlockWrite(cf,buf^,ptr-buf);
           CloseHandle(cf);
-          AnsiToWide(PAnsiChar(@buf1),Info.Cover);
+          AnsiToWide(PAnsiChar(@buf1),Info.cover);
         end;
       end;
     end;

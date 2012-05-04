@@ -22,7 +22,7 @@ const
   opt_UserCP    :PAnsiChar = 'usercp';
   opt_CheckTime :PAnsiChar = 'checktime';
   opt_coverpaths:PAnsiChar = 'coverpaths';
-  opt_implantant:PAnsiChar = 'useimplantant';
+  opt_Implantant:PAnsiChar = 'useimplantant';
   opt_MTHCheck  :PAnsiChar = 'mthcheck';
   opt_KeepOld   :PAnsiChar = 'keepold';
   opt_mmkeyemu  :PAnsiChar = 'mmkeyemu';
@@ -43,7 +43,7 @@ begin
   MTHCheck     :=DBReadByte(0,PluginShort,opt_MTHCheck  ,BST_CHECKED);
   KeepOld      :=DBReadByte(0,PluginShort,opt_KeepOld   ,BST_UNCHECKED);
   CheckAll     :=DBReadByte(0,PluginShort,opt_CheckAll  ,BST_UNCHECKED);
-  mTimer       :=DBReadWord(0,PluginShort,opt_timer     ,3000);
+  mTimer       :=DBReadWord(0,PluginShort,opt_Timer     ,3000);
   if mTimer<500 then
     mTimer:=mTimer*1000;
   UserCP       :=DBReadWord(0,PluginShort,opt_UserCP    ,CP_ACP);
@@ -64,10 +64,10 @@ begin
   DBWriteByte(0,PluginShort,opt_MTHCheck  ,MTHCheck);
   DBWriteByte(0,PluginShort,opt_KeepOld   ,KeepOld);
   DBWriteByte(0,PluginShort,opt_CheckAll  ,CheckAll);
-  DBWriteWord(0,PluginShort,opt_timer     ,mTimer);
+  DBWriteWord(0,PluginShort,opt_Timer     ,mTimer);
   DBWriteWord(0,PluginShort,opt_UserCP    ,UserCP);
 
-  DBWriteUnicode(0,PluginShort,opt_CoverPaths,CoverPaths);
+  DBWriteUnicode(0,PluginShort,opt_coverpaths,CoverPaths);
 
   DBWriteByte (0,PluginShort,opt_mmkeyemu  ,mmkeyemu);
 end;

@@ -285,7 +285,7 @@
       IDC_RW_SVAR ,
       IDC_RW_TVAR ,
       IDC_MSG_TTL ,
-      IDC_MSG_TXT : SetButtonIcon(GetDlgItem(Dialog,Ctrl),checknames[state]);
+      IDC_MSG_TXT : SetButtonIcon(GetDlgItem(Dialog,ctrl),checknames[state]);
      end;
   end;
 
@@ -695,7 +695,7 @@
         ACT_CONTACT: begin
           if (flags and ACF_KEEPONLY)<>0 then
             ButtonOn(IDC_CNT_KEEP);
-          if fCLFilter then
+          if fCLfilter then
             ButtonOn(IDC_CNT_FILTER);
           SetDlgItemTextW(Dialog,IDC_EDIT_FORMAT,fCLformat);
 

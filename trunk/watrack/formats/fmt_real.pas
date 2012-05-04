@@ -103,7 +103,7 @@ begin
   while FilePos(f)<fsize do
   begin
     BlockRead(f,chunk,SizeOf(chunk));
-    chunk.len:=bswap(chunk.len);
+    chunk.Len:=BSwap(chunk.Len);
     if (not (AnsiChar(chunk.ID and $FF) in ['A'..'Z','a'..'z','.'])) or
       (chunk.Len<SizeOf(chunk)) then
       break;
@@ -136,10 +136,10 @@ begin
       begin
         SkipStr(p,2); // rating?
         ls:=ReadStr(p,2); // title
-        ANSItoWide(ls,Info.title);
+        AnsiToWide(ls,Info.title);
         mFreeMem(ls);
         ls:=ReadStr(p,2); // author
-        ANSItoWide(ls,Info.artist);
+        AnsiToWide(ls,Info.artist);
         mFreeMem(ls);
 {
         SkipStr(p,2); // copyright
@@ -276,12 +276,12 @@ begin
       Skip(f,chunk.Len-SizeOf(chunk));
 {
     BlockRead(f,chunk,SizeOf(chunk)); //RJMD
-    chunk.len:=bswap(chunk.len);
+    chunk.len:=BSwap(chunk.len);
     BlockRead(f,tmplong,4);
 
 
     BlockRead(f,chunk,SizeOf(chunk)); //RMJE
-    chunk.len:=bswap(chunk.len);
+    chunk.len:=BSwap(chunk.len);
 }
     end
     else
@@ -306,25 +306,25 @@ procedure InitLink;
 begin
   LocalFormatLinkRM.Next:=FormatLink;
 
-  LocalFormatLinkRM.this.proc :=@ReadReal;
-  LocalFormatLinkRM.this.ext  :='RM';
-  LocalFormatLinkRM.this.flags:=WAT_OPT_VIDEO;
+  LocalFormatLinkRM.This.proc :=@ReadReal;
+  LocalFormatLinkRM.This.ext  :='RM';
+  LocalFormatLinkRM.This.flags:=WAT_OPT_VIDEO;
 
   FormatLink:=@LocalFormatLinkRM;
 
   LocalFormatLinkRA.Next:=FormatLink;
 
-  LocalFormatLinkRA.this.proc :=@ReadReal;
-  LocalFormatLinkRA.this.ext  :='RA';
-  LocalFormatLinkRA.this.flags:=WAT_OPT_VIDEO;
+  LocalFormatLinkRA.This.proc :=@ReadReal;
+  LocalFormatLinkRA.This.ext  :='RA';
+  LocalFormatLinkRA.This.flags:=WAT_OPT_VIDEO;
 
   FormatLink:=@LocalFormatLinkRA;
 
   LocalFormatLinkRAM.Next:=FormatLink;
 
-  LocalFormatLinkRAM.this.proc :=@ReadReal;
-  LocalFormatLinkRAM.this.ext  :='RAM';
-  LocalFormatLinkRAm.this.flags:=WAT_OPT_VIDEO;
+  LocalFormatLinkRAM.This.proc :=@ReadReal;
+  LocalFormatLinkRAM.This.ext  :='RAM';
+  LocalFormatLinkRAM.This.flags:=WAT_OPT_VIDEO;
 
   FormatLink:=@LocalFormatLinkRAM;
 end;

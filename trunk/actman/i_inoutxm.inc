@@ -6,7 +6,7 @@ const
   ioRoot         :PWideChar = 'ActMan_Export';
   ioAction       :PWideChar = 'Action';
   ioSubAction    :PWideChar = 'SubAction';
-  ioContactwindow:PWideChar = 'ContactWindow';
+  ioContactWindow:PWideChar = 'ContactWindow';
   ioCallService  :PWideChar = 'CallService';
   ioRunProgram   :PWideChar = 'RunProgram';
   ioInsertText   :PWideChar = 'InsertText';
@@ -14,8 +14,8 @@ const
   ioLinkAction   :PWideChar = 'LinkAction';
   ioProfile      :PWideChar = 'Profile';
   ioMessageBox   :PWideChar = 'MessageBox';
-  iowParam       :PWideChar = 'WPARAM';
-  iolParam       :PWideChar = 'LPARAM';
+  ioWParam       :PWideChar = 'WPARAM';
+  ioLParam       :PWideChar = 'LPARAM';
   ioItem         :PWideChar = 'ITEM';
   ioPost         :PWideChar = 'POST';
   ioIf           :PWideChar = 'IF';
@@ -463,7 +463,7 @@ begin
     else if StrCmpW(tmp,ioLinkAction)=0 then
     begin
       actionType:=ACT_CHAIN;
-      StrDupW(actname,getText(actNode));
+      StrDupW(actname,getText(actnode));
       flags:=flags or ACF_BYNAME;
     end
 
@@ -521,7 +521,7 @@ begin
     begin
       actionType:=ACT_MESSAGE;
       StrDupW(msgtitle,getAttrValue(actnode,ioTitle));
-      StrDupW(msgtext,getText(actNode));
+      StrDupW(msgtext,getText(actnode));
       boxopts:=StrToInt(getAttrValue(actnode,ioType));
       if StrToInt(getAttrValue(actnode,ioArgVariable))=1 then flags2:=flags2 or ACF2_MSG_TXT;
       if StrToInt(getAttrValue(actnode,ioVariables  ))=1 then flags2:=flags2 or ACF2_MSG_TTL;
@@ -536,7 +536,7 @@ begin
     end;
   end;
   result:=NewAction(ActionList,MaxActions);
-  move(act,ActionList^[result],SizeOf(tHkAction));
+  move(act,ActionList^[result],SizeOf(tHKAction));
 end;
 
 function Import(fname:PWideChar;aflags:dword):integer;

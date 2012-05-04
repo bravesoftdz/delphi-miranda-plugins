@@ -22,7 +22,7 @@ const
 const
   BufferSize = 8192;
 
-function DBRW(act:pHKAction;hcontact:dword;avalue:uint_ptr;
+function DBRW(act:pHKAction;hContact:THANDLE;avalue:uint_ptr;
               last,restype:uint_ptr):uint_ptr;
 var
   buf ,buf1 :array [0..127] of AnsiChar;
@@ -116,7 +116,7 @@ begin
   end;
 end;
 
-function OpenContact(hContact:cardinal):dword;
+function OpenContact(hContact:THANDLE):THANDLE;
 begin
   ShowContactDialog(hContact);
 {
@@ -133,7 +133,7 @@ begin
   result:=hContact;
 end;
 
-function replany(var str:pWideChar;aparam:dword;alast:pWideChar):boolean;
+function replany(var str:pWideChar;aparam:LPARAM;alast:pWideChar):boolean;
 var
   buf:array [0..31] of WideChar;
   tmp:pWideChar;
@@ -152,12 +152,12 @@ begin
     result:=false;
 end;
 
-function RunProgram(act:pHKAction;aparam:dword;alast:pWideChar):dword;
+function RunProgram(act:pHKAction;aparam:LPARAM;alast:pWideChar):dword;
 var
   tmp,tmpp,lpath:PWideChar;
   replPrg ,replArg :PWideChar;
   replPrg1,replArg1:PWideChar;
-  pd:dword;
+  pd:LPARAM;
   vars1,vars2,prgs,argss:boolean;
 begin
   with act^ do
@@ -254,7 +254,7 @@ var
   tmp1,tmp2:pWideChar;
   code,len:integer;
 begin
-  result:=dword(-1);
+  result:=uint_ptr(-1);
 
   lservice:=act^.service;
   lwparam :=act^.wparam;
@@ -262,7 +262,7 @@ begin
   with act^ do
   begin
     if (flags2 and ACF2_SRV_SRVC)<>0 then
-      lservice:=ParseVarString(lservice,param);
+      lservice:=ParseVarString(lservice,Param);
       
     StrCopy(buf,lservice);
     if StrPos(lservice,protostr)<>nil then
@@ -538,14 +538,14 @@ begin
 end;
 
 type
-  rec = record
+  trec = record
     text:PAnsiChar;
     one, two:integer;
   end;
 
 function GetFileString(fname:PAnsiChar;linenum:integer):pWideChar;
 var
-  pc,Filebuf,CurLine:PAnsiChar;
+  pc,FileBuf,CurLine:PAnsiChar;
   f:THANDLE;
   NumLines, j:integer;
 begin
@@ -605,32 +605,31 @@ begin
     pc^:=#0;
     StrReplace(CurLine,'\n',#13#10);
     StrReplace(CurLine,'\t',#09);
-    ANSItoWide(CurLine,result,CP_ACP);
+    AnsiToWide(CurLine,result,CP_ACP);
     mFreeMem(FileBuf);
   end
   else
     result:=nil;
 end;
 
-function Split(buf:PWideChar;macro:PWideChar;var r:rec):integer;
+function Split(buf:PWideChar;macro:PWideChar;var r:trec):integer;
 type
-  conv = packed record
+  tconv = packed record
     case boolean of
       false: (res:int);
       true: (lo,hi:word);
   end;
 var
-  i,j:integer;
+  i:integer;
   p,pp,lp:pWideChar;
-  ls:array [0..511] of widechar;
+  ls:array [0..511] of WideChar;
 begin
   result:=0;
   i:=StrIndexW(buf,macro);
   if i>0 then
   begin
     dec(i);
-    j:=StrLenW(macro);
-    p:=buf+i+j;
+    p:=buf+i+StrLenW(macro);
     pp:=p;
     while (p^<>#0) and (p^<>')') do
       inc(p);
@@ -645,7 +644,7 @@ begin
         inc(pp);
       end;
       lp^:=#0;
-      WideToANSI(ls,r.text,MirandaCP);
+      WideToAnsi(ls,r.text,MirandaCP);
       r.one:=-1;
       r.two:=-1;
       if pp^=',' then
@@ -659,8 +658,8 @@ begin
           r.two:=StrToInt(pp);
         end;
       end;
-      conv(result).lo:=p-buf-i+1; // length
-      conv(result).hi:=i;   // position
+      tconv(result).lo:=p-buf-i+1; // length
+      tconv(result).hi:=i;   // position
     end;
   end;
 end;
@@ -670,7 +669,7 @@ var
   i:integer;
   lp:pWideChar;
   buf:array [0..511] of AnsiChar;
-  r:rec;
+  r:trec;
 begin
   repeat
     i:=Split(dst,'^f(',r);
@@ -733,7 +732,7 @@ begin
   end;
 end;
 
-function InsertText(act:pHKAction;param:dword;last:pWideChar):uint_ptr;
+function InsertText(act:pHKAction;param:LPARAM;last:pWideChar):uint_ptr;
 var
   tmp:PWideChar;
   blob,p:PAnsiChar;
@@ -836,7 +835,7 @@ begin
       if fexist and ((flags and ACF_FAPPEND)<>0) then
       begin
         fh:=Append(tmp);
-        if dword(fh)<>INVALID_HANDLE_VALUE then
+        if fh<>THANDLE(INVALID_HANDLE_VALUE) then
         begin
           BlockWrite(fh,lstr^,llen);
         end;
@@ -847,7 +846,7 @@ begin
               (not fexist and ((flags and ACF_FAPPEND)<>0)) then
       begin
         fh:=ReWrite(tmp);
-        if dword(fh)<>INVALID_HANDLE_VALUE then
+        if fh<>THANDLE(INVALID_HANDLE_VALUE) then
         begin
           if cp=3 then
           begin
@@ -879,7 +878,7 @@ begin
         else
           b1[0]:=#0;
         fh:=Reset(tmp);
-        if dword(fh)<>INVALID_HANDLE_VALUE then
+        if fh<>THANDLE(INVALID_HANDLE_VALUE) then
         begin
           i:=GetFSize(tmp);
           mGetMem (w ,i+SizeOf(WideChar));
@@ -906,7 +905,7 @@ begin
         if b1[0]<>#0 then
           DeleteFileA(b1);
       end;
-      if dword(fh)<>INVALID_HANDLE_VALUE then
+      if fh<>THANDLE(INVALID_HANDLE_VALUE) then
         CloseHandle(fh);
       if tmp<>tfile then
         mFreeMem(tmp);

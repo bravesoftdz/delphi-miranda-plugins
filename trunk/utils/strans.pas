@@ -342,7 +342,7 @@ end;
 
 // within translation need to check array size limit
 // "limit" = array size, elements, not bytes!
-procedure TranslateBlob(dst:pByte;element:tOneElement);
+procedure TranslateBlob(dst:pByte;const element:tOneElement);
 var
   datatype:integer;
   clen,len:integer;

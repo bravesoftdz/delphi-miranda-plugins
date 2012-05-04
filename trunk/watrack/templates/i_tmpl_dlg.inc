@@ -108,7 +108,7 @@ begin
         mFreeMem(ExportText);
         ExportText:=GetDlgText(Dialog,IDC_EXPORT_TEXT);
 
-        saveopt;
+        SaveOpt;
       end;
     end;
   else

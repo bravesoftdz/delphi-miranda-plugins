@@ -119,7 +119,7 @@ end;
 function ActGetList(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
   pc:^tChain;
-  p:PHKRecord;
+  p:pHKRecord;
   i,cnt:integer;
 begin
   p:=@GroupList[0];
@@ -136,7 +136,7 @@ begin
     mGetMem(pc,cnt*SizeOf(tChain)+4);
     puint_ptr(lParam)^:=uint_ptr(pc);
 //    {$IFDEF WIN64}pqword{$ELSE}pdword{$ENDIF}(lParam)^:=uint_ptr(pc);
-    pdword(pc)^:=SizeOf(TChain);
+    pdword(pc)^:=SizeOf(tChain);
     inc(PByte(pc),4);
 
     p:=@GroupList[0];
@@ -160,7 +160,7 @@ end;
 function ActRun(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
   i:integer;
-  p:PHKRecord;
+  p:pHKRecord;
 begin
   result:=-1;
   p:=@GroupList[0];
@@ -180,7 +180,7 @@ end;
 function ActRunGroup(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
   i:integer;
-  p:PHKRecord;
+  p:pHKRecord;
 begin
   result:=-1;
   p:=@GroupList[0];
@@ -200,16 +200,16 @@ end;
 function ActRunParam(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
   i:integer;
-  p:PHKRecord;
+  p:pHKRecord;
 begin
   result:=-1;
   p:=@GroupList[0];
   
-  if (PAct_Param(lParam)^.flags and ACTP_BYNAME)=0 then
+  if (pAct_Param(lParam)^.flags and ACTP_BYNAME)=0 then
   begin
     for i:=0 to MaxGroups-1 do
     begin
-      if ((p^.flags and ACF_ASSIGNED)<>0) and (p^.id=PAct_Param(lParam)^.Id) then
+      if ((p^.flags and ACF_ASSIGNED)<>0) and (p^.id=pAct_Param(lParam)^.Id) then
       begin
         result:=p^.firstAction;
         break;
@@ -222,7 +222,7 @@ begin
     for i:=0 to MaxGroups-1 do
     begin
       if ((p^.flags and ACF_ASSIGNED)<>0) and
-         (StrCmpW(p^.descr,pWideChar(PAct_Param(lParam)^.Id))=0) then
+         (StrCmpW(p^.descr,pWideChar(pAct_Param(lParam)^.Id))=0) then
       begin
         result:=p^.firstAction;
         break;
@@ -233,10 +233,10 @@ begin
 
   if result>0 then
   begin
-    if (PAct_Param(lParam)^.flags and ACTP_WAIT)=0 then
-      result:=ActionStarter    (result,PAct_Param(lParam)^.wParam,p,PAct_Param(lParam)^.lParam)
+    if (pAct_Param(lParam)^.flags and ACTP_WAIT)=0 then
+      result:=ActionStarter    (result,pAct_Param(lParam)^.wParam,p,pAct_Param(lParam)^.lParam)
     else
-      result:=ActionStarterWait(result,PAct_Param(lParam)^.wParam,p,PAct_Param(lParam)^.lParam);
+      result:=ActionStarterWait(result,pAct_Param(lParam)^.wParam,p,pAct_Param(lParam)^.lParam);
   end;
 end;
 

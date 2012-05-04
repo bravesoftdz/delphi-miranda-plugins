@@ -32,7 +32,7 @@ begin
   end;
 end;
 
-procedure Error(text:PWideChar);
+procedure BassError(text:PWideChar);
 begin
   MessageboxW(0,TranslateW(text),TranslateW('Sorry!'),MB_ICONERROR)
 end;
@@ -108,7 +108,7 @@ begin
         if not Load_BASSDLL(basspath) then
         begin
           if (custom<>nil) and (custom^<>#0) then
-            Error('BASS.DLL not found!');
+            BassError('BASS.DLL not found!');
           result:=false;
         end;
       end;
@@ -118,7 +118,7 @@ begin
   if (not result) and ((custom=nil) or (custom^=#0)) then
   begin
     if MessageboxA(0,Translate('BASS.DLL not found! Choose BASS.dll path manually'),
-        'mRadio',MB_YESNO)=IDYES then
+        cPluginName,MB_YESNO)=IDYES then
     begin
       pc := nil;
       if SelectDirectory(TranslateW('Choose BASS.dll path'),pc,0,true) then
@@ -135,7 +135,7 @@ begin
         StrCopyW(pc,BASSName);
 
         if not Load_BASSDLL(basspath) then
-          Error('BASS.DLL not found!')
+          BassError('BASS.DLL not found!')
         else
           result:=true;
       end;
@@ -149,7 +149,7 @@ begin
     begin
       Unload_BASSDLL;
       result:=false;
-      Error('Wrong version of BASS.DLL');
+      BassError('Wrong version of BASS.DLL');
     end
     else
     begin
@@ -194,7 +194,7 @@ end;
 
 procedure MyFreeBASS;
 begin
-  MyStopBass;
+  MyStopBASS;
   BASS_Free;
   BASS_PluginFree(0);
 end;
@@ -207,7 +207,7 @@ begin
   mFreeMem(StationHeader);
   mFreeMem(ActiveURLw);
   DBDeleteSetting(ActiveContact,strCList,optStatusMsg);
-  MyStopBass;
+  MyStopBASS;
 end;
 
 function MyInitBASS:int;
@@ -433,6 +433,7 @@ end;
   end;
 end;
 
+{$IFDEF Debug}
 procedure logmeta(tag,a,b:pansiChar);
 var
   f:thandle;
@@ -448,6 +449,7 @@ begin
   p:=#13#10; BlockWrite(f,p^,StrLen(p));
   CloseHandle(f);
 end;
+{$ENDIF}
 
 function DoMeta(meta:PAnsiChar;TagType:int_ptr):Boolean;
 var
@@ -697,9 +699,9 @@ begin
           end;
         end;
       end;
-      
-//logmeta(tag,artist,title);
-
+{$IFDEF Debug}      
+logmeta(tag,artist,title);
+{$ENDIF}
       mFreeMem(oldartist);
       mFreeMem(oldtitle);
       mFreeMem(CurDescrW);
@@ -749,7 +751,7 @@ type
   end;
 const
   NumICYFields = 4;
-  ICYFields: array [0..NumIcyFields-1] of tICYField = (
+  ICYFields: array [0..NumICYFields-1] of tICYField = (
     (name:'icy-name:'      ; branch:'CList'     ; option:'MyHandle'),
     (name:'icy-genre:'     ; branch:cPluginName ; option:'Genre'),
     (name:'icy-br:'        ; branch:cPluginName ; option:'Bitrate'),
@@ -789,7 +791,7 @@ end;
 
 function OpenURL(url:PWideChar):dword;// stdcall;
 var
-  Len,Progress:DWORD;
+  len,progress:DWORD;
   flags:dword;
   i:integer;
   EAXUsed:bool;
@@ -882,6 +884,7 @@ begin
       url[4]:=']';
       url[5]:=' ';
 {$ENDIF}
+      progress:=0;
       repeat
         if CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_GET)=RD_STATUS_ABORT then
         begin

@@ -44,8 +44,9 @@ FONT 8, "MS Shell Dlg", 0, 0
                                 ES_MULTILINE | ES_AUTOVSCROLL | ES_WANTRETURN
   EDITTEXT                      IDC_DATA_EDTN, 186,  55, 160, 11
 #ifdef Miranda
-  AUTOCHECKBOX "Use Variables", IDC_DATA_VARS, 186, 138, 160, 14
-  AUTOCHECKBOX "Use MMI"      , IDC_DATA_MMI , 186, 152, 142, 14
+  CONTROL "V"  ,IDC_VAR_HELP   ,"MButtonClass",WS_TABSTOP,328,137,16,16,$18000000
+  AUTOCHECKBOX "Use Variables", IDC_DATA_VARS, 186, 138, 142, 14
+  AUTOCHECKBOX "Use MMI"      , IDC_DATA_MMI , 186, 152, 160, 14
 #endif
 
   DEFPUSHBUTTON   "&Change", IDC_DATA_CHANGE, 186, 168,  46, 14//, WS_GROUP
