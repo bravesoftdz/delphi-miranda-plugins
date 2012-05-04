@@ -3,7 +3,7 @@
 function Service_RadioPlayStop(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
   p:PAnsiChar;
-  new:bool;
+  lnew:bool;
   hContact:THANDLE;
   cni:TCONTACTINFO;
   i:integer;
@@ -65,12 +65,12 @@ begin
       RD_STATUS_ABORT: exit;
     end;
 
-    new:=ActiveContact<>hContact;
+    lnew:=ActiveContact<>hContact;
 
     if ActiveContact<>0 then
       CallService(MS_RADIO_COMMAND,MRC_STOP,1);
 
-    if new then
+    if lnew then
       CallService(MS_RADIO_COMMAND,MRC_PLAY,hContact);
   end;
 end;

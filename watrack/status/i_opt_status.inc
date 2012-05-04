@@ -19,7 +19,7 @@ end;
 
 procedure SetModStatus(stat:integer);
 begin
-  DBWriteByte(0,PluginShort,opt_modStatus,stat);
+  DBWriteByte(0,PluginShort,opt_ModStatus,stat);
 end;
 
 procedure LoadOpt;
@@ -29,7 +29,7 @@ begin
   UseExtStatus  :=DBReadByte(0,PluginShort,opt_UseExtStat ,BST_CHECKED);
   UseMessages   :=DBReadByte(0,PluginShort,opt_UseMsgs    ,BST_CHECKED);
   KeepStatus    :=DBReadByte(0,PluginShort,opt_KeepStatus ,BST_UNCHECKED);
-  XIndepended   :=DBReadByte(0,PluginShort,opt_independed ,BST_CHECKED);
+  XIndepended   :=DBReadByte(0,PluginShort,opt_Independed ,BST_CHECKED);
   ClearXStat    :=DBReadByte(0,PluginShort,opt_ClearXStat ,BST_UNCHECKED);
   UseListeningTo:=DBReadByte(0,PluginShort,opt_ListeningTo,BST_UNCHECKED);
   XStatusSet    :=DBReadByte(0,PluginShort,opt_XStatusSet ,1);
@@ -42,7 +42,7 @@ begin
   DBWriteByte(0,PluginShort,opt_UseExtStat ,UseExtStatus);
   DBWriteByte(0,PluginShort,opt_UseMsgs    ,UseMessages);
   DBWriteByte(0,PluginShort,opt_KeepStatus ,KeepStatus);
-  DBWriteByte(0,PluginShort,opt_independed ,XIndepended);
+  DBWriteByte(0,PluginShort,opt_Independed ,XIndepended);
   DBWriteByte(0,PluginShort,opt_ClearXStat ,ClearXStat);
   DBWriteByte(0,PluginShort,opt_ListeningTo,UseListeningTo);
   DBWriteByte(0,PluginShort,opt_XStatusSet ,XStatusSet);

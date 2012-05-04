@@ -4,7 +4,7 @@ var
   CurWin:HWND;
   s:pWideChar;
   p:PAnsiChar;
-  IsUnicode:boolean;
+  isUnicode:boolean;
   i:integer;
   j:integer;
   tt:tTemplateType;
@@ -17,7 +17,7 @@ begin
 //  i:=CallService(MS_WAT_GETMUSICINFO,0,0);
   if UseMessages=BST_CHECKED then
   begin
-    Curwin:=GetFocus;
+    CurWin:=GetFocus;
     if CurWin<>0 then
     begin
 //      j:=WndToContact(WaitFocusedWndChild(GetForegroundwindow){GetFocus});
@@ -46,11 +46,11 @@ begin
           SendRTF(CurWin,s,isUnicode,UserCP)
         else
         begin
-          if IsUnicode then
+          if isUnicode then
             SendMessageW(CurWin,EM_REPLACESEL,0,tlparam(s))
           else
           begin
-            SendMessageA(CurWin,EM_REPLACESEL,0,tlparam(WideToANSI(s,p,UserCP)));
+            SendMessageA(CurWin,EM_REPLACESEL,0,tlparam(WideToAnsi(s,p,UserCP)));
             mFreeMem(p);
           end;
         end;

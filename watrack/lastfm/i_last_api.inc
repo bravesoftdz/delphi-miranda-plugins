@@ -86,7 +86,7 @@ begin
   end;
 end;
 
-function Encode(dst,src:pAnsiChar):PAnsiChar;
+function encode(dst,src:pAnsiChar):PAnsiChar;
 begin
   while src^<>#0 do
   begin

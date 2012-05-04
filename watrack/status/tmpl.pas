@@ -11,7 +11,12 @@ type
 const
   tmpl_first   = tmpl_pm;
   tmpl_last    = tmpl_tunes;
-
+{
+const
+  TMPL_EMPTY    = 0;
+  TMPL_PARENT   = $4000;
+  TMPL_INACTIVE = ;
+}
 procedure CreateTemplates;
 procedure FreeTemplates;
 procedure SaveTemplates;
@@ -107,7 +112,7 @@ var
   lProtoStatus:cardinal;
   tmp:pMyStrArray;
   NumProto:integer;
-  tmpl:PStrTemplate;
+  tmpl:pStrTemplate;
 begin
   // clear counters
   for i:=1 to NumString do
@@ -225,7 +230,7 @@ end;
 function SetTemplateStr(aStr:PWideChar;aType:tTemplateType;proto:cardinal=0;
                         ProtoStatus:integer=0):integer;
 var
-  tmpl:PStrTemplate;
+  tmpl:pStrTemplate;
   tmp,tmp1:smallint;
 begin
   tmpl:=@StrTemplates^[proto];
@@ -256,7 +261,7 @@ begin
   i:=SizeOf(tStrTemplate)*(NumTemplates+1);
   mGetMem(StrTemplates,i);
   //  size in words
-  Fillword(StrTemplates^,i div 2,dubtmpl);
+  FillWord(StrTemplates^,i div 2,dubtmpl);
   LoadTemplates;
 end;
 

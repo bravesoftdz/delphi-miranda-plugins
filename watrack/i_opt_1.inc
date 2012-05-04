@@ -189,10 +189,8 @@ begin
           IDC_CHK_FORMAT: begin
             wnd:=GetDlgItem(Dialog,IDC_FORMATLIST);
             j:=ListView_GetItemCount(wnd)-1;
-            if btnChkFormat=0 then
-              tmp:=false
-            else if btnChkFormat=3 then
-              tmp:=true;
+
+            tmp:=btnChkFormat=3;
             for i:=0 to j do
             begin
               if (btnChkFormat=1) or (btnChkFormat=2) then

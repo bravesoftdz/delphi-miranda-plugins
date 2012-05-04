@@ -13,14 +13,14 @@ var
   p:PAnsiChar;
   buf:PAnsiChar;
   NumProto:cardinal;
-  tmpl:PStrTemplate;
+  tmpl:pStrTemplate;
   tmp:SmallInt;
   setting:array [0..63] of AnsiChar;
   pset:PAnsiChar;
 begin
   DBWriteWord(0,PluginShort,opt_numstr,NumString);
   StrCopy(setting,spref);
-  pset:=strend(setting);
+  pset:=StrEnd(setting);
   for i:=1 to NumString do
   begin
     IntToStr(pset,i);
@@ -81,7 +81,7 @@ end;
 
 procedure InitDefault;
 var
-  tmpl:PStrTemplate;
+  tmpl:pStrTemplate;
 begin
   NumString:=8;
   mGetMem (strings ,SizeOf(tMyString)*NumString);
@@ -124,7 +124,7 @@ begin
     pp:=szSetting[i-2];
     if (pp>='0') and (pp<='9') then
     begin
-      p:=pointer(lparam);
+      p:=pointer(lParam);
       move(szSetting^,p^^,i);
       inc(p^,i);
     end;
@@ -155,7 +155,7 @@ var
   p:PAnsiChar;
   pc:PAnsiChar;
   NumProto:cardinal;
-  tmpl:PStrTemplate;
+  tmpl:pStrTemplate;
   setting:array [0..63] of AnsiChar;
   pset:PAnsiChar;
 begin
@@ -165,7 +165,7 @@ begin
     mGetMem (strings ,SizeOf(tMyString)*NumString);
     FillChar(strings^,SizeOf(tMyString)*NumString,0);
     StrCopy(setting,spref);
-    pset:=strend(setting);
+    pset:=StrEnd(setting);
     for i:=1 to NumString do
     begin
       IntToStr(pset,i);
@@ -221,7 +221,7 @@ begin
       begin
         if StrCmp(pc,setting,j)=0 then // only proper proto
         begin
-          pc:=strend(pc);
+          pc:=StrEnd(pc);
           lProtoStatus :=              ORD((pc-2)^)-ORD('0');
           lTmplType    :=tTemplateType(ORD((pc-1)^)-ORD('0'));
 
@@ -233,7 +233,7 @@ begin
               DBReadWord(0,PluginShort,setting,dubtmpl);
         end
         else
-          pc:=strend(pc);
+          pc:=StrEnd(pc);
         inc(pc);
       end;
     end;

@@ -11,7 +11,7 @@ implementation
 
 uses commctrl,Messages,m_api,common,wrapper,mirutils,sr_global;
 
-{$include resource.inc}
+{.$include resource.inc}
 
 const
   frm_back:pAnsiChar = 'Frame background';
@@ -151,7 +151,7 @@ begin
       end;
     end;
   end;
-  result:=CallWindowProc(OldEditProc,dialog,hMessage,wParam,lParam);
+  result:=CallWindowProc(OldEditProc,Dialog,hMessage,wParam,lParam);
 end;
 
 function QSDlgResizer(Dialog:HWND;lParam:LPARAM;urc:PUTILRESIZECONTROL):int; cdecl;
@@ -181,7 +181,7 @@ begin
     end;
 
     WM_INITDIALOG: begin
-      OldEditProc:=pointer(SetWindowLongPtrW(GetDlgItem(dialog,IDC_FRAME_EDIT),
+      OldEditProc:=pointer(SetWindowLongPtrW(GetDlgItem(Dialog,IDC_FRAME_EDIT),
          GWL_WNDPROC,LONG_PTR(@NewEditProc)));
 
       hwndTooltip:=CreateWindowW(TOOLTIPS_CLASS,nil,TTS_ALWAYSTIP,
@@ -192,7 +192,7 @@ begin
       FillChar(ti,SizeOf(ti),0);
       ti.cbSize  :=sizeof(TOOLINFO);
       ti.uFlags  :=TTF_IDISHWND or TTF_SUBCLASS;
-      ti.hwnd    :=dialog;
+      ti.hwnd    :=Dialog;
       ti.hinst   :=hInstance;
       ti.uId     :=GetDlgItem(Dialog,IDC_FRAME_PREV);
 

@@ -140,7 +140,7 @@ var
   AF:tWaveFormatEx;
 begin
   BlockRead(f,AF,SizeOf(AF));
-  Info.channels:=AF.nchannels;
+  Info.channels:=AF.nChannels;
   Info.khz     :=AF.nSamplesPerSec div 1000;
   Info.kbps    :=(AF.nAvgBytesPerSec*8) div 1000;
   Skip(f,Size-SizeOf(AF));
@@ -208,30 +208,30 @@ begin
       BlockRead(f,ls^,Chunk.Length);
       case Chunk.Lo of
         sIART: begin
-          ANSItoWide(ls,Info.artist);
+          AnsiToWide(ls,Info.artist);
         end;
         sICMT: begin
           if Info.comment=NIL then
-            ANSItoWide(ls,Info.comment);
+            AnsiToWide(ls,Info.comment);
         end;
         sICRD: begin
-          ANSItoWide(ls,Info.year);
+          AnsiToWide(ls,Info.year);
         end;
         sIGNR: begin
-          ANSItoWide(ls,Info.genre);
+          AnsiToWide(ls,Info.genre);
         end;
         sINAM: begin
-          ANSItoWide(ls,Info.title);
+          AnsiToWide(ls,Info.title);
         end;
         sIPRT: begin
           Info.track:=StrToInt(ls);
         end;
         sIPRO: begin
           if Info.artist=NIL then
-            ANSItoWide(ls,Info.artist);
+            AnsiToWide(ls,Info.artist);
         end;
         sISBJ: begin
-          ANSItoWide(ls,Info.comment);
+          AnsiToWide(ls,Info.comment);
         end;
       end;
       mFreeMem(ls);
@@ -275,17 +275,17 @@ procedure InitLink;
 begin
   LocalFormatLinkAVI.Next:=FormatLink;
 
-  LocalFormatLinkAVI.this.proc :=@ReadAVI;
-  LocalFormatLinkAVI.this.ext  :='AVI';
-  LocalFormatLinkAVI.this.flags:=WAT_OPT_VIDEO;
+  LocalFormatLinkAVI.This.proc :=@ReadAVI;
+  LocalFormatLinkAVI.This.ext  :='AVI';
+  LocalFormatLinkAVI.This.flags:=WAT_OPT_VIDEO;
 
   FormatLink:=@LocalFormatLinkAVI;
 
   LocalFormatLinkDIVX.Next:=FormatLink;
 
-  LocalFormatLinkDIVX.this.proc :=@ReadAVI;
-  LocalFormatLinkDIVX.this.ext  :='DIVX';
-  LocalFormatLinkDIVX.this.flags:=WAT_OPT_VIDEO;
+  LocalFormatLinkDIVX.This.proc :=@ReadAVI;
+  LocalFormatLinkDIVX.This.ext  :='DIVX';
+  LocalFormatLinkDIVX.This.flags:=WAT_OPT_VIDEO;
 
   FormatLink:=@LocalFormatLinkDIVX;
 end;

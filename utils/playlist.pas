@@ -7,12 +7,12 @@ type
   tPlaylist = class
   private
     fShuffle  :boolean;
-    PlSize    :cardinal;  // playlist entries
-    PlCapacity:cardinal;
+    plSize    :cardinal;  // playlist entries
+    plCapacity:cardinal;
     base      :pWideChar;
     name      :pWideChar;
     descr     :pWideChar;
-    PlStrings :array of PWideChar;
+    plStrings :array of PWideChar;
     CurElement:cardinal;
     PlOrder   :array of cardinal;
     CurOrder  :cardinal;
@@ -28,7 +28,7 @@ type
     function ProcessElement(num:integer=-1):PWideChar; //virtual;
 
   public
-    constructor Create(fName:pWideChar);
+    constructor Create(fname:pWideChar);
     destructor Free;
 
     procedure SetBasePath(path:pWideChar);
@@ -49,7 +49,7 @@ function CreatePlaylistBuf(buf:pointer;format:integer):tPlaylist;
 
 implementation
 
-uses windows, common, io;//, m_api, mirutils;
+uses windows, common, io, memini;//, m_api, mirutils;
 
 const
   plSizeStart = 2048;
@@ -59,17 +59,18 @@ const
   pltM3UTF   = $200;
 
 type
-  tM3UPlaylist = class(tPlayList)
+  tM3UPlaylist = class(tPlaylist)
   private
   public
     constructor Create(fName:pWideChar);
     constructor CreateBuf(buf:pointer);
   end;
 
-  tPLSPlaylist = class(tPlayList)
+  tPLSPlaylist = class(tPlaylist)
   private
   public
-    constructor Create(fName:pWideChar);
+    constructor Create(fname:pWideChar);
+    constructor CreateBuf(buf:pointer);
   end;
 
 function isPlaylist(fname:pWideChar):integer;
@@ -85,8 +86,8 @@ end;
 function CreatePlaylist(fname:pWideChar):tPlaylist;
 begin
   case isPlaylist(fname) of
-    1: result:=tM3UPlaylist.Create(fName);
-    2: result:=tPLSPlaylist.Create(fName);
+    1: result:=tM3UPlaylist.Create(fname);
+    2: result:=tPLSPlaylist.Create(fname);
   else result:=nil;
   end;
 end;
@@ -94,8 +95,8 @@ end;
 function CreatePlaylistBuf(buf:pointer;format:integer):tPlaylist;
 begin
   case format of
-    1: result:=tM3UPlaylist.CreateBuf(Buf);
-//    2: result:=tPLSPlaylist.Create(fName);
+    1: result:=tM3UPlaylist.CreateBuf(buf);
+    2: result:=tPLSPlaylist.CreateBuf(buf);
   else result:=nil;
   end;
 end;
@@ -129,7 +130,7 @@ var
 begin
   inherited;
 
-  p:=Buf;
+  p:=buf;
   if (pdword(p)^ and $00FFFFFF)=$00BFBBEF then
   begin
     inc(p,3);
@@ -177,11 +178,11 @@ begin
       i:=integer(GetFSize(fName));
     if i<>-1 then
     begin
-      mGetMem(PlBuf,i+1);
-      BlockRead(f,PlBuf^,i);
+      mGetMem(plBuf,i+1);
+      BlockRead(f,plBuf^,i);
       CloseHandle(f);
-      PlBuf[i]:=#0;
-      CreateBuf(PlBuf);
+      plBuf[i]:=#0;
+      CreateBuf(plBuf);
       mFreeMem(plBuf);
     end;
   end;
@@ -190,43 +191,69 @@ end;
 
 //-----  -----
 
-constructor tPLSPlaylist.Create(fName:pWideChar);
+constructor tPLSPlaylist.CreateBuf(buf:pointer);
 var
-  buf:array [0..MAX_PATH-1] of AnsiChar;
   lname,ldescr:pWideChar;
+  section,storage,sectionlist:pointer;
   ffile,ftitle:array [0..31] of AnsiChar;
-  plName:array [0..127] of AnsiChar;
   f,t:pAnsiChar;
   i,size:integer;
-  plFile:pAnsiChar;
 begin
   inherited;
 
-  WideToAnsi(fName,PlFile);
-  GetPrivateProfileSectionNamesA(buf,127,PlFile);
-  StrCopy(plName,buf);
-  size:=GetPrivateProfileIntA(PlName,'NumberOfEntries',0,PlFile);
+  storage:=OpenStorageBuf(buf);
+  sectionlist:=GetSectionList(storage);
+  section:=SearchSection(storage,sectionlist);
+  FreeSectionList(sectionlist);
+
+  size:=GetParamSectionInt(section,'NumberOfEntries');
   f:=StrCopyE(ffile ,'File');
   t:=StrCopyE(ftitle,'Title');
   for i:=1 to size do
   begin
     IntToStr(f,i);
-    GetPrivateProfileStringA(PlName,ffile,'',buf,SizeOf(buf),PlFile);
-    AnsiToWide(buf,lname);
+    AnsiToWide(GetParamSectionStr(section,ffile),lname);
 
     IntToStr(t,i);
-    GetPrivateProfileStringA(PlName,ftitle,'',buf,SizeOf(buf),PlFile);
-    AnsiToWide(buf,ldescr);
+    AnsiToWide(GetParamSectionStr(section,ftitle),ldescr);
 
     AddLine(lname,ldescr,false);
   end;
-  mFreeMem(plFile);
+
+  CloseStorage(storage);
+end;
+
+constructor tPLSPlaylist.Create(fName:pWideChar);
+var
+  buf:pAnsiChar;
+  h:THANDLE;
+  size:integer;
+begin
+  if FileExists(fname) then
+  begin
+    h:=Reset(fname);
+    if h<>THANDLE(INVALID_HANDLE_VALUE) then
+    begin
+      size:=FileSize(h);
+      if size>0 then
+      begin
+        GetMem(buf,size+1);
+        BlockRead(h,buf^,size);
+        buf[size]:=#0;
+        CreateBuf(buf);
+        FreeMem(buf);
+      end;
+      CloseHandle(h);
+    end;
+  end;
 end;
 
 //-----  -----
 
 constructor tPlaylist.Create(fName:pWideChar);
 begin
+//  inherited;
+
   CurElement:=0;
   base:=nil;
   name:=nil;
@@ -247,26 +274,28 @@ begin
   mFreeMem(name);
   mFreeMem(descr);
 
-  for i:=0 to PlSize-1 do
+  for i:=0 to plSize-1 do
   begin
     mFreeMem(plStrings[i*2]);
     mFreeMem(plStrings[i*2+1]);
   end;
-  PlStrings:=nil;
+  plStrings:=nil;
+
+//  inherited;
 end;
 
 procedure tPlaylist.AddLine(name,descr:pWideChar;new:boolean=true);
 begin
-  if PlCapacity=0 then
+  if plCapacity=0 then
   begin
-    PlCapacity:=plSizeStart;
-    SetLength(PlStrings,plSizeStart*2);
+    plCapacity:=plSizeStart;
+    SetLength(plStrings,plSizeStart*2);
     fillChar(plStrings[0],plSizeStart*2*SizeOf(pWideChar),0);
   end
-  else if plSize=PlCapacity then
+  else if plSize=plCapacity then
   begin
     inc(plCapacity,plSizeStep);
-    SetLength(PlStrings,plCapacity*2);
+    SetLength(plStrings,plCapacity*2);
     fillChar(plStrings[plSize],plSizeStep*2*SizeOf(pWideChar),0);
   end;
   if new then
@@ -307,7 +336,7 @@ end;
 
 function tPlaylist.GetCount:integer;
 begin
-  result:=PlSize;
+  result:=plSize;
 end;
 
 function tPlaylist.GetTrackNumber:integer;
@@ -322,8 +351,8 @@ procedure tPlaylist.SetTrackNumber(value:integer);
 begin
   if value<0 then
     value:=0
-  else if value>=Integer(PlSize) then
-    value:=PlSize-1;
+  else if value>=Integer(plSize) then
+    value:=plSize-1;
 
   if fShuffle then
     CurOrder:=value
@@ -335,8 +364,8 @@ function tPlaylist.ProcessElement(num:integer=-1):pWideChar;
 begin
   if num<0 then
     num:=Track
-  else if num>=integer(PlSize) then
-    num:=PlSize-1;
+  else if num>=integer(plSize) then
+    num:=plSize-1;
   if fShuffle then
     num:=PlOrder[num];
 
@@ -379,15 +408,15 @@ var
   i,RandInx: cardinal;
   SwapItem: cardinal;
 begin
-  SetLength(PlOrder,PlSize);
+  SetLength(PlOrder,plSize);
   Randomize;
-  for i:=0 to PlSize-1 do
+  for i:=0 to plSize-1 do
     PlOrder[i]:=i;
-  if PlSize>1 then
+  if plSize>1 then
   begin
-    for i:=0 to PlSize-2 do
+    for i:=0 to plSize-2 do
     begin
-      RandInx:=cardinal(Random(PlSize-i));
+      RandInx:=cardinal(Random(plSize-i));
       SwapItem:=PlOrder[i];
       PlOrder[i      ]:=PlOrder[RandInx];
       PlOrder[RandInx]:=SwapItem;
@@ -398,18 +427,18 @@ end;
 
 function tPlaylist.Next:PWideChar;
 begin
-  if PlSize<>0 then
+  if plSize<>0 then
   begin
     if not Shuffle then
     begin
       inc(CurElement);
-      if CurElement=PlSize then
+      if CurElement=plSize then
         CurElement:=0;
     end
     else // if mode=plShuffle then
     begin
       inc(CurOrder);
-      if CurOrder=PlSize then
+      if CurOrder=plSize then
       begin
         DoShuffle;
         CurOrder:=0;
@@ -423,12 +452,12 @@ end;
 
 function tPlaylist.Previous:PWideChar;
 begin
-  if PlSize<>0 then
+  if plSize<>0 then
   begin
     if not Shuffle then
     begin
       if CurElement=0 then
-        CurElement:=PlSize;
+        CurElement:=plSize;
       Dec(CurElement);
     end
     else // if mode=plShuffle then
@@ -436,7 +465,7 @@ begin
       if CurOrder=0 then
       begin
         DoShuffle;
-        CurOrder:=PlSize;
+        CurOrder:=plSize;
       end;
       dec(CurOrder);
     end;

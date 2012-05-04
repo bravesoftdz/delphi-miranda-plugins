@@ -5,7 +5,7 @@ uses windows,m_api;
 
 function DBReadByte (hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;default:byte =0):byte;
 function DBReadWord (hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;default:word =0):word;
-function DBReadDword(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;default:dword=0):dword;
+function DBReadDWord(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;default:dword=0):dword;
 
 function DBReadSetting   (hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;dbv:PDBVARIANT):int_ptr;
 function DBReadSettingStr(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;dbv:PDBVARIANT):int_ptr;
@@ -72,7 +72,7 @@ begin
     Result:=dbv.wVal;
 end;
 
-function DBReadDword(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;default:dword=0):dword;
+function DBReadDWord(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;default:dword=0):dword;
 var
   dbv:TDBVARIANT;
   cgs:TDBCONTACTGETSETTING;
@@ -228,7 +228,7 @@ begin
   cws.szModule   :=szModule;
   cws.szSetting  :=szSetting;
   cws.value._type:=DBVT_BYTE;
-  cws.value.bVal :=Val;
+  cws.value.bVal :=val;
   Result:=PluginLink^.CallService(MS_DB_CONTACT_WRITESETTING,hContact,lParam(@cws));
 end;
 
@@ -239,7 +239,7 @@ begin
   cws.szModule   :=szModule;
   cws.szSetting  :=szSetting;
   cws.value._type:=DBVT_WORD;
-  cws.value.wVal :=Val;
+  cws.value.wVal :=val;
   Result:=PluginLink^.CallService(MS_DB_CONTACT_WRITESETTING,hContact,lParam(@cws));
 end;
 
@@ -250,7 +250,7 @@ begin
   cws.szModule   :=szModule;
   cws.szSetting  :=szSetting;
   cws.value._type:=DBVT_DWORD;
-  cws.value.dVal :=Val;
+  cws.value.dVal :=val;
   Result:=PluginLink^.CallService(MS_DB_CONTACT_WRITESETTING,hContact,lParam(@cws));
 end;
 
@@ -268,7 +268,7 @@ begin
     p:=0;
     val:=@p;
   end;
-  cws.value.szVal.a:=Val;
+  cws.value.szVal.a:=val;
   Result:=PluginLink^.CallService(MS_DB_CONTACT_WRITESETTING,hContact,lParam(@cws));
 end;
 

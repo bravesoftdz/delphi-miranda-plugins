@@ -33,7 +33,7 @@ var
   tmp:array [0..255] of AnsiChar;
   pc:pWideChar;
 begin
-  if IsVarsInstalled then
+  if isVarsInstalled then
   begin
     pc:=ParseVarString(StatusTmpl,ActiveContact);
     WideToAnsi(pc,buf,MirandaCP);
@@ -155,7 +155,7 @@ begin
       proxy:=GetProxy(hNetLib);
       BASS_SetConfigPtr(BASS_CONFIG_NET_PROXY,proxy);
 
-      if (ActiveContact<>0) and (auConnect<>0) then
+      if (ActiveContact<>0) and (AuConnect<>0) then
         CallService(MS_RADIO_COMMAND,MRC_PLAY,ActiveContact);
     end;
   end

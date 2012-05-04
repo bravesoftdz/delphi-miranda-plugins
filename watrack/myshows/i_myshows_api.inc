@@ -151,7 +151,7 @@ begin
   result:=-1;
 
   si:=pointer(CallService(MS_WAT_RETURNGLOBAL,WAT_INF_UTF8,0));
-  Encode(buf,Si.mfile);
+  Encode(buf,si.mfile);
   pc:=Extract(buf,true);
 
   // Episode search by filename

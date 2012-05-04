@@ -10,8 +10,8 @@ const
   HKListPage  = 8;
   ActListPage = 16;
 var
-  MaxGroups :dword=0; // current array size
-  MaxActions:dword=0; // current array size
+  MaxGroups :cardinal=0; // current array size
+  MaxActions:cardinal=0; // current array size
 var
   GroupList :pHKList =nil;
   ActionList:pActList=nil;
@@ -20,8 +20,8 @@ var
 var
   NewGroupList :pHKList  = nil;
   NewActionList:pActList = nil;
-  NewMaxGroups :dword;
-  NewMaxActions:dword;
+  NewMaxGroups :cardinal;
+  NewMaxActions:cardinal;
 var
   xmlfilename:array [0..511] of WideChar;
 var

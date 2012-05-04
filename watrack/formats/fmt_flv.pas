@@ -14,7 +14,7 @@ type
   tFLVHeader = packed record
     Signature:array [0..2] of AnsiChar; // FLV
     Version  :byte;
-    Flags    :byte;
+    flags    :byte;
     Offset   :dword; // reversed byte order
   end;
 type
@@ -124,13 +124,13 @@ begin
     
     // String
     2: begin
-      i:=reverse(pWord(ptr)^,2); inc(ptr,2);
+      i:=Reverse(pWord(ptr)^,2); inc(ptr,2);
 
       if StrCmp(key,'creationdate')=0 then
       begin
         move(ptr^,value[0],i);
         value[i]:=#0;
-        ANSItoWide(value,Info.Year);
+        AnsiToWide(value,Info.year);
       end;
 
       inc(ptr,i);
@@ -139,7 +139,7 @@ begin
     // Object
     3: begin
       repeat
-        len:=reverse(pWord(ptr)^,2); inc(ptr,2); // key name length
+        len:=Reverse(pWord(ptr)^,2); inc(ptr,2); // key name length
         key:=ptr; inc(ptr,len);                  // key name
 
         result:=ProcessValue(ptr,key,Info);
@@ -173,7 +173,7 @@ begin
       while i>0 do
       begin
 
-        len:=reverse(pWord(ptr)^,2); inc(ptr,2); // key name length
+        len:=Reverse(pWord(ptr)^,2); inc(ptr,2); // key name length
         key:=ptr; inc(ptr,len);                  // key name
 
         result:=ProcessValue(ptr,key,Info);
@@ -291,7 +291,7 @@ begin
             if pByte(p)^=2 then // string
             begin
               Inc(p);
-              i:=reverse(pWord(p)^,2); inc(p,2);
+              i:=Reverse(pWord(p)^,2); inc(p,2);
               if StrCmp(p,'onMetaData',i)=0 then // Metadata processing start
               begin
                 inc(p,i);
@@ -322,9 +322,9 @@ procedure InitLink;
 begin
   LocalFormatLink.Next:=FormatLink;
 
-  LocalFormatLink.this.proc :=@ReadFLV;
-  LocalFormatLink.this.ext  :='FLV';
-  LocalFormatLink.this.flags:=WAT_OPT_VIDEO;
+  LocalFormatLink.This.proc :=@ReadFLV;
+  LocalFormatLink.This.ext  :='FLV';
+  LocalFormatLink.This.flags:=WAT_OPT_VIDEO;
 
   FormatLink:=@LocalFormatLink;
 end;

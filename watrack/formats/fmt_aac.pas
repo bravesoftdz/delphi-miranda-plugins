@@ -81,9 +81,9 @@ procedure InitLink;
 begin
   LocalFormatLink.Next:=FormatLink;
 
-  LocalFormatLink.this.proc :=@ReadAAC;
-  LocalFormatLink.this.ext  :='AAC';
-  LocalFormatLink.this.flags:=0;
+  LocalFormatLink.This.proc :=@ReadAAC;
+  LocalFormatLink.This.ext  :='AAC';
+  LocalFormatLink.This.flags:=0;
 
   FormatLink:=@LocalFormatLink;
 end;

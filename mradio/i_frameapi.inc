@@ -65,7 +65,7 @@ begin
       FillChar(ti,SizeOf(ti),0);
       ti.cbSize  :=sizeof(TOOLINFO);
       ti.uFlags  :=TTF_IDISHWND or TTF_SUBCLASS;
-      ti.hwnd    :=dialog;
+      ti.hwnd    :=Dialog;
       ti.hinst   :=hInstance;
       ti.uId     :=hMuteFrmCtrl;
       ti.lpszText:=pWideChar(TranslateW('Mute'));
@@ -105,7 +105,7 @@ begin
     end;
 
     WM_CONTEXTMENU: begin
-      CallService('mRadio/Settings',0,0);
+      CallService(cPluginName + '/Settings',0,0);
     end;
 
     WM_COMMAND: begin
@@ -138,7 +138,7 @@ var
 begin
   result:=0;
   cid.cbSize:=SizeOf(cid);
-  StrCopy(cid.group,'mRadio');
+  StrCopy(cid.group,cPluginName);
   StrCopy(cid.name ,frm_back);
   frm_bkg:=CallService(MS_COLOUR_GETA,twparam(@cid),0);
   if hbr<>0 then DeleteObject(hbr);
@@ -181,14 +181,14 @@ begin
       if IsAnsi then
       begin
         Flags   :=F_VISIBLE or F_NOBORDER;
-        name.a  :='mRadio';
-        TBName.a:='mRadio volume control';
+        name.a  :=cPluginName;
+        TBName.a:=cPluginName + ' volume control';
       end
       else
       begin
         Flags   :=F_VISIBLE or F_NOBORDER or F_UNICODE;
-        name.w  :='mRadio';
-        TBName.w:='mRadio volume control';
+        name.w  :=cPluginName;
+        TBName.w:=cPluginName + ' volume control';
       end;
     end;
 
@@ -203,8 +203,8 @@ begin
 
       cid.cbSize:=SizeOf(cid);
       cid.flags :=0;
-      StrCopy(cid.group,'mRadio');
-      StrCopy(cid.dbSettingsGroup,'mRadio');
+      StrCopy(cid.group,cPluginName);
+      StrCopy(cid.dbSettingsGroup,cPluginName);
 
       StrCopy(cid.name   ,frm_back);
       StrCopy(cid.setting,'frame_back');

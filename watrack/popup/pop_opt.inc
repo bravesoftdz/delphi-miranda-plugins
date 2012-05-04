@@ -29,7 +29,7 @@ end;
 
 procedure SetModStatus(stat:integer);
 begin
-  DBWriteByte(0,PluginShort,opt_modStatus,stat);
+  DBWriteByte(0,PluginShort,opt_ModStatus,stat);
 end;
 
 procedure loadpopup;

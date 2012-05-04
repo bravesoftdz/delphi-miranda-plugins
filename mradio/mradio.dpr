@@ -5,14 +5,14 @@
   {.$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
 {$ENDIF}
 {$IMAGEBASE $13300000}
-library MRadio;
+library mradio;
 
 uses
 //  FastMM4,
   {$IFDEF KOL_MCK}kol,icobuttons,KOLCCtrls,{$ENDIF}Windows,messages,commctrl
   ,common,io,wrapper,wrapdlgs,syswin
   ,Dynamic_Bass,dynbasswma
-  ,m_api,dbsettings,mirutils,playlist;
+  ,m_api,dbsettings,mirutils,playlist,memini;
 
 {$include mr_rc.inc}
 {$r mradio.res}
@@ -69,15 +69,15 @@ begin
     result:=nil;
 end;
 
-procedure SetStatus(hContact:THANDLE;Status:integer);
+procedure SetStatus(hContact:THANDLE;status:integer);
 begin
 //  if Status=ID_STATUS_OFFLINE then
 //    MyStopBass;
 
-  if Status=ID_STATUS_OFFLINE then
+  if status=ID_STATUS_OFFLINE then
   begin
     if (AsOffline=BST_UNCHECKED) or (PluginStatus<>ID_STATUS_OFFLINE) then
-      Status:=ID_STATUS_INVISIBLE;
+      status:=ID_STATUS_INVISIBLE;
   end;
 
   if hContact=0 then
@@ -87,13 +87,13 @@ begin
     begin
       if StrCmp(PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,hContact,0)),PluginName)=0 then
       begin
-        DBWriteWord(hContact,PluginName,optStatus,Status);
+        DBWriteWord(hContact,PluginName,optStatus,status);
       end;
       hContact:=CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
     end;
   end
   else
-    DBWriteWord(hContact,PluginName,optStatus,Status);
+    DBWriteWord(hContact,PluginName,optStatus,status);
 end;
 
 {$include i_search.inc}
@@ -183,7 +183,7 @@ begin
   nlu.cbSize             :=SizeOf(nlu);
   nlu.flags              :=NUF_HTTPCONNS or NUF_NOHTTPSOPTION or NUF_OUTGOING;
   nlu.szSettingsModule   :=PluginName;
-  hNetlib:=CallService(MS_NETLIB_REGISTERUSER,0,tlparam(@nlu));
+  hNetLib:=CallService(MS_NETLIB_REGISTERUSER,0,tlparam(@nlu));
 
 //  CallService(MS_RADIO_COMMAND,MRC_RECORD,2); record off - not so necessary
 
@@ -201,7 +201,7 @@ begin
   doLoop    :=DBReadByte(0,PluginName,optLoop);
   doShuffle :=DBReadByte(0,PluginName,optShuffle);
   doContRec :=DBReadByte(0,PluginName,optContRec);
-  PlayFirst :=DBReadByte(0,PluginName,optPlay1st);
+  PlayFirst :=DBReadByte(0,PluginName,optPlayFirst);
   isEQ_OFF  :=DBReadByte(0,PluginName,optEQ_OFF);
   AuConnect :=DBReadByte(0,PluginName,optConnect);
   AsOffline :=DBReadByte(0,PluginName,optOffline);
@@ -218,7 +218,7 @@ begin
 
   RegisterVariables;
 
-  if Auconnect<>BST_UNCHECKED then
+  if AuConnect<>BST_UNCHECKED then
     ActiveContact:=LoadContact(PluginName,optLastStn)
   else
     ActiveContact:=0;
@@ -243,7 +243,7 @@ var
 }
 begin
   CallService(MS_RADIO_COMMAND,MRC_STOP,1);
-  UnRegisterHotKey;
+  UnregisterHotKey;
 
   DestroyProtoServices;
   DestroyWindow(hiddenwindow);
@@ -322,7 +322,7 @@ begin
   inc(pc);
   pc^:=#0;
 
-  custom:=DBReadUnicode(0,PluginName,optBASSpath,nil);
+  custom:=DBReadUnicode(0,PluginName,optBASSPath,nil);
 
   if MyLoadBASS(szTemp,custom) then
   begin

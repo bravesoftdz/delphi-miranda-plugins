@@ -78,6 +78,8 @@ implementation
 
 uses Messages,dbsettings,common,io,freeimage,syswin{$IFDEF KOL_MCK},kol{$ENDIF};
 
+const
+  clGroup = 'Group';
 // Save / Load contact 
 const
   opt_cproto   = 'cproto';
@@ -673,7 +675,7 @@ begin
         if dbv._type=ldbv._type then
         begin
           case dbv._type of
-            DBVT_DELETED: ;
+//            DBVT_DELETED: ;
             DBVT_BYTE   : if dbv.bVal=ldbv.bVal then result:=hContact;
             DBVT_WORD   : if dbv.wVal=ldbv.wVal then result:=hContact;
             DBVT_DWORD  : if dbv.dVal=ldbv.dVal then result:=hContact;
@@ -788,7 +790,7 @@ begin
     if StrCmpW(dbv.szVal.w+1,@grbuf[1])=0 then
     begin
       if hContact<>0 then
-        DBWriteUnicode(hContact,strCList,'Group',@grbuf[1]);
+        DBWriteUnicode(hContact,strCList,clGroup,@grbuf[1]);
 
       DBFreeVariant(@dbv);
       result:=0;
@@ -796,13 +798,13 @@ begin
     end;
 
     DBFreeVariant(@dbv);
-    inc(groupid);
+    inc(groupId);
   until false;
 
   DBWriteUnicode(0,'CListGroups',groupIdStr,grbuf);
 
   if hContact<>0 then
-    DBWriteUnicode(hContact,strCList,'Group',@grbuf[1]);
+    DBWriteUnicode(hContact,strCList,clGroup,@grbuf[1]);
 
   p:=StrRScanW(grbuf,'\');
   if p<>nil then
@@ -845,7 +847,7 @@ begin
     if StrCmp(dbv.szVal.a+1,@grbuf[1])=0 then
     begin
       if hContact<>0 then
-      DBWriteString(hContact,strCList,'Group',@grbuf[1]);
+      DBWriteString(hContact,strCList,clGroup,@grbuf[1]);
 
       DBFreeVariant(@dbv);
       result:=0;
@@ -853,13 +855,13 @@ begin
     end;
 
     DBFreeVariant(@dbv);
-    inc(groupid);
+    inc(groupId);
   until false;
 
   DBWriteString(0,'CListGroups',groupIdStr,grbuf);
 
   if hContact<>0 then
-    DBWriteString(hContact,strCList,'Group',@grbuf[1]);
+    DBWriteString(hContact,strCList,clGroup,@grbuf[1]);
 
   p:=StrRScan(grbuf,'\');
   if p<>nil then
@@ -976,7 +978,7 @@ begin
     nlu.cbSize          :=SizeOf(nlu);
     nlu.flags           :=NUF_HTTPCONNS or NUF_NOHTTPSOPTION or NUF_OUTGOING or NUF_NOOPTIONS;
     nlu.szSettingsModule:='dummy';
-    hTmpNetlib:=CallService(MS_NETLIB_REGISTERUSER,0,lparam(@nlu));
+    hTmpNetLib:=CallService(MS_NETLIB_REGISTERUSER,0,lparam(@nlu));
   end
   else
     hTmpNetLib:=hNetLib;
@@ -1033,10 +1035,10 @@ begin
     nlu.cbSize          :=SizeOf(nlu);
     nlu.flags           :=NUF_HTTPCONNS or NUF_NOHTTPSOPTION or NUF_OUTGOING or NUF_NOOPTIONS;
     nlu.szSettingsModule:='dummy';
-    hNetlib:=CallService(MS_NETLIB_REGISTERUSER,0,lparam(@nlu));
+    hNetLib:=CallService(MS_NETLIB_REGISTERUSER,0,lparam(@nlu));
   end;
 
-  resp:=pointer(CallService(MS_NETLIB_HTTPTRANSACTION,hNetlib,lparam(@req)));
+  resp:=pointer(CallService(MS_NETLIB_HTTPTRANSACTION,hNetLib,lparam(@req)));
 
   if resp<>nil then
   begin
@@ -1161,9 +1163,9 @@ begin
   nlu.cbSize          :=SizeOf(nlu);
   nlu.flags           :=NUF_HTTPCONNS or NUF_NOHTTPSOPTION or NUF_OUTGOING or NUF_NOOPTIONS;
   nlu.szSettingsModule:='dummy';
-  hNetlib:=CallService(MS_NETLIB_REGISTERUSER,0,lparam(@nlu));
+  hNetLib:=CallService(MS_NETLIB_REGISTERUSER,0,lparam(@nlu));
 
-  resp:=pointer(CallService(MS_NETLIB_HTTPTRANSACTION,hNetlib,lparam(@req)));
+  resp:=pointer(CallService(MS_NETLIB_HTTPTRANSACTION,hNetLib,lparam(@req)));
 
   if resp<>nil then
   begin
@@ -1182,7 +1184,7 @@ begin
   CallService(MS_NETLIB_CLOSEHANDLE,hNetLib,0);
 end;
 
-function RegisterSingleIcon(resname,ilname,descr,group:PAnsiChar):int;
+function RegisterSingleIcon(resname,ilname,descr,group:pAnsiChar):int;
 var
   sid:TSKINICONDESC;
 begin

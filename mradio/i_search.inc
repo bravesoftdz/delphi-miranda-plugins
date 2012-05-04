@@ -1,9 +1,8 @@
 {search station code}
-
+(*
 procedure SetAvatar(hContact:THANDLE);
 var
   success:boolean;
-  local:boolean;
   fname:pAnsiChar;
   url:pWideChar;
   buf,buf1,buf2:array [0..MAX_PATH-1] of AnsiChar;
@@ -14,7 +13,7 @@ var
 begin
   // get url
   url:=DBReadUnicode(hContact,PluginName,optStationURL);
-  // translate to ansi
+  // translate to Ansi
   FastWideToAnsiBuf(url,buf);
   mFreeMem(url);
 
@@ -54,8 +53,7 @@ begin
       // rule for name is?..
 
 
-      local:=StrPos(buf,'://')=nil;
-      if local then
+      if StrPos(buf,'://')=nil then
       begin
         fname:=@buf;
         success:=FileExists(fname);
@@ -86,7 +84,7 @@ begin
     end;
   end;
 end;
-
+*)
 type
   TMySearchFilter = record
     lStation,
@@ -101,26 +99,27 @@ const
 
 // Since mRadio is unicode version only now, translate all strings to Wide
 // coz f*cking jinn will set unicode flag in any cases
-procedure LoadOneStation(ini,section:PAnsiChar;const filter:TMySearchFilter);
+procedure LoadOneStation(section:pointer;const filter:TMySearchFilter);
 var
-  buf:array [0..511] of AnsiChar;
   bitrate:integer;
   l:bool;
   columns:array [0..3] of TCHAR;
   csr:CUSTOMSEARCHRESULTS;
+  pc:pAnsiChar;
+  buf:array [0..127] of AnsiChar;
 begin
-  GetPrivateProfileStringA(section,'URL','',buf,SizeOf(buf),ini);
-  if buf[0]<>#0 then
+  pc:=GetParamSectionStr(section,'URL');
+  if pc<>nil then
   begin
-    if (filter.lStationURL=nil) or (StrPos(CharLowerA(@buf),filter.lStationURL)<>nil) then
+    if (filter.lStationURL=nil) or (StrPos(CharLowerA(pc),filter.lStationURL)<>nil) then
     begin
       FillChar(csr,SizeOf(csr),0);
       csr.psr.cbSize:=SizeOf(csr.psr);
       csr.psr.Flags:=PSR_UNICODE;
-      ANSItoWide(buf,csr.psr.firstname.w,MirandaCP);
-      GetPrivateProfileStringA(section,'Bitrate','0',buf,SizeOf(buf),ini);
-      bitrate:=StrToInt(buf);
-      if (bitrate<>0) and (filter.lbitrate<>0) then
+      AnsiToWide(pc,csr.psr.firstname.w,MirandaCP);
+      pc:=GetParamSectionStr(section,optBitrate,'0');
+      bitrate:=StrToInt(pc);
+      if (bitrate<>0) and (filter.lBitrate<>0) then
       begin
         if      filter.lBitrateMode<0 then l:=bitrate<=filter.lBitrate
         else if filter.lBitrateMode=0 then l:=bitrate =filter.lBitrate
@@ -130,14 +129,17 @@ begin
         l:=true;
       if l then
       begin
-        ANSItoWide(buf,csr.psr.email.w,MirandaCP);
-        GetPrivateProfileStringA(section,'Name',section,buf,SizeOf(buf),ini);
-        ANSItoWide(buf,csr.psr.nick.w,MirandaCP);
+        AnsiToWide(pc,csr.psr.email.w,MirandaCP);
+
+        StrCopy(buf,GetParamSectionStr(section,'Name',GetSectionName(section)),127);
         if (filter.lStation=nil) or (StrPos(CharLowerA(@buf),filter.lStation)<>nil) then
         begin
-          GetPrivateProfileStringA(section,'Genre','unknown',buf,SizeOf(buf),ini);
-          ANSItoWide(buf,csr.psr.lastname.w,MirandaCP);
-          if (filter.lGenre<>nil) and (StrPos(CharLowerA(@buf),filter.lGenre)=nil) then
+          AnsiToWide(@buf,csr.psr.nick.w,MirandaCP);
+
+          StrCopy(buf,GetParamSectionStr(section,optGenre,'unknown'),127);
+          if (filter.lGenre=nil) or (StrPos(CharLowerA(@buf),filter.lGenre)<>nil) then
+            AnsiToWide(@buf,csr.psr.lastname.w,MirandaCP)
+          else
             l:=false;
         end
         else
@@ -166,19 +168,11 @@ end;
 
 procedure ProcessSearch(var filter:TMySearchFilter;ini:PAnsiChar);
 var
-  pc,buf:PAnsiChar;
+  pc:PAnsiChar;
   csr:CUSTOMSEARCHRESULTS;
   columns:array [0..3] of TCHAR;
-  i:integer;
+  lstorage,section,list:pointer;
 begin
-  i:=GetFSize(ini);
-  if i=0 then
-    i:=32767;
-  mGetMem(buf,i+1);
-  buf^:=#0;
-  GetPrivateProfileSectionNamesA(buf,i,ini);
-  pc:=buf;
-
   columns[0].w:='Station Name';
   columns[1].w:='Station URL';
   columns[2].w:='Genre';
@@ -190,20 +184,28 @@ begin
   csr.psr.cbSize :=0;
   ProtoBroadcastAck(PluginName,0,ACKTYPE_SEARCH,ACKRESULT_SEARCHRESULT,AckHandle,lparam(@csr));
 
+  lstorage:=OpenStorage(ini);
+  list:=GetSectionList(lstorage);
+  pc:=list;
+
   while pc^<>#0 do
   begin
-    LoadOneStation(ini,pc,filter); //!!
+    section:=SearchSection(lstorage,pc);
+    LoadOneStation(section,filter); //!!
     while pc^<>#0 do inc(pc);
     inc(pc);
   end;
+
+  FreeSectionList(list);
+  CloseStorage(lstorage);
+
   ProtoBroadcastAck(PluginName,0,ACKTYPE_SEARCH,ACKRESULT_SUCCESS,AckHandle,0);
-  mFreeMem(buf);
   mFreeMem(filter.lStation);
   mFreeMem(filter.lStationURL);
   mFreeMem(filter.lGenre);
 end;
 
-function BasicSearch(Name:PAnsiChar):dword;// stdcall;
+function BasicSearch(name:PAnsiChar):dword;// stdcall;
 var
   filter:TMySearchFilter;
   ini:array [0..MAX_PATH-1] of AnsiChar;
@@ -211,7 +213,7 @@ begin
   FillChar(filter,SizeOf(filter),0);
   StrCopy(ini,storage);
 
-  StrDup(filter.lStation,Name);
+  StrDup(filter.lStation,name);
   if filter.lStation<>nil then
     CharLowerA(filter.lStation);
 
@@ -342,7 +344,7 @@ type
 
 var
   hr:HRSRC;
-  ptr:PDlgTemplateEx;
+  pdte:PDLGTEMPLATEEX;
 begin
   result:=0;
   if lParam<>0 then
@@ -350,13 +352,13 @@ begin
     hr:=FindResource(hInstance,MAKEINTRESOURCE(IDD_SEARCH),RT_DIALOG);
     if hr<>0 then
     begin
-      ptr:=PDlgTemplateEx(LoadResource(hInstance,hr));
-      if ptr<>nil then
+      pdte:=PDLGTEMPLATEEX(LoadResource(hInstance,hr));
+      if pdte<>nil then
       begin
         if (Service_GetCaps(PFLAGNUM_1,0) and PF1_EXTSEARCHUI)<>0 then
-          ptr^.style:=(ptr^.style and not WS_CHILD) or WS_POPUP or WS_BORDER;
+          pdte^.style:=(pdte^.style and not WS_CHILD) or WS_POPUP or WS_BORDER;
         result:=CreateDialogIndirect(hInstance,
-            PDlgTemplate(ptr){$IFNDEF FPC}^{$ENDIF},lParam,@ExtSearchProc);
+            PDlgTemplate(pdte){$IFNDEF FPC}^{$ENDIF},lParam,@ExtSearchProc);
       end;
     end;
   end;

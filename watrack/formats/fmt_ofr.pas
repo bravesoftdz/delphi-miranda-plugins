@@ -54,17 +54,17 @@ procedure InitLink;
 begin
   LocalFormatLinkOFR.Next:=FormatLink;
 
-  LocalFormatLinkOFR.this.proc :=@ReadOFR;
-  LocalFormatLinkOFR.this.ext  :='OFR';
-  LocalFormatLinkOFR.this.flags:=0;
+  LocalFormatLinkOFR.This.proc :=@ReadOFR;
+  LocalFormatLinkOFR.This.ext  :='OFR';
+  LocalFormatLinkOFR.This.flags:=0;
 
   FormatLink:=@LocalFormatLinkOFR;
 
   LocalFormatLinkOFS.Next:=FormatLink;
 
-  LocalFormatLinkOFS.this.proc :=@ReadOFR;
-  LocalFormatLinkOFS.this.ext  :='OFS';
-  LocalFormatLinkOFS.this.flags:=0;
+  LocalFormatLinkOFS.This.proc :=@ReadOFR;
+  LocalFormatLinkOFS.This.ext  :='OFS';
+  LocalFormatLinkOFS.This.flags:=0;
 
   FormatLink:=@LocalFormatLinkOFS;
 end;

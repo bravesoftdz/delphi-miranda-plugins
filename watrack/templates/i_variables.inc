@@ -5,7 +5,7 @@ var
   res,ws:pWideChar;
   s:array [0..31] of WideChar;
   rs:boolean;
-  si:PSongInfo;
+  si:pSongInfo;
 begin
   i:=0;
   repeat

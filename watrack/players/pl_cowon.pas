@@ -315,7 +315,7 @@ begin
   begin
     if (flags and WAT_OPT_CHANGES)<>0 then
     begin
-      wndText:=GetWndText;
+      wndtext:=GetWndText;
       volume :=GetVolume(plwnd);
       if status<>WAT_MES_STOPPED then
 //        if time=0 then

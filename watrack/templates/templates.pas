@@ -80,7 +80,7 @@ begin
   hEXP    :=PluginLink^.CreateServiceFunction(MS_WAT_EXPORT     ,@ExportProc);
   hReplace:=PluginLink^.CreateServiceFunction(MS_WAT_REPLACETEXT,@WATReplaceText);
   hMacro  :=PluginLink^.CreateServiceFunction(MS_WAT_MACROHELP  ,@WATMacroHelp);
-  loadopt;
+  LoadOpt;
   LoadAliases;
   RegisterVariables;
   reginshotkey;

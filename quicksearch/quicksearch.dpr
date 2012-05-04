@@ -18,8 +18,7 @@ uses
   sr_window,
   sr_frame,
   mirutils,
-  common{,
-  hotkeys};
+  common;
 
 var
   opthook:cardinal;
@@ -200,10 +199,7 @@ var
   buf:array [0..63] of AnsiChar;
 begin
   PluginLink^.UnhookEvent(onloadhook);
-{
-  if DetectHKManager<>HKMT_CORE then
-    InitHotKeys;
-}
+
   PluginLink^.CallService('DBEditorpp/RegisterSingleModule',twparam(qs_module),0);
 
   if PluginLink^.ServiceExists(MS_UPDATE_REGISTER)<>0 then
@@ -241,7 +237,7 @@ begin
 //  onaccount:=PluginLink^.HookEvent(ME_PROTO_ACCLISTCHANGED    ,@OnAccountChanged);
   PluginLink.HookEvent(ME_TTB_MODULELOADED,@OnTTBLoaded);
 
-  createframe(0);
+  CreateFrame(0);
   Result:=0;
 end;
 
@@ -269,11 +265,9 @@ begin
 //  PluginLink^.UnhookEvent(onaccount);
   if icohook<>0 then
     PluginLink^.UnhookEvent(icohook);
-{
+
 //  unreghotkeys;
-  if DetectHKManager<>HKMT_CORE then
-    FreeHotKeys;
-}
+
   CloseSrWindow;
 
   clear_columns;

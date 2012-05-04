@@ -15,7 +15,7 @@ begin
     hContact:=PluginLink^.CallService(MS_DB_CONTACT_FINDFIRST,0,0);
     while hContact<>0 do
     begin
-       if StrCmp(PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,hContact,0)),'mRadio')=0 then
+       if StrCmp(PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,hContact,0)),cPluginName)=0 then
        begin
          p:=DBReadUnicode(hContact,strCList,'MyHandle',nil);
          if p<>nil then
@@ -55,7 +55,7 @@ begin
     hContact:=PluginLink^.CallService(MS_DB_CONTACT_FINDFIRST,0,0);
     while hContact<>0 do
     begin
-       if StrCmp(PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,hContact,0)),'mRadio')=0 then
+       if StrCmp(PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,hContact,0)),cPluginName)=0 then
        begin
          p:=DBReadUnicode(hContact,strCList,'MyHandle',nil);
          if p<>nil then
@@ -134,7 +134,7 @@ begin
       FillChar(mi, sizeof(mi), 0);
       mi.cbSize    :=sizeof(mi);
       mi.pszService:=MS_RADIO_TRAYMENU;
-      mi.szName.a  :='mRadio';
+      mi.szName.a  :=cPluginName;
       mi.hIcon     :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnSettings));
       PluginLink^.CallService(MS_CLIST_ADDTRAYMENUITEM,0,lparam(@mi));
     end;

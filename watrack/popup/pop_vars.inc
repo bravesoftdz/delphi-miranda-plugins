@@ -16,7 +16,7 @@ var
 
   DisablePlugin:integer;
   IsPopup2Present:boolean;
-  isFreeImagePresent:boolean;
+  IsFreeImagePresent:boolean;
 var
   hMenuInfo   :THANDLE;
   ssmi,sic,

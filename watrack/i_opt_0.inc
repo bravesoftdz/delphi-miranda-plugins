@@ -74,7 +74,7 @@ begin
     end;
 
     WM_COMMAND: begin
-      if (wparam shr 16)=BN_CLICKED then
+      if (wParam shr 16)=BN_CLICKED then
         SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
     end;
 

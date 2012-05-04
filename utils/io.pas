@@ -1,4 +1,4 @@
-unit IO;
+unit io;
 
 interface
 uses windows;

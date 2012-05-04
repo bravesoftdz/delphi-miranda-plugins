@@ -4,8 +4,8 @@ const
 const
   optOldPreset:pAnsiChar='oldpreset';
   optPresets  :pAnsiChar='numpreset';
-  optPreset   :PAnsiChar='preset_';
-  optPreDescr :PAnsiChar='predescr_';
+  optPreset   :pAnsiChar='preset_';
+  optPreDescr :pAnsiChar='predescr_';
 
 const
   PresetMax = 17;
@@ -92,37 +92,39 @@ begin
     mFreeMem(Presets[i].name);
 end;
 
-function ImportOneStation(group,ini,section:PAnsiChar):int;
+function ImportOneStation(group:PAnsiChar;section:pointer):int;
 var
-  grbuf,buf:array [0..511] of AnsiChar;
   p:pWideChar;
+  pc:pAnsiChar;
 begin
   result:=0;
-  GetPrivateProfileStringA(section,'URL','',buf,SizeOf(buf),ini);
-  if buf[0]<>#0 then
+  pc:=GetParamSectionStr(section,'URL');
+  if pc<>nil then
   begin
     result:=CallService(MS_DB_CONTACT_ADD,0,0);
     if result<>0 then
     begin
       CallService(MS_PROTO_ADDTOCONTACT,result,lparam(PluginName));
-      DBWriteString(result,PluginName,optStationURL,buf);
-      DBWriteString(result,PluginName,optFirstName ,buf);
-      GetPrivateProfileStringA(section,'Bitrate','0',buf,SizeOf(buf),ini);
-      DBWriteString(result,PluginName,optBitrate,buf);
-      DBWriteWord  (result,PluginName,optAge    ,StrToInt(buf));
-      GetPrivateProfileStringA(section,'Name',section,buf,SizeOf(buf),ini);
-      DBWriteString(result,strCList  ,optMyHandle,buf);
-      DBWriteString(result,PluginName,optNick    ,buf);
-      GetPrivateProfileStringA(section,'Genre','unknown',buf,SizeOf(buf),ini);
-      DBWriteString(result,PluginName,optGenre   ,buf);
-      DBWriteString(result,PluginName,optLastName,buf);
+      DBWriteString(result,PluginName,optStationURL,pc);
+      DBWriteString(result,PluginName,optFirstName ,pc);
+
+      pc:=GetParamSectionStr(section,optBitrate,'0');
+      DBWriteString(result,PluginName,optBitrate,pc);
+      DBWriteWord  (result,PluginName,optAge    ,StrToInt(pc));
+
+      pc:=GetParamSectionStr(section,'Name',GetSectionName(section));
+      DBWriteString(result,strCList  ,optMyHandle,pc);
+      DBWriteString(result,PluginName,optNick    ,pc);
+
+      pc:=GetParamSectionStr(section,optGenre,'unknown');
+      DBWriteString(result,PluginName,optGenre   ,pc);
+      DBWriteString(result,PluginName,optLastName,pc);
+
       SetStatus(result,ID_STATUS_OFFLINE);
 
       if group=nil then
-      begin
-        GetPrivateProfileStringA(section,'Group','',grbuf,SizeOf(grbuf),ini);
-        group:=@grbuf;
-      end;
+        group:=GetParamSectionStr(section,optGroup);
+
       AnsiToWide(group,p,MirandaCP);
       CreateGroupW(p,result);
       mFreeMem(p);
@@ -134,23 +136,29 @@ end;
 function ImportAll(wParam:WPARAM;lParam:LPARAM):int; cdecl;
 var
   dst:array [0..MAX_PATH-1] of AnsiChar;
-  pc,buf:pAnsiChar;
+  pc:pAnsiChar;
+  lstorage,section,list:pointer;
 begin
   result:=0;
   if lParam<>0 then
     StrCopy(dst,PAnsiChar(lParam));
   if (lParam<>0) or ShowDlg(dst,'radio.ini',nil,true) then
   begin
-    mGetMem(buf,32768);
-    GetPrivateProfileSectionNamesA(buf,32768,dst);
-    pc:=buf;
+    lstorage:=OpenStorage(dst);
+    list:=GetSectionList(lstorage);
+    
+    pc:=list;
     while pc^<>#0 do
     begin
-      if ImportOneStation(pAnsiChar(wParam),dst,pc)<>0 then inc(result);
+      section:=SearchSection(lstorage,pc);
+      if ImportOneStation(pAnsiChar(wParam),section)<>0 then inc(result);
       while pc^<>#0 do inc(pc);
       inc(pc);
     end;
-    mFreeMem(buf);
+
+    FreeSectionList(list);
+
+    CloseStorage(lstorage);
   end;
 end;
 
@@ -171,21 +179,21 @@ begin
   pc:=DBReadString(hContact,PluginName,optGenre);
   if pc<>nil then
   begin
-    WritePrivateProfileStringA(section,'Genre',pc,fname);
+    WritePrivateProfileStringA(section,optGenre,pc,fname);
     mFreeMem(pc);
   end;
 
   pc:=DBReadString(hContact,PluginName,optBitrate);
   if pc<>nil then
   begin
-    WritePrivateProfileStringA(section,'Bitrate',pc,fname);
+    WritePrivateProfileStringA(section,optBitrate,pc,fname);
     mFreeMem(pc);
   end;
 
   pc:=DBReadString(hContact,strCList,optGroup);
   if pc<>nil then
   begin
-    WritePrivateProfileStringA(section,'Group',pc,fname);
+    WritePrivateProfileStringA(section,optGroup,pc,fname);
     mFreeMem(pc);
   end;
 end;
@@ -271,7 +279,7 @@ begin
     begin
       Info:=BASS_PluginGetInfo(ph^);
       for i:=0 to Info^.formatc-1 do
-//!! need to translate ansi -> wide
+//!! need to translate Ansi -> wide
         with Info^.Formats[i] do
         begin
           pc:=MakeFilter(pc,FastAnsiToWideBuf(name,tmpbuf1),full,FastAnsiToWideBuf(exts,tmpbuf2));
@@ -296,7 +304,7 @@ begin
   FillChar(ti,SizeOf(ti),0);
   ti.cbSize  :=sizeof(TOOLINFO);
   ti.uFlags  :=TTF_IDISHWND or TTF_SUBCLASS;
-  ti.hwnd    :=dialog;
+  ti.hwnd    :=Dialog;
   ti.hinst   :=hInstance;
 
   ti.uId     :=GetDlgItem(Dialog,IDC_EQ_ADD);
@@ -327,12 +335,12 @@ begin
   result:=0;
   case hMessage of
     WM_DESTROY: begin
-      DBWriteByte(0,PluginName,optLoop    ,doLoop);
-      DBWriteByte(0,PluginName,optShuffle ,doShuffle);
-      DBWriteByte(0,PluginName,optContRec ,doContRec);
-      DBWriteByte(0,PluginName,optPlay1st ,PlayFirst);
-      DBWriteByte(0,PluginName,optConnect ,AuConnect);
-      DBWriteByte(0,PluginName,optOffline ,AsOffline);
+      DBWriteByte(0,PluginName,optLoop     ,doLoop);
+      DBWriteByte(0,PluginName,optShuffle  ,doShuffle);
+      DBWriteByte(0,PluginName,optContRec  ,doContRec);
+      DBWriteByte(0,PluginName,optPlayFirst,PlayFirst);
+      DBWriteByte(0,PluginName,optConnect  ,AuConnect);
+      DBWriteByte(0,PluginName,optOffline  ,AsOffline);
 
       DBWriteUnicode(0,PluginName,optStatusTmpl,StatusTmpl);
     end;
@@ -369,7 +377,7 @@ begin
       case wParam shr 16 of
         EN_CHANGE: begin
           if DlgInit=0 then
-            case loword(wparam) of
+            case loword(wParam) of
               IDC_STATION,IDC_STATIONURL,IDC_GENRE,IDC_BITRATE: ;
             else
               SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
@@ -457,25 +465,25 @@ begin
                     // "changing" station group
                     dst:=GetNewGroupName(Dialog);
                     if dst<>nil then
-                      DBWriteUnicode(i,strCList,'Group',dst)
+                      DBWriteUnicode(i,strCList,optGroup,dst)
                     else
-                      DBDeleteSetting(i,strCList,'Group');
+                      DBDeleteSetting(i,strCList,optGroup);
                       
                   end
                   else if loword(wParam)=IDC_ADD_INI then
                   begin
-                    if WritePrivateProfileStringA(firstname.a,'URL'    ,firstname.a,storage) then
+                    if WritePrivateProfileStringA(firstname.a,'URL',firstname.a,storage) then
                     begin
-                      WritePrivateProfileStringA(firstname.a,'Name'   ,nick.a     ,storage);
-                      WritePrivateProfileStringA(firstname.a,'Genre'  ,lastname.a ,storage);
-                      WritePrivateProfileStringA(firstname.a,'Bitrate',email.a    ,storage);
+                      WritePrivateProfileStringA(firstname.a,'Name'    ,nick.a     ,storage);
+                      WritePrivateProfileStringA(firstname.a,optGenre  ,lastname.a ,storage);
+                      WritePrivateProfileStringA(firstname.a,optBitrate,email.a    ,storage);
                     end
                     else
                     begin
-                      WritePrivateProfileStringA(firstname.a,'URL'    ,firstname.a,storagep);
-                      WritePrivateProfileStringA(firstname.a,'Name'   ,nick.a     ,storagep);
-                      WritePrivateProfileStringA(firstname.a,'Genre'  ,lastname.a ,storagep);
-                      WritePrivateProfileStringA(firstname.a,'Bitrate',email.a    ,storagep);
+                      WritePrivateProfileStringA(firstname.a,'URL'     ,firstname.a,storagep);
+                      WritePrivateProfileStringA(firstname.a,'Name'    ,nick.a     ,storagep);
+                      WritePrivateProfileStringA(firstname.a,optGenre  ,lastname.a ,storagep);
+                      WritePrivateProfileStringA(firstname.a,optBitrate,email.a    ,storagep);
                     end;
 
                   end;
@@ -601,7 +609,7 @@ begin
       
       CheckDlgButton(Dialog,IDC_EQOFF,isEQ_OFF);
 
-      dst:=DBReadUnicode(0,PluginName,optBASSpath,nil);
+      dst:=DBReadUnicode(0,PluginName,optBASSPath,nil);
       SetDlgItemTextW(Dialog,IDC_BASSPATH,dst);
       mFreeMem(dst);
 
@@ -869,7 +877,7 @@ begin
       DBVT_DELETED: pc:=DBReadString(wParam,PluginName,szSetting);
       DBVT_ASCIIZ : pc:=value.szVal.a;
       DBVT_WCHAR  : WideToAnsi(value.szVal.w,pc,MirandaCP);
-      DBVT_UTF8   : UTF8ToANSI(value.szVal.a,pc,MirandaCP);
+      DBVT_UTF8   : UTF8ToAnsi(value.szVal.a,pc,MirandaCP);
     end;
 
     if      StrCmp(szSetting,optFirstName)=0 then DBWriteString(wParam,PluginName,optStationURL,pc)

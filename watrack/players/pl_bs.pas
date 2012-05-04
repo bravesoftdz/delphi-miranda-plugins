@@ -38,7 +38,7 @@ const
 
 function HiddenWindProc(wnd:HWnd; msg:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
 begin
-  result:=DefWindowProc(wnd,msg,wparam,lparam);
+  result:=DefWindowProc(wnd,msg,wParam,lParam);
 end;
 
 function Check(wnd:HWND;flags:integer):HWND;cdecl;
@@ -111,7 +111,7 @@ begin
   cds.cbData:=4;
   SendMessage(wnd,WM_COPYDATA,bspwnd,lparam(@cds));
 
-  ANSItoWide(buf,result);
+  AnsiToWide(buf,result);
 end;
 
 function Play(wnd:HWND;fname:PWideChar=nil):integer;
@@ -121,7 +121,7 @@ begin
   if (fname<>nil) and (fname^<>#0) then
   begin
     cds.dwData:=BSP_OpenFile;
-    WideToANSI(fname,PAnsiChar(cds.lpData));
+    WideToAnsi(fname,PAnsiChar(cds.lpData));
     cds.cbData:=StrLen(PAnsiChar(cds.lpData))+1;
     SendMessage(wnd,WM_COPYDATA,0{!!!},lparam(@cds));
     mFreeMem(cds.lpData);

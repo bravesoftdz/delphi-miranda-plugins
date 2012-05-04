@@ -53,9 +53,9 @@ procedure InitLink;
 begin
   LocalFormatLink.Next:=FormatLink;
 
-  LocalFormatLink.this.proc :=@ReadTTA;
-  LocalFormatLink.this.ext  :='TTA';
-  LocalFormatLink.this.flags:=0;
+  LocalFormatLink.This.proc :=@ReadTTA;
+  LocalFormatLink.This.ext  :='TTA';
+  LocalFormatLink.This.flags:=0;
 
   FormatLink:=@LocalFormatLink;
 end;

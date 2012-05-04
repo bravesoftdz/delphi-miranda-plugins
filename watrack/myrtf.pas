@@ -202,7 +202,7 @@ begin
     SendMessagew(wnd,EM_REPLACESEL,0,lparam(txt))
   else
   begin
-    SendMessageA(wnd,EM_REPLACESEL,0,lparam(WideToANSI(txt,ls,CP)));
+    SendMessageA(wnd,EM_REPLACESEL,0,lparam(WideToAnsi(txt,ls,CP)));
     mFreeMem(ls);
   end;
 

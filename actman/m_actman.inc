@@ -20,7 +20,7 @@ const
   ACCF_CLEAR    = $01000000;  // clear other flags, else - set
 type
   pChain = ^tChain;
-  TChain = record
+  tChain = record
     descr:pWideChar;
     id   :dword;
     flags:dword; // ACCF_* flags
@@ -61,10 +61,10 @@ const
   ACTP_BYNAME = 1;
   ACTP_WAIT   = 2;
 type
-  PAct_Param = ^TAct_Param;
-  TAct_Param = record
+  pAct_Param = ^tAct_Param;
+  tAct_Param = record
     flags :dword; // ACTP_*
-    ID    :uint_ptr; // Id or name
+    Id    :uint_ptr; // Id or name
     wParam:WPARAM;
     lParam:LPARAM;
   end;

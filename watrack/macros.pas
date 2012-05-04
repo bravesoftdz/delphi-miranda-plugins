@@ -24,6 +24,7 @@ type
 // --- data ---
 const
   numvars = 35;
+
   mn_wndtext    = 0;
   mn_artist     = 1;
   mn_title      = 2;

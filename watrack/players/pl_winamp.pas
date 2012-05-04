@@ -26,7 +26,7 @@ function Check(wnd:HWND;aflags:integer):HWND;cdecl;
 var
   tmp,EXEName:PAnsiChar;
 begin
-  result:=FindWindowEx(0,wnd,WinAmpClass,NIL);
+  result:=FindWindowEx(0,wnd,WinampClass,NIL);
   if result<>0 then
   begin
     tmp:=Extract(GetEXEByWnd(result,EXEName),true);
@@ -39,7 +39,7 @@ end;
 
 function WAnyCheck(wnd:HWND;aflags:integer):HWND;cdecl;
 begin
-  result:=FindWindowEx(0,wnd,WinAmpClass,NIL);
+  result:=FindWindowEx(0,wnd,WinampClass,NIL);
 end;
 
 // ----------- Get info ------------
@@ -66,7 +66,7 @@ begin
   with SongInfo do
   begin
     if (aflags and WAT_OPT_CHANGES)<>0 then
-      wndText:=WinampGetWindowText(winampwnd)
+      wndtext:=WinampGetWindowText(winampwnd)
     else
     begin
 {

@@ -30,7 +30,7 @@ const
   fIMG = $494D47;
   fINF = $494E46;
 
-procedure ID3v1_TagCorrect(var dst:pWideChar;tag:array of AnsiChar);
+procedure ID3v1_TagCorrect(var dst:pWideChar;const tag:array of AnsiChar);
 var
   i:integer;
   s:array [0..31] of AnsiChar;
@@ -41,7 +41,7 @@ begin
   if i>0 then
   begin
     s[i+1]:=#0;
-    ANSItoWide(s,dst);
+    AnsiToWide(s,dst);
   end;
 end;
 
@@ -129,9 +129,9 @@ begin
               end;
               pword(ptr1+i)^:=c;
             end;
-            fEAL: ID3v1_GetField(ptr1,Info.Album,i);
-            fEAR: ID3v1_GetField(ptr1,Info.Artist,i);
-            fETT: ID3v1_GetField(ptr1,Info.Title,i);
+            fEAL: ID3v1_GetField(ptr1,Info.album,i);
+            fEAR: ID3v1_GetField(ptr1,Info.artist,i);
+            fETT: ID3v1_GetField(ptr1,Info.title,i);
 //            fINF:
 //            fIMG:
           end;
@@ -145,25 +145,25 @@ end;
 
 function ReadID3v1(f:THANDLE; var Info:tSongInfo):longint;
 var
-  Tag:TID3v1Tag;
+  tag:TID3v1Tag;
   ofs:integer;
 begin
   result:=0;
-  ofs:=FileSize(f)-SizeOf(Tag);
+  ofs:=FileSize(f)-SizeOf(tag);
   Seek(f,ofs);
-  BlockRead(f,Tag,SizeOf(Tag));
-  if Tag.ID=TAG1Sign then
+  BlockRead(f,tag,SizeOf(tag));
+  if tag.ID=TAG1Sign then
   begin
-    if Info.Album  =nil then ID3v1_TagCorrect(Info.Album  ,tag.Album);
-    if Info.Artist =nil then ID3v1_TagCorrect(Info.Artist ,tag.Artist);
-    if Info.Title  =nil then ID3v1_TagCorrect(Info.Title  ,tag.Title);
-    if Info.Comment=nil then ID3v1_TagCorrect(Info.Comment,tag.Comment);
-    if Info.Year   =nil then ID3v1_TagCorrect(Info.Year   ,tag.Year);
-    if Info.Genre  =nil then Info.Genre:=GenreName(tag.Genre);
-    if Info.Track=0 then
+    if Info.album  =nil then ID3v1_TagCorrect(Info.album  ,tag.Album);
+    if Info.artist =nil then ID3v1_TagCorrect(Info.artist ,tag.Artist);
+    if Info.title  =nil then ID3v1_TagCorrect(Info.title  ,tag.Title);
+    if Info.comment=nil then ID3v1_TagCorrect(Info.comment,tag.Comment);
+    if Info.year   =nil then ID3v1_TagCorrect(Info.year   ,tag.Year);
+    if Info.genre  =nil then Info.genre:=GenreName(tag.Genre);
+    if Info.track=0 then
     begin
-      Info.Track:=tag.Track;
-      if Info.Track  >=32 then Info.Track:=0;
+      Info.track:=tag.Track;
+      if Info.track  >=32 then Info.track:=0;
     end;
     dec(ofs,9);
     result:=1;

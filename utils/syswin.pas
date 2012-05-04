@@ -1,4 +1,4 @@
-unit SysWin;
+unit syswin;
 {$include compilers.inc}
 
 interface
@@ -6,7 +6,7 @@ interface
 uses windows;
 
 type
-  FFWFilterProc = function(fname:pWideChar):boolean;
+  tFFWFilterProc = function(fname:pWideChar):boolean;
 
 const
   ThreadTimeout = 50;
@@ -21,7 +21,7 @@ function SendString(wnd:HWND;astr:PAnsiChar):integer; overload;
 procedure ProcessMessages;
 function GetFocusedChild(wnd:HWND):HWND;
 function GetAssoc(key:PAnsiChar):PAnsiChar;
-function GetFileFromWnd(wnd:HWND;Filter:FFWFilterProc;
+function GetFileFromWnd(wnd:HWND;Filter:tFFWFilterProc;
          flags:dword=gffdMultiThread+gffdOld;timeout:cardinal=ThreadTimeout):pWideChar;
 
 function WaitFocusedWndChild(Wnd:HWnd):HWnd;
@@ -276,7 +276,7 @@ begin
     while s^<>#0 do
     begin
       if s^<>#10 then
-        PostMessageW(Wnd,WM_CHAR,ord(s^),1);
+        PostMessageW(wnd,WM_CHAR,ord(s^),1);
       Inc(s);
     end;
     mFreeMem(s0); //??
@@ -304,7 +304,7 @@ begin
     while s^<>#0 do
     begin
       if s^<>#10 then
-        PostMessageA(Wnd,WM_CHAR,ord(s^),1);
+        PostMessageA(wnd,WM_CHAR,ord(s^),1);
       Inc(s);
     end;
     mFreeMem(s0); //??
@@ -408,7 +408,7 @@ begin
     if hProcess<>0 then
     begin
       GetModuleFilenameExW(hProcess,0,ModuleName,SizeOf(ModuleName));
-      result:=lstrcmpiw(extractw(ModuleName,true),exename)=0;
+      result:=lstrcmpiw(ExtractW(ModuleName,true),exename)=0;
       CloseHandle(hProcess);
       if result then exit;
     end;
@@ -418,7 +418,7 @@ end;
 //----- work with handles -----
 function GetProcessHandleCount(hProcess:THANDLE;var pdwHandleCount:dword):bool; stdcall; external 'kernel32.dll';
 
-function NtQueryObject(ObjectHandle:THANDLE;ObjectInformationClass:integer;
+function NTQueryObject(ObjectHandle:THANDLE;ObjectInformationClass:integer;
          ObjectInformation:pointer;Length:ulong;var ResultLength:longint):cardinal; stdcall; external 'ntdll.dll';
 
 const
@@ -596,7 +596,7 @@ begin
     begin
       GetMem(ptrec(param)^.fname,size+SizeOf(WideChar)); // length in bytes
 
-      pc:=pWideChar(pint_ptr(@tmpbuf[offset])^);
+      pc:=pWideChar(pint_ptr(@TmpBuf[offset])^);
       move(pc^,ptrec(param)^.fname^,size); // can be without zero
       pword(pAnsiChar(ptrec(param)^.fname)+size)^:=0;
     end
@@ -622,7 +622,7 @@ begin
 }
   // check what it disk file
 //!!! need to check again
-  if GetFileType(handle)<>FILE_TYPE_DISK then exit;
+  if GetFileType(Handle)<>FILE_TYPE_DISK then exit;
 
   rec.handle:=Handle;
   rec.fname:=nil;
@@ -645,14 +645,14 @@ begin
   end;
 end;
 
-function GetFileFromWnd(wnd:HWND;Filter:FFWFilterProc;
+function GetFileFromWnd(wnd:HWND;Filter:tFFWFilterProc;
          flags:dword=gffdMultiThread+gffdOld;timeout:cardinal=ThreadTimeout):pWideChar;
 var
   hProcess,h:THANDLE;
   pid:THANDLE;
   i:THANDLE;
   c:THANDLE;
-  Handles:dword;
+  handles:dword;
   pc:pWideChar;
 begin
   result:=nil;
@@ -664,7 +664,7 @@ begin
   harcnt:=0;
   if GetProcessHandleCount(pid,handles) then
   begin
-    Handles:=Handles*4; // count no matter, check "every 4th" handle
+    handles:=handles*4; // count no matter, check "every 4th" handle
 //    Handles:=Handles*SizeOf(THANDLE);
     hProcess:=GetCurrentProcess;
     i:=SIZEOF(THANDLE); // skip first
@@ -693,11 +693,11 @@ begin
       begin
 //        inc(handles,SizeOf(THANDLE)); //????skip empty number and non-duplicates
         inc(handles,4); //????skip empty number and non-duplicates
-        if Handles>MaxHandle then break; //file not found
+        if handles>MaxHandle then break; //file not found
       end;
       inc(i,4);
 //!!      inc(i,SizeOf(THANDLE));
-      if i>Handles then
+      if i>handles then
         break;
     end;
   end;
@@ -706,7 +706,7 @@ begin
   if harcnt>0 then
   begin
     CheckHandles((flags and gffdOld)=0);
-    result:=translatePath(hold[0]);
+    result:=TranslatePath(hold[0]);
   end
 end;
 

@@ -37,7 +37,7 @@ const
 const
   qs_module     :PAnsiChar = 'QuickSearch';
   qs_name       :PAnsiChar = 'Quick Search';
-  qs_showservice:PAnsiChar = 'QuickSearch_PLUGIN/Show';
+  QS_SHOWSERVICE:PAnsiChar = 'QuickSearch_PLUGIN/Show';
 
 const
   StatusSort = 1000;
@@ -184,15 +184,15 @@ procedure reghotkeys;
 var
   hkrec:HOTKEYDESC;
 begin
+  FillChar(hkrec,SizeOf(hkrec),0);
   with hkrec do
   begin
     cbSize          :=HOTKEYDESC_SIZE_V1;
     pszName         :=HKN_GLOBAL;
     pszDescription.a:='QuickSearch window hotkey';
     pszSection.a    :=qs_name;
-    pszService      :=qs_showservice;
+    pszService      :=QS_SHOWSERVICE;
     DefHotKey       :=(HOTKEYF_ALT shl 8) or VK_F3;
-    lParam          :=0;
   end;
   CallService(MS_HOTKEY_REGISTER,0,lparam(@hkrec));
 end;
@@ -220,8 +220,8 @@ begin
     begin
       ZeroMemory(@ttbopt,sizeof(ttbopt));
       ttbopt.cbSize        :=sizeof(ttbopt);
-      ttbopt.pszServiceUp  :=qs_showservice;
-      ttbopt.pszServiceDown:=qs_showservice;
+      ttbopt.pszServiceUp  :=QS_SHOWSERVICE;
+      ttbopt.pszServiceDown:=QS_SHOWSERVICE;
       ttbopt.hIconUp       :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(QS_QS));
       ttbopt.hIconDn       :=ttbopt.hIconUp;
       ttbopt.dwFlags       :=TTBBF_VISIBLE;
@@ -244,7 +244,7 @@ begin
     cmi.position    :=500050000;
 //    cmi.pszPopupName:=nil;
 //    cmi.flags       :=0;
-    cmi.pszService  :=qs_showservice;
+    cmi.pszService  :=QS_SHOWSERVICE;
     cmi.hIcon       :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(QS_QS));
     MainMenuItem    :=PluginLink^.CallService(MS_CLIST_ADDMAINMENUITEM,0,lparam(@cmi));
   end
@@ -517,9 +517,9 @@ var
   p,pp:PAnsiChar;
 begin
   WriteInt (so_mbottom    ,qsopt.grrect.bottom);
-  writeInt (so_mright     ,qsopt.grrect.right);
-  writeInt (so_mtop       ,qsopt.grrect.top);
-  writeInt (so_mleft      ,qsopt.grrect.left);
+  WriteInt (so_mright     ,qsopt.grrect.right);
+  WriteInt (so_mtop       ,qsopt.grrect.top);
+  WriteInt (so_mleft      ,qsopt.grrect.left);
 
   WriteBool(so_showoffline,qsopt.showoffline);
   WriteBool(so_colorize   ,qsopt.colorize);
@@ -549,7 +549,7 @@ var
   buf:array [0..127] of AnsiChar;
   p,pp:PAnsiChar;
 begin
-  writeWord(so_numcolumns      ,qsopt.numcolumns);
+  WriteWord(so_numcolumns      ,qsopt.numcolumns);
 
   WriteBool(so_sortbystatus    ,qsopt.sortbystatus);
   WriteBool(so_showinmenu      ,qsopt.showinmenu);

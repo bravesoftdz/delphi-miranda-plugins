@@ -58,7 +58,7 @@ begin
   GetWindowThreadProcessId(wnd,@pr);
   result:=0;
   repeat
-    result:=FindWindowEx(0,result,WinAmpClass,nil);
+    result:=FindWindowEx(0,result,WinampClass,nil);
     if result<>0 then
     begin
       GetWindowThreadProcessId(result,@pr1);

@@ -106,7 +106,7 @@ begin
   if atom.len>0 then
   begin
     BlockRead(f,atom.name,4);
-    atom.len:=bswap(atom.len);
+    atom.len:=BSwap(atom.len);
   end
   else
   begin
@@ -123,7 +123,7 @@ begin
   begin
     atom.name:=pdword(p)^;
     inc(p,4);
-    atom.len:=bswap(atom.len);
+    atom.len:=BSwap(atom.len);
   end
   else
   begin
@@ -176,7 +176,7 @@ var
 begin
   len:=pdword(p)^;
   inc(p,4);
-  len:=bswap(len);
+  len:=BSwap(len);
   if len>0 then
     inc(p,4); // 'data'
   inc(p,4); // type?
@@ -192,7 +192,7 @@ begin
   end
   else
   begin
-    result:=bswap(pdword(p)^);
+    result:=BSwap(pdword(p)^);
     inc(p,4);
   end;
 end;
@@ -205,7 +205,7 @@ var
 begin
   len:=pdword(p)^;
   inc(p,4);
-  len:=bswap(len);
+  len:=BSwap(len);
   if len>0 then
     inc(p,4); // 'data'
   inc(p,4); // type?
@@ -215,7 +215,7 @@ begin
   inc(p,len);
   c:=p^;
   p^:=0;
-  UTF8toWide(ltmp,prop);
+  UTF8ToWide(ltmp,prop);
   p^:=c;
 end;
 
@@ -232,7 +232,7 @@ begin
   if f=THANDLE(INVALID_HANDLE_VALUE) then
     exit;
   cursize:=0;
-  parentsize:=Filesize(f);
+  parentsize:=FileSize(f);
   repeat
     ReadAtom(f,atom);
     if atom.name=at_moov then
@@ -251,7 +251,7 @@ begin
           if size>0 then
           begin
             ZDecompressBuf(PAnsiChar(p)+4,size-SizeOf(mp4Atom),
-                pointer(pn),size,bswap(pdword(p)^));
+                pointer(pn),size,BSwap(pdword(p)^));
             mFreeMem(buf);
             buf:=pn;
             p:=buf;
@@ -264,7 +264,7 @@ begin
         if atom.name=at_mvhd then
         begin
           if pmvhd(p)^.TimeScale<>0 then
-            Info.total:=bswap(pmvhd(p)^.Duration) div bswap(pmvhd(p)^.TimeScale);
+            Info.total:=BSwap(pmvhd(p)^.Duration) div BSwap(pmvhd(p)^.TimeScale);
         end;
         if atom.name=at_udta then
         begin
@@ -308,7 +308,7 @@ begin
             p:=par;
             if SetTree(atom,p,'stbl.stsd',par)>0 then
             begin
-              Info.khz:=(bswap(pastsd(p)^.Samplerate) shr 16) div 1000;
+              Info.khz:=(BSwap(pastsd(p)^.Samplerate) shr 16) div 1000;
               Info.channels:=swap(pastsd(p)^.ChannelCount);
             end;
             p:=par;
@@ -341,33 +341,33 @@ procedure InitLink;
 begin
   LocalFormatLinkM4A.Next:=FormatLink;
 
-  LocalFormatLinkM4A.this.proc :=@ReadM4A;
-  LocalFormatLinkM4A.this.ext  :='M4A';
-  LocalFormatLinkM4A.this.flags:=0;
+  LocalFormatLinkM4A.This.proc :=@ReadM4A;
+  LocalFormatLinkM4A.This.ext  :='M4A';
+  LocalFormatLinkM4A.This.flags:=0;
 
   FormatLink:=@LocalFormatLinkM4A;
 
   LocalFormatLinkMP4.Next:=FormatLink;
 
-  LocalFormatLinkMP4.this.proc :=@ReadM4A;
-  LocalFormatLinkMP4.this.ext  :='MP4';
-  LocalFormatLinkMP4.this.flags:=WAT_OPT_VIDEO;
+  LocalFormatLinkMP4.This.proc :=@ReadM4A;
+  LocalFormatLinkMP4.This.ext  :='MP4';
+  LocalFormatLinkMP4.This.flags:=WAT_OPT_VIDEO;
 
   FormatLink:=@LocalFormatLinkMP4;
 
   LocalFormatLinkMOV.Next:=FormatLink;
 
-  LocalFormatLinkMOV.this.proc :=@ReadM4A;
-  LocalFormatLinkMOV.this.ext  :='MOV';
-  LocalFormatLinkMOV.this.flags:=WAT_OPT_VIDEO;
+  LocalFormatLinkMOV.This.proc :=@ReadM4A;
+  LocalFormatLinkMOV.This.ext  :='MOV';
+  LocalFormatLinkMOV.This.flags:=WAT_OPT_VIDEO;
 
   FormatLink:=@LocalFormatLinkMOV;
 
   LocalFormatLink3GP.Next:=FormatLink;
 
-  LocalFormatLink3GP.this.proc :=@ReadM4A;
-  LocalFormatLink3GP.this.ext  :='3GP';
-  LocalFormatLink3GP.this.flags:=WAT_OPT_VIDEO;
+  LocalFormatLink3GP.This.proc :=@ReadM4A;
+  LocalFormatLink3GP.This.ext  :='3GP';
+  LocalFormatLink3GP.This.flags:=WAT_OPT_VIDEO;
 
   FormatLink:=@LocalFormatLink3GP;
 

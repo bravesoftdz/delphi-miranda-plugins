@@ -53,7 +53,7 @@ begin
       TranslateDialogDefault(Dialog);
       SetScreenLite(Dialog);
       result:=0;
-      changed:=0;
+      Changed:=0;
     end;
 
     WM_COMMAND: begin

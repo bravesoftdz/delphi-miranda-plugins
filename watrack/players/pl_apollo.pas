@@ -74,7 +74,7 @@ begin
     if ps[0]<>#0 then
     begin
       mGetMem(result,(StrLen(ps)+1)*SizeOf(WideChar));
-      ANSItoWide(ps,result);
+      AnsiToWide(ps,result);
       exit;
     end;
   end;
@@ -89,7 +89,7 @@ begin
   tmpwnd:=SendMessage(wnd,WM_APOLLO_COMMAND,APOLLO_GETCURRENTLYPLAYEDTITLE,0);
   SendMessageA(tmpwnd,WM_GETTEXT,255,lparam(@ps));
   mGetMem(result,(StrLen(ps)+1)*SizeOf(WideChar));
-  ANSItoWide(ps,result);
+  AnsiToWide(ps,result);
 end;
 
 function Play(wnd:HWND;fname:PWideChar=nil):integer;
@@ -99,7 +99,7 @@ begin
   if (fname<>nil) and (fname^<>#0) then
   begin
     cds.dwData:=APOLLO_OPENFILE;
-    WideToANSI(fname,PAnsiChar(cds.lpData));
+    WideToAnsi(fname,PAnsiChar(cds.lpData));
     cds.cbData:=StrLen(PAnsiChar(cds.lpData))+1;
     SendMessage(wnd,WM_COPYDATA,0,lparam(@cds));
     mFreeMem(cds.lpData);
@@ -175,7 +175,7 @@ begin
   tmpwnd:=SendMessage(wnd,WM_APOLLO_COMMAND,APOLLO_GETPLAYLISTTITLE   ,num);
   SendMessageA(tmpwnd,WM_GETTEXT,255,lparam(@ps));
   mGetMem(result,(StrLen(ps)+1)*SizeOf(WideChar));
-  ANSItoWide(ps,result);
+  AnsiToWide(ps,result);
 end;
 
 function GetInfo(var SongInfo:tSongInfo;flags:integer):integer;cdecl;
@@ -201,7 +201,7 @@ begin
   begin
     with SongInfo do
     begin
-      wndText:=GetWndText(plwnd);
+      wndtext:=GetWndText(plwnd);
       volume :=GetVolume (plwnd);
     end
   end

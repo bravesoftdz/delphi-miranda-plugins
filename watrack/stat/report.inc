@@ -50,7 +50,7 @@ var
       OutChar(pc);
   end;
 
-  procedure OutputBlock(var start:PAnsiChar;var Root:pCells;sortmode:integer);
+  procedure OutputBlock(var start:PAnsiChar;var Root:pCells;asortmode:integer);
   const
     blocksize = 8192;
   var
@@ -68,30 +68,30 @@ var
     if len>6143 then
       err('Template block too large');
 
-    Resort(Root,sortmode);
+    Resort(Root,asortmode);
 
-    case sortmode of
+    case asortmode of
       stArtist,stAlbum,stPath: begin
 
         Cell:=Root^.Cells[0];
         max:=Cell^.Count;
-        if sortmode=stPath then OnlyPath(ls,Cell^.MFile); // speed optimization
+        if asortmode=stPath then OnlyPath(ls,Cell^.MFile); // speed optimization
 
-        for i:=0 to Root^.count-1 do
+        for i:=0 to Root^.Count-1 do
         begin
           with Root^.Cells[i]^ do
           begin
             AltCount:=0;
-            if      sortmode=stArtist then cnt:=lstrcmpia(Cell^.Artist,Artist)
-            else if sortmode=stAlbum  then cnt:=lstrcmpia(Cell^.Album,Album)
-            else                           cnt:=lstrcmpia(ls,OnlyPath(ls1,MFile));
+            if      asortmode=stArtist then cnt:=lstrcmpia(Cell^.Artist,Artist)
+            else if asortmode=stAlbum  then cnt:=lstrcmpia(Cell^.Album,Album)
+            else                            cnt:=lstrcmpia(ls,OnlyPath(ls1,MFile));
             if cnt=0 then
               inc(max,Count)
             else
             begin
               Cell^.AltCount:=max;
               Cell:=Root^.Cells[i];
-              if sortmode=stPath then OnlyPath(ls,Cell^.MFile); // speed optimization
+              if asortmode=stPath then OnlyPath(ls,Cell^.MFile); // speed optimization
               max:=Count;
             end;
           end;
@@ -99,9 +99,9 @@ var
         Cell^.AltCount:=max;
 
         Resort(Root,stAltCount);
-        if (sortmode=stAlbum) and (Root^.Cells[0]^.Album^=#0) then
+        if (asortmode=stAlbum) and (Root^.Cells[0]^.Album^=#0) then
         begin
-          if Root^.count>1 then
+          if Root^.Count>1 then
             max:=Root^.Cells[1]^.AltCount
           else
             max:=0;
@@ -121,12 +121,12 @@ var
     
     items:=1;
     if ReportItems>0 then
-      for i:=0 to Root^.count-1 do
+      for i:=0 to Root^.Count-1 do
       begin
-        with Root^.cells[i]^ do
+        with Root^.Cells[i]^ do
         begin
-          if (sortmode=stAlbum) and (Album^=#0) then continue;
-          case sortmode of
+          if (asortmode=stAlbum) and (Album^=#0) then continue;
+          case asortmode of
             stArtist,
             stAlbum,
             stPath  : cnt:=AltCount;
@@ -164,7 +164,7 @@ var
   ptr:PAnsiChar;
   i,j,k:integer;
   size:integer;
-  sortmode:integer;
+  lsortmode:integer;
   MyTime:TSYSTEMTIME;
   Root:pCells;
   b1,tmp:PAnsiChar;
@@ -194,7 +194,7 @@ begin
 
     i:=0;
     k:=0;
-    for j:=0 to Root^.count-1 do
+    for j:=0 to Root^.Count-1 do
     begin
       inc(k);
       with Root^.Cells[j]^ do
@@ -203,7 +203,7 @@ begin
     IntToTime(tt,i); // total time
     IntToStr(tf,k);  // total files
     
-    sortmode:=stDate;
+    lsortmode:=stDate;
     while (ptr-TmplBuf)<size do
     begin
       while (ptr^<>'%') and (ptr^<>#0) do
@@ -223,32 +223,32 @@ begin
         end
         else if StrCmp(ptr,'freqartist%',11)=0 then
         begin
-          sortmode:=stArtist;
+          lsortmode:=stArtist;
           i:=11;
         end
         else if StrCmp(ptr,'freqsongs%',10)=0 then
         begin
-          sortmode:=stCount;
+          lsortmode:=stCount;
           i:=10;
         end
         else if StrCmp(ptr,'freqalbum%',10)=0 then
         begin
-          sortmode:=stAlbum;
+          lsortmode:=stAlbum;
           i:=10;
         end
         else if StrCmp(ptr,'lastsongs%',10)=0 then
         begin
-          sortmode:=stDate;
+          lsortmode:=stDate;
           i:=10;
         end
         else if StrCmp(ptr,'songtime%',9)=0 then
         begin
-          sortmode:=stLength;
+          lsortmode:=stLength;
           i:=9;
         end
         else if StrCmp(ptr,'freqpath%',9)=0 then
         begin
-          sortmode:=stPath;
+          lsortmode:=stPath;
           i:=9;
         end
         else
@@ -262,7 +262,7 @@ begin
           while (ptr^<' ') and (ptr^<>#0) do inc(ptr);
           k:=0;
         end;
-        if (ReportMask and sortmode)=0 then
+        if (ReportMask and lsortmode)=0 then
         begin
           tmp:=StrPos(ptr,'%block_end%');
           if tmp<>nil then
@@ -284,7 +284,7 @@ begin
           while (ptr^<' ') and (ptr^<>#0) do inc(ptr);
           k:=0;
         end;
-        OutputBlock(ptr,Root,sortmode);
+        OutputBlock(ptr,Root,lsortmode);
       end
       else if StrCmp(ptr,'%currenttime%',13)=0 then
       begin

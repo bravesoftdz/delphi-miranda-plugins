@@ -3,7 +3,7 @@ unit sr_optdialog;
 interface
 uses windows;
 
-{$include resource.inc}
+{.$include resource.inc}
 
 procedure OptChangeColumns(code:integer;column,data:integer);
 function DlgProcOptions(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
@@ -96,7 +96,7 @@ var
 begin
   for i:=0 to MaxControls-1 do
   begin
-    j :=aShowElement[atype][i];
+    j :=aShowElement[aType][i];
     wnd:=GetDlgItem(Dialog,aIdElement[i]);
     EnableWindow(wnd,odd(j));
     if shortint(j)<0 then
@@ -188,7 +188,7 @@ begin
   result:=SendMessage(list,LVM_GETNEXTITEM,-1,LVNI_FOCUSED);
 end;
 
-function savecuritem(dialog:hwnd):integer;
+function savecuritem(Dialog:hwnd):integer;
 var
   listhwnd:hwnd;
   selitem:integer;
@@ -197,7 +197,7 @@ var
   var
     tpc:array [0..1023] of AnsiChar;
   begin
-    GetDlgItemTextA(dialog,id,tpc,SizeOf(tpc));
+    GetDlgItemTextA(Dialog,id,tpc,SizeOf(tpc));
     mFreeMem(dst);
     StrDup(dst,tpc);
     LV_SetItem(listhwnd,dst,selitem,subpos);
@@ -208,7 +208,7 @@ var
   var
     tpc:array [0..1023] of WideChar;
   begin
-    GetDlgItemTextW(dialog,id,@tpc,SizeOf(tpc) div SizeOf(WideChar));
+    GetDlgItemTextW(Dialog,id,@tpc,SizeOf(tpc) div SizeOf(WideChar));
     mFreeMem(dst);
     StrDupW(dst,@tpc);
     LV_SetItemW(listhwnd,dst,selitem,subpos);
@@ -219,16 +219,16 @@ var
     z:bool;
     tpc:array [0..1023] of WideChar;
   begin
-    param._type:=SendDlgItemMessage(dialog,cb,CB_GETCURSEL,0,0);
+    param._type:=SendDlgItemMessage(Dialog,cb,CB_GETCURSEL,0,0);
     case param._type of
-      ptNumber:  param.n:=GetDlgItemInt(dialog,id,z,false);
-      ptInteger: param.i:=GetDlgItemInt(dialog,id,z,true);
+      ptNumber:  param.n:=GetDlgItemInt(Dialog,id,z,false);
+      ptInteger: param.i:=GetDlgItemInt(Dialog,id,z,true);
       ptString:  begin
-        GetDlgItemTextA(dialog,id,@tpc,SizeOf(tpc));
+        GetDlgItemTextA(Dialog,id,@tpc,SizeOf(tpc));
         StrDup(param.a,@tpc);
       end;
       ptUnicode: begin
-        GetDlgItemTextW(dialog,id,@tpc,SizeOf(tpc) div SizeOf(WideChar));
+        GetDlgItemTextW(Dialog,id,@tpc,SizeOf(tpc) div SizeOf(WideChar));
         StrDupW(param.w,@tpc);
       end;
     end;
@@ -240,7 +240,7 @@ var
   oldtype,i:integer;
   column:integer;
 begin
-  listhwnd:=GetDlgItem(dialog,IDC_LIST);
+  listhwnd:=GetDlgItem(Dialog,IDC_LIST);
   selitem:=getselecteditem(listhwnd);
 //!!  column:=LV_GetLParam(listhwnd,selitem);
   column:=selitem;
@@ -256,7 +256,7 @@ begin
 
       oldtype:=setting_type;
 
-      tmpwnd:=GetDlgItem(dialog,IDC_C_VARTYPE);
+      tmpwnd:=GetDlgItem(Dialog,IDC_C_VARTYPE);
 
       setting_type:=SendMessage(tmpwnd,CB_GETITEMDATA,
              SendMessage(tmpwnd,CB_GETCURSEL,0,0),0);
@@ -287,7 +287,7 @@ begin
 
         ST_CONTACTINFO: begin
           FillChar(tpc,SizeOf(tpc),0);
-          tmpwnd:=GetDlgItem(dialog,IDC_C_CNFTYPE);
+          tmpwnd:=GetDlgItem(Dialog,IDC_C_CNFTYPE);
 
           i:=SendMessage(tmpwnd,CB_GETCURSEL,0,0);
           setting_cnftype:=SendMessage(tmpwnd,CB_GETITEMDATA,i,0);
@@ -301,7 +301,7 @@ begin
           LV_SetItemW(listhwnd,TranslateW('Service'),selitem,2);
 //!!          setitem(listhwnd,selitem,3,module_name);
 
-          setting_cnftype:=SendDlgItemMessage(dialog,IDC_C_RESULT,CB_GETCURSEL,0,0);
+          setting_cnftype:=SendDlgItemMessage(Dialog,IDC_C_RESULT,CB_GETCURSEL,0,0);
           setparam(wparam,IDC_C_WPAR,IDC_E_VAR);
           setparam(lparam,IDC_C_LPAR,IDC_E_LPAR);
         end;
@@ -313,14 +313,14 @@ begin
   end;
 end;
 
-procedure disable_elem(dialog:hwnd;id:cardinal);
+procedure disable_elem(Dialog:hwnd;id:cardinal);
 begin
-  EnableWindow(GetDlgItem(dialog,id),FALSE);
+  EnableWindow(GetDlgItem(Dialog,id),FALSE);
 end;
 
-procedure enable_elem(dialog:hwnd;id:cardinal);
+procedure enable_elem(Dialog:hwnd;id:cardinal);
 begin
-  EnableWindow(GetDlgItem(dialog,id),TRUE);
+  EnableWindow(GetDlgItem(Dialog,id),TRUE);
 end;
 
 procedure CheckDirection(Dialog:HWND;item:integer);
@@ -336,20 +336,20 @@ begin
     enable_elem(Dialog,IDC_DN);
 end;
 
-procedure displcurinfo(dialog:hwnd;column:integer);
+procedure displcurinfo(Dialog:hwnd;column:integer);
 
-  procedure set_elem(param:tserviceparam;cb,id:integer);
+  procedure set_elem(const param:tserviceparam;cb,id:integer);
   begin
-    SendDlgItemMessage(dialog,cb,CB_SETCURSEL,param._type,0);
+    SendDlgItemMessage(Dialog,cb,CB_SETCURSEL,param._type,0);
     case param._type of
-      ptNumber:  SetDlgItemInt  (dialog,id,param.n,false);
-      ptInteger: SetDlgItemInt  (dialog,id,param.i,true);
-      ptString:  SetDlgItemTextA(dialog,id,param.a);
-      ptUnicode: SetDlgItemTextW(dialog,id,param.w);
+      ptNumber:  SetDlgItemInt  (Dialog,id,param.n,false);
+      ptInteger: SetDlgItemInt  (Dialog,id,param.i,true);
+      ptString:  SetDlgItemTextA(Dialog,id,param.a);
+      ptUnicode: SetDlgItemTextW(Dialog,id,param.w);
     else
-      SetDlgItemTextA(dialog,id,'');
+      SetDlgItemTextA(Dialog,id,'');
     end;
-    EnableWindow(GetDlgItem(dialog,id),param._type<>ptCurrent);
+    EnableWindow(GetDlgItem(Dialog,id),param._type<>ptCurrent);
   end;
 
 var
@@ -357,15 +357,15 @@ var
   i:int_ptr;
   selpos:integer;
 begin
-  CheckDirection(dialog,column);
+  CheckDirection(Dialog,column);
 
   selpos:=column;
   if (selpos>=0) and (selpos<qsopt.numcolumns) then
   begin
-    enable_elem(dialog,IDC_E_TITLE);
-    enable_elem(dialog,IDC_C_VARTYPE);
-    enable_elem(dialog,IDC_DELETE);
-//    enable_elem(dialog,IDC_SETITEM);
+    enable_elem(Dialog,IDC_E_TITLE);
+    enable_elem(Dialog,IDC_C_VARTYPE);
+    enable_elem(Dialog,IDC_DELETE);
+//    enable_elem(Dialog,IDC_SETITEM);
 
     with qsopt.columns[column] do
     begin
@@ -376,40 +376,40 @@ begin
           StrDupW(pWideChar(curscript),wparam.w);
         end;
         ST_SERVICE: begin
-          SendDlgItemMessage(dialog,IDC_C_RESULT,CB_SETCURSEL,setting_cnftype,0);
-          SetDlgItemTextA(dialog,IDC_E_MODULE,module_name);
+          SendDlgItemMessage(Dialog,IDC_C_RESULT,CB_SETCURSEL,setting_cnftype,0);
+          SetDlgItemTextA(Dialog,IDC_E_MODULE,module_name);
           set_elem(wparam,IDC_C_WPAR,IDC_E_VAR);
           set_elem(lparam,IDC_C_LPAR,IDC_E_LPAR);
         end;
         ST_CONTACTINFO: begin
           i:=int_ptr(setcnftype2str(setting_cnftype));
-          SendDlgItemMessageW(dialog,IDC_C_CNFTYPE,CB_SELECTSTRING,twparam(-1),i);
+          SendDlgItemMessageW(Dialog,IDC_C_CNFTYPE,CB_SELECTSTRING,twparam(-1),i);
         end;
       else
-        SetDlgItemTextA(dialog,IDC_E_MODULE,module_name);
-        SetDlgItemTextA(dialog,IDC_E_VAR,wparam.a);
+        SetDlgItemTextA(Dialog,IDC_E_MODULE,module_name);
+        SetDlgItemTextA(Dialog,IDC_E_VAR,wparam.a);
       end;
 
       v:=settype2str(setting_type);
-      SetDlgItemTextW(dialog,IDC_E_TITLE,title);
-      SendDlgItemMessageW(dialog,IDC_C_VARTYPE,CB_SELECTSTRING,twparam(-1),tlparam(v));
+      SetDlgItemTextW(Dialog,IDC_E_TITLE,title);
+      SendDlgItemMessageW(Dialog,IDC_C_VARTYPE,CB_SELECTSTRING,twparam(-1),tlparam(v));
       mFreeMem(v);
     end;
   end
   else
   begin
-    disable_elem(dialog,IDC_E_TITLE);
-    disable_elem(dialog,IDC_C_VARTYPE);
-    disable_elem(dialog,IDC_DELETE);
-    disable_elem(dialog,IDC_SETITEM);
+    disable_elem(Dialog,IDC_E_TITLE);
+    disable_elem(Dialog,IDC_C_VARTYPE);
+    disable_elem(Dialog,IDC_DELETE);
+    disable_elem(Dialog,IDC_SETITEM);
 
     v:=TranslateW(strNotSelected);
-    SetDlgItemTextW(dialog,IDC_E_TITLE ,v);
-    SetDlgItemTextW(dialog,IDC_E_MODULE,v);
-    SetDlgItemTextW(dialog,IDC_E_VAR   ,v);
-    SetDlgItemTextW(dialog,IDC_E_LPAR  ,v);
-    SendDlgItemMessageW(dialog,IDC_C_VARTYPE,CB_SELECTSTRING,twparam(-1),tlparam(v));
-    SendDlgItemMessageW(dialog,IDC_C_CNFTYPE,CB_SELECTSTRING,twparam(-1),tlparam(v));
+    SetDlgItemTextW(Dialog,IDC_E_TITLE ,v);
+    SetDlgItemTextW(Dialog,IDC_E_MODULE,v);
+    SetDlgItemTextW(Dialog,IDC_E_VAR   ,v);
+    SetDlgItemTextW(Dialog,IDC_E_LPAR  ,v);
+    SendDlgItemMessageW(Dialog,IDC_C_VARTYPE,CB_SELECTSTRING,twparam(-1),tlparam(v));
+    SendDlgItemMessageW(Dialog,IDC_C_CNFTYPE,CB_SELECTSTRING,twparam(-1),tlparam(v));
   end;
 end;
 
@@ -581,7 +581,7 @@ begin
 
     WM_INITDIALOG: begin
       TranslateDialogDefault(Dialog);
-      SetDlgItemTextW(dialog,IDC_EDIT_SCRIPT,pWideChar(lParam));
+      SetDlgItemTextW(Dialog,IDC_EDIT_SCRIPT,pWideChar(lParam));
     end;
 
     WM_COMMAND: begin
@@ -643,7 +643,7 @@ begin
       end;
     end;
   end;
-  result:=CallWindowProc(OldListProc,dialog,hMessage,wParam,lParam);
+  result:=CallWindowProc(OldListProc,Dialog,hMessage,wParam,lParam);
 end;
 
 function DlgProcOptions(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM): integer; stdcall;
@@ -684,7 +684,7 @@ begin
 
     WM_INITDIALOG: begin
       InitDlg:=true;
-      listhwnd:=GetDlgItem(dialog,IDC_LIST);
+      listhwnd:=GetDlgItem(Dialog,IDC_LIST);
 
       SendMessageW(listhwnd,LVM_SETEXTENDEDLISTVIEWSTYLE,0,
         SendMessageW(listhwnd,LVM_GETEXTENDEDLISTVIEWSTYLE,0,0) or
@@ -696,48 +696,48 @@ begin
       addcolumn(listhwnd,105,'Module/InfoType');
       addcolumn(listhwnd,85 ,'Title');
       addcolumn(listhwnd,20 ,'#');
-      addsettypes   (GetDlgItem(dialog,IDC_C_VARTYPE));
-      addsetcnftypes(GetDlgItem(dialog,IDC_C_CNFTYPE));
-      addparamtypes (GetDlgItem(dialog,IDC_C_WPAR));
-      addparamtypes (GetDlgItem(dialog,IDC_C_LPAR));
-      addresulttypes(GetDlgItem(dialog,IDC_C_RESULT));
+      addsettypes   (GetDlgItem(Dialog,IDC_C_VARTYPE));
+      addsetcnftypes(GetDlgItem(Dialog,IDC_C_CNFTYPE));
+      addparamtypes (GetDlgItem(Dialog,IDC_C_WPAR));
+      addparamtypes (GetDlgItem(Dialog,IDC_C_LPAR));
+      addresulttypes(GetDlgItem(Dialog,IDC_C_RESULT));
 
-      CheckDlgButton(dialog,IDC_CH_SORTSTATUS     ,ORD(qsopt.sortbystatus));
-      CheckDlgButton(dialog,IDC_CH_SHOWINMENU     ,ORD(qsopt.showinmenu));
-      CheckDlgButton(dialog,IDC_CH_SHOWONLYUSERS  ,ORD(qsopt.showonlyinlist));
-      CheckDlgButton(dialog,IDC_CH_AUTOCLOSE      ,ORD(qsopt.closeafteraction));
-      CheckDlgButton(dialog,IDC_CH_ADDTOTOPTOOLBAR,ORD(qsopt.showintoptoolbar));
-      CheckDlgButton(dialog,IDC_CH_USETOOLSTYLE   ,ORD(qsopt.usetoolstyle));
-      CheckDlgButton(dialog,IDC_CH_DRAWGRID       ,ORD(qsopt.drawgrid));
-      CheckDlgButton(dialog,IDC_CH_SINGLECSV      ,ORD(qsopt.singlecsv));
-      CheckDlgButton(dialog,IDC_CH_EXPORTHEADERS  ,ORD(qsopt.exportheaders));
-      CheckDlgButton(dialog,IDC_CH_SKIPMINIMIZED  ,ORD(qsopt.skipminimized));
-      CheckDlgButton(dialog,IDC_CH_SAVEPATTERN    ,ORD(qsopt.savepattern));
+      CheckDlgButton(Dialog,IDC_CH_SORTSTATUS     ,ORD(qsopt.sortbystatus));
+      CheckDlgButton(Dialog,IDC_CH_SHOWINMENU     ,ORD(qsopt.showinmenu));
+      CheckDlgButton(Dialog,IDC_CH_SHOWONLYUSERS  ,ORD(qsopt.showonlyinlist));
+      CheckDlgButton(Dialog,IDC_CH_AUTOCLOSE      ,ORD(qsopt.closeafteraction));
+      CheckDlgButton(Dialog,IDC_CH_ADDTOTOPTOOLBAR,ORD(qsopt.showintoptoolbar));
+      CheckDlgButton(Dialog,IDC_CH_USETOOLSTYLE   ,ORD(qsopt.usetoolstyle));
+      CheckDlgButton(Dialog,IDC_CH_DRAWGRID       ,ORD(qsopt.drawgrid));
+      CheckDlgButton(Dialog,IDC_CH_SINGLECSV      ,ORD(qsopt.singlecsv));
+      CheckDlgButton(Dialog,IDC_CH_EXPORTHEADERS  ,ORD(qsopt.exportheaders));
+      CheckDlgButton(Dialog,IDC_CH_SKIPMINIMIZED  ,ORD(qsopt.skipminimized));
+      CheckDlgButton(Dialog,IDC_CH_SAVEPATTERN    ,ORD(qsopt.savepattern));
       if PluginLink^.ServiceExists(MS_FP_GETCLIENTICON)<>0 then
-        CheckDlgButton(dialog,IDC_CH_SHOWCLIENTICONS,ORD(qsopt.showclienticons))
+        CheckDlgButton(Dialog,IDC_CH_SHOWCLIENTICONS,ORD(qsopt.showclienticons))
       else
-        EnableWindow(GetDlgItem(dialog,IDC_CH_SHOWCLIENTICONS),false);
+        EnableWindow(GetDlgItem(Dialog,IDC_CH_SHOWCLIENTICONS),false);
 
       if PluginLink^.ServiceExists(MS_TTB_ADDBUTTON)=0 then
-        EnableWindow(GetDlgItem(dialog,IDC_CH_ADDTOTOPTOOLBAR),FALSE);
+        EnableWindow(GetDlgItem(Dialog,IDC_CH_ADDTOTOPTOOLBAR),FALSE);
 
       hwndTooltip:=CreateWindowW(TOOLTIPS_CLASS,nil,TTS_ALWAYSTIP,
           integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
           integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
           Dialog,0,hInstance,nil);
 
-      hNew    :=GetDlgItem(dialog,IDC_NEW);
-      hItem   :=GetDlgItem(dialog,IDC_SETITEM);
-      hUp     :=GetDlgItem(dialog,IDC_UP);
-      hDown   :=GetDlgItem(dialog,IDC_DN);
-      hDelete :=GetDlgItem(dialog,IDC_DELETE);
-      hDefault:=GetDlgItem(dialog,IDC_DEFAULT);
-      hReload :=GetDlgItem(dialog,IDC_RELOAD);
+      hNew    :=GetDlgItem(Dialog,IDC_NEW);
+      hItem   :=GetDlgItem(Dialog,IDC_SETITEM);
+      hUp     :=GetDlgItem(Dialog,IDC_UP);
+      hDown   :=GetDlgItem(Dialog,IDC_DN);
+      hDelete :=GetDlgItem(Dialog,IDC_DELETE);
+      hDefault:=GetDlgItem(Dialog,IDC_DEFAULT);
+      hReload :=GetDlgItem(Dialog,IDC_RELOAD);
 
       FillChar(ti,SizeOf(ti),0);
       ti.cbSize  :=sizeof(TOOLINFO);
       ti.uFlags  :=TTF_IDISHWND or TTF_SUBCLASS;
-      ti.hwnd    :=dialog;
+      ti.hwnd    :=Dialog;
       ti.hinst   :=hInstance;
       ti.uId     :=hNew;
       ti.lpszText:=TranslateW('New');
@@ -771,7 +771,7 @@ begin
 
       update_list(listhwnd);
 
-      maindlg:=dialog;
+      maindlg:=Dialog;
       hook:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
 
       result:=1;
@@ -786,7 +786,7 @@ begin
 
         PSN_APPLY: begin
           // checkboxes
-          listhwnd:=GetDlgItem(dialog,IDC_LIST);
+          listhwnd:=GetDlgItem(Dialog,IDC_LIST);
 
           for i:=0 to SendMessage(listhwnd,LVM_GETITEMCOUNT,0,0)-1 do
           begin
@@ -799,27 +799,27 @@ begin
             end;
           end;
 
-          disable_elem(dialog,IDC_SETITEM);
-          savecuritem(dialog);
+          disable_elem(Dialog,IDC_SETITEM);
+          savecuritem(Dialog);
 
-          qsopt.sortbystatus    :=IsDlgButtonChecked(dialog,IDC_CH_SORTSTATUS     )<>BST_UNCHECKED;
-          qsopt.showonlyinlist  :=IsDlgButtonChecked(dialog,IDC_CH_SHOWONLYUSERS  )<>BST_UNCHECKED;
-          qsopt.closeafteraction:=IsDlgButtonChecked(dialog,IDC_CH_AUTOCLOSE      )<>BST_UNCHECKED;
-          qsopt.usetoolstyle    :=IsDlgButtonChecked(dialog,IDC_CH_USETOOLSTYLE   )<>BST_UNCHECKED;
-          qsopt.drawgrid        :=IsDlgButtonChecked(dialog,IDC_CH_DRAWGRID       )<>BST_UNCHECKED;
-          qsopt.showclienticons :=IsDlgButtonChecked(dialog,IDC_CH_SHOWCLIENTICONS)<>BST_UNCHECKED;
-          qsopt.singlecsv       :=IsDlgButtonChecked(dialog,IDC_CH_SINGLECSV      )<>BST_UNCHECKED;
-          qsopt.exportheaders   :=IsDlgButtonChecked(dialog,IDC_CH_EXPORTHEADERS  )<>BST_UNCHECKED;
-          qsopt.skipminimized   :=IsDlgButtonChecked(dialog,IDC_CH_SKIPMINIMIZED  )<>BST_UNCHECKED;
-          qsopt.savepattern     :=IsDlgButtonChecked(dialog,IDC_CH_SAVEPATTERN    )<>BST_UNCHECKED;
+          qsopt.sortbystatus    :=IsDlgButtonChecked(Dialog,IDC_CH_SORTSTATUS     )<>BST_UNCHECKED;
+          qsopt.showonlyinlist  :=IsDlgButtonChecked(Dialog,IDC_CH_SHOWONLYUSERS  )<>BST_UNCHECKED;
+          qsopt.closeafteraction:=IsDlgButtonChecked(Dialog,IDC_CH_AUTOCLOSE      )<>BST_UNCHECKED;
+          qsopt.usetoolstyle    :=IsDlgButtonChecked(Dialog,IDC_CH_USETOOLSTYLE   )<>BST_UNCHECKED;
+          qsopt.drawgrid        :=IsDlgButtonChecked(Dialog,IDC_CH_DRAWGRID       )<>BST_UNCHECKED;
+          qsopt.showclienticons :=IsDlgButtonChecked(Dialog,IDC_CH_SHOWCLIENTICONS)<>BST_UNCHECKED;
+          qsopt.singlecsv       :=IsDlgButtonChecked(Dialog,IDC_CH_SINGLECSV      )<>BST_UNCHECKED;
+          qsopt.exportheaders   :=IsDlgButtonChecked(Dialog,IDC_CH_EXPORTHEADERS  )<>BST_UNCHECKED;
+          qsopt.skipminimized   :=IsDlgButtonChecked(Dialog,IDC_CH_SKIPMINIMIZED  )<>BST_UNCHECKED;
+          qsopt.savepattern     :=IsDlgButtonChecked(Dialog,IDC_CH_SAVEPATTERN    )<>BST_UNCHECKED;
 
-          tmpbool:=IsDlgButtonChecked(dialog,IDC_CH_SHOWINMENU)<>BST_UNCHECKED;
+          tmpbool:=IsDlgButtonChecked(Dialog,IDC_CH_SHOWINMENU)<>BST_UNCHECKED;
           if qsopt.showinmenu<>tmpbool then
           begin
             qsopt.showinmenu:=tmpbool;
             AddRemoveMenuItemToMainMenu;
           end;
-          tmpbool:=IsDlgButtonChecked(dialog,IDC_CH_ADDTOTOPTOOLBAR )<>BST_UNCHECKED;
+          tmpbool:=IsDlgButtonChecked(Dialog,IDC_CH_ADDTOTOPTOOLBAR )<>BST_UNCHECKED;
           if qsopt.showintoptoolbar<>tmpbool then
           begin
             qsopt.showintoptoolbar:=tmpbool;
@@ -838,9 +838,9 @@ begin
             if i<0 then // new focus
             begin
               InitDlg:=true;
-              displcurinfo(dialog,PNMLISTVIEW(lParam)^.iItem);
+              displcurinfo(Dialog,PNMLISTVIEW(lParam)^.iItem);
 {!!
-              displcurinfo(dialog,
+              displcurinfo(Dialog,
                  LV_GetLParam(PNMLISTVIEW(lParam)^.hdr.hwndFrom,
                  PNMLISTVIEW(lParam)^.iItem));
 }
@@ -853,7 +853,7 @@ begin
                 i:=PNMLISTVIEW(lParam)^.uOldState-PNMLISTVIEW(lParam)^.uNewState;
                 if abs(i)=$1000 then
                 begin
-                  SendMessage(GetParent(dialog),PSM_CHANGED,0,0);
+                  SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
                   if i<0 then
                     i:=wcShow
                   else
@@ -871,12 +871,12 @@ begin
 
     WM_MYSHOWHIDEITEM: begin
       InitDlg:=true;
-      ListView_SetCheckState(GetDlgItem(dialog,IDC_LIST),wParam,lParam<>0);
+      ListView_SetCheckState(GetDlgItem(Dialog,IDC_LIST),wParam,lParam<>0);
       InitDlg:=false;
     end;
 
     WM_MYMOVEITEM: begin
-      listhwnd:=GetDlgItem(dialog,IDC_LIST);
+      listhwnd:=GetDlgItem(Dialog,IDC_LIST);
       LV_MoveItem(listhwnd,lParam,wParam);
       itemsel:=wParam+lParam;
       i:=SizeOf(tcolumnitem)*abs(integer(lParam));
@@ -893,7 +893,7 @@ begin
     end;
 
     WM_COMMAND: begin
-      if ((wparam shr 16)=CBN_SELCHANGE) then
+      if ((wParam shr 16)=CBN_SELCHANGE) then
       begin
         case loword(wParam) of
           IDC_C_VARTYPE: begin
@@ -919,16 +919,16 @@ begin
       end;
 
       if not InitDlg then
-        case wparam shr 16 of
+        case wParam shr 16 of
           CBN_SELCHANGE,
           BN_CLICKED,
           EN_CHANGE: begin
-            SendMessage(GetParent(dialog),PSM_CHANGED,0,0);
-            enable_elem(dialog,IDC_SETITEM);
+            SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
+            enable_elem(Dialog,IDC_SETITEM);
           end;
         end;
 
-      listhwnd:=GetDlgItem(dialog,IDC_LIST);
+      listhwnd:=GetDlgItem(Dialog,IDC_LIST);
       result:=1;
       case loword(wParam) of
         IDC_SCRIPT: begin
@@ -990,7 +990,7 @@ begin
         end;
 
         IDC_SETITEM: begin
-          WndChangeColumns(wcChange,savecuritem(dialog));
+          WndChangeColumns(wcChange,savecuritem(Dialog));
         end;
 
         IDC_DEFAULT: begin

@@ -34,7 +34,7 @@ end;
 
 procedure SaveOpt;
 begin
-  DBWriteByte   (0,PluginShort,opt_playercaps,PlayerCaps);
+  DBWriteByte   (0,PluginShort,opt_PlayerCaps,PlayerCaps);
   DBWriteByte   (0,PluginShort,opt_LoCaseType,LoCaseType);
   DBWriteByte   (0,PluginShort,opt_ReplaceSpc,ReplaceSpc);
   DBWriteByte   (0,PluginShort,opt_FSPrec    ,FSPrecision);
