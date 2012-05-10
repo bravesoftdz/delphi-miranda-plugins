@@ -418,7 +418,7 @@ end;
 //----- work with handles -----
 function GetProcessHandleCount(hProcess:THANDLE;var pdwHandleCount:dword):bool; stdcall; external 'kernel32.dll';
 
-function NTQueryObject(ObjectHandle:THANDLE;ObjectInformationClass:integer;
+function NtQueryObject(ObjectHandle:THANDLE;ObjectInformationClass:integer;
          ObjectInformation:pointer;Length:ulong;var ResultLength:longint):cardinal; stdcall; external 'ntdll.dll';
 
 const
@@ -587,7 +587,7 @@ var
 begin
   result:=0;
 
-  if NTQueryObject(ptrec(param)^.handle,ObjectNameInformation,
+  if NtQueryObject(ptrec(param)^.handle,ObjectNameInformation,
      @TmpBuf,BufSize*SizeOf(WideChar),dummy)=0 then
   begin
     // UNICODE_STRING: 2b - length, 2b - maxlen, (align), next - pWideChar
@@ -615,7 +615,7 @@ begin
   result:=nil;
 {
   // check what it - file
-  if (NTQueryObject(Handle,ObjectTypeInformation,
+  if (NtQueryObject(Handle,ObjectTypeInformation,
      @TmpBuf,BufSize*SizeOf(WideChar),dummy)<>0) or
      (StrCmpW(TmpBuf+$30,'File')<>0) then
     Exit;

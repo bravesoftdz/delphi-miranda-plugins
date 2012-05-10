@@ -116,6 +116,8 @@ begin
     if btnMute<>nil then
     begin
       FillChar(med,SizeOf(med),0);
+      med.Button:=mbLeft;
+      med.StopHandling:=true;
       btnMute.OnMouseDown(btnMute,med);
   //    btnMute.Click; // without click processing
       btnMute.OnMouseUp  (btnMute,med);

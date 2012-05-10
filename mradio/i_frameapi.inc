@@ -97,7 +97,7 @@ begin
     end;
 
     WM_CTLCOLORSTATIC: begin
-      if lParam=hVolFrmCtrl then
+      if THANDLE(lParam)=hVolFrmCtrl then
       begin
         SetBkColor(wParam, frm_bkg);
         result:=hbr;

@@ -62,16 +62,17 @@ const
   IDC_9          = 1170;
 
   IDC_CONNECT    = 1072;
-  IDC_OFFLINE    = 1079;
+  IDC_OFFLINE    = 1073;
+  IDC_AUTOMUTE   = 1074;
 
-  IDC_STATUS     = 1073;
-  IDC_HLP_VARS   = 1074;
+  IDC_STATUS     = 1075;
+  IDC_HLP_VARS   = 1076;
 
-  IDC_IMPORT     = 1075;
-  IDC_EXPORT     = 1076;
+  IDC_IMPORT     = 1077;
+  IDC_EXPORT     = 1078;
 
-  IDC_EQ_ADD     = 1077;
-  IDC_EQ_DEL     = 1078;
+  IDC_EQ_ADD     = 1079;
+  IDC_EQ_DEL     = 1080;
 
   IDC_RADIO_MUTE = 1025;
   IDC_RADIO_VOL  = 1026;

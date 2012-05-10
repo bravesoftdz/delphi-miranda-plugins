@@ -38,6 +38,7 @@ FONT 8, "MS Shell Dlg", 0, 0
   AUTOCHECKBOX "Continuous record"         ,IDC_CONTREC  , 204, 76,98,22, BS_VCENTER | BS_MULTILINE
   AUTOCHECKBOX "Autoconnect last station"  ,IDC_CONNECT  , 204,100,98,22, BS_VCENTER | BS_MULTILINE
   AUTOCHECKBOX "Protocol depending status" ,IDC_OFFLINE  , 204,124,98,22, BS_VCENTER | BS_MULTILINE
+  AUTOCHECKBOX "Mute with Miranda"         ,IDC_AUTOMUTE , 204,148,98,22, BS_VCENTER | BS_MULTILINE
 
   PUSHBUTTON   "Import File", IDC_IMPORT, 204,188,98,16, BS_MULTILINE
   PUSHBUTTON   "Export All" , IDC_EXPORT, 204,206,98,16, BS_MULTILINE
@@ -152,7 +153,7 @@ BTN_RECDN ICON "ico\recoff.ico"
 
 LANGUAGE 0,0 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 0,0,2,1
+ FILEVERSION 0,0,2,2
  PRODUCTVERSION 0,0,8,0
  FILEFLAGSMASK $3F
  FILEOS 4 
@@ -166,12 +167,12 @@ BEGIN
       VALUE "CompanyName",""0 
       VALUE "Comments", "Plugin to play Internet radio"0 
       VALUE "FileDescription", "mRadio Mod plugin for Miranda IM"0 
-      VALUE "FileVersion", "0, 0, 2, 1 "0 
+      VALUE "FileVersion", "0, 0, 2, 2 "0 
       VALUE "InternalName", "mRadio Mod"0 
       VALUE "OriginalFilename", "mradio.dll"0 
       VALUE "ProductName", "mRadio Mod Dynamic Link Library (DLL)"0 
       VALUE "ProductVersion", "0, 0, 8, 0 "0 
-      VALUE "SpecialBuild", ".0.2011 "0 
+      VALUE "SpecialBuild", "10.05.2012 "0 
     END
   END
   BLOCK "VarFileInfo"
