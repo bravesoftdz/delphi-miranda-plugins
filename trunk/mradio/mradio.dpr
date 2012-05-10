@@ -117,12 +117,12 @@ begin
   result:=@PluginInfo;
   PluginInfo.cbSize     :=SizeOf(TPLUGININFOEX);
   PluginInfo.shortName  :='mRadio Mod';
-  PluginInfo.version    :=$00000201;
+  PluginInfo.version    :=$00000202;
   PluginInfo.description:='This plugin plays and records Internet radio streams.'+
                           ' Also local media files can be played.';
   PluginInfo.author     :='Awkward';
   PluginInfo.authorEmail:='panda75@bk.ru; awk1975@ya.ru';
-  PluginInfo.copyright  :='(c) 2007-2011 Awkward';
+  PluginInfo.copyright  :='(c) 2007-2012 Awkward';
   PluginInfo.homepage   :='http://code.google.com/p/delphi-miranda-plugins/';
   PluginInfo.flags      :=UNICODE_AWARE;
   PluginInfo.replacesDefaultModule:=0;
@@ -204,6 +204,7 @@ begin
   PlayFirst :=DBReadByte(0,PluginName,optPlayFirst);
   isEQ_OFF  :=DBReadByte(0,PluginName,optEQ_OFF);
   AuConnect :=DBReadByte(0,PluginName,optConnect);
+  AuMute    :=DBReadByte(0,PluginName,optAutoMute);
   AsOffline :=DBReadByte(0,PluginName,optOffline);
   gVolume   :=DBReadByte(0,PluginName,optVolume,50);
   NumTries  :=DBReadByte(0,PluginName,optNumTries,1);

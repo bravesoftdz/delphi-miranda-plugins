@@ -340,6 +340,7 @@ begin
       DBWriteByte(0,PluginName,optContRec  ,doContRec);
       DBWriteByte(0,PluginName,optPlayFirst,PlayFirst);
       DBWriteByte(0,PluginName,optConnect  ,AuConnect);
+      DBWriteByte(0,PluginName,optAutoMute ,AuMute);
       DBWriteByte(0,PluginName,optOffline  ,AsOffline);
 
       DBWriteUnicode(0,PluginName,optStatusTmpl,StatusTmpl);
@@ -366,6 +367,7 @@ begin
       CheckDlgButton(Dialog,IDC_CONTREC  ,doContRec);
       CheckDlgButton(Dialog,IDC_PLAYFIRST,PlayFirst);
       CheckDlgButton(Dialog,IDC_CONNECT  ,AuConnect);
+      CheckDlgButton(Dialog,IDC_AUTOMUTE ,AuMute);
       CheckDlgButton(Dialog,IDC_OFFLINE  ,AsOffline);
 
       SetDlgItemTextW(Dialog,IDC_STATUS,StatusTmpl);
@@ -425,7 +427,7 @@ begin
               end;
             end;
 
-            IDC_LOOP,IDC_SHUFFLE,IDC_CONTREC,IDC_CONNECT,IDC_OFFLINE:
+            IDC_LOOP,IDC_SHUFFLE,IDC_CONTREC,IDC_CONNECT,IDC_OFFLINE,IDC_AUTOMUTE:
               SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
 
             IDC_ADD_LIST,IDC_ADD_INI: begin
@@ -509,6 +511,7 @@ begin
         doContRec:=IsDlgButtonChecked(Dialog,IDC_CONTREC);
         PlayFirst:=IsDlgButtonChecked(Dialog,IDC_PLAYFIRST);
         AuConnect:=IsDlgButtonChecked(Dialog,IDC_CONNECT);
+        AuMute   :=IsDlgButtonChecked(Dialog,IDC_AUTOMUTE);
         AsOffline:=IsDlgButtonChecked(Dialog,IDC_OFFLINE);
 
         mFreeMem(StatusTmpl);
@@ -830,6 +833,31 @@ begin
 
   with PDBCONTACTWRITESETTING(lParam)^ do
   begin
+
+    if AuMute<>BST_UNCHECKED then
+    begin
+      if StrCmp(szModule,'Skin')=0 then
+      begin
+        if StrCmp(szSetting,'UseSound')=0 then
+        begin
+          // Mute
+          if value.bVal=0 then
+          begin
+            if gVolume>=0 then
+              Service_RadioMute(0,0);
+          end
+          // Unmute
+          else
+          begin
+            if gVolume<0 then
+              Service_RadioMute(0,0);
+          end;
+        end;
+
+        exit;
+      end
+    end;
+
     // works only if called AFTER changes
     if StrCmp(szModule,strCList)=0 then
     begin

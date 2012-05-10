@@ -6,6 +6,7 @@ const
   optActiveCodec:PAnsiChar = 'ActiveCodec';
   optLastStn    :PAnsiChar = 'LastStation';
   optConnect    :PAnsiChar = 'AutoConnect';
+  optAutoMute   :PAnsiChar = 'AutoMute';
   optEQ_OFF     :PAnsiChar = 'eqoff';
   optStatusMsg  :PAnsiChar = 'StatusMsg';
   optCurElement :PAnsiChar = 'LastPlayed';
@@ -77,20 +78,21 @@ var
   RemoteSong:bool;
   gVolume:integer;
   NumTries:cardinal;
-  doLoop:dword;
-  PlayFirst:dword;
-  doShuffle:dword;
-  ForcedMono:dword;
-  doContRec:dword;
-  AuConnect:dword;
-  AsOffline:dword;
-  isEQ_OFF:dword;
+  doLoop:cardinal;
+  PlayFirst:cardinal;
+  doShuffle:cardinal;
+  ForcedMono:cardinal;
+  doContRec:cardinal;
+  AuConnect:cardinal;
+  AuMute:cardinal;
+  AsOffline:cardinal;
+  isEQ_OFF:cardinal;
   PluginStatus:integer;
   storagep,storage:PAnsiChar;
   recpath:pWideChar;
   sBuffer,
   sTimeout,
-  sPreBuf:dword;
+  sPreBuf:cardinal;
 const
   hVolCtrl    :HWND=0;
   hVolFrmCtrl :HWND=0;
