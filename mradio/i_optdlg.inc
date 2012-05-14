@@ -145,20 +145,23 @@ begin
   if (lParam<>0) or ShowDlg(dst,'radio.ini',nil,true) then
   begin
     lstorage:=OpenStorage(dst);
-    list:=GetSectionList(lstorage);
-    
-    pc:=list;
-    while pc^<>#0 do
+    if lstorage<>nil then
     begin
-      section:=SearchSection(lstorage,pc);
-      if ImportOneStation(pAnsiChar(wParam),section)<>0 then inc(result);
-      while pc^<>#0 do inc(pc);
-      inc(pc);
+      list:=GetSectionList(lstorage);
+      
+      pc:=list;
+      while pc^<>#0 do
+      begin
+        section:=SearchSection(lstorage,pc);
+        if ImportOneStation(pAnsiChar(wParam),section)<>0 then inc(result);
+        while pc^<>#0 do inc(pc);
+        inc(pc);
+      end;
+
+      FreeSectionList(list);
+
+      CloseStorage(lstorage);
     end;
-
-    FreeSectionList(list);
-
-    CloseStorage(lstorage);
   end;
 end;
 

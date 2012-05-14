@@ -202,6 +202,8 @@ begin
   inherited;
 
   storage:=OpenStorageBuf(buf);
+  if storage=nil then
+    exit;
   sectionlist:=GetSectionList(storage);
   section:=SearchSection(storage,sectionlist);
   FreeSectionList(sectionlist);

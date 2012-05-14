@@ -139,6 +139,7 @@ begin
 
         RangeMin:=0;
         RangeMax:=100;
+        PageSize:=20;
 
         OnEraseBkGnd:=TOnPaint(MakeMethod(nil, @MyErase));
       end;
