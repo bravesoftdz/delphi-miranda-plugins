@@ -73,6 +73,7 @@ begin
 
       hVolFrmCtrl:=GetDlgItem(Dialog,IDC_RADIO_VOL);
       SendMessage(hVolFrmCtrl,TBM_SETRANGE,0,MAKELONG(0,100));
+      SendMessage(hVolFrmCtrl,TBM_SETPAGESIZE,0,20);
       SendMessage(hVolFrmCtrl,TBM_SETPOS,1,gVolume);
 
       OldSliderWndProc:=pointer(SetWindowLongPtrW(hVolFrmCtrl,GWL_WNDPROC,LONG_PTR(@SliderWndProc)));

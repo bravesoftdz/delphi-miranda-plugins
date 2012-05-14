@@ -997,7 +997,8 @@ begin
       TranslateDialogDefault(Dialog);
       RegisterIcons;
       storage:=OpenStorage(API_STRUCT_FILE);
-      FillTemplates(GetDlgItem(Dialog,IDC_DATA_TMPL),storage);
+      if storage<>nil then
+        FillTemplates(GetDlgItem(Dialog,IDC_DATA_TMPL),storage);
       if isVarsInstalled then
         SendDlgItemMessage(Dialog,IDC_VAR_HELP,BM_SETIMAGE,IMAGE_ICON,
           CallService(MS_VARS_GETSKINITEM,0,VSI_HELPICON));

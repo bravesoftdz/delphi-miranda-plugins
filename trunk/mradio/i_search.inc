@@ -185,19 +185,22 @@ begin
   ProtoBroadcastAck(PluginName,0,ACKTYPE_SEARCH,ACKRESULT_SEARCHRESULT,AckHandle,lparam(@csr));
 
   lstorage:=OpenStorage(ini);
-  list:=GetSectionList(lstorage);
-  pc:=list;
-
-  while pc^<>#0 do
+  if lstorage<>nil then
   begin
-    section:=SearchSection(lstorage,pc);
-    LoadOneStation(section,filter); //!!
-    while pc^<>#0 do inc(pc);
-    inc(pc);
-  end;
+    list:=GetSectionList(lstorage);
+    pc:=list;
 
-  FreeSectionList(list);
-  CloseStorage(lstorage);
+    while pc^<>#0 do
+    begin
+      section:=SearchSection(lstorage,pc);
+      LoadOneStation(section,filter); //!!
+      while pc^<>#0 do inc(pc);
+      inc(pc);
+    end;
+
+    FreeSectionList(list);
+    CloseStorage(lstorage);
+  end;
 
   ProtoBroadcastAck(PluginName,0,ACKTYPE_SEARCH,ACKRESULT_SUCCESS,AckHandle,0);
   mFreeMem(filter.lStation);
