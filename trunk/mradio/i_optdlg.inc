@@ -819,7 +819,7 @@ begin
 
   odp.pszTemplate:=MAKEINTRESOURCEA(IDD_SETTING_TECH);
   odp.pfnDlgProc :=@DlgProcOptTech;//!!
-  odp.szTab.a    :='Technical';
+  odp.szTab.a    :=Translate('Advanced');
   PluginLink^.CallService(MS_OPT_ADDPAGE,wParam,tlparam(@odp));
 
   result:=0;
@@ -924,7 +924,7 @@ function OnContactDeleted(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
   result:=0;
   if ActiveContact<>THANDLE(wParam) then exit;
-  CallService(MS_RADIO_COMMAND,MRC_STOP,wParam);
+  ControlCenter(MRC_STOP,wParam);
 
 {  if StrCmp(PAnsiChar(PluginLink^.CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0)),
              PluginName)<>0 then exit;

@@ -29,7 +29,7 @@ begin
 
     // record
     mi.flags:=CMIM_FLAGS or CMIM_ICON or CMIM_NAME;
-    if CallService(MS_RADIO_RECORD,0,1)<>0 then
+    if Service_RadioRecord(0,1)<>0 then
     begin
       mi.szName.a:='Stop record';
       mi.hIcon:=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnRecDn));

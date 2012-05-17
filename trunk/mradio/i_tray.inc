@@ -108,7 +108,7 @@ begin
     case id of
       0: ; // nothing
       startid+1: begin // mute
-        CallService(MS_RADIO_MUTE,0,0);
+        Service_RadioMute(0,0);
       end;
       startid+2: begin // play/pause
         CallService(MS_RADIO_COMMAND,MRC_PAUSE,0);
@@ -117,7 +117,7 @@ begin
         CallService(MS_RADIO_COMMAND,MRC_STOP,0);
       end;
     else // choose station
-      CallService(MS_RADIO_PLAYSTOP,id,0);
+      Service_RadioPlayStop(id,0);
     end;
     DestroyMenu(menu);
   end;

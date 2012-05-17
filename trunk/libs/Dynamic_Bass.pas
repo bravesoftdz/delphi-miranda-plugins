@@ -1,4 +1,4 @@
-{$DEFINE CHECK_PROC}
+{.$DEFINE CHECK_PROC}
 {
   BASS 2.4 Delphi unit (dynamic)
   Copyright (c) 1999-2008 Un4seen Developments Ltd.
@@ -156,19 +156,27 @@ const
   BASS_CONFIG_DEV_BUFFER    = 27;
   BASS_CONFIG_DEV_DEFAULT   = 36;
   BASS_CONFIG_NET_READTIMEOUT = 37;
+  BASS_CONFIG_VISTA_SPEAKERS = 38;
+  BASS_CONFIG_IOS_SPEAKER   = 39;
+  BASS_CONFIG_HANDLES       = 41;
+  BASS_CONFIG_UNICODE       = 42;
+  BASS_CONFIG_SRC           = 43;
+  BASS_CONFIG_SRC_SAMPLE    = 44;
 
   // BASS_SetConfigPtr options
   BASS_CONFIG_NET_AGENT     = 16;
   BASS_CONFIG_NET_PROXY     = 17;
 
   // Initialization flags
-  BASS_DEVICE_8BITS       = 1;    // use 8 bit resolution, else 16 bit
-  BASS_DEVICE_MONO        = 2;    // use mono, else stereo
-  BASS_DEVICE_3D          = 4;    // enable 3D functionality
-  BASS_DEVICE_LATENCY     = 256;  // calculate device latency (BASS_INFO struct)
-  BASS_DEVICE_CPSPEAKERS  = 1024; // detect speakers via Windows control panel
-  BASS_DEVICE_SPEAKERS    = 2048; // force enabling of speaker assignment
-  BASS_DEVICE_NOSPEAKER   = 4096; // ignore speaker arrangement
+  BASS_DEVICE_8BITS       = 1;     // use 8 bit resolution, else 16 bit
+  BASS_DEVICE_MONO        = 2;     // use mono, else stereo
+  BASS_DEVICE_3D          = 4;     // enable 3D functionality
+  BASS_DEVICE_LATENCY     = $100;  // calculate device latency (BASS_INFO struct)
+  BASS_DEVICE_CPSPEAKERS  = $400;  // detect speakers via Windows control panel
+  BASS_DEVICE_SPEAKERS    = $800;  // force enabling of speaker assignment
+  BASS_DEVICE_NOSPEAKER   = $1000; // ignore speaker arrangement
+  BASS_DEVICE_DMIX        = $2000; // use ALSA "dmix" plugin
+  BASS_DEVICE_FREQ        = $4000; // set device sample rate
 
   // DirectSound interfaces (for use with BASS_GetDSoundObject)
   BASS_OBJECT_DS          = 1;   // IDirectSound
@@ -384,6 +392,8 @@ const
   BASS_ATTRIB_PAN                   = 3;
   BASS_ATTRIB_EAXMIX                = 4;
   BASS_ATTRIB_NOBUFFER              = 5;
+  BASS_ATTRIB_CPU                   = 7;
+  BASS_ATTRIB_SRC                   = 8;
   BASS_ATTRIB_MUSIC_AMPLIFY         = $100;
   BASS_ATTRIB_MUSIC_PANSEP          = $101;
   BASS_ATTRIB_MUSIC_PSCALER         = $102;
@@ -416,8 +426,12 @@ const
   BASS_TAG_ICY           = 4;      // ICY headers : series of null-terminated ANSI strings
   BASS_TAG_META          = 5;      // ICY metadata : ANSI string
   BASS_TAG_APE           = 6;      // APEv2 tags : series of null-terminated UTF-8 strings
+  BASS_TAG_MP4           = 7;      // MP4/iTunes metadata : series of null-terminated UTF-8 strings
   BASS_TAG_VENDOR        = 9;      // OGG encoder : UTF-8 string
   BASS_TAG_LYRICS3       = 10;     // Lyric3v2 tag : ASCII string
+  BASS_TAG_CA_CODEC      = 11;     // CoreAudio codec info : TAG_CA_CODEC structure
+  BASS_TAG_MF            = 13;     // Media Foundation tags : series of null-terminated UTF-8 strings
+  BASS_TAG_WAVEFORMAT    = 14;     // WAVE format : WAVEFORMATEEX structure
   BASS_TAG_RIFF_INFO     = $100;   // RIFF "INFO" tags : series of null-terminated ANSI strings
   BASS_TAG_RIFF_BEXT     = $101;   // RIFF/BWF "bext" tags : TAG_BEXT structure
   BASS_TAG_RIFF_CART     = $102;   // RIFF/BWF "cart" tags : TAG_CART structure
@@ -504,7 +518,7 @@ type
     latency  : DWORD; // delay (in ms) before start of playback (requires BASS_DEVICE_LATENCY)
     initflags: DWORD; // BASS_Init "flags" parameter
     speakers : DWORD; // number of speakers available
-    freq     : DWORD; // current output rate (OSX only)
+    freq     : DWORD; // current output rate
   end;
 
   // Recording device info structure
@@ -513,7 +527,7 @@ type
     formats : DWORD; // supported standard formats (WAVE_FORMAT_xxx flags)
     inputs  : DWORD; // number of inputs
     singlein: BOOL;  // only 1 input can be set at a time
-    freq    : DWORD; // current input rate (OSX only)
+    freq    : DWORD; // current input rate
   end;
 
   // Sample info structure
@@ -546,11 +560,17 @@ type
     origres : DWORD;     // original resolution
     plugin  : HPLUGIN;   // plugin
     sample  : HSAMPLE;   // sample
+    {$IFDEF CPUX64}
+    padding: DWORD;
+    {$ENDIF}
     filename: PAnsiChar; // filename
   end;
 
   BASS_PLUGINFORM = record
     ctype: DWORD;     // channel type
+    {$IFDEF CPUX64}
+    padding: DWORD;
+    {$ENDIF}
     name : PAnsiChar; // format description
     exts : PAnsiChar; // file extension filter (*.ext1;*.ext2;etc...)
   end;
@@ -710,13 +730,8 @@ type
 
 const
   // special STREAMPROCs
-  {$IFNDEF FPC}
-  STREAMPROC_DUMMY : STREAMPROC = STREAMPROC(0);  // "dummy" stream
-  STREAMPROC_PUSH  : STREAMPROC = STREAMPROC(-1); // push stream
-  {$ELSE}
   STREAMPROC_DUMMY : pointer = pointer(0);  // "dummy" stream
   STREAMPROC_PUSH  : pointer = pointer(-1); // push stream
-  {$ENDIF}
 
 type
 

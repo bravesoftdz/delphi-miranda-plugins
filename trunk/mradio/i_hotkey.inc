@@ -15,7 +15,7 @@ const
 function mRadio_Hotkey(wParam:WPARAM;lParam:LPARAM):int_ptr; cdecl;
 begin
   if lParam=MRC_MUTE then
-    result:=CallService(MS_RADIO_MUTE,0,0)
+    result:=Service_RadioMute(0,0)
   else
     result:=CallService(MS_RADIO_COMMAND,lParam,0);
 end;

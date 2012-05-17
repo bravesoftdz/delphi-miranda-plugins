@@ -59,7 +59,7 @@ end;
 
 function DoAction(action:integer):integer;
 begin
-  result:=CallService(MS_RADIO_MUTE,0,1);
+  result:=Service_RadioMute(0,1);
 end;
 
 function ColorReload(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -222,7 +222,7 @@ begin
       hbr:=0;
       colorhook:=PluginLink^.HookEvent(ME_COLOUR_RELOAD,@ColorReload);
       ColorReload(0,0);
-      CallService(MS_RADIO_SETVOL,gVolume,0);
+      Service_RadioSetVolume(gVolume,0);
     end;
   end;
 end;

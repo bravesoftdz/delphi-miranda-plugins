@@ -83,7 +83,7 @@ begin
   ood.cbSize:=SizeOf(ood);
   ood.pszGroup:='Network';
   ood.pszPage :=PluginName;
-  ood.pszTab  :='Technical';
+  ood.pszTab  :=Translate('Advanced');
   CallService(MS_OPT_OPENOPTIONS,0,tlparam(@ood));
 end;
 
@@ -92,6 +92,27 @@ begin
   if lParam<>0 then lParam:=TLPARAM(-1) else lParam:=0;
 
   result:=CallService(MS_RADIO_COMMAND,MRC_RECORD,lParam);
+end;
+
+function Service_RadioGetVolume(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+begin
+  result:=gVolume;
+end;
+
+function Service_RadioSetVolume(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+begin
+  result:=Service_RadioGetVolume(0,0);
+  SetSndVol(wParam);
+
+  DBWriteByte(0,PluginName,optVolume,ABS(wParam));
+  if lParam<>2 then // not from Frame
+    if hVolFrmCtrl<>0 then
+      SendMessage(hVolFrmCtrl,TBM_SETPOS,1,ABS(wParam));
+
+  if lParam<>1 then // not from Settings
+    if hVolCtrl<>0 then
+      SendMessage(hVolCtrl,TBM_SETPOS,1,ABS(wParam));
+
 end;
 
 function Service_RadioMute(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -106,7 +127,7 @@ begin
     gVolume:=-1
   else
     gVolume:=-gVolume;
-  Result:=CallService(MS_RADIO_SETVOL,gVolume,0);
+  Result:=Service_RadioSetVolume(gVolume,0);
   if hVolFrmCtrl<>0 then
     EnableWindow(hVolFrmCtrl,gVolume>=0);
 
@@ -134,27 +155,6 @@ begin
     SetButtonIcon(hMuteFrmCtrl,tmp);
   end;
 {$ENDIF}
-end;
-
-function Service_RadioGetVolume(wParam:WPARAM;lParam:LPARAM):int;cdecl;
-begin
-  result:=gVolume;
-end;
-
-function Service_RadioSetVolume(wParam:WPARAM;lParam:LPARAM):int;cdecl;
-begin
-  result:=Service_RadioGetVolume(0,0);
-  SetSndVol(wParam);
-
-  DBWriteByte(0,PluginName,optVolume,ABS(wParam));
-  if lParam<>2 then // not from Frame
-    if hVolFrmCtrl<>0 then
-      SendMessage(hVolFrmCtrl,TBM_SETPOS,1,ABS(wParam));
-
-  if lParam<>1 then // not from Settings
-    if hVolCtrl<>0 then
-      SendMessage(hVolCtrl,TBM_SETPOS,1,ABS(wParam));
-
 end;
 
 function Service_EqOnOff(wParam:WPARAM;lParam:LPARAM):int;cdecl;
