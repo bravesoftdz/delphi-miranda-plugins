@@ -6,6 +6,8 @@ const
   client_ver = '1.0';
   api_key    = '51f5d25159da31b0814609c3a12900e2';
 *)
+{$include i_cookies.inc}
+
 const API_URL = 'http://api.myshows.ru/';
 
 const
@@ -13,8 +15,8 @@ const
 
 procedure ShowError(code:integer);
 var
-  buf:array [0..511] of AnsiChar;
-  ppc:pAnsiChar;
+  buf:array [0..511] of WideChar;
+  ppc:pWideChar;
 begin
   case code of
     401: begin // Требуется авторизация
@@ -32,12 +34,12 @@ begin
   else
     ppc:='something wrong!';
   end;
-  StrCopy(StrCopyE(buf,'MyShows: '),Translate(ppc));
+  StrCopyW(StrCopyEW(buf,'MyShows: '),TranslateW(ppc));
   
-  if PluginLink^.ServiceExists(MS_POPUP_SHOWMESSAGE)<>0 then
-    CallService(MS_POPUP_SHOWMESSAGE,TWPARAM(@buf),SM_WARNING)
+  if PluginLink^.ServiceExists(MS_POPUP_SHOWMESSAGEW)<>0 then
+    CallService(MS_POPUP_SHOWMESSAGEW,TWPARAM(@buf),SM_WARNING)
   else
-    MessageBoxA(0,@buf,'ERROR',MB_ICONERROR)
+    MessageBoxW(0,@buf,'ERROR',MB_ICONERROR)
 end;
 
 function GetMD5Str(digest:TMD5Hash; buf:pAnsiChar):PAnsiChar;
@@ -88,7 +90,8 @@ begin
   StrReplace(request,'<login>'   ,login);
   StrReplace(request,'<password>',buf);
 
-  res:=SendRequest(request,REQUEST_GET);
+  res:=SendRequestCookies(request,false);
+//  res:=SendRequest(request,REQUEST_GET);
   if res<>nil then
   begin
     if uint_ptr(res)<$0FFF then
@@ -122,43 +125,50 @@ begin
   result:=dst;
 end;
 
-function SendMSRequest(request:pAnsiChar;doShowError:boolean):pAnsiChar;
+function SendMSRequest(request:pAnsiChar;doShowError:boolean):boolean;
+var
+  res:pAnsiChar;
 begin
-  result:=SendRequest(request,REQUEST_GET);
-  if uint_ptr(result)<$0FFF then
+  result:=true;
+  res:=SendRequestCookies(request,true);
+  if (unit_ptr(res)<>200) and (uint_ptr(res)<$0FFF) then
   begin
-//!!    if int_ptr(result)=401 then
+//!!    if int_ptr(res)=401 then
     begin
       Handshake(msh_login,msh_password);
 
-      result:=SendRequest(request,REQUEST_GET);
+      res:=SendRequestCookies(request,true);
     end;
-    if (uint_ptr(result)<$0FFF) and doShowError then
-      ShowError(int_ptr(result));
+    if (uint_ptr(res)<$0FFF) then
+      if (uint_ptr(res)<>200) and doShowError then
+      begin
+        ShowError(int_ptr(res));
+        result:=false;
+      end;
   end;
 end;
 
-function Scrobble:integer;
+function Scrobble:boolean;
 var
   si:pSongInfoA;
   buf:array [0..511] of AnsiChar;
-  request:array [0..511] of AnsiChar;
+  bufw:array [0..511] of WideChar;
   res,pc:PAnsiChar;
   shId,epId:pAnsiChar;
   json:TJSONSERVICEINTERFACE;
   jn,jroot:PJSONNODE;
 begin
-  result:=-1;
+  result:=false;
 
   si:=pointer(CallService(MS_WAT_RETURNGLOBAL,WAT_INF_UTF8,0));
   Encode(buf,si.mfile);
   pc:=Extract(buf,true);
-
+  
   // Episode search by filename
-  StrCopy(StrCopyE(request,API_URL+'shows/search/file/?q='),pc);
+  StrCopy(StrCopyE(buf,API_URL+'shows/search/file/?q='),pc);
   mFreeMem(pc);
-  res:=SendRequest(request,REQUEST_GET);
-  if (res<>nil) and (uint_ptr(res)>$0FFF) then
+  res:=SendRequest(buf,REQUEST_GET);
+  if uint_ptr(res)>$0FFF then
   begin
     CallService(MS_JSON_GETINTERFACE,wparam(@json),0);
 
@@ -185,13 +195,39 @@ episodes:{:{id:
 
   // Show mark as "watching"
   StrCopy(StrCopyE(StrCopyE(request,API_URL+'profile/shows/'),shId),'/watching');
-  SendMSRequest(request,false);
-  json.free(shId);
+  if SendMSRequest(request,false) then
+  begin
+    // Episode check
+    StrCopy(StrCopyE(request,API_URL+'profile/episodes/check/'),epId);
+  //  StrCopy(request,API_URL+'profile/shows/');
+    if SendMSRequest(request,true) then
+    begin
+      //!! add option to show it??
+      if PluginLink^.ServiceExists(MS_POPUP_SHOWMESSAGE)<>0 then
+      begin
+        json.free(shId);
+        json.free(epId);
 
-  // Episode check
-  StrCopy(StrCopyE(request,API_URL+'profile/episodes/check/'),epId);
-//  StrCopy(request,API_URL+'profile/shows/');
-  SendMSRequest(request,true);
+        jn:=json.get(jroot,'show');
+        shId:=json.as_string(json.get(jn,'title'));
+        jn:=json.get(jn,'episodes');
+        epId:=json.as_string(json.get(jn,'title'));
+
+        StrCopy(
+          StrCopyE(
+            StrCopyE(
+              StrCopyE(
+                StrCopyE(bufw,'Show "'),
+              shId),
+            '"'#13#10'episode "'),
+          epId),
+        '" checked');
+        CallService(MS_POPUP_SHOWMESSAGEW,TWPARAM(@buf),SM_NOTIFY);
+      end;
+      result:=true;
+    end;
+  end;
+  json.free(shId);
   json.free(epId);
 
   json.delete_(jroot);

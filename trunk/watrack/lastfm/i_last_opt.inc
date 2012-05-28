@@ -32,8 +32,8 @@ begin
   if lfm_password<>nil then
     CallService(MS_DB_CRYPT_DECODESTRING,StrLen(lfm_password)+1,lparam(lfm_password));
   if (lfm_login=nil) or (lfm_password=nil) then
-    CallService(MS_POPUP_SHOWMESSAGE,
-      wparam(Translate('Don''t forget to enter Login and Password to use Last.fm service')),
+    CallService(MS_POPUP_SHOWMESSAGEW,
+      wparam(TranslateW('Don''t forget to enter Login and Password to use Last.fm service')),
       SM_WARNING);
 end;
 

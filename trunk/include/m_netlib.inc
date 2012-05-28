@@ -545,6 +545,60 @@ const
   }
   MS_NETLIB_BASE64ENCODE:PAnsiChar = 'Netlib/Base64Encode';
 
+{
+  Converts string representation of IP and port into numerical SOCKADDR_INET
+  IPv4 could supplied in formats address:port or address
+  IPv6 could supplied in formats [address]:port or [address]
+  wParam=(WPARAM)(char*) string to convert
+  lParam=(LPARAM)(SOCKADDR_INET*) numeric IP address structure
+  Returns 0 on success
+}
+  MS_NETLIB_STARINGTOADDRESS:PAnsiChar = 'Netlib/StringToAddress';
+
+{
+  Converts numerical representation of IP in SOCKADDR_INET into string representation with IP and port 
+  IPv4 will be supplied in formats address:port or address
+  IPv6 will be supplied in formats [address]:port or [address]
+  wParam=(WPARAM)(int) 0 - lParam - (SOCKADDR_INET*); 1 - lParam - (unsigned) in host byte order
+  lParam=(LPARAM)(SOCKADDR_INET*) or (unsigned) numeric IP address structure
+  Returns pointer to the string or NULL if not successful 
+}
+  MS_NETLIB_ADDRESSTOSTRING:PAnsiChar = 'Netlib/AddressToString';
+
+type
+  TNETLIBCONNINFO = record
+	  cbSize:int;
+	  szIpPort:array [0..63] of AnsiChar;
+	  dwIpv4:uint;
+	  wPort:word;
+  end;
+
+const
+{
+  Get connection Information
+  IPv4 will be supplied in formats address:port or address
+  IPv6 will be supplied in formats [address]:port or [address]
+  wParam=(WPARAM)(HANDLE)hConnection
+  lParam=(LPARAM)(NETLIBCONNINFO*) pointer to the connection information structure to fill
+  Returns 0 if successful  
+}
+  MS_NETLIB_GETCONNECTIONINFO:PAnsiChar = 'Netlib/GetConnectionInfo';
+
+type
+  TNETLIBIPLIST = record
+	  cbNum:uint;
+	  szIp:array[0..0,0..63] of AnsiChar;
+  end;
+
+const
+{
+  Get connection Information
+  wParam=(WPARAM)IP filter 1 - return global only IPv6 address, 0 all IPs
+  Returns (INT_PTR)(NETLIBIPLIST*) numeric IP address address array 
+  the last element of the array is all 0s, 0 if not successful
+}
+  MS_NETLIB_GETMYIP:PAnsiChar = 'Netlib/GetMyIP';
+
   {
     wParam : HANDLE
     lParam : Pointer to a initialised TNETLIBHTTPREQUEST structure

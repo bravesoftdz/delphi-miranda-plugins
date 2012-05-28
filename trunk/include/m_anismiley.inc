@@ -93,10 +93,10 @@ const
 
 // Extended NMHDR structure for WM_NOTIFY
 type
-  TFVCNDATA_NMHDR = packed record
+  TFVCNDATA_NMHDR = record
     //NMHDR structure
     hwndFrom     :HWND;      // Window of smiley host
-    idFrom       :uint;      // ignored
+    idFrom       :uint_ptr;  // ignored
     code         :uint;      // NM_FIREVIEWCHANGE
     
     cbSize       :size_t;

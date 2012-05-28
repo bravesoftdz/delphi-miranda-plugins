@@ -13,7 +13,7 @@ uses
   srv_format,srv_player,wat_api,wrapper,
   common,syswin,HlpDlg,mirutils
   ,global,waticons,io,macros, msninfo
-//  ,myshows   in 'myshows\myshows.pas' // no ccokies = no myshows
+  ,myshows   in 'myshows\myshows.pas'
   ,lastfm    in 'lastfm\lastfm.pas'
   ,statlog   in 'stat\statlog.pas'
   ,popups    in 'popup\popups.pas'
@@ -527,7 +527,7 @@ begin
     PluginLink^.CallService(MS_UPDATE_REGISTER,0,tlparam(@upd));
   end;
 
-  CallService('DBEditorpp/RegisterSingleModule',twparam(PluginShort),0);
+  CallService(MS_DBEDIT_REGISTERSINGLEMODULE,twparam(PluginShort),0);
 
   hTimer:=0;
 
