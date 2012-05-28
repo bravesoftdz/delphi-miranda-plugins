@@ -200,7 +200,7 @@ var
 begin
   PluginLink^.UnhookEvent(onloadhook);
 
-  PluginLink^.CallService('DBEditorpp/RegisterSingleModule',twparam(qs_module),0);
+  PluginLink^.CallService(MS_DBEDIT_REGISTERSINGLEMODULE,twparam(qs_module),0);
 
   if PluginLink^.ServiceExists(MS_UPDATE_REGISTER)<>0 then
   begin

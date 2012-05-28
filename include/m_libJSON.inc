@@ -61,7 +61,7 @@ type
     merge           : procedure (node:PJSONNODE; node2:PJSONNODE);cdecl;
     preparse        : procedure (node:PJSONNODE);cdecl;
     set_binary      : procedure (node:PJSONNODE; data:pointer; length:ulong);cdecl;
-    cast            : procedure (node:PJSONNODE; _type:char);cdecl;
+    cast            : procedure (node:PJSONNODE; _type:AnsiChar);cdecl;
     reserve         : procedure (node:PJSONNODE; siz:uint);cdecl;
     at              : function (node:PJSONNODE; pos:uint):PJSONNODE;cdecl;
     get             : function (node:PJSONNODE; name:PAnsiChar):PJSONNODE;cdecl;

@@ -97,9 +97,9 @@ begin
       // need to use half of movie len if presents
       if msh_on=0 then
       begin
-        if PluginLink^.ServiceExists(MS_JSON_GETINTERFACE)<>0 then
+        if pSongInfo(lParam).width>0 then // for video only
         begin
-          if pSongInfo(lParam).width>0 then // for video only
+          if PluginLink^.ServiceExists(MS_JSON_GETINTERFACE)<>0 then
           begin
             timervalue:=5000;//(pSongInfo(lParam).total div 2)*1000; // to msec
             if timervalue=0 then
@@ -305,6 +305,8 @@ begin
   mFreeMem(sub_url);
 
   msh_on:=msh_on or 4;
+
+  mFreeMem(cookies); //!!
 end;
 
 var

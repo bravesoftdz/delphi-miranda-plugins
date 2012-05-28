@@ -6,7 +6,7 @@
 
 type
   pSongInfoA = ^tSongInfoA;
-  tSongInfoA = packed record
+  tSongInfoA = record
     artist   :PAnsiChar;
     title    :PAnsiChar;
     album    :PAnsiChar;
@@ -43,7 +43,7 @@ type
   end;
 type
   pSongInfo=^tSongInfo;
-  tSongInfo = packed record
+  tSongInfo = record
     artist   :pWideChar;
     title    :pWideChar;
     album    :pWideChar;
@@ -277,7 +277,7 @@ const
 type
   tReadFormatProc = function(var Info:tSongInfo):boolean; cdecl;
   pMusicFormat = ^tMusicFormat;
-  tMusicFormat = packed record
+  tMusicFormat = record
     proc :tReadFormatProc;
     ext  :array [0..7] of AnsiChar;
     flags:cardinal;
@@ -315,7 +315,7 @@ type
   tCommandProc = function(wnd:HWND;command:integer;value:integer):integer;cdecl;
 
   pPlayerCell = ^tPlayerCell;
-  tPlayerCell = packed record
+  tPlayerCell = record
     Desc     :PAnsiChar; // Short player name
     flags    :cardinal;
     Icon     :HICON;     // can be 0. for registration only
@@ -372,7 +372,7 @@ const
 }
 type
   pLastFMInfo = ^tLastFMInfo;
-  tLastFMInfo = packed record
+  tLastFMInfo = record
     request:cardinal;   // 0 - artist, 1 - album, 2 - track
     artist :pWideChar; // artist
     album  :pWideChar; // album or similar artists for Artist info request

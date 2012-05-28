@@ -20,7 +20,7 @@ const
 
 implementation
 
-uses {$IFDEF KOL_MCK}kol,{$ENDIF}messages,commctrl,sr_global,common,dbsettings,mirutils,
+uses messages,commctrl,sr_global,common,dbsettings,mirutils,
     wrapper,sr_optdialog,protocols;
 
 const

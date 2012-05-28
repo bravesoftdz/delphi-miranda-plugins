@@ -92,7 +92,7 @@ const
   {
     wParam : bOpenInNewWindow
     lParam : Pointer to a null terminated string containing Url
-    Affect : Open a URRL in the user's default web browser, see notes
+    Affect : Open a URL in the user's default web browser, see notes
     Returns: 0 on success, [non zero on failure]
     Notes  : bOpenInWindow should be zero to open the URL in the browoser window
              the user last used, or nonzero to open in a new browser window,
@@ -262,7 +262,8 @@ const
              Remember to delete the returned handle with DeleteObject (see GDI documentation for WINAPI)
     Version: v0.1.2.1+
   }
-  MS_UTILS_LOADBITMAP:PAnsiChar = 'Utils/LoadBitmap';
+  MS_UTILS_LOADBITMAP :PAnsiChar = 'Utils/LoadBitmap';
+  MS_UTILS_LOADBITMAPW:PAnsiChar = 'Utils/LoadBitmapW';
 
   {
       wParam : byte length of buffer (not to be confused with byte range)
