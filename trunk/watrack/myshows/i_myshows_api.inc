@@ -131,7 +131,7 @@ var
 begin
   result:=true;
   res:=SendRequestCookies(request,true);
-  if (unit_ptr(res)<>200) and (uint_ptr(res)<$0FFF) then
+  if (uint_ptr(res)<>200) and (uint_ptr(res)<$0FFF) then
   begin
 //!!    if int_ptr(res)=401 then
     begin
@@ -152,7 +152,7 @@ function Scrobble:boolean;
 var
   si:pSongInfoA;
   buf:array [0..511] of AnsiChar;
-  bufw:array [0..511] of WideChar;
+//  bufw:array [0..511] of WideChar;
   res,pc:PAnsiChar;
   shId,epId:pAnsiChar;
   json:TJSONSERVICEINTERFACE;
@@ -194,13 +194,13 @@ episodes:{:{id:
   end;
 
   // Show mark as "watching"
-  StrCopy(StrCopyE(StrCopyE(request,API_URL+'profile/shows/'),shId),'/watching');
-  if SendMSRequest(request,false) then
+  StrCopy(StrCopyE(StrCopyE(buf,API_URL+'profile/shows/'),shId),'/watching');
+  if SendMSRequest(buf,false) then
   begin
     // Episode check
-    StrCopy(StrCopyE(request,API_URL+'profile/episodes/check/'),epId);
+    StrCopy(StrCopyE(buf,API_URL+'profile/episodes/check/'),epId);
   //  StrCopy(request,API_URL+'profile/shows/');
-    if SendMSRequest(request,true) then
+    if SendMSRequest(buf,true) then
     begin
       //!! add option to show it??
       if PluginLink^.ServiceExists(MS_POPUP_SHOWMESSAGE)<>0 then
@@ -217,12 +217,12 @@ episodes:{:{id:
           StrCopyE(
             StrCopyE(
               StrCopyE(
-                StrCopyE(bufw,'Show "'),
+                StrCopyE(buf,'Show "'),
               shId),
             '"'#13#10'episode "'),
           epId),
         '" checked');
-        CallService(MS_POPUP_SHOWMESSAGEW,TWPARAM(@buf),SM_NOTIFY);
+        CallService(MS_POPUP_SHOWMESSAGE,TWPARAM(@buf),SM_NOTIFY);
       end;
       result:=true;
     end;
