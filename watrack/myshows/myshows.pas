@@ -15,14 +15,26 @@ const
   opt_ModStatus:PAnsiChar = 'module/myshows';
 const
   IcoMyShows:pAnsiChar = 'WATrack_myshows';
+type
+  tMyShowsData = record
+    series      :PAnsiChar;
+    series_id   :PAnsiChar;
+    kinopoisk_id:PAnsiChar;
+    episode     :PAnsiChar;
+    episode_id  :PAnsiChar;
+    info        :PAnsiChar;
+    image       :PAnsiChar;
+  end;
 var
   md5:TMD5_INTERFACE;
-  msh_tries:integer;
+  msh_tries,
+//  msh_timeout,
+  msh_scrobpos:integer;
   sic:THANDLE;
   slastinf:THANDLE;
   slast:THANDLE;
+  MSData:tMyShowsData;
 const
-//  msh_lang    :integer=0;
   msh_on      :integer=0;
   hMenuMyShows:HMENU = 0;
   msh_login   :pAnsiChar=nil;
@@ -30,6 +42,18 @@ const
   session_id  :pAnsiChar=nil;
   np_url      :pAnsiChar=nil;
   sub_url     :pAnsiChar=nil;
+
+procedure ClearData;
+begin
+  mFreeMem(MSData.series);
+  mFreeMem(MSData.series_id);
+  mFreeMem(MSData.kinopoisk_id);
+  mFreeMem(MSData.episode);
+  mFreeMem(MSData.episode_id);
+  mFreeMem(MSData.info);
+  mFreeMem(MSData.image);
+  FillChar(MSData,SizeOf(MSData),0);
+end;
 
 function GetModStatus:integer;
 begin
@@ -45,23 +69,15 @@ end;
 {$i i_myshows_opt.inc}
 {$i i_myshows_api.inc}
 
-function ThScrobble(param:LPARAM):dword; //stdcall;
-{
+function ThScrobble(param:LPARAM):integer; //stdcall;
 var
   count:integer;
-  npisok:bool;
 begin
   count:=msh_tries;
-  npisok:=false;
-  while count>0 do
-  begin
-    if Scrobble>=0 then break;
+  repeat
+    if Scrobble then break;
     dec(count);
-  end;
-  if count=0 then ;
-}
-begin
-  Scrobble;
+  until count<=0;
   result:=0;
 end;
 
@@ -101,10 +117,10 @@ begin
         begin
           if PluginLink^.ServiceExists(MS_JSON_GETINTERFACE)<>0 then
           begin
-            timervalue:=5000;//(pSongInfo(lParam).total div 2)*1000; // to msec
+            timervalue:=pSongInfo(lParam).total*10*msh_scrobpos; // 1000(msec) div 100(%)
             if timervalue=0 then
               timervalue:=DefTimerValue;
-            hTimer:=SetTimer(0,0,timervalue,@TimerProc)
+            hTimer:=SetTimer(0,0,timervalue,@TimerProc);
           end;
         end;
       end;

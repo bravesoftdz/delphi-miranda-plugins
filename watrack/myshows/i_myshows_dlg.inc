@@ -1,95 +1,125 @@
 {}
-(*
+
+const
+  kinopoisk_info = 'http://www.kinopoisk.ru/level/1/film/';
+
 procedure ClearInfo(dlg:HWND);
 begin
-  SetDlgItemTextW(dlg,IDC_DATA_ARTIST,'');
-  SetDlgItemTextW(dlg,IDC_DATA_ALBUM ,'');
-  SetDlgItemTextW(dlg,IDC_DATA_TRACK ,'');
-  SetDlgItemTextW(dlg,IDC_DATA_TAGS  ,'');
-  SetDlgItemTextW(dlg,IDC_DATA_INFO  ,'');
+  SetDlgItemTextW(dlg,IDC_DATA_SERIES ,'');
+  SetDlgItemTextW(dlg,IDC_DATA_EPISODE,'');
+  SetDlgItemTextW(dlg,IDC_DATA_TAGS   ,'');
+  SetDlgItemTextW(dlg,IDC_DATA_TAGS   ,'');
+  SetDlgItemTextW(dlg,IDC_DATA_INFO   ,'');
 end;
 
-procedure ClearData(data:tLastFMInfo);
-begin
-  mFreeMem(data.artist);
-  mFreeMem(data.album);
-  mFreeMem(data.title);
-  mFreeMem(data.tags);
-  mFreeMem(data.info);
-  mFreeMem(data.image);
-end;
-*)
 function DlgProcOptions(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
+const
+  inited:bool=false;
 var
   tmp:longbool;
-//  bmp,wnd:HWND;
-//  lang:integer;
-//  data:tMyShowsInfo;
+  bmp,wnd:HWND;
+  buf:array [0..255] of AnsiChar;
 begin
   result:=0;
   case hMessage of
     WM_INITDIALOG: begin
+      inited:=false;
       TranslateDialogDefault(Dialog);
 
       SetDlgItemTextA(Dialog,IDC_LOGIN,msh_login);
       SetDlgItemTextA(Dialog,IDC_PASS ,msh_password);
       SetDlgItemInt  (Dialog,IDC_TRIES,msh_tries,false);
+//      SetDlgItemInt  (Dialog,IDC_TIME ,msh_timeout,false);
+//      ClearInfo(Dialog);
+//      EnableWindow(GetDlgItem(Dialog,IDC_KINOPOISK),false);
+
+      SendDlgItemMessage(Dialog,IDC_SCROBPOS,TBM_SETRANGE,0,MAKELONG(0,100));
+      SendDlgItemMessage(Dialog,IDC_SCROBPOS,TBM_SETPOS,1,msh_scrobpos);
+      inited:=true;
+    end;
+
+    WM_HSCROLL: begin
+      SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
     end;
 
     WM_COMMAND: begin
-      case wParam shr 16 of
-         BN_CLICKED: begin
-//           ClearInfo(Dialog);
-//           FillChar(data,SizeOf(data),0);
-{
-           if loword(wParam)=IDC_INFO_ARTIST then
-           begin
-             SetDlgItemTextW(Dialog,IDC_ALT,TranslateW('Similar artists'));
-             GetArtistInfo(data,msh_lang);
-             SetDlgItemTextW(Dialog,IDC_DATA_ALBUM,data.similar);
-           end
-           else
-           begin
-             SetDlgItemTextW(Dialog,IDC_ALT,TranslateW('Album'));
-             if loword(wParam)=IDC_INFO_TRACK then
-               GetTrackInfo (data,msh_lang)
-             else
-               GetAlbumInfo (data,msh_lang);
-             SetDlgItemTextW(Dialog,IDC_DATA_ALBUM,data.album);
-           end;
-}
-{
-           SetDlgItemTextW(Dialog,IDC_DATA_ARTIST,data.artist);
-           SetDlgItemTextW(Dialog,IDC_DATA_TRACK ,data.title);
-           SetDlgItemTextW(Dialog,IDC_DATA_TAGS  ,data.tags);
-           SetDlgItemTextW(Dialog,IDC_DATA_INFO  ,data.info);
-}
-{
-           bmp:=LoadImageURL(data.image,64);
-           if bmp<>0 then
-             DeleteObject(SendDlgItemMessage(Dialog,IDC_DATA_PIC,STM_SETIMAGE,IMAGE_BITMAP,bmp));
-}
-//           ClearData(data);
-         end;
-         EN_CHANGE: 
-           case loword(wParam) of
-             IDC_LOGIN,IDC_PASS,IDC_TRIES:
-               SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
-           end;
+      if inited then
+      begin
+  (*
+        case Loword(wParam) of
+          IDC_KINOPOISK: begin
+            StrCopy(StrCopyE(buf,kinopoisk_info),MSData.kinopoisk_id);
+            PluginLink.CallService(MS_UTILS_OPENURL,TWPARAM(True),TLPARAM(@buf));
+            result:=1;
+            exit;
+          end;
+        end;
+  *)
+        case wParam shr 16 of
+          BN_CLICKED: begin
+ (*
+            case LoWord(wParam) of
+              IDC_INFO_SERIES: begin
+                ClearInfo(Dialog);
+                ClearData;
+ {
+              if loword(wParam)=IDC_INFO_ARTIST then
+              begin
+                SetDlgItemTextW(Dialog,IDC_ALT,TranslateW('Similar artists'));
+                GetArtistInfo(data,msh_lang);
+                SetDlgItemTextW(Dialog,IDC_DATA_ALBUM,data.similar);
+              end
+              else
+              begin
+                SetDlgItemTextW(Dialog,IDC_ALT,TranslateW('Album'));
+                if loword(wParam)=IDC_INFO_TRACK then
+                  GetTrackInfo (data,msh_lang)
+                else
+                  GetAlbumInfo (data,msh_lang);
+                SetDlgItemTextW(Dialog,IDC_DATA_ALBUM,data.album);
+              end;
+   }
+
+              SetDlgItemTextW(Dialog,IDC_DATA_SERIES ,MSData.series);
+              SetDlgItemTextW(Dialog,IDC_DATA_EPISODE,MSData.episode);
+ //             SetDlgItemTextW(Dialog,IDC_DATA_TAGS   ,data.genre);
+              SetDlgItemTextW(Dialog,IDC_DATA_INFO   ,MSData.info);
+
+              bmp:=LoadImageURL(MSData.image,80);
+              if bmp<>0 then
+                DeleteObject(SendDlgItemMessage(Dialog,IDC_DATA_PIC,STM_SETIMAGE,IMAGE_BITMAP,bmp));
+
+              EnableWindow(GetDligItem(Dialog,IDC_KINOPOISK),true);
+            end;
+ *)
+          end;
+
+          EN_CHANGE: begin
+            case loword(wParam) of
+              IDC_LOGIN,IDC_PASS,IDC_TRIES{,IDC_TIME}:
+                SendMessage(GetParent(Dialog),PSM_CHANGED,0,0);
+            end;
+          end;
+        end;
       end;
     end;
 
     WM_NOTIFY: begin
-      if integer(PNMHdr(lParam)^.code)=PSN_APPLY then
-      begin
-        mFreeMem(msh_login   ); msh_login   :=GetDlgText(Dialog,IDC_LOGIN,true);
-        mFreeMem(msh_password); msh_password:=GetDlgText(Dialog,IDC_PASS ,true);
-        mFreeMem(session_id);
-        mFreeMem(np_url);
-        mFreeMem(sub_url);
-        msh_tries:=GetDlgItemInt(Dialog,IDC_TRIES,tmp,false);
+      case integer(PNMHdr(lParam)^.code) of
+        PSN_APPLY: begin
+          msh_scrobpos:=SendDlgItemMessage(Dialog,IDC_SCROBPOS,TBM_GETPOS,0,0);
+          msh_tries   :=GetDlgItemInt(Dialog,IDC_TRIES,tmp,false);
+          mFreeMem(msh_login   ); msh_login   :=GetDlgText(Dialog,IDC_LOGIN,true);
+          mFreeMem(msh_password); msh_password:=GetDlgText(Dialog,IDC_PASS ,true);
+  {
+          mFreeMem(session_id);
+          mFreeMem(np_url);
+          mFreeMem(sub_url);
+  }
+  //        msh_timeout:=GetDlgItemInt(Dialog,IDC_TIME ,tmp,false);
 
-        SaveOpt;
+          SaveOpt;
+        end;
       end;
     end;
   else
