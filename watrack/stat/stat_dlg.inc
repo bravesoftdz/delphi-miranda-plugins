@@ -165,7 +165,7 @@ begin
             GetDlgItemTextA(Dialog,IDC_REPNAME,buf1,511);
             GetDlgItemTextA(Dialog,IDC_TMPLNAME,buf,511);
             SetReportMask(Dialog);
-            PluginLink^.CallService(MS_WAT_MAKEREPORT,TWPARAM(@buf),TLPARAM(@buf1));
+            CallService(MS_WAT_MAKEREPORT,TWPARAM(@buf),TLPARAM(@buf1));
           end;
         end;
       end;
@@ -185,7 +185,7 @@ begin
         if buf[0]<>#0 then
         begin
           buf1[0]:=#0;
-          PluginLink^.CallService(MS_UTILS_PATHTORELATIVE,TWPARAM(@buf),TLPARAM(@buf1));
+          CallService(MS_UTILS_PATHTORELATIVE,TWPARAM(@buf),TLPARAM(@buf1));
           StrDup(StatName,buf1);
         end;
 
@@ -194,7 +194,7 @@ begin
         if buf[0]<>#0 then
         begin
           buf1[0]:=#0;
-          PluginLink^.CallService(MS_UTILS_PATHTORELATIVE,TWPARAM(@buf),TLPARAM(@buf1));
+          CallService(MS_UTILS_PATHTORELATIVE,TWPARAM(@buf),TLPARAM(@buf1));
           StrDup(ReportName,buf1);
         end;
 
@@ -203,7 +203,7 @@ begin
         if buf[0]<>#0 then
         begin
           buf1[0]:=#0;
-          PluginLink^.CallService(MS_UTILS_PATHTORELATIVE,TWPARAM(@buf),TLPARAM(@buf1));
+          CallService(MS_UTILS_PATHTORELATIVE,TWPARAM(@buf),TLPARAM(@buf1));
           StrDup(TmplName,buf1);
         end;
 

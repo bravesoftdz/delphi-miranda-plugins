@@ -23,7 +23,7 @@ begin
 //      j:=WndToContact(WaitFocusedWndChild(GetForegroundwindow){GetFocus});
       j:=WndToContact(CurWin);
       p:=GetContactProtoAcc(j);
-//      p:=PAnsiChar(PluginLink^.CallService(MS_PROTO_GETCONTACTBASEPROTO,j,0));
+//      p:=PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,j,0));
       if DBReadByte(j,p,'ChatRoom',0)=1 then
       begin
         isUnicode:=false;

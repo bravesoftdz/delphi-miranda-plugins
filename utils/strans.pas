@@ -706,7 +706,7 @@ begin
           inc(element.len); // with Zero at the end
 {$IFDEF Miranda}
           if (element.flags and EF_MMI)<>0 then
-            lsrc:=mmi.malloc(element.len*SizeOf(AnsiChar))
+            lsrc:=mir_alloc(element.len*SizeOf(AnsiChar))
           else
 {$ENDIF}
           mGetMem (lsrc ,element.len*SizeOf(AnsiChar));
@@ -733,7 +733,7 @@ begin
           inc(element.len); // with Zero at the end
 {$IFDEF Miranda}
           if (element.flags and EF_MMI)<>0 then
-            lsrc:=mmi.malloc(element.len*SizeOf(WideChar))
+            lsrc:=mir_alloc(element.len*SizeOf(WideChar))
           else
 {$ENDIF}
           mGetMem (lsrc ,element.len*SizeOf(WideChar));
@@ -813,7 +813,7 @@ begin
         value:=pAnsiChar(pint_ptr(pAnsiChar(struct)+tmpl^.offset)^);
 {$IFDEF Miranda}
         if (tmpl^.flags and EF_MMI)<>0 then
-          mmi.Free(value)
+          mir_free(value)
         else
 {$ENDIF}
         mFreeMem(value);

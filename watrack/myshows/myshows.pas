@@ -26,12 +26,11 @@ type
     image       :PAnsiChar;
   end;
 var
-  md5:TMD5_INTERFACE;
   msh_tries,
 //  msh_timeout,
   msh_scrobpos:integer;
   sic:THANDLE;
-  slastinf:THANDLE;
+//  slastinf:THANDLE;
   slast:THANDLE;
   MSData:tMyShowsData;
 const
@@ -75,8 +74,8 @@ var
 begin
   count:=msh_tries;
   repeat
-    if Scrobble then break;
     dec(count);
+    if Scrobble(count<=0) then break;
   until count<=0;
   result:=0;
 end;
@@ -115,9 +114,9 @@ begin
       begin
         if pSongInfo(lParam).width>0 then // for video only
         begin
-          if PluginLink^.ServiceExists(MS_JSON_GETINTERFACE)<>0 then
+          if ServiceExists(MS_JSON_GETINTERFACE)<>0 then
           begin
-            timervalue:=pSongInfo(lParam).total*10*msh_scrobpos; // 1000(msec) div 100(%)
+            timervalue:=integer(pSongInfo(lParam).total)*10*msh_scrobpos; // 1000(msec) div 100(%)
             if timervalue=0 then
               timervalue:=DefTimerValue;
             hTimer:=SetTimer(0,0,timervalue,@TimerProc);
@@ -174,10 +173,11 @@ begin
   FillChar(mi,SizeOf(mi),0);
   mi.cbSize:=sizeof(mi);
   mi.flags :=CMIM_ICON;
-  mi.hIcon :=PluginLink^.CallService(MS_SKIN2_GETICON,0,tLParam(IcoMyShows));
+  mi.hIcon :=CallService(MS_SKIN2_GETICON,0,tLParam(IcoMyShows));
   CallService(MS_CLIST_MODIFYMENUITEM,hMenuMyShows,tlParam(@mi));
 end;
 
+(* kinopoisk link, cover, series?
 function SrvMyShowsInfo(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 //var
 //  data:tMyShowsInfo;
@@ -193,7 +193,7 @@ begin
   end;
 }
 end;
-
+*)
 function SrvMyShows(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
   mi:TCListMenuItem;
@@ -234,18 +234,18 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,'IDI_MYSHOWS',IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoMyShows;
   sid.szDescription.a:='MyShows';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,tlParam(@sid));
+  CallService(MS_SKIN2_ADDICON,0,tlParam(@sid));
   DestroyIcon(sid.hDefaultIcon);
   
   FillChar(mi, sizeof(mi), 0);
   mi.cbSize       :=sizeof(mi);
   mi.szPopupName.a:=PluginShort;
 
-  mi.hIcon        :=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlParam(IcoMyShows));
+  mi.hIcon        :=CallService(MS_SKIN2_GETICON,0,tlParam(IcoMyShows));
   mi.szName.a     :='Disable scrobbling';
   mi.pszService   :=MS_WAT_MYSHOWS;
   mi.popupPosition:=500050000;
-  hMenuMyShows:=PluginLink^.CallService(MS_CLIST_ADDMAINMENUITEM,0,tlParam(@mi));
+  hMenuMyShows:=CallService(MS_CLIST_ADDMAINMENUITEM,0,tlParam(@mi));
 end;
 
 // ------------ base interface functions -------------
@@ -263,7 +263,7 @@ var
 
 function InitProc(aGetStatus:boolean=false):integer;
 begin
-  slastinf:=PluginLink^.CreateServiceFunction(MS_WAT_MYSHOWSINFO,@SrvMyShowsInfo);
+//  slastinf:=CreateServiceFunction(MS_WAT_MYSHOWSINFO,@SrvMyShowsInfo);
   if aGetStatus then
   begin
     if GetModStatus=0 then
@@ -281,20 +281,12 @@ begin
 
   LoadOpt;
 
-  if md5.cbSize=0 then
-  begin
-    md5.cbSize:=SizeOf(TMD5_INTERFACE);
-    if (CallService(MS_SYSTEM_GET_MD5I,0,tlParam(@md5))<>0) then
-    begin
-    end;
-  end;
-
-  slast:=PluginLink^.CreateServiceFunction(MS_WAT_MYSHOWS,@SrvMyShows);
+  slast:=CreateServiceFunction(MS_WAT_MYSHOWS,@SrvMyShows);
   if hMenuMyShows=0 then
     CreateMenus;
-  sic:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
+  sic:=HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
   if (msh_on and 4)=0 then
-    plStatusHook:=PluginLink^.HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);
+    plStatusHook:=HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);
 end;
 
 procedure DeInitProc(aSetDisable:boolean);
@@ -302,11 +294,11 @@ begin
   if aSetDisable then
     SetModStatus(0)
   else
-    PluginLink^.DestroyServiceFunction(slastinf);
+;//    DestroyServiceFunction(slastinf);
 
-  PluginLink^.DestroyServiceFunction(slast);
-  PluginLink^.UnhookEvent(plStatusHook);
-  PluginLink^.UnhookEvent(sic);
+  DestroyServiceFunction(slast);
+  UnhookEvent(plStatusHook);
+  UnhookEvent(sic);
 
   if hTimer<>0 then
   begin
@@ -337,7 +329,6 @@ begin
   mmyshows.ModuleName:='MyShows.ru';
   ModuleLink     :=@mmyshows;
 
-  md5.cbSize:=0;
 end;
 
 begin

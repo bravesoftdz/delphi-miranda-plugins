@@ -106,11 +106,18 @@ const
   wParam=(WPARAM)hContact
 }
    MS_REVOKE_AUTH = '/RevokeAuth';
+
+{
+  Open ICQ profile
+  wParam=(WPARAM)hContact
+}
+   MS_OPEN_PROFILE = '/OpenProfile';
+
 {
   Add contact to server-list
   wParam=(WPARAM)hContact
 }
-  MS_ICQ_ADDSERVCONTACT  = '/AddServerContact';
+   MS_ICQ_ADDSERVCONTACT  = '/AddServerContact';
 {
   Display XStatus detail (internal use only)
   wParam=(WPARAM)hContact;

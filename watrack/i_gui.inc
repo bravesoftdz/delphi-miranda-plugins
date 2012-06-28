@@ -2,9 +2,9 @@
 
 function OnTTBLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
-  ttb:TTBButtonV2;
+  ttb:m_api.TTBButton;
 begin
-  PluginLink^.UnhookEvent(onloadhook);
+  UnhookEvent(onloadhook);
 
   FillChar(ttb,SizeOf(ttb),0);
   ttb.cbSize :=SizeOf(ttb);
@@ -14,13 +14,12 @@ begin
   if DisablePlugin<>dsPermanent then
     ttb.dwFlags:=ttb.dwFlags or TTBBF_PUSHED;
 
-  ttb.hIconDn       :=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnEnable));
-  ttb.hIconUp       :=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnDisable));
-  ttb.wParamUp      :=1;
+  ttb.hIconDn   :=CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnEnable));
+  ttb.hIconUp   :=CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnDisable));
+  ttb.wParamUp  :=1;
 //  ttb.wParamDown    :=0;
-  ttb.pszServiceUp  :=MS_WAT_PLUGINSTATUS;
-  ttb.pszServiceDown:=MS_WAT_PLUGINSTATUS;
-  ttb.name          :='WATrack status';
+  ttb.pszService:=MS_WAT_PLUGINSTATUS;
+  ttb.name      :='WATrack status';
 //  ttb.tooltipDn:='Disable Plugin';
 //  ttb.tooltipUp:='Enable Plugin';
   ttbState:=CallService(MS_TTB_ADDBUTTON,twparam(@ttb),0);
@@ -37,11 +36,11 @@ begin
   mi.cbSize       :=sizeof(mi);
   mi.szPopupName.a:=PluginShort;
 
-  mi.hIcon        :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnEnable));
+  mi.hIcon        :=CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnEnable));
   mi.szName.a     :='Disable Plugin';
   mi.pszService   :=MS_WAT_PLUGINSTATUS;
   mi.popupPosition:=MenuDisablePos;
-  hMenuDisable:=PluginLink^.CallService(MS_CLIST_ADDMAINMENUITEM,0,lparam(@mi));
+  hMenuDisable:=CallService(MS_CLIST_ADDMAINMENUITEM,0,lparam(@mi));
 end;
 
 procedure ChangeMenuIcons(f1:cardinal);
@@ -54,17 +53,17 @@ begin
   mi.flags :=CMIM_NAME+CMIM_FLAGS+CMIM_ICON+f1;
   if f1<>0 then
   begin
-    mi.hIcon   :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnDisable));
+    mi.hIcon   :=CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnDisable));
     mi.szName.a:='Enable Plugin';
   end
   else
   begin
-    mi.hIcon   :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnEnable));
+    mi.hIcon   :=CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnEnable));
     mi.szName.a:='Disable Plugin';
   end;
   CallService(MS_CLIST_MODIFYMENUITEM,hMenuDisable,lparam(@mi));
 
-  if PluginLink^.ServiceExists(MS_TTB_SETBUTTONSTATE)<>0 then
+  if ServiceExists(MS_TTB_SETBUTTONSTATE)<>0 then
   begin
     if f1<>0 then
     begin
@@ -84,28 +83,29 @@ end;
 function IconChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
   mi:TCListMenuItem;
-//  ttb:TTBButtonV2; work only with TTBButton type :(
+  ttb:m_api.TTBButton;
 begin
   result:=0;
   FillChar(mi,SizeOf(mi),0);
   mi.cbSize:=sizeof(mi);
   mi.flags :=CMIM_ICON;
 
-  mi.hIcon:=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnEnable));
-  PluginLink^.CallService(MS_CLIST_MODIFYMENUITEM,hMenuDisable,tlparam(@mi));
+  mi.hIcon:=CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnEnable));
+  CallService(MS_CLIST_MODIFYMENUITEM,hMenuDisable,tlparam(@mi));
 
-{// toptoolbar
-  if PluginLink^.ServiceExists(MS_TTB_GETBUTTONOPTIONS)<>0 then
+// toptoolbar
+  if ServiceExists(MS_TTB_GETBUTTONOPTIONS)<>0 then
   begin
-    PluginLink^.CallService(MS_TTB_GETBUTTONOPTIONS,(ttbInfo shl 16)+TTBO_ALLDATA,dword(@ttb));
-    ttb.hIconUp:=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnInfo));
+{
+    CallService(MS_TTB_GETBUTTONOPTIONS,(ttbInfo shl 16)+TTBO_ALLDATA,tlparam(@ttb));
+    ttb.hIconUp:=CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnInfo));
     ttb.hIconDn:=ttb.hIconUp;
-    PluginLink^.CallService(MS_TTB_SETBUTTONOPTIONS,(ttbInfo shl 16)+TTBO_ALLDATA,dword(@ttb));
-
-    PluginLink^.CallService(MS_TTB_GETBUTTONOPTIONS,(ttbState shl 16)+TTBO_ALLDATA,dword(@ttb));
-    ttb.hIconDn:=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnEnable));
-    ttb.hIconUp:=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(IcoBtnDisable));
-    PluginLink^.CallService(MS_TTB_SETBUTTONOPTIONS,(ttbState shl 16)+TTBO_ALLDATA,dword(@ttb));
-  end;
+    CallService(MS_TTB_SETBUTTONOPTIONS,(ttbInfo shl 16)+TTBO_ALLDATA,tlparam(@ttb));
 }
+    CallService(MS_TTB_GETBUTTONOPTIONS,(ttbState shl 16)+TTBO_ALLDATA,tlparam(@ttb));
+    ttb.hIconDn:=CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnEnable));
+    ttb.hIconUp:=CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnDisable));
+    CallService(MS_TTB_SETBUTTONOPTIONS,(ttbState shl 16)+TTBO_ALLDATA,tlparam(@ttb));
+  end;
+
 end;

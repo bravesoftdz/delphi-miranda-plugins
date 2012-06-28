@@ -86,14 +86,14 @@ begin
       case wParam of
         1: ShowMusicInfo(si);
         2: ShowWindow(si^.plwnd,SW_RESTORE);
-        3: PluginLink^.CallServiceSync(MS_WAT_PRESSBUTTON,WAT_CTRL_NEXT,0);
+        3: CallServiceSync(MS_WAT_PRESSBUTTON,WAT_CTRL_NEXT,0);
       end;
       SendMessage(Wnd,UM_DESTROYPOPUP,0,0);
       result:=1;
     end;
     UM_POPUPACTION: begin
 //      if wParam<>0 then
-        result:=PluginLink^.CallServiceSync(MS_WAT_PRESSBUTTON,lParam,0);
+        result:=CallServiceSync(MS_WAT_PRESSBUTTON,lParam,0);
     end;
     UM_FREEPLUGINDATA: begin
       h:=0;
@@ -156,9 +156,9 @@ begin
   result:=0;
   line:=CallService(MS_POPUP_ISSECONDLINESHOWN,0,0)<>0;
 
-  descr:=PWideChar(PluginLink^.CallService(MS_WAT_REPLACETEXT,0,lparam(PopText)));
+  descr:=PWideChar(CallService(MS_WAT_REPLACETEXT,0,lparam(PopText)));
   if line then
-    title:=PWideChar(PluginLink^.CallService(MS_WAT_REPLACETEXT,0,lparam(PopTitle)))
+    title:=PWideChar(CallService(MS_WAT_REPLACETEXT,0,lparam(PopTitle)))
   else
     title:=nil;
 
@@ -237,7 +237,7 @@ begin
         end;
         PluginData:=pointer(hbmAvatar);
       end;
-      PluginLink^.CallService(MS_POPUP_ADDPOPUP2,wparam(ppd2),flag);
+      CallService(MS_POPUP_ADDPOPUP2,wparam(ppd2),flag);
       mFreeMem(ppd2);
     end
     else
@@ -269,7 +269,7 @@ begin
         colorBack       :=cb;
         colorText       :=ct;
 
-    //    if PluginLink^.ServiceExists(MS_POPUP_REGISTERACTIONS)=0 then
+    //    if ServiceExists(MS_POPUP_REGISTERACTIONS)=0 then
         if ActionList=nil then
           flag:=0
         else
@@ -280,7 +280,7 @@ begin
           lpActions  :=ActionList;
         end;
       end;
-      PluginLink^.CallService(MS_POPUP_ADDPOPUPW,wparam(ppdu),flag);
+      CallService(MS_POPUP_ADDPOPUPW,wparam(ppdu),flag);
       mFreeMem(ppdu);
     end;
     mFreeMem(title);
@@ -304,7 +304,7 @@ begin
   result:=0;
   if DisablePlugin<>dsEnabled then
     exit;
-  if PluginLink^.CallService(MS_WAT_GETMUSICINFO,0,tlparam(@si))=WAT_PLS_NORMAL then
+  if CallService(MS_WAT_GETMUSICINFO,0,tlparam(@si))=WAT_PLS_NORMAL then
   begin
     if PopupPresent then
       ShowPopUp(si)
@@ -373,7 +373,7 @@ begin
   FillChar(mi,SizeOf(mi),0);
   mi.cbSize:=sizeof(mi);
   mi.flags :=CMIM_ICON;
-  mi.hIcon :=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnInfo));
+  mi.hIcon :=CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnInfo));
   CallService(MS_CLIST_MODIFYMENUITEM,hMenuInfo,tlparam(@mi));
   if ActionList<>nil then
   begin
@@ -397,7 +397,7 @@ begin
   odp.szGroup.a  :='PopUps';
   odp.pszTemplate:=DLGPOPUP;
   odp.pfnDlgProc :=@DlgPopUpOpt;
-  PluginLink^.CallService(MS_OPT_ADDPAGE,wParam,tlparam(@odp));
+  CallService(MS_OPT_ADDPAGE,wParam,tlparam(@odp));
   result:=0;
 end;
 
@@ -406,7 +406,7 @@ end;
 function InitProc(aGetStatus:boolean=false):integer;
 var
   mi:TCListMenuItem;
-//  ttb:TTBButtonV2;
+  ttb:TTBButton;
   sid:TSKINICONDESC;
 begin
   if aGetStatus then
@@ -421,7 +421,7 @@ begin
     SetModStatus(1);
   result:=1;
 
-  ssmi:=PluginLink^.CreateServiceFunction(MS_WAT_SHOWMUSICINFO,@OpenPopUp);
+  ssmi:=CreateServiceFunction(MS_WAT_SHOWMUSICINFO,@OpenPopUp);
 
   FillChar(sid,SizeOf(TSKINICONDESC),0);
   sid.cbSize:=SizeOf(TSKINICONDESC);
@@ -431,30 +431,30 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(BTN_INFO),IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoBtnInfo;
   sid.szDescription.a:='Music Info';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
-  sic:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
+  sic:=HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
 
   FillChar(mi,SizeOf(mi),0);
   mi.cbSize       :=SizeOf(mi);
   mi.szPopupName.a:=PluginShort;
-  mi.hIcon        :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnInfo));
+  mi.hIcon        :=CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnInfo));
   mi.szName.a     :='Music Info';
   mi.pszService   :=MS_WAT_SHOWMUSICINFO;
   mi.popupPosition:=MenuInfoPos;
-  hMenuInfo       :=PluginLink^.CallService(MS_CLIST_ADDMAINMENUITEM,0,lparam(@mi));
+  hMenuInfo       :=CallService(MS_CLIST_ADDMAINMENUITEM,0,lparam(@mi));
 
-  if PluginLink^.ServiceExists(MS_POPUP_ADDPOPUPW)<>0 then
+  if ServiceExists(MS_POPUP_ADDPOPUPW)<>0 then
   begin
-    IsFreeImagePresent:=PluginLink^.ServiceExists(MS_IMG_LOAD       )<>0;
-    IsPopup2Present   :=PluginLink^.ServiceExists(MS_POPUP_ADDPOPUP2)<>0;
+    IsFreeImagePresent:=ServiceExists(MS_IMG_LOAD       )<>0;
+    IsPopup2Present   :=ServiceExists(MS_POPUP_ADDPOPUP2)<>0;
     PopupPresent:=true;
-    opthook:=PluginLink^.HookEvent(ME_OPT_INITIALISE,@OnOptInitialise);
+    opthook:=HookEvent(ME_OPT_INITIALISE,@OnOptInitialise);
     loadpopup;
     regpophotkey;
 
     ActionList:=nil;
-    if PluginLink^.ServiceExists(MS_POPUP_REGISTERACTIONS)<>0 then
+    if ServiceExists(MS_POPUP_REGISTERACTIONS)<>0 then
     begin
       if RegisterButtonIcons then
       begin
@@ -469,19 +469,18 @@ begin
     PopupPresent:=false;
   end;
 
-  plStatusHook:=PluginLink^.HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);
-(*
+  plStatusHook:=HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);
+
   // get info button
   FillChar(ttb,SizeOf(ttb),0);
-  ttb.cbSize :=SizeOf(ttb);
-  ttb.dwFlags:=TTBBF_VISIBLE{ or TTBBF_SHOWTOOLTIP};
-  ttb.hIconUp       :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnInfo));
-  ttb.hIconDn       :=ttb.hIconUp;
-  ttb.pszServiceUp  :=MS_WAT_SHOWMUSICINFO;
-  ttb.pszServiceDown:=MS_WAT_SHOWMUSICINFO;
-  ttb.name          :='Music Info';
+  ttb.cbSize    :=SizeOf(ttb);
+  ttb.dwFlags   :=TTBBF_VISIBLE{ or TTBBF_SHOWTOOLTIP};
+  ttb.hIconUp   :=CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnInfo));
+  ttb.hIconDn   :=ttb.hIconUp;
+  ttb.pszService:=MS_WAT_SHOWMUSICINFO;
+  ttb.name      :='Music Info';
   ttbInfo:=CallService(MS_TTB_ADDBUTTON,wparam(@ttb),0);
-*)
+
 end;
 
 procedure DeInitProc(aSetDisable:boolean);
@@ -490,15 +489,15 @@ begin
     SetModStatus(0);
 
   CallService(MS_CLIST_REMOVEMAINMENUITEM,hMenuInfo,0);
-  PluginLink^.UnhookEvent(plStatusHook);
-  PluginLink^.DestroyServiceFunction(ssmi);
-  PluginLink^.UnhookEvent(sic);
+  UnhookEvent(plStatusHook);
+  DestroyServiceFunction(ssmi);
+  UnhookEvent(sic);
 
   freepopup;
 
   if PopupPresent then
   begin
-    PluginLink^.UnhookEvent(opthook);
+    UnhookEvent(opthook);
     mFreeMem(ActionList);
   end;
 end;

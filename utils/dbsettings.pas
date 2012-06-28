@@ -52,7 +52,7 @@ begin
   cgs.szModule :=szModule;
   cgs.szSetting:=szSetting;
   cgs.pValue   :=@dbv;
-  If PluginLink^.CallService(MS_DB_CONTACT_GETSETTING,hContact,lParam(@cgs))<>0 then
+  If CallService(MS_DB_CONTACT_GETSETTING,hContact,lParam(@cgs))<>0 then
     Result:=default
   else
     Result:=dbv.bVal;
@@ -66,7 +66,7 @@ begin
   cgs.szModule :=szModule;
   cgs.szSetting:=szSetting;
   cgs.pValue   :=@dbv;
-  If PluginLink^.CallService(MS_DB_CONTACT_GETSETTING,hContact,lParam(@cgs))<>0 then
+  If CallService(MS_DB_CONTACT_GETSETTING,hContact,lParam(@cgs))<>0 then
     Result:=default
   else
     Result:=dbv.wVal;
@@ -80,7 +80,7 @@ begin
   cgs.szModule :=szModule;
   cgs.szSetting:=szSetting;
   cgs.pValue   :=@dbv;
-  If PluginLink^.CallService(MS_DB_CONTACT_GETSETTING,hContact,lParam(@cgs))<>0 then
+  If CallService(MS_DB_CONTACT_GETSETTING,hContact,lParam(@cgs))<>0 then
     Result:=default
   else
     Result:=dbv.dVal;
@@ -93,7 +93,7 @@ begin
   cgs.szModule :=szModule;
   cgs.szSetting:=szSetting;
   cgs.pValue   :=dbv;
-  Result:=PluginLink^.CallService(MS_DB_CONTACT_GETSETTING,hContact,lParam(@cgs));
+  Result:=CallService(MS_DB_CONTACT_GETSETTING,hContact,lParam(@cgs));
 end;
 
 function DBReadSettingStr(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;dbv:PDBVARIANT):int_ptr;
@@ -103,7 +103,7 @@ begin
   cgs.szModule :=szModule;
   cgs.szSetting:=szSetting;
   cgs.pValue   :=dbv;
-  Result:=PluginLink^.CallService(MS_DB_CONTACT_GETSETTING_STR,hContact,lParam(@cgs));
+  Result:=CallService(MS_DB_CONTACT_GETSETTING_STR,hContact,lParam(@cgs));
 end;
 
 function DBReadStringLength(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar):integer;
@@ -116,7 +116,7 @@ begin
   cgs.szModule :=szModule;
   cgs.szSetting:=szSetting;
   cgs.pValue   :=@dbv;
-  i:=PluginLink^.CallService(MS_DB_CONTACT_GETSETTING_STR,hContact,lParam(@cgs));
+  i:=CallService(MS_DB_CONTACT_GETSETTING_STR,hContact,lParam(@cgs));
   if (i<>0) or (dbv.szVal.a=nil) or (dbv.szVal.a^=#0) then
     result:=0
   else
@@ -137,7 +137,7 @@ begin
   cgs.szSetting:=szSetting;
   cgs.pValue   :=@dbv;
   dbv._type    :=enc;
-  i:=PluginLink^.CallService(MS_DB_CONTACT_GETSETTING_STR,hContact,lParam(@cgs));
+  i:=CallService(MS_DB_CONTACT_GETSETTING_STR,hContact,lParam(@cgs));
   if i=0 then
     default:=dbv.szVal.a;
 
@@ -166,7 +166,7 @@ begin
   cgs.szSetting:=szSetting;
   cgs.pValue   :=@dbv;
   dbv._type    :=DBVT_WCHAR;
-  i:=PluginLink^.CallService(MS_DB_CONTACT_GETSETTING_STR,hContact,lParam(@cgs));
+  i:=CallService(MS_DB_CONTACT_GETSETTING_STR,hContact,lParam(@cgs));
   if i=0 then
     default:=dbv.szVal.w;
 
@@ -208,7 +208,7 @@ begin
   cws.value._type :=DBVT_BLOB;
   cws.value.pbVal :=ptr;
   cws.value.cpbVal:=size;
-  result:=PluginLink^.CallService(MS_DB_CONTACT_WRITESETTING,0,lParam(@cws));
+  result:=CallService(MS_DB_CONTACT_WRITESETTING,0,lParam(@cws));
 end;
 
 function DBWriteSetting(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;dbv:PDBVARIANT):int_ptr;
@@ -218,7 +218,7 @@ begin
   cws.szModule  :=szModule;
   cws.szSetting :=szSetting;
   move(dbv^,cws.value,SizeOf(TDBVARIANT));
-  Result := PluginLink^.CallService(MS_DB_CONTACT_WRITESETTING, hContact, lParam(@cws));
+  Result := CallService(MS_DB_CONTACT_WRITESETTING, hContact, lParam(@cws));
 end;
 
 function DBWriteByte(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:Byte):int_ptr;
@@ -229,7 +229,7 @@ begin
   cws.szSetting  :=szSetting;
   cws.value._type:=DBVT_BYTE;
   cws.value.bVal :=val;
-  Result:=PluginLink^.CallService(MS_DB_CONTACT_WRITESETTING,hContact,lParam(@cws));
+  Result:=CallService(MS_DB_CONTACT_WRITESETTING,hContact,lParam(@cws));
 end;
 
 function DBWriteWord(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:Word):int_ptr;
@@ -240,7 +240,7 @@ begin
   cws.szSetting  :=szSetting;
   cws.value._type:=DBVT_WORD;
   cws.value.wVal :=val;
-  Result:=PluginLink^.CallService(MS_DB_CONTACT_WRITESETTING,hContact,lParam(@cws));
+  Result:=CallService(MS_DB_CONTACT_WRITESETTING,hContact,lParam(@cws));
 end;
 
 function DBWriteDWord(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:dword):int_ptr;
@@ -251,7 +251,7 @@ begin
   cws.szSetting  :=szSetting;
   cws.value._type:=DBVT_DWORD;
   cws.value.dVal :=val;
-  Result:=PluginLink^.CallService(MS_DB_CONTACT_WRITESETTING,hContact,lParam(@cws));
+  Result:=CallService(MS_DB_CONTACT_WRITESETTING,hContact,lParam(@cws));
 end;
 
 function DBWriteString(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;
@@ -269,7 +269,7 @@ begin
     val:=@p;
   end;
   cws.value.szVal.a:=val;
-  Result:=PluginLink^.CallService(MS_DB_CONTACT_WRITESETTING,hContact,lParam(@cws));
+  Result:=CallService(MS_DB_CONTACT_WRITESETTING,hContact,lParam(@cws));
 end;
 
 function DBWriteUTF8(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:PAnsiChar):int_ptr;
@@ -288,13 +288,13 @@ begin
   cws.szSetting    :=szSetting;
   cws.value._type  :=DBVT_WCHAR;
   cws.value.szVal.w:=Val;
-  Result:=PluginLink^.CallService(MS_DB_CONTACT_WRITESETTING,hContact,lParam(@cws));
+  Result:=CallService(MS_DB_CONTACT_WRITESETTING,hContact,lParam(@cws));
 }
 end;
 
 function DBFreeVariant(dbv:PDBVARIANT):int_ptr;
 begin
-  Result:=PluginLink^.CallService(MS_DB_CONTACT_FREEVARIANT,0,lParam(dbv));
+  Result:=CallService(MS_DB_CONTACT_FREEVARIANT,0,lParam(dbv));
 end;
 
 function DBDeleteSetting(hContact:THandle;szModule:PAnsiChar;szSetting:PAnsiChar):int_ptr;
@@ -303,7 +303,7 @@ var
 begin
   cgs.szModule :=szModule;
   cgs.szSetting:=szSetting;
-  Result:=PluginLink^.CallService(MS_DB_CONTACT_DELETESETTING,hContact,lParam(@cgs));
+  Result:=CallService(MS_DB_CONTACT_DELETESETTING,hContact,lParam(@cgs));
 end;
 
 type
@@ -336,14 +336,14 @@ begin
   ces.pfnEnumProc:=@EnumSettingsProcCalc;
   ces.lParam     :=lParam(@num);
   ces.ofsSettings:=0;
-  PluginLink^.CallService(MS_DB_CONTACT_ENUMSETTINGS,hContact,lparam(@ces));
+  CallService(MS_DB_CONTACT_ENUMSETTINGS,hContact,lparam(@ces));
 
   GetMem(p,num+1);
   ptr:=p;
   ces.pfnEnumProc:=@EnumSettingsProc;
   ces.lParam     :=lparam(@ptr);
   ces.ofsSettings:=0;
-  result:=PluginLink^.CallService(MS_DB_CONTACT_ENUMSETTINGS,hContact,lparam(@ces));
+  result:=CallService(MS_DB_CONTACT_ENUMSETTINGS,hContact,lparam(@ces));
   ptr^:=#0;
 
   cgs.szModule:=szModule;
@@ -357,7 +357,7 @@ begin
     if (len=0) or (StrCmp(prefix,ptr,len)=0) then
     begin
       cgs.szSetting:=ptr;
-      PluginLink^.CallService(MS_DB_CONTACT_DELETESETTING,hContact,lParam(@cgs));
+      CallService(MS_DB_CONTACT_DELETESETTING,hContact,lParam(@cgs));
     end;
     while ptr^<>#0 do inc(ptr);
     inc(ptr);
@@ -368,7 +368,7 @@ end;
 function DBDeleteModule(szModule:PAnsiChar):integer; // 0.8.0+
 begin
   result:=0;
-  PluginLink^.CallService(MS_DB_MODULE_DELETE,0,lParam(szModule));
+  CallService(MS_DB_MODULE_DELETE,0,lParam(szModule));
 end;
 
 function DBGetSettingType(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar):integer;

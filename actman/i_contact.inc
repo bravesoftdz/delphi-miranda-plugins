@@ -11,36 +11,47 @@ var
   uid:pAnsiChar;
   ldbv:TDBVARIANT;
   acc:pAnsiChar;
+  lName,
+  lGroup,
+  lAccount,
+  lUID:boolean;
 begin
   if format=nil then format:=defformat;
 
   SendMessage(list,CB_RESETCONTENT,0,0);
   hContact:=CallService(MS_DB_CONTACT_FINDFIRST,0,0);
+
+  lName   :=StrPosW(format,'%name%')<>nil;
+  lGroup  :=StrPosW(format,'%group%')<>nil;
+  lAccount:=StrPosW(format,'%account%')<>nil;
+  lUID    :=StrPosW(format,'%uid%')<>nil;
+  
   while hContact<>0 do
   begin
     if ((not filter) and ((IsContactActive(hContact)+1)>=0)) or // + disabled (not deleted)
             (filter  and  (IsContactActive(hContact)   >=0)) then
     begin
       StrCopyW(buf,format);
-      if StrPosW(buf,'%name%')<>nil then
+      if lName then
         StrReplaceW(buf,'%name%',
           PWideChar(CallService(MS_CLIST_GETCONTACTDISPLAYNAME,hContact,GCDNF_UNICODE)));
 
-      if StrPosW(buf,'%group%')<>nil then
+      if lGroup then
       begin
         p:=DBReadUnicode(hContact,strCList,'Group',nil);
         StrReplaceW(buf,'%group%',p);
         mFreeMem(p);
       end;
 
-      acc:=nil;
-      if StrPosW(buf,'%account%')<>nil then
+      if lAccount then
       begin
         acc:=GetContactProtoAcc(hContact);
         StrReplaceW(buf,'%account%',FastAnsiToWideBuf(acc,buf1));
-      end;
+      end
+      else
+        acc:=nil;
 
-      if StrPosW(buf,'%uid%')<>nil then
+      if lUID then
       begin
         if acc=nil then
           acc:=GetContactProtoAcc(hContact);
@@ -85,7 +96,7 @@ begin
   end;
 end;
 
-function FindContact(list:hwnd;contact:cardinal):integer;
+function FindContact(list:hwnd;contact:THANDLE):integer;
 var
   i,j:integer;
 begin
@@ -93,7 +104,7 @@ begin
   j:=SendMessage(list,CB_GETCOUNT,0,0);
   for i:=0 to j-1 do
   begin
-    if dword(SendMessage(list,CB_GETITEMDATA,i,0))=contact then
+    if THANDLE(SendMessage(list,CB_GETITEMDATA,i,0))=contact then
     begin
       result:=i;
       break;

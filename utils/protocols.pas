@@ -447,11 +447,11 @@ begin
           status:=status or psf_chat;
         p:=StrCopyE(buf,name);
         StrCopy(p,PS_ICQ_GETCUSTOMSTATUS);
-        if PluginLink^.ServiceExists(buf)<>0 then
+        if ServiceExists(buf)<>0 then
           status:=status or psf_icq;
 
         StrCopy(p,PS_SET_LISTENINGTO);
-        if PluginLink^.ServiceExists(buf)<>0 then
+        if ServiceExists(buf)<>0 then
           status:=status or psf_tunes;
           
       end;
@@ -462,7 +462,7 @@ begin
 {
   if deepscan then
   begin
-    hContact:=PluginLink^.CallService(MS_DB_CONTACT_FINDFIRST,0,0);
+    hContact:=CallService(MS_DB_CONTACT_FINDFIRST,0,0);
     while hContact<>0 do
     begin
       i:=NumProto;
@@ -473,18 +473,18 @@ begin
         dec(i);
       end;
 
-      hContact:=PluginLink^.CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
+      hContact:=CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
     end;
   end;
 }
   result:=NumProto;
 
-  hAccounts:=PluginLink^.HookEvent(ME_PROTO_ACCLISTCHANGED,@AccListChanged);
+  hAccounts:=HookEvent(ME_PROTO_ACCLISTCHANGED,@AccListChanged);
 end;
 
 procedure FreeProtoList;
 begin
-  PluginLink^.UnhookEvent(hAccounts);
+  UnhookEvent(hAccounts);
   mFreeMem(protos);
   NumProto:=0;
 end;
@@ -499,7 +499,7 @@ begin
     result:=-1;
   if txt<>PAnsiChar(-1) then
   begin
-    if PluginLink^.ServiceExists(MS_NAS_SETSTATEA)=0 then
+    if ServiceExists(MS_NAS_SETSTATEA)=0 then
       result:=CallProtoService(proto,PS_SETAWAYMSG,abs(status),lparam(txt))
     else
     begin
@@ -513,7 +513,7 @@ begin
       nas.cbSize :=SizeOf(nas);
       nas.szProto:=proto;
       nas.status :=abs(status){0};
-      result:=PluginLink^.CallService(MS_NAS_SETSTATEA,LPARAM(@nas),1);
+      result:=CallService(MS_NAS_SETSTATEA,LPARAM(@nas),1);
     end;
   end;
 end;
@@ -589,7 +589,7 @@ begin
 
     StrCopy(buf,proto);
     StrCat (buf,PS_ICQ_GETCUSTOMSTATUS);
-    result:=PluginLink^.CallService(buf,0,0);
+    result:=CallService(buf,0,0);
     if (txt<>nil) or (title<>nil) then
     begin
       move('XStatus',param,7);

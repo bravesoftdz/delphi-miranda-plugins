@@ -64,14 +64,14 @@ begin
   LoadOpt;
   CreateProtoList;
   CreateTemplates;
-  hINS:=PluginLink^.CreateServiceFunction(MS_WAT_INSERT,@InsertProc);
+  hINS:=CreateServiceFunction(MS_WAT_INSERT,@InsertProc);
   reghotkey;
-  plStatusHook:=PluginLink^.HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);
+  plStatusHook:=HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);
 
 //  mStatus.ModuleStat:=1;
 
-//  if PluginLink^.ServiceExists(MS_LISTENINGTO_GETPARSEDTEXT)<>0 then
-//    hLTo:=PluginLink^.CreateServiceFunction(MS_LISTENINGTO_GETPARSEDTEXT,@ListenProc);
+//  if ServiceExists(MS_LISTENINGTO_GETPARSEDTEXT)<>0 then
+//    hLTo:=CreateServiceFunction(MS_LISTENINGTO_GETPARSEDTEXT,@ListenProc);
 end;
 
 procedure DeInitProc(aSetDisable:boolean);
@@ -86,9 +86,9 @@ begin
     if (SimpleMode<>BST_UNCHECKED) or ((GetProtoSetting(j) and psf_enabled)<>0) then
       CallProtoService(GetProtoName(j),PS_SET_LISTENINGTO,0,0);
   end;
-//  PluginLink^.DestroyServiceFunction(hLTo);
-  PluginLink^.DestroyServiceFunction(hINS);
-  PluginLink^.UnhookEvent(plStatusHook);
+//  DestroyServiceFunction(hLTo);
+  DestroyServiceFunction(hINS);
+  UnhookEvent(plStatusHook);
   FreeProtoList;
   FreeTemplates;
 

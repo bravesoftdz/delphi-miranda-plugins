@@ -44,7 +44,7 @@ Returns 0 on success, nonzero otherwise.
 
 type
   PFILETYPEDESC = ^TFILETYPEDESC;
-  TFILETYPEDESC = packed record
+  TFILETYPEDESC = record
     cbSize: Integer;         // size of this structure, in bytes
 
     pszDescription: PAnsiChar;   // description for options dialog and in registry.
@@ -125,7 +125,7 @@ Returns 0 on success, nonzero otherwise.
 
 type
   PURLTYPEDESC = ^TURLTYPEDESC;
-  TURLTYPEDESC = packed record
+  TURLTYPEDESC = record
     cbSize: Integer;           // size of this structure, in bytes
 
     pszDescription: PAnsiChar;     // description for options dialog and in registry.

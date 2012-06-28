@@ -1,21 +1,5 @@
-{}
-  procedure SetNumValue(wnd:HWND;value:dword;isvar:boolean;ishex:boolean);
-  var
-    buf:array [0..31] of WideChar;
-  begin
-    if isvar then
-      SendMessageW(wnd,WM_SETTEXT,0,value)
-    else if ishex then
-    begin
-      buf[0]:='$';
-      IntToHex(PWideChar(@buf[1]),value);
-      SendMessageW(wnd,WM_SETTEXT,0,tlparam(@buf));
-    end
-    else
-      SendMessageW(wnd,WM_SETTEXT,0,tlparam(IntToStr(buf,value)));
-  end;
-
-  procedure SHControl(ctrl,mode:dword);
+{Dialog visual part, depends of Dialog window}
+  procedure SHControl(ctrl,mode:dword); {$IFDEF MSWINDOWS}inline;{$ENDIF}
   begin
     ShowWindow(GetDlgItem(Dialog,ctrl),mode);
   end;
@@ -289,17 +273,17 @@
      end;
   end;
 
-  procedure ButtonOff(ctrl:dword);
+  procedure ButtonOff(ctrl:dword); {$IFDEF MSWINDOWS}inline;{$ENDIF}
   begin
     SetButtonOnOff(ctrl,BST_UNCHECKED);
   end;
 
-  procedure ButtonOn(ctrl:dword);
+  procedure ButtonOn(ctrl:dword); {$IFDEF MSWINDOWS}inline;{$ENDIF}
   begin
     SetButtonOnOff(ctrl,BST_CHECKED);
   end;
 
-  procedure TextClear(ctrl:dword);
+  procedure TextClear(ctrl:dword); {$IFDEF MSWINDOWS}inline;{$ENDIF}
   begin
     SetDlgItemTextW(Dialog,ctrl,nil);
   end;
@@ -349,6 +333,7 @@
         end;
       mFreeMem(pc);
     end;
+
     pc:=ApiCard.FillParams(GetDlgItem(Dialog,IDC_EDIT_LPAR),false);
     if pc<>nil then
     begin
@@ -1085,54 +1070,4 @@
       end;
       SHWindows(actionType);
     end;
-  end;
-
-  procedure MakeMathOperList(id:integer);
-  var
-    wnd:HWND;
-  begin
-    wnd:=GetDlgItem(Dialog,id);
-    SendMessage(wnd,CB_RESETCONTENT,0,0);
-    InsertString(wnd,cardinal(aeNot),'! not');
-    InsertString(wnd,cardinal(aeAdd),'+ add');
-    InsertString(wnd,cardinal(aeSub),'- sub');
-    InsertString(wnd,cardinal(aeMul),'* mul');
-    InsertString(wnd,cardinal(aeDiv),'/ div');
-    InsertString(wnd,cardinal(aeMod),'% mod');
-    InsertString(wnd,cardinal(aeAnd),'& and');
-    InsertString(wnd,cardinal(aeOr ),'| or');
-    InsertString(wnd,cardinal(aeXor),'^ xor');
-    InsertString(wnd,cardinal(aeSet),'= set');
-    SendMessage(wnd,CB_SETCURSEL,0,0);
-  end;
-
-  procedure MakeParamTypeList(id:integer);
-  var
-    wnd:HWND;
-  begin
-    wnd:=GetDlgItem(Dialog,id);
-    SendMessage(wnd,CB_RESETCONTENT,0,0);
-
-    InsertString(wnd,ptNumber ,'number value');
-    InsertString(wnd,ptString ,'ANSI string');
-    InsertString(wnd,ptUnicode,'Unicode string');
-    InsertString(wnd,ptCurrent,'current contact');
-    InsertString(wnd,ptResult ,'last result');
-    InsertString(wnd,ptParam  ,'parameter');
-    InsertString(wnd,ptStruct ,'structure');
-    SendMessage(wnd,CB_SETCURSEL,0,0);
-  end;
-
-  procedure MakeResultTypeList(id:integer);
-  var
-    wnd:HWND;
-  begin
-    wnd:=GetDlgItem(Dialog,id);
-    SendMessage(wnd,CB_RESETCONTENT,0,0);
-
-    InsertString(wnd,sresInt   ,'Integer');
-    InsertString(wnd,sresHex   ,'Hexadecimal');
-    InsertString(wnd,sresString,'String');
-    InsertString(wnd,sresStruct,'Structure');
-    SendMessage(wnd,CB_SETCURSEL,0,0);
   end;

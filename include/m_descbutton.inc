@@ -41,10 +41,13 @@ const
 {
 #define MDescButton_SetTitle(hwnd, title)	\
 	(SendMessage((hwnd), DBCM_SETTITLE, MDBCF_TCHAR, (LPARAM)(title)))
+
 #define MDescButton_SetDescription(hwnd, title)	\
 	(SendMessage((hwnd), DBCM_SETDESCRIPTION, MDBCF_TCHAR, (LPARAM)(title)))
+
 #define MDescButton_SetIcon(hwnd, hicon)	\
 	(SendMessage((hwnd), DBCM_SETICON, 0, (LPARAM)(hicon)))
+
 #define MDescButton_SetIconShared(hwnd, hicon)	\
 	(SendMessage((hwnd), DBCM_SETICON, MDBCF_SHAREDICON, (LPARAM)(hicon)))
 }

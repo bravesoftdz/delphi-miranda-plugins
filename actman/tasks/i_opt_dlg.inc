@@ -413,7 +413,7 @@ begin
   result:=0;
   case hMessage of
     WM_CLOSE: begin
-      PluginLink^.UnhookEvent(onactchanged);
+      UnhookEvent(onactchanged);
       settings:=0;
     end;
 
@@ -443,7 +443,7 @@ begin
       FillStartTimeList(GetDlgItem(Dialog,IDC_TASK_ABSOLUTE));
       FillTaskList(wnd);
       CheckTaskList(Dialog,false);
-      onactchanged:=PluginLink^.HookEvent(ME_ACT_CHANGED,@ActListChange);
+      onactchanged:=HookEvent(ME_ACT_CHANGED,@ActListChange);
       settings:=Dialog;
     end;
 

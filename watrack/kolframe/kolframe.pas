@@ -195,7 +195,7 @@ var
   FrameWnd:HWND;
 begin
   result:=false;
-  if PluginLink^.ServiceExists(MS_CLIST_FRAMES_ADDFRAME)=0 then
+  if ServiceExists(MS_CLIST_FRAMES_ADDFRAME)=0 then
     exit;
 
   if parent=0 then
@@ -223,7 +223,7 @@ begin
     PWATFrameData(FrameCtrl.CustomData).FrameId:=CallService(MS_CLIST_FRAMES_ADDFRAME,dword(@CLFrame),0);
     if PWATFrameData(FrameCtrl.CustomData).FrameId>=0 then
     begin
-      plStatusHook:=PluginLink^.HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);
+      plStatusHook:=HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);
     end;
   end;
   result:=FrameWnd<>0;
@@ -235,7 +235,7 @@ var
 begin
   if (FrameCtrl<>nil) and (PWATFrameData(FrameCtrl.CustomData).FrameId>=0) then
   begin
-    PluginLink^.UnhookEvent(plStatusHook);
+    UnhookEvent(plStatusHook);
 
     id:=PWATFrameData(FrameCtrl.CustomData).FrameId;
     FrameCtrl.Free;
@@ -273,7 +273,7 @@ begin
 
   result:=ord(CreateFrame(0));
   if result<>0 then
-    sic:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
+    sic:=HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
 end;
 
 procedure DeInitProc(aSetDisable:boolean);
@@ -281,7 +281,7 @@ begin
   if aSetDisable then
     SetModStatus(0);
 
-  if sic<>0 then PluginLink^.UnhookEvent(sic);
+  if sic<>0 then UnhookEvent(sic);
   sic:=0;
   DestroyFrame;
 end;

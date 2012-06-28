@@ -3,49 +3,29 @@
 
 //button flags
 const
-  TTBBF_DISABLED    = 1;
-  TTBBF_VISIBLE     = 2;
-  TTBBF_PUSHED      = 4;
-  TTBBF_SHOWTOOLTIP = 8;
-  TTBBF_DRAWBORDER  = 16; // draw border for bitmap,bitmap must be WxH 16x12
-  TTBBF_ISSEPARATOR = 32;
-
-//for internal launch buttons
-  TTBBF_ISLBUTTON   = 64;
+  TTBBF_DISABLED     = 1;
+  TTBBF_VISIBLE      = 2;
+  TTBBF_PUSHED       = 4;
+  TTBBF_SHOWTOOLTIP  = 8;
+  TTBBF_ISSEPARATOR  = 32;
+  TTBBF_ISLBUTTON    = 64;
+  TTBBF_ICONBYHANDLE = 128;
+  TTBBF_ISSBUTTON    = 256;
+  TTBBF_ASPUSHBUTTON = 512;
 
 type
   PTTBButton = ^TTBButton;
   TTBButton = record
     cbSize        :int;
-    hbBitmapUp    :HBITMAP;
-    hbBitmapDown  :HBITMAP;
-    pszServiceUp  :PAnsiChar;
-    pszServiceDown:PAnsiChar;
+    pszService  :PAnsiChar; // or program for lButtons
     dwFlags       :DWORD;
     lParamUp      :LPARAM;
     wParamUp      :WPARAM;
     lParamDown    :LPARAM;
     wParamDown    :WPARAM;
     name          :PAnsiChar;
-  end;
-
-  PTTBButtonV2 = ^TTBButtonV2;
-  TTBButtonV2 = record
-    cbSize        :int;
-    hbBitmapUp    :HBITMAP;
-    hbBitmapDown  :HBITMAP;
-    pszServiceUp  :PAnsiChar;
-    pszServiceDown:PAnsiChar;
-    dwFlags       :DWORD;
-    lParamUp      :LPARAM;
-    wParamUp      :WPARAM;
-    lParamDown    :LPARAM;
-    wParamDown    :WPARAM;
-    name          :PAnsiChar;
-    hIconUp       :HICON;
-    hIconDn       :HICON;
-    tooltipUp     :PAnsiChar;
-    tooltipDn     :PAnsiChar;
+    hIconUp       :HICON;     // or hIconHandleUp:HANDLE
+    hIconDn       :HICON;     // or hIconHandleDn:HANDLE
   end;
 
 const

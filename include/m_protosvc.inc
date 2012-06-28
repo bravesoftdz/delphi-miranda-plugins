@@ -225,7 +225,7 @@ type
   TPROTORECVEVENT = record
     flags    : DWORD;
     timestamp: DWORD;
-    szMessage: PAnsiChar;
+    szMessage: TChar;
     lParam   : LPARAM;
   end;
 

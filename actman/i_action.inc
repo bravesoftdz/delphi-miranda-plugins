@@ -122,7 +122,7 @@ begin
 {
   if CallService(MS_DB_CONTACT_IS,hContact,0)<>0 then
   begin
-    if PluginLink^.ServiceExists(MS_MSG_CONVERS)<>0 then
+    if ServiceExists(MS_MSG_CONVERS)<>0 then
     begin
       CallService(MS_MSG_CONVERS,hContact,0)
     end
@@ -275,7 +275,7 @@ begin
       else
         StrReplace(buf,protostr,GetContactProtoAcc(Param));
 
-    if PluginLink^.ServiceExists(buf)<>0 then
+    if ServiceExists(buf)<>0 then
     begin
 
       cc:=-1;
@@ -351,7 +351,7 @@ begin
         end;
       end;
 
-      res:=PluginLink^.CallServiceSync(buf,lwparam,llparam);
+      res:=CallServiceSync(buf,lwparam,llparam);
       result:=res;
       if (flags and ACF_STRING)<>0 then
       begin
@@ -677,7 +677,7 @@ begin
     begin
       StrDeleteW(dst,i shr 16,loword(i));
       ConvertFileName(r.text,buf);
-//      PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,dword(r.text),dword(@buf));
+//      CallService(MS_UTILS_PATHTOABSOLUTE,dword(r.text),dword(@buf));
       lp:=GetFileString(@buf,r.one);
       if lp<>nil then
       begin

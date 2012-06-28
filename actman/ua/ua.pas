@@ -71,29 +71,29 @@ begin
 
   CreateUActionList;
 
-  ontabbtnpressed:=PluginLink^.HookEvent(ME_MSG_BUTTONPRESSED,@OnTabButtonPressed);
-  onactchanged   :=PluginLink^.HookEvent(ME_ACT_CHANGED      ,@ActListChange);
+  ontabbtnpressed:=HookEvent(ME_MSG_BUTTONPRESSED,@OnTabButtonPressed);
+  onactchanged   :=HookEvent(ME_ACT_CHANGED      ,@ActListChange);
 
-  hPreBuildMMenu:=PluginLink^.HookEvent(ME_CLIST_PREBUILDMAINMENU   , PreBuildMainMenu);
-  hPreBuildCMenu:=PluginLink^.HookEvent(ME_CLIST_PREBUILDCONTACTMENU, PreBuildContactMenu);
-  hPreBuildTMenu:=PluginLink^.HookEvent(ME_CLIST_PREBUILDTRAYMENU   , PreBuildTrayMenu);
+  hPreBuildMMenu:=HookEvent(ME_CLIST_PREBUILDMAINMENU   , PreBuildMainMenu);
+  hPreBuildCMenu:=HookEvent(ME_CLIST_PREBUILDCONTACTMENU, PreBuildContactMenu);
+  hPreBuildTMenu:=HookEvent(ME_CLIST_PREBUILDTRAYMENU   , PreBuildTrayMenu);
 
-  iohook:=PluginLink^.HookEvent(ME_ACT_INOUT,@ActInOut);
+  iohook:=HookEvent(ME_ACT_INOUT,@ActInOut);
 end;
 
 procedure DeInit;
 begin
   SetLength(arMenuRec,0);
 
-  PluginLink^.UnhookEvent(hPreBuildMMenu);
-  PluginLink^.UnhookEvent(hPreBuildCMenu);
-  PluginLink^.UnhookEvent(hPreBuildTMenu);
+  UnhookEvent(hPreBuildMMenu);
+  UnhookEvent(hPreBuildCMenu);
+  UnhookEvent(hPreBuildTMenu);
 
-  PluginLink^.UnhookEvent(ontabbtnpressed);
-  PluginLink^.UnhookEvent(onactchanged);
-  PluginLink^.UnhookEvent(iohook);
-  PluginLink^.DestroyServiceFunction(hServiceWithLParam);
-  PluginLink^.DestroyServiceFunction(hMTBService);
+  UnhookEvent(ontabbtnpressed);
+  UnhookEvent(onactchanged);
+  UnhookEvent(iohook);
+  DestroyServiceFunction(hServiceWithLParam);
+  DestroyServiceFunction(hMTBService);
 end;
 
 function AddOptionPage(var tmpl:pAnsiChar;var proc:pointer;var name:PAnsiChar):integer;

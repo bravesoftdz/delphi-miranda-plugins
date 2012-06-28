@@ -427,7 +427,7 @@ begin
         mFreeMem(title);
       end;
       
-      PluginLink^.NotifyEventHooks(hhRadioStatus,code,arg);
+      NotifyEventHooks(hhRadioStatus,code,arg);
     end;
 
   end;

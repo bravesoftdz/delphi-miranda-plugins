@@ -277,7 +277,7 @@ var
   tr:TRECT;
   cid:TColourID;
 begin
-  if PluginLink^.ServiceExists(MS_CLIST_FRAMES_ADDFRAME)=0 then
+  if ServiceExists(MS_CLIST_FRAMES_ADDFRAME)=0 then
     exit;
   if parent=0 then
     parent:=CallService(MS_CLUI_GETHWND,0,0);
@@ -321,7 +321,7 @@ begin
       cid.order    :=0;
       CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
 
-      colorhook:=PluginLink^.HookEvent(ME_COLOUR_RELOAD,@ColorReload);
+      colorhook:=HookEvent(ME_COLOUR_RELOAD,@ColorReload);
       ColorReload(0,0);
     end;
   end;
@@ -331,7 +331,7 @@ procedure DestroyFrame;
 begin
   if FrameId>=0 then
   begin
-    PluginLink.UnhookEvent(colorhook);
+    UnhookEvent(colorhook);
     CallService(MS_CLIST_FRAMES_REMOVEFRAME,FrameId,0);
     FrameId:=-1;
   end;

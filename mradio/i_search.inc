@@ -371,10 +371,7 @@ function Service_AddToList(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
   hContact:THANDLE;
   p:PWideChar;
-  pc:pAnsiChar;
-  l:bool;
   lurl:pWideChar;
-  buf:array [0..255] of WideChar;
 begin
   result:=0;
   if lParam<>0 then
@@ -385,9 +382,6 @@ begin
         lurl:=id.w
       else
         lurl:=firstname.w;
-// eally, not PSR_UNICODE but PALF_TEMPORARY here
-//!!      if (flags and PSR_UNICODE)=0 then
-        lurl:=FastAnsiToWideBuf(pAnsiChar(lurl),@buf);
 
       if lurl<>nil then
       begin
@@ -423,45 +417,25 @@ begin
           DBWriteUnicode(hContact,PluginName,optFirstName ,lurl);
 
           // Name
-          l:=false;
           if nick.w=nil then
             p:=lurl
-          else //!!if (flags and PSR_UNICODE)=0 then
-          begin
-            l:=true;
-            AnsiToWide(nick.a,p,MirandaCP);
-//            p:=FastAnsiToWideBuf(nick.a,@buf)
-          end
-;{!!          else
+          else
             p:=nick.w;
-}
           DBWriteUnicode(hContact,strCList  ,optMyHandle,p);
           DBWriteUnicode(hContact,PluginName,optNick    ,p);
-          if l then
-            mFreeMem(p);
 
           // Bitrate
-          if email.a<>nil then
+          if email.w<>nil then
           begin
-{!!
-            if (flags and PSR_UNICODE)<>0 then
-              pc:=FastWideToAnsiBuf(email.w,@buf)
-            else
-}
-              pc:=email.a;
-            DBWriteWord  (hContact,PluginName,optAge    ,StrToInt(pc));
-            DBWriteString(hContact,PluginName,optBitrate,pc);
+            DBWriteWord   (hContact,PluginName,optAge    ,StrToInt(email.w));
+            DBWriteUnicode(hContact,PluginName,optBitrate,email.w);
           end;
 
           // Genre
-          if lastname.a<>nil then
+          if lastname.w<>nil then
           begin
-{!!            if (flags and PSR_UNICODE)<>0 then
-              pc:=FastWideToAnsiBuf(lastname.w,@buf)
-            else
-}              pc:=lastname.a;
-            DBWriteString(hContact,PluginName,optGenre   ,pc);
-            DBWriteString(hContact,PluginName,optLastName,pc);
+            DBWriteUnicode(hContact,PluginName,optGenre   ,lastname.w);
+            DBWriteUnicode(hContact,PluginName,optLastName,lastname.w);
           end;
 
           SetStatus(hContact,ID_STATUS_OFFLINE);

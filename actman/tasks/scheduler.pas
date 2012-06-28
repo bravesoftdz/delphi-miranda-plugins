@@ -45,19 +45,19 @@ begin
   else
     SetAllTasks;
 
-  hcount:=PluginLink^.CreateServiceFunction(MS_ACT_TASKCOUNT ,@TaskCount);
-  hendis:=PluginLink^.CreateServiceFunction(MS_ACT_TASKENABLE,@TaskEnable);
-  hdel  :=PluginLink^.CreateServiceFunction(MS_ACT_TASKDELETE,@TaskDelete);
-  hevent:=PluginLink^.CreateHookableEvent(ME_ACT_BELL);
+  hcount:=CreateServiceFunction(MS_ACT_TASKCOUNT ,@TaskCount);
+  hendis:=CreateServiceFunction(MS_ACT_TASKENABLE,@TaskEnable);
+  hdel  :=CreateServiceFunction(MS_ACT_TASKDELETE,@TaskDelete);
+  hevent:=CreateHookableEvent(ME_ACT_BELL);
 
 end;
 
 procedure DeInit;
 begin
   StopAllTasks;
-  PluginLink^.DestroyServiceFunction(hendis);
-  PluginLink^.DestroyServiceFunction(hdel);
-  PluginLink^.DestroyServiceFunction(hcount);
+  DestroyServiceFunction(hendis);
+  DestroyServiceFunction(hdel);
+  DestroyServiceFunction(hcount);
   ClearTasks;
 end;
 

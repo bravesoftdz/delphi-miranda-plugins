@@ -84,37 +84,11 @@ type
 
 const
   hLangpack:THANDLE = 0;
-{$include m_system.inc}
-const
-  mmi:TMM_INTERFACE=(
-    cbSize :SizeOf(TMM_INTERFACE);
-    malloc :nil;
-    realloc:nil;
-    free   :nil;
-// if MIRANDA_VER >= 0x0600
-    calloc :nil;
-    strdup :nil;
-    wstrdup:nil;
-// if MIRANDA_VER >= 0x0700
-    mir_snprintf  :nil;
-    mir_sntprintf :nil;
-    mir_vsnprintf :nil;
-    mir_vsntprintf:nil;
 
-    mir_a2u_cp:nil;
-    mir_a2u   :nil;
-    mir_u2a_cp:nil;
-    mir_u2a   :nil);
+{$include m_core.inc}
+{$include m_system.inc}
 
 {-- start newpluginapi --}
-const
-  MAXMODULELABELLENGTH = 64;
-  {$IFDEF WIN64}
-  CALLSERVICE_NOTFOUND = $8000000000000000;
-  {$ELSE}
-  CALLSERVICE_NOTFOUND = $80000000;
-  {$ENDIF}
-
 const
   UNICODE_AWARE = 1;
 
@@ -173,73 +147,23 @@ type
     uuid       :MUUID; // Not required until 0.8.
   end;
 
-{ modules.h is never defined -- no check needed }
+//----- Fork enchancement -----
+{
+  Miranda/System/LoadModule event
+  called when a plugin is being loaded dynamically
+  wParam=PLUGININFOEX*
+  //lParam=HINSTANCE of the loaded plugin
+}
+const
+  ME_SYSTEM_MODULELOAD:pAnsiChar = 'Miranda/System/LoadModule';
 
-  TMIRANDAHOOK            = function(wParam: WPARAM; lParam: LPARAM): int; cdecl;
-  TMIRANDAHOOKPARAM       = function(wParam: WPARAM; lParam,lParam1: LPARAM): int; cdecl;
-  TMIRANDAHOOKOBJ         = function(ptr:pointer;wParam:WPARAM;lParam:LPARAM): int; cdecl;
-  TMIRANDAHOOKOBJPARAM    = function(ptr:pointer;wParam:WPARAM;lParam,lParam1: LPARAM): int; cdecl;
-  TMIRANDASERVICE         = function(wParam: WPARAM; lParam: LPARAM): int_ptr; cdecl;
-  TMIRANDASERVICEPARAM    = function(wParam:WPARAM;lParam,lParam1:LPARAM):int_ptr; cdecl;
-  TMIRANDASERVICEOBJ      = function(ptr:pointer;wParam,lParam:LPARAM):int_ptr; cdecl;
-  TMIRANDASERVICEOBJPARAM = function(ptr:pointer;wParam:WPARAM;lParam,lParam1:LPARAM):int_ptr; cdecl;
-
-  //see modules.h tor what all this stuff is
-
-  TCreateHookableEvent            = function(const AnsiChar: PAnsiChar): THandle; cdecl;
-  TDestroyHookableEvent           = function(Handle: THandle): int; cdecl;
-  TNotifyEventHooks               = function(Handle: THandle; wParam: WPARAM; lParam: LPARAM): int; cdecl;
-  THookEvent                      = function(const AnsiChar: PAnsiChar; MIRANDAHOOK: TMIRANDAHOOK): THandle; cdecl;
-  THookEventMessage               = function(const AnsiChar: PAnsiChar; Wnd: THandle; wMsg: uint): THandle; cdecl;
-  TUnhookEvent                    = function(Handle: THandle): int; cdecl;
-  TCreateServiceFunction          = function(const AnsiChar: PAnsiChar; MIRANDASERVICE: TMIRANDASERVICE): THandle; cdecl;
-  TCreateTransientServiceFunction = function(const AnsiChar: PAnsiChar; MIRANDASERVICE: TMIRANDASERVICE): THandle; cdecl;
-  TDestroyServiceFunction         = function(Handle: THandle): int; cdecl;
-  TCallService                    = function(const AnsiChar: PAnsiChar; wParam: WPARAM; lParam: LPARAM): int_ptr; cdecl;
-  TServiceExists                  = function(const AnsiChar: PAnsiChar): int; cdecl;
-  TCallServiceSync                = function(const AnsiChar: PAnsiChar;wParam: WPARAM; lParam: LPARAM): int_ptr; cdecl;    //v0.3.3+
-  TCallFunctionAsync              = function(ptr1,ptr2:pointer):int; cdecl; {stdcall;}  //v0.3.4+
-  TSetHookDefaultForHookableEvent = function(Handle:THandle;MIRANDAHOOK: TMIRANDAHOOK):int; cdecl;// v0.3.4 (2004/09/15)
-  TCreateServiceFunctionParam     = function(const AnsiChar:PAnsiChar; MIRANDASERVICEPARAM:TMIRANDASERVICEPARAM;lParam:LPARAM): THandle; cdecl;
-  TNotifyEventHooksDirect         = function(Handle:THANDLE;wParam:WPARAM;lParam:LPARAM):int; cdecl; // v0.7+
-  TCallProtoService               = function(const str1:PAnsiChar;const str2:PAnsiChar;wParam:WPARAM;lParam:LPARAM):int_ptr; cdecl; //v0.8+
-  TCallContactService             = function(Handle:THANDLE;const str:PAnsiChar;wParam:WPARAM;lParam:LPARAM):int_ptr; cdecl; // v0.8+
-  THookEventParam                 = function(const str:PAnsiChar;mhp:TMIRANDAHOOKPARAM;lParam:LPARAM):THANDLE; cdecl;
-  THookEventObj                   = function(const str:PAnsiChar;mho:TMIRANDAHOOKOBJ;ptr:pointer):THANDLE; cdecl;
-  THookEventObjParam              = function(const str:PAnsiChar;mhop:TMIRANDAHOOKOBJPARAM;ptr:pointer;lParam:LPARAM):THANDLE; cdecl;
-  TCreateServiceFunctionObj       = function(const str:PAnsiChar;mso:TMIRANDASERVICEOBJ;ptr:pointer):THANDLE; cdecl;
-  TCreateServiceFunctionObjParam  = function(const str:PAnsiChar;msop:TMIRANDASERVICEOBJPARAM;ptr:pointer;lParam:LPARAM):THANDLE; cdecl;
-  TKillObjectServices             = procedure(var ptr); 
-  TKillObjectEventHooks           = procedure(var ptr);
-
-  PPLUGINLINK = ^TPLUGINLINK;
-  TPLUGINLINK = record
-    CreateHookableEvent           : TCreateHookableEvent;
-    DestroyHookableEvent          : TDestroyHookableEvent;
-    NotifyEventHooks              : TNotifyEventHooks;
-    HookEvent                     : THookEvent;
-    HookEventMessage              : THookEventMessage;
-    UnhookEvent                   : TUnhookEvent;
-    CreateServiceFunction         : TCreateServiceFunction;
-    CreateTransientServiceFunction: TCreateTransientServiceFunction;
-    DestroyServiceFunction        : TDestroyServiceFunction;
-    CallService                   : TCallService;
-    ServiceExists                 : TServiceExists;                  // v0.1.0.1+
-    CallServiceSync               : TCallServiceSync;                // v0.3.3+
-    CallFunctionAsync             : TCallFunctionAsync;              // v0.3.4+
-    SetHookDefaultForHookableEvent: TSetHookDefaultForHookableEvent; // v0.3.4 (2004/09/15)
-    CreateServiceFunctionParam    : TCreateServiceFunctionParam;     // v0.7+ (2007/04/24)
-    NotifyEventHooksDirect        : TNotifyEventHooksDirect;         // v0.7+
-    CallProtoService              : TCallProtoService;               // v0.8+
-    CallContactService            : TCallContactService;             // v0.8+
-    HookEventParam                : THookEventParam;                 // v0.8+
-    HookEventObj                  : THookEventObj;                   // v0.8+
-    HookEventObjParam             : THookEventObjParam;              // v0.8+
-    CreateServiceFunctionObj      : TCreateServiceFunctionObj;       // v0.8+
-    CreateServiceFunctionObjParam : TCreateServiceFunctionObjParam;  // v0.8+
-		KillObjectServices            : TKillObjectServices;
-		KillObjectEventHooks          : TKillObjectEventHooks;
-  end;
+{
+  Miranda/System/UnloadModule event
+  called when a plugin is being unloaded dynamically
+  wParam=PLUGININFOEX*
+  lParam=HINSTANCE of the loaded plugin
+}
+  ME_SYSTEM_MODULEUNLOAD:pAnsiChar = 'Miranda/System/UnloadModule';
 
   { Database plugin stuff  }
 
@@ -295,7 +219,7 @@ type
         which is a PLUGINLINK structure
       Returns: 0 on success, nonzero on failure
     }
-    Load : function (profile:PAnsiChar; link:pointer):int; cdecl;
+    Load : function (profile:PAnsiChar):int; cdecl;
     {
       Affect: The database plugin should shutdown, unloading things from the core and freeing internal structures
       Returns: 0 on success, nonzero on failure
@@ -307,14 +231,9 @@ type
 {-- end newpluginapi --}
 
 var
-  { this is now a pointer to a record of function pointers to match the C API,
-  and to break old code and annoy you. }
-  PLUGINLINK: PPLUGINLINK;
-
   { has to be returned via MirandaPluginInfo and has to be statically allocated,
   this means only one module can return info, you shouldn't be merging them anyway! }
   PLUGININFO: TPLUGININFOEX;
-
 
   {$include m_plugins.inc}
   {$include m_database.inc}
@@ -326,6 +245,7 @@ var
   {$include m_tabsrmm.inc}
   {$include m_url.inc}
   {$include m_clui.inc}
+  {$include m_idle.inc}
   {$include m_ignore.inc}
   {$include m_skin.inc}
   {$include m_file.inc}
@@ -350,13 +270,11 @@ var
   {$include m_fontservice.inc}
   {$include m_chat.inc}
   {$include m_fingerprint.inc}
-  {$include m_toptoolbar.inc}
   {$include m_updater.inc}
   {$include m_variables.inc}
   {$include m_cluiframes.inc}
   {$include m_popup.inc}
   {$include m_avatars.inc}
-  {$include m_png.inc}
   {$include m_smileyadd.inc}
   {$include m_tipper.inc}
   {$include m_button.inc}
@@ -364,7 +282,6 @@ var
   {$include m_userinfoex.inc}
   {$include m_imgsrvc.inc}
   {$include m_hotkeys.inc}
-  {.$include m_anismiley.inc}
   {$include m_acc.inc}
   {$include m_xml.inc}
   {$include m_historyevents.inc}
@@ -372,12 +289,13 @@ var
   {$include m_descbutton.inc}
   {$include m_iconheader.inc}
   {$include m_extraicons.inc}
-  {$include m_toolbar.inc}
   {$include m_errors.inc}
   {$include m_help.inc}
   {$include m_proto_listeningto.inc}
+  {$include m_toptoolbar.inc}
+  {$include m_toolbar.inc}
   {$include m_msg_buttonsbar.inc}
-  {$include m_libJSON.inc}
+  {$include m_json.inc}
 {$define M_API_UNIT}
   {$include m_helpers.inc}
   {$include m_clistint.inc}
@@ -387,17 +305,10 @@ var
 
   {$include m_newawaysys.inc}
 
-procedure InitMMI;
-
 implementation
 
 {$undef M_API_UNIT}
   {$include m_helpers.inc}
   {$include m_clistint.inc}
-
-procedure InitMMI;
-begin
-  PluginLink^.CallService(MS_SYSTEM_GET_MMI,0,lParam(@mmi));
-end;
 
 end.

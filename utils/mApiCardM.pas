@@ -93,7 +93,7 @@ var
   tmp:pWideChar;
   paramname:pAnsiChar;
 begin
-  if storage<>nil then
+  if storage=nil then
   begin
     result:=nil;
     exit;
@@ -105,7 +105,6 @@ begin
 
   StrCopy(buf,GetParamSectionStr(current,paramname,''));
   StrDup(result,@buf);
-
   SendMessage(wnd,CB_RESETCONTENT,0,0);
   if buf[0]<>#0 then
   begin
@@ -365,7 +364,7 @@ begin
   if fname<>nil then
   begin
     ConvertFileName(fname,@INIFile);
-  //  PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,
+  //  CallService(MS_UTILS_PATHTOABSOLUTE,
   //    dword(PAnsiChar(ServiceHlpFile)),dword(INIFile));
     if GetFSize(pAnsiChar(@INIFile))=0 then
     begin

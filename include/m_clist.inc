@@ -72,6 +72,7 @@ type
                               // applies, NULL(0) if it applies to all contacts.
                               // if it applies to multiple but not all protocols
                               // add multiple menu items or use ME_CLIST_PREBUILDCONTACTMENU
+    hLangpack      : int;     // plugin's hLangpack (added automatically)
   end;
 
 const

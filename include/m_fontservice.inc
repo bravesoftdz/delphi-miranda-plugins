@@ -43,7 +43,7 @@ type
   PFontSettings_tag = ^TFontSettings_tag;
   TFontSettings_tag = record
     colour  : TCOLORREF;
-    size    : AnsiChar;
+    size    : BYTE;
     style   : BYTE; // see the DBFONTF_* flags above
     charset : BYTE;
     szFace  : array[0..(LF_FACESIZE)-1] of AnsiChar;
@@ -54,7 +54,7 @@ type
   PFontSettingsW_tag = ^TFontSettingsW_tag;
   TFontSettingsW_tag = record
     colour  : TCOLORREF;
-    size    : AnsiChar;
+    size    : BYTE;
     style   : BYTE; // see the DBFONTF_* flags above
     charset : BYTE;
     szFace  : array[0..(LF_FACESIZE)-1] of WideChar;
@@ -124,6 +124,23 @@ const
   FontIDW_SIZEOF_V2 = SizeOf(TFontIDW);
   {$ENDIF}
 
+const
+  { register a font }
+  { wparam = pointer to FontID structure}
+  { lparam = hLangpack }
+  MS_FONT_REGISTERA:PAnsiChar = 'Font/Register';
+  MS_FONT_REGISTERW:PAnsiChar = 'Font/RegisterW';
+
+  { get a font }
+  { wparam = pointer to FontID structure (only name and group matter) }
+  { lParam = pointer to LOGFONT structure }
+  { returns the font's colour }
+  MS_FONT_GETA:PAnsiChar = 'Font/Get';
+  MS_FONT_GETW:PAnsiChar = 'Font/GetW';
+
+  { fired when a user modifies font settings, so reget your fonts }
+  ME_FONT_RELOAD:PAnsiChar = 'Font/Reload';
+
 type
   PColourID_tag = ^TColourID_tag;
   TColourID_tag = record
@@ -154,27 +171,11 @@ type
   PColourIDW = ^TColourIDW;
 
 const
-  { register a font }
-  { wparam = pointer to FontID structure}
-  { lparam = 0 }
-  MS_FONT_REGISTERA:PAnsiChar = 'Font/Register';
-  MS_FONT_REGISTERW:PAnsiChar = 'Font/RegisterW';
-
-  { get a font }
-  { wparam = pointer to FontID structure (only name and group matter) }
-  { lParam = pointer to LOGFONT structure }
-  { returns the font's colour }
-  MS_FONT_GETA:PAnsiChar = 'Font/Get';
-  MS_FONT_GETW:PAnsiChar = 'Font/GetW';
-
-  { fired when a user modifies font settings, so reget your fonts }
-  ME_FONT_RELOAD:PAnsiChar = 'Font/Reload';
-
   { register a colour (this should be used for everything except actual text colour for registered fonts) }
   { [note - a colour with name 'Background' has special meaning and will be used as the background colour of  }
   { the font list box in the options, for the given group] }
   { wparam = pointer to ColourID structure }
-  { lparam = 0 }
+  { lparam = hLangpack }
   MS_COLOUR_REGISTERA:PAnsiChar = 'Colour/Register';
   MS_COLOUR_REGISTERW:PAnsiChar = 'Colour/RegisterW';
 
@@ -218,6 +219,7 @@ type
     order          :int;
     value          :TFONTEFFECT;
   end;
+  PEffectID = ^TEffectID;
   TEffectID = EffectID_tag;
 
 type
@@ -232,12 +234,13 @@ type
     order          :int;
     value          :TFONTEFFECT;
   end;
+  PEffectIDW = ^TEffectIDW;
   TEffectIDW = EffectIDW_tag;
 
 const
 // register an effect
 // wparam = (EffectID *)&effect_id
-// lparam = 0
+// lparam = hLangpack
   MS_EFFECT_REGISTER :pAnsiChar = 'Effect/Register';
   MS_EFFECT_REGISTERW:pAnsiChar = 'Effect/RegisterW';
 

@@ -72,6 +72,8 @@ const
   SKINICON_OTHER_GROUP         = 239; // v0.8.0.29+
   SKINICON_OTHER_ON            = 240; // v0.9.0.9+
   SKINICON_OTHER_OFF           = 241; // v0.9.0.9+
+  SKINICON_OTHER_LOADEDGRAY    = 242; // v0.10.3.1+
+  SKINICON_OTHER_NOTLOADEDGRAY = 243; // v0.10.3.1+
 {
   SKINICON_EVENT_MESSAGE_BIG     = 300;
   SKINICON_EVENT_URL_BIG         = 301;
@@ -108,27 +110,8 @@ type
     pszName       : PAnsiChar; // name to refer to sound when playing and in DB
     pszDescription: TChar; // [TRANSLATED-BY-CORE] description to use for it in options dialog
     pszDefaultFile: TChar; // the default sound file to use, WITHOUT path
-    pszSection    : TChar; // [TRANSLATED-BY-CORE] section name used to group sounds (NULL is acceptable) (added during 0.3.4+ (2004/10/*))
+    pszSection    : TChar; // [TRANSLATED-BY-CORE] section name used to group sounds (NULL is acceptable)
     dwFlags       : dword; // if Miranda ver >=9.0
-  end;
-
-const
-  {$IFNDEF WIN64}
-  SKINSOUNDDESC_SIZE_V1 = 5*SizeOf(dword); // (offsetof(SKINSOUNDDESCEX, pszSection))
-  SKINSOUNDDESC_SIZE_V2 = 6*SizeOf(dword); // (offsetof(SKINSOUNDDESCEX, dwFlags)) // MIRANDA_VER >= 0x0900
-  {$ELSE}
-  SKINSOUNDDESC_SIZE_V1 = SIZEOF(TSKINSOUNDDESCEX);
-  SKINSOUNDDESC_SIZE_V2 = SIZEOF(TSKINSOUNDDESCEX);
-  {$ENDIF}
-
-type
-// Old struct pre 0.3.4
-  PSKINSOUNDDESC = ^TSKINSOUNDDESC;
-  TSKINSOUNDDESC = record
-    cbSize        : int;
-    pszName       : PAnsiChar; // name to refer to sound when playing and in DB
-    pszDescription: PAnsiChar; // [TRANSLATED-BY-CORE] description to use for it in options dialog
-    pszDefaultFile: PAnsiChar; // the default sound file to use, WITHOUT path
   end;
 
 const
@@ -156,7 +139,7 @@ const
   MS_SKIN_LOADPROTOICONBIG:PAnsiChar = 'Skin/Icons/LoadProtoBig';
 
   {
-    wParam : 0
+    wParam : hLangpack
     lParam : Pointer to a initialised SKINSOUNDDESC
     Affect : Add a new sound so it has a default and can be changed in the
              options dialog

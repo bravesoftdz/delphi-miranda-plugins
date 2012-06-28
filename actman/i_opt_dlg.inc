@@ -57,7 +57,7 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(id),IMAGE_ICON,16,16,0);
   sid.pszName        :=name;
   sid.szDescription.w:=FastAnsiToWideBuf(descr,buf);
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 end;
 
@@ -169,21 +169,6 @@ begin
   end;
 end;
 
-procedure InsertString(wnd:HWND;num:dword;str:PAnsiChar);
-var
-  buf:array [0..127] of WideChar;
-begin
-  SendMessageW(wnd,CB_SETITEMDATA,
-      SendMessageW(wnd,CB_ADDSTRING,0,
-          lparam(TranslateW(FastAnsiToWideBuf(str,buf)))),
-      num);
-{
-  SendMessageW(wnd,CB_INSERTSTRING,num,
-      dword(TranslateW(FastAnsiToWideBuf(str,buf))));
-}
-end;
-
-{.$include i_opt_struct.inc}
 {$include i_opt_dlg2.inc}
 
 function OnOptInitialise(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -197,6 +182,10 @@ var
 begin
   result:=0;
   NoDescription  :=TranslateW('No Description');
+  StrCopyW(xmlfilename,'c:\export.xml');
+
+  DoInitCommonControls(ICC_USEREX_CLASSES);
+
   FillChar(odp,SizeOf(odp),0);
   odp.cbSize     :=SizeOf(odp);
   odp.flags      :=ODPF_BOLDGROUPS or ODPF_EXPERTONLY;
@@ -207,9 +196,7 @@ begin
   odp.szTab.a    :='Actions';
   odp.pfnDlgProc :=@DlgProcOpt2;
   odp.pszTemplate:=PAnsiChar(IDD_ACTION);
-  PluginLink^.CallService(MS_OPT_ADDPAGE,wParam,tlparam(@odp));
-  DoInitCommonControls(ICC_USEREX_CLASSES);
-  StrCopyW(xmlfilename,'c:\export.xml');
+  Options_AddPage(wParam,@odp);
 
   ptr:=ActionLink;
   while ptr<>nil do
@@ -220,7 +207,7 @@ begin
       odp.pszTemplate:=tmpl;
       odp.pfnDlgProc :=proc;
       odp.szTab.a    :=name;
-      PluginLink^.CallService(MS_OPT_ADDPAGE,wParam,tlparam(@odp));
+      Options_AddPage(wParam,@odp);
       if i>0 then continue;
     end;
     ptr:=ptr^.Next;

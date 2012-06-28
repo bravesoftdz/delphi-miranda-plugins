@@ -43,8 +43,6 @@ var
   resp:PNETLIBHTTPREQUEST;
   hTmpNetLib:THANDLE;
   nlh:array [0..10] of TNETLIBHTTPHEADER;
-  i:integer;
-  p,pc:pAnsiChar;
 begin
   result:=nil;
 

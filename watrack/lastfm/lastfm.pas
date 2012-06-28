@@ -14,7 +14,6 @@ const
 const
   IcoLastFM:pAnsiChar = 'WATrack_lasfm';
 var
-  md5:TMD5_INTERFACE;
   lfm_tries:integer;
   sic:THANDLE;
   slastinf:THANDLE;
@@ -145,7 +144,7 @@ begin
   FillChar(mi,SizeOf(mi),0);
   mi.cbSize:=sizeof(mi);
   mi.flags :=CMIM_ICON;
-  mi.hIcon :=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoLastFM));
+  mi.hIcon :=CallService(MS_SKIN2_GETICON,0,tlparam(IcoLastFM));
   CallService(MS_CLIST_MODIFYMENUITEM,hMenuLast,tlparam(@mi));
 end;
 
@@ -202,18 +201,18 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,'IDI_LAST',IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoLastFM;
   sid.szDescription.a:='LastFM';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
   
   FillChar(mi, sizeof(mi), 0);
   mi.cbSize       :=sizeof(mi);
   mi.szPopupName.a:=PluginShort;
 
-  mi.hIcon        :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(IcoLastFM));
+  mi.hIcon        :=CallService(MS_SKIN2_GETICON,0,lparam(IcoLastFM));
   mi.szName.a     :='Disable scrobbling';
   mi.pszService   :=MS_WAT_LASTFM;
   mi.popupPosition:=500050000;
-  hMenuLast:=PluginLink^.CallService(MS_CLIST_ADDMAINMENUITEM,0,lparam(@mi));
+  hMenuLast:=CallService(MS_CLIST_ADDMAINMENUITEM,0,lparam(@mi));
 end;
 
 // ------------ base interface functions -------------
@@ -231,7 +230,7 @@ var
 
 function InitProc(aGetStatus:boolean=false):integer;
 begin
-  slastinf:=PluginLink^.CreateServiceFunction(MS_WAT_LASTFMINFO,@SrvLastFMInfo);
+  slastinf:=CreateServiceFunction(MS_WAT_LASTFMINFO,@SrvLastFMInfo);
   if aGetStatus then
   begin
     if GetModStatus=0 then
@@ -249,20 +248,12 @@ begin
 
   LoadOpt;
 
-//  if md5.cbSize=0 then
-  begin
-    md5.cbSize:=SizeOf(TMD5_INTERFACE);
-    if (CallService(MS_SYSTEM_GET_MD5I,0,lparam(@md5))<>0) then
-    begin
-    end;
-  end;
-
-  slast:=PluginLink^.CreateServiceFunction(MS_WAT_LASTFM,@SrvLastFM);
+  slast:=CreateServiceFunction(MS_WAT_LASTFM,@SrvLastFM);
   if hMenuLast=0 then
     CreateMenus;
-  sic:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
+  sic:=HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
   if (lfm_on and 4)=0 then
-    plStatusHook:=PluginLink^.HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);
+    plStatusHook:=HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);
 end;
 
 procedure DeInitProc(aSetDisable:boolean);
@@ -270,13 +261,13 @@ begin
   if aSetDisable then
     SetModStatus(0)
   else
-    PluginLink^.DestroyServiceFunction(slastinf);
+    DestroyServiceFunction(slastinf);
 
   CallService(MS_CLIST_REMOVEMAINMENUITEM,hMenuLast,0);
   hMenuLast:=0;
-  PluginLink^.DestroyServiceFunction(slast);
-  PluginLink^.UnhookEvent(plStatusHook);
-  PluginLink^.UnhookEvent(sic);
+  DestroyServiceFunction(slast);
+  UnhookEvent(plStatusHook);
+  UnhookEvent(sic);
 
   if hTimer<>0 then
   begin
@@ -305,7 +296,6 @@ begin
   last.ModuleName:='Last.FM';
   ModuleLink     :=@last;
 
-  md5.cbSize:=0;
 end;
 
 begin
