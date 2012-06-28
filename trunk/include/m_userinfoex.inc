@@ -51,7 +51,7 @@ called this message. Because UserinfoEx now looks for changes in the settings of
 shown inforamtion up to date.
 }
   PSP_CHANGED     = 2;
-  PSN_ICONCHANGED = 2;
+  PSN_ICONCHANGED = 2000;
 
 { PSM_GETBOLDFONT v0.1.0.3+
 wParam=NULL
@@ -129,6 +129,27 @@ type
 const
   PSM_DLGMESSAGE = WM_USER+907;
 
+(* PSM_ISAEROMODE v0.8.2.1+
+This message can be sent to the propertysheet (details dialog) to examine, 
+whether the aero adaption mode is enabled or not. This message should be used in
+each propertysheet page's dialog procedure as follows:
+
+	...
+	switch (msg) {
+		...
+		case WM_CTLCOLORSTATIC:
+		case WM_CTLCOLORDLG:
+			if (PSIsAeroMode(hDlg))
+				return (INT_PTR)GetStockBrush(WHITE_BRUSH);
+			break;
+		...
+
+This will draw a propertysheet page with white background, if aero adaption is enabled.
+wParam=not used
+lParam=pointer to boolean bIsAero
+*)
+   PSM_ISAEROMODE = (WM_USER+908);
+
 {*************************************************************
  *  vCard Module
 }
@@ -162,6 +183,19 @@ Return values are TRUE for success and FALSE if anything went wrong.
 }
   MS_USERINFO_LOCALTIME:PAnsiChar = 'UserInfo/LocalTime';
 
+{ UserInfo/LocalTime v0.7.0.1+
+This service provides the timezone information for a given contact
+as known by windows, too. All but the DaylightName and StandardName members
+of the class are filled out and can be used. The values are read
+from the windows registry and therefore keep up to date if the latest
+windows hotfixes are installed. There is no default API in the windows SDK
+to solve this problem.
+wParam=(WPARAM)hContact
+lParam=(TIME_ZONE_INFORMATION*)tzi
+Return values are 0 for success and 1 if no valid timezone is set for the contact.
+}
+  MS_USERINFO_TIMEZONEINFO:PAnsiChar = 'UserInfo/TimezoneInfo';
+
 {*************************************************************
  *  Reminder module
 }
@@ -191,6 +225,13 @@ lParam = not used
 }
   MS_USERINFO_REMINDER_AGGRASIVEBACKUP:PAnsiChar = 'UserInfo/Reminder/AggrassiveBackup';
 
+{ UserInfo/Refresh v0.7.0.1+
+This service calls PSS_GETINFO for all contacts in the contact list
+wParam = not used
+lParam = not used
+}
+  MS_USERINFO_REFRESH:PAnsiChar = 'UserInfo/Refresh';
+
 {*************************************************************
  *  Uinfobuttonclass module
 }
@@ -217,6 +258,7 @@ Slightly modified version of MButtonClass, to draw both text and icon in a butto
 }
   UINFOBUTTONCLASS = 'UInfoButtonClass';
 
+(*!! DELETED
 {*************************************************************
  *  Messagebox module
 }
@@ -224,7 +266,7 @@ Slightly modified version of MButtonClass, to draw both text and icon in a butto
 { UserInfo/MsgBox  v0.1.0.3+
 Some little changed message box for nicer look of miranda's messages or questions :-)
 wParam=hContact      - can be null
-lParam=(TMsgBox*)pMsg  - structure that holds information about the look of the message dialog
+lParam=(TMsgBox* )pMsg  - structure that holds information about the look of the message dialog
 uType member of TMsgBox can be a combination of the following values, where most of them are defined in winuser.h:
 MB_OK
 MB_OKCANCEL
@@ -261,13 +303,13 @@ type
 
 const
   MS_MSGBOX:PAnsiChar = 'UserInfo/MsgBox';
-
+*)
 {*************************************************************
  *  contact info module
 }
 
 // additional information which can be retrieved with this service
-  CNF_COPHONE    = 39; // returns company phone (string)
+  CNF_COPHONE    = 55; // returns company phone (string)
   CNF_COFAX      = 40; // returns company fax (string)
   CNF_COCELLULAR = 41; // returns company cellular (string)
   CNF_COEMAIL    = 42; // returns company email address (string)
@@ -291,5 +333,31 @@ wParam=hContact  - handle to contact whose homepage is to show
 lParam=not used
 }
   MS_USERINFO_HOMEPAGE_OPENURL:PAnsiChar = 'UserInfo/Homepage/OpenURL';
+
+
+{*************************************************************
+ * extended database module
+ *}
+
+{ DB/Contact/GetSettingStrEx	v0.7.0.1+
+This service function reads a database setting from USERINFO module.
+If the setting does not exist, it is looked up in 'pszProto'. 
+If 'hContact' points to a MetaContact, the setting is recursivly
+searched in all sub contacts, too, starting with the default contact,
+if the MetaContact does not directly provide the setting.
+This service can directly replace the default MS_DB_CONTACT_GETSETTING_STR 
+for reading contact information from the database. 
+There will be no difference for the user but the possible source of information.
+
+This service can be used to retrieve all kinds of settings! 
+Some versions of the default MS_DB_CONTACT_GETSETTING_STR service return 
+an error for BYTE, WORD and DWORD values if cgs.pValue->type is not 0.
+
+wParam = (WPARAM)(HANDLE)hContact
+lParam = (LPARAM)(DBCONTACTGETSETTING*)&cgs
+
+This service returns one of the results of MS_DB_CONTACT_GETSETTING_STR!
+}
+  MS_DB_CONTACT_GETSETTING_STR_EX:PAnsiChar = 'DB/Contact/GetSettingStrEx';
 
 {$ENDIF}

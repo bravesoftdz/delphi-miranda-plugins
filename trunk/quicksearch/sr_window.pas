@@ -418,7 +418,7 @@ begin
   dbtts.cbDest    :=sizeof(strdatetime);
   dbtts.szDest.w  :=@strdatetime;
   dbtts.szFormat.w:='d - t';
-  PluginLink^.CallService(MS_DB_TIME_TIMESTAMPTOSTRINGT,data,lparam(@dbtts));
+  CallService(MS_DB_TIME_TIMESTAMPTOSTRINGT,data,lparam(@dbtts));
   StrDupW(result,strdatetime);
 end;
 
@@ -526,7 +526,7 @@ begin
       ST_SERVICE: begin
         if wparam._type=ptCurrent then wparam.n:=hContact;
         if lparam._type=ptCurrent then lparam.n:=hContact;
-        tmp:=PluginLink^.CallService(protov,wparam.n,lparam.n);
+        tmp:=CallService(protov,wparam.n,lparam.n);
         if int_ptr(tmp)=int_ptr(CALLSERVICE_NOTFOUND) then exit;
         case setting_cnftype of
           ptString: begin
@@ -548,14 +548,14 @@ begin
         cni.dwFlag:=setting_cnftype or CNF_UNICODE;
         cni.hContact:=hContact;
         cni.szProto :=GetProtoName(proto);
-        if PluginLink^.CallService(MS_CONTACT_GETCONTACTINFO,0,tlparam(@cni))=0 then
+        if CallService(MS_CONTACT_GETCONTACTINFO,0,tlparam(@cni))=0 then
         begin
           case cni._type of
             CNFT_ASCIIZ: begin
               if cni.retval.szVal.w<>nil then
               begin
                 StrDupW(res.text,cni.retval.szVal.w);
-                mmi.free(cni.retval.szVal.w);
+                mir_free(cni.retval.szVal.w);
               end;
               exit;
             end;
@@ -619,12 +619,12 @@ begin
       end;
 
       ST_LASTEVENT: begin
-        hDbEvent:=PluginLink^.CallService(MS_DB_EVENT_FINDLAST,hContact,0);
+        hDbEvent:=CallService(MS_DB_EVENT_FINDLAST,hContact,0);
         if hDbEvent<>0 then
         begin
           ZeroMemory(@dbei,sizeof(dbei));
           dbei.cbSize:=SizeOf(dbei);
-          PluginLink^.CallService(MS_DB_EVENT_GET,hDbEvent,tlparam(@dbei));
+          CallService(MS_DB_EVENT_GET,hDbEvent,tlparam(@dbei));
           res.data:=dbei.timestamp;
           res.text:=TimeToStrW(res.data);
         end
@@ -732,7 +732,7 @@ begin
   FillChar(li,SizeOf(li),0);
   li.iItem :=100000; //!! need append
   li.mask  :=LVIF_IMAGE or LVIF_PARAM;
-  li.iImage:=PluginLink^.CallService(MS_CLIST_GETCONTACTICON,hContact,0);
+  li.iImage:=CallService(MS_CLIST_GETCONTACTICON,hContact,0);
   li.lParam:=num;
   li.iItem :=SendMessageW(grid,LVM_INSERTITEMW,0,lparam(@li));
 
@@ -812,11 +812,11 @@ begin
   begin
     if ((SBData[i].flags and (QSF_ACCDEL or QSF_ACCOFF))<>0) then
     begin
-      icon:=PluginLink^.CallService(MS_SKIN_LOADPROTOICON,0,ID_STATUS_OFFLINE);
+      icon:=CallService(MS_SKIN_LOADPROTOICON,0,ID_STATUS_OFFLINE);
     end
     else
     begin
-      icon:=PluginLink^.CallService(
+      icon:=CallService(
           MS_SKIN_LOADPROTOICON,wparam(GetProtoName(i)),ID_STATUS_ONLINE);
     end;
 
@@ -1178,7 +1178,7 @@ begin
   if qsopt.numcolumns=0 then
     exit;
   // calculating contacts
-  cnt:=PluginLink^.CallService(MS_DB_CONTACT_GETCOUNT,0,0);
+  cnt:=CallService(MS_DB_CONTACT_GETCOUNT,0,0);
   if cnt=0 then
     exit;
 
@@ -1190,14 +1190,14 @@ begin
   // filling buffer
   LastMeta:=0;
   cnt1:=0;
-  hContact:=PluginLink^.CallService(MS_DB_CONTACT_FINDFIRST,0,0);
+  hContact:=CallService(MS_DB_CONTACT_FINDFIRST,0,0);
   while hContact<>0 do
   begin
     //!! check account
     AddContact(cnt1,hContact);
     inc(cnt1);
     if cnt1=cnt then break; // additional checking
-    hContact:=PluginLink^.CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
+    hContact:=CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
   end;
   if cnt1<>cnt then
   begin
@@ -1243,10 +1243,10 @@ end;
 
 procedure DeleteOneContact(hContact:THANDLE);
 begin
-  if Pluginlink^.ServiceExists(strCListDel)>0 then
-    PluginLink^.CallService(strCListDel,hContact,0)
+  if ServiceExists(strCListDel)>0 then
+    CallService(strCListDel,hContact,0)
   else
-    PluginLink^.CallService(MS_DB_CONTACT_DELETE,hContact,0);
+    CallService(MS_DB_CONTACT_DELETE,hContact,0);
 end;
 
 procedure DeleteByList;
@@ -1264,7 +1264,7 @@ begin
     for i:=j downto 0 do
     begin
       if ListView_GetItemState(grid,i,LVIS_SELECTED)<>0 then
-        PluginLink^.CallService(MS_DB_CONTACT_DELETE,FlagBuf[LV_GetLParam(grid,i)].contact,0);
+        CallService(MS_DB_CONTACT_DELETE,FlagBuf[LV_GetLParam(grid,i)].contact,0);
     end;
     SendMessage(grid,WM_SETREDRAW,1,0);
   end;
@@ -1715,7 +1715,7 @@ end;
           exit;
         end;
         VK_INSERT: begin
-          PluginLink^.CallService(MS_FINDADDFINDADD,0,0);
+          CallService(MS_FINDADDFINDADD,0,0);
           exit;
         end;
         VK_DELETE: begin
@@ -1927,7 +1927,7 @@ begin
         if j>0 then
         begin
           StrCopy(StrCopyE(buf,GetProtoName(FlagBuf[i].proto)),PS_ICQ_GETCUSTOMSTATUSICON);
-          if PluginLink^.ServiceExists(buf)<>0 then
+          if ServiceExists(buf)<>0 then
           begin
             h:=CallService(buf,j,LR_SHARED);
 
@@ -1951,7 +1951,7 @@ begin
 //        ListView_GetItemTextA(grid,lplvcd^.nmcd.dwItemSpec,lplvcd^.iSubItem,buf,SizeOf(buf));
         if buf[0]<>#0 then
         begin
-          h:=PluginLink^.CallService(MS_FP_GETCLIENTICON,tlparam(@buf),1);
+          h:=CallService(MS_FP_GETCLIENTICON,tlparam(@buf),1);
           ListView_GetSubItemRect(grid,lplvcd^.nmcd.dwItemSpec,lplvcd^.iSubItem,LVIR_ICON,@rc);
           DrawIconEx(lplvcd^.nmcd.hdc,rc.left+1,rc.top,h,16,16,0,0,DI_NORMAL);
 //??????          DestroyIcon(h);
@@ -2030,7 +2030,7 @@ begin
   if hContact<>0 then
   begin
     GetCursorPos(pt);
-    result:=PluginLink^.CallService(MS_CLIST_MENUBUILDCONTACT,hContact,0);
+    result:=CallService(MS_CLIST_MENUBUILDCONTACT,hContact,0);
     if result<>0 then
     begin
       TrackPopupMenu(result,0,pt.x,pt.y,0,wnd,nil);
@@ -2067,7 +2067,7 @@ begin
   AppendMenuW(mmenu,MF_SEPARATOR,0,nil);
   AppendMenuW(mmenu,MF_STRING,101,TranslateW('&Delete'));
   AppendMenuW(mmenu,MF_STRING,102,TranslateW('&Copy'));
-  if PluginLink^.ServiceExists(MS_MC_CONVERTTOMETA)<>0 then
+  if ServiceExists(MS_MC_CONVERTTOMETA)<>0 then
     AppendMenuW(mmenu,MF_STRING,103,TranslateW('C&onvert to Meta'));
 
   grpmenu:=MakeGroupMenu(400);
@@ -2172,8 +2172,8 @@ begin
     else if (setting_type=ST_CONTACTINFO) and
             (setting_cnftype=CNF_GENDER) then
     begin
-      if hIconF=0 then hIconF:=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(QS_FEMALE));
-      if hIconM=0 then hIconM:=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(QS_MALE));
+      if hIconF=0 then hIconF:=CallService(MS_SKIN2_GETICON,0,tlparam(QS_FEMALE));
+      if hIconM=0 then hIconM:=CallService(MS_SKIN2_GETICON,0,tlparam(QS_MALE));
       flags:=flags or COL_GENDER;
       tstrMale   :=TranslateW('Male');
       tstrFemale :=TranslateW('Female');
@@ -2183,7 +2183,7 @@ begin
     else if (wparam.a<>NIL) and // FingerPrint preprocess
        (setting_type=ST_STRING) and
        (lstrcmpia(wparam.a,'MirVer')=0) and
-       (PluginLink^.ServiceExists(MS_FP_GETCLIENTICON)<>0) then
+       (ServiceExists(MS_FP_GETCLIENTICON)<>0) then
       flags:=flags or COL_CLIENT;
   end;
 end;
@@ -2266,7 +2266,7 @@ begin
   result:=0;
   case hMessage of
     WM_DESTROY: begin
-      PluginLink^.UnhookEvent(colorhook);
+      UnhookEvent(colorhook);
 
       StatusBar:=0;
       DeleteObject(gridbrush);
@@ -2349,11 +2349,11 @@ begin
       SetWindowLongPtrW(Dialog,GWL_EXSTYLE,tmp);
 
       SendMessage(Dialog,WM_SETICON,ICON_SMALL,//LoadIcon(hInstance,PAnsiChar(IDI_QS))
-        PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(QS_QS)));
+        CallService(MS_SKIN2_GETICON,0,tlparam(QS_QS)));
       grid:=GetDlgItem(Dialog,IDC_LIST);
 
       ListView_SetImageList(grid,
-         PluginLink^.CallService(MS_CLIST_GETICONSIMAGELIST,0,0),LVSIL_SMALL);
+         CallService(MS_CLIST_GETICONSIMAGELIST,0,0),LVSIL_SMALL);
 
       tmp:=LVS_EX_FULLROWSELECT or LVS_EX_SUBITEMIMAGES or LVS_EX_HEADERDRAGDROP or LVS_EX_LABELTIP;
       if qsopt.drawgrid then
@@ -2405,7 +2405,7 @@ begin
 
       SendMessageW(HintWnd,TTM_ADDTOOLW,0,tlparam(@TI));
 //      SetWindowsHookEx(WH_KEYBOARD,@QSKbdHook,0,GetCurrentThreadId);
-      colorhook:=PluginLink^.HookEvent(ME_COLOUR_RELOAD,@ColorReload);
+      colorhook:=HookEvent(ME_COLOUR_RELOAD,@ColorReload);
       
       opened:=true;
     end;
@@ -2489,9 +2489,9 @@ begin
     end;
 
     WM_MEASUREITEM:
-      PluginLink^.CallService(MS_CLIST_MENUMEASUREITEM,wParam,lParam);
+      CallService(MS_CLIST_MENUMEASUREITEM,wParam,lParam);
     WM_DRAWITEM:
-      PluginLink^.CallService(MS_CLIST_MENUDRAWITEM,wParam,lParam);
+      CallService(MS_CLIST_MENUDRAWITEM,wParam,lParam);
 
     WM_MOUSEMOVE: begin
       if TTInstalled then
@@ -2522,7 +2522,7 @@ begin
     end;
 
     WM_COMMAND: begin
-      if opened and (PluginLink^.CallService(MS_CLIST_MENUPROCESSCOMMAND,
+      if opened and (CallService(MS_CLIST_MENUPROCESSCOMMAND,
           MAKEWPARAM(LOWORD(wParam),MPCF_CONTACTMENU),
           GetFocusedhContact)<>0) then
       begin
@@ -2614,7 +2614,7 @@ begin
   if opened then
     exit;
 
-  TTInstalled := PluginLink^.ServiceExists(MS_TIPPER_SHOWTIP)<>0;
+  TTInstalled := ServiceExists(MS_TIPPER_SHOWTIP)<>0;
   // too lazy to move pattern and flags to thread
   if apattern<>nil then
   begin
@@ -2660,7 +2660,7 @@ begin
     li.iItem   :=row;
     li.iSubItem:=0;
     li.mask    :=LVIF_IMAGE;
-    li.iImage  :=Pic;//PluginLink^.CallService(MS_CLIST_GETCONTACTICON,hContact,0);
+    li.iImage  :=Pic;//CallService(MS_CLIST_GETCONTACTICON,hContact,0);
     SendMessage(grid,LVM_SETITEM,0,lparam(@li));
   end;
 end;

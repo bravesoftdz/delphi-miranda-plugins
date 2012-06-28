@@ -25,7 +25,7 @@ begin
   SendMessage(wnd,CB_RESETCONTENT,0,0);
   StrCopy(StrCopyE(buf,proto),PS_ICQ_GETCUSTOMSTATUSICON);
 
-  if PluginLink^.ServiceExists(@buf)=0 then
+  if ServiceExists(@buf)=0 then
     exit;
 
   il:=ImageList_Create(16,16,ILC_COLOR32 or ILC_MASK,0,1);

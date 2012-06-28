@@ -12,7 +12,7 @@ begin
   if result<>0 then
   begin
     sl:=NewWStrListEx;
-    hContact:=PluginLink^.CallService(MS_DB_CONTACT_FINDFIRST,0,0);
+    hContact:=CallService(MS_DB_CONTACT_FINDFIRST,0,0);
     while hContact<>0 do
     begin
        if StrCmp(PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,hContact,0)),cPluginName)=0 then
@@ -24,7 +24,7 @@ begin
            mFreeMem(p);
          end;
        end;
-      hContact:=PluginLink^.CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
+      hContact:=CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
     end;
 
     sl.Sort(false);
@@ -52,7 +52,7 @@ begin
   if result<>0 then
   begin
     i:=0;
-    hContact:=PluginLink^.CallService(MS_DB_CONTACT_FINDFIRST,0,0);
+    hContact:=CallService(MS_DB_CONTACT_FINDFIRST,0,0);
     while hContact<>0 do
     begin
        if StrCmp(PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,hContact,0)),cPluginName)=0 then
@@ -68,7 +68,7 @@ begin
            mFreeMem(p);
          end;
        end;
-      hContact:=PluginLink^.CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
+      hContact:=CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
       inc(i);
     end;
   end;
@@ -128,15 +128,15 @@ procedure CreateMIMTrayMenu;
 var
   mi:TCListMenuItem;
 begin
-  if PluginLink^.ServiceExists(MS_CLIST_ADDTRAYMENUITEM)<>0 then
+  if ServiceExists(MS_CLIST_ADDTRAYMENUITEM)<>0 then
 //    if hiddenwindow<>0 then
     begin
       FillChar(mi, sizeof(mi), 0);
       mi.cbSize    :=sizeof(mi);
       mi.pszService:=MS_RADIO_TRAYMENU;
       mi.szName.a  :=cPluginName;
-      mi.hIcon     :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnSettings));
-      PluginLink^.CallService(MS_CLIST_ADDTRAYMENUITEM,0,lparam(@mi));
+      mi.hIcon     :=CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnSettings));
+      CallService(MS_CLIST_ADDTRAYMENUITEM,0,lparam(@mi));
     end;
 end;
 

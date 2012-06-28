@@ -2167,14 +2167,14 @@ TYPE
        End;
 
     ISequentialStream = Types.ISequentialStream;
-    {interface(IUnknown)
+    (*interface(IUnknown)
        ['{0c733a30-2a1c-11ce-ade5-00aa0044773d}']
        function Read(pv : Pointer;cb : ULONG;pcbRead : PULONG) : HRESULT;stdcall;
        function Write(pv : Pointer;cb : ULONG;pcbWritten : PULONG): HRESULT;stdcall;
      end;
-    }
+    *)
 
-    { defined above by pulling it in from types IStream = interface(ISequentialStream)
+    (* defined above by pulling it in from types IStream = interface(ISequentialStream)
        ['{0000000C-0000-0000-C000-000000000046}']
        function Seek(dlibMove : LargeInt; dwOrigin: Longint;
             out libNewPosition : LargeInt): HResult; stdcall;
@@ -2190,7 +2190,7 @@ TYPE
        Function Stat(out statstg : TStatStg; grfStatFlag: Longint): HRESULT;stdcall;
        function Clone(out stm : IStream) : HRESULT; stdcall;
      end;
-    }
+    *)
     IEnumSTATSTG = Interface (IUnknown)
        ['{0000000d-0000-0000-C000-000000000046}']
         Function Next (Celt:ULong;Out xcelt;pceltfetched : PUlong):HResult; StdCall;

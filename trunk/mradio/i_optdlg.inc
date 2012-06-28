@@ -221,7 +221,7 @@ begin
       hContact:=CallService(MS_DB_CONTACT_FINDFIRST,0,0);
       while hContact<>0 do
       begin
-        if StrCmp(PAnsiChar(PluginLink^.CallService(MS_PROTO_GETCONTACTBASEPROTO,hContact,0)),
+        if StrCmp(PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,hContact,0)),
                PluginName)=0 then
         begin
           inc(result);
@@ -409,7 +409,7 @@ begin
                 hwndCtrl     :=GetDlgItem(Dialog,IDC_STATUS);
                 szSubjectDesc:='test your variables';
               end;
-              PluginLink^.CallService(MS_VARS_SHOWHELPEX,Dialog,tlparam(@vhi));
+              CallService(MS_VARS_SHOWHELPEX,Dialog,tlparam(@vhi));
             end;
 
             IDC_BN_URLPATH: begin
@@ -424,7 +424,7 @@ begin
               dst:=nil;
               if SelectDirectory(pWideChar(nil),dst,Dialog,true) then
               begin
-                PluginLink^.CallService(MS_UTILS_PATHTORELATIVEW,twparam(dst),tlparam(@buf));
+                CallService(MS_UTILS_PATHTORELATIVEW,twparam(dst),tlparam(@buf));
                 SetDlgItemTextW(Dialog,IDC_ED_RECPATH,pWideChar(@buf));
                 mFreeMem(dst);
               end;
@@ -536,7 +536,7 @@ begin
         mFreeMem(recpath);
         mGetMem(recpath,MAX_PATH*SizeOf(WideChar));
         GetDlgItemTextW(Dialog,IDC_ED_RECPATH,@buf,SizeOf(buf) div SizeOf(WideChar));
-        PluginLink^.CallService(MS_UTILS_PATHTORELATIVEW,twparam(@buf),tlparam(recpath));
+        CallService(MS_UTILS_PATHTORELATIVEW,twparam(@buf),tlparam(recpath));
         DBWriteUnicode(0,PluginName,optRecPath,recpath);
       end;
     end;
@@ -636,7 +636,7 @@ begin
               dst:=nil;
               if SelectDirectory(pWideChar(nil),dst,Dialog,true) then
               begin
-                PluginLink^.CallService(MS_UTILS_PATHTORELATIVEW,twparam(dst),tlparam(@buf));
+                CallService(MS_UTILS_PATHTORELATIVEW,twparam(dst),tlparam(@buf));
                 SetDlgItemTextW(Dialog,IDC_BASSPATH,pWideChar(@buf));
                 mFreeMem(dst);
               end;
@@ -815,12 +815,12 @@ begin
   odp.pszTemplate:=MAKEINTRESOURCEA(IDD_SETTING);
   odp.pfnDlgProc :=@DlgProcOpt;
   odp.szTab.a    :='Common';
-  PluginLink^.CallService(MS_OPT_ADDPAGE,wParam,tlparam(@odp));
+  CallService(MS_OPT_ADDPAGE,wParam,tlparam(@odp));
 
   odp.pszTemplate:=MAKEINTRESOURCEA(IDD_SETTING_TECH);
   odp.pfnDlgProc :=@DlgProcOptTech;//!!
   odp.szTab.a    :=Translate('Advanced');
-  PluginLink^.CallService(MS_OPT_ADDPAGE,wParam,tlparam(@odp));
+  CallService(MS_OPT_ADDPAGE,wParam,tlparam(@odp));
 
   result:=0;
 end;
@@ -868,7 +868,7 @@ begin
       begin
         if value._type=DBVT_DELETED then
         begin
-          if StrCmp(PAnsiChar(PluginLink^.CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0)),
+          if StrCmp(PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0)),
              PluginName)<>0 then exit;
 
           pc:=DBReadString(wParam,PluginName,optNick);
@@ -883,7 +883,7 @@ begin
 
     if StrCmp(szSetting,optAge)=0 then
     begin
-      if StrCmp(PAnsiChar(PluginLink^.CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0)),
+      if StrCmp(PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0)),
          PluginName)<>0 then exit;
       if value._type=DBVT_DELETED then
         i:=DBReadWord(wParam,PluginName,optAge)
@@ -898,7 +898,7 @@ begin
       DBVT_ASCIIZ ,
       DBVT_WCHAR  ,
       DBVT_UTF8   :
-      if StrCmp(PAnsiChar(PluginLink^.CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0)),
+      if StrCmp(PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0)),
          PluginName)<>0 then exit;
     else
       exit;
@@ -926,7 +926,7 @@ begin
   if ActiveContact<>THANDLE(wParam) then exit;
   ControlCenter(MRC_STOP,wParam);
 
-{  if StrCmp(PAnsiChar(PluginLink^.CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0)),
+{  if StrCmp(PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,wParam,0)),
              PluginName)<>0 then exit;
 }
 end;

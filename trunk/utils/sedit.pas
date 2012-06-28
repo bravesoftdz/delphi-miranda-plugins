@@ -86,7 +86,7 @@ begin
   sid.hDefaultIcon   :=LoadImageA(hInstance,id,IMAGE_ICON,16,16,0);
   sid.pszName        :=name;
   sid.szDescription.w:=FastAnsiToWideBuf(descr,buf);
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 end;
 
@@ -94,7 +94,7 @@ procedure RegisterIcons;
 var
   sid:TSKINICONDESC;
 begin
-  if PluginLink^.CallService(MS_SKIN2_GETICON,0,LPARAM(ACI_NEW))<>0 then
+  if CallService(MS_SKIN2_GETICON,0,LPARAM(ACI_NEW))<>0 then
     exit;
 
   FillChar(sid,SizeOf(TSKINICONDESC),0);

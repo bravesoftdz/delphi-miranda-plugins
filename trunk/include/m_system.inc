@@ -138,141 +138,6 @@ const
     wParam=0, lParam = (LPARAM) &MM_INTERFACE
   }
 
-type
-  PMM_INTERFACE = ^TMM_INTERFACE;
-  TMM_INTERFACE = record
-    cbSize :size_t;
-    malloc :function  (para1:size_t):pointer;cdecl;
-    realloc:function  (para1:pointer; para2:size_t):pointer;cdecl;
-    free   :procedure (para1:pointer);cdecl;
-// if MIRANDA_VER >= 0x0600
-    calloc :function  (para1:size_t):pointer;cdecl;
-    strdup :function  (const src:PAnsiChar):PAnsiChar;cdecl;
-    wstrdup:function  (const src:PWideChar):PWideChar;cdecl;
-// if MIRANDA_VER >= 0x0700
-    mir_snprintf  :function(buffer:PAnsiChar;count:size_t;fmt:PAnsiChar{, ...}):int; cdecl;
-    mir_sntprintf :function(buffer:TChar    ;count:size_t;fmt:TChar{, ...}):int; cdecl;
-    mir_vsnprintf :function(buffer:PAnsiChar;count:size_t;fmt:PAnsiChar;va:va_list):int; cdecl;
-    mir_vsntprintf:function(buffer:TChar    ;count:size_t;fmt:TChar    ;va:va_list):int; cdecl;
-
-    mir_a2u_cp:function(src:PAnsiChar;codepage:int):pWideChar; cdecl;
-    mir_a2u   :function(src:PAnsiChar):pWideChar; cdecl;
-    mir_u2a_cp:function(src:pWideChar;codepage:int):PAnsiChar; cdecl;
-    mir_u2a   :function(src:pWideChar):PAnsiChar; cdecl;
-  end;
-
-const
-  MS_SYSTEM_GET_MMI:PAnsiChar = 'Miranda/System/GetMMI';
-
-  { Returns the pointer to the simple lists manager.
-    If the sortFunc member of the list gets assigned, the list becomes sorted
-    wParam=0, lParam = (LPARAM)LIST_INTERFACE*
-  }
-
-type
-  TFSortFunc = function (para1:pointer; para2:pointer):longint;cdecl;
-{
-// Assumes first 32 bit value of the data is the numeric key 
-// and uses it to perform sort/search operations, this results
-// in much better performance as no compare function calls needed 
-// Incredibly useful for Hash Tables
-}
-const
-  NumericKeySort = {TFSortFunc}(pointer(-1));
-  HandleKeySort  = {TFSortFunc}(pointer(-2));
-  PtrKeySort     = {TFSortFunc}(pointer(-3));
-
-type
-  PSortedList = ^TSortedList;
-  TSortedList = record
-    items    : ^pointer;
-    realCount: int;
-    limit    : int;
-    increment: int;
-    sortFunc : TFSortFunc;
-  end;
-  PLIST_INTERFACE = ^TLIST_INTERFACE;
-  TLIST_INTERFACE = record
-    cbSize        :int;
-    List_Create   :function (limit:int; increment:int):PSortedList;cdecl;
-    List_Destroy  :procedure(list:PSortedList);cdecl;
-    List_Find     :function (list:PSortedList; value:pointer):pointer;cdecl;
-    List_GetIndex :function (list:PSortedList; value:pointer; index:Pint):int;cdecl;
-    List_Insert   :function (list:PSortedList; value:pointer; index:int):int;cdecl;
-    List_Remove   :function (list:PSortedList; index:int):int;cdecl;
-    List_IndexOf  :function (list:PSortedList; value:pointer):int;cdecl;
-// if MIRANDA_VER >= 0x0600
-    List_InsertPtr:function (list:PSortedList; p:pointer):int;cdecl;
-    List_RemovePtr:function (list:PSortedList; p:pointer):int;cdecl;
-// if MIRANDA_VER >= 0x0800
-    List_Copy     :procedure (src:PSortedList; dst:PSortedList; size:size_t); cdecl;
-    List_ObjCopy  :procedure (src:PSortedList; dst:PSortedList; size:size_t); cdecl;
-
-  end;
-
-const
-  {$IFNDEF WIN64}
-  LIST_INTERFACE_V1_SIZE = sizeof(size_t)+ 7*sizeof(pointer);
-  LIST_INTERFACE_V2_SIZE = sizeof(size_t)+ 9*sizeof(pointer);
-  LIST_INTERFACE_V3_SIZE = sizeof(size_t)+11*sizeof(pointer);
-  {$ELSE}
-  LIST_INTERFACE_V1_SIZE = sizeof(TLIST_INTERFACE);
-  LIST_INTERFACE_V2_SIZE = sizeof(TLIST_INTERFACE);
-  LIST_INTERFACE_V3_SIZE = sizeof(TLIST_INTERFACE);
-  {$ENDIF}
-
-const
-  MS_SYSTEM_GET_LI:PAnsiChar = 'Miranda/System/GetLI';
-
-{
-  UTF8 Manager interface. 0.5.2+
-
-  Contains functions for utf8-strings encoding & decoding
-}
-
-type
-  pPWideChar = ^PWideChar;
-  UTF8_INTERFACE = record
-     cbSize:int;
-
-    // decodes utf8 and places the result back into the same buffer.
-    // if the second parameter is present, the additional wchar_t* string gets allocated,
-    // and filled with the decoded utf8 content without any information loss.
-    // this string should be freed using mir_free()
-    utf8_decode  :function (str:PAnsiChar; var ucs2:pPWideChar):PAnsiChar;cdecl;
-    utf8_decodecp:function (str:PAnsiChar; codepage:int; var ucs2:pPWideChar):PAnsiChar;cdecl;
-
-    // encodes an ANSI string into a utf8 format using the current langpack code page,
-    // or CP_ACP, if lanpack is missing
-    // the resulting string should be freed using mir_free
-    utf8_encode  :function(src:PAnsiChar):PAnsiChar;cdecl;
-    utf8_encodecp:function(src:PAnsiChar;codepage:int):PAnsiChar;cdecl;
-
-    // encodes an WCHAR string into a utf8 format
-    // the resulting string should be freed using mir_free
-    utf8_encodeW :function(src:PWideChar):PAnsiChar;cdecl;
-
-    // decodes utf8 and returns the result as wchar_t* that should be freed using
-    // mir_free() the input buffer remains unchanged
-    utf8_decodeW :function(str:PAnsiChar):pWideChar;cdecl;
-	// returns the predicted length of the utf-8 string 
-
-// MIRANDA_VER >= 0x0900
-		utf8_lenW    :function(const src:pWideChar):int; cdecl;
-  end;
-
-const
-  {$IFNDEF WIN64}
-  UTF8_INTERFACE_SIZEOF_V1 = (sizeof(size_t)+5*sizeof(dword));// 24;
-  UTF8_INTERFACE_SIZEOF_V2 = (sizeof(size_t)+6*sizeof(dword));
-  {$ELSE}
-  UTF8_INTERFACE_SIZEOF_V1 = sizeof(UTF8_INTERFACE);
-  UTF8_INTERFACE_SIZEOF_V2 = sizeof(UTF8_INTERFACE);
-  {$ENDIF}
-
-const
-  MS_SYSTEM_GET_UTFI:PAnsiChar = 'Miranda/System/GetUTFI';
-
 (*
     -- Thread Safety --
 
@@ -365,9 +230,6 @@ lParam=function parameter
 registers a thread in the core and forks it
 }
 
-type
-  pThreadFunc = function(p:pointer):integer; cdecl;
-
 const
   MS_SYSTEM_FORK_THREAD:PAnsiChar = 'Miranda/Thread/Fork';
 
@@ -380,10 +242,6 @@ passes the extended parameters info and returns the thread id
 }
 
 type
-  pThreadFuncEx    = function(p:pointer):integer; stdcall;
-  pThreadFuncOwner = function(owner, param:pointer):integer; cdecl;
-
-type
   FORK_THREADEX_PARAMS = record
     pFunc     :pThreadFuncEx;
     iStackSize:int;
@@ -393,39 +251,7 @@ type
 
 const
   MS_SYSTEM_FORK_THREAD_EX:PAnsiChar = 'Miranda/Thread/ForkEx';
-(*
-static __inline int mir_forkthreadex( pThreadFuncEx aFunc, void* arg, int stackSize, unsigned* pThreadID )
-{
-  FORK_THREADEX_PARAMS params;
-  params.pFunc      = aFunc;
-  params.arg        = arg;
-  params.iStackSize = stackSize;
-  params.threadID   = pThreadID;
-  return CallService( MS_SYSTEM_FORK_THREAD_EX, 0, (LPARAM)&params );
-}
-*)
 
-{ 0.8.0+
-  wParam=(void*)owner
-  lParam=FORK_THREADEX_PARAMS*
-
-  registers a thread, owned by some object, in the core and forks it
-  passes the owner info and extended parameters info and returns the thread id
-}
-
-//  MS_SYSTEM_FORK_OWNED_THREAD:PAnsiChar = 'Miranda/Thread/ForkOwned';
-
-(*
-static __inline int mir_forkthreadowner( pThreadFuncOwner aFunc, void* owner, void* arg, unsigned* pThreadID )
-{
-  FORK_THREADEX_PARAMS params;
-  params.pFunc      = ( pThreadFuncEx )aFunc;
-  params.arg        = arg;
-  params.iStackSize = 0;
-  params.threadID   = pThreadID;
-  return CallService( MS_SYSTEM_FORK_THREAD_EX, (WPARAM)owner, (LPARAM)&params );
-}
-*)
   {
     wParam=0
     lParam=0
@@ -530,9 +356,6 @@ obtain this filter and call it inside the __except section
 0.8.0+ addition (2008/07/20)
 }
 
-type
-  PEXCEPTION_POINTERS = ^EXCEPTION_POINTERS;
-  pfnExceptionFilter = function(code:dword; info:PEXCEPTION_POINTERS):DWORD; cdecl;
 const
   MS_SYSTEM_GETEXCEPTFILTER:PAnsiChar = 'System/GetExceptFilter';
 

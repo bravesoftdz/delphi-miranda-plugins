@@ -17,8 +17,8 @@ const
   inited:bool=false;
 var
   tmp:longbool;
-  bmp,wnd:HWND;
-  buf:array [0..255] of AnsiChar;
+//  bmp,wnd:HWND;
+//  buf:array [0..255] of AnsiChar;
 begin
   result:=0;
   case hMessage of
@@ -49,7 +49,7 @@ begin
         case Loword(wParam) of
           IDC_KINOPOISK: begin
             StrCopy(StrCopyE(buf,kinopoisk_info),MSData.kinopoisk_id);
-            PluginLink.CallService(MS_UTILS_OPENURL,TWPARAM(True),TLPARAM(@buf));
+            CallService(MS_UTILS_OPENURL,TWPARAM(True),TLPARAM(@buf));
             result:=1;
             exit;
           end;
@@ -62,23 +62,6 @@ begin
               IDC_INFO_SERIES: begin
                 ClearInfo(Dialog);
                 ClearData;
- {
-              if loword(wParam)=IDC_INFO_ARTIST then
-              begin
-                SetDlgItemTextW(Dialog,IDC_ALT,TranslateW('Similar artists'));
-                GetArtistInfo(data,msh_lang);
-                SetDlgItemTextW(Dialog,IDC_DATA_ALBUM,data.similar);
-              end
-              else
-              begin
-                SetDlgItemTextW(Dialog,IDC_ALT,TranslateW('Album'));
-                if loword(wParam)=IDC_INFO_TRACK then
-                  GetTrackInfo (data,msh_lang)
-                else
-                  GetAlbumInfo (data,msh_lang);
-                SetDlgItemTextW(Dialog,IDC_DATA_ALBUM,data.album);
-              end;
-   }
 
               SetDlgItemTextW(Dialog,IDC_DATA_SERIES ,MSData.series);
               SetDlgItemTextW(Dialog,IDC_DATA_EPISODE,MSData.episode);

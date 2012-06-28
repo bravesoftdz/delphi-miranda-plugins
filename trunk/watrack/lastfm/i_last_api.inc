@@ -34,7 +34,7 @@ function GetMD5(const data;datalen:integer;var digest:TMD5Hash):TMD5Hash;
 begin
   FillChar(digest,16,0);
 
-  md5.md5_hash(pmir_md5_byte_t(data),datalen,digest);
+  mir_md5_hash(pmir_md5_byte_t(data),datalen,digest);
 
   result:=digest;
 end;
@@ -50,11 +50,11 @@ var
 begin
   result:=false;
   GetMD5Str(GetMD5(password,StrLen(password),digest),buf);
-  md5.md5_init(@stat);
-  md5.md5_append(@stat,@buf,32);
+  mir_md5_init(@stat);
+  mir_md5_append(@stat,@buf,32);
   IntToStr(timestamp,GetCurrentTime);
-  md5.md5_append(@stat,@timestamp,StrLen(timestamp));
-  md5.md5_finish(@stat,digest);
+  mir_md5_append(@stat,@timestamp,StrLen(timestamp));
+  mir_md5_finish(@stat,digest);
   GetMD5Str(digest,buf);
   StrCopy(request,defreq);
   StrReplace(request,'<client-id>' ,client_id);
@@ -193,7 +193,7 @@ begin
       else if StrCmp(res,'FAILED',6)=0 then
       begin
         StrCopy(StrCopyE(args,Translate('Last.fm error: ')),res+7);
-        CallService(MS_POPUP_SHOWMESSAGEW,wparam(@args),SM_NOTIFY);
+        CallService(MS_POPUP_SHOWMESSAGE,wparam(@args),SM_NOTIFY);
         result:=0;
       end;
       mFreeMem(res);

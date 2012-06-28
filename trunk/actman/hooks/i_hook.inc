@@ -74,15 +74,15 @@ begin
         begin
           if handle<>0 then
           begin
-            PluginLink^.UnhookEvent(handle);
+            UnhookEvent(handle);
             handle:=0;
           end;
         end
         else
         begin
           if handle<>0 then
-            PluginLink^.UnhookEvent(handle);
-          handle:=PluginLink^.HookEventMessage(name,MessageWindow,message);
+            UnhookEvent(handle);
+          handle:=HookEventMessage(name,MessageWindow,message);
         end;
       end;
     end;
@@ -144,7 +144,7 @@ begin
         mFreeMem(descr);
         mFreeMem(name);
         if handle<>0 then
-          PluginLink^.UnhookEvent(handle);
+          UnhookEvent(handle);
       end;
     end;
   end;

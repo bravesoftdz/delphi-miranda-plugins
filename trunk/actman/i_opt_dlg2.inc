@@ -119,7 +119,7 @@ begin
   cbei.mask:=CBEIF_IMAGE or CBEIF_SELECTEDIMAGE or CBEIF_TEXT; //!!
   for i:=0 to ACT_MAXTYPE-1 do
   begin
-    ImageList_AddIcon(il,PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(ActIds[i].icon)));
+    ImageList_AddIcon(il,CallService(MS_SKIN2_GETICON,0,lparam(ActIds[i].icon)));
 
     cbei.pszText       :=TranslateW(FastAnsiToWideBuf(ActIds[i].text,buf));
     cbei.iItem         :=i;
@@ -302,34 +302,43 @@ begin
   ti.lpszText:=TranslateW('New');
   SetButtonIcon(ti.uId,ACI_NEW);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
+
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_NEW);
   SetButtonIcon(ti.uId,ACI_NEW);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
+
   ti.uId     :=GetDlgItem(Dialog,IDC_ACTION_UP);
   ti.lpszText:=TranslateW('Up');
   SetButtonIcon(ti.uId,ACI_UP);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
+
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_UP);
   SetButtonIcon(ti.uId,ACI_UP);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
+
   ti.uId     :=GetDlgItem(Dialog,IDC_ACTION_DOWN);
   ti.lpszText:=TranslateW('Down');
   SetButtonIcon(ti.uId,ACI_DOWN);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
+
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_DOWN);
   SetButtonIcon(ti.uId,ACI_DOWN);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
+
   ti.uId     :=GetDlgItem(Dialog,IDC_ACTION_DELETE);
   ti.lpszText:=TranslateW('Delete');
   SetButtonIcon(ti.uId,ACI_DELETE);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
+
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_DELETE);
   SetButtonIcon(ti.uId,ACI_DELETE);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
+
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_RELOAD);
   ti.lpszText:=TranslateW('Reload');
   SetButtonIcon(ti.uId,ACI_RELOAD);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
+
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_TEST);
   ti.lpszText:=TranslateW('Test');
   SetButtonIcon(ti.uId,ACI_TEST);
@@ -344,6 +353,7 @@ begin
   ti.lpszText:=TranslateW('Import');
   SetButtonIcon(ti.uId,ACI_IMPORT);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
+
   ti.uId     :=GetDlgItem(Dialog,IDC_GROUP_EXPORT);
   ti.lpszText:=TranslateW('Export');
   SetButtonIcon(ti.uId,ACI_EXPORT);
@@ -353,36 +363,53 @@ begin
   ti.uId:=GetDlgItem(Dialog,IDC_SRV_WPAR);
   SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
+
+{
+  pc:=TranslateW('');
+  wnd:=GetDlgItem(Dialog,IDC_NEW);
+  SendMessage(hNew,BUTTONADDTOOLTIP,TWPARAM(pc),BATF_UNICODE);
+  SetButtonIcon(wnd,QS_NEW);
+}
   ti.uId:=GetDlgItem(Dialog,IDC_SRV_LPAR);
   SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
+
   ti.uId:=GetDlgItem(Dialog,IDC_SRV_SRVC);
   SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
+
   ti.uId:=GetDlgItem(Dialog,IDC_PRG_PRG);
   SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
+
   ti.uId:=GetDlgItem(Dialog,IDC_PRG_ARG);
   SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
+
   ti.uId:=GetDlgItem(Dialog,IDC_TXT_FILE);
   SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
+
   ti.uId:=GetDlgItem(Dialog,IDC_TXT_TEXT);
   SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
+
   ti.uId:=GetDlgItem(Dialog,IDC_RW_MVAR);
   SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
+
   ti.uId:=GetDlgItem(Dialog,IDC_RW_SVAR);
   SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
+
   ti.uId:=GetDlgItem(Dialog,IDC_RW_TVAR);
   SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
+
   ti.uId:=GetDlgItem(Dialog,IDC_MSG_TTL);
   SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
+
   ti.uId:=GetDlgItem(Dialog,IDC_MSG_TXT);
   SetButtonIcon(ti.uId,ACI_VAR_UNCHECKED);
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
@@ -451,6 +478,24 @@ begin
   end;
 end;
 
+{$include i_dlglists.inc}
+
+procedure SetNumValue(wnd:HWND;value:dword;isvar:boolean;ishex:boolean);
+var
+  buf:array [0..31] of WideChar;
+begin
+  if isvar then
+    SendMessageW(wnd,WM_SETTEXT,0,value)
+  else if ishex then
+  begin
+    buf[0]:='$';
+    IntToHex(PWideChar(@buf[1]),value);
+    SendMessageW(wnd,WM_SETTEXT,0,tlparam(@buf));
+  end
+  else
+    SendMessageW(wnd,WM_SETTEXT,0,tlparam(IntToStr(buf,value)));
+end;
+
 function DlgProcOpt2(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 
   {$include i_visual.inc}
@@ -468,7 +513,7 @@ function DlgProcOpt2(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lres
           cbSize:=SizeOf(vhi);
           flags:=VHF_NOINPUTDLG;
         end;
-        PluginLink^.CallService(MS_VARS_SHOWHELPEX,Dialog,tlparam(@vhi));
+        CallService(MS_VARS_SHOWHELPEX,Dialog,tlparam(@vhi));
       end;
       hlpAdvVariables: begin
         FillChar(vhi,SizeOf(vhi),0);
@@ -479,7 +524,7 @@ function DlgProcOpt2(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lres
           hwndCtrl     :=GetDlgItem(Dialog,IDC_ADV_VARS);
           szSubjectDesc:='test your variables';
         end;
-        PluginLink^.CallService(MS_VARS_SHOWHELPEX,Dialog,tlparam(@vhi));
+        CallService(MS_VARS_SHOWHELPEX,Dialog,tlparam(@vhi));
       end;
       hlpContact: begin
 {
@@ -870,7 +915,7 @@ function DlgProcOpt2(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lres
           p:=GetDlgText(IDC_EDIT_PRGPATH);
           if p<>nil then
           begin
-            PluginLink^.CallService(MS_UTILS_PATHTORELATIVE,dword(p),dword(@buf));
+            CallService(MS_UTILS_PATHTORELATIVE,dword(p),dword(@buf));
             StrDupW(prgname,@buf);
             mFreeMem(p);
           end;
@@ -1155,28 +1200,6 @@ function DlgProcOpt2(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lres
     CheckGrpList(next);
   end;
 
-  procedure MakeFileEncList(wnd:HWND);
-  begin
-    SendMessage(wnd,CB_RESETCONTENT,0,0);
-    InsertString(wnd,0,'Ansi');
-    InsertString(wnd,1,'UTF8');
-    InsertString(wnd,2,'UTF8+sign');
-    InsertString(wnd,3,'UTF16');
-    InsertString(wnd,4,'UTF16+sign');
-    SendMessage(wnd,CB_SETCURSEL,0,0);
-  end;
-
-  procedure MakeDataTypeList(wnd:HWND);
-  begin
-    SendMessage(wnd,CB_RESETCONTENT,0,0);
-    InsertString(wnd,0,'Byte');
-    InsertString(wnd,1,'Word');
-    InsertString(wnd,2,'DWord');
-    InsertString(wnd,3,'Ansi');
-    InsertString(wnd,4,'Unicode');
-    SendMessage(wnd,CB_SETCURSEL,0,0);
-  end;
-
   // Fill action group list and disable chain controls
   function FillGroupList{(Dialog:hwnd)}:integer;
   var
@@ -1314,10 +1337,11 @@ begin
       lv.cx  :=110;
       SendMessageW(wnd,LVM_INSERTCOLUMNW ,0,tlparam(@lv));
       SendMessageW(wnd,LVM_SETCOLUMNWIDTH,0,LVSCW_AUTOSIZE_USEHEADER);
-      MakeResultTypeList(IDC_SRV_RESULT);
-      MakeParamTypeList (IDC_FLAG_WPAR);
-      MakeParamTypeList (IDC_FLAG_LPAR);
-      MakeMathOperList  (IDC_ADV_OPER);
+
+      MakeResultTypeList(GetDlgItem(Dialog,IDC_SRV_RESULT));
+      MakeParamTypeList (GetDlgItem(Dialog,IDC_FLAG_WPAR));
+      MakeParamTypeList (GetDlgItem(Dialog,IDC_FLAG_LPAR));
+      MakeMathOperList  (GetDlgItem(Dialog,IDC_ADV_OPER));
       MakeFileEncList   (GetDlgItem(Dialog,IDC_FILE_ENC));
       MakeDataTypeList  (GetDlgItem(Dialog,IDC_RW_DATATYPE));
 
@@ -1336,7 +1360,7 @@ begin
         SendDlgItemMessage(Dialog,IDC_ADV_HVARS,BM_SETIMAGE,IMAGE_ICON,ico);
       end;
 
-      if PluginLink^.ServiceExists(MS_SYSTEM_GET_XI)=0 then
+      if ServiceExists(MS_SYSTEM_GET_XI)=0 then
       begin
         EnableWindow(GetDlgItem(Dialog,IDC_GROUP_EXPORT),false);
         EnableWindow(GetDlgItem(Dialog,IDC_GROUP_IMPORT),false);
@@ -1489,7 +1513,7 @@ begin
                 begin
                   EnableWindow(wnd,true);
 {
-                flag:=GetWindowLong(wnd,GWL_STYLE);
+                flag:=GetWindowLongPtr(wnd,GWL_STYLE);
                 if i=ptNumber then
                   flag:=flag or ES_NUMBER
                 else
@@ -1598,7 +1622,7 @@ begin
                   if MessageBoxW(Dialog,TranslateW('Append data to file'),
                      PluginName,MB_YESNO+MB_ICONWARNING)=IDYES then
                     i:=i or ACIO_APPEND;
-                ActInOut(i,uint_ptr(@xmlfilename));
+                CallService(MS_ACT_INOUT,i,TLPARAM(@xmlfilename));
 //                Export({GetLParam(GetDlgItem(Dialog,IDC_ACTION_GROUP)),}xmlfilename,i);
                 for i:=0 to MaxGroups-1 do
                   with GroupList[i] do
@@ -1612,7 +1636,7 @@ begin
               if ShowDlgW(xmlfilename,xmlfilename,inoutfilter) then
               begin
 //                if Import(xmlfilename) then
-                if ActInOut(0,uint_ptr(@xmlfilename))<>0 then
+                if CallService(MS_ACT_INOUT,0,TLPARAM(@xmlfilename))<>0 then
                 begin
                   ChMask:=ChMask or ACTM_NEW;
                   SendMessage(Dialog,WM_COMMAND,IDC_GROUP_RELOAD+(BN_CLICKED shl 16),
@@ -1947,7 +1971,7 @@ begin
 
           if ChMask<>0 then //??
           begin
-            PluginLink^.NotifyEventHooks(hHookChanged,ChMask,0);
+            NotifyEventHooks(hHookChanged,ChMask,0);
             ChMask:=0;
           end;
 

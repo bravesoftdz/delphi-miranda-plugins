@@ -88,7 +88,7 @@ const
 
 function SetButtonIcon(btn:HWND;name:PAnsiChar):HICON;
 begin
-  result:=PluginLink^.CallService(MS_SKIN2_GETICON,0,LPARAM(name));
+  result:=CallService(MS_SKIN2_GETICON,0,LPARAM(name));
   SendMessage(btn,BM_SETIMAGE,IMAGE_ICON,result);
 end;
 
@@ -107,7 +107,7 @@ begin
     end
     else
       pc:=nil;
-    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTEW,wparam(src),lparam(dst));
+    CallService(MS_UTILS_PATHTOABSOLUTEW,wparam(src),lparam(dst));
     mFreeMem(pc);
   end;
 end;
@@ -137,7 +137,7 @@ begin
     end
     else
       pc:=nil;
-    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,wparam(src),lparam(dst));
+    CallService(MS_UTILS_PATHTOABSOLUTE,wparam(src),lparam(dst));
     mFreeMem(pc);
   end;
 end;
@@ -173,7 +173,7 @@ end;
 
 function isVarsInstalled:bool;
 begin
-  result:=PluginLink^.ServiceExists(MS_VARS_FORMATSTRING)<>0;
+  result:=ServiceExists(MS_VARS_FORMATSTRING)<>0;
 end;
 
 function ParseVarString(astr:pAnsiChar;aContact:THANDLE=0;extra:pAnsiChar=nil):pAnsiChar;
@@ -182,11 +182,11 @@ var
   tmp,pc:pAnsiChar;
   dat:TREPLACEVARSDATA;
 begin
-  if PluginLink^.ServiceExists(MS_UTILS_REPLACEVARS)<>0 then
+  if ServiceExists(MS_UTILS_REPLACEVARS)<>0 then
   begin
     FillChar(dat,SizeOf(TREPLACEVARSDATA),0);
     dat.cbSize :=SizeOf(TREPLACEVARSDATA);
-    pc:=pAnsiChar(PluginLink^.CallService(MS_UTILS_REPLACEVARS,wparam(astr),lparam(@dat)));
+    pc:=pAnsiChar(CallService(MS_UTILS_REPLACEVARS,wparam(astr),lparam(@dat)));
     astr:=pc;
   end
   else
@@ -204,13 +204,13 @@ begin
     end;
     tmp:=pointer(CallService(MS_VARS_FORMATSTRING,wparam(@tfi),0));
     StrDup(result,tmp);
-    PluginLink^.CallService(MS_VARS_FREEMEMORY,wparam(tmp),0);
+    CallService(MS_VARS_FREEMEMORY,wparam(tmp),0);
   end
   else
   begin
     StrDup(result,astr);
   end;
-  mmi.free(pc);
+  mir_free(pc);
 end;
 
 function ParseVarString(astr:pWideChar;aContact:THANDLE=0;extra:pWideChar=nil):pWideChar;
@@ -219,12 +219,12 @@ var
   tmp,pc:pWideChar;
   dat:TREPLACEVARSDATA;
 begin
-  if PluginLink^.ServiceExists(MS_UTILS_REPLACEVARS)<>0 then
+  if ServiceExists(MS_UTILS_REPLACEVARS)<>0 then
   begin
     FillChar(dat,SizeOf(TREPLACEVARSDATA),0);
     dat.cbSize :=SizeOf(TREPLACEVARSDATA);
     dat.dwflags:=RVF_UNICODE;
-    pc:=pWideChar(PluginLink^.CallService(MS_UTILS_REPLACEVARS,wparam(astr),lparam(@dat)));
+    pc:=pWideChar(CallService(MS_UTILS_REPLACEVARS,wparam(astr),lparam(@dat)));
     astr:=pc;
   end
   else
@@ -243,13 +243,13 @@ begin
     end;
     tmp:=pointer(CallService(MS_VARS_FORMATSTRING,wparam(@tfi),0));
     StrDupW(result,tmp);
-    PluginLink^.CallService(MS_VARS_FREEMEMORY,wparam(tmp),0);
+    CallService(MS_VARS_FREEMEMORY,wparam(tmp),0);
   end
   else
   begin
     StrDupW(result,astr);
   end;
-  mmi.free(pc); // forced!
+  mir_free(pc); // forced!
 //  mFreeMem(pc);
 end;
 
@@ -269,19 +269,18 @@ begin
       hwndCtrl:=GetDlgItem(dlg,id);
     end;
   end;
-  result:=PluginLink^.CallService(MS_VARS_SHOWHELPEX,dlg,lparam(@vhi));
+  result:=CallService(MS_VARS_SHOWHELPEX,dlg,lparam(@vhi));
 end;
 
 function DetectHKManager:dword;
 begin
   if HKManager<0 then
   begin
-    with PluginLink^ do
-      if      ServiceExists('CoreHotkeys/Register'       )<>0 then HKManager:=HKMT_CORE
-      else if ServiceExists('HotkeysPlus/Add'            )<>0 then HKManager:=HKMT_HOTKEYPLUS
-      else if ServiceExists('HotKey/CatchHotkey'         )<>0 then HKManager:=HKMT_HK
-      else if ServiceExists('HotkeysService/RegisterItem')<>0 then HKManager:=HKMT_HKSERVICE
-      else HKManager:=0;
+    if      ServiceExists('CoreHotkeys/Register'       )<>0 then HKManager:=HKMT_CORE
+    else if ServiceExists('HotkeysPlus/Add'            )<>0 then HKManager:=HKMT_HOTKEYPLUS
+    else if ServiceExists('HotKey/CatchHotkey'         )<>0 then HKManager:=HKMT_HK
+    else if ServiceExists('HotkeysService/RegisterItem')<>0 then HKManager:=HKMT_HKSERVICE
+    else HKManager:=0;
   end;
   result:=HKManager;
 //  else if (CallService(MS_SYSTEM_GETVERSION,0,0) and $FFFF0000)>=$00080000 then // core
@@ -305,7 +304,7 @@ begin
     StrCopyW(ppdu.lpwzContactName,text,MAX_CONTACTNAME-1);
     ppdu.lpwzText[0]:=' ';
   end;
-  PluginLink^.CallService(MS_POPUP_ADDPOPUPW,wparam(@ppdu),APF_NO_HISTORY);
+  CallService(MS_POPUP_ADDPOPUPW,wparam(@ppdu),APF_NO_HISTORY);
 end;
 
 function TranslateA2W(sz:PAnsiChar):PWideChar;
@@ -313,7 +312,7 @@ var
   tmp:pWideChar;
 begin
   mGetMem(tmp,(StrLen(sz)+1)*SizeOf(WideChar));
-  Result:=PWideChar(PluginLink^.CallService(MS_LANGPACK_TRANSLATESTRING,LANG_UNICODE,
+  Result:=PWideChar(CallService(MS_LANGPACK_TRANSLATESTRING,LANG_UNICODE,
           lParam(FastAnsiToWideBuf(sz,tmp))));
   if Result<>tmp then
   begin
@@ -324,7 +323,7 @@ end;
 
 function GetContactProtoAcc(hContact:THANDLE):PAnsiChar;
 begin
-  if PluginLink^.ServiceExists(MS_PROTO_GETCONTACTBASEACCOUNT)<>0 then
+  if ServiceExists(MS_PROTO_GETCONTACTBASEACCOUNT)<>0 then
     result:=PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEACCOUNT,hContact,0))
   else
     result:=PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,hContact,0));
@@ -435,7 +434,7 @@ var
   mwod:TMessageWindowOutputData;
 begin
   wnd:=GetParent(wnd); //!!
-  hContact:=PluginLink^.CallService(MS_DB_CONTACT_FINDFIRST,0,0);
+  hContact:=CallService(MS_DB_CONTACT_FINDFIRST,0,0);
   with mwid do
   begin
     cbSize:=SizeOf(mwid);
@@ -445,7 +444,7 @@ begin
   while hContact<>0 do
   begin
     mwid.hContact:=hContact;
-    if PluginLink^.CallService(MS_MSG_GETWINDOWDATA,wparam(@mwid),lparam(@mwod))=0 then
+    if CallService(MS_MSG_GETWINDOWDATA,wparam(@mwid),lparam(@mwod))=0 then
     begin
       if {((mwod.uState and MSG_WINDOW_STATE_FOCUS)<>0) and} (mwod.hwndWindow=wnd) then
       begin
@@ -453,7 +452,7 @@ begin
         exit;
       end
     end;
-    hContact:=PluginLink^.CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
+    hContact:=CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
   end;
   result:=0;
 end;
@@ -477,7 +476,7 @@ function GetContactStatus(hContact:THANDLE):integer;
 var
   szProto:PAnsiChar;
 begin
-  szProto:=PAnsiChar(PluginLink^.CallService(MS_PROTO_GETCONTACTBASEPROTO,hContact,0));
+  szProto:=PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,hContact,0));
   if szProto=NIL then
     result:=ID_STATUS_OFFLINE
   else
@@ -589,7 +588,7 @@ CallService(MS_CLIST_CONTACTDOUBLECLICKED,hContact,0);
     end
     else
     begin
-      if PluginLink^.ServiceExists(MS_MSG_CONVERS)<>0 then // Convers compat.
+      if ServiceExists(MS_MSG_CONVERS)<>0 then // Convers compat.
         CallService(MS_MSG_CONVERS,hContact,0)
       else
         CallService(MS_MSG_SENDMESSAGE,hContact,0)
@@ -614,7 +613,7 @@ begin
   gce.dwFlags :=GCEF_ADDTOLOG+GC_UNICODE;
   gce.time    :=GetCurrentTime;
   
-  PluginLink^.CallServiceSync(MS_GC_EVENT,0,lparam(@gce));
+  CallServiceSync(MS_GC_EVENT,0,lparam(@gce));
 end;
 
 procedure SendToChat(hContact:THANDLE;pszText:PWideChar);
@@ -715,11 +714,11 @@ begin
   dbcgs.szModule :='Protocol';
   dbcgs.szSetting:='p';
 
-  if PluginLink^.CallService(MS_DB_CONTACT_GETSETTINGSTATIC,hContact,lparam(@dbcgs))=0 then
+  if CallService(MS_DB_CONTACT_GETSETTINGSTATIC,hContact,lparam(@dbcgs))=0 then
   begin
     result:=0;
 
-    if PluginLink^.ServiceExists(MS_PROTO_GETACCOUNT)<>0 then
+    if ServiceExists(MS_PROTO_GETACCOUNT)<>0 then
     begin
       p:=PPROTOACCOUNT(CallService(MS_PROTO_GETACCOUNT,0,lparam(dbv.szVal.a)));
       if p=nil then
@@ -736,7 +735,7 @@ begin
     if (result=0) and (DBReadByte(hContact,strCList,'Hidden',0)=0) then
     begin
       result:=255;
-      if PluginLink^.ServiceExists(MS_MC_GETMETACONTACT)<>0 then
+      if ServiceExists(MS_MC_GETMETACONTACT)<>0 then
       begin
         if CallService(MS_MC_GETMETACONTACT,hContact,0)<>0 then
           result:=2;
@@ -784,7 +783,7 @@ begin
   repeat
     dbv._type:=DBVT_WCHAR;
     cgs.szSetting:=IntToStr(groupIdStr,groupId);
-    if PluginLink^.CallService(MS_DB_CONTACT_GETSETTING_STR,0,lParam(@cgs))<>0 then
+    if CallService(MS_DB_CONTACT_GETSETTING_STR,0,lParam(@cgs))<>0 then
       break;
 
     if StrCmpW(dbv.szVal.w+1,@grbuf[1])=0 then
@@ -841,7 +840,7 @@ begin
   repeat
     dbv._type:=DBVT_ASCIIZ;
     cgs.szSetting:=IntToStr(groupIdStr,groupId);
-    if PluginLink^.CallService(MS_DB_CONTACT_GETSETTING_STR,0,lParam(@cgs))<>0 then
+    if CallService(MS_DB_CONTACT_GETSETTING_STR,0,lParam(@cgs))<>0 then
       break;
 
     if StrCmp(dbv.szVal.a+1,@grbuf[1])=0 then
@@ -1198,7 +1197,7 @@ begin
   sid.hDefaultIcon   :=LoadImageA(hInstance,resname,IMAGE_ICON,16,16,0);
   sid.pszName        :=ilname;
   sid.szDescription.a:=descr;
-  result:=PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  result:=CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 end;
 

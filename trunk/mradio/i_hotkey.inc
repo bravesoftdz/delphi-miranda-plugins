@@ -24,7 +24,7 @@ procedure RegisterHotKey;
 var
   hkrec:HOTKEYDESC;
 begin
-  hRadioHotkey:=PluginLink^.CreateServiceFunction(MS_RADIO_HOTKEY,@mRadio_Hotkey);
+  hRadioHotkey:=CreateServiceFunction(MS_RADIO_HOTKEY,@mRadio_Hotkey);
 
   FillChar(hkrec,SizeOf(hkrec),0);
 
@@ -57,5 +57,5 @@ begin
   CallService(MS_HOTKEY_UNREGISTER,0,lparam(HKN_STOP));
   CallService(MS_HOTKEY_UNREGISTER,0,lparam(HKN_MUTE));
 
-  PluginLink^.DestroyServiceFunction(hRadioHotkey);
+  DestroyServiceFunction(hRadioHotkey);
 end;

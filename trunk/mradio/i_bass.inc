@@ -123,7 +123,7 @@ begin
       pc := nil;
       if SelectDirectory(TranslateW('Choose BASS.dll path'),pc,0,true) then
       begin
-        PluginLink^.CallService(MS_UTILS_PATHTORELATIVEW,wparam(pc),lparam(@buf));
+        CallService(MS_UTILS_PATHTORELATIVEW,wparam(pc),lparam(@buf));
         pc:=StrCopyEW(basspath,buf);
         if (pc-1)^<>'\' then
         begin
@@ -317,7 +317,7 @@ begin
   begin
     ConvertFileName(recpath,buf,ActiveContact);
 //    pcw:=ParseVarString(recpath,ActiveContact);
-//    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTEW,dword(pcw),dword(buf));
+//    CallService(MS_UTILS_PATHTOABSOLUTEW,dword(pcw),dword(buf));
 //    mFreeMem(pcw);
     if not ForceDirectories(buf) then
     begin

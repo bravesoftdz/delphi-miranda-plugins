@@ -1169,5 +1169,5 @@ begin
     result:=1;
     Export(pWideChar(lParam),wParam);
   end;
-  PluginLink^.NotifyEventHooks(hevinout,wParam,lParam);
+  NotifyEventHooks(hevinout,wParam,lParam);
 end;

@@ -144,7 +144,7 @@ begin
   ces.lParam     :=lparam(@p);
   ces.szModule   :=PluginShort;
   ces.ofsSettings:=0;
-  PluginLink^.CallService(MS_DB_CONTACT_ENUMSETTINGS,0,lparam(@ces));
+  CallService(MS_DB_CONTACT_ENUMSETTINGS,0,lparam(@ces));
 end;
 
 procedure LoadTemplates;

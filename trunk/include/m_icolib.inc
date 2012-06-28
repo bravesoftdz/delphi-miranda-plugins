@@ -24,18 +24,6 @@ type
   end;
 
 const
-  SKINICONDESC_SIZE    = SizeOf(TSKINICONDESC);
-  {$IFNDEF WIN64}
-  SKINICONDESC_SIZE_V1 = $18;
-  SKINICONDESC_SIZE_V2 = $1C;
-  SKINICONDESC_SIZE_V3 = $24;
-  {$ELSE}
-  SKINICONDESC_SIZE_V1 = SKINICONDESC_SIZE;
-  SKINICONDESC_SIZE_V2 = SKINICONDESC_SIZE;
-  SKINICONDESC_SIZE_V3 = SKINICONDESC_SIZE;
-  {$ENDIF}
-
-const
   SIDF_SORTED       = 1;    // Icons in section are sorted by name
   SIDF_UNICODE      = $100; // Section and Description are in UCS-2
   SIDF_PATH_UNICODE = $200; // Default File is in UCS-2

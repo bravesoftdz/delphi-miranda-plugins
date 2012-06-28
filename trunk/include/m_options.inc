@@ -75,6 +75,7 @@ type
       // for duration of dlg.
     szTab                 :TChar;   // v0.6.0.0+ [TRANSLATED-BY-CORE]
     dwInitParam           :LPARAM;  // v0.8.0.0+ a value to pass to lParam of WM_INITDIALOG message
+    hLangpack             :int;
   end;
 
 const

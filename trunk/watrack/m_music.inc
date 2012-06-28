@@ -120,7 +120,7 @@ const
   if lParam=0 only internal SongInfo structure will be filled
   Example:
     var p:pSongInfo;
-    PluginLink^.CallService(MS_WAT_GETMUSICINFO,0,dword(@p));
+    CallService(MS_WAT_GETMUSICINFO,0,dword(@p));
 }
   MS_WAT_GETMUSICINFO:PAnsiChar = 'WATrack/GetMusicInfo';
 {
@@ -129,7 +129,7 @@ const
   Affects: Fill structure by info from file named in SongInfo.mfile
   returns: 0, if success
   note: fields, which values can't be obtained, leaves old values.
-    you must free given strings by miranda mmi.free
+    you must free given strings by miranda mir_free
 }
   MS_WAT_GETFILEINFO:PAnsiChar = 'WATrack/GetFileInfo';
 

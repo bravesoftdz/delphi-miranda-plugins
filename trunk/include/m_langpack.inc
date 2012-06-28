@@ -24,9 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 {$DEFINE M_LANGPACK}
 
 const
-  MS_TRANSLATE_PREFIX = 'LangPack';
-const
-  LANG_UNICODE = $1000;
 
 {
  translates a single string into the user's local language    v0.1.1.0+
@@ -39,11 +36,11 @@ const
  these versions, I pity them.
 }
   MS_LANGPACK_TRANSLATESTRING:PAnsiChar = 'LangPack/TranslateString';
-
+(*
 {
  translates a dialog into the user's local language    v0.1.1.0+
  wParam=0
- lParam=(LPARAM)(LANGPACKTRANSLATEDIALOG*)&lptd
+ lParam=(LPARAM)(LANGPACKTRANSLATEDIALOG* )&lptd
  returns 0 on success, nonzero on failure
  This service only knows about the following controls:
  Window titles, STATIC, EDIT, Hyperlink, BUTTON
@@ -65,7 +62,7 @@ const
 
 const
  MS_LANGPACK_TRANSLATEDIALOG:PAnsiChar = 'LangPack/TranslateDialog';
-
+*)
 {
  translates a menu into the user's local language    v0.1.1.0+
  wParam=(WPARAM)(HMENU)hMenu
@@ -106,5 +103,13 @@ const
   always returns 0
 }
   MS_LANGPACK_REGISTER:PAnsiChar = 'LangPack/Register';
+
+{
+  reloads langpack
+  wParam=0 (ignored)
+  lParam=(LPARAM)(TCHAR*)langpack file name or NULL to reload the current one
+  always returns 0
+}
+  MS_LANGPACK_RELOAD:PAnsiChar = 'LangPack/Reload';
 
 {$ENDIF}

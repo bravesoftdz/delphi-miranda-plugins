@@ -204,29 +204,28 @@ end;
 
 procedure addtotoolbar;
 var
-  ttbopt:TTBButtonV2;
+  ttbopt:TTBButton;
 begin
   if hTTBButton<>0 then
   begin
-    if PluginLink^.ServiceExists(MS_TTB_REMOVEBUTTON)>0 then
+    if ServiceExists(MS_TTB_REMOVEBUTTON)>0 then
     begin
-      PluginLink^.CallService(MS_TTB_REMOVEBUTTON,WPARAM(hTTBButton),0);
+      CallService(MS_TTB_REMOVEBUTTON,WPARAM(hTTBButton),0);
       hTTBButton:=0;
     end;
   end;
   if qsopt.showintoptoolbar then
   begin
-    if PluginLink^.ServiceExists(MS_TTB_ADDBUTTON)>0 then
+    if ServiceExists(MS_TTB_ADDBUTTON)>0 then
     begin
       ZeroMemory(@ttbopt,sizeof(ttbopt));
-      ttbopt.cbSize        :=sizeof(ttbopt);
-      ttbopt.pszServiceUp  :=QS_SHOWSERVICE;
-      ttbopt.pszServiceDown:=QS_SHOWSERVICE;
-      ttbopt.hIconUp       :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(QS_QS));
-      ttbopt.hIconDn       :=ttbopt.hIconUp;
-      ttbopt.dwFlags       :=TTBBF_VISIBLE;
-      ttbopt.name          :=qs_module;
-      hTTBButton:=PluginLink^.CallService(MS_TTB_ADDBUTTON,WPARAM(@ttbopt),0);
+      ttbopt.cbSize    :=sizeof(ttbopt);
+      ttbopt.pszService:=QS_SHOWSERVICE;
+      ttbopt.hIconUp   :=CallService(MS_SKIN2_GETICON,0,lparam(QS_QS));
+      ttbopt.hIconDn   :=ttbopt.hIconUp;
+      ttbopt.dwFlags   :=TTBBF_VISIBLE;
+      ttbopt.name      :=qs_module;
+      hTTBButton:=CallService(MS_TTB_ADDBUTTON,WPARAM(@ttbopt),0);
     end;
   end;
 end;
@@ -245,15 +244,15 @@ begin
 //    cmi.pszPopupName:=nil;
 //    cmi.flags       :=0;
     cmi.pszService  :=QS_SHOWSERVICE;
-    cmi.hIcon       :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(QS_QS));
-    MainMenuItem    :=PluginLink^.CallService(MS_CLIST_ADDMAINMENUITEM,0,lparam(@cmi));
+    cmi.hIcon       :=CallService(MS_SKIN2_GETICON,0,lparam(QS_QS));
+    MainMenuItem    :=CallService(MS_CLIST_ADDMAINMENUITEM,0,lparam(@cmi));
   end
   else
   begin
     if (MainMenuItem<>0) and
-       (PluginLink^.ServiceExists(MS_CLIST_REMOVEMAINMENUITEM)<>0) then
+       (ServiceExists(MS_CLIST_REMOVEMAINMENUITEM)<>0) then
     begin
-      PluginLink^.CallService(MS_CLIST_REMOVEMAINMENUITEM,MainMenuItem,0);
+      CallService(MS_CLIST_REMOVEMAINMENUITEM,MainMenuItem,0);
       MainMenuItem:=0;
     end;
   end;
@@ -673,7 +672,7 @@ begin
     qsopt.savepattern     :=GetBool(so_savepattern     ,true);
     qsopt.colorize        :=GetBool(so_colorize        ,true);
 
-    if PluginLink^.ServiceExists(MS_FP_GETCLIENTICON)<>0 then
+    if ServiceExists(MS_FP_GETCLIENTICON)<>0 then
       qsopt.showclienticons:=GetBool(so_showclienticons,true)
     else
       qsopt.showclienticons:=false;

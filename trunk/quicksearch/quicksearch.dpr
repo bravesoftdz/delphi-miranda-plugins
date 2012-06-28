@@ -41,9 +41,6 @@ const
   BetaUpdateURL     = 'http://awkward.miranda.im/quicksearch.zip';
   BetaChangelogURL  = nil;
 
-var
-  PluginInterfaces:array [0..1] of MUUID;
-
 function MirandaPluginInfoEx(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
 begin
   result:=@PluginInfo;
@@ -73,25 +70,25 @@ end;
 function IconChanged(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
   mi:TCListMenuItem;
-//  ttb:TTBButtonV2; work only with TTBButton type :(
+  ttb:TTBButton;
 begin
   result:=0;
   FillChar(mi,SizeOf(mi),0);
   mi.cbSize:=sizeof(mi);
   mi.flags :=CMIM_ICON;
 
-  mi.hIcon:=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(QS_QS));
-  PluginLink^.CallService(MS_CLIST_MODIFYMENUITEM,MainMenuItem,tlparam(@mi));
+  mi.hIcon:=CallService(MS_SKIN2_GETICON,0,tlparam(QS_QS));
+  CallService(MS_CLIST_MODIFYMENUITEM,MainMenuItem,tlparam(@mi));
 
-{// toptoolbar
-  if PluginLink^.ServiceExists(MS_TTB_GETBUTTONOPTIONS)<>0 then
+// toptoolbar
+  if ServiceExists(MS_TTB_GETBUTTONOPTIONS)<>0 then
   begin
-    pluginLink^.CallService(MS_TTB_GETBUTTONOPTIONS,(hTTBButton shl 16)+TTBO_ALLDATA,dword(@ttb));
-    ttb.hIconUp:=PluginLink^.CallService(MS_SKIN2_GETICON,0,dword(QS_QS));
+    CallService(MS_TTB_GETBUTTONOPTIONS,(hTTBButton shl 16)+TTBO_ALLDATA,TLPARAM(@ttb));
+    ttb.hIconUp:=CallService(MS_SKIN2_GETICON,0,TLPARAM(QS_QS));
     ttb.hIconDn:=ttb.hIconUp;
-    pluginLink^.CallService(MS_TTB_SETBUTTONOPTIONS,(hTTBButton shl 16)+TTBO_ALLDATA,dword(@ttb));
+    CallService(MS_TTB_SETBUTTONOPTIONS,(hTTBButton shl 16)+TTBO_ALLDATA,TLPARAM(@ttb));
   end;
-}
+
 end;
 
 procedure RegisterIcons;
@@ -107,64 +104,64 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_QS),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_QS;
   sid.szDescription.a:=qs_name;
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_NEW),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_NEW;
   sid.szDescription.a:='New Column';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_ITEM),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_ITEM;
   sid.szDescription.a:='Save Column';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_UP),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_UP;
   sid.szDescription.a:='Column Up';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_DOWN),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_DOWN;
   sid.szDescription.a:='Column Down';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_DELETE),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_DELETE;
   sid.szDescription.a:='Delete Column';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_DEFAULT),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_DEFAULT;
   sid.szDescription.a:='Default';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_RELOAD),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_RELOAD;
   sid.szDescription.a:='Reload';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_MALE),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_MALE;
   sid.szDescription.a:='Male';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_FEMALE),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_FEMALE;
   sid.szDescription.a:='Female';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 
-  icohook:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
+  icohook:=HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
 end;
 
 function OnOptInitialise(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -172,7 +169,7 @@ var
   odp:TOPTIONSDIALOGPAGE;
 begin
   ZeroMemory(@odp,sizeof(odp));
-  odp.cbSize     :=OPTIONPAGE_OLD_SIZE3;  //for 0.6+ compatibility
+  odp.cbSize     :=SizeOf(odp);  //for 0.6+ compatibility
   odp.Position   :=900003000;
   odp.hInstance  :=hInstance;
   odp.pszTemplate:=PAnsiChar(IDD_DIALOG1);
@@ -180,7 +177,8 @@ begin
   odp.szGroup.a  :='Contact List';
   odp.pfnDlgProc :=@sr_optdialog.DlgProcOptions;
   odp.flags      :=ODPF_BOLDGROUPS;
-  PluginLink^.CallService(MS_OPT_ADDPAGE,wParam,tlparam(@odp));
+  Options_AddPage(wParam,@odp);
+//  CallService(MS_OPT_ADDPAGE,wParam,tlparam(@odp));
   Result:=0;
 end;
 
@@ -198,11 +196,11 @@ var
   upd:TUpdate;
   buf:array [0..63] of AnsiChar;
 begin
-  PluginLink^.UnhookEvent(onloadhook);
+  UnhookEvent(onloadhook);
 
-  PluginLink^.CallService(MS_DBEDIT_REGISTERSINGLEMODULE,twparam(qs_module),0);
+  CallService(MS_DBEDIT_REGISTERSINGLEMODULE,twparam(qs_module),0);
 
-  if PluginLink^.ServiceExists(MS_UPDATE_REGISTER)<>0 then
+  if ServiceExists(MS_UPDATE_REGISTER)<>0 then
   begin
     with upd do
     begin
@@ -220,35 +218,33 @@ begin
       cpbVersion          :=StrLen(pbVersion);
       szBetaChangelogURL  :=BetaChangelogURL;
     end;
-    PluginLink^.CallService(MS_UPDATE_REGISTER,0,tlparam(@upd));
+    CallService(MS_UPDATE_REGISTER,0,tlparam(@upd));
   end;
 
   RegisterIcons;
   RegisterColors;
 
-  servshow:=PluginLink^.CreateServiceFunction(QS_SHOWSERVICE,@OpenSearchWindow);
+  servshow:=CreateServiceFunction(QS_SHOWSERVICE,@OpenSearchWindow);
   AddRemoveMenuItemToMainMenu;
 
   reghotkeys;
 
-  onadd    :=PluginLink^.HookEvent(ME_DB_CONTACT_ADDED        ,@OnContactAdded);
-  ondelete :=PluginLink^.HookEvent(ME_DB_CONTACT_DELETED      ,@OnContactDeleted);
-  onstatus :=PluginLink^.HookEvent(ME_CLIST_CONTACTICONCHANGED,@OnStatusChanged);
-//  onaccount:=PluginLink^.HookEvent(ME_PROTO_ACCLISTCHANGED    ,@OnAccountChanged);
-  PluginLink.HookEvent(ME_TTB_MODULELOADED,@OnTTBLoaded);
+  onadd    :=HookEvent(ME_DB_CONTACT_ADDED        ,@OnContactAdded);
+  ondelete :=HookEvent(ME_DB_CONTACT_DELETED      ,@OnContactDeleted);
+  onstatus :=HookEvent(ME_CLIST_CONTACTICONCHANGED,@OnStatusChanged);
+//  onaccount:=HookEvent(ME_PROTO_ACCLISTCHANGED    ,@OnAccountChanged);
+  HookEvent(ME_TTB_MODULELOADED,@OnTTBLoaded);
 
   CreateFrame(0);
   Result:=0;
 end;
 
-function Load(link:PPLUGINLINK):Integer;cdecl;
+function Load():Integer;cdecl;
 begin
   Result:=0;
-  PluginLink:=pointer(link);
-  InitMMI;
   Langpack_register;
-  opthook   :=PluginLink^.HookEvent(ME_OPT_INITIALISE      ,@OnOptInitialise);
-  onloadhook:=PluginLink^.HookEvent(ME_SYSTEM_MODULESLOADED,@OnModulesLoaded);
+  opthook   :=HookEvent(ME_OPT_INITIALISE      ,@OnOptInitialise);
+  onloadhook:=HookEvent(ME_SYSTEM_MODULESLOADED,@OnModulesLoaded);
   loadopt_db(true);
 end;
 
@@ -257,14 +253,14 @@ begin
   result:=0;
   DestroyFrame;
 
-  PluginLink^.DestroyServiceFunction(servshow);
-  PluginLink^.UnhookEvent(opthook);
-  PluginLink^.UnhookEvent(onadd);
-  PluginLink^.UnhookEvent(ondelete);
-  PluginLink^.UnhookEvent(onstatus);
-//  PluginLink^.UnhookEvent(onaccount);
+  DestroyServiceFunction(servshow);
+  UnhookEvent(opthook);
+  UnhookEvent(onadd);
+  UnhookEvent(ondelete);
+  UnhookEvent(onstatus);
+//  UnhookEvent(onaccount);
   if icohook<>0 then
-    PluginLink^.UnhookEvent(icohook);
+    UnhookEvent(icohook);
 
 //  unreghotkeys;
 
@@ -273,16 +269,9 @@ begin
   clear_columns;
 end;
 
-function MirandaPluginInterfaces:PMUUID; cdecl;
-begin
-  PluginInterfaces[0]:=PluginInfo.uuid;
-  PluginInterfaces[1]:=MIID_LAST;
-  result:=@PluginInterfaces;
-end;
-
 exports
   Load, Unload,
-  MirandaPluginInterfaces,MirandaPluginInfoEx;
+  MirandaPluginInfoEx;
 
 begin
 end.

@@ -89,7 +89,7 @@ const
   IRDF_EVENT    = $0004;
 
 type
-  TItemRenderDetails = packed record
+  TItemRenderDetails = record
     cbSize        :DWord;     // size of the structure in bytes
     hContact      :THandle;   // handle to the contact for which the event is processed
     hDBEvent      :THandle;   // handle to the event which is processed
@@ -145,10 +145,10 @@ const
   MS_HPP_SHOWGLOBALSEARCH = 'History++/ShowGlobalSearch';
 
 type
-  TOpenEventParams = packed record
+  TOpenEventParams = record
     cbSize   : DWord;
-    hContact : DWord;
-    hDBEvent : DWord;
+    hContact : THandle;
+    hDBEvent : THandle;
     pPassword: PAnsiChar;
   end;
 

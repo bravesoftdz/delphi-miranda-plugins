@@ -77,9 +77,9 @@ var
 function InitProc(aGetStatus:boolean=false):integer;
 begin
   result:=1;
-  hEXP    :=PluginLink^.CreateServiceFunction(MS_WAT_EXPORT     ,@ExportProc);
-  hReplace:=PluginLink^.CreateServiceFunction(MS_WAT_REPLACETEXT,@WATReplaceText);
-  hMacro  :=PluginLink^.CreateServiceFunction(MS_WAT_MACROHELP  ,@WATMacroHelp);
+  hEXP    :=CreateServiceFunction(MS_WAT_EXPORT     ,@ExportProc);
+  hReplace:=CreateServiceFunction(MS_WAT_REPLACETEXT,@WATReplaceText);
+  hMacro  :=CreateServiceFunction(MS_WAT_MACROHELP  ,@WATMacroHelp);
   LoadOpt;
   LoadAliases;
   RegisterVariables;
@@ -88,9 +88,9 @@ end;
 
 procedure DeInitProc(aSetDisable:boolean);
 begin
-  PluginLink^.DestroyServiceFunction(hReplace);
-  PluginLink^.DestroyServiceFunction(hEXP);
-  PluginLink^.DestroyServiceFunction(hMacro);
+  DestroyServiceFunction(hReplace);
+  DestroyServiceFunction(hEXP);
+  DestroyServiceFunction(hMacro);
   FreeAliases;
   FreeOpt;
 end;

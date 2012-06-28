@@ -566,7 +566,7 @@ begin
 
   if arg^.group<>nil then
   begin
-    PluginLink^.NotifyEventHooks(hevaction,arg^.group.id,0); // started
+    NotifyEventHooks(hevaction,arg^.group.id,0); // started
     arg^.group.flags:=arg^.group.flags or ACF_USEDNOW;
   end;
 
@@ -575,7 +575,7 @@ begin
   if arg^.group<>nil then
   begin
     arg^.group.flags:=arg^.group.flags and not ACF_USEDNOW;
-    PluginLink^.NotifyEventHooks(hevaction,arg^.group.id,1); // finished
+    NotifyEventHooks(hevaction,arg^.group.id,1); // finished
   end;
 
   if arg^.event<>0 then

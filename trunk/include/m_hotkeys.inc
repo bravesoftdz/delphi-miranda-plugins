@@ -37,6 +37,7 @@ type
     dwFlags       :dword;      // Miranda ver >=9.0
   end;
   THOTKEYDESC = HOTKEYDESC;
+  PHOTKEYDESC = ^THOTKEYDESC;
 
 const
   {$IFNDEF Win64}

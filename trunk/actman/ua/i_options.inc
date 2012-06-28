@@ -243,7 +243,7 @@ begin
 
   if (not luse) and (ActionItem.hMenuService<>0) then
   begin
-    PluginLink^.DestroyServiceFunction(ActionItem.hMenuService);
+    DestroyServiceFunction(ActionItem.hMenuService);
     ActionItem.hMenuService:=0;
   end;
 
@@ -309,7 +309,7 @@ begin
 
   if (not luse) and (ActionItem.hMenuService<>0) then
   begin
-    PluginLink^.DestroyServiceFunction(ActionItem.hMenuService);
+    DestroyServiceFunction(ActionItem.hMenuService);
     ActionItem.hMenuService:=0;
   end;
 

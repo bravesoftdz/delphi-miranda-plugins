@@ -7,7 +7,7 @@
 library WATrack;
 uses
   // FastMM not compatible with FPC, internal for delphi xe
-  {$IFNDEF COMPILER_16_UP}{$IFNDEF FPC}fastmm4,{$ENDIF}{$ENDIF}
+//  {$IFNDEF COMPILER_16_UP}{$IFNDEF FPC}fastmm4,{$ENDIF}{$ENDIF}
   m_api,dbsettings,activex,winampapi,
   Windows,messages,commctrl,//uxtheme,
   srv_format,srv_player,wat_api,wrapper,
@@ -33,9 +33,6 @@ uses
 {$Resource res\watrack.res}
 
 {$include i_vars.inc}
-
-var
-  PluginInterfaces:array [0..1] of MUUID;
 
 const
   MenuDisablePos = 500050000;
@@ -211,7 +208,7 @@ begin
   if result=WAT_RES_NEWPLAYER then
   begin
     newplayer:=true;
-    PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_NEWPLAYER,tlparam(@WorkSI));
+    NotifyEventHooks(hHookWATStatus,WAT_EVENT_NEWPLAYER,tlparam(@WorkSI));
     result:=WAT_RES_OK;
   end
   else // !!!! (need to add) must remember about same player, another instance
@@ -232,7 +229,7 @@ begin
 
       if Hiword(OldPlayerStatus)<>WAT_MES_STOPPED then
       begin
-        PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLAYERSTATUS,WAT_MES_STOPPED);
+        NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLAYERSTATUS,WAT_MES_STOPPED);
       end;
 
       ClearFileInfo    (SongInfo,true);
@@ -279,7 +276,7 @@ begin
 
       if OldPlayerStatus<>WorkSI.status then
       begin
-        PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLAYERSTATUS,WorkSI.status);
+        NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLAYERSTATUS,WorkSI.status);
       end;
 
       // no playing file - clear all file info
@@ -360,7 +357,7 @@ begin
             result:=WAT_RES_NEWFILE;
 
           if result=WAT_RES_NEWFILE then
-            PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_NEWTRACK,tlparam(@SongInfo));
+            NotifyEventHooks(hHookWATStatus,WAT_EVENT_NEWTRACK,tlparam(@SongInfo));
         end
         else // just changing infos
         begin
@@ -388,14 +385,14 @@ begin
       ClearSongInfoData(SongInfo,true);
       SongInfo.status:=WAT_PLS_NOTFOUND+WAT_MES_UNKNOWN shl 16;
 
-      PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLAYERSTATUS,
+      NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLAYERSTATUS,
           WAT_PLS_NOTFOUND+WAT_MES_UNKNOWN shl 16);
     end;
 
 {
     if OldPlayerStatus<>WorkSI.status then
     begin
-      PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLAYERSTATUS,
+      NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLAYERSTATUS,
           WAT_PLS_NOTFOUND+WAT_MES_UNKNOWN shl 16);
     end;
 
@@ -470,7 +467,7 @@ begin
 
   ChangeMenuIcons(f1);
 
-  PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLUGINSTATUS,DisablePlugin);
+  NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLUGINSTATUS,DisablePlugin);
 end;
 
 function WaitAllModules(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -494,7 +491,7 @@ begin
 
   StartTimer;
 
-  PluginLink^.NotifyEventHooks(hHookWATLoaded,0,0);
+  NotifyEventHooks(hHookWATLoaded,0,0);
   CloseHandle(hEvent);
 end;
 
@@ -504,9 +501,9 @@ var
   upd:TUpdate;
   p:PAnsiChar;
 begin
-   PluginLink^.UnhookEvent(onloadhook);
+   UnhookEvent(onloadhook);
 
-  if PluginLink^.ServiceExists(MS_UPDATE_REGISTER)<>0 then
+  if ServiceExists(MS_UPDATE_REGISTER)<>0 then
   begin
     with upd do
     begin
@@ -524,7 +521,7 @@ begin
       cpbVersion          :=StrLen(pbVersion);
       szBetaChangelogURL  :=BetaChangelogURL;
     end;
-    PluginLink^.CallService(MS_UPDATE_REGISTER,0,tlparam(@upd));
+    CallService(MS_UPDATE_REGISTER,0,tlparam(@upd));
   end;
 
   CallService(MS_DBEDIT_REGISTERSINGLEMODULE,twparam(PluginShort),0);
@@ -534,14 +531,14 @@ begin
   OleInitialize(nil);
 
   if RegisterIcons then
-    wsic:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged)
+    wsic:=HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged)
   else
     wsic:=0;
 
   CreateMenus;
 
-  if PluginLink^.ServiceExists(MS_TTB_ADDBUTTON)<>0 then
-    onloadhook:=pluginlink^.HookEvent(ME_TTB_MODULELOADED,@OnTTBLoaded);
+  if ServiceExists(MS_TTB_ADDBUTTON)<>0 then
+    onloadhook:=HookEvent(ME_TTB_MODULELOADED,@OnTTBLoaded);
 
   ProcessFormatLink;
   ProcessPlayerLink;
@@ -588,18 +585,18 @@ end;
 
 procedure FreeServices;
 begin
-  PluginLink^.DestroyServiceFunction(hGFI);
-  PluginLink^.DestroyServiceFunction(hRGS);
+  DestroyServiceFunction(hGFI);
+  DestroyServiceFunction(hRGS);
 
-  PluginLink^.DestroyServiceFunction(hWI);
-  PluginLink^.DestroyServiceFunction(hGMI);
-  PluginLink^.DestroyServiceFunction(hPS);
-  PluginLink^.DestroyServiceFunction(hPB);
-  PluginLink^.DestroyServiceFunction(hWATI);
-  PluginLink^.DestroyServiceFunction(hWC);
+  DestroyServiceFunction(hWI);
+  DestroyServiceFunction(hGMI);
+  DestroyServiceFunction(hPS);
+  DestroyServiceFunction(hPB);
+  DestroyServiceFunction(hWATI);
+  DestroyServiceFunction(hWC);
 
-  PluginLink^.DestroyServiceFunction(hFMT);
-  PluginLink^.DestroyServiceFunction(hPLR);
+  DestroyServiceFunction(hFMT);
+  DestroyServiceFunction(hPLR);
 end;
 
 function PreShutdown(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -612,7 +609,7 @@ var
 begin
   StopMSNHook;
 
-  PluginLink^.NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLAYERSTATUS,WAT_PLS_NOTFOUND);
+  NotifyEventHooks(hHookWATStatus,WAT_EVENT_PLAYERSTATUS,WAT_PLS_NOTFOUND);
 
   if hwndTooltip<>0 then
     DestroyWindow(hwndTooltip);
@@ -626,16 +623,16 @@ begin
     ptr:=ptr^.Next;
   end;
 
-//  PluginLink^.UnhookEvent(plStatusHook);
-  PluginLink^.UnhookEvent(hHookShutdown);
-  PluginLink^.UnhookEvent(opthook);
-  if wsic<>0 then PluginLink^.UnhookEvent(wsic);
+//  UnhookEvent(plStatusHook);
+  UnhookEvent(hHookShutdown);
+  UnhookEvent(opthook);
+  if wsic<>0 then UnhookEvent(wsic);
 
   FreeServices;
   FreeVariables;
 
-  PluginLink^.DestroyHookableEvent(hHookWATLoaded);
-  PluginLink^.DestroyHookableEvent(hHookWATStatus);
+  DestroyHookableEvent(hHookWATLoaded);
+  DestroyHookableEvent(hHookWATStatus);
 
   OleUnInitialize;
 
@@ -658,36 +655,34 @@ begin
   result:=0;
 end;
 
-function Load(link:PPLUGINLINK):int; cdecl;
+function Load():int; cdecl;
 begin
   result:=0;
-  PluginLink:=Pointer(link);
-  InitMMI;
   Langpack_register;
 
   DisablePlugin:=dsPermanent;
 
-  hHookWATLoaded:=PluginLink^.CreateHookableEvent(ME_WAT_MODULELOADED);
-  hHookWATStatus:=PluginLink^.CreateHookableEvent(ME_WAT_NEWSTATUS);
-  hHookShutdown :=PluginLink^.HookEvent(ME_SYSTEM_OKTOEXIT,@PreShutdown);
-  opthook       :=PluginLink^.HookEvent(ME_OPT_INITIALISE ,@OnOptInitialise);
+  hHookWATLoaded:=CreateHookableEvent(ME_WAT_MODULELOADED);
+  hHookWATStatus:=CreateHookableEvent(ME_WAT_NEWSTATUS);
+  hHookShutdown :=HookEvent(ME_SYSTEM_OKTOEXIT,@PreShutdown);
+  opthook       :=HookEvent(ME_OPT_INITIALISE ,@OnOptInitialise);
 
-  hGFI:=PluginLink^.CreateServiceFunction(MS_WAT_GETFILEINFO  ,@WATGetFileInfo);
-  hRGS:=PluginLink^.CreateServiceFunction(MS_WAT_RETURNGLOBAL ,@WATReturnGlobal);
+  hGFI:=CreateServiceFunction(MS_WAT_GETFILEINFO  ,@WATGetFileInfo);
+  hRGS:=CreateServiceFunction(MS_WAT_RETURNGLOBAL ,@WATReturnGlobal);
 
-  hGMI:=PluginLink^.CreateServiceFunction(MS_WAT_GETMUSICINFO ,@WATGetMusicInfo);
-  hPS :=PluginLink^.CreateServiceFunction(MS_WAT_PLUGINSTATUS ,@WATPluginStatus);
-  hPB :=PluginLink^.CreateServiceFunction(MS_WAT_PRESSBUTTON  ,@PressButton);
-  hWI :=PluginLink^.CreateServiceFunction(MS_WAT_WINAMPINFO   ,@WinampGetInfo);
-  hWC :=PluginLink^.CreateServiceFunction(MS_WAT_WINAMPCOMMAND,@WinampCommand);
+  hGMI:=CreateServiceFunction(MS_WAT_GETMUSICINFO ,@WATGetMusicInfo);
+  hPS :=CreateServiceFunction(MS_WAT_PLUGINSTATUS ,@WATPluginStatus);
+  hPB :=CreateServiceFunction(MS_WAT_PRESSBUTTON  ,@PressButton);
+  hWI :=CreateServiceFunction(MS_WAT_WINAMPINFO   ,@WinampGetInfo);
+  hWC :=CreateServiceFunction(MS_WAT_WINAMPCOMMAND,@WinampCommand);
 
-  hFMT:=PluginLink^.CreateServiceFunction(MS_WAT_FORMAT,@ServiceFormat);
-  hPLR:=PluginLink^.CreateServiceFunction(MS_WAT_PLAYER,@ServicePlayer);
+  hFMT:=CreateServiceFunction(MS_WAT_FORMAT,@ServiceFormat);
+  hPLR:=CreateServiceFunction(MS_WAT_PLAYER,@ServicePlayer);
 
   FillChar(SongInfoA,SizeOf(SongInfoA),0);
   FillChar(SongInfo ,SizeOf(SongInfo ),0);
   FillChar(WorkSI   ,SizeOf(SongInfo ),0);
-  onloadhook:=PluginLink^.HookEvent(ME_SYSTEM_MODULESLOADED,@OnModulesLoaded);
+  onloadhook:=HookEvent(ME_SYSTEM_MODULESLOADED,@OnModulesLoaded);
 end;
 
 function Unload:int; cdecl;
@@ -695,16 +690,9 @@ begin
   result:=0;
 end;
 
-function MirandaPluginInterfaces:PMUUID; cdecl;
-begin
-  PluginInterfaces[0]:=PluginInfo.uuid;
-  PluginInterfaces[1]:=MIID_LAST;
-  result:=@PluginInterfaces;
-end;
-
 exports
   Load, Unload,
-  MirandaPluginInterfaces,MirandaPluginInfoEx;
+  MirandaPluginInfoEx;
 
 begin
 end.

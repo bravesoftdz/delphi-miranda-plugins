@@ -17,19 +17,23 @@ const
 type
   pTaskRec = ^tTaskRec;
   tTaskRec = record
+    // option values
     flags     :dword;
     name      :PWideChar; // name for task
     action    :dword;     // assigned action
-    // maybe tSystemTime is better? but harder to save
     intdays,              // interval,days
     dayoffset :integer;   //!! offset, days
     starttime,            // task starttime
     interval  :TFileTime; // interval for repeat
     count     :integer;   // repeat count
-
-    timer     :uint_ptr;  // (runtime) timer handle
-    curcount  :integer;   // (runtime) repeat count
+    // support values
     lastcall  :TFileTime; // last timer event time
+    nextcall  :TFileTime; // ?? next start time? 
+    // runtime values
+    timer     :uint_ptr;  // timer handle
+    curcount  :integer;   // repeat count
+    inprocess :bool;      // starting processing
+    inaction  :bool;      // timer event processing
   end;
   pTaskList = ^tTaskList;
   tTaskList  = array [0..1023] of tTaskRec;
@@ -52,9 +56,10 @@ begin
       if (flags and (ACF_ASSIGNED or ACF_DISABLED))=ACF_ASSIGNED then
         if timer=idEvent then
         begin
+          inaction:=true;
           if ((flags and TCF_MAKEEVENT)<>0) and
             (((flags and TCF_EVENTONCE) =0) or (curcount=count)) then
-            PluginLink^.NotifyEventHooks(hevent,count-curcount,lParam(name));
+            NotifyEventHooks(hevent,count-curcount,lParam(name));
 
           GetLocalTime(st);
           SystemTimeToFileTime(st,lastcall);
@@ -82,6 +87,7 @@ begin
             if count>0 then
               dec(curcount);
           end;
+          inaction:=false;
           break;
         end;
     end;
@@ -96,6 +102,7 @@ var
   st:tSystemTime;
   dif:int64;
 begin
+  task.inprocess:=true;
   // Check task time
   if (task.flags and TCF_IMMEDIATELY)<>0 then
   begin
@@ -133,6 +140,7 @@ begin
 
   if (task.flags and TCF_IMMEDIATELY)<>0 then
     TimerProc(0,WM_TIMER,task.timer,0);
+  task.inprocess:=false;
 end;
 
 procedure SetAllTasks;

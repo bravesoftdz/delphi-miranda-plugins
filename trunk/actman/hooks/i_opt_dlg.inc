@@ -267,7 +267,7 @@ begin
     WM_CLOSE: begin
       ApiCard.Free;
 
-      PluginLink^.UnhookEvent(onactchanged);
+      UnhookEvent(onactchanged);
       settings:=0;
     end;
 
@@ -299,7 +299,7 @@ begin
       FillHookList(wnd);
       ShowHookData(Dialog);
 
-      onactchanged:=PluginLink^.HookEvent(ME_ACT_CHANGED,@ActListChange);
+      onactchanged:=HookEvent(ME_ACT_CHANGED,@ActListChange);
       settings:=Dialog;
     end;
 

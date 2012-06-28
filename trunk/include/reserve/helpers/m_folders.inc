@@ -57,7 +57,7 @@ const
   FF_UNICODE = $00000001;
 
 type
-  TFOLDERSDATA = packed record
+  TFOLDERSDATA = record
     cbSize:integer;                                  //size of struct
     //section name, if it doesn't exist it will be created otherwise it will just add this entry to it
     szSection:array [0..FOLDERS_NAME_MAX_SIZE-1] of AnsiChar;
@@ -91,7 +91,7 @@ const
   MS_FOLDERS_GET_SIZE = 'Folders/Get/PathSize';
 
 type
-  TFOLDERSGETDATA = packed record
+  TFOLDERSGETDATA = record
     cbSize:integer;
     nMaxPathSize:integer; // maximum size of buffer. This represents the number
                           // of characters that can be copied to it (so for
@@ -110,7 +110,7 @@ const
   MS_FOLDERS_GET_PATH = 'Folders/Get/Path';
 
 type
-  TFOLDERSGETALLOCDATA = packed record
+  TFOLDERSGETALLOCDATA = record
     cbSize:integer;
     szPath:^TCHAR; // address of a string variable where the path should be
                    // stored (the last \ won't be copied).

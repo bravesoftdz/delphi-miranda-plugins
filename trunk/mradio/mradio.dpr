@@ -24,9 +24,6 @@ const
 const
   PluginName:PAnsiChar = cPluginName;
 
-var
-  PluginInterfaces:array [0..1] of MUUID;
-
 const
   VersionURL        = nil;//'http://addons.miranda-im.org/details.php?action=viewfile&id=3285';
   VersionPrefix     = nil;//'<span class="fileNameHeader">QuickSearch Mod ';
@@ -136,11 +133,11 @@ var
   i:integer;
   upd:TUpdate;
 begin
-  PluginLink^.UnhookEvent(onloadhook);
+  UnhookEvent(onloadhook);
 
   DBWriteDWord(0,PluginName,optVersion,PluginInfo.version);
 
-  if PluginLink^.ServiceExists(MS_UPDATE_REGISTER)<>0 then
+  if ServiceExists(MS_UPDATE_REGISTER)<>0 then
   begin
     with upd do
     begin
@@ -158,7 +155,7 @@ begin
       cpbVersion          :=StrLen(pbVersion);
       szBetaChangelogURL  :=BetaChangelogURL;
     end;
-    PluginLink^.CallService(MS_UPDATE_REGISTER,0,tlparam(@upd));
+    CallService(MS_UPDATE_REGISTER,0,tlparam(@upd));
   end;
 
   szTemp[0]:='E';
@@ -224,8 +221,8 @@ begin
   else
     ActiveContact:=0;
 
-  onsetting:=Pluginlink^.HookEvent(ME_DB_CONTACT_SETTINGCHANGED,@OnSettingsChanged);
-  ondelete :=PluginLink^.HookEvent(ME_DB_CONTACT_DELETED       ,@OnContactDeleted);
+  onsetting:=HookEvent(ME_DB_CONTACT_SETTINGCHANGED,@OnSettingsChanged);
+  ondelete :=HookEvent(ME_DB_CONTACT_DELETED       ,@OnContactDeleted);
   randomize;
   CreateFrame(0);
 
@@ -252,30 +249,27 @@ begin
   MyFreeBASS;
   DBWriteByte(0,PluginName,optVolume,gVolume);
 
-  with PluginLink^ do
-  begin
-    DestroyServiceFunction(hsTrayMenu);
-    DestroyServiceFunction(hsPlayStop);
-    DestroyServiceFunction(hsRecord);
-    DestroyServiceFunction(hsSettings);
-    DestroyServiceFunction(hsSetVol);
-    DestroyServiceFunction(hsGetVol);
-    DestroyServiceFunction(hsMute);
-    DestroyServiceFunction(hsCommand);
-    DestroyServiceFunction(hsEqOnOff);
+  DestroyServiceFunction(hsTrayMenu);
+  DestroyServiceFunction(hsPlayStop);
+  DestroyServiceFunction(hsRecord);
+  DestroyServiceFunction(hsSettings);
+  DestroyServiceFunction(hsSetVol);
+  DestroyServiceFunction(hsGetVol);
+  DestroyServiceFunction(hsMute);
+  DestroyServiceFunction(hsCommand);
+  DestroyServiceFunction(hsEqOnOff);
 
-    DestroyServiceFunction(hsExport);
-    DestroyServiceFunction(hsImport);
+  DestroyServiceFunction(hsExport);
+  DestroyServiceFunction(hsImport);
 
-    DestroyHookableEvent(hhRadioStatus);
+  DestroyHookableEvent(hhRadioStatus);
 
-    UnhookEvent(onsetting);
-    UnhookEvent(ondelete);
-    UnhookEvent(hHookShutdown);
-    UnhookEvent(hDblClick);
-    UnhookEvent(opthook);
-    UnhookEvent(contexthook);
-  end;
+  UnhookEvent(onsetting);
+  UnhookEvent(ondelete);
+  UnhookEvent(hHookShutdown);
+  UnhookEvent(hDblClick);
+  UnhookEvent(opthook);
+  UnhookEvent(contexthook);
 
   CallService(MS_NETLIB_CLOSEHANDLE,hNetLib,0);
   mFreeMem(storage);
@@ -304,15 +298,13 @@ begin
   result:=0;
 end;
 
-function Load(link:PPLUGINLINK): int; cdecl;
+function Load(): int; cdecl;
 var
   desc:TPROTOCOLDESCRIPTOR;
   szTemp:array [0..MAX_PATH-1] of WideChar;
   pc:pWideChar;
   custom:pWideChar;
 begin
-  PluginLink:=Pointer(link);
-  InitMMI;
   Langpack_register;
 
   GetModuleFileNameW(0,szTemp,MAX_PATH-1);
@@ -340,33 +332,30 @@ begin
     desc._type :=PROTOTYPE_PROTOCOL;
     CallService(MS_PROTO_REGISTERMODULE,0,lparam(@desc));
 
-    with PluginLink^ do
-    begin
-      hhRadioStatus:=PluginLink^.CreateHookableEvent(ME_RADIO_STATUS);
+    hhRadioStatus:=CreateHookableEvent(ME_RADIO_STATUS);
 
-      hsPlayStop:=CreateServiceFunction(MS_RADIO_PLAYSTOP,@Service_RadioPlayStop);
-      hsRecord  :=CreateServiceFunction(MS_RADIO_RECORD  ,@Service_RadioRecord);
-      hsSettings:=CreateServiceFunction(MS_RADIO_SETTINGS,@Service_RadioSettings);
-      hsSetVol  :=CreateServiceFunction(MS_RADIO_SETVOL  ,@Service_RadioSetVolume);
-      hsGetVol  :=CreateServiceFunction(MS_RADIO_GETVOL  ,@Service_RadioGetVolume);
-      hsMute    :=CreateServiceFunction(MS_RADIO_MUTE    ,@Service_RadioMute);
-      hsCommand :=CreateServiceFunction(MS_RADIO_COMMAND ,@ControlCenter);
-      hsEqOnOff :=CreateServiceFunction(MS_RADIO_EQONOFF ,@Service_EqOnOff);
+    hsPlayStop:=CreateServiceFunction(MS_RADIO_PLAYSTOP,@Service_RadioPlayStop);
+    hsRecord  :=CreateServiceFunction(MS_RADIO_RECORD  ,@Service_RadioRecord);
+    hsSettings:=CreateServiceFunction(MS_RADIO_SETTINGS,@Service_RadioSettings);
+    hsSetVol  :=CreateServiceFunction(MS_RADIO_SETVOL  ,@Service_RadioSetVolume);
+    hsGetVol  :=CreateServiceFunction(MS_RADIO_GETVOL  ,@Service_RadioGetVolume);
+    hsMute    :=CreateServiceFunction(MS_RADIO_MUTE    ,@Service_RadioMute);
+    hsCommand :=CreateServiceFunction(MS_RADIO_COMMAND ,@ControlCenter);
+    hsEqOnOff :=CreateServiceFunction(MS_RADIO_EQONOFF ,@Service_EqOnOff);
 
-      hiddenwindow:=CreateHiddenWindow;
-      hsTrayMenu:=CreateServiceFunction(MS_RADIO_TRAYMENU,@CreateTrayMenu);
+    hiddenwindow:=CreateHiddenWindow;
+    hsTrayMenu:=CreateServiceFunction(MS_RADIO_TRAYMENU,@CreateTrayMenu);
 
-      hsExport  :=CreateServiceFunction(MS_RADIO_EXPORT  ,@ExportAll);
-      hsImport  :=CreateServiceFunction(MS_RADIO_IMPORT  ,@ImportAll);
+    hsExport  :=CreateServiceFunction(MS_RADIO_EXPORT  ,@ExportAll);
+    hsImport  :=CreateServiceFunction(MS_RADIO_IMPORT  ,@ImportAll);
 
 
-      CreateProtoServices;
-      onloadhook   :=HookEvent(ME_SYSTEM_MODULESLOADED     ,@OnModulesLoaded);
-      hHookShutdown:=HookEvent(ME_SYSTEM_SHUTDOWN{ME_SYSTEM_OKTOEXIT},@PreShutdown);
-      hDblClick    :=HookEvent(ME_CLIST_DOUBLECLICKED      ,@Service_RadioPlayStop{@DblClickProc});
-      opthook      :=HookEvent(ME_OPT_INITIALISE           ,@OnOptInitialise);
-      contexthook  :=HookEvent(ME_CLIST_PREBUILDCONTACTMENU,@OnContactMenu);
-    end;
+    CreateProtoServices;
+    onloadhook   :=HookEvent(ME_SYSTEM_MODULESLOADED     ,@OnModulesLoaded);
+    hHookShutdown:=HookEvent(ME_SYSTEM_SHUTDOWN{ME_SYSTEM_OKTOEXIT},@PreShutdown);
+    hDblClick    :=HookEvent(ME_CLIST_DOUBLECLICKED      ,@Service_RadioPlayStop{@DblClickProc});
+    opthook      :=HookEvent(ME_OPT_INITIALISE           ,@OnOptInitialise);
+    contexthook  :=HookEvent(ME_CLIST_PREBUILDCONTACTMENU,@OnContactMenu);
 
     PluginStatus:=ID_STATUS_OFFLINE;
   end;
@@ -381,16 +370,9 @@ begin
   Result:=0;
 end;
 
-function MirandaPluginInterfaces:PMUUID; cdecl;
-begin
-  PluginInterfaces[0]:=PluginInfo.uuid;
-  PluginInterfaces[1]:=MIID_LAST;
-  result:=@PluginInterfaces;
-end;
-
 exports
   Load, Unload,
-  MirandaPluginInterfaces,MirandaPluginInfoEx;
+  MirandaPluginInfoEx;
 
 begin
 end.

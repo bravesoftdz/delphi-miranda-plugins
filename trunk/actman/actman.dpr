@@ -12,7 +12,6 @@ library actman;
 {%File 'i_action.inc'}
 {%File 'i_const.inc'}
 {%File 'i_contact.inc'}
-{%File 'i_opt_struct.inc'}
 {%File 'i_opt_dlg2.inc'}
 {%File 'i_opt_dlg.inc'}
 {%File 'i_visual.inc'}
@@ -78,9 +77,6 @@ const
   BetaUpdateURL     = 'http://awkward.miranda.im/actman.zip';
   BetaChangelogURL  = nil; //'http://awkward.miranda.im/actman.txt';
 
-var
-  PluginInterfaces:array [0..2] of MUUID;
-
 function MirandaPluginInfoEx(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
 begin
   result:=@PluginInfo;
@@ -91,7 +87,7 @@ begin
                           'run program and call services';
   PluginInfo.author     :='Awkward';
   PluginInfo.authorEmail:='panda75@bk.ru; awk1975@ya.ru';
-  PluginInfo.copyright  :='(c) 2007-2011 Awkward';
+  PluginInfo.copyright  :='(c) 2007-2012 Awkward';
   PluginInfo.homepage   :='http://code.google.com/p/delphi-miranda-plugins/';
   PluginInfo.flags      :=UNICODE_AWARE;
   PluginInfo.replacesDefaultModule:=0;
@@ -101,144 +97,13 @@ end;
 {$include i_const.inc}
 {$include i_vars.inc}
 
-function ActInOut(wParam:WPARAM;lParam:LPARAM):int_ptr; cdecl; forward;
-
 {$include i_action.inc}
 {$include i_actlow.inc}
 {$include i_options.inc}
 {$include i_contact.inc}
 {$include i_opt_dlg.inc}
 {$include i_inoutxm.inc}
-
-function ActFreeList(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
-begin
-  result:=0;
-  mFreeMem(PAnsiChar(lParam));
-end;
-
-function ActGetList(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
-var
-  pc:^tChain;
-  p:pHKRecord;
-  i,cnt:integer;
-begin
-  p:=@GroupList[0];
-  cnt:=0;
-  for i:=0 to MaxGroups-1 do
-  begin
-    if (p^.flags and (ACF_ASSIGNED or ACF_VOLATILE))=ACF_ASSIGNED then inc(cnt);
-    inc(p);
-  end;
-  result:=cnt;
-  if lParam=0 then exit;
-  if cnt>0 then
-  begin
-    mGetMem(pc,cnt*SizeOf(tChain)+4);
-    puint_ptr(lParam)^:=uint_ptr(pc);
-//    {$IFDEF WIN64}pqword{$ELSE}pdword{$ENDIF}(lParam)^:=uint_ptr(pc);
-    pdword(pc)^:=SizeOf(tChain);
-    inc(PByte(pc),4);
-
-    p:=@GroupList[0];
-    for i:=0 to MaxGroups-1 do
-    begin
-      if (p^.flags and (ACF_ASSIGNED or ACF_VOLATILE))=ACF_ASSIGNED then
-      begin
-        pc^.descr:=p^.descr;
-        pc^.id   :=p^.id;
-        pc^.flags:=p^.flags;
-        inc(pc);
-      end;
-      inc(p);
-    end;
-  end
-  else
-    puint_ptr(lParam)^:=0;
-//    {$IFDEF WIN64}pqword{$ELSE}pdword{$ENDIF}(lParam)^:=0;
-end;
-
-function ActRun(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
-var
-  i:integer;
-  p:pHKRecord;
-begin
-  result:=-1;
-  p:=@GroupList[0];
-  for i:=0 to MaxGroups-1 do
-  begin
-    if ((p^.flags and ACF_ASSIGNED)<>0) and (p^.id=dword(wParam)) then
-    begin
-      result:=p^.firstAction;
-      break;
-    end;
-    inc(p);
-  end;
-  if result>0 then
-    result:=ActionStarter(result,lParam,p);
-end;
-
-function ActRunGroup(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
-var
-  i:integer;
-  p:pHKRecord;
-begin
-  result:=-1;
-  p:=@GroupList[0];
-  for i:=0 to MaxGroups-1 do
-  begin
-    if ((p^.flags and ACF_ASSIGNED)<>0) and (StrCmpW(p^.descr,pWideChar(wParam))=0) then
-    begin
-      result:=p^.firstAction;
-      break;
-    end;
-    inc(p);
-  end;
-  if result>0 then
-    result:=ActionStarter(result,lParam,p);
-end;
-
-function ActRunParam(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
-var
-  i:integer;
-  p:pHKRecord;
-begin
-  result:=-1;
-  p:=@GroupList[0];
-  
-  if (pAct_Param(lParam)^.flags and ACTP_BYNAME)=0 then
-  begin
-    for i:=0 to MaxGroups-1 do
-    begin
-      if ((p^.flags and ACF_ASSIGNED)<>0) and (p^.id=pAct_Param(lParam)^.Id) then
-      begin
-        result:=p^.firstAction;
-        break;
-      end;
-      inc(p);
-    end;
-  end
-  else
-  begin
-    for i:=0 to MaxGroups-1 do
-    begin
-      if ((p^.flags and ACF_ASSIGNED)<>0) and
-         (StrCmpW(p^.descr,pWideChar(pAct_Param(lParam)^.Id))=0) then
-      begin
-        result:=p^.firstAction;
-        break;
-      end;
-      inc(p);
-    end;
-  end;
-
-  if result>0 then
-  begin
-    if (pAct_Param(lParam)^.flags and ACTP_WAIT)=0 then
-      result:=ActionStarter    (result,pAct_Param(lParam)^.wParam,p,pAct_Param(lParam)^.lParam)
-    else
-      result:=ActionStarterWait(result,pAct_Param(lParam)^.wParam,p,pAct_Param(lParam)^.lParam);
-  end;
-end;
+{$include i_services.inc}
 
 function PreShutdown(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
@@ -255,18 +120,21 @@ begin
   end;
 
   FreeGroups;
-  PluginLink^.UnhookEvent(hHookShutdown);
-  PluginLink^.UnhookEvent(opthook);
-  PluginLink^.DestroyHookableEvent(hHookChanged);
-  PluginLink^.DestroyHookableEvent(hevinout);
-  PluginLink^.DestroyHookableEvent(hevaction);
-  PluginLink^.DestroyServiceFunction(hfree);
-  PluginLink^.DestroyServiceFunction(hget);
-  PluginLink^.DestroyServiceFunction(hrun);
-  PluginLink^.DestroyServiceFunction(hrung);
-  PluginLink^.DestroyServiceFunction(hrunp);
-  PluginLink^.DestroyServiceFunction(hinout);
-  PluginLink^.DestroyServiceFunction(hsel);
+
+  UnhookEvent(hHookShutdown);
+  UnhookEvent(opthook);
+
+  DestroyHookableEvent(hHookChanged);
+  DestroyHookableEvent(hevinout);
+  DestroyHookableEvent(hevaction);
+
+  DestroyServiceFunction(hfree);
+  DestroyServiceFunction(hget);
+  DestroyServiceFunction(hrun);
+  DestroyServiceFunction(hrung);
+  DestroyServiceFunction(hrunp);
+  DestroyServiceFunction(hinout);
+  DestroyServiceFunction(hsel);
 end;
 
 function OnModulesLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -276,16 +144,17 @@ var
   ptr:pActionLink;
 begin
   Result:=0;
-  PluginLink^.UnhookEvent(onloadhook);
+  UnhookEvent(onloadhook);
 
   LoadGroups;
   RegisterIcons;
   
-  opthook      :=PluginLink^.HookEvent(ME_OPT_INITIALISE ,@OnOptInitialise);
-  hHookShutdown:=PluginLink^.HookEvent(ME_SYSTEM_SHUTDOWN{ME_SYSTEM_OKTOEXIT},@PreShutdown);
-  PluginLink^.NotifyEventHooks(hHookChanged,twparam(ACTM_LOADED),0);
+  opthook      :=HookEvent(ME_OPT_INITIALISE ,@OnOptInitialise);
+  hHookShutdown:=HookEvent(ME_SYSTEM_SHUTDOWN{ME_SYSTEM_OKTOEXIT},@PreShutdown);
+  NotifyEventHooks(hHookChanged,twparam(ACTM_LOADED),0);
 
-  if PluginLink^.ServiceExists(MS_UPDATE_REGISTER)<>0 then
+  //----- UPDATER support -----
+  if ServiceExists(MS_UPDATE_REGISTER)<>0 then
   begin
     with upd do
     begin
@@ -303,10 +172,13 @@ begin
       cpbVersion          :=StrLen(pbVersion);
       szBetaChangelogURL  :=BetaChangelogURL;
     end;
-    PluginLink^.CallService(MS_UPDATE_REGISTER,0,tlparam(@upd));
+    CallService(MS_UPDATE_REGISTER,0,tlparam(@upd));
   end;
+
+  //----- DBEDITOR support -----
 //  CallService('DBEditorpp/RegisterSingleModule',dword(PluginShort),0);
 
+  // Load additional modules
   ptr:=ActionLink;
   while ptr<>nil do
   begin
@@ -318,26 +190,24 @@ begin
   CallService(MS_ACT_RUNBYNAME,TWPARAM(AutoStartName),0);
 end;
 
-function Load(link:PPLUGINLINK):int; cdecl;
+function Load():int; cdecl;
 begin
   Result:=0;
-  PluginLink:=Pointer(link);
-  InitMMI;
   Langpack_register;
 
-  hHookChanged:=PluginLink^.CreateHookableEvent(ME_ACT_CHANGED);
-  hevinout    :=PluginLink^.CreateHookableEvent(ME_ACT_INOUT);
-  hevaction   :=PluginLink^.CreateHookableEvent(ME_ACT_ACTION);
+  hHookChanged:=CreateHookableEvent(ME_ACT_CHANGED);
+  hevinout    :=CreateHookableEvent(ME_ACT_INOUT);
+  hevaction   :=CreateHookableEvent(ME_ACT_ACTION);
 
-  hfree :=PluginLink^.CreateServiceFunction(MS_ACT_FREELIST ,@ActFreeList);
-  hget  :=PluginLink^.CreateServiceFunction(MS_ACT_GETLIST  ,@ActGetList);
-  hrun  :=PluginLink^.CreateServiceFunction(MS_ACT_RUNBYID  ,@ActRun);
-  hrung :=PluginLink^.CreateServiceFunction(MS_ACT_RUNBYNAME,@ActRunGroup);
-  hrunp :=PluginLink^.CreateServiceFunction(MS_ACT_RUNPARAMS,@ActRunParam);
-  hinout:=PluginLink^.CreateServiceFunction(MS_ACT_INOUT    ,@ActInOut);
-  hsel  :=PluginLink^.CreateServiceFunction(MS_ACT_SELECT   ,@ActSelect);
+  hfree :=CreateServiceFunction(MS_ACT_FREELIST ,@ActFreeList);
+  hget  :=CreateServiceFunction(MS_ACT_GETLIST  ,@ActGetList);
+  hrun  :=CreateServiceFunction(MS_ACT_RUNBYID  ,@ActRun);
+  hrung :=CreateServiceFunction(MS_ACT_RUNBYNAME,@ActRunGroup);
+  hrunp :=CreateServiceFunction(MS_ACT_RUNPARAMS,@ActRunParam);
+  hinout:=CreateServiceFunction(MS_ACT_INOUT    ,@ActInOut);
+  hsel  :=CreateServiceFunction(MS_ACT_SELECT   ,@ActSelect);
 
-  onloadhook:=PluginLink^.HookEvent(ME_SYSTEM_MODULESLOADED,@OnModulesLoaded);
+  onloadhook:=HookEvent(ME_SYSTEM_MODULESLOADED,@OnModulesLoaded);
 end;
 
 function Unload: int; cdecl;
@@ -345,16 +215,8 @@ begin
   Result:=0;
 end;
 
-function MirandaPluginInterfaces:PMUUID; cdecl;
-begin
-  PluginInterfaces[0]:=PluginInfo.uuid;
-  PluginInterfaces[1]:=MIID_USEACTIONS;
-  PluginInterfaces[2]:=MIID_LAST;
-  result:=@PluginInterfaces;
-end;
-
 exports
   Load, Unload,
-  MirandaPluginInterfaces,MirandaPluginInfoEx;
+  MirandaPluginInfoEx;
 
 end.

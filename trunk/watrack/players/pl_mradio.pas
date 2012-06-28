@@ -50,7 +50,7 @@ begin
   result:=0;
   if ChangesHook>0 then
   begin
-    PluginLink^.UnhookEvent(ChangesHook);
+    UnhookEvent(ChangesHook);
     ChangesHook:=0;
     CurrentStation:=THANDLE(-1);
   end;
@@ -72,7 +72,7 @@ function Fill:integer;
 var
   i:integer;
 begin
-  CurrentStation:=PluginLink^.CallService(MS_DB_CONTACT_FINDFIRST,0,0);
+  CurrentStation:=CallService(MS_DB_CONTACT_FINDFIRST,0,0);
   while CurrentStation<>0 do
   begin
     i:=DBReadWord(CurrentStation,playername,'Status',WORD(-1));
@@ -81,7 +81,7 @@ begin
       result:=1;
       exit;
     end;
-    CurrentStation:=PluginLink^.CallService(MS_DB_CONTACT_FINDNEXT,CurrentStation,0);
+    CurrentStation:=CallService(MS_DB_CONTACT_FINDNEXT,CurrentStation,0);
   end;
   result:=WAT_RES_NOTFOUND;
 end;
@@ -90,7 +90,7 @@ function InitmRadio:integer;
 begin
   if ChangesHook=0 then
   begin
-    ChangesHook:=PluginLink^.HookEvent(ME_RADIO_STATUS,@SettingsChanged);
+    ChangesHook:=HookEvent(ME_RADIO_STATUS,@SettingsChanged);
     result:=Fill;
   end
   else if (CurrentStation<>0) and (CurrentStation<>THANDLE(-1)) then
@@ -158,7 +158,7 @@ end;
 
 procedure SetVolume(value:cardinal);
 begin
-  PluginLink^.CallService(MS_RADIO_SETVOL,(value*100) shr 4,0);
+  CallService(MS_RADIO_SETVOL,(value*100) shr 4,0);
 end;
 
 function VolDn:integer;
@@ -186,7 +186,7 @@ var
   ptr:PavatarCacheEntry;
 begin
   result:=nil;
-  if PluginLink^.ServiceExists(MS_AV_GETAVATARBITMAP)<>0 then
+  if ServiceExists(MS_AV_GETAVATARBITMAP)<>0 then
   begin
     ptr:=PavatarCacheEntry(CallService(MS_AV_GETAVATARBITMAP,CurrentStation,0));
     if ptr<>nil then

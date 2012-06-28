@@ -42,6 +42,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 {
 	WPARAM FLASHAVATAR* (hContact, hParentWindow)
+	LPARAM LPRECT
+}
+  MS_FAVATAR_SETPOS = 'FlashAvatar/SetPos';
+
+{
+	WPARAM FLASHAVATAR* (hContact, hParentWindow)
 	LPARAM not used
 }
   MS_FAVATAR_GETINFO = 'FlashAvatar/GetInfo';
@@ -51,6 +57,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 	LPARAM BSTR
 }
   MS_FAVATAR_SETEMOFACE = 'FlashAvatar/SetEmoFace';
+
+{
+	WPARAM FLASHAVATAR* (hContact, hParentWindow)
+	LPARAM COLORREF
+}
+  MS_FAVATAR_SETBKCOLOR	 = 'FlashAvatar/SetBkColor';
 
 // Avatar emotion faces
   AV_SMILE   = 'smile';
@@ -63,12 +75,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
   AV_LOVE    = 'love';
   AV_NORMAL  = 'stam';
 
+// Avatar default size
+  FAVATAR_WIDTH  = 52;
+  FAVATAR_HEIGHT = 64;
+
 type
   TFLASHAVATAR = record
     hContact     :THANDLE; // contact who flash avatar belongs to
     hWindow      :HWND;    // handle of flash avatar object
     hParentWindow:HWND;    // handle of flash avatar's parent object
-    cUrl         :PAnsiChar;   // url of .swf file
+    cUrl         :TChar;   // url of .swf file
     id           :int;     // unique number of plugin which wants to use avatar service
     cProto       :PAnsiChar;   // contacts protocol
   end;

@@ -414,7 +414,7 @@ var
 begin
   Lock:=true;
   ConvertFileName(fname,buf1);
-//  PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,dword(fname),dword(@buf1));
+//  CallService(MS_UTILS_PATHTOABSOLUTE,dword(fname),dword(@buf1));
   Root:=BuildTree(buf1,buf);
   if Root<>nil then
   begin
@@ -460,7 +460,7 @@ begin
   else
     fname:=PAnsiChar(wParam);
   ConvertFileName(fname,log);
-//  PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,dword(fname),dword(@log));
+//  CallService(MS_UTILS_PATHTOABSOLUTE,dword(fname),dword(@log));
   AppendStat(log,pSongInfo(lParam));
 end;
 
@@ -494,9 +494,9 @@ begin
     ConvertFileName(r,report);
     ConvertFileName(l,template);
     ConvertFileName(StatName,log);
-//    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,dword(r),dword(@report));
-//    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,dword(l),dword(@template));
-//    PluginLink^.CallService(MS_UTILS_PATHTOABSOLUTE,dword(StatName),dword(@log));
+//    CallService(MS_UTILS_PATHTOABSOLUTE,dword(r),dword(@report));
+//    CallService(MS_UTILS_PATHTOABSOLUTE,dword(l),dword(@template));
+//    CallService(MS_UTILS_PATHTOABSOLUTE,dword(StatName),dword(@log));
     if DoAddExt=BST_CHECKED then
       ChangeExt(report,'htm');
     if StatOut(report,log,template) then
@@ -561,7 +561,7 @@ begin
   FillChar(mi,SizeOf(mi),0);
   mi.cbSize:=sizeof(mi);
   mi.flags :=CMIM_ICON;
-  mi.hIcon :=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnReport));
+  mi.hIcon :=CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnReport));
   CallService(MS_CLIST_MODIFYMENUITEM,hMenuReport,tlparam(@mi));
 end;
 
@@ -584,9 +584,9 @@ begin
     SetModStatus(1);
   result:=1;
 
-  hPackLog   :=PluginLink^.CreateServiceFunction(MS_WAT_PACKLOG   ,@PackLog);
-  hMakeReport:=PluginLink^.CreateServiceFunction(MS_WAT_MAKEREPORT,@MakeReport);
-  hAddToLog  :=PluginLink^.CreateServiceFunction(MS_WAT_ADDTOLOG  ,@AddToLog);
+  hPackLog   :=CreateServiceFunction(MS_WAT_PACKLOG   ,@PackLog);
+  hMakeReport:=CreateServiceFunction(MS_WAT_MAKEREPORT,@MakeReport);
+  hAddToLog  :=CreateServiceFunction(MS_WAT_ADDTOLOG  ,@AddToLog);
   loadstat;
 
   FillChar(sid,SizeOf(TSKINICONDESC),0);
@@ -597,20 +597,20 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(BTN_REPORT),IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoBtnReport;
   sid.szDescription.a:='Create Report';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,tlparam(@sid));
+  CallService(MS_SKIN2_ADDICON,0,tlparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
-  sic:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
+  sic:=HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
 
   FillChar(mi, sizeof(mi), 0);
   mi.cbSize       :=sizeof(mi);
   mi.flags        :=0;
   mi.szPopupName.a:=PluginShort;
-  mi.hIcon        :=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnReport));
+  mi.hIcon        :=CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnReport));
   mi.szName.a     :='Create WATrack report';
   mi.pszService   :=MS_WAT_MAKEREPORT;
   mi.popupPosition:=MenuReportPos;
-  hMenuReport :=pluginLink^.CallService(MS_CLIST_ADDMAINMENUITEM,0,lParam(@mi));
-  plStatusHook:=PluginLink^.HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);
+  hMenuReport :=CallService(MS_CLIST_ADDMAINMENUITEM,0,lParam(@mi));
+  plStatusHook:=HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);
 end;
 
 procedure DeInitProc(aSetDisable:boolean);
@@ -619,11 +619,11 @@ begin
     SetModStatus(0);
 
   CallService(MS_CLIST_REMOVEMAINMENUITEM,hMenuReport,0);
-  PluginLink^.UnhookEvent(plStatusHook);
-  PluginLink^.UnhookEvent(sic);
-  PluginLink^.DestroyServiceFunction(hPackLog);
-  PluginLink^.DestroyServiceFunction(hMakeReport);
-  PluginLink^.DestroyServiceFunction(hAddToLog);
+  UnhookEvent(plStatusHook);
+  UnhookEvent(sic);
+  DestroyServiceFunction(hPackLog);
+  DestroyServiceFunction(hMakeReport);
+  DestroyServiceFunction(hAddToLog);
   FreeStat;
 end;
 

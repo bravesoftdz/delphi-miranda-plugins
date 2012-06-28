@@ -47,7 +47,7 @@ begin
   SendMessage(hwndList,CLM_SETINDENT      ,10,0);
   for i:=0 to FONTID_MAX do
     SendMessage(hwndList,CLM_SETTEXTCOLOR,i,GetSysColor(COLOR_WINDOWTEXT));
-  SetWindowLong(hwndList,GWL_STYLE,GetWindowLong(hwndList,GWL_STYLE) or CLS_SHOWHIDDEN);
+  SetWindowLongPtr(hwndList,GWL_STYLE,GetWindowLongPtr(hwndList,GWL_STYLE) or CLS_SHOWHIDDEN);
 end;
 
 procedure SetHistMask(Dlg:HWND);

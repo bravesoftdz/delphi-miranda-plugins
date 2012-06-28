@@ -124,8 +124,8 @@ const
 type
   lpGroupMenuParam = ^GroupMenuParam;
   GroupMenuParam = record
-    wParam:int;
-    lParam:int;
+    wParam:WPARAM;
+    lParam:LPARAM;
   end;
 
 const
@@ -247,6 +247,7 @@ type
     hIcon    :HICON;   // or hIcolibItem:THANDLE;
     hotKey   :DWORD;
     ownerdata:^pointer;
+    hLangpack:int;
   end;
 
 {

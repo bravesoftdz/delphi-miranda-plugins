@@ -80,7 +80,7 @@ begin
     else
       Timestamp:=GetCurrentTime;
   end;
-  PluginLink^.CallService(MS_DB_EVENT_ADD,hContact,lparam(@dbeo));
+  CallService(MS_DB_EVENT_ADD,hContact,lparam(@dbeo));
 end;
 
 {SEND-time text translation}
@@ -165,7 +165,7 @@ begin
         if SimpleMode<>BST_UNCHECKED then
           i:=0
         else
-          i:=PluginLink^.CallService(MS_PROTO_GETCONTACTBASEPROTO,ccs^.hContact,0);
+          i:=CallService(MS_PROTO_GETCONTACTBASEPROTO,ccs^.hContact,0);
         s:=GetMacros(TM_MESSAGE,i);
       end;
   //    if s<>nil then // for empty strings
@@ -228,11 +228,11 @@ begin
   result:=0;
   mGetMem(buf,bufsize);
 
-  isNewRequest:=StrCmp(PPROTORECVEVENT(ccs^.lParam)^.szMessage,
+  isNewRequest:=StrCmp(PPROTORECVEVENT(ccs^.lParam)^.szMessage.a,
      wpRequestNew,Length(wpRequestNew))=0;
 
   if isNewRequest or 
-     (StrCmp(PPROTORECVEVENT(ccs^.lParam)^.szMessage,
+     (StrCmp(PPROTORECVEVENT(ccs^.lParam)^.szMessage.a,
              wpRequest,Length(wpRequest))=0) then
   begin
     StrCopy(PAnsiChar(buf),PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,ccs^.hContact,0)));
@@ -274,7 +274,7 @@ begin
               curpos:=buf;
 //!! check to DisableTemporary
 
-            s:=PWideChar(PluginLink^.CallService(MS_WAT_REPLACETEXT,0,tlparam(ProtoText)));
+            s:=PWideChar(CallService(MS_WAT_REPLACETEXT,0,tlparam(ProtoText)));
             textpos:=StrCopyW(curpos,s);
             mFreeMem(s);
             curpos:=StrEndW(curpos)+1;
@@ -302,7 +302,7 @@ begin
           mGetMem(encbuf,base64.cchEncoded+1+Length(wpAnswer));
           base64.pszEncoded:=PAnsiChar(encbuf)+Length(wpAnswer);
           StrCopy(PAnsiChar(encbuf),wpAnswer);
-          PluginLink^.CallService(MS_NETLIB_BASE64ENCODE,0,tlparam(@base64));
+          CallService(MS_NETLIB_BASE64ENCODE,0,tlparam(@base64));
           if (HistMask and hmOutInfo)<>0 then
             AddEvent(ccs^.hContact,EVENTTYPE_WAT_ANSWER,DBEF_SENT,
                      base64.pbDecoded,base64.cbDecoded);
@@ -345,15 +345,15 @@ begin
       end;
     end;
   end
-  else if StrCmp(PPROTORECVEVENT(ccs^.lParam)^.szMessage,wpAnswer,Length(wpAnswer))=0 then
+  else if StrCmp(PPROTORECVEVENT(ccs^.lParam)^.szMessage.a,wpAnswer,Length(wpAnswer))=0 then
   begin
 // decode
-    base64.pszEncoded:=PPROTORECVEVENT(ccs^.lParam)^.szMessage+Length(wpAnswer);
+    base64.pszEncoded:=PPROTORECVEVENT(ccs^.lParam)^.szMessage.a+Length(wpAnswer);
     base64.cchEncoded:=StrLen(base64.pszEncoded);
     base64.cbDecoded :=Netlib_GetBase64DecodedBufferSize(base64.cchEncoded);
     mGetMem(base64.pbDecoded,base64.cbDecoded);
 
-    PluginLink^.CallService(MS_NETLIB_BASE64DECODE,0,tlparam(@base64));
+    CallService(MS_NETLIB_BASE64DECODE,0,tlparam(@base64));
 
     curpos:=pWideChar(base64.pbDecoded);           // pos_artist:=curpos;
     while curpos^<>#0 do inc(curpos); inc(curpos); // pos_title :=curpos;
@@ -374,7 +374,7 @@ begin
 
     mFreeMem(base64.pbDecoded);
   end
-  else if StrCmp(PPROTORECVEVENT(ccs^.lParam)^.szMessage,wpError,Length(wpError))=0 then
+  else if StrCmp(PPROTORECVEVENT(ccs^.lParam)^.szMessage.a,wpError,Length(wpError))=0 then
   begin
     if (HistMask and hmInError)<>0 then
       AddEvent(ccs^.hContact,EVENTTYPE_WAT_ERROR,DBEF_READ,nil,0,
@@ -385,7 +385,7 @@ begin
     StrCatW (buf,TranslateW(' answer you'));
     mFreeMem(s);
 }
-    MessageBoxA(0,Translate(PPROTORECVEVENT(ccs^.lParam)^.szMessage+Length(wpError)),
+    MessageBoxA(0,Translate(PPROTORECVEVENT(ccs^.lParam)^.szMessage.a+Length(wpError)),
                Translate('You Get Error'),MB_ICONERROR);
   end
   else
@@ -435,7 +435,7 @@ begin
     mi.flags:=CMIF_NOTOFFLINE or CMIF_NOTOFFLIST or CMIM_FLAGS or CMIF_HIDDEN
   else
     mi.flags:=CMIF_NOTOFFLINE or CMIF_NOTOFFLIST or CMIM_FLAGS;
-  PluginLink^.CallService(MS_CLIST_MODIFYMENUITEM,hContactMenuItem,tlparam(@mi));
+  CallService(MS_CLIST_MODIFYMENUITEM,hContactMenuItem,tlparam(@mi));
   result:=0;
 end;
 
@@ -463,8 +463,8 @@ begin
   mi.cbSize:=sizeof(mi);
   mi.flags :=CMIM_ICON;
 
-  mi.hIcon:=PluginLink^.CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnContext));
-  PluginLink^.CallService(MS_CLIST_MODIFYMENUITEM,hContactMenuItem,tlparam(@mi));
+  mi.hIcon:=CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnContext));
+  CallService(MS_CLIST_MODIFYMENUITEM,hContactMenuItem,tlparam(@mi));
 end;
 
 procedure RegisterIcons;
@@ -480,10 +480,10 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(BTN_CONTEXT),IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoBtnContext;
   sid.szDescription.a:='Context Menu';
-  PluginLink^.CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
   DestroyIcon(sid.hDefaultIcon);
 //!!
-  icchangedhook:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
+  icchangedhook:=HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
 end;
 
 // ------------ base interface functions -------------
@@ -512,16 +512,16 @@ begin
   mi.szPopupName.a:=PluginShort;
   mi.flags        :=CMIF_NOTOFFLINE or CMIF_NOTOFFLIST;
 //  mi.popupPosition:=MenuUserInfoPos;
-  mi.hIcon        :=PluginLink^.CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnContext));
+  mi.hIcon        :=CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnContext));
   mi.szName.a     :='Get user''s Music Info';
   mi.pszService   :=MS_WAT_GETCONTACTINFO;
-  hContactMenuItem:=PluginLink^.CallService(MS_CLIST_ADDCONTACTMENUITEM,0,lparam(@mi));
+  hContactMenuItem:=CallService(MS_CLIST_ADDCONTACTMENUITEM,0,lparam(@mi));
 
   SetProtocol;
   RegisterContacts;
-  hGCI:=PluginLink^.CreateServiceFunction(MS_WAT_GETCONTACTINFO,@SendRequest);
-  contexthook :=PluginLink^.HookEvent(ME_CLIST_PREBUILDCONTACTMENU,@OnContactMenu);
-  hAddUserHook:=PluginLink^.HookEvent(ME_DB_CONTACT_ADDED         ,@HookAddUser);
+  hGCI:=CreateServiceFunction(MS_WAT_GETCONTACTINFO,@SendRequest);
+  contexthook :=HookEvent(ME_CLIST_PREBUILDCONTACTMENU,@OnContactMenu);
+  hAddUserHook:=HookEvent(ME_DB_CONTACT_ADDED         ,@HookAddUser);
 end;
 
 procedure DeInitProc(aSetDisable:boolean);
@@ -529,12 +529,12 @@ begin
   if aSetDisable then
     SetModStatus(0);
 
-  PluginLink^.UnhookEvent(hAddUserHook);
-  PluginLink^.UnhookEvent(contexthook);
-  PluginLink^.UnhookEvent(icchangedhook);
+  UnhookEvent(hAddUserHook);
+  UnhookEvent(contexthook);
+  UnhookEvent(icchangedhook);
 
-  PluginLink^.DestroyServiceFunction(hSRM);
-  PluginLink^.DestroyServiceFunction(hGCI);
+  DestroyServiceFunction(hSRM);
+  DestroyServiceFunction(hGCI);
   mFreeMem(ProtoText);
 end;
 

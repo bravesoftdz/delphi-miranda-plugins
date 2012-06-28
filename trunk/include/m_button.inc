@@ -44,15 +44,18 @@ const
 
   {
     Sets the button as a push button
-    wParam = lParam = not used
-    Usage: SendMessage(hwndbutton,BUTTONSETASPUSHBTN,0,0);
+    wParam = 1/0 as on/off
+    lParam = not used
+    Usage: SendMessage(hwndbutton,BUTTONSETASPUSHBTN,1,0);
     Only works on MButtonClass buttons
   }
   BUTTONSETASPUSHBTN = WM_USER + 3;
 
   {
     Sets the button type as a flat button without borders v0.3.3+
-    Usage: SendMessage(hwndbutton,BUTTONSETASFLATBTN,0,0);
+    wParam = 1/0 as on/off
+    lParam = not used
+    Usage: SendMessage(hwndbutton,BUTTONSETASFLATBTN,1,0);
     Only works on MButtonClass buttons
   }
   BUTTONSETASFLATBTN = WM_USER + 4;
@@ -60,10 +63,29 @@ const
   {
     Sets a tooltip for the button v0.3.3+
     wParam = PAnsiChar(szTip)
-    lParam = not used
+    lParam = BATF_* flags
     Usage: SendMessage(hwndButton,BUTTONADDTOOLTIP,(WPARAM)"My Tip",BATF_* flags);
   }
   BATF_UNICODE = 1;
 
   BUTTONADDTOOLTIP = WM_USER + 5;
+
+  {
+    Sets the button type as a themed button
+    wParam = TRUE/FALSE default on/off
+    lParam = not used
+    Usage: SendMessage(hwndbutton, BUTTONSETASTHEMEDBTN, 1, 0);
+    Only works on MButtonClass buttons
+  }
+  BUTTONSETASTHEMEDBTN = WM_USER + 6;
+
+{
+    Sets the custom painting procedure for a button
+    wParam = not used
+    lParam = MButtonCustomize* (refer to mbutton_int.h for details)
+    Usage: SendMessage(hwndbutton, BUTTONSETCUSTOM, 0, (LPARAM)&CustomData);
+    Only works on MButtonClass buttons
+}
+  BUTTONSETCUSTOM = WM_USER+7;
+
 {$ENDIF}

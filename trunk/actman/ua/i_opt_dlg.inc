@@ -62,7 +62,7 @@ begin
   begin
     with NamesArray[i] do
     begin
-      enable:=(service=nil) or (PluginLink^.ServiceExists(service)<>0);
+      enable:=(service=nil) or (ServiceExists(service)<>0);
     end;
   end;
 end;
@@ -423,7 +423,7 @@ begin
   case hMessage of
     WM_CLOSE: begin
       settings:=0;
-      PluginLink^.UnhookEvent(hIC);
+      UnhookEvent(hIC);
     end;
 
     WM_INITDIALOG: begin
@@ -461,7 +461,7 @@ begin
       end;
       
       settings:=Dialog;
-      hIC:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
+      hIC:=HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
     end;
 
     WM_COMMAND: begin

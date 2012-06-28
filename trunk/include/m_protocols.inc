@@ -119,23 +119,6 @@ type
   TFNAMECHAR = FNAMECHAR;
 }
 type
-  PPROTOFILETRANSFERSTATUS_V1 = ^TPROTOFILETRANSFERSTATUS_V1;
-  TPROTOFILETRANSFERSTATUS_V1 = record
-    cbSize             : size_t;
-    hContact           : THANDLE;
-    sending            : int;     // 1 if sending, 0 if receiving
-    files              : ^PAnsiChar;
-    totalFiles         : int;
-    currentFileNumber  : int;
-    totalBytes         : ulong;
-    totalProgress      : ulong;
-    workingDir         : PAnsiChar;
-    currentFile        : PAnsiChar;
-    currentFileSize    : ulong;
-    currentFileProgress: ulong;
-    currentFileTime    : ulong;   // as seconds since 1970
-  end;
-
   // especially for Miranda 9.0+
   PPROTOFILETRANSFERSTATUS = ^TPROTOFILETRANSFERSTATUS;
   TPROTOFILETRANSFERSTATUS = record

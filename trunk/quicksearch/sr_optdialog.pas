@@ -608,7 +608,7 @@ begin
         cbSize:=SizeOf(vhi);
         flags:=VHF_NOINPUTDLG;
       end;
-      PluginLink^.CallService(MS_VARS_SHOWHELPEX,Dialog,tlparam(@vhi));
+      CallService(MS_VARS_SHOWHELPEX,Dialog,tlparam(@vhi));
     end;
   end;
 end;
@@ -657,7 +657,7 @@ var
   tmpbool:bool;
   i:integer;
   ti:TTOOLINFOW;
-  hwndTooltip:HWND;
+//  hwndTooltip:HWND;
   hNew    :hwnd;
   hItem   :hwnd;
   hUp     :hwnd;
@@ -678,7 +678,7 @@ begin
 
       mFreeMem(curscript);
       if hook<>0 then
-        PluginLink^.UnhookEvent(hook);
+        UnhookEvent(hook);
       maindlg:=0;
     end;
 
@@ -713,27 +713,34 @@ begin
       CheckDlgButton(Dialog,IDC_CH_EXPORTHEADERS  ,ORD(qsopt.exportheaders));
       CheckDlgButton(Dialog,IDC_CH_SKIPMINIMIZED  ,ORD(qsopt.skipminimized));
       CheckDlgButton(Dialog,IDC_CH_SAVEPATTERN    ,ORD(qsopt.savepattern));
-      if PluginLink^.ServiceExists(MS_FP_GETCLIENTICON)<>0 then
+      if ServiceExists(MS_FP_GETCLIENTICON)<>0 then
         CheckDlgButton(Dialog,IDC_CH_SHOWCLIENTICONS,ORD(qsopt.showclienticons))
       else
         EnableWindow(GetDlgItem(Dialog,IDC_CH_SHOWCLIENTICONS),false);
 
-      if PluginLink^.ServiceExists(MS_TTB_ADDBUTTON)=0 then
+      if ServiceExists(MS_TTB_ADDBUTTON)=0 then
         EnableWindow(GetDlgItem(Dialog,IDC_CH_ADDTOTOPTOOLBAR),FALSE);
-
+{
       hwndTooltip:=CreateWindowW(TOOLTIPS_CLASS,nil,TTS_ALWAYSTIP,
           integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
           integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
           Dialog,0,hInstance,nil);
-
+}
       hNew    :=GetDlgItem(Dialog,IDC_NEW);
+      SendMessage(hNew,BUTTONADDTOOLTIP,TWPARAM(TranslateW('New')),BATF_UNICODE);
       hItem   :=GetDlgItem(Dialog,IDC_SETITEM);
+      SendMessage(hItem,BUTTONADDTOOLTIP,TWPARAM(TranslateW('Save Item')),BATF_UNICODE);
       hUp     :=GetDlgItem(Dialog,IDC_UP);
+      SendMessage(hUp,BUTTONADDTOOLTIP,TWPARAM(TranslateW('Up')),BATF_UNICODE);
       hDown   :=GetDlgItem(Dialog,IDC_DN);
+      SendMessage(hDown,BUTTONADDTOOLTIP,TWPARAM(TranslateW('Down')),BATF_UNICODE);
       hDelete :=GetDlgItem(Dialog,IDC_DELETE);
+      SendMessage(hDelete,BUTTONADDTOOLTIP,TWPARAM(TranslateW('Delete')),BATF_UNICODE);
       hDefault:=GetDlgItem(Dialog,IDC_DEFAULT);
+      SendMessage(hDefault,BUTTONADDTOOLTIP,TWPARAM(TranslateW('Default')),BATF_UNICODE);
       hReload :=GetDlgItem(Dialog,IDC_RELOAD);
-
+      SendMessage(hReload,BUTTONADDTOOLTIP,TWPARAM(TranslateW('Reload')),BATF_UNICODE);
+{
       FillChar(ti,SizeOf(ti),0);
       ti.cbSize  :=sizeof(TOOLINFO);
       ti.uFlags  :=TTF_IDISHWND or TTF_SUBCLASS;
@@ -760,7 +767,7 @@ begin
       ti.uId     :=hReload;
       ti.lpszText:=TranslateW('Reload');
       SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,tlparam(@ti));
-
+}
       SetButtonIcon(hNew    ,QS_NEW);
       SetButtonIcon(hItem,   QS_ITEM);
       SetButtonIcon(hUp     ,QS_UP);
@@ -772,7 +779,7 @@ begin
       update_list(listhwnd);
 
       maindlg:=Dialog;
-      hook:=PluginLink^.HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
+      hook:=HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
 
       result:=1;
 

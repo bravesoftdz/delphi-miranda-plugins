@@ -432,7 +432,7 @@ begin
 
   clmi.pszService:=ActionItem.szNameID;
   if ActionItem.hMenuService=0 then
-    ActionItem.hMenuService:=PluginLink.CreateServiceFunctionParam(
+    ActionItem.hMenuService:=CreateServiceFunctionParam(
       clmi.pszService,@ServiceCallWithFParam,ActionItem.dwActID);
 
   clmi.position:=ActionItem.wSortIndex*10;

@@ -299,7 +299,7 @@ var
   p:pWideChar;
 begin
   result:=0;
-//  result:=PluginLink^.CallService(MS_WAT_WINAMPINFO,integer(@SongInfo),flags);
+//  result:=CallService(MS_WAT_WINAMPINFO,integer(@SongInfo),flags);
 //  result:=WinampGetInfo(integer(@SongInfo),flags);
   if (flags and WAT_OPT_PLAYERDATA)<>0 then
   begin

@@ -29,68 +29,61 @@ end;
 
 function GetAwayMsgProc(hContact:THANDLE):dword;// stdcall;
 var
-  buf,p:PAnsiChar;
-  tmp:array [0..255] of AnsiChar;
-  pc:pWideChar;
+  buf,p:PWideChar;
 begin
   if isVarsInstalled then
   begin
-    pc:=ParseVarString(StatusTmpl,ActiveContact);
-    WideToAnsi(pc,buf,MirandaCP);
+    buf:=ParseVarString(StatusTmpl,ActiveContact);
   end
   else
   begin
     mGetMem(buf,1024);
-    WideToAnsi(StatusTmpl,p,MirandaCP);
-    StrCopy(buf,p);
-    mFreeMem(p);
-    if StrPos(buf,'%radio_name%')<>nil then
+    StrCopyW(buf,StatusTmpl);
+    if StrPosW(buf,'%radio_name%')<>nil then
     begin
-      p:=DBReadString(ActiveContact,strCList,optMyHandle);
-      StrReplace(buf,'%radio_name%',p);
+      p:=DBReadUnicode(ActiveContact,strCList,optMyHandle);
+      StrReplaceW(buf,'%radio_name%',p);
       mFreeMem(p);
     end;
-    if StrPos(buf,'%radio_url%')<>nil then
+    if StrPosW(buf,'%radio_url%')<>nil then
     begin
-      p:=DBReadString(ActiveContact,PluginName,optStationURL);
-      StrReplace(buf,'%radio_url%',p);
+      p:=DBReadUnicode(ActiveContact,PluginName,optStationURL);
+      StrReplaceW(buf,'%radio_url%',p);
       mFreeMem(p);
     end;
-    if StrPos(buf,'%radio_active%')<>nil then
+    if StrPosW(buf,'%radio_active%')<>nil then
     begin
-      StrReplace(buf,'%radio_active%',FastWideToAnsiBuf(ActiveURLw,tmp,MirandaCP));
+      StrReplaceW(buf,'%radio_active%',ActiveURLw);
     end;
-    if StrPos(buf,'%radio_genre%')<>nil then
+    if StrPosW(buf,'%radio_genre%')<>nil then // saved as String
     begin
-      p:=DBReadString(ActiveContact,PluginName,optGenre);
-      StrReplace(buf,'%radio_genre%',p);
+      p:=DBReadUnicode(ActiveContact,PluginName,optGenre);
+      StrReplaceW(buf,'%radio_genre%',p);
       mFreeMem(p);
     end;
-    if StrPos(buf,'%radio_bitrate%')<>nil then
+    if StrPosW(buf,'%radio_bitrate%')<>nil then // saved as String
     begin
-      p:=DBReadString(ActiveContact,PluginName,optBitrate);
-      StrReplace(buf,'%radio_bitrate%',p);
+      p:=DBReadUnicode(ActiveContact,PluginName,optBitrate);
+      StrReplaceW(buf,'%radio_bitrate%',p);
       mFreeMem(p);
     end;
-    if StrPos(buf,'%radio_title%')<>nil then
+    if StrPosW(buf,'%radio_title%')<>nil then
     begin
-      pc:=MakeMessage;
-      WideToAnsi(pc,p);
-      StrReplace(buf,'%radio_title%',p);
-      mFreeMem(pc);
+      p:=MakeMessage;
+      StrReplaceW(buf,'%radio_title%',p);
       mFreeMem(p);
     end;
-    if StrPos(buf,'')<>nil then
+    if StrPosW(buf,'%radio_codec%')<>nil then
     begin
-      p:=DBReadString(ActiveContact,PluginName,optActiveCodec);
-      StrReplace(buf,'%radio_codec%',p);
+      p:=DBReadUnicode(ActiveContact,PluginName,optActiveCodec);
+      StrReplaceW(buf,'%radio_codec%',p);
       mFreeMem(p);
     end;
-    if StrPos(buf,'%radio_status%')<>nil then
+    if StrPosW(buf,'%radio_status%')<>nil then
     begin
-      StrReplace(buf,'%radio_status%',
-         Translate(FastWideToAnsiBuf(GetStatusText(
-             CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_GET)),tmp)));
+      StrReplaceW(buf,'%radio_status%',
+         TranslateW(GetStatusText(
+             CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_GET))));
     end;
   end;
 
@@ -182,16 +175,16 @@ var
 
 procedure DestroyProtoServices;
 begin
-  PluginLink^.DestroyServiceFunction(prh0);
-  PluginLink^.DestroyServiceFunction(prh1);
-  PluginLink^.DestroyServiceFunction(prh2);
-  PluginLink^.DestroyServiceFunction(prh3);
-  PluginLink^.DestroyServiceFunction(prh4);
-  PluginLink^.DestroyServiceFunction(prh5);
-  PluginLink^.DestroyServiceFunction(prh6);
-  PluginLink^.DestroyServiceFunction(prh7);
-  PluginLink^.DestroyServiceFunction(prh8);
-  PluginLink^.DestroyServiceFunction(prh9);
+  DestroyServiceFunction(prh0);
+  DestroyServiceFunction(prh1);
+  DestroyServiceFunction(prh2);
+  DestroyServiceFunction(prh3);
+  DestroyServiceFunction(prh4);
+  DestroyServiceFunction(prh5);
+  DestroyServiceFunction(prh6);
+  DestroyServiceFunction(prh7);
+  DestroyServiceFunction(prh8);
+  DestroyServiceFunction(prh9);
 end;
 
 procedure CreateProtoServices;
