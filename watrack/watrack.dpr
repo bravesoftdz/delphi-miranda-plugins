@@ -59,7 +59,6 @@ begin
   PluginInfo.copyright  :='(c) 2005-2011 Awkward';
   PluginInfo.homepage   :='http://code.google.com/p/delphi-miranda-plugins/';
   PluginInfo.flags      :=UNICODE_AWARE;
-  PluginInfo.replacesDefaultModule:=0;
   PluginInfo.uuid       :=MIID_WATRACK;
 end;
 

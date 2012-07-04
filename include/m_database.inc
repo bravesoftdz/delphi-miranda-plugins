@@ -2,40 +2,6 @@
 {$DEFINE M_DATABASE}
 
 const
-  DBVT_DELETED         = 0;   // setting got deleted, no values are valid
-  DBVT_BYTE            = 1;   // bVal, cVal are valid
-  DBVT_WORD            = 2;   // wVal, sVal are valid
-  DBVT_DWORD           = 4;   // dVal, lVal are valid
-  DBVT_ASCIIZ          = 255; // pszVal is valid
-  DBVT_BLOB            = 254; // cpbVal and pbVal are valid
-  DBVT_UTF8            = 253; // pszVal is valid
-  DBVT_WCHAR           = 252; // pszVal is valid
-  DBVTF_VARIABLELENGTH = $80; // ?
-  DBVTF_DENYUNICODE    = $10000;
-
-type
-  HDBEVENT = Integer;
-  PDBVARIANT = ^TDBVARIANT;
-  TDBVARIANT = record
-    _type: Byte;
-    case LongInt of
-    0: (bVal: Byte);
-    1: (cVal: AnsiChar);
-    2: (wVal: Word);
-    3: (sVal: ShortInt);
-    4: (dVal: dword);
-    5: (lVal: long);
-    6: (
-      szVal : TChar;
-      cchVal: Word;
-    );
-    7: (
-      cpbVal: Word;
-      pbVal : PByte;
-    );
-  end;
-
-const
   {
     wParam : size of the buffer to be filled
     lParam : pointer to the buffer to be filled
@@ -268,6 +234,7 @@ Always returns 0.
 }
 
 type
+  PDBEVENTTYPEDESCR = ^TDBEVENTTYPEDESCR;
   TDBEVENTTYPEDESCR = record
     cbSize     :int;      // structure size in bytes
     module     :PAnsiChar;    // event module name

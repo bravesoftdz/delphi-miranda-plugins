@@ -214,7 +214,8 @@ const
 
 // Extended NMHDR structure for WM_NOTIFY
 type
-  FVCNDATA_NMHDR = record
+  PFVCNDATA_NMHDR = ^TFVCNDATA_NMHDR;
+  TFVCNDATA_NMHDR = record
     //NMHDR structure
     hwndFrom     :HWND;     // Window of smiley host
     idFrom       :UINT_PTR; // ignored
