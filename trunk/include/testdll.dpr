@@ -6,22 +6,6 @@ uses
 var
   PluginInterfaces:array [0..1] of MUUID;
 
-// for old plugin API - old miranda version compatibility
-function MirandaPluginInfo(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
-begin
-  result:=@PluginInfo;
-  PluginInfo.cbSize     :=SizeOf(TPLUGININFO);
-  PluginInfo.shortName  :='Plugin Template';
-  PluginInfo.version    :=$00000001;
-  PluginInfo.description:='The long description of your plugin, to go in the plugin options dialog';
-  PluginInfo.author     :='J. Random Hacker';
-  PluginInfo.authorEmail:='noreply@sourceforge.net';
-  PluginInfo.copyright  :='(c) 2003 J. Random Hacker';
-  PluginInfo.homepage   :='http://miranda-icq.sourceforge.net/';
-  PluginInfo.flags      :=UNICODE_AWARE;
-  PluginInfo.replacesDefaultModule:=0;
-end;
-
 function MirandaPluginInfoEx(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
 begin
   result:=@PluginInfo;
@@ -35,10 +19,10 @@ begin
   PluginInfo.homepage   :='http://miranda-icq.sourceforge.net/';
   PluginInfo.flags      :=UNICODE_AWARE;
   PluginInfo.replacesDefaultModule:=0;
-  PluginInfo.uuid:='{08B86253-EC6E-4d09-B7A9-64ACDF0627B8}';
+  PluginInfo.uuid       :=MIID_TESTPLUGIN;//'{08B86253-EC6E-4d09-B7A9-64ACDF0627B8}';
 end;
 
-function PluginMenuCommand(wParam: WPARAM; lParam: LPARAM):Integer; cdecl;
+function PluginMenuCommand(wParam: WPARAM; lParam: LPARAM):int_ptr; cdecl;
 begin
   Result:=0;
   // this is called by Miranda, thus has to use the cdecl calling convention
@@ -54,9 +38,9 @@ var
   mi:TCListMenuItem;
 begin
   Result:=0;
-  PluginLink^.UnhookEvent(onloadhook);
+  UnhookEvent(onloadhook);
 
-  PluginLink^.CreateServiceFunction('TestPlug/MenuCommand', @PluginMenuCommand);
+  CreateServiceFunction('TestPlug/MenuCommand', @PluginMenuCommand);
   FillChar(mi,SizeOf(mi),0);
   mi.cbSize    :=SizeOf(mi);
   mi.position  :=$7FFFFFFF;
@@ -64,16 +48,13 @@ begin
   mi.hIcon     :=LoadSkinnedIcon(SKINICON_OTHER_MIRANDA);
   mi.szName.a  :='&Test Plugin...';
   mi.pszService:='TestPlug/MenuCommand';
-  PluginLink^.CallService(MS_CLIST_ADDMAINMENUITEM,0,dword(@mi));
+  Menu_AddMainMenuItem(@mi)
 end;
 
-function Load(link:PPLUGINLINK):int; cdecl;
+function Load():int; cdecl;
 begin
-  // this line is VERY VERY important, if it's not present, expect crashes.
-  PluginLink:=Pointer(link);
-  InitMMI;
-
-  onloadhook:=PluginLink^.HookEvent(ME_SYSTEM_MODULESLOADED,@OnModulesLoaded);
+  Langpack_register;
+  onloadhook:=HookEvent(ME_SYSTEM_MODULESLOADED,@OnModulesLoaded);
 
   Result:=0;
 end;
@@ -92,7 +73,6 @@ end;
 
 exports
   Load, Unload,
-  MirandaPluginInfo,
   MirandaPluginInterfaces,MirandaPluginInfoEx;
 
 begin

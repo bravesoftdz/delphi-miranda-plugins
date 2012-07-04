@@ -57,7 +57,6 @@ begin
   PluginInfo.copyright  :='(c) 2004,2005 Bethoven; 2006-2011 Awkward';
   PluginInfo.homepage   :='http://code.google.com/p/delphi-miranda-plugins/';
   PluginInfo.flags      :=UNICODE_AWARE;
-  PluginInfo.replacesDefaultModule:=0;
   PluginInfo.uuid       :=MIID_QUICKSEARCH;
 end;
 

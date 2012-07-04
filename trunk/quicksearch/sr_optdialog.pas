@@ -6,7 +6,7 @@ uses windows;
 {.$include resource.inc}
 
 procedure OptChangeColumns(code:integer;column,data:integer);
-function DlgProcOptions(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):integer; stdcall;
+function DlgProcOptions(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 
 const
   maindlg:HWND = 0;
@@ -646,7 +646,7 @@ begin
   result:=CallWindowProc(OldListProc,Dialog,hMessage,wParam,lParam);
 end;
 
-function DlgProcOptions(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM): integer; stdcall;
+function DlgProcOptions(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 const
   InitDlg:bool = true;
   hook:THANDLE = 0;

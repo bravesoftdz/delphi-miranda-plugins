@@ -122,8 +122,7 @@ begin
   PluginInfo.copyright  :='(c) 2007-2012 Awkward';
   PluginInfo.homepage   :='http://code.google.com/p/delphi-miranda-plugins/';
   PluginInfo.flags      :=UNICODE_AWARE;
-  PluginInfo.replacesDefaultModule:=0;
-  PluginInfo.uuid  :=MIID_MRADIO;
+  PluginInfo.uuid       :=MIID_MRADIO;
 end;
 
 function OnModulesLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
