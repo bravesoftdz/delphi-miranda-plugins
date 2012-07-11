@@ -159,7 +159,11 @@ type
     nButtonWidth :int;
     nButtonHeight:int;
     nButtonSpace :int;
-    bFlatButtons :boolean;
+    nLastHeight  :int;  // fix against recursion in WM_SIZE
+    nLineCount   :int;
+    bFlatButtons,
+    bAutoSize,
+    bSingleLine  :boolean;
 
     pButtonList  :PSortedList;
 
