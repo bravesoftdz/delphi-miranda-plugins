@@ -23,11 +23,14 @@
 const
   MS_IEVIEW_WINDOW              = 'IEVIEW/NewWindow';
   MS_IEVIEW_EVENT               = 'IEVIEW/Event';
+  MS_IEVIEW_NAVIGATE            = 'IEVIEW/Navigate';
+
+  ME_IEVIEW_OPTIONSCHANGED      = 'IEVIEW/OptionsChanged';
+(*
   MS_IEVIEW_UTILS               = 'IEVIEW/Utils';
   MS_IEVIEW_SHOWSMILEYSELECTION = 'IEVIEW/ShowSmileySelection';
-  ME_IEVIEW_OPTIONSCHANGED      = 'IEVIEW/OptionsChanged';
   ME_IEVIEW_NOTIFICATION        = 'IEVIEW/Notification';
-
+*)
   IEW_CREATE       = 1; // create new window (control)
   IEW_DESTROY      = 2; // destroy control
   IEW_SETPOS       = 3; // set window position and size
@@ -40,6 +43,7 @@ const
   IEWM_MUCC    = 4; // MUCC group chats GUI
   IEWM_CHAT    = 5; // chat.dll group chats GUI
   IEWM_HISTORY = 6; // history viewer
+  IEWM_BROWSER = 256; // empty browser window
 
 type
   PIEVIEWWINDOW = ^TIEVIEWWINDOW;
@@ -48,8 +52,8 @@ type
     iType  : int;   // one of IEW_* values
     dwMode : DWORD; // compatibility mode - one of IEWM_* values
     dwFlags: DWORD; // flags, one of IEWF_* values
-    parent : THWND; // parent window HWND
-    hwnd   : THWND; // IEW_CREATE returns WebBrowser control's HWND here
+    parent : HWND;  // parent window HWND
+    hwnd   : HWND;  // IEW_CREATE returns WebBrowser control's HWND here
     x      : int;   // IE control horizontal position
     y      : int;   // IE control vertical position
     cx     : int;   // IE control horizontal size
@@ -69,6 +73,7 @@ const
 
   IEEDF_READ = $00001000; // if set
   IEEDF_SENT = $00002000; // if set
+  IEEDF_RTL  = $00004000; // if set
 
   IEED_EVENT_MESSAGE      = $0001; // message
   IEED_EVENT_STATUSCHANGE = $0002; // status change
@@ -83,6 +88,14 @@ const
   IEED_MUCC_EVENT_LEFT    = $0004; // user left
   IEED_MUCC_EVENT_ERROR   = $0005; // error
 
+// MUCC-related dwData bit flags
+  IEEDD_MUCC_SHOW_NICK       = $00000001;
+  IEEDD_MUCC_MSG_ON_NEW_LINE = $00000002;
+  IEEDD_MUCC_SHOW_DATE       = $00000010;
+  IEEDD_MUCC_SHOW_TIME       = $00000020;
+  IEEDD_MUCC_SECONDS         = $00000040;
+  IEEDD_MUCC_LONG_DATE       = $00000080;
+
   IEED_GC_EVENT_HIGHLIGHT    = $8000;
   IEED_GC_EVENT_MESSAGE      = $0001;
   IEED_GC_EVENT_TOPIC        = $0002;
@@ -96,6 +109,12 @@ const
   IEED_GC_EVENT_INFORMATION  = $000B;
   IEED_GC_EVENT_ADDSTATUS    = $000C;
   IEED_GC_EVENT_REMOVESTATUS = $000D;
+
+// GC-related dwData bit flags
+  IEEDD_GC_SHOW_NICK       = $00000001;
+  IEEDD_GC_SHOW_TIME       = $00000002;
+  IEEDD_GC_SHOW_ICON       = $00000004;
+  IEEDD_GC_MSG_ON_NEW_LINE = $00001000;
 
   IE_FONT_BOLD      = $000100; // Bold font flag
   IE_FONT_ITALIC    = $000200; // Italic font flag
@@ -133,6 +152,7 @@ const
   IEEF_NO_UNICODE   = 2; // disable Unicode support
   IEEF_NO_SCROLLING = 4; // do not scroll logs to bottom
 
+const
   IEVIEWEVENT_SIZE_V1 = 28;
   IEVIEWEVENT_SIZE_V2 = 32;
   IEVIEWEVENT_SIZE_V3 = 36;
@@ -146,8 +166,8 @@ type
 
   PIEVIEWEVENT = ^TIEVIEWEVENT;
   TIEVIEWEVENT = record
-    cbSize   :longint; // size of the strusture
-    iType    :longint; // one of IEE_* values
+    cbSize   :int; // size of the strusture
+    iType    :int; // one of IEE_* values
     dwFlags  :DWORD;   // one of IEEF_* values
     hwnd     :HWND;    // HWND returned by IEW_CREATE
     hContact :THANDLE; // contact
@@ -158,7 +178,7 @@ type
     codepage :int;     // ANSI codepage
     pszProto :PAnsiChar;
   end;
-
+(*
 type
   PIEVIEWSHOWSMILEYSEL = ^TIEVIEWSHOWSMILEYSEL;
   TIEVIEWSHOWSMILEYSEL = record
@@ -180,5 +200,18 @@ type
     targetWParam : LPARAM; // Target WParam to be sent (LParam will be AnsiChar*
                            // to select smiley) see the example file.
   end;
+*)
+const
+  IEN_NAVIGATE = 1; // navigate to the given destination
+  IENF_UNICODE = 1; // if set urlW is used instead of urlW
+
+type
+  IEVIEWNAVIGATE = record
+    cbSize :int;   // size of the strusture
+    iType  :int;   // one of IEN_* values
+    dwFlags:dword; // one of IEEF_* values
+    hwnd   :HWND;  // HWND returned by IEW_CREATE
+    url    :TChar; // Text, usage depends on type of event
+end;
 
 {$ENDIF}

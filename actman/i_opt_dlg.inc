@@ -57,7 +57,7 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(id),IMAGE_ICON,16,16,0);
   sid.pszName        :=name;
   sid.szDescription.w:=FastAnsiToWideBuf(descr,buf);
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 end;
 

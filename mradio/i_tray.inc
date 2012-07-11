@@ -136,7 +136,7 @@ begin
       mi.pszService:=MS_RADIO_TRAYMENU;
       mi.szName.a  :=cPluginName;
       mi.hIcon     :=CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnSettings));
-      CallService(MS_CLIST_ADDTRAYMENUITEM,0,lparam(@mi));
+      Menu_AddTrayMenuItem(@mi);
     end;
 end;
 

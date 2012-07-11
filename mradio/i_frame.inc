@@ -217,7 +217,7 @@ begin
       StrCopy(cid.setting,'frame_back');
       cid.defcolour:=COLOR_3DFACE;
       cid.order    :=0;
-      CallService(MS_COLOUR_REGISTERA,dword(@cid),0);
+      ColourRegister(@cid);
 
       hbr:=0;
       colorhook:=HookEvent(ME_COLOUR_RELOAD,@ColorReload);

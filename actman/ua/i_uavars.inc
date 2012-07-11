@@ -12,7 +12,7 @@ const
   ICOLIB_MNUSECTION = MODULE_NAME+'/Menu icons';
 
   SERVICE_WITH_LPARAM_NAME = MODULE_NAME+'/CallAction';
-  MTB_SERVICE_NAME         = MODULE_NAME+'/MTBAction';
+  TTB_SERVICE_NAME         = MODULE_NAME+'/TTBAction';
 
 type
   tMenuType = (main_menu,contact_menu,tray_menu,proto_menu,status_menu);
@@ -39,10 +39,10 @@ type
     hIcolibIcon,
     hIcolibIconPressed  :THANDLE;
 
-    hMTBButton          :THANDLE;   // Modern toolbar button
-    szMTBTooltip        :PAnsiChar;
-    szMTBTooltipPressed :PAnsiChar;
-    szMTBShowWhenVars   :pWideChar;
+    hTTBButton          :THANDLE;   // TopToolbar button
+    szTTBTooltip        :PAnsiChar;
+    szTTBTooltipPressed :PAnsiChar;
+    szTTBShowWhenVars   :pWideChar;
 
     szTabBTooltip       :PWideChar; // TabSRMM toolbar button
     szTabBTooltipPressed:PWideChar;
@@ -56,10 +56,10 @@ const
   UAF_NONE      = 0;
 
   UAF_REGHOTKEY = 1 shl  0; // hotkey
-  UAF_REGMTBB   = 1 shl  1; // modern toolbar
+  UAF_REGTTBB   = 1 shl  1; // modern toolbar
 
   UAF_REGTABB   = 1 shl  5; // TabSRMM toolbar
-  UAF_USING     = UAF_REGHOTKEY or UAF_REGMTBB or UAF_REGTABB;
+  UAF_USING     = UAF_REGHOTKEY or UAF_REGTTBB or UAF_REGTABB;
 
   UAF_2STATE    = 1 shl 11; // Buttons/menu items are 2-state
   UAF_PRESSED   = 1 shl 12; // Button pressed/menu item selected
@@ -90,15 +90,15 @@ type
 const
   NumTypes  = 8;
 const
-  uaMTB     = 0;
+  uaTTB     = 0;
   uaTAB     = 1;
   uaHotkey  = 2;
   uaMenu    = 3;
 
 const
   NamesArray: array [0..NumTypes-1] of tNameRec = (
-    (name:'CList Modern toolbar'; service:'ToolBar/AddButton';
-     mask:UAF_REGMTBB  ; atype:uaMTB; enable:false),
+    (name:'TopToolbar'; service:'TopToolBar/AddButton';
+     mask:UAF_REGTTBB  ; atype:uaTTB; enable:false),
     (name:'TabSRMM toolbar'     ; service:'TabSRMM/ButtonsBar/AddButton';
      mask:UAF_REGTABB  ; atype:uaTAB; enable:false),
     (name:'Core Hotkey'         ; service:nil{MS_HOTKEY_REGISTER};
@@ -121,4 +121,4 @@ var
   szMyPath:array [0..MAX_PATH] of WideChar;
 var
   hServiceWithLParam:THANDLE;
-  hMTBService:THANDLE;
+  hTTBService:THANDLE;

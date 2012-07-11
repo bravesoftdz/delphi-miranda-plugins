@@ -480,7 +480,7 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(BTN_CONTEXT),IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoBtnContext;
   sid.szDescription.a:='Context Menu';
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 //!!
   icchangedhook:=HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
@@ -515,7 +515,7 @@ begin
   mi.hIcon        :=CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnContext));
   mi.szName.a     :='Get user''s Music Info';
   mi.pszService   :=MS_WAT_GETCONTACTINFO;
-  hContactMenuItem:=CallService(MS_CLIST_ADDCONTACTMENUITEM,0,lparam(@mi));
+  hContactMenuItem:=Menu_AddContactMenuItem(@mi);
 
   SetProtocol;
   RegisterContacts;

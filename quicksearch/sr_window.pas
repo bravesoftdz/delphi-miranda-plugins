@@ -230,85 +230,85 @@ begin
   StrCopy(cid.setting,'back_norm');
   cid.defcolour:=$00FFFFFF;
   cid.order    :=0;
-  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
+  ColourRegister(@cid);
 
   StrCopy(cid.name   ,fgr_norm);
   StrCopy(cid.setting,'fore_norm');
   cid.defcolour:=$00000000;
   cid.order    :=1;
-  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
+  ColourRegister(@cid);
 
   StrCopy(cid.name   ,bkg_odd);
   StrCopy(cid.setting,'back_odd');
   cid.defcolour:=$00EBE6DE;
   cid.order    :=2;
-  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
+  ColourRegister(@cid);
 
   StrCopy(cid.name   ,fgr_odd);
   StrCopy(cid.setting,'fore_odd');
   cid.defcolour:=$00000000;
   cid.order    :=3;
-  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
+  ColourRegister(@cid);
 
   StrCopy(cid.name   ,bkg_dis);
   StrCopy(cid.setting,'back_dis');
   cid.defcolour:=$008080FF;
   cid.order    :=4;
-  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
+  ColourRegister(@cid);
 
   StrCopy(cid.name   ,fgr_dis);
   StrCopy(cid.setting,'fore_dis');
   cid.defcolour:=$00000000;
   cid.order    :=5;
-  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
+  ColourRegister(@cid);
 
   StrCopy(cid.name   ,bkg_del);
   StrCopy(cid.setting,'back_del');
   cid.defcolour:=$008000FF;
   cid.order    :=6;
-  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
+  ColourRegister(@cid);
 
   StrCopy(cid.name   ,fgr_del);
   StrCopy(cid.setting,'fore_del');
   cid.defcolour:=$00000000;
   cid.order    :=7;
-  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
+  ColourRegister(@cid);
 
   StrCopy(cid.name   ,bkg_hid);
   StrCopy(cid.setting,'back_hid');
   cid.defcolour:=$0080FFFF;
   cid.order    :=8;
-  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
+  ColourRegister(@cid);
 
   StrCopy(cid.name   ,fgr_hid);
   StrCopy(cid.setting,'fore_hid');
   cid.defcolour:=$00000000;
   cid.order    :=9;
-  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
+  ColourRegister(@cid);
 
   StrCopy(cid.name   ,bkg_meta);
   StrCopy(cid.setting,'back_meta');
   cid.defcolour:=$00BAE699;
   cid.order    :=10;
-  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
+  ColourRegister(@cid);
 
   StrCopy(cid.name   ,fgr_meta);
   StrCopy(cid.setting,'fore_meta');
   cid.defcolour:=$00000000;
   cid.order    :=11;
-  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
+  ColourRegister(@cid);
 
   StrCopy(cid.name   ,bkg_sub);
   StrCopy(cid.setting,'back_sub');
   cid.defcolour:=$00B3CCC1;
   cid.order    :=12;
-  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
+  ColourRegister(@cid);
 
   StrCopy(cid.name   ,fgr_sub);
   StrCopy(cid.setting,'fore_sub');
   cid.defcolour:=$00000000;
   cid.order    :=13;
-  CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
+  ColourRegister(@cid);
 end;
 
 function int2strw(i:integer):PWideChar;

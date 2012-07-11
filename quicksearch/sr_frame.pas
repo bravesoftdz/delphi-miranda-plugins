@@ -319,7 +319,7 @@ begin
       StrCopy(cid.setting,'frame_back');
       cid.defcolour:=COLOR_3DFACE;
       cid.order    :=0;
-      CallService(MS_COLOUR_REGISTERA,wparam(@cid),0);
+      ColourRegister(@cid);
 
       colorhook:=HookEvent(ME_COLOUR_RELOAD,@ColorReload);
       ColorReload(0,0);

@@ -111,7 +111,7 @@ begin
 
     // personal settings
     case LoByte(atype) of
-      uaMTB, uaTAB: begin
+      uaTTB, uaTAB: begin
         enable:=false;
         if IsDlgButtonChecked(Dialog,IDC_UA_TWOSTATE)<>BST_UNCHECKED then
           if IsWindowEnabled(GetDlgItem(Dialog,IDC_UA_TTNORMALV)) then
@@ -165,10 +165,10 @@ begin
 
   // Show real UA settings
   case LoByte(aType) of
-    uaMTB: begin // CList modern toolbar
-      SetDlgItemTextA(Dialog,IDC_UA_TTNORMALV ,UA.szMTBTooltip);
-      SetDlgItemTextA(Dialog,IDC_UA_TTPRESSEDV,UA.szMTBTooltipPressed);
-      SetDlgItemTextW(Dialog,IDC_UA_SHOWVARV  ,UA.szMTBShowWhenVars);
+    uaTTB: begin // CList modern toolbar
+      SetDlgItemTextA(Dialog,IDC_UA_TTNORMALV ,UA.szTTBTooltip);
+      SetDlgItemTextA(Dialog,IDC_UA_TTPRESSEDV,UA.szTTBTooltipPressed);
+      SetDlgItemTextW(Dialog,IDC_UA_SHOWVARV  ,UA.szTTBShowWhenVars);
     end;
 
     uaTAB: begin // TabSRMM toolbar
@@ -200,7 +200,7 @@ begin
   result:=false;
   with UActionList[idx] do
     case LoByte(place) of
-      uaMTB    : result:=(flags and UAF_REGMTBB)<>0;
+      uaTTB    : result:=(flags and UAF_REGTTBB)<>0;
       uaTAB    : result:=(flags and UAF_REGTABB)<>0;
       uaHotkey : result:=(flags and UAF_REGHOTKEY)<>0;
       uaMenu: begin
@@ -285,7 +285,7 @@ procedure SetPlaceActive(idx,place:integer;active:boolean);
 begin
   with UActionList[idx] do
     case LoByte(place) of
-      uaMTB   : if active then flags:=flags or UAF_REGMTBB   else flags:=flags and not UAF_REGMTBB;
+      uaTTB   : if active then flags:=flags or UAF_REGTTBB   else flags:=flags and not UAF_REGTTBB;
       uaTAB   : if active then flags:=flags or UAF_REGTABB   else flags:=flags and not UAF_REGTABB;
       uaHotkey: if active then flags:=flags or UAF_REGHOTKEY else flags:=flags and not UAF_REGHOTKEY;
       uaMenu  :
@@ -327,10 +327,10 @@ begin
 
     // custom data
     case LoByte(atype) of
-      uaMTB: begin // CList modern toolbar
-        mFreeMem(szMTBTooltip       ); szMTBTooltip       :=GetDlgText(Dialog,IDC_UA_TTNORMALV ,true);
-        mFreeMem(szMTBTooltipPressed); szMTBTooltipPressed:=GetDlgText(Dialog,IDC_UA_TTPRESSEDV,true);
-        mFreeMem(szMTBShowWhenVars  ); szMTBShowWhenVars  :=GetDlgText(Dialog,IDC_UA_SHOWVARV);
+      uaTTB: begin // CList modern toolbar
+        mFreeMem(szTTBTooltip       ); szTTBTooltip       :=GetDlgText(Dialog,IDC_UA_TTNORMALV ,true);
+        mFreeMem(szTTBTooltipPressed); szTTBTooltipPressed:=GetDlgText(Dialog,IDC_UA_TTPRESSEDV,true);
+        mFreeMem(szTTBShowWhenVars  ); szTTBShowWhenVars  :=GetDlgText(Dialog,IDC_UA_SHOWVARV);
       end;
 
       uaTAB: begin // TabSRMM toolbar

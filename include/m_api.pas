@@ -45,6 +45,7 @@ type
     cpMin:integer;
     cpMax:integer;
   end;
+  CHARRANGE = TCHARRANGE;
 
 // C translations
 type
@@ -81,9 +82,6 @@ type
       false: (a:PAnsiChar); // ANSI or UTF8
       true:  (w:PWideChar); // Unicode
   end;
-
-const
-  hLangpack:THANDLE = 0;
 
 {$include m_core.inc}
 {$include m_system.inc}
@@ -259,7 +257,6 @@ var
   {$include m_hotkeys.inc}
   {$include m_acc.inc}
   {$include m_xml.inc}
-  {$include m_historyevents.inc}
   {$include m_modernopt.inc}
   {$include m_descbutton.inc}
   {$include m_iconheader.inc}
@@ -268,7 +265,6 @@ var
   {$include m_help.inc}
   {$include m_proto_listeningto.inc}
   {$include m_toptoolbar.inc}
-  {$include m_toolbar.inc}
   {$include m_msg_buttonsbar.inc}
   {$include m_json.inc}
 {$define M_API_UNIT}
@@ -281,6 +277,9 @@ var
   {$include m_newawaysys.inc}
 
 implementation
+
+const
+  hLangpack:THANDLE = 0;
 
 {$undef M_API_UNIT}
   {$include m_helpers.inc}

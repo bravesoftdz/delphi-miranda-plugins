@@ -66,7 +66,7 @@ begin
   GetModuleFileNameW(hInstance,szMyPath,MAX_PATH);
 
   hServiceWithLParam:=CreateServiceFunction(SERVICE_WITH_LPARAM_NAME,@ServiceCallWithLParam);
-  hMTBService       :=CreateServiceFunction(MTB_SERVICE_NAME        ,@MTBServiceCall);
+  hTTBService       :=CreateServiceFunction(TTB_SERVICE_NAME        ,@TTBServiceCall);
   CheckPlacesAbility;
 
   CreateUActionList;
@@ -93,7 +93,7 @@ begin
   UnhookEvent(onactchanged);
   UnhookEvent(iohook);
   DestroyServiceFunction(hServiceWithLParam);
-  DestroyServiceFunction(hMTBService);
+  DestroyServiceFunction(hTTBService);
 end;
 
 function AddOptionPage(var tmpl:pAnsiChar;var proc:pointer;var name:PAnsiChar):integer;

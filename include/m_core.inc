@@ -239,14 +239,14 @@ function SetExceptionFilter(pMirandaExceptFilter:pfnExceptionFilter):pfnExceptio
 const
   LANG_UNICODE = $1000;
 
-procedure LangPackDropUnusedItems(); stdcall;
-                                  external CoreDLL name 'LangPackDropUnusedItems';
-function LangPackGetDefaultCodePage():int; stdcall;
-                                  external CoreDLL name 'LangPackGetDefaultCodePage';
-function LangPackGetDefaultLocale():int; stdcall;
-                                  external CoreDLL name 'LangPackGetDefaultLocale';
-function LangPackPcharToTchar(const pszStr:pAnsiChar):pWideChar; stdcall;
-                              external CoreDLL name 'LangPackPcharToTchar';
+procedure Langpack_SortDuplicates(); stdcall;
+                                  external CoreDLL name 'Langpack_SortDuplicates';
+function Langpack_GetDefaultCodePage():int; stdcall;
+                                  external CoreDLL name 'Langpack_GetDefaultCodePage';
+function Langpack_GetDefaultLocale():int; stdcall;
+                                  external CoreDLL name 'Langpack_GetDefaultLocale';
+function Langpack_PcharToTchar(const pszStr:pAnsiChar):pWideChar; stdcall;
+                              external CoreDLL name 'Langpack_PcharToTchar';
 
 function LoadLangPackModule():int; stdcall;
                             external CoreDLL name 'LoadLangPackModule';
@@ -463,7 +463,11 @@ function ltrimp(str:pAnsiChar):pAnsiChar; stdcall;
 function wildcmp(name:pAnsiChar; mask:pAnsiChar):int; stdcall;
                  external CoreDLL name 'wildcmp';
 
-
+// mir_free dest, mir_strdup src to dest
+function replaceStr(var dest:pAnsiChar; const src:pAnsiChar):pAnsiChar; stdcall;
+                 external CoreDLL name 'replaceStr';
+function replaceStrW(var dest:pWideChar; const src:pWideChar):pWideChar; stdcall;
+                 external CoreDLL name 'replaceStrW';
 ///////////////////////////////////////////////////////////////////////////////
 // text conversion functions
 

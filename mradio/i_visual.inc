@@ -53,13 +53,13 @@ begin
 //  mi.popupPosition:=MenuUserInfoPos;
   mi.pszService:=MS_RADIO_RECORD;
   mi.szName.a  :='Start/Stop Record';
-  hCMenuItemRec:=CallService(MS_CLIST_ADDCONTACTMENUITEM,0,lparam(@mi));
+  hCMenuItemRec:=Menu_AddContactMenuItem(@mi);
 
 //!!  mi.flags        :=CMIF_NOTOFFLINE or CMIF_NOTOFFLIST;
   mi.hIcon      :=CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnOn));
   mi.pszService :=MS_RADIO_PLAYSTOP;
   mi.szName.a   :='Start/Stop broadcasting';
-  hCMenuItemPlay:=CallService(MS_CLIST_ADDCONTACTMENUITEM,0,lparam(@mi));
+  hCMenuItemPlay:=Menu_AddContactMenuItem(@mi);
 end;
 
 procedure RegisterIcons;
@@ -74,42 +74,42 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(BTN_RECUP),IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoBtnRecUp;
   sid.szDescription.a:='Start record';
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(BTN_RECDN),IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoBtnRecDn;
   sid.szDescription.a:='Stop record';
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_MAIN),IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoBtnSettings;
   sid.szDescription.a:='Settings';
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_ON),IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoBtnOn;
   sid.szDescription.a:='Broadcast ON';
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_OFF),IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoBtnOff;
   sid.szDescription.a:='Broadcast OFF';
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_ADD),IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoBtnAdd;
   sid.szDescription.a:='Add EQ preset';
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_DEL),IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoBtnDel;
   sid.szDescription.a:='Delete EQ preset';
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 end;

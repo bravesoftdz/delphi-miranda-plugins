@@ -225,7 +225,7 @@ begin
       ttbopt.hIconDn   :=ttbopt.hIconUp;
       ttbopt.dwFlags   :=TTBBF_VISIBLE;
       ttbopt.name      :=qs_module;
-      hTTBButton:=CallService(MS_TTB_ADDBUTTON,WPARAM(@ttbopt),0);
+      hTTBButton:=TopToolbar_AddButton(@ttbopt);
     end;
   end;
 end;
@@ -245,7 +245,7 @@ begin
 //    cmi.flags       :=0;
     cmi.pszService  :=QS_SHOWSERVICE;
     cmi.hIcon       :=CallService(MS_SKIN2_GETICON,0,lparam(QS_QS));
-    MainMenuItem    :=CallService(MS_CLIST_ADDMAINMENUITEM,0,lparam(@cmi));
+    MainMenuItem    :=Menu_AddMainMenuItem(@cmi);
   end
   else
   begin

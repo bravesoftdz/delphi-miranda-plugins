@@ -201,7 +201,7 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,'IDI_LAST',IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoLastFM;
   sid.szDescription.a:='LastFM';
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
   
   FillChar(mi, sizeof(mi), 0);
@@ -212,7 +212,7 @@ begin
   mi.szName.a     :='Disable scrobbling';
   mi.pszService   :=MS_WAT_LASTFM;
   mi.popupPosition:=500050000;
-  hMenuLast:=CallService(MS_CLIST_ADDMAINMENUITEM,0,lparam(@mi));
+  hMenuLast:=Menu_AddMainMenuItem(@mi);
 end;
 
 // ------------ base interface functions -------------
