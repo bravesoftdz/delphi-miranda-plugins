@@ -55,6 +55,7 @@ var
 
 var
   iohook:THANDLE;
+  onttbloaded,
   ontabbtnpressed,
   onactchanged:THANDLE;
   hPreBuildMMenu,
@@ -71,6 +72,7 @@ begin
 
   CreateUActionList;
 
+  onttbloaded    :=HookEvent(ME_TTB_MODULELOADED ,@OnTTBLoaded);
   ontabbtnpressed:=HookEvent(ME_MSG_BUTTONPRESSED,@OnTabButtonPressed);
   onactchanged   :=HookEvent(ME_ACT_CHANGED      ,@ActListChange);
 
