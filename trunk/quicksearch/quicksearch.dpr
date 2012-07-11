@@ -103,61 +103,61 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_QS),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_QS;
   sid.szDescription.a:=qs_name;
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_NEW),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_NEW;
   sid.szDescription.a:='New Column';
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_ITEM),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_ITEM;
   sid.szDescription.a:='Save Column';
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_UP),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_UP;
   sid.szDescription.a:='Column Up';
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_DOWN),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_DOWN;
   sid.szDescription.a:='Column Down';
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_DELETE),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_DELETE;
   sid.szDescription.a:='Delete Column';
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_DEFAULT),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_DEFAULT;
   sid.szDescription.a:='Default';
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_RELOAD),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_RELOAD;
   sid.szDescription.a:='Reload';
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_MALE),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_MALE;
   sid.szDescription.a:='Male';
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_FEMALE),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_FEMALE;
   sid.szDescription.a:='Female';
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 
   icohook:=HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);

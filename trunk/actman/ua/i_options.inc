@@ -1,8 +1,8 @@
 {}
 const
-  opt_MTBTooltip        :pAnsiChar = 'MTBTooltip';
-  opt_MTBTooltipPressed :pAnsiChar = 'MTBTooltipPressed';
-  opt_MTBShowWhenVars   :pAnsiChar = 'MTBVarStr';
+  opt_TTBTooltip        :pAnsiChar = 'MTBTooltip';
+  opt_TTBTooltipPressed :pAnsiChar = 'MTBTooltipPressed';
+  opt_TTBShowWhenVars   :pAnsiChar = 'MTBVarStr';
 
   opt_TabBTooltip       :pAnsiChar = 'TabBTooltip';
   opt_TabBTooltipPressed:pAnsiChar = 'TabBTooltipPressed';
@@ -29,9 +29,9 @@ begin
 
       StrCopy(p,opt_Flags); DBDeleteSetting(0,DBBranch,setting);
     
-      StrCopy(p,opt_MTBTooltip        ); DBDeleteSetting(0,DBBranch,setting);
-      StrCopy(p,opt_MTBTooltipPressed ); DBDeleteSetting(0,DBBranch,setting);
-      StrCopy(p,opt_MTBShowWhenVars   ); DBDeleteSetting(0,DBBranch,setting);
+      StrCopy(p,opt_TTBTooltip        ); DBDeleteSetting(0,DBBranch,setting);
+      StrCopy(p,opt_TTBTooltipPressed ); DBDeleteSetting(0,DBBranch,setting);
+      StrCopy(p,opt_TTBShowWhenVars   ); DBDeleteSetting(0,DBBranch,setting);
 
       StrCopy(p,opt_TabBTooltip       ); DBDeleteSetting(0,DBBranch,setting);
       StrCopy(p,opt_TabBTooltipPressed); DBDeleteSetting(0,DBBranch,setting);
@@ -79,9 +79,9 @@ begin
       StrCopy(p,opt_Flags); DBWriteDWord(0,DBBranch,setting,
           flags and not (UAF_REALTIME OR UAF_SPECIAL));
 
-      StrCopy(p,opt_MTBTooltip       ); addSaveUA(setting,szMTBTooltip);
-      StrCopy(p,opt_MTBTooltipPressed); addSaveUA(setting,szMTBTooltipPressed);
-      StrCopy(p,opt_MTBShowWhenVars  ); addSaveUA(setting,szMTBShowWhenVars);
+      StrCopy(p,opt_TTBTooltip       ); addSaveUA(setting,szTTBTooltip);
+      StrCopy(p,opt_TTBTooltipPressed); addSaveUA(setting,szTTBTooltipPressed);
+      StrCopy(p,opt_TTBShowWhenVars  ); addSaveUA(setting,szTTBShowWhenVars);
 
       StrCopy(p,opt_TabBTooltip       ); addSaveUA(setting,szTabBTooltip);
       StrCopy(p,opt_TabBTooltipPressed); addSaveUA(setting,szTabBTooltipPressed);
@@ -140,9 +140,9 @@ begin
       flags:=flags and not UAF_REALTIME;
       result:=1;
 
-      StrCopy(p,opt_MTBTooltip       ); szMTBTooltip       :=DBReadString (0,DBBranch,setting);
-      StrCopy(p,opt_MTBTooltipPressed); szMTBTooltipPressed:=DBReadString (0,DBBranch,setting);
-      StrCopy(p,opt_MTBShowWhenVars  ); szMTBShowWhenVars  :=DBReadUnicode(0,DBBranch,setting);
+      StrCopy(p,opt_TTBTooltip       ); szTTBTooltip       :=DBReadString (0,DBBranch,setting);
+      StrCopy(p,opt_TTBTooltipPressed); szTTBTooltipPressed:=DBReadString (0,DBBranch,setting);
+      StrCopy(p,opt_TTBShowWhenVars  ); szTTBShowWhenVars  :=DBReadUnicode(0,DBBranch,setting);
                                         
       StrCopy(p,opt_TabBTooltip       ); szTabBTooltip       :=DBReadUnicode(0,DBBranch,setting);
       StrCopy(p,opt_TabBTooltipPressed); szTabBTooltipPressed:=DBReadUnicode(0,DBBranch,setting);
@@ -209,11 +209,11 @@ begin
       DeleteCoreHotkey(ActionItem);
   end;
 
-  if NamesArray[uaMTB].enable then
+  if NamesArray[uaTTB].enable then
   begin
-    DeleteMTBButton(ActionItem); // no modify command there, just delete, then insert back
-    if (ActionItem.flags and UAF_REGMTBB)<>0 then
-      AddMTBButton(ActionItem);
+    DeleteTTBButton(ActionItem); // no modify command there, just delete, then insert back
+    if (ActionItem.flags and UAF_REGTTBB)<>0 then
+      AddTTBButton(ActionItem);
   end;
 
   if NamesArray[uaTAB].enable then
@@ -280,11 +280,11 @@ begin
   if (ActionItem.flags and UAF_REGHOTKEY)<>0 then
     DeleteCoreHotkey(ActionItem^);
 
-  if (ActionItem.flags and UAF_REGMTBB)<>0 then
-    DeleteMTBButton(ActionItem^);
-  mFreeMem(ActionItem.szMTBTooltip);
-  mFreeMem(ActionItem.szMTBTooltipPressed);
-  mFreeMem(ActionItem.szMTBShowWhenVars);
+  if (ActionItem.flags and UAF_REGTTBB)<>0 then
+    DeleteTTBButton(ActionItem^);
+  mFreeMem(ActionItem.szTTBTooltip);
+  mFreeMem(ActionItem.szTTBTooltipPressed);
+  mFreeMem(ActionItem.szTTBShowWhenVars);
 
   if (ActionItem.flags and UAF_REGTABB)<>0 then
     DeleteTabBBButton(ActionItem^);

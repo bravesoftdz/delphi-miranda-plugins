@@ -38,7 +38,6 @@ function TranslateWideString(const sz:WideString):WideString;
 function TranslateUnicodeString(sz: String): String;{$ifdef FPC}inline;{$endif}
 procedure TranslateDialogDefault(hwndDlg: THandle);
 procedure TranslateMenu(hMenu: HMENU);
-function Langpack_PCharToTChar(astr:PAnsiChar):int_ptr;
 function Langpack_Register:int_ptr;
 
 function ProtoBroadcastAck(const szModule: PAnsiChar; hContact: THandle; type_: int; result_: int; hProcess: THandle; lParam: LPARAM): int_ptr;
@@ -71,6 +70,8 @@ procedure ColourRegisterW(pColorID:pColourIDW);
 
 procedure EffectRegister(pEffectID:pEffectID);
 procedure EffectRegisterW(pEffectID:pEffectIDW);
+
+function TopToolbar_AddButton(pButton:PTTBButton):THANDLE;
 
 {$ELSE}
 
@@ -315,11 +316,6 @@ begin
   TranslateMenu_LP(hMenu,hLangpack);
 end;
 
-function Langpack_PCharToTChar(astr:PAnsiChar):int_ptr;
-begin
-  result:=CallService(MS_LANGPACK_PCHARTOTCHAR, hLangpack, LPARAM(astr));
-end;
-
 function Langpack_Register:int_ptr;
 begin
   result:=CallService(MS_LANGPACK_REGISTER,WPARAM(@hLangpack),LPARAM(@PluginInfo));
@@ -456,29 +452,34 @@ end;
 
 procedure FontRegister(pFontID:pFontID);
 begin
-	CallService('Font/Register', WPARAM(pFontID), hLangpack);
+	CallService(MS_FONT_REGISTERA, WPARAM(pFontID), hLangpack);
 end;
 procedure FontRegisterW(pFontID:pFontIDW);
 begin
-	CallService('Font/RegisterW', WPARAM(pFontID), hLangpack);
+	CallService(MS_FONT_REGISTERW, WPARAM(pFontID), hLangpack);
 end;
 
 procedure ColourRegister(pColorID:pColourID);
 begin
-	CallService('Colour/Register', WPARAM(pColorID), hLangpack);
+	CallService(MS_COLOUR_REGISTERA, WPARAM(pColorID), hLangpack);
 end;
 procedure ColourRegisterW(pColorID:pColourIDW);
 begin
-	CallService('Colour/RegisterW', WPARAM(pColorID), hLangpack);
+	CallService(MS_COLOUR_REGISTERW, WPARAM(pColorID), hLangpack);
 end;
 
 procedure EffectRegister(pEffectID:pEffectID);
 begin
-	CallService('Effect/Register', WPARAM(pEffectID), hLangpack);
+	CallService(MS_EFFECT_REGISTERA, WPARAM(pEffectID), hLangpack);
 end;
 procedure EffectRegisterW(pEffectID:pEffectIDW);
 begin
-	CallService('Effect/RegisterW', WPARAM(pEffectID), hLangpack);
+	CallService(MS_EFFECT_REGISTERW, WPARAM(pEffectID), hLangpack);
+end;
+
+function TopToolbar_AddButton(pButton:PTTBButton):THANDLE;
+begin
+  result:=CallService(MS_TTB_ADDBUTTON, WPARAM(pButton), hLangpack);
 end;
 
 {$ENDIF}

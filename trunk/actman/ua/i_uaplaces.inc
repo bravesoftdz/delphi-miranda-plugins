@@ -25,26 +25,26 @@ begin
   result:=CallService(MS_ACT_RUNBYID, lParam, wParam);
 end;
 
-procedure SetMTBState(var ActionItem:tMyActionItem);
+procedure SetTTBState(var ActionItem:tMyActionItem);
 var
   lflag:integer;
 begin
-  if ActionItem.hMTBButton=0 then exit;
+  if ActionItem.hTTBButton=0 then exit;
   if (ActionItem.flags and UAF_2STATE)=0 then exit;
 
-  lflag:=CallService(MS_TB_GETBUTTONSTATE,ActionItem.hMTBButton,0);
-  if lflag=TBST_PUSHED then
+  lflag:=CallService(MS_TTB_GETBUTTONSTATE,ActionItem.hTTBButton,0);
+  if lflag=TTBST_PUSHED then
   begin
     if (ActionItem.flags and (UAF_2STATE+UAF_PRESSED))<>(UAF_2STATE+UAF_PRESSED) then exit;
-    lflag:=TBST_RELEASED;
+    lflag:=TTBST_RELEASED;
   end
   else
   begin
     if (ActionItem.flags and (UAF_2STATE+UAF_PRESSED))=(UAF_2STATE+UAF_PRESSED) then exit;
     if (ActionItem.flags and UAF_PRESSED)=0 then exit;
-    lflag:=TBST_PUSHED;
+    lflag:=TTBST_PUSHED;
   end;
-  CallService(MS_TB_SETBUTTONSTATE,ActionItem.hMTBButton,lflag);
+  CallService(MS_TTB_SETBUTTONSTATE,ActionItem.hTTBButton,lflag);
 end;
 
 procedure SetTABState(hContact:THANDLE;var ActionItem:tMyActionItem;pressed:integer);
@@ -82,7 +82,7 @@ begin
      (UAItem.UAMenuItem[tray_menu  ].hMenuItem=0) and
      (UAItem.UAMenuItem[proto_menu ].hMenuItem=0) and
      (UAItem.UAMenuItem[status_menu].hMenuItem=0) and
-     (UAItem.hMTBButton=0);
+     (UAItem.hTTBButton=0);
 end;
 
 function ServiceCallWithFParam(wParam:WPARAM; lParam:LPARAM; fParam:LPARAM):int_ptr; cdecl;
@@ -126,8 +126,8 @@ begin
               end;
             end;
 
-            if hMTBButton<>0 then
-              SetMTBState(UActionList[i]);
+            if hTTBButton<>0 then
+              SetTTBState(UActionList[i]);
 
             cnt:=0;
             state:=ORD(flags and UAF_PRESSED);
@@ -164,7 +164,7 @@ begin
     sid.szDescription.w:=@buf;
     StrCopy(StrCopyE(@buf1,ActionItem.szNameID),'_pressed');
     sid.pszName        :=@buf1;
-    ActionItem.hIcolibIconPressed:=CallService(MS_SKIN2_ADDICON,0,LPARAM(@sid));
+    ActionItem.hIcolibIconPressed:=Skin_AddIcon(@sid);
   end;
   result:=ActionItem.hIcolibIconPressed;
 end;
@@ -187,7 +187,7 @@ begin
     // icon "on"
     sid.szDescription.w:=ActionItem.szActDescr;
     sid.pszName        :=ActionItem.szNameID;
-    ActionItem.hIcolibIcon:=CallService(MS_SKIN2_ADDICON,0,LPARAM(@sid));
+    ActionItem.hIcolibIcon:=Skin_AddIcon(@sid);
   end;
   result:=ActionItem.hIcolibIcon;
 end;
@@ -231,7 +231,7 @@ begin
     hkd.pszSection    .w:= MODULE_NAME;
     hkd.pszService      := SERVICE_WITH_LPARAM_NAME;
     hkd.lParam          := ActionItem.dwActID;
-    result:=CallService(MS_HOTKEY_REGISTER,0,LPARAM(@hkd))<>0;
+    result:=Hotkey_Register(@hkd)<>0;
     if result then
       ActionItem.flags:=ActionItem.flags or UAF_HKREGGED;
   end
@@ -267,7 +267,7 @@ begin
   sid.szDefaultFile.w:= szMyPath;
   sid.iDefaultIndex  := -IDI_ACTION;
   WideToAnsi(szPopupName,sid.pszName);
-  result:=CallService(MS_SKIN2_ADDICON,0,LPARAM(@sid));
+  result:=Skin_AddIcon(@sid);
   mFreeMem(sid.pszName);
 end;
 
@@ -326,6 +326,19 @@ begin
   end;
 end;
 
+function MakeMenuItem(mtype:tMenuType;clmi:PCListMenuItem):THANDLE;
+begin
+  case mtype of
+    main_menu   : result:=Menu_AddMainMenuItem(clmi);
+    contact_menu: result:=Menu_AddContactMenuItem(clmi);
+    tray_menu   : result:=Menu_AddTrayMenuItem(clmi);
+    proto_menu  : result:=Menu_AddProtoMenuItem(clmi);
+    status_menu : result:=Menu_AddStatusMenuItem(clmi);
+  else
+    result:=0;
+  end;
+end;
+
 procedure CreateMenuItem(var ActionItem:tMyActionItem;mtype:tMenuType);
 var
   i:integer;
@@ -381,7 +394,8 @@ begin
     inc(clmi.position,GetMenuPosition(0,mtype,
         (UAMenuItem.menu_opt and UAF_MENUSEP)<>0));
 
-    UAMenuItem.hMenuRoot:=CallService(MenuServices[mtype],0,LPARAM(@clmi));
+    UAMenuItem.hMenuRoot:=MakeMenuItem(mtype,@clmi);
+    //CallService(MenuServices[mtype],0,LPARAM(@clmi));
     if clmi.szName.w<>ActionItem.szActDescr then
       mFreeMem(clmi.szName.w);
 
@@ -440,7 +454,8 @@ begin
   inc(clmi.position,GetMenuPosition(UAMenuItem.hMenuRoot,mtype,
       (UAMenuItem.menu_opt and UAF_MENUSEP)<>0));
 
-  UAMenuItem.hMenuItem:=CallService(MenuServices[mtype],0,LPARAM(@clmi));
+  UAMenuItem.hMenuItem:=MakeMenuItem(mtype,@clmi);
+  //CallService(MenuServices[mtype],0,LPARAM(@clmi));
   if clmi.szName.w<>ActionItem.szActDescr then
     mFreeMem(clmi.szName.w);
 {}
@@ -559,25 +574,25 @@ begin
   result:=PreBuildMenu(tray_menu,wParam);
 end;
 
-//----- Modern Toolbar -----
+//----- TopToolbar -----
 
-procedure AddMTBButton(var ActionItem:tMyActionItem);
+procedure AddTTBButton(var ActionItem:tMyActionItem);
 var
-  mtButton:TBButton;
+  mtButton:TTBButton;
   pc,pc1,pc2:pAnsiChar;
   res:boolean;
   p:pWideChar;
 begin
-  if not NamesArray[uaMTB].enable then exit;
+  if not NamesArray[uaTTB].enable then exit;
 
-  if ActionItem.hMTBButton=0 then
+  if ActionItem.hTTBButton=0 then
   begin
     // Add or not
     if isVarsInstalled then
     begin
-      if (ActionItem.szMTBShowWhenVars<>nil) and (ActionItem.szMTBShowWhenVars^<>#0) then
+      if (ActionItem.szTTBShowWhenVars<>nil) and (ActionItem.szTTBShowWhenVars^<>#0) then
       begin
-        p:=ParseVarString(ActionItem.szMTBShowWhenVars);
+        p:=ParseVarString(ActionItem.szTTBShowWhenVars);
         if p<>nil then
         begin
           res:=StrCmpW(p,'1')<>0;
@@ -592,51 +607,50 @@ begin
 
     FillChar(mtButton,SizeOf(mtButton),0);
     mtButton.cbSize  :=SizeOf(mtButton);
-    mtButton.defPos  :=1000;
 
-    mtButton.pszButtonID   :=ActionItem.szNameID;
-    mtButton.pszServiceName:=MTB_SERVICE_NAME;//SERVICE_WITH_LPARAM_NAME;
-    mtButton.lParam        :=ActionItem.dwActID;
+    mtButton.pszService:=TTB_SERVICE_NAME;//SERVICE_WITH_LPARAM_NAME;
+    mtButton.lParamUp  :=ActionItem.dwActID;
+    mtButton.lParamDown:=ActionItem.dwActID;
 
-    mtButton.hPrimaryIconHandle  :=ActionItem.hIcolibIcon;
-    mtButton.hSecondaryIconHandle:=ActionItem.hIcolibIconPressed;
+    mtButton.hIconUp:=ActionItem.hIcolibIcon;
+    mtButton.hIconDn:=ActionItem.hIcolibIconPressed;
 
     WideToAnsi(ActionItem.szActDescr,pc);
 
     if (ActionItem.flags and UAF_2STATE)<>0 then
-      mtButton.tbbFlags:=TBBF_VISIBLE or TBBF_SHOWTOOLTIP or TBBF_PUSHED
+      mtButton.dwFlags:=TTBBF_ICONBYHANDLE or TTBBF_VISIBLE or TTBBF_SHOWTOOLTIP{ or TTBBF_ASPUSHBUTTON}
     else
-      mtButton.tbbFlags:=TBBF_VISIBLE or TBBF_SHOWTOOLTIP;
+      mtButton.dwFlags:=TTBBF_ICONBYHANDLE or TTBBF_VISIBLE or TTBBF_SHOWTOOLTIP;
 
-    if ActionItem.szMTBTooltip =nil then
+    if ActionItem.szTTBTooltip =nil then
       pc1:=pc
-    else pc1:=ActionItem.szMTBTooltip;
-
+    else pc1:=ActionItem.szTTBTooltip;
+    
     if ((ActionItem.flags and UAF_2STATE)=0) or 
-       (ActionItem.szMTBTooltipPressed=nil) then
+       (ActionItem.szTTBTooltipPressed=nil) then
       pc2:=pc1
     else
-      pc2:=ActionItem.szMTBTooltipPressed;
+      pc2:=ActionItem.szTTBTooltipPressed;
 
-    mtButton.pszButtonName :=pc;
+    mtButton.Name :=pc;
     mtButton.pszTooltipUp  :=pc1;
     mtButton.pszTooltipDn  :=pc2;
 
-    ActionItem.hMTBButton:=CallService(MS_TB_ADDBUTTON,0,LPARAM(@mtButton));
+    ActionItem.hTTBButton:=TopToolbar_AddButton(@mtButton);
     mFreeMem(pc);
   end;
 end;
 
-procedure DeleteMTBButton(var ActionItem:tMyActionItem);
+procedure DeleteTTBButton(var ActionItem:tMyActionItem);
 begin
-  if ActionItem.hMTBButton<>0 then
+  if ActionItem.hTTBButton<>0 then
   begin
-    CallService(MS_TB_REMOVEBUTTON,ActionItem.hMTBButton,0);
-    ActionItem.hMTBButton:=0;
+    CallService(MS_TTB_REMOVEBUTTON,ActionItem.hTTBButton,0);
+    ActionItem.hTTBButton:=0;
   end;
 end;
 
-function MTBServiceCall(wParam:WPARAM; lParam:LPARAM):int_ptr; cdecl;
+function TTBServiceCall(wParam:WPARAM; lParam:LPARAM):int_ptr; cdecl;
 var
   i,lflag:integer;
 begin
@@ -649,15 +663,15 @@ begin
       begin
         if (flags and UAF_2STATE)<>0 then
         begin
-          if CallService(MS_TB_GETBUTTONSTATE,hMTBButton,0)=TBST_PUSHED then
+          if CallService(MS_TTB_GETBUTTONSTATE,hTTBButton,0)=TTBST_PUSHED then
           begin
-            lflag:=TBST_RELEASED;
+            lflag:=TTBST_RELEASED;
           end
           else
           begin
-            lflag:=TBST_PUSHED;
+            lflag:=TTBST_PUSHED;
           end;
-          CallService(MS_TB_SETBUTTONSTATE,hMTBButton,lflag);
+          CallService(MS_TTB_SETBUTTONSTATE,hTTBButton,lflag);
         end;
       end;
 
@@ -667,15 +681,15 @@ begin
   end;
 end;
 
-function OnMTBLoaded(wParam:WPARAM;lParam:LPARAM):int; cdecl;
+function OnTTBLoaded(wParam:WPARAM;lParam:LPARAM):int; cdecl;
 var
   i:integer;
 begin
   result:=0;
   for i:=HIGH(UActionList) downto 0 do
   begin
-    if (UActionList[i].flags and UAF_REGMTBB)<>0 then
-      AddMTBButton(UActionList[i]);
+    if (UActionList[i].flags and UAF_REGTTBB)<>0 then
+      AddTTBButton(UActionList[i]);
   end;
 end;
 

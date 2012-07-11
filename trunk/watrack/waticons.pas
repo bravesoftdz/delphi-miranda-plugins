@@ -76,14 +76,14 @@ begin
       MAKEINTRESOURCE(IDI_PLUGIN_ENABLE),IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoBtnEnable;
   sid.szDescription.a:='Plugin Enabled';
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 
   sid.hDefaultIcon   :=LoadImage(hIconDLL,
       MAKEINTRESOURCE(IDI_PLUGIN_DISABLE),IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoBtnDisable;
   sid.szDescription.a:='Plugin Disabled';
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 
   if hIconDLL<>hInstance then
@@ -181,7 +181,7 @@ begin
           sid.pszName        :=CtrlIcoLib[i][j].name;
           sid.szDescription.a:=CtrlIcoLib[i][j].descr;
 
-          CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+          Skin_AddIcon(@sid);
           DestroyIcon(sid.hDefaultIcon);
           Inc(j);
         until j>AST_PRESSED;

@@ -218,19 +218,10 @@ type
   end;
 
 type
-  PClcCacheEntryBase = pointer;
-  PClcCacheEntryBaseA = ^ClcCacheEntryBaseA;
-  ClcCacheEntryBaseA = record
+  PClcCacheEntryBase = ^ClcCacheEntryBase;
+  ClcCacheEntryBase = record
     hContact:THANDLE;
     name    :TCHAR;
-    group   :TCHAR;
-    isHidden:int;
-  end;
-  PClcCacheEntryBaseW = ^ClcCacheEntryBaseW;
-  ClcCacheEntryBaseW = record
-    hContact:THANDLE;
-    name    :TCHAR;
-    szName  :PAnsiChar;
     group   :TCHAR;
     isHidden:int;
   end;

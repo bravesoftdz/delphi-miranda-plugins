@@ -431,7 +431,7 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(BTN_INFO),IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoBtnInfo;
   sid.szDescription.a:='Music Info';
-  CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
   sic:=HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
 
@@ -442,7 +442,7 @@ begin
   mi.szName.a     :='Music Info';
   mi.pszService   :=MS_WAT_SHOWMUSICINFO;
   mi.popupPosition:=MenuInfoPos;
-  hMenuInfo       :=CallService(MS_CLIST_ADDMAINMENUITEM,0,lparam(@mi));
+  hMenuInfo       :=Menu_AddMainMenuItem(@mi);
 
   if ServiceExists(MS_POPUP_ADDPOPUPW)<>0 then
   begin
@@ -479,7 +479,7 @@ begin
   ttb.hIconDn   :=ttb.hIconUp;
   ttb.pszService:=MS_WAT_SHOWMUSICINFO;
   ttb.name      :='Music Info';
-  ttbInfo:=CallService(MS_TTB_ADDBUTTON,wparam(@ttb),0);
+  ttbInfo:=TopToolbar_AddButton(@ttb);
 
 end;
 

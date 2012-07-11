@@ -12,7 +12,7 @@ const
   ioSaveState      :PWideChar = 'savestate';
 
   ioHotkey         :PWideChar = 'Hotkey';
-  ioModern         :PWideChar = 'CLModern';
+  ioToolbar        :PWideChar = 'Toolbar';
   ioTabSRMM        :PWideChar = 'TabSRMM';
   ioMenuItem       :PWideChar = 'Menu';
 
@@ -76,8 +76,8 @@ begin
   //      sub:=AddChild(actnode,ioRegister,nil);
     if StrToInt(getAttrValue(actnode,ioHotkey))<>0 then
       UA.flags:=UA.flags or UAF_REGHOTKEY;
-    if StrToInt(getAttrValue(actnode,ioModern))<>0 then
-      UA.flags:=UA.flags or UAF_REGMTBB;
+    if StrToInt(getAttrValue(actnode,ioToolbar))<>0 then
+      UA.flags:=UA.flags or UAF_REGTTBB;
     if StrToInt(getAttrValue(actnode,ioTabSRMM))<>0 then
       UA.flags:=UA.flags or UAF_REGTABB;
 
@@ -86,9 +86,9 @@ begin
 
     // ----- Modern CList toolbar -----
     // source - ANSI text
-    sub:=GetNthChild(actnode,ioModern,0);
-    WideToAnsi(GetAttrValue(sub,ioTooltip       ),UA.szMTBTooltip       ,MirandaCP);
-    WideToAnsi(GetAttrValue(sub,ioTooltipPressed),UA.szMTBTooltipPressed,MirandaCP);
+    sub:=GetNthChild(actnode,ioToolbar,0);
+    WideToAnsi(GetAttrValue(sub,ioTooltip       ),UA.szTTBTooltip       ,MirandaCP);
+    WideToAnsi(GetAttrValue(sub,ioTooltipPressed),UA.szTTBTooltipPressed,MirandaCP);
 
     // ----- TabSRMM toolbar -----
     sub:=GetNthChild(actnode,ioTabSRMM,0);
@@ -241,7 +241,7 @@ begin
 
   //      sub:=AddChild(actnode,ioRegister,nil);
         AddAttrInt(actnode,ioHotkey ,ORD((UA.flags and UAF_REGHOTKEY)<>0));
-        AddAttrInt(actnode,ioModern ,ORD((UA.flags and UAF_REGMTBB )<>0));
+        AddAttrInt(actnode,ioToolbar,ORD((UA.flags and UAF_REGTTBB )<>0));
         AddAttrInt(actnode,ioTabSRMM,ORD((UA.flags and UAF_REGTABB )<>0));
 
         // ----- Hotkey -----
@@ -249,19 +249,19 @@ begin
 
         // ----- Modern CList toolbar -----
         // source - ANSI text
-        if ((UA.szMTBTooltip       <>nil) and (UA.szMTBTooltip^       <>#0)) or
-           ((UA.szMTBTooltipPressed<>nil) and (UA.szMTBTooltipPressed^<>#0)) then
+        if ((UA.szTTBTooltip       <>nil) and (UA.szTTBTooltip^       <>#0)) or
+           ((UA.szTTBTooltipPressed<>nil) and (UA.szTTBTooltipPressed^<>#0)) then
         begin
-          sub:=AddChild(actnode,ioModern,nil);
-          if (UA.szMTBTooltip<>nil) and (UA.szMTBTooltip^<>#0) then
+          sub:=AddChild(actnode,ioToolbar,nil);
+          if (UA.szTTBTooltip<>nil) and (UA.szTTBTooltip^<>#0) then
           begin
-            AnsiToWide(UA.szMTBTooltip,pc,MirandaCP);
+            AnsiToWide(UA.szTTBTooltip,pc,MirandaCP);
             AddAttr(sub,ioTooltip,pc);
             mFreeMem(pc);
           end;
-          if (UA.szMTBTooltipPressed<>nil) and (UA.szMTBTooltipPressed^<>#0) then
+          if (UA.szTTBTooltipPressed<>nil) and (UA.szTTBTooltipPressed^<>#0) then
           begin
-            AnsiToWide(UA.szMTBTooltipPressed,pc,MirandaCP);
+            AnsiToWide(UA.szTTBTooltipPressed,pc,MirandaCP);
             AddAttr(sub,ioTooltipPressed,pc);
             mFreeMem(pc);
           end;

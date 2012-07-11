@@ -234,7 +234,7 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,'IDI_MYSHOWS',IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoMyShows;
   sid.szDescription.a:='MyShows';
-  CallService(MS_SKIN2_ADDICON,0,tlParam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
   
   FillChar(mi, sizeof(mi), 0);
@@ -245,7 +245,7 @@ begin
   mi.szName.a     :='Disable scrobbling';
   mi.pszService   :=MS_WAT_MYSHOWS;
   mi.popupPosition:=500050000;
-  hMenuMyShows:=CallService(MS_CLIST_ADDMAINMENUITEM,0,tlParam(@mi));
+  hMenuMyShows:=Menu_AddMainMenuItem(@mi);
 end;
 
 // ------------ base interface functions -------------

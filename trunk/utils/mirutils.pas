@@ -1197,7 +1197,7 @@ begin
   sid.hDefaultIcon   :=LoadImageA(hInstance,resname,IMAGE_ICON,16,16,0);
   sid.pszName        :=ilname;
   sid.szDescription.a:=descr;
-  result:=CallService(MS_SKIN2_ADDICON,0,lparam(@sid));
+  result:=Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 end;
 

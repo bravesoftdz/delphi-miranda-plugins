@@ -597,7 +597,7 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(BTN_REPORT),IMAGE_ICON,16,16,0);
   sid.pszName        :=IcoBtnReport;
   sid.szDescription.a:='Create Report';
-  CallService(MS_SKIN2_ADDICON,0,tlparam(@sid));
+  Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
   sic:=HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
 
@@ -609,7 +609,7 @@ begin
   mi.szName.a     :='Create WATrack report';
   mi.pszService   :=MS_WAT_MAKEREPORT;
   mi.popupPosition:=MenuReportPos;
-  hMenuReport :=CallService(MS_CLIST_ADDMAINMENUITEM,0,lParam(@mi));
+  hMenuReport :=Menu_AddMainMenuItem(@mi);
   plStatusHook:=HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);
 end;
 

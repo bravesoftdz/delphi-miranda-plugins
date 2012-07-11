@@ -22,7 +22,7 @@ begin
   ttb.name      :='WATrack status';
 //  ttb.tooltipDn:='Disable Plugin';
 //  ttb.tooltipUp:='Enable Plugin';
-  ttbState:=CallService(MS_TTB_ADDBUTTON,twparam(@ttb),0);
+  ttbState:=TopToolbar_AddButton(@ttb);
   CallService(MS_TTB_SETBUTTONOPTIONS,(ttbState shl 16)+TTBO_TIPNAME,
       tlparam(Translate('Disable Plugin')));
   result:=0;
@@ -40,7 +40,7 @@ begin
   mi.szName.a     :='Disable Plugin';
   mi.pszService   :=MS_WAT_PLUGINSTATUS;
   mi.popupPosition:=MenuDisablePos;
-  hMenuDisable:=CallService(MS_CLIST_ADDMAINMENUITEM,0,lparam(@mi));
+  hMenuDisable:=Menu_AddMainMenuItem(@mi);
 end;
 
 procedure ChangeMenuIcons(f1:cardinal);
