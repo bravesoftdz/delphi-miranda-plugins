@@ -535,9 +535,12 @@ function DlgProcOpt2(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lres
       end;
       hlpService: begin
         buf:=GetDlgText(Dialog,IDC_EDIT_SERVICE,true);
-        ApiCard.Service:=buf;
-        mFreeMem(buf);
-        ApiCard.Show;
+//!!        if buf<>nil then
+        begin
+          ApiCard.Service:=buf;
+          mFreeMem(buf);
+          ApiCard.Show;
+        end;
       end;
       hlpProgram: begin
         MessageBoxW(0,

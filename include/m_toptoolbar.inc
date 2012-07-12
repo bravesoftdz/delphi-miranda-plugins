@@ -6,15 +6,14 @@ const
 
 //button flags
 const
-  TTBBF_DISABLED     = 1;
-  TTBBF_VISIBLE      = 2;
-  TTBBF_PUSHED       = 4;
-  TTBBF_SHOWTOOLTIP  = 8;
-  TTBBF_ISSEPARATOR  = 32;
-  TTBBF_ISLBUTTON    = 64;
-  TTBBF_ICONBYHANDLE = 128;
-  TTBBF_ISSBUTTON    = 256;
-  TTBBF_ASPUSHBUTTON = 512;
+  TTBBF_DISABLED     = $0001;
+  TTBBF_VISIBLE      = $0002;
+  TTBBF_PUSHED       = $0004;
+  TTBBF_SHOWTOOLTIP  = $0008;
+  TTBBF_ISSEPARATOR  = $0020;
+  TTBBF_ISLBUTTON    = $0040;
+  TTBBF_ISSBUTTON    = $0100;
+  TTBBF_ASPUSHBUTTON = $0200;
 
 type
   PTTBButton = ^TTBButton;
@@ -159,16 +158,16 @@ type
     nButtonWidth :int;
     nButtonHeight:int;
     nButtonSpace :int;
-    nLastHeight  :int;  // fix against recursion in WM_SIZE
-    nLineCount   :int;
+    nLastHeight  :int;         // fix against recursion in WM_SIZE
+    bOrderChanged:boolean;     // set by buttons' arrange procedure if the buttons' order was changed
     bFlatButtons,
     bAutoSize,
     bSingleLine  :boolean;
 
     pButtonList  :PSortedList;
 
-    lResult      :LRESULT;           // custom window proc result
-    fnWindowProc :TWNDPROC;          // custom window proc
+    lResult      :LRESULT;     // custom window proc result
+    fnWindowProc :TWNDPROC;    // custom window proc
   end;
 
 type
