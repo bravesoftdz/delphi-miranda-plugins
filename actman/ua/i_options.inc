@@ -208,6 +208,7 @@ begin
     else
       DeleteCoreHotkey(ActionItem);
   end;
+{!! These 2 types moved to events
 
   if NamesArray[uaTTB].enable then
   begin
@@ -223,7 +224,7 @@ begin
     else
       DeleteTabBBButton(ActionItem);
   end;
-
+}
   luse:=false;
   for lmenu:=main_menu to HIGH(tMenuType) do
   begin
