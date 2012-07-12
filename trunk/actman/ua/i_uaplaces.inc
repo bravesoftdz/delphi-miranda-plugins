@@ -637,6 +637,8 @@ begin
     mtButton.pszTooltipDn  :=pc2;
 
     ActionItem.hTTBButton:=TopToolbar_AddButton(@mtButton);
+    if ActionItem.hTTBButton=THANDLE(-1) then
+      ActionItem.hTTBButton:=0;
     mFreeMem(pc);
   end;
 end;
@@ -726,8 +728,8 @@ begin
     else
       tabb.szTooltip.w:=ActionItem.szActDescr;
 
-    CallService(MS_BB_ADDBUTTON,0,LPARAM(@tabb));
-    ActionItem.flags:=ActionItem.flags or UAF_TBREGGED;
+    if CallService(MS_BB_ADDBUTTON,0,LPARAM(@tabb))=0 then
+      ActionItem.flags:=ActionItem.flags or UAF_TBREGGED;
   end;
 end;
 

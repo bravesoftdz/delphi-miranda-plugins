@@ -55,6 +55,7 @@ var
 
 var
   iohook:THANDLE;
+  hontabloaded,
   honttbloaded,
   ontabbtnpressed,
   onactchanged:THANDLE;
@@ -72,7 +73,8 @@ begin
 
   CreateUActionList;
 
-  honttbloaded    :=HookEvent(ME_TTB_MODULELOADED ,@OnTTBLoaded);
+  honttbloaded   :=HookEvent(ME_TTB_MODULELOADED ,@OnTTBLoaded);
+  hontabloaded   :=HookEvent(ME_MSG_TOOLBARLOADED,@OnTabBBLoaded);
   ontabbtnpressed:=HookEvent(ME_MSG_BUTTONPRESSED,@OnTabButtonPressed);
   onactchanged   :=HookEvent(ME_ACT_CHANGED      ,@ActListChange);
 
@@ -92,6 +94,7 @@ begin
   UnhookEvent(hPreBuildTMenu);
 
   UnhookEvent(honttbloaded);
+  UnhookEvent(hontabloaded);
   UnhookEvent(ontabbtnpressed);
   UnhookEvent(onactchanged);
   UnhookEvent(iohook);
