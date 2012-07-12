@@ -230,7 +230,7 @@ begin
     WM_UPDATEHELP: begin
       with tmApiCard(lParam) do
       begin
-        if (storage<>nil) and (lParam<>0) then
+        if (storage<>nil) and (lParam<>0) and (current<>nil) then
         begin
           GetMem(buf,BufSize);
           GetMem(tmp,BufSize*SizeOf(WideChar));
@@ -304,7 +304,10 @@ end;
 
 procedure tmApiCard.SetCurrentService(item:pAnsiChar);
 begin
-  current:=SearchSection(storage,item,namespace);
+  if (item=nil) or (item^=#0) then
+    current:=nil
+  else
+    current:=SearchSection(storage,item,namespace);
 end;
 
 procedure tmApiCard.Update(item:pAnsiChar=nil);

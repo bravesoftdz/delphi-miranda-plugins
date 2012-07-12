@@ -415,7 +415,10 @@ end;
 
 function GetSectionName(section:pointer):pAnsiChar;
 begin
-  result:=pSection(section).name;
+  if section=nil then
+    result:=nil
+  else
+    result:=pSection(section).name;
 end;
 
 function SearchParameter(section:pointer;param:pAnsiChar):pointer;

@@ -618,9 +618,9 @@ begin
     WideToAnsi(ActionItem.szActDescr,pc);
 
     if (ActionItem.flags and UAF_2STATE)<>0 then
-      mtButton.dwFlags:=TTBBF_ICONBYHANDLE or TTBBF_VISIBLE or TTBBF_SHOWTOOLTIP{ or TTBBF_ASPUSHBUTTON}
+      mtButton.dwFlags:=TTBBF_VISIBLE or TTBBF_SHOWTOOLTIP{ or TTBBF_ASPUSHBUTTON}
     else
-      mtButton.dwFlags:=TTBBF_ICONBYHANDLE or TTBBF_VISIBLE or TTBBF_SHOWTOOLTIP;
+      mtButton.dwFlags:=TTBBF_VISIBLE or TTBBF_SHOWTOOLTIP;
 
     if ActionItem.szTTBTooltip =nil then
       pc1:=pc
