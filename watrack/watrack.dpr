@@ -37,16 +37,6 @@ uses
 const
   MenuDisablePos = 500050000;
 
-// Updater compatibility data
-const
-  VersionURL        = 'http://addons.miranda-im.org/details.php?action=viewfile&id=2345';
-  VersionPrefix     = '<span class="fileNameHeader">WATrack ';
-  UpdateURL         = 'http://addons.miranda-im.org/feed.php?dlfile=2345';
-  BetaVersionURL    = 'http://awkward.miranda.im/index.htm';
-  BetaVersionPrefix = 'WATrack beta version ';
-  BetaUpdateURL     = 'http://awkward.miranda.im/watrack.zip';
-  BetaChangelogURL  = nil; //'http://awkward.mirandaim.ru/watrack.txt';
-
 function MirandaPluginInfoEx(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
 begin
   result:=@PluginInfo;
@@ -56,7 +46,7 @@ begin
   PluginInfo.description:='Paste played music info into message window or status text';
   PluginInfo.author     :='Awkward';
   PluginInfo.authorEmail:='panda75@bk.ru; awk1975@ya.ru';
-  PluginInfo.copyright  :='(c) 2005-2011 Awkward';
+  PluginInfo.copyright  :='(c) 2005-2012 Awkward';
   PluginInfo.homepage   :='http://code.google.com/p/delphi-miranda-plugins/';
   PluginInfo.flags      :=UNICODE_AWARE;
   PluginInfo.uuid       :=MIID_WATRACK;
@@ -496,32 +486,9 @@ end;
 
 function OnModulesLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
-  buf:array [0..511] of AnsiChar;
-  upd:TUpdate;
   p:PAnsiChar;
 begin
-   UnhookEvent(onloadhook);
-
-  if ServiceExists(MS_UPDATE_REGISTER)<>0 then
-  begin
-    with upd do
-    begin
-      cbSize              :=SizeOf(upd);
-      szComponentName     :=PluginInfo.ShortName;
-      szVersionURL        :=VersionURL;
-      pbVersionPrefix     :=VersionPrefix;
-      cpbVersionPrefix    :=length(VersionPrefix);
-      szUpdateURL         :=UpdateURL;
-      szBetaVersionURL    :=BetaVersionURL;
-      pbBetaVersionPrefix :=BetaVersionPrefix;
-      cpbBetaVersionPrefix:=length(pbBetaVersionPrefix);
-      szBetaUpdateURL     :=BetaUpdateURL;
-      pbVersion           :=CreateVersionStringPlugin(@pluginInfo,buf);
-      cpbVersion          :=StrLen(pbVersion);
-      szBetaChangelogURL  :=BetaChangelogURL;
-    end;
-    CallService(MS_UPDATE_REGISTER,0,tlparam(@upd));
-  end;
+  UnhookEvent(onloadhook);
 
   CallService(MS_DBEDIT_REGISTERSINGLEMODULE,twparam(PluginShort),0);
 

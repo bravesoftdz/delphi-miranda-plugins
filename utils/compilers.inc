@@ -767,3 +767,12 @@
 
 
 {$endif}
+
+{$IFDEF FPC}
+  {$DEFINE AllowInline}
+{$ELSE}
+  {$IFDEF NativeCode} // Delphi.NET+
+    {$DEFINE AllowInline}
+  {$ENDIF}
+{$ENDIF}
+{$UNDEF AllowInline}

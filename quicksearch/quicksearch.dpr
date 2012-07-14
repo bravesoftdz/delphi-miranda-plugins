@@ -31,15 +31,6 @@ var
 
 const
   icohook:THANDLE = 0;
-// Updater compatibility data
-const
-  VersionURL        = 'http://addons.miranda-im.org/details.php?action=viewfile&id=3285';
-  VersionPrefix     = '<span class="fileNameHeader">QuickSearch Mod ';
-  UpdateURL         = 'http://addons.miranda-im.org/feed.php?dlfile=3285';
-  BetaVersionURL    = 'http://awkward.miranda.im/index.htm';
-  BetaVersionPrefix = '>QuickSearch plugin ';
-  BetaUpdateURL     = 'http://awkward.miranda.im/quicksearch.zip';
-  BetaChangelogURL  = nil;
 
 function MirandaPluginInfoEx(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
 begin
@@ -54,7 +45,7 @@ begin
     'users version of miranda,group or city.';
   PluginInfo.author     :='Awkward, based on Bethoven sources';
   PluginInfo.authorEmail:='panda75@bk.ru; awk1975@ya.ru';
-  PluginInfo.copyright  :='(c) 2004,2005 Bethoven; 2006-2011 Awkward';
+  PluginInfo.copyright  :='(c) 2004,2005 Bethoven; 2006-2012 Awkward';
   PluginInfo.homepage   :='http://code.google.com/p/delphi-miranda-plugins/';
   PluginInfo.flags      :=UNICODE_AWARE;
   PluginInfo.uuid       :=MIID_QUICKSEARCH;
@@ -191,34 +182,10 @@ begin
 end;
 
 function OnModulesLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
-var
-  upd:TUpdate;
-  buf:array [0..63] of AnsiChar;
 begin
   UnhookEvent(onloadhook);
 
   CallService(MS_DBEDIT_REGISTERSINGLEMODULE,twparam(qs_module),0);
-
-  if ServiceExists(MS_UPDATE_REGISTER)<>0 then
-  begin
-    with upd do
-    begin
-      cbSize              :=SizeOf(upd);
-      szComponentName     :=PluginInfo.ShortName;
-      szVersionURL        :=VersionURL;
-      pbVersionPrefix     :=VersionPrefix;
-      cpbVersionPrefix    :=length(VersionPrefix);
-      szUpdateURL         :=UpdateURL;
-      szBetaVersionURL    :=BetaVersionURL;
-      pbBetaVersionPrefix :=BetaVersionPrefix;
-      cpbBetaVersionPrefix:=length(pbBetaVersionPrefix);
-      szBetaUpdateURL     :=BetaUpdateURL;
-      pbVersion           :=CreateVersionStringPlugin(@pluginInfo,buf);
-      cpbVersion          :=StrLen(pbVersion);
-      szBetaChangelogURL  :=BetaChangelogURL;
-    end;
-    CallService(MS_UPDATE_REGISTER,0,tlparam(@upd));
-  end;
 
   RegisterIcons;
   RegisterColors;

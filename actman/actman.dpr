@@ -67,15 +67,6 @@ var
 {$include m_actions.inc}
 {$include m_actman.inc}
 
-// Updater compatibility data
-const
-  VersionURL        = nil;//'';//'http://addons.miranda-im.org/details.php?action=viewfile&id=';
-  VersionPrefix     = nil;//'';//'<span class="fileNameHeader"> ';
-  UpdateURL         = nil;//'';//'http://addons.miranda-im.org/feed.php?dlfile=';
-  BetaVersionURL    = 'http://awkward.miranda.im/index.htm';
-  BetaVersionPrefix = 'ActMan plugin ';
-  BetaUpdateURL     = 'http://awkward.miranda.im/actman.zip';
-  BetaChangelogURL  = nil; //'http://awkward.miranda.im/actman.txt';
 
 function MirandaPluginInfoEx(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
 begin
@@ -138,8 +129,6 @@ end;
 
 function OnModulesLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
-  upd:TUpdate;
-  buf:array [0..63] of AnsiChar;
   ptr:pActionLink;
 begin
   Result:=0;
@@ -151,28 +140,6 @@ begin
   opthook      :=HookEvent(ME_OPT_INITIALISE ,@OnOptInitialise);
   hHookShutdown:=HookEvent(ME_SYSTEM_SHUTDOWN{ME_SYSTEM_OKTOEXIT},@PreShutdown);
   NotifyEventHooks(hHookChanged,twparam(ACTM_LOADED),0);
-
-  //----- UPDATER support -----
-  if ServiceExists(MS_UPDATE_REGISTER)<>0 then
-  begin
-    with upd do
-    begin
-      cbSize              :=SizeOf(upd);
-      szComponentName     :=PluginInfo.ShortName;
-      szVersionURL        :=VersionURL;
-      pbVersionPrefix     :=VersionPrefix;
-      cpbVersionPrefix    :=StrLen(VersionPrefix);//length(VersionPrefix);
-      szUpdateURL         :=UpdateURL;
-      szBetaVersionURL    :=BetaVersionURL;
-      pbBetaVersionPrefix :=BetaVersionPrefix;
-      cpbBetaVersionPrefix:=StrLen(pbBetaVersionPrefix);//length(pbBetaVersionPrefix);
-      szBetaUpdateURL     :=BetaUpdateURL;
-      pbVersion           :=CreateVersionStringPlugin(@pluginInfo,buf);
-      cpbVersion          :=StrLen(pbVersion);
-      szBetaChangelogURL  :=BetaChangelogURL;
-    end;
-    CallService(MS_UPDATE_REGISTER,0,tlparam(@upd));
-  end;
 
   //----- DBEDITOR support -----
 //  CallService('DBEditorpp/RegisterSingleModule',dword(PluginShort),0);

@@ -24,15 +24,6 @@ const
 const
   PluginName:PAnsiChar = cPluginName;
 
-const
-  VersionURL        = nil;//'http://addons.miranda-im.org/details.php?action=viewfile&id=3285';
-  VersionPrefix     = nil;//'<span class="fileNameHeader">QuickSearch Mod ';
-  UpdateURL         = nil;//'http://addons.miranda-im.org/feed.php?dlfile=3285';
-  BetaVersionURL    = 'http://awkward.miranda.im/index.htm';
-  BetaVersionPrefix = '>My mRadio mod ';
-  BetaUpdateURL     = 'http://awkward.miranda.im/mradio.zip';
-  BetaChangelogURL  = nil;
-
 function MakeMessage:pWideChar;
 var
   p,artist,title:pWideChar;
@@ -130,32 +121,10 @@ var
   nlu:TNETLIBUSER;
   szTemp:array [0..255] of AnsiChar;
   i:integer;
-  upd:TUpdate;
 begin
   UnhookEvent(onloadhook);
 
   DBWriteDWord(0,PluginName,optVersion,PluginInfo.version);
-
-  if ServiceExists(MS_UPDATE_REGISTER)<>0 then
-  begin
-    with upd do
-    begin
-      cbSize              :=SizeOf(upd);
-      szComponentName     :=PluginInfo.ShortName;
-      szVersionURL        :=VersionURL;
-      pbVersionPrefix     :=VersionPrefix;
-      cpbVersionPrefix    :=0;//length(VersionPrefix);
-      szUpdateURL         :=UpdateURL;
-      szBetaVersionURL    :=BetaVersionURL;
-      pbBetaVersionPrefix :=BetaVersionPrefix;
-      cpbBetaVersionPrefix:=length(pbBetaVersionPrefix);
-      szBetaUpdateURL     :=BetaUpdateURL;
-      pbVersion           :=CreateVersionStringPlugin(@pluginInfo,szTemp);
-      cpbVersion          :=StrLen(pbVersion);
-      szBetaChangelogURL  :=BetaChangelogURL;
-    end;
-    CallService(MS_UPDATE_REGISTER,0,tlparam(@upd));
-  end;
 
   szTemp[0]:='E';
   szTemp[1]:='Q';
