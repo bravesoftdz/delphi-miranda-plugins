@@ -768,11 +768,13 @@
 
 {$endif}
 
+{$UNDEF AllowInline}
 {$IFDEF FPC}
   {$DEFINE AllowInline}
 {$ELSE}
-  {$IFDEF NativeCode} // Delphi.NET+
-    {$DEFINE AllowInline}
+  {$IFDEF ConditionalExpressions}
+    {$IF System.ComiplerVersion >= 22.0}
+      {$DEFINE AllowInline}
+    {$IFEND}
   {$ENDIF}
 {$ENDIF}
-{$UNDEF AllowInline}
