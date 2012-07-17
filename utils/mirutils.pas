@@ -571,28 +571,28 @@ CallService(MS_CLIST_CONTACTDOUBLECLICKED,hContact,0);
 }
   if (hContact<>0) and (CallService(MS_DB_CONTACT_IS,hContact,0)<>0) then
   begin
-    StrCopy(pc,PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,hContact,0)));
-    if DblClk or (DBReadByte(hContact,pc,'ChatRoom',0)=1) then // chat room
-    begin
-      if not anystatus then
+    if StrCopy(pc,PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,hContact,0)))<>nil then
+      if DblClk or (DBReadByte(hContact,pc,'ChatRoom',0)=1) then // chat room
       begin
-        StrCat(pc,PS_GETSTATUS);
-        anystatus:=(CallService(pc,0,0)<>ID_STATUS_OFFLINE);
-      end;
-      if anystatus then
-      begin
-        CallService(MS_CLIST_CONTACTDOUBLECLICKED,hContact,0); //??
-      // if chat exist, open chat
-      // else create new session
-      end;
-    end
-    else
-    begin
-      if ServiceExists(MS_MSG_CONVERS)<>0 then // Convers compat.
-        CallService(MS_MSG_CONVERS,hContact,0)
+        if not anystatus then
+        begin
+          StrCat(pc,PS_GETSTATUS);
+          anystatus:=(CallService(pc,0,0)<>ID_STATUS_OFFLINE);
+        end;
+        if anystatus then
+        begin
+          CallService(MS_CLIST_CONTACTDOUBLECLICKED,hContact,0); //??
+        // if chat exist, open chat
+        // else create new session
+        end;
+      end
       else
-        CallService(MS_MSG_SENDMESSAGE,hContact,0)
-    end;
+      begin
+        if ServiceExists(MS_MSG_CONVERS)<>0 then // Convers compat.
+          CallService(MS_MSG_CONVERS,hContact,0)
+        else
+          CallService(MS_MSG_SENDMESSAGE,hContact,0)
+      end;
   end;
 end;
 

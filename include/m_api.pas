@@ -25,19 +25,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
   {$IFDEF WIN64}{$A8}{$ENDIF}
 {$ENDIF}
 {$UNDEF AllowInline}
-{$IFDEF FPC}
-  {$DEFINE AllowInline}
-{$ELSE}
-  {$IFDEF ConditionalExpressions}
-    {$IF System.ComiplerVersion >= 22.0}
-      {$DEFINE AllowInline}
-    {$IFEND}
-  {$ENDIF}
-{$ENDIF}
 
 unit m_api;
 
 interface
+
+{$IFDEF FPC}
+  {$DEFINE AllowInline}
+{$ELSE}
+  {$IFDEF ConditionalExpressions}
+    // CompilerVersion defined in SYSTEM module, need to use not earlier
+    {$IF CompilerVersion >= 22}
+      {$DEFINE AllowInline}
+    {$IFEND}
+  {$ENDIF}
+{$ENDIF}
 
 uses
   Windows;//, FreeImage;
