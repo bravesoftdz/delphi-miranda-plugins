@@ -22,5 +22,6 @@ var
   ssmi,sic,
   plStatusHook:THANDLE;
   PopupPresent:Bool;
+  onttbhook,
   opthook:THANDLE;
   ttbInfo:THANDLE;

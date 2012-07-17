@@ -130,6 +130,7 @@ procedure loaddefaultcolumns;
 
 procedure AddRemoveMenuItemToMainMenu;
 procedure addtotoolbar;
+procedure removetoolbar;
 
 var
   qsopt:tqsopt;
@@ -202,9 +203,7 @@ begin
   CallService(MS_HOTKEY_UNREGISTER,0,lparam(HKN_GLOBAL));
 end;
 
-procedure addtotoolbar;
-var
-  ttbopt:TTBButton;
+procedure removetoolbar;
 begin
   if hTTBButton<>0 then
   begin
@@ -214,6 +213,14 @@ begin
       hTTBButton:=0;
     end;
   end;
+end;
+
+procedure addtotoolbar;
+var
+  ttbopt:TTBButton;
+begin
+  removetoolbar;
+  
   if qsopt.showintoptoolbar then
   begin
     if ServiceExists(MS_TTB_ADDBUTTON)>0 then
@@ -226,6 +233,8 @@ begin
       ttbopt.dwFlags   :=TTBBF_VISIBLE;
       ttbopt.name      :=qs_module;
       hTTBButton:=TopToolbar_AddButton(@ttbopt);
+      if hTTBButton=THANDLE(-1) then
+        hTTBButton:=0;
     end;
   end;
 end;

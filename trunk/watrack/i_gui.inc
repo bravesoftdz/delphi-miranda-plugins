@@ -23,8 +23,11 @@ begin
 //  ttb.tooltipDn:='Disable Plugin';
 //  ttb.tooltipUp:='Enable Plugin';
   ttbState:=TopToolbar_AddButton(@ttb);
-  CallService(MS_TTB_SETBUTTONOPTIONS,(ttbState shl 16)+TTBO_TIPNAME,
-      tlparam(Translate('Disable Plugin')));
+  if ttbState=THANDLE(-1) then
+    ttbState:=0
+  else
+    CallService(MS_TTB_SETBUTTONOPTIONS,(ttbState shl 16)+TTBO_TIPNAME,
+        tlparam(Translate('Disable Plugin')));
   result:=0;
 end;
 

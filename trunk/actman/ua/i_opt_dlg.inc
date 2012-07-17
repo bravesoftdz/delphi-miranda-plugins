@@ -520,7 +520,7 @@ begin
           FillChar(arMenuRec[0],Length(arMenuRec)*SizeOf(tuaMenuRecA),0);
           for i:=0 to HIGH(UActionList) do
           begin
-            SetAllActionUsers(UActionList[i]);
+            SetAllActionUsers(UActionList[i],false);
           end;
         end;
 

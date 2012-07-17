@@ -504,7 +504,9 @@ begin
   CreateMenus;
 
   if ServiceExists(MS_TTB_ADDBUTTON)<>0 then
-    onloadhook:=HookEvent(ME_TTB_MODULELOADED,@OnTTBLoaded);
+    onloadhook:=HookEvent(ME_TTB_MODULELOADED,@OnTTBLoaded)
+  else
+    ttbState:=0;
 
   ProcessFormatLink;
   ProcessPlayerLink;
@@ -579,6 +581,13 @@ begin
 
   if hwndTooltip<>0 then
     DestroyWindow(hwndTooltip);
+
+  if ttbState<>0 then
+  begin
+    if ServiceExists(MS_TTB_REMOVEBUTTON)>0 then
+      CallService(MS_TTB_REMOVEBUTTON,TWPARAM(ttbState),0);
+    ttbState:=0;
+  end;
 
   StopTimer;
   ptr:=ModuleLink;

@@ -50,7 +50,7 @@ begin
       LoadUA(i); // just here coz at list changes for new we don't have settings
       if (UActionList[i].flags and UAF_2STATE)<>0 then
         AddIcolibIconP(UActionList[i]);
-      SetAllActionUsers(UActionList[i]); // will need to repeat at changes :(
+      SetAllActionUsers(UActionList[i],true);
       inc(ptr);
     end;
     CallService(MS_ACT_FREELIST,0,LPARAM(ptr1));
@@ -149,7 +149,7 @@ begin
     FillChar(arMenuRec[0],Length(arMenuRec)*SizeOf(tuaMenuRecA),0);
     for i:=0 to HIGH(UActionList) do
     begin
-      SetAllActionUsers(UActionList[i]);
+      SetAllActionUsers(UActionList[i],false);
     end;
   end;
 end;

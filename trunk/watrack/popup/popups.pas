@@ -401,12 +401,31 @@ begin
   result:=0;
 end;
 
+function OnTTBLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+var
+  ttb:TTBButton;
+begin
+  result:=0;
+  if onttbhook<>0 then
+    UnhookEvent(onttbhook);
+  // get info button
+  FillChar(ttb,SizeOf(ttb),0);
+  ttb.cbSize    :=SizeOf(ttb);
+  ttb.dwFlags   :=TTBBF_VISIBLE{ or TTBBF_SHOWTOOLTIP};
+  ttb.hIconUp   :=CallService(MS_SKIN2_GETICON,0,tlparam(IcoBtnInfo));
+  ttb.hIconDn   :=ttb.hIconUp;
+  ttb.pszService:=MS_WAT_SHOWMUSICINFO;
+  ttb.name      :='Music Info';
+  ttbInfo:=TopToolbar_AddButton(@ttb);
+  if ttbInfo=THANDLE(-1) then
+    ttbInfo:=0;
+end;
+
 // ------------ base interface functions -------------
 
 function InitProc(aGetStatus:boolean=false):integer;
 var
   mi:TCListMenuItem;
-  ttb:TTBButton;
   sid:TSKINICONDESC;
 begin
   if aGetStatus then
@@ -471,16 +490,15 @@ begin
 
   plStatusHook:=HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);
 
-  // get info button
-  FillChar(ttb,SizeOf(ttb),0);
-  ttb.cbSize    :=SizeOf(ttb);
-  ttb.dwFlags   :=TTBBF_VISIBLE{ or TTBBF_SHOWTOOLTIP};
-  ttb.hIconUp   :=CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnInfo));
-  ttb.hIconDn   :=ttb.hIconUp;
-  ttb.pszService:=MS_WAT_SHOWMUSICINFO;
-  ttb.name      :='Music Info';
-  ttbInfo:=TopToolbar_AddButton(@ttb);
-
+  if ServiceExists(MS_TTB_ADDBUTTON)>0 then
+  begin
+    onttbhook:=0;
+    OnTTBLoaded(0,0);
+    if ttbInfo=0 then
+      onttbhook:=HookEvent(ME_TTB_MODULELOADED,@OnTTBLoaded);
+  end
+  else
+    ttbInfo:=0;
 end;
 
 procedure DeInitProc(aSetDisable:boolean);
@@ -494,6 +512,13 @@ begin
   UnhookEvent(sic);
 
   freepopup;
+
+  if ttbInfo<>0 then
+  begin
+    if ServiceExists(MS_TTB_REMOVEBUTTON)>0 then
+      CallService(MS_TTB_REMOVEBUTTON,WPARAM(ttbInfo),0);
+    ttbInfo:=0;
+  end;
 
   if PopupPresent then
   begin
