@@ -194,7 +194,7 @@ begin
 }
 end;
 *)
-procedure SetAllActionUsers(var ActionItem:tMyActionItem);
+procedure SetAllActionUsers(var ActionItem:tMyActionItem; initial:boolean);
 var
   setting:array [0..63] of AnsiChar;
   p:pAnsiChar;
@@ -208,23 +208,24 @@ begin
     else
       DeleteCoreHotkey(ActionItem);
   end;
-{!! These 2 types moved to events
-
-  if NamesArray[uaTTB].enable then
+  if not initial then
   begin
-    DeleteTTBButton(ActionItem); // no modify command there, just delete, then insert back
-    if (ActionItem.flags and UAF_REGTTBB)<>0 then
-      AddTTBButton(ActionItem);
+    if NamesArray[uaTTB].enable then
+    begin
+      DeleteTTBButton(ActionItem); // no modify command there, just delete, then insert back
+      if (ActionItem.flags and UAF_REGTTBB)<>0 then
+        AddTTBButton(ActionItem);
+    end;
+
+    if NamesArray[uaTAB].enable then
+    begin
+      if (ActionItem.flags and UAF_REGTABB)<>0 then
+        AddTabBBButton(ActionItem)
+      else
+        DeleteTabBBButton(ActionItem);
+    end;
   end;
 
-  if NamesArray[uaTAB].enable then
-  begin
-    if (ActionItem.flags and UAF_REGTABB)<>0 then
-      AddTabBBButton(ActionItem)
-    else
-      DeleteTabBBButton(ActionItem);
-  end;
-}
   luse:=false;
   for lmenu:=main_menu to HIGH(tMenuType) do
   begin

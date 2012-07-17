@@ -217,6 +217,7 @@ end;
 function Unload:Integer;cdecl;
 begin
   result:=0;
+  removetoolbar; //??
   DestroyFrame;
 
   DestroyServiceFunction(servshow);
