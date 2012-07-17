@@ -1009,11 +1009,10 @@ end;
 function mGetMem(var dst;size:integer):pointer;
 begin
 {$IFDEF Use_MMI}
-  if @mmi.malloc<>nil then
-    pointer(dst):=mmi.malloc(size)
-  else
+  pointer(dst):=mir_alloc(size)
+{$ELSE}
+  GetMem(pointer(dst),size);
 {$ENDIF}
-    GetMem(pointer(dst),size);
   result:=pointer(dst);
 end;
 
@@ -1022,11 +1021,10 @@ begin
   if pointer(ptr)<>nil then
   begin
 {$IFDEF UseMMI}
-    if @mmi.free<>nil then
-      mmi.free(pointer(ptr))
-    else
+    mir_free(pointer(ptr))
+{$ELSE}
+    FreeMem(pointer(ptr));
 {$ENDIF}
-      FreeMem(pointer(ptr));
     Pointer(ptr):=nil;
   end;
 end;
@@ -1034,11 +1032,10 @@ end;
 function mReallocMem(var dst; size:integer):pointer;
 begin
 {$IFDEF Use_MMI}
-  if @mmi.malloc<>nil then
-    pointer(dst):=mmi.realloc(pointer(dst),size)
-  else
+  pointer(dst):=mir_realloc(pointer(dst),size)
+{$ELSE}
+  ReallocMem(pointer(dst),size);
 {$ENDIF}
-    ReallocMem(pointer(dst),size);
   result:=pointer(dst);
 end;
 

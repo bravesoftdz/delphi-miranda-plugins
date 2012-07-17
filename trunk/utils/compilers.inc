@@ -772,9 +772,7 @@
 {$IFDEF FPC}
   {$DEFINE AllowInline}
 {$ELSE}
-  {$IFDEF ConditionalExpressions}
-    {$IF System.ComiplerVersion >= 22.0}
-      {$DEFINE AllowInline}
-    {$IFEND}
+  {$IFDEF COMPILER_15_UP}
+    {$DEFINE AllowInline}
   {$ENDIF}
 {$ENDIF}
