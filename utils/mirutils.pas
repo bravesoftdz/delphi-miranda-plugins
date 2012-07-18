@@ -76,7 +76,7 @@ function LoadImageURL(url:pAnsiChar;size:integer=0):HBITMAP;
 
 implementation
 
-uses Messages,dbsettings,common,io,freeimage,syswin{$IFDEF KOL_MCK},kol{$ENDIF};
+uses Messages,dbsettings,common,io,freeimage,syswin;
 
 const
   clGroup = 'Group';
@@ -872,10 +872,14 @@ begin
   result:=1;
 end;
 
-{$IFDEF KOL_MCK}
+function MyStrSort(para1:pointer; para2:pointer):int; cdecl;
+begin
+  result:=StrCmpW(pWideChar(para1),pWideChar(para2));
+end;
+
 function MakeGroupMenu(idxfrom:integer=100):HMENU;
 var
-  sl:PWStrList;
+  sl:TSortedList;
   i:integer;
   b:array [0..15] of AnsiChar;
   p:pWideChar;
@@ -884,45 +888,24 @@ begin
   i:=0;
   AppendMenuW(result,MF_STRING,idxfrom,TranslateW('<Root Group>'));
   AppendMenuW(result,MF_SEPARATOR,0,nil);
-  sl:=NewWStrList;
+  FillChar(sl,SizeOf(sl),0);
+  sl.increment:=16;
+  sl.sortFunc:=@MyStrSort;
   repeat
     p:=DBReadUnicode(0,'CListGroups',IntToStr(b,i),nil);
     if p=nil then break;
-    sl.Add(p+1);
-    mFreeMem(p);
+    List_InsertPtr(@sl,p+1);
     inc(i);
   until false;
-  sl.Sort(false);
   inc(idxfrom);
-  for i:=0 to sl.Count-1 do
+  for i:=0 to sl.realCount-1 do
   begin
     AppendMenuW(result,MF_STRING,idxfrom+i,pWideChar(sl.Items[i]));
-  end;
-  sl.Clear;
-  sl.Free;
-end;
-{$ELSE}
-function MakeGroupMenu(idxfrom:integer=100):HMENU;
-var
-  i:integer;
-  b:array [0..15] of AnsiChar;
-  p:pWideChar;
-begin
-  result:=CreatePopupMenu;
-  i:=0;
-  AppendMenuW(result,MF_STRING,idxfrom,TranslateW('<Root Group>'));
-  AppendMenuW(result,MF_SEPARATOR,0,nil);
-  inc(idxfrom);
-  repeat
-    p:=DBReadUnicode(0,'CListGroups',IntToStr(b,i),nil);
-    if p=nil then break;
-    AppendMenuW(result,MF_STRING,idxfrom,p+1);
+    p:=pWideChar(sl.Items[i])-1;
     mFreeMem(p);
-    inc(i);
-    inc(idxfrom);
-  until false;
+  end;
+  List_Destroy(@sl);
 end;
-{$ENDIF}
 
 function GetNewGroupName(parent:HWND):pWideChar;
 var
