@@ -437,28 +437,28 @@ begin
               if GetWindowTextLength(GetDlgItem(Dialog,IDC_STATIONURL))>0 then
               begin
                 FillChar(psr,SizeOf(psr),0);
-                GetDlgItemTextA(Dialog,IDC_STATIONURL,PAnsiChar(@buf),SizeOf(buf));
                 with psr do
                 begin
-                  StrDup(firstname.a,PAnsiChar(@buf));
-                  PAnsiChar(@buf)^:=#0;
-
-                  GetDlgItemTextA(Dialog,IDC_STATION,PAnsiChar(@buf),SizeOf(buf));
-                  if PAnsiChar(@buf)^<>#0 then
-                    StrDup(nick.a,@buf)
-                  else
-                    StrDup(nick.a,firstname.a);
-                  PAnsiChar(@buf)^:=#0;
-
-                  GetDlgItemTextA(Dialog,IDC_GENRE,PAnsiChar(@buf),SizeOf(buf));
-                  StrDup(lastname.a,@buf);
-                  PAnsiChar(@buf)^:=#0;
-
-                  GetDlgItemTextA(Dialog,IDC_BITRATE,PAnsiChar(@buf),SizeOf(buf));
-                  StrDup(email.a,@buf);
-
                   if loword(wParam)=IDC_ADD_LIST then
                   begin
+                    GetDlgItemTextW(Dialog,IDC_STATIONURL,@buf,MAX_PATH);
+                    StrDupW(firstname.w,@buf);
+                    buf[0]:=#0;
+
+                    GetDlgItemTextW(Dialog,IDC_STATION,@buf,MAX_PATH);
+                    if buf[0]<>#0 then
+                      StrDupW(nick.w,@buf)
+                    else
+                      StrDupW(nick.w,firstname.w);
+                    buf[0]:=#0;
+
+                    GetDlgItemTextW(Dialog,IDC_GENRE,@buf,MAX_PATH);
+                    StrDupW(lastname.w,@buf);
+                    buf[0]:=#0;
+
+                    GetDlgItemTextW(Dialog,IDC_BITRATE,@buf,MAX_PATH);
+                    StrDupW(email.w,@buf);
+
                     i:=Service_AddToList(0,tlparam(@psr));
 {
                     GetDlgItemTextW(Dialog,IDC_STATION,@buf,SizeOf(buf));
@@ -477,6 +477,24 @@ begin
                   end
                   else if loword(wParam)=IDC_ADD_INI then
                   begin
+                    GetDlgItemTextA(Dialog,IDC_STATIONURL,PAnsiChar(@buf),SizeOf(buf));
+                    StrDup(firstname.a,PAnsiChar(@buf));
+                    PAnsiChar(@buf)^:=#0;
+
+                    GetDlgItemTextA(Dialog,IDC_STATION,PAnsiChar(@buf),SizeOf(buf));
+                    if PAnsiChar(@buf)^<>#0 then
+                      StrDup(nick.a,@buf)
+                    else
+                      StrDup(nick.a,firstname.a);
+                    PAnsiChar(@buf)^:=#0;
+
+                    GetDlgItemTextA(Dialog,IDC_GENRE,PAnsiChar(@buf),SizeOf(buf));
+                    StrDup(lastname.a,@buf);
+                    PAnsiChar(@buf)^:=#0;
+
+                    GetDlgItemTextA(Dialog,IDC_BITRATE,PAnsiChar(@buf),SizeOf(buf));
+                    StrDup(email.a,@buf);
+
                     if WritePrivateProfileStringA(firstname.a,'URL',firstname.a,storage) then
                     begin
                       WritePrivateProfileStringA(firstname.a,'Name'    ,nick.a     ,storage);

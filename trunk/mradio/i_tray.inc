@@ -1,142 +1,228 @@
 {}
-{$IFDEF KOL_MCK}
-function MakeStationsMenu:HMENU;
 var
-  hContact:Cardinal;
-  sl:PWStrListEx;
-  p:pWideChar;
-  i:integer;
-  flag:integer;
-begin
-  result:=CreatePopupMenu;
-  if result<>0 then
-  begin
-    sl:=NewWStrListEx;
-    hContact:=CallService(MS_DB_CONTACT_FINDFIRST,0,0);
-    while hContact<>0 do
-    begin
-       if StrCmp(PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,hContact,0)),cPluginName)=0 then
-       begin
-         p:=DBReadUnicode(hContact,strCList,'MyHandle',nil);
-         if p<>nil then
-         begin
-           sl.AddObject(p,hContact);
-           mFreeMem(p);
-         end;
-       end;
-      hContact:=CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
-    end;
-
-    sl.Sort(false);
-    for i:=0 to sl.Count-1 do
-    begin
-      if (i=0) or ((i mod 20)<>0) then
-        flag:=MF_STRING
-      else
-        flag:=MF_STRING or MF_MENUBARBREAK;
-      AppendMenuW(result,flag,sl.Objects[i],pWideChar(sl.Items[i]));
-    end;
-    sl.Clear;
-    sl.Free;
-  end;
-end;
-{$ELSE}
-function MakeStationsMenu:HMENU;
-var
-  hContact:Cardinal;
-  p:pWideChar;
-  i:integer;
-  flag:integer;
-begin
-  result:=CreatePopupMenu;
-  if result<>0 then
-  begin
-    i:=0;
-    hContact:=CallService(MS_DB_CONTACT_FINDFIRST,0,0);
-    while hContact<>0 do
-    begin
-       if StrCmp(PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,hContact,0)),cPluginName)=0 then
-       begin
-         p:=DBReadUnicode(hContact,strCList,'MyHandle',nil);
-         if p<>nil then
-         begin
-           if (i=0) or ((i mod 20)<>0) then
-             flag:=MF_STRING
-           else
-             flag:=MF_STRING or MF_MENUBARBREAK;
-           AppendMenuW(result,flag,hContact,p);
-           mFreeMem(p);
-         end;
-       end;
-      hContact:=CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
-      inc(i);
-    end;
-  end;
-end;
-{$ENDIF}
-
-function CreateTrayMenu(wParam:WPARAM;lParam:LPARAM):int; cdecl;
+  trayradioparent:THANDLE;
+  trayparent:THANDLE;
+  traymute  :THANDLE;
+  trayplay  :THANDLE;
+  srvtrayplaypause:THANDLE;
+  srvtraystop:THANDLE;
 const
-  startid = 100;
+  trayStations:TSortedList = (items:nil; realCount:0; limit:0; increment:8);
+  
+type
+  pTrayRadioStation = ^tTrayRadioStation;
+  tTrayRadioStation = record
+    name    :pWideChar;
+    hContact:THANDLE;
+    service :THANDLE;
+    menuitem:THANDLE;
+    presents:int; // 0 - not used, 1 - ok, 2 - new
+  end;
+
+function MyStrSort(para1:pointer; para2:pointer):int; cdecl;
+begin
+  result:=StrCmpW(pTrayRadioStation(para1).name,pTrayRadioStation(para2).name);
+end;
+
+function ChooseStation(wParam:WPARAM;lParam,lParam1:LPARAM):int; cdecl;
+begin
+  result:=Service_RadioPlayStop(lParam1,0);
+end;
+
+procedure MakeStationsMenu;
 var
-  menu:HMENU;
-  flag,id:integer;
-  pt:TPOINT;
+  hContact:Cardinal;
+  p:pWideChar;
+  i,idx:integer;
+  tmp:pTrayRadioStation;
+  srch:tTrayRadioStation;
+  pc:pAnsiChar;
+  buf:array [0..63] of AnsiChar;
+  mi:TCListMenuItem;
+begin
+  TrayStations.sortFunc:=@MyStrSort;
+
+  // clear presents flag
+  if trayStations.realCount>0 then
+    for i:=0 to trayStations.realCount-1 do
+      pTrayRadioStation(trayStations.Items[i]).presents:=0;
+
+  // Fill list
+  FillChar(srch,SizeOf(srch),0);
+  hContact:=CallService(MS_DB_CONTACT_FINDFIRST,0,0);
+  while hContact<>0 do
+  begin
+     if StrCmp(PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,hContact,0)),cPluginName)=0 then
+     begin
+       p:=DBReadUnicode(hContact,strCList,'MyHandle',nil);
+       if p<>nil then
+       begin
+         srch.name:=p;
+         // search in list
+         if List_GetIndex(@trayStations,@srch,@idx)<>0 then
+           // found - set mark
+           pTrayRadioStation(trayStations.Items[idx]).presents:=1
+         else // add if not found
+         begin
+           mGetMem(tmp,SizeOf(tTrayRadioStation));
+           tmp.name    :=p;
+           tmp.presents:=2;
+           tmp.hContact:=hContact;
+           List_InsertPtr(@trayStations,tmp);
+         end;
+       end;
+     end;
+    hContact:=CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
+  end;
+
+  // delete obsolete elements
+  for i:=trayStations.realCount-1 downto 0 do
+  begin
+    tmp:=pTrayRadioStation(trayStations.Items[i]);
+    if tmp.presents=0 then
+    begin
+      mFreeMem(tmp.name);
+      DestroyServiceFunction(tmp.service);
+      CallService(MS_CLIST_REMOVETRAYMENUITEM,tmp.menuitem,0);
+      mFreeMem(tmp);
+      List_Remove(@trayStations,i);
+    end;
+  end;
+
+  // build menu from sorted list
+  FillChar(mi,SizeOf(mi),0);
+  mi.cbSize:=sizeof(mi);
+  mi.Flags :=CMIF_KEEPUNTRANSLATED or CMIF_UNICODE or CMIF_ROOTHANDLE;
+  mi.szPopupName:=TChar(trayparent);
+  pc:=StrCopyE(@buf,'mRadio/Choose');
+  for i:=0 to trayStations.realCount-1 do
+  begin
+    tmp:=pTrayRadioStation(trayStations.Items[i]);
+    if tmp.presents=2 then
+    begin
+      IntToStr(pc,tmp.hContact);
+      tmp.service:=CreateServiceFunctionParam(@buf,@ChooseStation,tmp.hContact);
+      mi.position  :=i;
+      mi.pszService:=@buf;
+      mi.szName.w  :=tmp.name;
+      tmp.menuitem:=Menu_AddTrayMenuItem(@mi);
+    end;
+  end;
+end;
+
+function TrayPlayPause(wParam:WPARAM;lParam:LPARAM):int_ptr; cdecl;
+begin
+  result:=CallService(MS_RADIO_COMMAND,MRC_PAUSE,0);
+end;
+
+function TrayStop(wParam:WPARAM;lParam:LPARAM):int_ptr; cdecl;
+begin
+  result:=CallService(MS_RADIO_COMMAND,MRC_STOP,0);
+end;
+
+procedure CreateTrayMenu();
+var
+  mi:TCListMenuItem;
   playstr:pWideChar;
 begin
-  id:=0;
-  menu:=CreatePopupMenu;
-  if menu<>0 then
-  begin
-    if gVolume<0 then
-      flag:=MF_STRING+MF_CHECKED
-    else
-      flag:=MF_STRING+MF_UNCHECKED;
+  FillChar(mi, sizeof(mi), 0);
+  mi.cbSize  :=sizeof(mi);
+  mi.flags   :=CMIF_UNICODE;
+  mi.szName.w:=cPluginName;
+  mi.hIcon   :=CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnSettings));
+  trayradioparent:=Menu_AddTrayMenuItem(@mi);
 
-    if CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_GET)<>RD_STATUS_PAUSED then
-      playstr:='Pause'
-    else
-      playstr:='Play';
+  FillChar(mi, sizeof(mi), 0);
+  mi.cbSize  :=sizeof(mi);
+  mi.szPopupName:=TChar(trayradioparent);
 
-    AppendMenuW(menu,flag     ,startid+1,TranslateW('Mute'));
-    AppendMenuW(menu,MF_STRING,startid+2,TranslateW(playstr));
-    AppendMenuW(menu,MF_STRING,startid+3,TranslateW('Stop'));
-    AppendMenuW(menu,MF_SEPARATOR,0,nil);
-    AppendMenuW(menu,MF_POPUP,MakeStationsMenu,TranslateW('Play Station'));
-    GetCursorPos(pt);
-    id:=integer(TrackPopupMenu(menu,TPM_RETURNCMD+TPM_NONOTIFY,pt.x,pt.y,0,hiddenwindow,nil));
-    case id of
-      0: ; // nothing
-      startid+1: begin // mute
-        Service_RadioMute(0,0);
-      end;
-      startid+2: begin // play/pause
-        CallService(MS_RADIO_COMMAND,MRC_PAUSE,0);
-      end;
-      startid+3: begin // stop
-        CallService(MS_RADIO_COMMAND,MRC_STOP,0);
-      end;
-    else // choose station
-      Service_RadioPlayStop(id,0);
-    end;
-    DestroyMenu(menu);
-  end;
-  result:=id;
+  if gVolume<0 then
+    mi.flags:=CMIF_UNICODE or CMIF_ROOTHANDLE or CMIF_CHECKED
+  else
+    mi.flags:=CMIF_UNICODE or CMIF_ROOTHANDLE;
+  mi.szName.w  :='Mute';
+  mi.pszService:=MS_RADIO_MUTE;
+  mi.position  :=1;
+  traymute:=Menu_AddTrayMenuItem(@mi);
+
+  mi.flags:=CMIF_UNICODE or CMIF_ROOTHANDLE;
+  if CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_GET)<>RD_STATUS_PLAYING then
+    playstr:='Play'
+  else
+    playstr:='Pause';
+  mi.szName.w  :=playstr;
+  mi.position  :=2;
+  srvtrayplaypause:=CreateServiceFunction('mRadio/TrayPlayPause',@TrayPlayPause);
+  mi.pszService:='mRadio/TrayPlayPause';
+  trayplay:=Menu_AddTrayMenuItem(@mi);
+
+  mi.szName.w  :='Stop';
+  mi.position  :=3;
+  srvtraystop:=CreateServiceFunction('mRadio/TrayStop',@TrayStop);
+  mi.pszService:='mRadio/TrayStop';
+  Menu_AddTrayMenuItem(@mi);
+
+  mi.szName.w :='Play Station';
+  mi.position :=1000;
+  mi.pszService:=nil;
+  trayparent:=Menu_AddTrayMenuItem(@mi);
+end;
+
+function TrayPrebuild(wParam:WPARAM;lParam:LPARAM):int; cdecl;
+var
+  mi:tClistMenuItem;
+  playstr:pWideChar;
+begin
+  FillChar(mi,sizeof(mi),0);
+  mi.cbSize:=sizeof(mi);
+  if gVolume<0 then
+    mi.flags:=CMIM_FLAGS or CMIF_CHECKED
+  else
+    mi.flags:=CMIM_FLAGS;
+  CallService(MS_CLIST_MODIFYMENUITEM,traymute,tlparam(@mi));
+
+  mi.flags:=CMIM_NAME or CMIF_UNICODE;
+  if CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_GET)<>RD_STATUS_PLAYING then
+    playstr:='Play'
+  else
+    playstr:='Pause';
+  mi.szName.w:=playstr;
+  CallService(MS_CLIST_MODIFYMENUITEM,trayplay,tlparam(@mi));
+
+  MakeStationsMenu();
+  result:=0;
 end;
 
 procedure CreateMIMTrayMenu;
-var
-  mi:TCListMenuItem;
 begin
   if ServiceExists(MS_CLIST_ADDTRAYMENUITEM)<>0 then
 //    if hiddenwindow<>0 then
     begin
-      FillChar(mi, sizeof(mi), 0);
-      mi.cbSize    :=sizeof(mi);
-      mi.pszService:=MS_RADIO_TRAYMENU;
-      mi.szName.a  :=cPluginName;
-      mi.hIcon     :=CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnSettings));
-      Menu_AddTrayMenuItem(@mi);
+      CreateTrayMenu();
+      MakeStationsMenu();
+      HookEvent(ME_CLIST_PREBUILDTRAYMENU,@TrayPrebuild);
     end;
 end;
 
+procedure RemoveTrayItems;
+var
+  i:integer;
+  tmp:pTrayRadioStation;
+begin
+  // remove stations
+  for i:=trayStations.realCount-1 downto 0 do
+  begin
+    tmp:=pTrayRadioStation(trayStations.Items[i]);
+    mFreeMem(tmp.name);
+    DestroyServiceFunction(tmp.service);
+//    CallService(MS_CLIST_REMOVETRAYMENUITEM,tmp.menuitem,0);
+    mFreeMem(tmp);
+  end;
+  List_Destroy(@trayStations);
+  DestroyServiceFunction(srvtrayplaypause);
+  DestroyServiceFunction(srvtraystop);
+
+  if ServiceExists(MS_CLIST_REMOVETRAYMENUITEM)<>0 then
+    CallService(MS_CLIST_REMOVETRAYMENUITEM,trayradioparent,0);
+
+end;
