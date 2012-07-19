@@ -208,6 +208,8 @@ var
   fi:THANDLE;
 }
 begin
+  RemoveTrayItems;
+
   CallService(MS_RADIO_COMMAND,MRC_STOP,1);
   UnregisterHotKey;
 
@@ -320,7 +322,7 @@ begin
 
     CreateProtoServices;
     onloadhook   :=HookEvent(ME_SYSTEM_MODULESLOADED     ,@OnModulesLoaded);
-    hHookShutdown:=HookEvent(ME_SYSTEM_SHUTDOWN{ME_SYSTEM_OKTOEXIT},@PreShutdown);
+    hHookShutdown:=HookEvent(ME_SYSTEM_OKTOEXIT          ,@PreShutdown);
     hDblClick    :=HookEvent(ME_CLIST_DOUBLECLICKED      ,@Service_RadioPlayStop{@DblClickProc});
     opthook      :=HookEvent(ME_OPT_INITIALISE           ,@OnOptInitialise);
     contexthook  :=HookEvent(ME_CLIST_PREBUILDCONTACTMENU,@OnContactMenu);
