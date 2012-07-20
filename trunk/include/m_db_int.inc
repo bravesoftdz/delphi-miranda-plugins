@@ -67,28 +67,15 @@ type
   PDATABASELINK = ^TDATABASELINK;
   TDATABASELINK = record
     cbSize : int;
-    {
-      returns what the driver can do given the flag
-    }
-    getCapability : function (flag:int):int; cdecl;
-    {
-       buf: pointer to a string buffer
-       cch: length of buffer
-       shortName: if true, the driver should return a short but descriptive name, e.g. "3.xx profile"
-       Affect: The database plugin must return a "friendly name" into buf and not exceed cch bytes,
-         e.g. "Database driver for 3.xx profiles"
-       Returns: 0 on success, non zero on failure
-    }
-    getFriendlyName : function (buf:TChar; cch:size_t; shortName:int):int; cdecl;
+    szShortName:PAnsiChar;  // uniqie short database name
+    szFullName:TChar;  // in English, auto-translated by the core
     {
       profile: pointer to a string which contains full path + name
       Affect: The database plugin should create the profile, the filepath will not exist at
         the time of this call, profile will be C:\..\<name>.dat
-      Note: Do not prompt the user in anyway about this operation.
-      Note: Do not initialise internal data structures at this point!
       Returns: 0 on success, non zero on failure - error contains extended error information, see EMKPRF_
     }
-    makeDatabase : function (profile:TChar; error:Pint):int; cdecl;
+    makeDatabase : function (const profile:TChar; error:Pint):int; cdecl;
     {
       profile: [in] a null terminated string to file path of selected profile
       error: [in/out] pointer to an int to set with error if any
@@ -99,18 +86,37 @@ type
         etc.
       Returns: 0 on success, non zero on failure
     }
-    grokHeader : function (profile:TChar; error:Pint):int; cdecl;
+    grokHeader : function (const profile:TChar; error:Pint):int; cdecl;
     {
       Affect: Tell the database to create all services/hooks that a 3.xx legecy database might support into link
       Returns: 0 on success, nonzero on failure
     }
-    Load : function (profile:TChar):PMIDatabase; cdecl;
+    Load : function (const profile:TChar):PMIDatabase; cdecl;
     {
       Affect: The database plugin should shutdown, unloading things from the core and freeing internal structures
       Returns: 0 on success, nonzero on failure
       Note: Unload() might be called even if Load() was never called, wasLoaded is set to 1 if Load() was ever called.
     }
-    Unload : function (wasLoaded:int):int; cdecl;
+    Unload : function (db:PMIDatabase):int; cdecl;
   end;
+
+///////////////////////////////////////////////////////////////////////////////
+// Database list's services
+
+const
+{
+  MS_DB_REGISTER_PLUGIN : registers a database plugin
+  wParam : 0 (unused)
+  lParam : DATABASELINK* = database link description
+}
+  MS_DB_REGISTER_PLUGIN:PAnsiChar = 'DB/RegisterPlugin';
+
+{
+  MS_DB_FIND_PLUGIN : looks for a database plugin suitable to open this file
+  wParam : 0 (unused)
+  lParam : const TCHAR* = name of the database file
+  returns DATABASELINK* of the required plugin or NULL on error
+}
+  MS_DB_FIND_PLUGIN:PAnsiChar = 'DB/FindPlugin';
 
 {$ENDIF}

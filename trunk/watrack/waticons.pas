@@ -28,7 +28,7 @@ const
 }
 implementation
 
-uses m_api,windows,mirutils;
+uses m_api,windows;
 
 {$include waticons.inc}
 

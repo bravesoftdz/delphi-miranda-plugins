@@ -3,16 +3,6 @@ unit macros;
 
 interface
 
-uses windows;
-
-const
-  colors:array [0..15] of dword = (
-    $00FFFFFF,$00000000,$007F0000,$00009300,
-    $000000FF,$0000007F,$009C009C,$00007FFC,
-    $0000FFFF,$0000FC00,$00939300,$00FFFF00,
-    $00FC0000,$00FF00FF,$007F7F7F,$00D2D2D2
-   );
-
 type
   pvar = ^tvar;
   tvar = packed record

@@ -8,7 +8,7 @@ uses
   messages,windows,commctrl,
   common,syswin,wrapper,
   m_api,dbsettings,mirutils,
-  wat_api,global,macros,HlpDlg;
+  wat_api,global,macros;
 
 const
   splStopped:PWideChar = 'stopped';
