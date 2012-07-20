@@ -334,6 +334,7 @@ var
 //  info:BASS_CHANNELINFO;
   vhi:TVARHELPINFO;
   wnd:HWND;
+  p:pWideChar;
 begin
   result:=0;
   case hMessage of
@@ -362,8 +363,14 @@ begin
       else
         ShowWindow(wnd,SW_HIDE);
 
-//!!      if recpath<>nil then
-        SetDlgItemTextW(Dialog,IDC_ED_RECPATH,recpath);
+      if recpath<>nil then
+        p:=recpath
+      else
+      begin
+        buf[0]:=#0;
+        p:=@buf;
+      end;
+      SetDlgItemTextW(Dialog,IDC_ED_RECPATH,p);
 
       CheckDlgButton(Dialog,IDC_LOOP     ,doLoop);
       CheckDlgButton(Dialog,IDC_SHUFFLE  ,doShuffle);
@@ -552,9 +559,14 @@ begin
         end;
 
         mFreeMem(recpath);
-        mGetMem(recpath,MAX_PATH*SizeOf(WideChar));
+        buf[0]:=#0;
         GetDlgItemTextW(Dialog,IDC_ED_RECPATH,@buf,SizeOf(buf) div SizeOf(WideChar));
-        CallService(MS_UTILS_PATHTORELATIVEW,twparam(@buf),tlparam(recpath));
+        if buf[0]<>#0 then
+        begin
+          mGetMem(recpath,MAX_PATH*SizeOf(WideChar));
+          recpath^:=#0;
+          CallService(MS_UTILS_PATHTORELATIVEW,twparam(@buf),tlparam(recpath));
+        end;
         DBWriteUnicode(0,PluginName,optRecPath,recpath);
       end;
     end;

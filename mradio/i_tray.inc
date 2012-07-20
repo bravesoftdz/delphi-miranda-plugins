@@ -40,7 +40,7 @@ var
   buf:array [0..63] of AnsiChar;
   mi:TCListMenuItem;
 begin
-  TrayStations.sortFunc:=@MyStrSort;
+  trayStations.sortFunc:=@MyStrSort;
 
   // clear presents flag
   if trayStations.realCount>0 then
