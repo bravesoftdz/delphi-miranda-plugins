@@ -242,8 +242,6 @@ var
   {$include m_timezones.inc}
   {$include m_crypto.inc}
 
-  {$include m_newawaysys.inc}
-
 implementation
 
 const
