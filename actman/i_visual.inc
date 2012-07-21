@@ -1,5 +1,5 @@
 {Dialog visual part, depends of Dialog window}
-  procedure SHControl(ctrl,mode:dword); {$IFDEF MSWINDOWS}inline;{$ENDIF}
+  procedure SHControl(ctrl,mode:dword);
   begin
     ShowWindow(GetDlgItem(Dialog,ctrl),mode);
   end;
@@ -283,7 +283,7 @@
     SetButtonOnOff(ctrl,BST_CHECKED);
   end;
 
-  procedure TextClear(ctrl:dword); {$IFDEF MSWINDOWS}inline;{$ENDIF}
+  procedure TextClear(ctrl:dword);
   begin
     SetDlgItemTextW(Dialog,ctrl,nil);
   end;
