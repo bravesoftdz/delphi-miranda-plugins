@@ -53,14 +53,6 @@ function MakeGroupMenu(idxfrom:integer=100):HMENU;
 function GetNewGroupName(parent:HWND):pWideChar;
 
 const
-  HKMT_CORE       = 1;
-  HKMT_HOTKEYPLUS = 2;
-  HKMT_HK         = 3;
-  HKMT_HKSERVICE  = 4;
-
-function DetectHKManager:dword;
-
-const
   MAX_REDIRECT_RECURSE = 4;
 
 function SendRequest(url:PAnsiChar;rtype:int;args:pAnsiChar=nil;hNetLib:THANDLE=0):pAnsiChar;
@@ -154,8 +146,6 @@ end;
 
 const
   MirCP:integer=-1;
-const
-  HKManager:integer=-1;
 
 function MirandaCP:integer;
 begin
@@ -270,20 +260,6 @@ begin
     end;
   end;
   result:=CallService(MS_VARS_SHOWHELPEX,dlg,lparam(@vhi));
-end;
-
-function DetectHKManager:dword;
-begin
-  if HKManager<0 then
-  begin
-    if      ServiceExists('CoreHotkeys/Register'       )<>0 then HKManager:=HKMT_CORE
-    else if ServiceExists('HotkeysPlus/Add'            )<>0 then HKManager:=HKMT_HOTKEYPLUS
-    else if ServiceExists('HotKey/CatchHotkey'         )<>0 then HKManager:=HKMT_HK
-    else if ServiceExists('HotkeysService/RegisterItem')<>0 then HKManager:=HKMT_HKSERVICE
-    else HKManager:=0;
-  end;
-  result:=HKManager;
-//  else if (CallService(MS_SYSTEM_GETVERSION,0,0) and $FFFF0000)>=$00080000 then // core
 end;
 
 procedure ShowPopupW(text:pWideChar;title:pWideChar=nil);

@@ -121,7 +121,7 @@ begin
         cPluginName,MB_YESNO)=IDYES then
     begin
       pc := nil;
-      if SelectDirectory(TranslateW('Choose BASS.dll path'),pc,0,true) then
+      if SelectDirectory(TranslateW('Choose BASS.dll path'),pc,0) then
       begin
         CallService(MS_UTILS_PATHTORELATIVEW,wparam(pc),lparam(@buf));
         pc:=StrCopyEW(basspath,buf);

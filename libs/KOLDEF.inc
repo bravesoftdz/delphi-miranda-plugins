@@ -234,6 +234,11 @@ That is all to have full compatibility.
 
 //// from delphidef.inc ////
 
+{$IFDEF WIN64}
+  {$DEFINE x64}
+  {$DEFINE PAS_VERSION}
+{$ENDIF}
+
 //{$DEFINE _FPC}
 {$DEFINE ASM_VERSION} // Comment this line to produce Pascal code.
                       // Or, just add PAS_VERSION to conditionals

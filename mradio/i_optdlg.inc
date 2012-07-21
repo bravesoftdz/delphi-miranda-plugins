@@ -429,7 +429,7 @@ begin
 
             IDC_BN_RECPATH: begin
               dst:=nil;
-              if SelectDirectory(pWideChar(nil),dst,Dialog,true) then
+              if SelectDirectory(pWideChar(nil),dst,Dialog) then
               begin
                 CallService(MS_UTILS_PATHTORELATIVEW,twparam(dst),tlparam(@buf));
                 SetDlgItemTextW(Dialog,IDC_ED_RECPATH,pWideChar(@buf));
@@ -664,7 +664,7 @@ begin
 
             IDC_BASSPTHBTN: begin
               dst:=nil;
-              if SelectDirectory(pWideChar(nil),dst,Dialog,true) then
+              if SelectDirectory(pWideChar(nil),dst,Dialog) then
               begin
                 CallService(MS_UTILS_PATHTORELATIVEW,twparam(dst),tlparam(@buf));
                 SetDlgItemTextW(Dialog,IDC_BASSPATH,pWideChar(@buf));

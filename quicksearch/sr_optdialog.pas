@@ -656,7 +656,7 @@ var
   tmpwnd:HWND;
   tmpbool:bool;
   i:integer;
-  ti:TTOOLINFOW;
+//  ti:TTOOLINFOW;
 //  hwndTooltip:HWND;
   hNew    :hwnd;
   hItem   :hwnd;
