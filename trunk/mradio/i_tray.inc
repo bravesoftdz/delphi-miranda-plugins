@@ -7,7 +7,7 @@ var
   srvtrayplaypause:THANDLE;
   srvtraystop:THANDLE;
 const
-  trayStations:TSortedList = (items:nil; realCount:0; limit:0; increment:8);
+  trayStations:TSortedList = (items:nil; realCount:0; limit:0; increment:8; sortFunc: nil);
   
 type
   pTrayRadioStation = ^tTrayRadioStation;

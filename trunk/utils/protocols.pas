@@ -490,8 +490,7 @@ begin
 end;
 
 function SetStatus(proto:PAnsiChar;status:integer;txt:PAnsiChar=pointer(-1)):integer;
-var
-  nas:TNAS_PROTOINFO;
+//var  nas:TNAS_PROTOINFO;
 begin
   if status>0 then
     result:=CallProtoService(proto,PS_SETSTATUS,status,0)
@@ -499,8 +498,9 @@ begin
     result:=-1;
   if txt<>PAnsiChar(-1) then
   begin
-    if ServiceExists(MS_NAS_SETSTATEA)=0 then
+//    if ServiceExists(MS_NAS_SETSTATEA)=0 then
       result:=CallProtoService(proto,PS_SETAWAYMSG,abs(status),lparam(txt))
+(*
     else
     begin
   {
@@ -515,6 +515,7 @@ begin
       nas.status :=abs(status){0};
       result:=CallService(MS_NAS_SETSTATEA,LPARAM(@nas),1);
     end;
+*)
   end;
 end;
 

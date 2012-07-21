@@ -2,93 +2,128 @@
 unit wrapdlgs;
 
 interface
-uses windows;
 
-// ShlObj
+uses Windows;
+
 function SelectDirectory(Caption:PAnsiChar;var Directory:PAnsiChar;
-         Parent:HWND=0;newstyle:bool=false):Boolean; overload;
+         Parent:HWND=0):Boolean; overload;
 function SelectDirectory(Caption:PWideChar;var Directory:PWideChar;
-         Parent:HWND=0;newstyle:bool=false):Boolean; overload;
+         Parent:HWND=0):Boolean; overload;
 
 implementation
-uses common,shlobj,activex;
 
-{$IFNDEF DELPHI_7_UP}
+uses common, messages;
+
+type
+  PSHItemID = ^TSHItemID;
+  TSHItemID = packed record
+    cb: Word;                         { Size of the ID (including cb itself) }
+    abID: array[0..0] of Byte;        { The item ID (variable length) }
+  end;
+
+  PItemIDList = ^TItemIDList;
+  TItemIDList = record
+     mkid: TSHItemID;
+  end;
+
+  TBrowseInfoA = record
+    hwndOwner: HWND;
+    pidlRoot: PItemIDList;
+    pszDisplayName: PAnsiChar;  { Return display name of item selected. }
+    lpszTitle: PAnsiChar;      { text to go in the banner over the tree. }
+    ulFlags: UINT;           { Flags that control the return stuff }
+    lpfn: Pointer; //TFNBFFCallBack;
+    lParam: LPARAM;          { extra info that's passed back in callbacks }
+    iImage: Integer;         { output var: where to return the Image index. }
+  end;
+  TBrowseInfoW = record
+    hwndOwner: HWND;
+    pidlRoot: PItemIDList;
+    pszDisplayName: PWideChar;  { Return display name of item selected. }
+    lpszTitle: PWideChar;      { text to go in the banner over the tree. }
+    ulFlags: UINT;           { Flags that control the return stuff }
+    lpfn: Pointer; //TFNBFFCallBack;
+    lParam: LPARAM;          { extra info that's passed back in callbacks }
+    iImage: Integer;         { output var: where to return the Image index. }
+  end;
+
+function SHBrowseForFolderA(var lpbi: TBrowseInfoA): PItemIDList; stdcall;
+  external 'shell32.dll' name 'SHBrowseForFolderA';
+function SHBrowseForFolderW(var lpbi: TBrowseInfoW): PItemIDList; stdcall;
+  external 'shell32.dll' name 'SHBrowseForFolderW';
+function SHGetPathFromIDListA(pidl: PItemIDList; pszPath: PAnsiChar): BOOL; stdcall;
+  external 'shell32.dll' name 'SHGetPathFromIDListA';
+function SHGetPathFromIDListW(pidl: PItemIDList; pszPath: PWideChar): BOOL; stdcall;
+  external 'shell32.dll' name 'SHGetPathFromIDListW';
+procedure CoTaskMemFree(pv: Pointer); stdcall; external 'ole32.dll'
+  name 'CoTaskMemFree';
+
 const
-  BIF_NEWDIALOGSTYLE = $0040;
-{$ENDIF}
+  BIF_RETURNONLYFSDIRS   = $0001;  { For finding a folder to start document searching }
+  BIF_DONTGOBELOWDOMAIN  = $0002;  { For starting the Find Computer }
+  BIF_STATUSTEXT         = $0004;
+  BIF_RETURNFSANCESTORS  = $0008;
+  BIF_EDITBOX            = $0010;
+  BIF_VALIDATE           = $0020;  { insist on valid result (or CANCEL) }
+  BIF_NEWDIALOGSTYLE     = $0040;  { Use the new dialog layout with the ability to resize }
+                                   { Caller needs to call OleInitialize() before using this API (c) JVCL }
+  BIF_BROWSEFORCOMPUTER  = $1000;  { Browsing for Computers. }
+  BIF_BROWSEFORPRINTER   = $2000;  { Browsing for Printers }
+  BIF_BROWSEINCLUDEFILES = $4000;  { Browsing for Everything }
 
-function SelectDirectory(Caption:PAnsiChar;var Directory:PAnsiChar;
-         Parent:HWND=0;newstyle:bool=false):Boolean;
+  BFFM_INITIALIZED       = 1;
+  BFFM_SELCHANGED        = 2;
+
+  BFFM_SETSTATUSTEXT     = WM_USER + 100;
+  BFFM_ENABLEOK          = WM_USER + 101;
+  BFFM_SETSELECTION      = WM_USER + 102;
+  BFFM_SETSELECTIONW     = WM_USER + 103;
+
+function SelectDirectory(Caption:PAnsiChar;var Directory:PAnsiChar;Parent:HWND=0):Boolean;
 var
   BrowseInfo:TBrowseInfoA;
   Buffer:array [0..MAX_PATH-1] of AnsiChar;
   ItemIDList:PItemIDList;
-  ShellMalloc:IMalloc;
 begin
   Result:=False;
   FillChar(BrowseInfo,SizeOf(BrowseInfo),0);
-  if (ShGetMalloc(ShellMalloc)=S_OK) and (ShellMalloc<>nil) then
+
+  BrowseInfo.hwndOwner     :=Parent;
+  BrowseInfo.pszDisplayName:=@Buffer;
+  BrowseInfo.lpszTitle     :=Caption;
+  BrowseInfo.ulFlags       :=BIF_RETURNONLYFSDIRS or BIF_NEWDIALOGSTYLE;
+
+  ItemIDList:=ShBrowseForFolderA(BrowseInfo);
+  if ItemIDList<>nil then
   begin
-    with BrowseInfo do
-    begin
-      hwndOwner     :=Parent;
-      pszDisplayName:=@Buffer;
-      lpszTitle     :=Caption;
-      ulFlags       :=BIF_RETURNONLYFSDIRS;
-    end;
-    if newstyle then
-      if CoInitializeEx(nil,COINIT_APARTMENTTHREADED)<>RPC_E_CHANGED_MODE then
-        BrowseInfo.ulFlags:=BrowseInfo.ulFlags or BIF_NEWDIALOGSTYLE;
-    try
-      ItemIDList:=ShBrowseForFolderA({$IFDEF FPC}@{$ENDIF}BrowseInfo);
-      Result:=ItemIDList<>nil;
-      if Result then
-      begin
-        ShGetPathFromIDListA(ItemIDList,Buffer);
-        StrDup(Directory,Buffer);
-        ShellMalloc.Free(ItemIDList);
-      end;
-    finally
-      if newstyle then CoUninitialize;
-    end;
+    ShGetPathFromIDListA(ItemIDList,Buffer);
+    StrDup(Directory,Buffer);
+    CoTaskMemFree(ItemIDList);
+    result:=true;
   end;
 end;
 
-function SelectDirectory(Caption:PWideChar;var Directory:PWideChar;
-         Parent:HWND=0;newstyle:bool=false):Boolean;
+function SelectDirectory(Caption:PWideChar;var Directory:PWideChar;Parent:HWND=0):Boolean;
 var
   BrowseInfo:TBrowseInfoW;
   Buffer:array [0..MAX_PATH-1] of WideChar;
   ItemIDList:PItemIDList;
-  ShellMalloc:IMalloc;
 begin
   Result:=False;
   FillChar(BrowseInfo,SizeOf(BrowseInfo),0);
-  if (ShGetMalloc(ShellMalloc)=S_OK) and (ShellMalloc<>nil) then
+
+  BrowseInfo.hwndOwner     :=Parent;
+  BrowseInfo.pszDisplayName:=@Buffer;
+  BrowseInfo.lpszTitle     :=Caption;
+  BrowseInfo.ulFlags       :=BIF_RETURNONLYFSDIRS or BIF_NEWDIALOGSTYLE;
+
+  ItemIDList:=ShBrowseForFolderW(BrowseInfo);
+  if ItemIDList<>nil then
   begin
-    with BrowseInfo do
-    begin
-      hwndOwner     :=Parent;
-      pszDisplayName:=@Buffer;
-      lpszTitle     :=Caption;
-      ulFlags       :=BIF_RETURNONLYFSDIRS;
-    end;
-    if newstyle then
-      if CoInitializeEx(nil,COINIT_APARTMENTTHREADED)<>RPC_E_CHANGED_MODE then
-        BrowseInfo.ulFlags:=BrowseInfo.ulFlags or BIF_NEWDIALOGSTYLE;
-    try
-      ItemIDList:=ShBrowseForFolderW({$IFDEF FPC}@{$ENDIF}BrowseInfo);
-      Result:=ItemIDList<>nil;
-      if Result then
-      begin
-        ShGetPathFromIDListW(ItemIDList,Buffer);
-        StrDupW(Directory,Buffer);
-        ShellMalloc.Free(ItemIDList);
-      end;
-    finally
-      if newstyle then CoUninitialize;
-    end;
+    ShGetPathFromIDListW(ItemIDList,Buffer);
+    StrDupW(Directory,Buffer);
+    CoTaskMemFree(ItemIDList);
+    result:=true;
   end;
 end;
 

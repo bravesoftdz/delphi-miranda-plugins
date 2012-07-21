@@ -2687,7 +2687,7 @@ begin
       if qsopt.showoffline then
         ChangeStatusPicture(j,wParam,lParam)
       else
-        ProcessLine(j,false)
+        ProcessLine(j,false) // why false? need to filter!
     end
     else if {(oldstat<>ID_STATUS_OFFLINE) and} (newstat=ID_STATUS_OFFLINE) then
     begin

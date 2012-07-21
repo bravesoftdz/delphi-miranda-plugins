@@ -1,8 +1,4 @@
 ,pl_apollo  in 'players\pl_apollo.pas'
-,pl_qcd     in 'players\pl_qcd.pas'
-,pl_alsong  in 'players\pl_alsong.pas'
-,pl_pluton  in 'players\pl_pluton.pas'
-,pl_jrmc    in 'players\pl_jrmc.pas'
 ,pl_behold  in 'players\pl_behold.pas'
 ,pl_mradio  in 'players\pl_mradio.pas'
 ,pl_lastfm  in 'players\pl_lastfm.pas'
@@ -13,7 +9,8 @@
 ,pl_itunes  in 'players\pl_itunes.pas'
 ,pl_cowon   in 'players\pl_cowon.pas'
 ,pl_vlc     in 'players\pl_vlc.pas'
-,pl_wmp     in 'players\pl_wmp.pas'
+// keep file for check in future
+//,pl_wmp     in 'players\pl_wmp.pas'
 ,pl_mpc     in 'players\pl_mpc.pas'
 ,pl_aimp    in 'players\pl_aimp.pas'
 ,pl_foobar  in 'players\pl_foobar.pas'
