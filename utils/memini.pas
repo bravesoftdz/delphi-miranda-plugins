@@ -60,12 +60,15 @@ type
 
 function HashOf(txt:pAnsiChar):integer;
 begin
+  result:=Hash(txt,StrLen(txt));
+{
   result:=0;
   while txt^<>#0 do
   begin
     result:=((result shl 2) or (result shr (SizeOf(result)*8-2))) xor Ord(UpCase(txt^));
     inc(txt);
   end;
+}
 end;
 
 // sections adds 1 by 1, without duplicate check

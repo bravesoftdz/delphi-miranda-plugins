@@ -151,6 +151,7 @@ begin
     begin
       MinWidth :=80;
       MinHeight:=20;
+      Height:=18;
       Anchor(true,true,true,true);
 //      OnMessage:=TOnMessage(MakeMethod(nil, @MyEraseFrame));
       OnEraseBkGnd:=TOnPaint(MakeMethod(nil, @MyEraseFrame));
