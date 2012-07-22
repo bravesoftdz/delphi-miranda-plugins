@@ -62,6 +62,8 @@ const
 
 function BSwap(value:dword):dword;
 
+function Hash(s:pointer; len:integer{const Seed: LongWord=$9747b28c}): LongWord;
+
 function Encode(dst,src:pAnsiChar):PAnsiChar;
 function Decode(dst,src:pAnsiChar):PAnsiChar;
 function GetTextFormat(Buffer:pByte;sz:cardinal):integer;
@@ -204,6 +206,69 @@ function isPathAbsolute(path:pWideChar):boolean; overload;
 function isPathAbsolute(path:PAnsiChar):boolean; overload;
 
 implementation
+
+// Murmur 2.0
+function Hash(s:pointer; len:integer{const Seed: LongWord=$9747b28c}): LongWord;
+var
+  hash: LongWord;
+  k: LongWord;
+  tmp,data: pByte;
+const
+  // 'm' and 'r' are mixing constants generated offline.
+  // They're not really 'magic', they just happen to work well.
+  m = $5bd1e995;
+  r = 24;
+begin
+  //The default seed, $9747b28c, is from the original C library
+
+  // Initialize the hash to a 'random' value
+  hash := {seed xor }len;
+
+  // Mix 4 bytes at a time into the hash
+  data := s;
+
+  while(len >= 4) do
+  begin
+    k := PLongWord(data)^;
+
+    k := k*m;
+    k := k xor (k shr r);
+    k := k*m;
+
+    hash := hash*m;
+    hash := hash xor k;
+
+    inc(data,4);
+    dec(len,4);
+  end;
+
+  //   Handle the last few bytes of the input array
+  if len = 3 then
+  begin
+    tmp:=data;
+    inc(tmp,2);
+    hash := hash xor (LongWord(tmp^) shl 16);
+  end;
+  if len >= 2 then
+  begin
+    tmp:=data;
+    inc(tmp);
+    hash := hash xor (LongWord(tmp^) shl 8);
+  end;
+  if len >= 1 then
+  begin
+    hash := hash xor (LongWord(data^));
+    hash := hash * m;
+  end;
+
+  // Do a few final mixes of the hash to ensure the last few
+  // bytes are well-incorporated.
+  hash := hash xor (hash shr 13);
+  hash := hash * m;
+  hash := hash xor (hash shr 15);
+
+  Result := hash;
+end;
 
 function BSwap(value:dword):dword;
   {$IFNDEF WIN64}
