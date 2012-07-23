@@ -132,7 +132,7 @@ end;
 
 function GetFileName(wnd:HWND;flags:integer):pWideChar;cdecl;
 var
-  FFile:Cardinal;
+  FFile:THANDLE;
   pStr:pointer;
   s:integer;
   p:PAnsiChar;
@@ -224,7 +224,7 @@ end;
 
 function GetInfo(var SongInfo:tSongInfo;flags:integer):integer;cdecl;
 var
-  FFile:Cardinal;
+  FFile:THANDLE;
   s:integer;
   p:PAnsiChar;
   pStr:PAIMP2FileInfo;

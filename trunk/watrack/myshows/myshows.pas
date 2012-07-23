@@ -84,8 +84,6 @@ const
   hTimer:THANDLE=0;
 
 procedure TimerProc(wnd:HWND;uMsg:uint;idEvent:uint_ptr;dwTime:dword); stdcall;
-var
-  res:{$IFDEF COMPILER_16_UP}Longword{$ELSE}uint_ptr{$ENDIF};
 begin
   if hTimer<>0 then
   begin
@@ -95,7 +93,7 @@ begin
 
   if (msh_login   <>nil) and (msh_login^   <>#0) and
      (msh_password<>nil) and (msh_password^<>#0) then
-    CloseHandle(BeginThread(nil,0,@ThScrobble,nil,0,res));
+    CloseHandle(mir_forkthread(@ThScrobble,nil));
 end;
 
 function NewPlStatus(wParam:WPARAM;lParam:LPARAM):int;cdecl;

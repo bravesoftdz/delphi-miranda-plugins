@@ -558,9 +558,10 @@ type
     last  :LPARAM;
   end;
 
-function ThDoAction(arg:pActStartData):integer; //stdcall;
+procedure ThDoAction(arg:pActStartData); cdecl;
 var
   ltmp:uint_ptr;
+  res:integer;
 begin
   ltmp:=arg^.last;
 
@@ -570,7 +571,7 @@ begin
     arg^.group.flags:=arg^.group.flags or ACF_USEDNOW;
   end;
 
-  result:=DoAction(arg^.action,arg^.param,ltmp,rtInt);
+  res:=DoAction(arg^.action,arg^.param,ltmp,rtInt);
 
   if arg^.group<>nil then
   begin
@@ -583,17 +584,15 @@ begin
     arg^.last:=ltmp;
     SetEvent(arg^.event);
   end
-  else if result=rtWide then
+  else if res=rtWide then
   begin
     mFreeMem(ltmp);
-    result:=0;
   end;
 end;
 
 function ActionStarterWait(action:dword;aparam:LPARAM=0;group:pHKRecord=nil;alast:LPARAM=0):LPARAM;
 var
   tmp:pActStartData;
-  res:{$IFDEF COMPILER_16_UP}Longword{$ELSE}uint_ptr{$ENDIF};
 begin
   mGetMem(tmp,SizeOf(tActStartData));
   tmp^.action:=action;
@@ -601,7 +600,7 @@ begin
   tmp^.group :=group;
   tmp^.last  :=alast;
   tmp^.event :=CreateEvent(nil,FALSE,FALSE,nil);
-  CloseHandle(BeginThread(nil,0,@ThDoAction,tmp,0,res));
+  CloseHandle(mir_forkthread(@ThDoAction,tmp));
   WaitForSingleObjectEx(tmp.event,INFINITE,true);
   CloseHandle(tmp^.event);
   result:=tmp^.last;
@@ -610,7 +609,6 @@ end;
 function ActionStarter(action:dword;aparam:dword=0;group:pHKRecord=nil;alast:dword=0):integer;
 var
   tmp:pActStartData;
-  res:{$IFDEF COMPILER_16_UP}Longword{$ELSE}uint_ptr{$ENDIF};
 begin
   result:=0;
   mGetMem(tmp,SizeOf(tActStartData));
@@ -619,7 +617,7 @@ begin
   tmp^.group :=group;
   tmp^.last  :=alast;
   tmp^.event :=0;
-  CloseHandle(BeginThread(nil,0,@ThDoAction,tmp,0,res));
+  CloseHandle(mir_forkthread(@ThDoAction,tmp));
 end;
 
 procedure ReallocActionList(var ActList:pActList;var MaxAct:cardinal);

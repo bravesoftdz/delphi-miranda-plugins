@@ -264,29 +264,24 @@ begin
 end;
 
 function Service_SearchBasic(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
-var
-  res:{$IFDEF COMPILER_16_UP}Longword{$ELSE}uint_ptr{$ENDIF};
 begin
   if lParam=0 then
     result:=0
   else
   begin
     result:=AckHandle;
-    CloseHandle(BeginThread(nil,0,@BasicSearch,
-      StrDup(PAnsiChar(lParam),PAnsiChar(lParam)),0,res));
+    CloseHandle(mir_forkthread(@BasicSearch,StrDup(PAnsiChar(lParam),PAnsiChar(lParam))));
   end;
 end;
 
 function Service_SearchByAdvanced(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
-var
-  res:{$IFDEF COMPILER_16_UP}Longword{$ELSE}uint_ptr{$ENDIF};
 begin
   if lParam=0 then
     result:=0
   else
   begin
     result:=AckHandle;
-    CloseHandle(BeginThread(nil,0,@ExtSearch,pointer(lParam),0,res));
+    CloseHandle(mir_forkthread(@ExtSearch,pointer(lParam)));
   end;
 end;
 

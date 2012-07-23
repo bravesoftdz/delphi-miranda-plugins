@@ -98,7 +98,6 @@ const
   PlayStatus:int_ptr=RD_STATUS_NOSTATION;
   doRecord:boolean=false;
 var
-  res:{$IFDEF COMPILER_16_UP}Longword{$ELSE}uint_ptr{$ENDIF};
   tmpbuf,buf1:array [0..MAX_PATH-1] of WideChar;
   plFile:pWideChar;
   plLocal:boolean;
@@ -183,7 +182,7 @@ begin
           ControlCenter(MRC_STATUS,RD_STATUS_NEWSTATION);
           if Assigned(plist) then
             ControlCenter(MRC_STATUS,RD_STATUS_CONNECT);
-          CloseHandle(BeginThread(nil,0,@OpenURL,ActiveURLw,0,res));
+          CloseHandle(mir_forkthread(@OpenURL,ActiveURLw));
         end;
       end
       // play current from start
@@ -196,7 +195,7 @@ begin
       // play playlist entry?
       else if Assigned(plist) and (ActiveURLw<>nil) and (ActiveURLw^<>#0) then
       begin
-        CloseHandle(BeginThread(nil,0,@OpenURL,ActiveURLw,0,res));
+        CloseHandle(mir_forkthread(@OpenURL,ActiveURLw));
       end;
     end;
 

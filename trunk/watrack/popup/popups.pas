@@ -289,10 +289,8 @@ begin
 end;
 
 procedure ShowPopUp(si:pSongInfo);
-var
-  res:{$IFDEF COMPILER_16_UP}Longword{$ELSE}uint_ptr{$ENDIF};
 begin
-  CloseHandle(BeginThread(nil,0,@ThShowPopup,si,0,res));
+  CloseHandle(mir_forkthread(@ThShowPopup,si));
 end;
 
 // --------------- Services and Hooks ----------------

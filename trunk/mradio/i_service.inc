@@ -95,13 +95,12 @@ end;
 function Service_GetAwayMsg(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
   ccs:PCCSDATA;
-  res:{$IFDEF COMPILER_16_UP}Longword{$ELSE}uint_ptr{$ENDIF};
 begin
   ccs:=PCCSDATA(lParam);
   if (ccs^.hContact<>0) and (PluginStatus=ID_STATUS_ONLINE) and
      (DBReadWord(ccs^.hContact,PluginName,optStatus,ID_STATUS_OFFLINE)=ID_STATUS_ONLINE) then
   begin
-    CloseHandle(BeginThread(nil,0,@GetAwayMsgProc,pointer(ccs^.hContact),0,res));
+    CloseHandle(mir_forkthread(@GetAwayMsgProc,pointer(ccs^.hContact)));
     result:=AckHandle;
   end
   else
