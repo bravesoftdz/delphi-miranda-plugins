@@ -465,11 +465,9 @@ begin
 end;
 
 function PackLog(wParam:WPARAM;lParam:LPARAM):integer;cdecl;
-var
-  res:{$IFDEF COMPILER_16_UP}Longword{$ELSE}uint_ptr{$ENDIF};
 begin
   result:=0;
-  CloseHandle(BeginThread(nil,0,@ThPackLog,nil,0,res));
+  CloseHandle(mir_forkthread(@ThPackLog,nil));
 end;
 
 function MakeReport(wParam:WPARAM;lParam:LPARAM):integer;cdecl;

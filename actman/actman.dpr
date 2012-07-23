@@ -144,6 +144,7 @@ begin
   //----- DBEDITOR support -----
 //  CallService('DBEditorpp/RegisterSingleModule',dword(PluginShort),0);
 
+  IsMultiThread:=true;
   // Load additional modules
   ptr:=ActionLink;
   while ptr<>nil do

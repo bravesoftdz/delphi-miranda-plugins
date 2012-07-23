@@ -182,6 +182,8 @@ begin
 
   CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_NOSTATION);
 
+  IsMultiThread:=true;
+
   RegisterVariables;
 
   if AuConnect<>BST_UNCHECKED then

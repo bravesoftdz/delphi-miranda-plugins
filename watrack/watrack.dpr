@@ -524,6 +524,8 @@ begin
     mFreeMem(p);
   end;
 
+  IsMultiThread:=true;
+
   hEvent:=CreateEvent(nil,true,true,nil);
   if hEvent<>0 then
   begin
