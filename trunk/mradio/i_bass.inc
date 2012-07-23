@@ -789,7 +789,7 @@ begin
   end;
 end;
 
-function OpenURL(url:PWideChar):dword;// stdcall;
+procedure OpenURL(url:PWideChar); cdecl;
 var
   len,progress:DWORD;
   flags:dword;
@@ -797,7 +797,6 @@ var
   EAXUsed:bool;
   ansiurl:array [0..511] of AnsiChar;
 begin
-  result:=0;
   if plist=nil then
     CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_CONNECT);
 

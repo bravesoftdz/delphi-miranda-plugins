@@ -27,7 +27,7 @@ begin
   result:=0;
 end;
 
-function GetAwayMsgProc(hContact:THANDLE):dword;// stdcall;
+procedure GetAwayMsgProc(hContact:THANDLE); cdecl;
 var
   buf,p:PWideChar;
 begin
@@ -89,7 +89,6 @@ begin
 
   ProtoBroadcastAck(PluginName,hContact,ACKTYPE_AWAYMSG,ACKRESULT_SUCCESS,AckHandle,lParam(buf));
   mFreeMem(buf);
-  result:=0;
 end;
 
 function Service_GetAwayMsg(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
