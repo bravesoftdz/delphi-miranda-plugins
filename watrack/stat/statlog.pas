@@ -436,10 +436,9 @@ begin
   result:=0;
 end;
 
-function ThPackLog(param:pdword):dword;// stdcall;
+procedure ThPackLog(param:pdword); cdecl;
 begin
   SortFile(StatName,SortMode,Direction);
-  result:=0;
 end;
 
 function ThMakeReport(param:pdword):dword; stdcall;

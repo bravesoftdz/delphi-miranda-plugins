@@ -141,7 +141,7 @@ begin
     result:=nil;
 end;
 
-function ThShowPopup(si:pSongInfo):dword; //stdcall;
+procedure ThShowPopup(si:pSongInfo); cdecl;
 var
   ppdu:PPOPUPDATAW;
   title,descr:pWideChar;
@@ -153,7 +153,6 @@ var
   line:boolean;
   tmp:pAnsiChar;
 begin
-  result:=0;
   line:=CallService(MS_POPUP_ISSECONDLINESHOWN,0,0)<>0;
 
   descr:=PWideChar(CallService(MS_WAT_REPLACETEXT,0,lparam(PopText)));

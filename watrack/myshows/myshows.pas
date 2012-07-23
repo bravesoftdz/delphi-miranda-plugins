@@ -68,7 +68,7 @@ end;
 {$i i_myshows_opt.inc}
 {$i i_myshows_api.inc}
 
-function ThScrobble(param:LPARAM):integer; //stdcall;
+procedure ThScrobble(param:LPARAM); cdecl;
 var
   count:integer;
 begin
@@ -77,7 +77,6 @@ begin
     dec(count);
     if Scrobble(count<=0) then break;
   until count<=0;
-  result:=0;
 end;
 
 const

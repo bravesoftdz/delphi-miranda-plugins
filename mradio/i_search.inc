@@ -208,7 +208,7 @@ begin
   mFreeMem(filter.lGenre);
 end;
 
-function BasicSearch(name:PAnsiChar):dword;// stdcall;
+procedure BasicSearch(name:PAnsiChar); cdecl;
 var
   filter:TMySearchFilter;
   ini:array [0..MAX_PATH-1] of AnsiChar;
@@ -221,10 +221,9 @@ begin
     CharLowerA(filter.lStation);
 
   ProcessSearch(filter,ini);
-  result:=0;
 end;
 
-function ExtSearch(wnd:HWND):dword;// stdcall;
+procedure ExtSearch(wnd:HWND); cdecl;
 var
   filter:TMySearchFilter;
   ltmp:longbool;
@@ -260,7 +259,6 @@ begin
   end;
 
   ProcessSearch(filter,ini);
-  result:=0;
 end;
 
 function Service_SearchBasic(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;

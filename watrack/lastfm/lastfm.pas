@@ -42,7 +42,7 @@ end;
 {$i i_last_opt.inc}
 {$i i_last_api.inc}
 
-function ThScrobble(param:LPARAM):dword; //stdcall;
+procedure ThScrobble(param:LPARAM); cdecl;
 var
   count:integer;
   npisok:bool;
@@ -58,7 +58,6 @@ begin
     dec(count);
   end;
   if count=0 then ;
-  result:=0;
 end;
 
 const
