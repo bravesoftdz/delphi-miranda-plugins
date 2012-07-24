@@ -132,62 +132,55 @@ const
      (descr:'Slider Hovered'     ;name:'WATrack_SliderH'; id:IDI_SLIDER_HOVERED),
      (descr:'Slider Pushed'      ;name:'WATrack_SliderP'; id:IDI_SLIDER_PRESSED))
     );
-{  
-type
-  CtrlButtons=(
-      WAT_CTRL_PREV, WAT_CTRL_PLAY,  WAT_CTRL_PAUSE, WAT_CTRL_STOP,
-      WAT_CTRL_NEXT, WAT_CTRL_VOLDN, WAT_CTRL_VOLUP, WAT_CTRL_SLIDER);
-}
+
 function RegisterButtonIcons:boolean;
 var
   sid:TSKINICONDESC;
   buf:array [0..511] of AnsiChar;
   hIconDLL:THANDLE;
   i,j:integer;
+  path:pAnsiChar;
 begin
   if not IconsLoaded then
   begin
-    sid.flags:=0;
-    sid.cbSize:=SizeOf(TSKINICONDESC);
-    sid.cx:=16;
-    sid.cy:=16;
-
-    sid.szSection.a     :='WATrack/Frame Controls';
-    sid.szDefaultFile.a:='icons\'+ICOCtrlName;
+    path:='icons\'+ICOCtrlName;
 //    ConvertFileName(sid.szDefaultFile.a,buf);
-    CallService(MS_UTILS_PATHTOABSOLUTE,wparam(sid.szDefaultFile),lparam(@buf));
+    CallService(MS_UTILS_PATHTOABSOLUTE,wparam(path),lparam(@buf));
 
     hIconDLL:=LoadLibraryA(buf);
     if hIconDLL=0 then // not found
     begin
       sid.szDefaultFile.a:='plugins\'+ICOCtrlName;
 //      ConvertFileName(sid.szDefaultFile.a,buf);
-      CallService(MS_UTILS_PATHTOABSOLUTE,wparam(sid.szDefaultFile),lparam(@buf));
+      CallService(MS_UTILS_PATHTOABSOLUTE,wparam(path),lparam(@buf));
       hIconDLL:=LoadLibraryA(buf);
     end;
 
     if hIconDLL<>0 then
     begin
+      FreeLibrary(hIconDLL);
+      FillChar(sid,SizeOf(sid),0);
+      sid.flags:=0;
+      sid.cbSize:=SizeOf(TSKINICONDESC);
+      sid.cx:=16;
+      sid.cy:=16;
+
+      sid.szSection.a    :='WATrack/Frame Controls';
+      sid.szDefaultFile.a:=path;
       i:=WAT_CTRL_FIRST;
       repeat
         j:=AST_NORMAL;
         repeat
-          sid.hDefaultIcon   :=LoadImage(hIconDLL,
-              MAKEINTRESOURCE(CtrlIcoLib[i][j].id),IMAGE_ICON,16,16,0);
-          if sid.hDefaultIcon=0 then continue;
-
           // increment from 1 by order, so - just decrease number (for iconpack import)
           sid.iDefaultIndex  :=CtrlIcoLib[i][j].id-1;
           sid.pszName        :=CtrlIcoLib[i][j].name;
           sid.szDescription.a:=CtrlIcoLib[i][j].descr;
 
           Skin_AddIcon(@sid);
-          DestroyIcon(sid.hDefaultIcon);
           Inc(j);
         until j>AST_PRESSED;
         Inc(i);
       until i>WAT_CTRL_LAST;
-      FreeLibrary(hIconDLL);
       IconsLoaded:=true;
     end;
   end;
