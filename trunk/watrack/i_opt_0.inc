@@ -26,7 +26,8 @@ begin
               begin
                 ptr^.ModuleStat:=1;
                 if @ptr^.Init<>nil then
-                  ptr^.Init(false);
+                  if ptr^.Init(false)=0 then
+                    ptr^.ModuleStat:=0;
               end
               else
               begin
