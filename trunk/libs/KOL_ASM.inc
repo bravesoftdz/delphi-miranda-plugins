@@ -982,7 +982,7 @@ asm
           CALL      TObj.Destroy
 end;
 
-function TGraphicTool.ReleaseHandle: Integer;
+function TGraphicTool.ReleaseHandle: THANDLE;
 asm     //        //
         PUSH      EAX
         CALL      Changed

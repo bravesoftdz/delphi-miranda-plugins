@@ -401,7 +401,7 @@ type
   TFindTextEx = TFindTextExA;
 
   _formatrange = record
-    _hdc: HDC;
+    hdc: HDC;
     hdcTarget: HDC;
     rc: TRect;
     rcPage: TRect;
