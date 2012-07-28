@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 {$IFNDEF M_DB_INT}
 {$DEFINE M_DB_INT}
 
+///////////////////////////////////////////////////////////////////////////////
+// basic database interface
 type
   PMIDatabase = ^TMIDatabase;
   TMIDatabase = interface
@@ -63,6 +65,58 @@ type
     function EnumResidentSettings(pFunc:TDBMODULEENUMPROC; pParam:pointer):bool; stdcall;
   end;
 
+///////////////////////////////////////////////////////////////////////////////
+// basic database checker interface
+
+const
+  STATUS_MESSAGE = 0;
+  STATUS_WARNING = 1;
+  STATUS_ERROR   = 2;
+  STATUS_FATAL   = 3;
+  STATUS_SUCCESS = 4;
+
+type
+  pDBCHeckCallback = ^tDBCHeckCallback;
+  tDBCHeckCallback = record
+    cbSize:int;
+    spaceProcessed,
+    spaceUsed: dword;
+    hOutFile:THANDLE;
+    bCheckOnly,
+    bBackup,
+    bAggressive,
+    bEraseHistory,
+    bMarkRead,
+    bConvertUtf:int;
+    pfnAddLogMessage: procedure(_type:int; const szFormat:PWideChar{;...}); cdecl;
+  end;
+
+type
+  PMIDatabaseChecker = ^MIDatabaseChecker;
+  MIDatabaseChecker = interface
+	  function Start(callback:PDBCHeckCallback):bool;stdcall;
+    function CheckDb(phase:int; firstTime:int):bool; stdcall;
+    procedure Destroy(); stdcall;
+  end;
+
+///////////////////////////////////////////////////////////////////////////////
+// Each database plugin should register itself using this structure
+
+
+{
+ Codes for DATABASELINK functions
+}
+const
+// grokHeader() error codes
+  EGROKPRF_NOERROR   = 0;
+  EGROKPRF_CANTREAD  = 1; // can't open the profile for reading
+  EGROKPRF_UNKHEADER = 2; // header not supported, not a supported profile
+  EGROKPRF_VERNEWER  = 3; // header correct, version in profile newer than reader/writer
+  EGROKPRF_DAMAGED   = 4; // header/version fine, other internal data missing, damaged.
+
+// makeDatabase() error codes
+  EMKPRF_CREATEFAILED = 1; // for some reason CreateFile() didnt like something
+
 type
   PDATABASELINK = ^TDATABASELINK;
   TDATABASELINK = record
@@ -75,7 +129,7 @@ type
         the time of this call, profile will be C:\..\<name>.dat
       Returns: 0 on success, non zero on failure - error contains extended error information, see EMKPRF_
     }
-    makeDatabase : function (const profile:TChar; error:Pint):int; cdecl;
+    makeDatabase : function (const profile:TChar):int; cdecl;
     {
       profile: [in] a null terminated string to file path of selected profile
       error: [in/out] pointer to an int to set with error if any
@@ -86,9 +140,10 @@ type
         etc.
       Returns: 0 on success, non zero on failure
     }
-    grokHeader : function (const profile:TChar; error:Pint):int; cdecl;
+    grokHeader : function (const profile:TChar):int; cdecl;
     {
-      Affect: Tell the database to create all services/hooks that a 3.xx legecy database might support into link
+      Affect: Tell the database to create all services/hooks that a 3.xx legacy database might support into link,
+        which is a DATABASELINK structure
       Returns: 0 on success, nonzero on failure
     }
     Load : function (const profile:TChar):PMIDatabase; cdecl;
@@ -98,6 +153,11 @@ type
       Note: Unload() might be called even if Load() was never called, wasLoaded is set to 1 if Load() was ever called.
     }
     Unload : function (db:PMIDatabase):int; cdecl;
+    {
+      Returns a pointer to the database checker or NULL if a database doesn't support checking
+      When you don't need this object aanymore,  call its Destroy() method
+    }
+    CheckDB : function (const profile:PWideChar; error:pint):PMIDatabaseChecker;cdecl;
   end;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -118,5 +178,13 @@ const
   returns DATABASELINK* of the required plugin or NULL on error
 }
   MS_DB_FIND_PLUGIN:PAnsiChar = 'DB/FindPlugin';
+
+{
+  MS_DB_GET_CURRENT : returns the database pointer for the current profile
+  wParam : 0 (unused)
+  lParam : 0 (unused)
+  returns MIDatabase* of the current profile or NULL on error
+}
+  MS_DB_GET_CURRENT:PAnsiChar = 'DB/GetCurrentDb';
 
 {$ENDIF}

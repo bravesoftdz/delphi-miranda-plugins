@@ -693,12 +693,14 @@ const
 
 {$IFDEF WIN}
 //{_#IF [DELPHI]}
-{$INCLUDE delphicommctrl.inc}
-{$IFDEF UNICODE_CTRLS}
-  {$DEFINE interface_part} {$I KOL_unicode.inc} {$UNDEF interface_part}
-{$ELSE} // ANSI_CTRLS
-  {$DEFINE interface_part} {$I KOL_ansi.inc} {$UNDEF interface_part}
-{$ENDIF UNICODE_CTRLS}
+  {$INCLUDE delphicommctrl.inc}
+  {$IFNDEF FPC}
+    {$IFDEF UNICODE_CTRLS}
+      {$DEFINE interface_part} {$I KOL_unicode.inc} {$UNDEF interface_part}
+    {$ELSE} // ANSI_CTRLS
+      {$DEFINE interface_part} {$I KOL_ansi.inc} {$UNDEF interface_part}
+    {$ENDIF UNICODE_CTRLS}
+  {$ENDIF}
 //{_#ENDIF}
 {$ENDIF WIN}
 
@@ -2279,7 +2281,7 @@ type
     property OnChange: TOnGraphicChange read fOnGTChange write fOnGTChange;
     {* Called, when object is changed. }
     {$IFDEF GDI}
-    function ReleaseHandle: Integer;
+    function ReleaseHandle: THANDLE;
     {* Returns Handle value (if allocated), releasing it from the
        object (so, it is no more knows about this handle and its
        HandleAllocated function returns False. }
@@ -2292,7 +2294,7 @@ type
        excluding Handle. If assigning is really leading to change
        object, procedure Changed is called. }
     {$IFDEF GDI}
-    procedure AssignHandle( NewHandle: Integer );
+    procedure AssignHandle( NewHandle: THANDLE );
     {* Assigns value to Handle property. }
 
     property BrushBitmap: HBitmap read {-BCB-}fData.Brush.Bitmap{+BCB+}
@@ -14380,11 +14382,13 @@ implementation
 {$ENDIF _X_}
 
 {$IFDEF WIN}
-  {$IFDEF UNICODE_CTRLS}
-    {$DEFINE implementation_part} {$I KOL_unicode.inc} {$UNDEF implementation_part}
-  {$ELSE} // ANSI_CTRLS
-    {$DEFINE implementation_part} {$I KOL_ansi.inc} {$UNDEF implementation_part}
-  {$ENDIF UNICODE_CTRLS}
+  {$IFNDEF FPC}
+    {$IFDEF UNICODE_CTRLS}
+      {$DEFINE implementation_part} {$I KOL_unicode.inc} {$UNDEF implementation_part}
+    {$ELSE} // ANSI_CTRLS
+      {$DEFINE implementation_part} {$I KOL_ansi.inc} {$UNDEF implementation_part}
+    {$ENDIF UNICODE_CTRLS}
+  {$ENDIF}
 {$ENDIF WIN}
 
 {$IFDEF DEBUG_MCK}
@@ -17784,7 +17788,7 @@ end;
 {$ENDIF PAS_VERSION}
 {$IFDEF WIN_GDI}
 
-procedure TGraphicTool.AssignHandle(NewHandle: Integer);
+procedure TGraphicTool.AssignHandle(NewHandle: THANDLE);
 begin
   if fHandle <> 0 then                   //
     DeleteObject( fHandle );             //
@@ -17869,7 +17873,7 @@ begin
 end;
 
 {$IFDEF ASM_VERSION}{$ELSE ASM_VERSION PAS_VERSION}
-function TGraphicTool.ReleaseHandle: Integer;
+function TGraphicTool.ReleaseHandle: THANDLE;
 begin
     Changed;
     Result := fHandle;
@@ -23288,7 +23292,11 @@ begin
    {$IFDEF DATE0_1601}
    SystemTimeToFileTime( D1, ft1 );
    SystemTimeToFileTime( D2, ft2 );
+{$IFDEF FPC}
+   Result := CompareFileTime( @ft1, @ft2 );
+{$ELSE}
    Result := CompareFileTime( ft1, ft2 );
+{$ENDIF}
    {$ELSE}
    R := 0;
    CompareFields( D1.wYear, D2.wYear );
@@ -23305,7 +23313,11 @@ end;
 
 function FileTimeCompare( const FT1, FT2 : TFileTime ) : Integer;
 begin
+{$IFDEF FPC}
+  Result := CompareFileTime( @FT1, @FT2 );
+{$ELSE}
   Result := CompareFileTime( FT1, FT2 );
+{$ENDIF}
 end;
 {$ENDIF WIN}
 
@@ -24605,12 +24617,21 @@ begin
         if  Data.Rules[ I ] = sdrBySizeDescending then
             Result := -Result;
       end;
+{$IFDEF FPC}
+    sdrByDateCreate:
+        Result := CompareFileTime( @Item1.ftCreationTime, @Item2.ftCreationTime );
+    sdrByDateChanged:
+        Result := CompareFileTime( @Item1.ftLastWriteTime, @Item2.ftLastWriteTime );
+    sdrByDateAccessed:
+        Result := CompareFileTime( @Item1.ftLastAccessTime, @Item2.ftLastAccessTime );
+{$ELSE}
     sdrByDateCreate:
         Result := CompareFileTime( Item1.ftCreationTime, Item2.ftCreationTime );
     sdrByDateChanged:
         Result := CompareFileTime( Item1.ftLastWriteTime, Item2.ftLastWriteTime );
     sdrByDateAccessed:
         Result := CompareFileTime( Item1.ftLastAccessTime, Item2.ftLastAccessTime );
+{$ENDIF}
     sdrNone: break;
     end; {case}
     if Result <> 0 then break;
@@ -36337,7 +36358,7 @@ begin
 	   not CS_OFF or CS_ON;
    end;
    if  fDefWndProc = nil then
-       fDefWndProc := {$ifdef FPC21}@{$endif}Params.WindowClass.lpfnWndProc;
+       fDefWndProc := {$ifdef FPC}@{$endif}Params.WindowClass.lpfnWndProc;
    if  Params.WndParent = 0 then
        if Params.Style and WS_CHILD <> 0 then Exit; {>>>>>>>>>>>>>>>>>>>>>>>>>>}
 

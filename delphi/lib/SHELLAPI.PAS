@@ -135,8 +135,8 @@ function DoEnvironmentSubstW(szString: PWideChar; cbString: UINT): DWORD; stdcal
 function DoEnvironmentSubst(szString: PChar; cbString: UINT): DWORD; stdcall;
 function ExtractIconExA(lpszFile: PAnsiChar; nIconIndex: Integer;
   var phiconLarge, phiconSmall: HICON; nIcons: UINT): UINT; stdcall;
-{function ExtractIconExW(lpszFile: PWideChar; nIconIndex: Integer;
-  var phiconLarge, phiconSmall: HICON; nIcons: UINT): UINT; stdcall;}
+function ExtractIconExW(lpszFile: PWideChar; nIconIndex: Integer;
+  var phiconLarge, phiconSmall: HICON; nIcons: UINT): UINT; stdcall;
 function ExtractIconEx(lpszFile: PChar; nIconIndex: Integer;
   var phiconLarge, phiconSmall: HICON; nIcons: UINT): UINT; stdcall;
 
@@ -474,7 +474,7 @@ function ExtractIconA; external shell32 name 'ExtractIconA';
 function ExtractIconW; external shell32 name 'ExtractIconW';
 function ExtractIcon; external shell32 name 'ExtractIconA';
 function ExtractIconExA; external shell32 name 'ExtractIconExA';
-//function ExtractIconExW; external shell32 name 'ExtractIconExW';
+function ExtractIconExW; external shell32 name 'ExtractIconExW';
 function ExtractIconEx; external shell32 name 'ExtractIconExA';
 function FindExecutableA; external shell32 name 'FindExecutableA';
 function FindExecutableW; external shell32 name 'FindExecutableW';

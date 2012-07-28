@@ -26,6 +26,14 @@ const
   MS_DB_GETPROFILEPATH :PAnsiChar = 'DB/GetProfilePath';
   MS_DB_GETPROFILEPATHW:PAnsiChar = 'DB/GetProfilePathW';
 
+  {
+  Sets the default profile name programmatically
+  Analog of Database/DefaultProfile in mirandaboot.ini
+    wParam = (WPARAM)(TCHAR*)ptszProfileName
+    lParam = 0 (unused)
+  }
+  MS_DB_SETDEFAULTPROFILE:PAnsiChar = 'DB/SetDefaultProfile';
+
 type
   PDBCONTACTGETSETTING = ^TDBCONTACTGETSETTING;
   TDBCONTACTGETSETTING = record

@@ -186,13 +186,14 @@ Delphi version 8 not supported! (delphi 8 is .net only)
 	{$DEFINE _DXE2}
 	{$DEFINE _DXE2orHigher}
 	{$DEFINE PAS_VERSION}
-    {$WARN UNIT_DEPRECATED OFF}
+  {$WARN UNIT_DEPRECATED OFF}
 	{$WARN SYMBOL_PLATFORM OFF}
 	{$WARN UNSAFE_TYPE OFF}
 	{$WARN UNSAFE_CAST OFF}
 	{$WARN UNSAFE_CODE OFF}
 {$ENDIF}
 
+(*
 // TODO: check DLL project
 {$IFNDEF NO_STRIP_RELOC}
   // by Thaddy de Koning:
@@ -202,7 +203,7 @@ Delphi version 8 not supported! (delphi 8 is .net only)
 //	{$SETPEFlAGS IMAGE_FILE_RELOCS_STRIPPED or IMAGE_FILE_DEBUG_STRIPPED or IMAGE_FILE_LINE_NUMS_STRIPPED or IMAGE_FILE_LOCAL_SYMS_STRIPPED or IMAGE_FILE_REMOVABLE_RUN_FROM_SWAP or IMAGE_FILE_NET_RUN_FROM_SWAP}
   {$ENDIF}
 {$ENDIF}
-
+*)
 {$IFDEF FPC}
 {------------------------------------
 by Thaddy de Koning:
@@ -213,15 +214,15 @@ FPC1.X
  
 That is all to have full compatibility.
 ------------------------------------}
-{$DEFINE PAS_VERSION}
-{$IFDEF VER2}
- {$DEFINE _D3orHigher}
- {$DEFINE _D4orHigher}
- {$DEFINE _D5orHigher}
- {$DEFINE _D6orHigher}
- {$DEFINE _D7}
- {$DEFINE _D7orHigher}
-{$ENDIF}
+  {$DEFINE PAS_VERSION}
+  {$IFDEF VER2}
+   {$DEFINE _D3orHigher}
+   {$DEFINE _D4orHigher}
+   {$DEFINE _D5orHigher}
+   {$DEFINE _D6orHigher}
+   {$DEFINE _D7}
+   {$DEFINE _D7orHigher}
+  {$ENDIF}
 {$ENDIF FPC}
 
 {$IFNDEF _NOT_KOLCtrlWrapper_}
