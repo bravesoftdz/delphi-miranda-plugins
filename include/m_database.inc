@@ -34,6 +34,15 @@ const
   }
   MS_DB_SETDEFAULTPROFILE:PAnsiChar = 'DB/SetDefaultProfile';
 
+  {
+  Checks the specified profile like dbtool did.
+  Implemented in the dbchecker plugins, thus it might not exist
+    wParam = (WPARAM)(TCHAR*)ptszProfileName
+    lParam = 0 (unused)
+  }
+
+  MS_DB_CHECKPROFILE:PAnsiChar = 'DB/CheckProfile';
+
 type
   PDBCONTACTGETSETTING = ^TDBCONTACTGETSETTING;
   TDBCONTACTGETSETTING = record
