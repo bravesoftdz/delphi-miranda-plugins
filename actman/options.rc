@@ -312,7 +312,7 @@ BEGIN
     BEGIN
       VALUE "CompanyName",""
       VALUE "Comments", "Plugin for managing different Miranda actions "0
-      VALUE "FileDescription", "Action manager for Miranda IM"0
+      VALUE "FileDescription", "Action manager for Miranda NG"0
       VALUE "FileVersion", "0, 2, 0, 1 "0
       VALUE "InternalName", "ActManager"0
       VALUE "OriginalFilename", "actman.dll"0

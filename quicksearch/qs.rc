@@ -162,7 +162,7 @@ BEGIN
     BEGIN
       VALUE "CompanyName",""
       VALUE "Comments", "Plugin to quick search for nickname, firstname, lastname, email, uin in your contact list"0
-      VALUE "FileDescription", "Quick info search plugin for Miranda IM"0
+      VALUE "FileDescription", "Quick info search plugin for Miranda NG"0
       VALUE "FileVersion", "1, 4, 1, 18 "0
       VALUE "InternalName", "QuickSearchMod"0
       VALUE "OriginalFilename", "quicksearch.dll"0
