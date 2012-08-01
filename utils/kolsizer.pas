@@ -480,17 +480,16 @@ begin
   T := LowerCase(aName);
   while T <> '' do aName := Parse(T, '_');
 
-  aName[1]:=UpCase(aName[1]);
-{
+//  aName[1]:=UpCase(aName[1]);
   //Propercase it
   T := aName[1];
   T := UpperCase(T);
   aName[1] := T[1];
-}
+
   Result := aName;
   // Add at least a 1 to the name if the last char
   // is not a digit.
-  if not (aName[length(aName)] in ['0'..'9']) then
+  if not (AnsiChar(aName[length(aName)]) in ['0'..'9']) then
     Result := Format('%s%d', [aName, 1]);
   J := 1;
   repeat
