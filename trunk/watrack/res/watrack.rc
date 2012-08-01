@@ -88,7 +88,7 @@ BEGIN
     BEGIN
       VALUE "CompanyName",""
       VALUE "Comments", "Plugin to get, insert to messages and show currently played song info"
-      VALUE "FileDescription", "WATrack plugin for Miranda IM"
+      VALUE "FileDescription", "WATrack plugin for Miranda NG"
       VALUE "FileVersion", "0, 0, 6, 12 "0 
       VALUE "InternalName", "WATrack"
       VALUE "OriginalFilename", "watrack.dll"
