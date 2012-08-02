@@ -1,0 +1,34 @@
+move bottom: last - on top
+scroll on top - flick
+scroll on bottom - visual bugs
+
+ApplyItemToRich:
+  FontCharSet,FontName    RE_FmtFontCharset,RE_FmtFontName 
+  textColor,backColor
+  colorLink,ctable_text
+  RTL
+  bold,italic,underline,strikeout,size   RE_FmtBold etc
+  text
+----
+!!!!!RE_Text[ fmt, selonly ]
+RE_InsertRTF( s )
+
+RE_AutoURLDetect 
+RE_URL + OnRE_OverURL + OnRE_URLClick 
+
+RichCache/Bitmap as object = Width+Height for render on grid
+
+DoOptionsChanged -> split to Onchange
+
+Plugin -> Grid
+Readoptions and grid settings
+Create window? set window size
+choose contact 
+===========
+RichCache:
+ParentWindow = Grid.Handle in WMSize message - guarantee for existing window
+=============
+-----------
+отдельно хранить список открытых окон?
+(для журналов - тоже)
+----------
