@@ -29,7 +29,7 @@ end;
 function OnChange(Grid:PHistoryGrid;wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
   result:=0;
-Grid.DoOptionsChanged; //!!!!
+Grid.DoOptionsChanged; //!!
   if (wParam and HGOPT_OPTIONS) <> 0 then
   begin
   end;
@@ -44,10 +44,9 @@ end;
 procedure THistoryGrid.SetState(const Value: TGridState);
 begin
   FState := Value;
-{!!
+
   if Assigned(FOnState) then
-    FOnState(Self, FState);
-}
+    FOnState(@Self, FState);
 end;
 
 procedure THistoryGrid.SetGroupLinked(const Value: Boolean);
@@ -259,7 +258,7 @@ procedure THistoryGrid.UpdateFilter;
 begin
   if not Allocated then
     exit;
-//!!  CheckBusy;
+  CheckBusy;
 
   FRichCache.ResetItems(FSelItems);
   SetLength(FSelItems, 0);

@@ -1,7 +1,4 @@
-move bottom: last - on top
-scroll on top - flick
-scroll on bottom - visual bugs
-
+-------------
 ApplyItemToRich:
   FontCharSet,FontName    RE_FmtFontCharset,RE_FmtFontName 
   textColor,backColor

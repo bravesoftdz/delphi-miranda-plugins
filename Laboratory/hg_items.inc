@@ -370,7 +370,16 @@ begin
     Result := (FItems[Item].RTLMode = hppRTLEnable)
 end;
 
-procedure THistoryGrid.ApplyItemToRich(Item: Integer; aRichEdit: THPPRichEdit = nil; ForceInline: Boolean = False);
+function MakeColorLines(Color:TColor):AnsiString;
+var
+  b1,b2,b3:array [0..15] of AnsiChar;
+begin
+  result:=AnsiString('\red'  )+IntToStr(b1,Color and $FF)+
+          AnsiString('\green')+IntToStr(b2,(Color shr 8) and $FF)+
+          AnsiString('\blue' )+IntToStr(b3,(Color shr 16) and $FF)+';'
+end;
+
+procedure THistoryGrid.ApplyItemToRich(Item: Integer; aRichEdit: PHPPRichEdit = nil; ForceInline: Boolean = False);
 var
   reItemInline: Boolean;
   reItemSelected: Boolean;
@@ -401,6 +410,7 @@ begin
   if not reItemInline then
     FRich := aRichEdit;
 
+  GridOptions.GetItemOptions(FItems[Item].MessageType, textFont, BackColor);
   if reItemSelected then
   begin
     textColor := GridOptions.ColorSelectedText;
@@ -408,7 +418,6 @@ begin
   end
   else
   begin
-    GridOptions.GetItemOptions(FItems[Item].MessageType, textFont, BackColor);
     textColor := textFont.Color;
     BackColor := BackColor;
   end;
@@ -429,24 +438,15 @@ begin
   begin
     RTF := '{\rtf1\ansi\deff0{\fonttbl ';
     // RTF := Format('{\rtf1\ansi\ansicpg%u\deff0\deflang%u{\fonttbl ',[FItems[Item].Codepage,GetLCIDfromCodepage(CodePage)]);
-    RTF := RTF + Format('{\f0\fnil\fcharset%u %s}', [textFont.FontCharSet, textFont.FontName]);
+    RTF := RTF + AnsiString(Format('{\f0\fnil\fcharset%u %s}', [textFont.FontCharSet, textFont.FontName]));
     RTF := RTF + '}{\colortbl';
-    RTF := RTF + Format('\red%u\green%u\blue%u;',
-       [textColor and $FF,
-       (textColor shr 8) and $FF,
-       (textColor shr 16) and $FF]);
-    RTF := RTF + Format('\red%u\green%u\blue%u;',
-       [BackColor and $FF,
-       (BackColor shr 8) and $FF,
-       (BackColor shr 16) and $FF]);
+    RTF := RTF + MakeColorLines(textColor);
+    RTF := RTF + MakeColorLines(BackColor);
     // add color table for BBCodes
     if GridOptions.BBCodesEnabled then
     begin
       // link color ro [url][/url], [img][/img]
-      RTF := RTF + Format('\red%u\green%u\blue%u;',
-         [GridOptions.ColorLink and $FF,
-         (GridOptions.ColorLink shr 8) and $FF,
-         (GridOptions.ColorLink shr 16) and $FF]);
+      RTF := RTF + MakeColorLines(GridOptions.ColorLink);
       if reItemUseFormat then
         RTF := RTF + rtf_ctable_text;
     end;
@@ -532,7 +532,7 @@ begin
 
 end;
 
-procedure THistoryGrid.ApplyItemToRichCache(Sender: PControl; Item: Integer; aRichEdit: THPPRichEdit);
+procedure THistoryGrid.ApplyItemToRichCache(Sender: PControl; Item: Integer; aRichEdit: PHPPRichEdit);
 begin
   ApplyItemToRich(Item,aRichEdit);
 end;

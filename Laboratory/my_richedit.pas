@@ -3,21 +3,18 @@ unit my_richedit;
 interface
 
 uses
+  KolOleRe2,
   kol;
 
 type
-  TKOLRichEdit = PControl;
-
   PHPPRichEdit = ^THPPRichEdit;
-  THPPRichEdit = TKOLRichEdit;
+  THPPRichEdit = TKOLOleRichEdit2;
 
-function NewHPPRichEdit(aParent:PControl; Options:TEditOptions):PControl;
+function NewHPPRichEdit(aParent:PControl; Options:TEditOptions):PHPPRichEdit;
 
 implementation
 
-uses KolOleRe2;
-
-function NewHPPRichEdit(aParent:PControl; Options:TEditOptions):PControl;
+function NewHPPRichEdit(aParent:PControl; Options:TEditOptions):PHPPRichEdit;
 begin
 //  result:=NewRichEdit(aParent, Options);
   result:=NewOLERichEdit2(aParent, Options);
