@@ -157,7 +157,7 @@ type
     descr :PWideChar;
     case actionType:dword of
       ACT_CONTACT:
-        (contact:cardinal);
+        (contact:THANDLE);
       ACT_SERVICE:
         (service:PAnsiChar;
         wparam  :WPARAM;
@@ -182,7 +182,7 @@ type
         (id    :dword;
         actname:pWideChar);
       ACT_RW:
-        (dbcontact:cardinal;
+        (dbcontact:THANDLE;
         dbmodule  :PAnsiChar;
         dbsetting :PAnsiChar;
         dbvalue   :uint_ptr);
