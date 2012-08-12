@@ -1,12 +1,24 @@
 {}
 
+procedure THistoryGrid.SetHideSelection(const Value: Boolean);
+begin
+  if FHideSelection = Value then
+    exit;
+  FHideSelection := Value;
+  if FGridNotFocused and (SelCount > 0) then
+  begin
+    FRichCache.ResetItems(FSelItems);
+    FClient.Invalidate;
+  end;
+end;
+
 function THistoryGrid.IsSelected(Item: Integer): Boolean;
 begin
   Result := False;
-{!!
+
   if FHideSelection and FGridNotFocused then
     exit;
-}
+
   if Item = -1 then
     exit;
   Result := IntSortedArray_Find(TIntArray(FSelItems), Item) <> -1;
@@ -159,4 +171,26 @@ begin
   else
     first := FSelected;
   MakeRangeSelected(first, Item);
+end;
+
+function THistoryGrid.GetSelectionString: WideString;
+begin
+  if FSelectionStored then
+  begin
+    Result := FSelectionString;
+    exit;
+  end
+  else
+    Result := '';
+  if Count = 0 then
+    exit;
+
+  if State = gsInline then
+    Result := GetRichString(FRichInline.Handle, True)
+  else if Selected <> -1 then
+  begin
+    FSelectionString := FormatSelected(GridOptions.SelectionFormat);
+    FSelectionStored := True;
+    Result := FSelectionString;
+  end;
 end;

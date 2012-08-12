@@ -2,11 +2,10 @@
 procedure THistoryGrid.OnGridBeforeScroll(Sender: PControl; OldPos, NewPos: Integer;
       Cmd: Word; var AllowChange: Boolean);
 begin
-//!!  CheckBusy;
+  CheckBusy;
 
   if Cmd = SB_ENDSCROLL then
     exit;
-//beginupdate;
   if Cmd in [SB_LINEUP, SB_LINEDOWN, SB_PAGEDOWN, SB_PAGEUP] then
   begin
     case Cmd of
@@ -20,14 +19,11 @@ begin
   end;
   NeededSBPosition := NewPos;
   FClient.Invalidate;
-//endupdate;
-//  FClient.Update;
 end;
 
 procedure THistoryGrid.OnGridScroll(Sender: PControl; Cmd: Word);
 var
-  Item1, Item2, SBPos: Integer;
-  off, idx, first, ind: Integer;
+  idx: Integer;
 begin
   // scrolled position to real item number position
   VertScrollBar.SBPosition := NeededSBPosition;
@@ -203,7 +199,6 @@ begin
   first := GetFirstVisible;
   if first = -1 then
     exit;
-
   SumHeight := -TopItemOffset;
   idx := first;
   // Scroll Grid to bottom -> Scroll window Up

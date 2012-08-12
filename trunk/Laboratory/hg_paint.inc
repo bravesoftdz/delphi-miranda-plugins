@@ -264,7 +264,7 @@ begin
       ItemClipRect.Top - ItemRect.Top, SRCCOPY);
   end;
 
-  if (*!!(not FGridNotFocused {or WindowPrePainting}) and *)(Index = Selected) then
+  if (not FGridNotFocused {or WindowPrePainting}) and (Index = Selected) then
   begin
     DrawFocusRect(FClient.Canvas.Handle, OrgRect);
   end;

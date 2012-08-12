@@ -7,6 +7,7 @@ uses
   my_GridOptions in 'my_GridOptions.pas',
   my_RichCache in 'my_RichCache.pas',
   my_grid in 'my_grid.pas',
+//  hpp_external in 'hpp_external.pas',
   hpp_options in 'hpp_options.pas',
   hpp_opt_dialog in 'hpp_opt_dialog.pas',
   hpp_global in 'hpp_global.pas';

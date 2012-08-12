@@ -26,6 +26,10 @@ procedure ReplaceCharFormatRange(RichEditHandle: THandle;
      const fromCF, toCF: CHARFORMAT2; idx, len: Integer);
 procedure ReplaceCharFormat(RichEditHandle: THandle; const fromCF, toCF: CHARFORMAT2);
 
+function GetTextLength(RichEditHandle:THandle): Integer;
+
+function GetTextRange(RichEditHandle:THandle; cpMin,cpMax: Integer): AnsiString;
+
 implementation
 
 uses
@@ -131,7 +135,8 @@ function RichEditStreamSave(dwCookie: Longint; pbBuff: PByte; cb: Longint; var p
 var
   prevSize: Integer;
 begin
-  with PTextStream(dwCookie)^ do begin
+  with PTextStream(dwCookie)^ do
+  begin
     prevSize := Size;
     Inc(Size,cb);
     ReallocMem(Data,Size);
@@ -395,6 +400,18 @@ begin
   ReplaceCharFormatRange(RichEditHandle,fromCF,toCF,0,GetTextLength(RichEditHandle));
 end;
 
+
+function GetTextRange(RichEditHandle: THandle; cpMin,cpMax: Integer): AnsiString;
+var
+  tr: TextRange;
+begin
+  tr.chrg.cpMin := cpMin;
+  tr.chrg.cpMax := cpMax;
+  SetLength(Result,cpMax-cpMin);
+  tr.lpstrText := @Result[1];
+
+  SendMessage(RichEditHandle,EM_GETTEXTRANGE,0,LPARAM(@tr));
+end;
 
 initialization
 finalization

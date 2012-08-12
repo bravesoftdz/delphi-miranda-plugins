@@ -1308,6 +1308,7 @@ function DlgProcOpt2(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lres
 var
   wnd,wnd1,wnd2:HWND;
   i,j:int_ptr;
+  lvflag:integer;
   pc:pAnsiChar;
   li:LV_ITEMW;
   lv:LV_COLUMNW;
@@ -1988,16 +1989,17 @@ begin
 
         LVN_ITEMCHANGED: begin
           if DontReact then exit; // bug when group moved avoid
+
           if wParam=IDC_ACTION_GROUP then
           begin
             if PNMLISTVIEW(lParam)^.uChanged=LVIF_STATE then
             begin
-              i:=(PNMLISTVIEW(lParam)^.uOldState and LVNI_FOCUSED)-
-                 (PNMLISTVIEW(lParam)^.uNewState and LVNI_FOCUSED);
+              lvflag:=(PNMLISTVIEW(lParam)^.uOldState and LVNI_FOCUSED)-
+                      (PNMLISTVIEW(lParam)^.uNewState and LVNI_FOCUSED);
 
-              if i>0 then // old focus
+              if lvflag>0 then // old focus
                 BuildActionChain(PNMLISTVIEW(lParam)^.iItem)
-              else if i<0 then // new focus
+              else if lvflag<0 then // new focus
               begin
                 DontReact:=true;
 
@@ -2009,21 +2011,21 @@ begin
               end
               else
               begin
-                i:=(PNMLISTVIEW(lParam)^.uOldState and LVNI_SELECTED)-
-                   (PNMLISTVIEW(lParam)^.uNewState and LVNI_SELECTED);
-                if i<>0 then
+                lvflag:=(PNMLISTVIEW(lParam)^.uOldState and LVNI_SELECTED)-
+                        (PNMLISTVIEW(lParam)^.uNewState and LVNI_SELECTED);
+                if lvflag<>0 then
                   CheckGrpList(PNMLISTVIEW(lParam)^.iItem);
               end;
             end;
           end
           else if wParam=IDC_ACTION_LIST then
           begin
-            i:=(PNMLISTVIEW(lParam)^.uOldState and LVNI_FOCUSED)-
-               (PNMLISTVIEW(lParam)^.uNewState and LVNI_FOCUSED);
-            if i>0 then // old focus
+            lvflag:=(PNMLISTVIEW(lParam)^.uOldState and LVNI_FOCUSED)-
+                    (PNMLISTVIEW(lParam)^.uNewState and LVNI_FOCUSED);
+            if lvflag>0 then // old focus
               SaveAction(PNMLISTVIEW(lParam)^.iItem,
                          PNMLISTVIEW(lParam)^.lParam)
-            else if i<0 then // new focus
+            else if lvflag<0 then // new focus
             begin
               DontReact:=true;
 
@@ -2036,9 +2038,9 @@ begin
             end
             else
             begin // checkboxes
-              i:=(PNMLISTVIEW(lParam)^.uOldState and LVNI_SELECTED)-
-                 (PNMLISTVIEW(lParam)^.uNewState and LVNI_SELECTED);
-              if i<>0 then
+              lvflag:=(PNMLISTVIEW(lParam)^.uOldState and LVNI_SELECTED)-
+                      (PNMLISTVIEW(lParam)^.uNewState and LVNI_SELECTED);
+              if lvflag<>0 then
                 CheckGrpList(PNMLISTVIEW(lParam)^.iItem);
 
               if (PNMLISTVIEW(lParam)^.uOldState or PNMLISTVIEW(lParam)^.uNewState)=$3000 then

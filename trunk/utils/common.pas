@@ -175,10 +175,10 @@ function IntToTime(dst:PAnsiChar;time:integer):PAnsiChar; overload;
 function IntToK(dst:pWideChar;value,divider,prec,post:integer):pWideChar;
 
 // string conversion
-function IntToHex(dst:pWideChar;Value:dword  ;Digits:integer=0):pWideChar; overload;
-function IntToHex(dst:PAnsiChar;Value:dword  ;Digits:integer=0):PAnsiChar; overload;
-function IntToStr(dst:pWideChar;Value:integer;Digits:integer=0):pWideChar; overload;
-function IntToStr(dst:PAnsiChar;Value:integer;Digits:integer=0):PAnsiChar; overload;
+function IntToHex(dst:pWideChar;Value:int64;Digits:integer=0):pWideChar; overload;
+function IntToHex(dst:PAnsiChar;Value:int64;Digits:integer=0):PAnsiChar; overload;
+function IntToStr(dst:pWideChar;Value:int64;Digits:integer=0):pWideChar; overload;
+function IntToStr(dst:PAnsiChar;Value:int64;Digits:integer=0):PAnsiChar; overload;
 function StrToInt(src:pWideChar):int64; overload;
 function StrToInt(src:PAnsiChar):int64; overload;
 function HexToInt(src:pWideChar;len:cardinal=$FFFF):int64; overload;
@@ -2096,7 +2096,7 @@ begin
   end;
 end;
 
-function IntToStr(dst:PAnsiChar;Value:integer;Digits:integer=0):PAnsiChar;
+function IntToStr(dst:PAnsiChar;Value:int64;Digits:integer=0):PAnsiChar;
 var
   i:dword;
 begin
@@ -2127,7 +2127,7 @@ begin
   result:=dst;
 end;
 
-function IntToStr(dst:pWideChar;Value:integer;Digits:integer=0):pWideChar;
+function IntToStr(dst:pWideChar;Value:int64;Digits:integer=0):pWideChar;
 var
   i:dword;
 begin
@@ -2194,7 +2194,7 @@ begin
   end;
 end;
 
-function IntToHex(dst:pWidechar;Value:dword;Digits:integer=0):pWideChar;
+function IntToHex(dst:pWidechar;Value:int64;Digits:integer=0):pWideChar;
 var
   i:dword;
 begin
@@ -2216,7 +2216,7 @@ begin
   result:=dst;
 end;
 
-function IntToHex(dst:PAnsiChar;Value:dword;Digits:integer=0):PAnsiChar;
+function IntToHex(dst:PAnsiChar;Value:int64;Digits:integer=0):PAnsiChar;
 var
   i:dword;
 begin
@@ -2382,16 +2382,26 @@ var
   i:integer;
   p:pAnsiChar;
   p1:pByte;
+  cnt:integer;
 begin
-  SetLength(buf,len*3+1);
+  SetLength(buf,len*4+1);
   p:=@buf[0];
   p1:=ptr;
+  cnt:=0;
   for i:=0 to len-1 do
   begin
     IntToHex(p,p1^,2);
     inc(p,2);
     inc(p1);
+    inc(cnt);
+    if cnt=4 then
+    begin
+      cnt:=0;
+      p^:='.';
+      inc(p);
+    end;
   end;
+  p^:=#0;
   messageboxa(0,@buf[0],'',0);
 end;
 begin

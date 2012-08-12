@@ -13,7 +13,7 @@ type
 type
   PRichItem = ^TRichItem;
   TRichItem = record
-    Rich       : THPPRichEdit;
+    Rich       : PHPPRichEdit;
     Bitmap     : CacheBitmap;
     BitmapDrawn: Boolean;
     Height     : Integer; // "real" height for bottomless RichEdit
@@ -26,7 +26,7 @@ type
     SaveRect: TRect;     // can get rect from RichItem.Rich?
   end;
 
-  tOnRichApply = procedure (Sender: PControl; Item:integer; Rich:THPPRichEdit) of object;
+  tOnRichApply = procedure (Sender: PControl; Item:integer; Rich:PHPPRichEdit) of object;
 
   PRichCache = ^TRichCache;
   TRichCache = object(TObj)
@@ -178,7 +178,7 @@ begin
       LockedItem.RichItem := Item;
       LockedItem.SaveRect := SaveRect;
       FLockedList.Add(LockedItem);
-      Result := FLockedList.Count;
+      Result := FLockedList.Count-1;
     end;
   end;
 end;
@@ -241,8 +241,12 @@ begin
     HDC := Item^.Bitmap.Canvas.Handle;
     hdcTarget := HDC;
     SetRect(rc, 0, 0,
+      Item^.Bitmap.Width * 1440 div LogX,
+      Item^.Bitmap.Height * 1440 div LogY);
+{
       MulDiv(Item^.Bitmap.Width , 1440, LogX),
       MulDiv(Item^.Bitmap.Height, 1440, LogY));
+}
     rcPage := rc;
     chrg.cpMin := 0;
     chrg.cpMax := -1;
@@ -367,7 +371,8 @@ begin
   result^.Height   := -1;
   result^.GridItem := -1;
 
-  result^.Rich := NewHPPRichEdit(aParent,[eoNoHScroll, eoNoVScroll,eoMultiline]).RE_Bottomless;
+  result^.Rich := NewHPPRichEdit(aParent,[eoNoHScroll, eoNoVScroll,eoMultiline]);
+  result^.Rich.RE_Bottomless;
   // make richedit transparent:
   ExStyle := GetWindowLongPtr(result^.Rich.Handle, GWL_EXSTYLE);
   ExStyle := ExStyle or WS_EX_TRANSPARENT;

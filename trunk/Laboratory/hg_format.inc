@@ -1,4 +1,132 @@
 {}
+{ from SysUtils }
+function IsLeadChar(C: WideChar): Boolean;
+begin
+  Result := (C >= #$D800) and (C <= #$DFFF);
+end;
+
+function StrCharLength(const Str: PWideChar): Integer;
+begin
+  if (Str^ >= #$D800) and (Str^ <= #$DBFF) and
+     (Str[1] >= #$DC00) and (Str[1] <= #$DFFF) then
+    Result := SizeOf(WideChar) * 2
+  else
+    Result := SizeOf(WideChar);
+end;
+
+function CharLength(const S: UnicodeString; Index: Integer): Integer;
+begin
+  Result := SizeOf(WideChar);
+  if IsLeadChar(S[Index]) then
+    Result := StrCharLength(PWideChar(S) + Index - 1);
+end;
+
+type
+  TSysCharSet = set of AnsiChar;
+
+function WrapText(const Line, BreakStr: WideString; const BreakChars: TSysCharSet;
+  MaxCol: Integer): WideString;
+const
+  QuoteChars = ['''', '"'];
+   sLineBreak = WideString(#13#10);
+var
+  Col, Pos: Integer;
+  LinePos, LineLen: Integer;
+  BreakLen, BreakPos: Integer;
+  QuoteChar, CurChar: WideChar;
+  ExistingBreak: Boolean;
+  L: Integer;
+begin
+  Col := 1;
+  Pos := 1;
+  LinePos := 1;
+  BreakPos := 0;
+  QuoteChar := #0;
+  ExistingBreak := False;
+  LineLen := Length(Line);
+  BreakLen := Length(BreakStr);
+  Result := '';
+  while Pos <= LineLen do
+  begin
+    CurChar := Line[Pos];
+    if IsLeadChar(CurChar) then
+    begin
+      L := CharLength(Line, Pos) div SizeOf(WideChar) - 1;
+      Inc(Pos, L);
+      Inc(Col, L);
+    end
+    else
+    begin
+    if AnsiChar(CurChar) in QuoteChars then
+      if QuoteChar = #0 then
+        QuoteChar := CurChar
+      else if CurChar = QuoteChar then
+        QuoteChar := #0;
+    if QuoteChar = #0 then
+    begin
+      if CurChar = BreakStr[1] then
+      begin
+        ExistingBreak := StrCmpW(PWideChar(BreakStr), PWideChar(@Line[Pos]), BreakLen) = 0;
+        if ExistingBreak then
+        begin
+          Inc(Pos, BreakLen-1);
+          BreakPos := Pos;
+        end;
+      end;
+
+      if not ExistingBreak then
+        if AnsiChar(CurChar) in BreakChars then
+          BreakPos := Pos;
+      end;
+    end;
+
+    Inc(Pos);
+    Inc(Col);
+
+    if not (AnsiChar(QuoteChar) in QuoteChars) and (ExistingBreak or
+      ((Col > MaxCol) and (BreakPos > LinePos))) then
+    begin
+      Col := 1;
+      Result := Result + Copy(Line, LinePos, BreakPos - LinePos + 1);
+      if not (AnsiChar(CurChar) in QuoteChars) then
+      begin
+        while Pos <= LineLen do
+        begin
+          if AnsiChar(Line[Pos]) in BreakChars then
+          begin
+            Inc(Pos);
+            ExistingBreak := False;
+          end
+          else
+          begin
+            if StrCmpW(PWideChar(@Line[Pos]), sLineBreak, Length(sLineBreak)) = 0 then
+            begin
+              Inc(Pos, Length(sLineBreak));
+              ExistingBreak := True;
+            end
+            else
+              Break;
+          end;
+        end;
+      end;
+      if (Pos <= LineLen) and not ExistingBreak then
+        Result := Result + BreakStr;
+
+      Inc(BreakPos);
+      LinePos := BreakPos;
+      Pos := LinePos;
+      ExistingBreak := False;
+    end;
+  end;
+  Result := Result + Copy(Line, LinePos, MaxInt);
+end;
+{
+function WrapText(const Line: WideString; MaxCol: Integer): WideString;
+begin
+  Result := WrapText(Line, sLineBreak, [' ', '-', #9], MaxCol);
+end;
+}
+
 function THistoryGrid.FormatItems(ItemList: array of Integer; Format: WideString): WideString;
 var
   ifrom, ito, step, i, n: Integer;
@@ -144,28 +272,26 @@ begin
       ws:=tok[toksp[i]];
       if ws = '%mes%' then
         subst := Mes
-{!!
+
       else if ws = '%adj_mes%' then
         subst := WrapText(Mes, #13#10, [' ', #9, '-'], 72)
-}
 
       else if ws = '%quot_mes%' then
       begin
         subst := StringReplace('» ' + Mes, #13#10, #13#10 + '» ', [rfReplaceAll]);
-//!!        subst := WrapText(subst, #13#10 + '» ', [' ', #9, '-'], 70)
+        subst := WrapText(subst, #13#10 + '» ', [' ', #9, '-'], 70)
       end
 
       else if ws = '%selmes%' then
         subst := selmes
-{!!
+
       else if ws = '%adj_selmes%' then
         subst := WrapText(selmes, #13#10, [' ', #9, '-'], 72)
-}
 
       else if ws = '%quot_selmes%' then
       begin
         subst := StringReplace('» ' + selmes, #13#10, #13#10 + '» ', [rfReplaceAll]);
-//!!        subst := WrapText(subst, #13#10 + '» ', [' ', #9, '-'], 70)
+        subst := WrapText(subst, #13#10 + '» ', [' ', #9, '-'], 70)
       end
 
       else if ws = '%nick%' then
