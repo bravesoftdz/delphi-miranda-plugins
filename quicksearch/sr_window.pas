@@ -527,7 +527,7 @@ begin
         if wparam._type=ptCurrent then wparam.n:=hContact;
         if lparam._type=ptCurrent then lparam.n:=hContact;
         tmp:=CallService(protov,wparam.n,lparam.n);
-        if int_ptr(tmp)=int_ptr(CALLSERVICE_NOTFOUND) then exit;
+        if tmp=CALLSERVICE_NOTFOUND then exit;
         case setting_cnftype of
           ptString: begin
             AnsiToWide(PAnsiChar(tmp),res.text);
