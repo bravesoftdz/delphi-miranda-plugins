@@ -21,6 +21,24 @@
 {$DEFINE M_EXTRAICONS}
 
 const
+// Adding icon to extra image list.
+// Used for EXTRAICON_TYPE_CALLBACK extra icons
+//
+// wparam = (HICON)hIcon
+// lparam = 0 (unused)
+// return HANDLE hImage on success or INVALID_HANDLE_VALUE on failure
+  MS_CLIST_EXTRA_ADD_ICON:PansiChar = 'CListFrames/AddIconToExtraImageList';
+
+//called with wparam=hContact
+  ME_CLIST_EXTRA_IMAGE_APPLY:PansiChar = 'CListFrames/OnExtraImageApply';
+
+//called with wparam=hContact lparam=extra
+  ME_CLIST_EXTRA_CLICK:PansiChar = 'CListFrames/OnExtraClick';
+
+//called with wparam=lparam=0
+  ME_CLIST_EXTRA_LIST_REBUILD:PansiChar = 'CListFrames/OnExtraListRebuild';
+
+const
   EXTRAICON_TYPE_CALLBACK = 0; // Similar to old clist callbacks, it fires 2 notifications
   EXTRAICON_TYPE_ICOLIB   = 1; // This extra icon will use only icons registered with icolib.
         // No callbacks needed. Just call MS_EXTRAICON_SET_ICON passing the name of the
