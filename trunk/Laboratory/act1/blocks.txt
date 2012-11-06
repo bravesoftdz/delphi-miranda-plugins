@@ -1,0 +1,49 @@
+Messagebox
+start program
+call service
+import/export clipboard/file
+just text
+contact
+call chain
+jump action
+read/write settings
+
+
+1 - name
+2 - dialog
+3 - action
+
+registration: 
+  name, link to object constructor, to dialog?
+  uid = name hash?
+
+action: LastResult, hContact, Param?
+dialog: action (with parent link) - for subaction list
+
+TActionRegister = record
+  Name    : PWideChar; // array [0..31] of WideChar;
+  Dialog  : Template; // input/output: Action with parent link
+  Action  : pointer;  // LastResult, hContact, Parameter
+  Save,
+  Load    : pointer;  // no parameters
+  Export,
+  Import  : pointer;  // format number/code
+  DataSize: integer;  // SizeOf Action type record
+end;
+
+если делать классы, где-то проще, где-то сложнее
+1 - create element
+2 - delete element
+3 - change element
+4 - save (export) element
+5 - load (import) element
+6 - edit element
+7 - choose element type!!
+
+Registration: name / registration procedure pointer?
+Dialog - outside object?
+Create, Delete, Clear-Set to default, Hide/Show
+common (buttons): clear, save, revert=reload (to saved)
+dialog: save - destroy old object if any
+               create new by corresponding type
+               fill by dialog data

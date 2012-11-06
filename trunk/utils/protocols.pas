@@ -415,46 +415,42 @@ begin
   end;
   for i:=1 to protoCount do
   begin
-    // active and switched off (but not deleted)
-    if (proto^^._type and PROTOTYPE_PROTOCOL)<>0 then
+    inc(NumProto);
+    with protos^[NumProto] do
     begin
-      inc(NumProto);
-      with protos^[NumProto] do
-      begin
-        name :=proto^^.szModuleName;
-        descr:=proto^^.tszAccountName.w;
+      name :=proto^^.szModuleName;
+      descr:=proto^^.tszAccountName.w;
 
-        enabled:=psf_all;//psf_enabled;
-        status :=0;
+      enabled:=psf_all;//psf_enabled;
+      status :=0;
 //        xstat  :=-1;
-        flag:=CallProtoService(name,PS_GETCAPS,PFLAGNUM_2,0);
-        if (flag and PF2_ONLINE)    <>0 then status:=status or psf_online;
-        if (flag and PF2_INVISIBLE) <>0 then status:=status or psf_invisible;
-        if (flag and PF2_SHORTAWAY) <>0 then status:=status or psf_shortaway;
-        if (flag and PF2_LONGAWAY)  <>0 then status:=status or psf_longaway;
-        if (flag and PF2_LIGHTDND)  <>0 then status:=status or psf_lightdnd;
-        if (flag and PF2_HEAVYDND)  <>0 then status:=status or psf_heavydnd;
-        if (flag and PF2_FREECHAT)  <>0 then status:=status or psf_freechat;
-        if (flag and PF2_OUTTOLUNCH)<>0 then status:=status or psf_outtolunch;
-        if (flag and PF2_ONTHEPHONE)<>0 then status:=status or psf_onthephone;
+      flag:=CallProtoService(name,PS_GETCAPS,PFLAGNUM_2,0);
+      if (flag and PF2_ONLINE)    <>0 then status:=status or psf_online;
+      if (flag and PF2_INVISIBLE) <>0 then status:=status or psf_invisible;
+      if (flag and PF2_SHORTAWAY) <>0 then status:=status or psf_shortaway;
+      if (flag and PF2_LONGAWAY)  <>0 then status:=status or psf_longaway;
+      if (flag and PF2_LIGHTDND)  <>0 then status:=status or psf_lightdnd;
+      if (flag and PF2_HEAVYDND)  <>0 then status:=status or psf_heavydnd;
+      if (flag and PF2_FREECHAT)  <>0 then status:=status or psf_freechat;
+      if (flag and PF2_OUTTOLUNCH)<>0 then status:=status or psf_outtolunch;
+      if (flag and PF2_ONTHEPHONE)<>0 then status:=status or psf_onthephone;
 
-        flag:=CallProtoService(name,PS_GETCAPS,PFLAGNUM_1,0);
-        if ((flag and PF1_CHAT)<>0) or
-           (DBReadByte(0,name,'CtcpChatAccept',13)<>13) or // IRC
-           (DBReadByte(0,name,'Jud',13)<>13) then          // Jabber
+      flag:=CallProtoService(name,PS_GETCAPS,PFLAGNUM_1,0);
+      if ((flag and PF1_CHAT)<>0) or
+         (DBReadByte(0,name,'CtcpChatAccept',13)<>13) or // IRC
+         (DBReadByte(0,name,'Jud',13)<>13) then          // Jabber
 //        flag:=CallProtoService(name,PS_GETCAPS,PFLAGNUM_1,0);
 //        if (flag and PF1_CHAT)<>0 then
-          status:=status or psf_chat;
-        p:=StrCopyE(buf,name);
-        StrCopy(p,PS_ICQ_GETCUSTOMSTATUS);
-        if ServiceExists(buf)<>0 then
-          status:=status or psf_icq;
+        status:=status or psf_chat;
+      p:=StrCopyE(buf,name);
+      StrCopy(p,PS_ICQ_GETCUSTOMSTATUS);
+      if ServiceExists(buf)<>0 then
+        status:=status or psf_icq;
 
-        StrCopy(p,PS_SET_LISTENINGTO);
-        if ServiceExists(buf)<>0 then
-          status:=status or psf_tunes;
-          
-      end;
+      StrCopy(p,PS_SET_LISTENINGTO);
+      if ServiceExists(buf)<>0 then
+        status:=status or psf_tunes;
+        
     end;
     inc(proto);
   end;

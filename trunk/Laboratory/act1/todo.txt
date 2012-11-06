@@ -1,0 +1,52 @@
+messagebox:
+MB_RIGHT
+0x00080000L	
+The text is right-justified.
+MB_RTLREADING
+0x00100000L	
+Displays message and caption text using right-to-left reading order on Hebrew and Arabic systems.
+
+chain:
+ACF_BYNAME - используется лишь для импорта
+FillChainList вызывается каждый раз при изменении списка
+(ME_ACT_CHANGED,MS_ACT_GETLIST,MS_ACT_FREELIST)
+  переименование
+  добавление
+  удаление
+  релоад
+  (импорт)
+
+icons:
+*icon resource handle   =icon
+*icon icolib name       =prefix+icon?
++icon icolib description=name
+prefix = 'action_type_'
+used in icolib registration and combobox fill
+
+dialog:
+changing action - reset dialogs
+
+new action:
+show first type dialog
+initialize dialogs by default
+
+FillActTypeList
+Add dialog icons registration?
+Add to list directly?
+Register icons at modules registration? (RegisterActTypes)
+----------------------
+AddAction:
+default dialog fields
+EditAction:
+Filled type dialog
+default dialog fields
+SaveAction:
+Delete old object
+Create type object
+fill common fields (BaseAction, ActionList)
+fill type fields from dialog
+--------------
+CheckActList - Up/Dn buttons
+CheckActionList - other action buttons, acttype list
+------
+action array

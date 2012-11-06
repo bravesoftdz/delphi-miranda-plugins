@@ -194,7 +194,6 @@ const
   PROTOTYPE_FILTER      = 3000;
   PROTOTYPE_TRANSLATION = 4000;
   PROTOTYPE_OTHER       = 10000; // avoid using this if at all possible
-  PROTOTYPE_DISPROTO    = 20000;
 
 { determines if a protocol module is loaded or not
   wParam=0
@@ -259,7 +258,6 @@ type
   TPROTOACCOUNT = record
     cbSize          :int;              // sizeof this structure
     szModuleName    :PAnsiChar;        // unique physical account name (matches database module name)
-    _type           :int;              // always equal to PROTOTYPE_PROTOCOL
     tszAccountName  :TChar;            // user-defined account name
     szProtoName     :PAnsiChar;        // physical protocol name
     bIsEnabled      :int;              // is account enabled?
@@ -281,7 +279,7 @@ const
   MS_PROTO_ENUMACCOUNTS:PAnsiChar = 'Proto/EnumAccounts';
 
   MS_PROTO_ENUMPROTOS   :PAnsiChar = 'Proto/EnumProtos';   // MIRANDA_VER >= $800
-  MS_PROTO_ENUMPROTOCOLS:PAnsiChar = 'Proto/EnumProtocols';// MIRANDA_VER < $800
+//  MS_PROTO_ENUMPROTOCOLS:PAnsiChar = 'Proto/EnumProtocols';// MIRANDA_VER < $800
 
 (*
 __inline int ProtoEnumAccounts( int* accNumber, PROTOACCOUNT*** accArray )

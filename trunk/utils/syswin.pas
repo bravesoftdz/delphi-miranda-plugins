@@ -46,6 +46,12 @@ uses
 {$ENDIF}
   common,messages;
 
+{ shellapi import
+function FindExecutableA(FileName, Directory: PAnsiChar; Result: PAnsiChar): HINST; stdcall;
+         external 'shell32.dll' name 'FindExecutableA';
+function FindExecutableW(FileName, Directory: PWideChar; Result: PWideChar): HINST; stdcall;
+         external 'shell32.dll' name 'FindExecutableW';
+}
 {$IFDEF COMPILER_16_UP}
 type  pqword = ^int64;
 {$ENDIF}
