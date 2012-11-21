@@ -116,8 +116,8 @@ begin
 end;
 
 function Service_RadioMute(wParam:WPARAM;lParam:LPARAM):int;cdecl;
-var
 {$IFDEF KOL_MCK}
+var
   med:TMouseEventData;
 {$ENDIF}
 begin
