@@ -17,16 +17,32 @@ const
   ACF_KEEPONLY = $00000001; // keep contact handle in Last, don't show window
 
 type
-  pContactAction = ^tContactAction;
-  tContactAction = object(tBaseAction)
+  tContactAction = class(tBaseAction)
     contact:THANDLE;
 
-    function DoAction(var WorkData:tWorkData):LRESULT;
+    constructor Create(uid:dword);
+    function  Clone:tBaseAction;
+    function  DoAction(var WorkData:tWorkData):LRESULT;
     procedure Save(node:pointer;fmt:integer);
     procedure Load(node:pointer;fmt:integer);
   end;
 
 //----- Support functions -----
+
+constructor tContactAction.Create(uid:dword);
+begin
+  inherited Create(uid);
+
+  contact:=0;
+end;
+
+function tContactAction.Clone:tBaseAction;
+begin
+  result:=tContactAction.Create(0);
+  Duplicate(result);
+
+  tContactAction(result).contact:=contact;
+end;
 
 function OpenContact(hContact:THANDLE):THANDLE;
 begin
@@ -51,7 +67,7 @@ function tContactAction.DoAction(var WorkData:tWorkData):LRESULT;
 begin
   ClearResult(WorkData);
 
-  if (flags1 and ACF_KEEPONLY)=0 then
+  if (flags and ACF_KEEPONLY)=0 then
     WorkData.LastResult:=OpenContact(contact)
   else
     WorkData.LastResult:=contact;
@@ -124,9 +140,9 @@ begin
     end;
 
     WM_ACT_SETVALUE: begin
-      with pContactAction(lParam)^ do
+      with tContactAction(lParam) do
       begin
-        if (flags1 and ACF_KEEPONLY)<>0 then
+        if (flags and ACF_KEEPONLY)<>0 then
           CheckDlgButton(Dialog,IDC_CNT_KEEP,BST_CHECKED);
 
         SendDlgItemMessage(Dialog,IDC_CONTACTLIST,CB_SETCURSEL,
@@ -142,12 +158,12 @@ begin
     end;
 
     WM_ACT_SAVE: begin
-      with pContactAction(lParam)^ do
+      with tContactAction(lParam) do
       begin
         contact:=SendDlgItemMessage(Dialog,IDC_CONTACTLIST,CB_GETITEMDATA,
             SendDlgItemMessage(Dialog,IDC_CONTACTLIST,CB_GETCURSEL,0,0),0);
         if IsDlgButtonChecked(Dialog,IDC_CNT_KEEP)=BST_CHECKED then
-          flags1:=flags1 or ACF_KEEPONLY;
+          flags:=flags or ACF_KEEPONLY;
       end;
     end;
 
@@ -183,28 +199,20 @@ begin
   end;
 end;
 
-//----- Export functions -----
+//----- Export/interface functions -----
 
-function CreateAction:pBaseAction;
 var
-  tmp:pContactAction;
+  vc:tActModule;
+
+function CreateAction:tBaseAction;
 begin
-  New(tmp);
-
-  tmp.contact:=0;
-
-  result:=tmp;
+  result:=tContactAction.Create(vc.Hash);
 end;
 
 function CreateDialog(parent:HWND):HWND;
 begin
   result:=CreateDialogW(hInstance,'IDD_ACTCONTACT',parent,@DlgProc);
 end;
-
-//----- Interface part -----
-
-var
-  vc:tActModule;
 
 procedure Init;
 begin

@@ -58,15 +58,19 @@ const
 }
   MS_ACT_RUNPARAMS:PAnsiChar = 'Actions/RunWithParams';
 const
-  ACTP_BYNAME = 1;
-  ACTP_WAIT   = 2;
+  ACTP_BYNAME     =  1; // id points on unicode name
+  ACTP_WAIT       =  2; // waiting for macro finish
+  ACTP_NOTIFY     =  4; // notify (raise event) for start/finish macro
+  ACTP_SAMETHREAD =  8; // execute macro in same thread (with finish waiting)
+  ACTP_KEEPRESULT = 16; // (internal) keep last result
 type
   pAct_Param = ^tAct_Param;
   tAct_Param = record
-    flags :dword; // ACTP_*
     Id    :uint_ptr; // Id or name
     wParam:WPARAM;
     lParam:LPARAM;
+    flags :dword; // ACTP_*
+    lPType:dword;
   end;
 
 const

@@ -16,11 +16,6 @@ const
   ACI_VAR_UNCHECKED = 'ACI_VarUnChecked';
   ACI_VAR_CHECKED   = 'ACI_VarChecked';
 
-const
-  sresInt    = 0;
-  sresHex    = 1;
-  sresString = 2;
-  sresStruct = 3;
 
 procedure RegisterIcon(var sid:TSKINICONDESC;id:uint_ptr;name:PAnsiChar;descr:PAnsiChar);
 var
@@ -36,7 +31,7 @@ end;
 procedure RegisterIcons;
 var
   sid:TSKINICONDESC;
-  i:integer;
+//  i:integer;
 begin
   FillChar(sid,SizeOf(TSKINICONDESC),0);
   sid.cbSize     :=SizeOf(TSKINICONDESC);
@@ -60,84 +55,12 @@ begin
     with ActIds[i] do
       RegisterIcon(sid,id,icon,text);
 }
+{
   sid.cx:=8;
   sid.cy:=8;
   RegisterIcon(sid,IDI_VAR_CHECKED  ,ACI_VAR_CHECKED  ,'Use Variables');
   RegisterIcon(sid,IDI_VAR_UNCHECKED,ACI_VAR_UNCHECKED,'Don''t use Variables');
-end;
-
-procedure SetStart;
-begin
-  if NewGroupList=nil then
-  begin
-    NewGroupList:=GroupList;
-    NewMaxGroups:=MaxGroups;
-  end;
-  if NewActionList=nil then
-  begin
-    NewActionList:=ActionList;
-    NewMaxActions:=MaxActions;
-  end;
-end;
-
-procedure SetChanged(wnd:HWND;atype:integer);
-begin
-  SendMessage(GetParent(wnd),PSM_CHANGED,0,0);
-  if ((atype and etHK )<>0) and (NewGroupList =GroupList ) then NewGroupList :=CloneGroupList;
-  if ((atype and etACT)<>0) and (NewActionList=ActionList) then NewActionList:=CloneActionList;
-end;
-
-procedure SetSave(Dialog:HWND;curIdx:integer);
-var
-  i,j:integer;
-  li:LV_ITEMW;
-  wnd:HWND;
-begin
-  if NewGroupList<>GroupList then
-  begin
-
-    DestroyGroups(GroupList,MaxGroups);
-    wnd:=GetDlgItem(Dialog,IDC_ACTION_GROUP);
-    j:=SendMessageW(wnd,LVM_GETITEMCOUNT,0,0);
-    MaxGroups:=j;
-    if j>0 then
-    begin
-      GetMem  (GroupList ,MaxGroups*SizeOf(tHKRecord));
-      FillChar(GroupList^,MaxGroups*SizeOf(tHKRecord),0);
-      li.mask    :=LVIF_PARAM;
-      li.iSubItem:=0;
-      for i:=0 to j-1 do
-      begin
-        li.iItem:=i;
-        SendMessageW(wnd,LVM_GETITEMW,0,lparam(@li)); // GetLParam(wnd,i);
-        move(NewGroupList^[li.lParam],GroupList^[i],SizeOf(tHKRecord));
-        li.lParam:=i;
-        SendMessageW(wnd,LVM_SETITEMW,0,lparam(@li));
-      end;
-    end
-    else
-      GroupList:=nil;
-
-    FreeMem(NewGroupList);
-    NewGroupList:=GroupList;
-    NewMaxGroups:=MaxGroups;
-  end;
-end;
-
-procedure SetCancel;
-begin
-  if NewActionList<>nil then
-  begin
-    if (NewActionList<>ActionList) then
-      DestroyActions(NewActionList,NewMaxActions);
-    NewActionList:=nil;
-  end;
-  if NewGroupList<>nil then
-  begin
-    if (NewGroupList<>GroupList) then
-      DestroyGroups(NewGroupList,NewMaxGroups);
-    NewGroupList:=nil;
-  end;
+}
 end;
 
 {$include i_opt_dlg2.inc}

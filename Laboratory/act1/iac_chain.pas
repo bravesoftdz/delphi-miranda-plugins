@@ -9,13 +9,14 @@ uses
   iac_global, mirutils, m_api,
   common,dbsettings;
 
-{$include m_actions.inc}
 {$include m_actman.inc}
 {$include i_cnst_chain.inc}
 {$resource iac_chain.res}
 
 const
-  ACF_BYNAME   = $00000001; // Address action link by name, not Id
+  ACF_BYNAME  = $00000001; // Address action link by name, not Id
+  ACF_NOWAIT  = $00000002; // Don't wait execution result, continue
+  ACF_KEEPOLD = $00000004; // Don't change LastResult value
 
 const
   opt_chain = 'chain';
@@ -24,12 +25,13 @@ const
   NoChainText:PWideChar = 'not defined';
 
 type
-  pChainAction = ^tChainAction;
-  tChainAction = object(tBaseAction)
-    id: dword;
+  tChainAction = class(tBaseAction)
+    id     :dword;
     actname:pWideChar;
 
-    function DoAction(var WorkData:tWorkData):LRESULT;
+    constructor Create(uid:dword);
+    function  Clone:tBaseAction;
+    function  DoAction(var WorkData:tWorkData):LRESULT;
     procedure Save(node:pointer;fmt:integer);
     procedure Load(node:pointer;fmt:integer);
     procedure Clear;
@@ -39,22 +41,41 @@ type
 
 //----- Object realization -----
 
+constructor tChainAction.Create(uid:dword);
+begin
+  inherited Create(uid);
+  id     :=0;
+  actname:=nil;
+end;
+
+function tChainAction.Clone:tBaseAction;
+begin
+  result:=tChainAction.Create(0);
+  Duplicate(result);
+
+  tChainAction(result).id:=id;
+  StrDupW(tChainAction(result).actname,actname);
+end;
+
 function tChainAction.DoAction(var WorkData:tWorkData):LRESULT;
 var
   params:tAct_Param;
 begin
   result:=0;
 
-  if (flags1 and ACF_BYNAME)<>0 then
+  if (flags and ACF_BYNAME)<>0 then
   begin
-    params.flags:=ACTP_BYNAME or ACTP_WAIT;
+    params.flags:=ACTP_BYNAME;
     params.id   :=uint_ptr(actname);
   end
   else
   begin
-    params.flags:=ACTP_WAIT;
+    params.flags:=0;
     params.id   :=id;
   end;
+  if (flags and ACF_NOWAIT)=0 then
+    params.flags:=params.flags or ACTP_WAIT;
+
   params.wParam:=WorkData.Parameter;
   params.lParam:=WorkData.LastResult;
   CallService(MS_ACT_RUNPARAMS,0,tlparam(@params));
@@ -102,7 +123,7 @@ end;
 
 procedure tChainAction.Clear;
 begin
-  if (flags1 and ACF_BYNAME)<>0 then
+  if (flags and ACF_BYNAME)<>0 then
     mFreeMem(actname);
   inherited Clear;
 end;
@@ -115,7 +136,7 @@ var
   i,count:integer;
   ptr,ptr1:pChain;
 begin
-  wnd:=GetDlgItem(Dialog,IDC_GROUP_LIST);
+  wnd:=GetDlgItem(Dialog,IDC_MACRO_LIST);
 
   SendMessage(wnd,CB_RESETCONTENT,0,0);
   SendMessage(wnd,CB_SETITEMDATA,
@@ -128,7 +149,7 @@ begin
     inc(pbyte(ptr),4);
     for i:=0 to count-1 do
     begin
-      if (ptr^.flags and (ACF_ASSIGNED or ACF_VOLATILE))=ACF_ASSIGNED then
+      if (ptr^.flags and ACCF_VOLATILE)=0 then
       begin
         SendMessage(wnd,CB_SETITEMDATA,
           SendMessageW(wnd,CB_ADDSTRING,0,lparam(ptr^.descr)),ptr^.id);
@@ -157,7 +178,7 @@ begin
 
 end;
 
-procedure SelectGroup(Dialog:HWND;id:dword);
+procedure SelectMacro(Dialog:HWND;id:dword);
 var
   i:integer;
   ptr,ptr1:pChain;
@@ -172,7 +193,7 @@ begin
     inc(pbyte(ptr),4);
     for i:=0 to count-1 do
     begin
-      if ((ptr^.flags and (ACF_ASSIGNED or ACF_VOLATILE))=ACF_ASSIGNED) and
+      if ((ptr^.flags and ACCF_VOLATILE)=0) and
          (id=ptr^.id) then
       begin
         pc:=ptr^.descr;
@@ -180,11 +201,11 @@ begin
       end;
     end;
 
-    SendDlgItemMessageW(Dialog,IDC_GROUP_LIST,CB_SELECTSTRING,twparam(-1),tlparam(pc));
+    SendDlgItemMessageW(Dialog,IDC_MACRO_LIST,CB_SELECTSTRING,twparam(-1),tlparam(pc));
     CallService(MS_ACT_FREELIST,0,TLPARAM(ptr1));
     exit;
   end;
-  SendDlgItemMessageW(Dialog,IDC_GROUP_LIST,CB_SELECTSTRING,twparam(-1),tlparam(NoChainText));
+  SendDlgItemMessageW(Dialog,IDC_MACRO_LIST,CB_SELECTSTRING,twparam(-1),tlparam(NoChainText));
 end;
 
 function DlgProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
@@ -210,28 +231,39 @@ begin
     end;
 
     WM_ACT_SETVALUE: begin
-      with pChainAction(lParam)^ do
+      with tChainAction(lParam) do
       begin
-        if (flags1 and ACF_BYNAME)<>0 then
-          SendDlgItemMessageW(Dialog,IDC_GROUP_LIST,CB_SELECTSTRING,twparam(-1),tlparam(actname))
+        if (flags and ACF_BYNAME)<>0 then
+          SendDlgItemMessageW(Dialog,IDC_MACRO_LIST,CB_SELECTSTRING,twparam(-1),tlparam(actname))
         else
-          SelectGroup(Dialog,id);
+          SelectMacro(Dialog,id);
+        if (flags and ACF_NOWAIT)<>0 then
+          CheckDlgButton(Dialog,IDC_MACRO_NOWAIT,BST_CHECKED);
+        if (flags and ACF_KEEPOLD)<>0 then
+          CheckDlgButton(Dialog,IDC_MACRO_KEEPOLD,BST_CHECKED);
       end;
     end;
 
     WM_ACT_RESET: begin
-      SendDlgItemMessage(Dialog,IDC_GROUP_LIST,CB_SETCURSEL,0,0);
+      SendDlgItemMessage(Dialog,IDC_MACRO_LIST,CB_SETCURSEL,0,0);
+      CheckDlgButton(Dialog,IDC_MACRO_NOWAIT ,BST_UNCHECKED);
+      CheckDlgButton(Dialog,IDC_MACRO_KEEPOLD,BST_UNCHECKED);
     end;
 
     WM_ACT_SAVE: begin
-      with pChainAction(lParam)^ do
+      with tChainAction(lParam) do
       begin
-        wnd:=GetDlgItem(Dialog,IDC_GROUP_LIST);
+        wnd:=GetDlgItem(Dialog,IDC_MACRO_LIST);
         i:=SendMessage(wnd,CB_GETCURSEL,0,0);
         if i>0 then
           id:=SendMessage(wnd,CB_GETITEMDATA,i,0)
         else
           id:=0;
+
+        if IsDlgButtonChecked(Dialog,IDC_MACRO_NOWAIT)<>BST_UNCHECKED then
+          flags:=flags or ACF_NOWAIT;
+        if IsDlgButtonChecked(Dialog,IDC_MACRO_KEEPOLD)<>BST_UNCHECKED then
+          flags:=flags or ACF_KEEPOLD;
       end;
     end;
 
@@ -244,29 +276,20 @@ begin
   end;
 end;
 
-//----- Export functions -----
+//----- Export/interface functions -----
 
-function CreateAction:pBaseAction;
 var
-  tmp:pChainAction;
+  vc:tActModule;
+
+function CreateAction:tBaseAction;
 begin
-  New(tmp);
-
-  tmp.id     :=0;
-  tmp.actname:=nil;
-
-  result:=tmp;
+  result:=tChainAction.Create(vc.Hash);
 end;
 
 function CreateDialog(parent:HWND):HWND;
 begin
   result:=CreateDialogW(hInstance,'IDD_ACTCHAIN',parent,@DlgProc);
 end;
-
-//----- Interface part -----
-
-var
-  vc:tActModule;
 
 procedure Init;
 begin

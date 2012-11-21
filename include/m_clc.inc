@@ -81,7 +81,7 @@ const
   CLM_GETEDITCONTROL    = (CLM_FIRST+13); // returns the HWND, or NULL
   CLM_GETEXPAND         = (CLM_FIRST+14); // wParam=hItem, returns a CLE_, CLE_INVALID if not a group
   CLM_GETEXTRACOLUMNS   = (CLM_FIRST+15); // returns number of extra columns
-  CLM_GETEXTRAIMAGE     = (CLM_FIRST+16); // wParam=hItem, lParam=MAKELPARAM(iColumn (0 based),0), returns iImage or $FF
+  CLM_GETEXTRAIMAGE     = (CLM_FIRST+16); // wParam=hItem, lParam=MAKELPARAM(iColumn (0 based),0), returns iImage or EMPTY_EXTRA_ICON
   CLM_GETEXTRAIMAGELIST = (CLM_FIRST+17); // returns HIMAGELIST
   CLM_GETFONT           = (CLM_FIRST+18); // wParam=fontId, see clm_setfont. returns hFont.
   CLM_GETINDENT         = (CLM_FIRST+19); // wParam=new group indent
@@ -123,7 +123,7 @@ const
   CLM_SETBKCOLOR        = (CLM_FIRST+28); // wParam=a COLORREF, default is GetSysColor(COLOR_3DFACE)
   CLM_SETCHECKMARK      = (CLM_FIRST+29); // wParam=hItem, lParam=1 or 0
   CLM_SETEXTRACOLUMNS   = (CLM_FIRST+30); // wParam = number of extra columns (zero to EXTRA_ICON_COUNT from clc.h, currently 16)
-  CLM_SETEXTRAIMAGE     = (CLM_FIRST+31); // wParam=hItem, lParam=MAKELPARAM(iColumn (0 based),iImage). iImage=$FF is a blank
+  CLM_SETEXTRAIMAGE     = (CLM_FIRST+31); // wParam=hItem, lParam=MAKELPARAM(iColumn (0 based),iImage). iImage=EMPTY_EXTRA_ICON is a blank
   CLM_SETEXTRAIMAGELIST = (CLM_FIRST+32); // lParam=HIMAGELIST
 
   FONTID_CONTACTS      = 0;

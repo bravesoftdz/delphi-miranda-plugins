@@ -19,13 +19,6 @@ var
   OldActTableProc:pointer;
   ChMask:dword;
 
-function GetLink(hash:dword):pActModule;
-begin
-  result:=ModuleLink;
-  while (result<>nil) and (result.Hash<>hash) do
-    result:=result^.Next;
-end;
-
 procedure ResetDialogs;
 var
   p:pActModule;
@@ -56,30 +49,101 @@ begin
   ShowWindow(GetDlgItem(Dialog,IDC_ACTION_TYPE),mode);
 end;
 
-procedure FillAction(act:pBaseAction);
+procedure SetStart;
+begin
+  if NewGroupList=nil then
+  begin
+    NewGroupList:=GroupList;
+    NewMaxGroups:=MaxGroups;
+  end;
+  if NewActionList=nil then
+  begin
+    NewActionList:=ActionList;
+    NewMaxActions:=MaxActions;
+  end;
+end;
+
+procedure SetChanged(wnd:HWND;atype:integer);
+begin
+  SendMessage(GetParent(wnd),PSM_CHANGED,0,0);
+  if ((atype and etHK )<>0) and (NewGroupList =GroupList ) then NewGroupList :=CloneGroupList;
+  if ((atype and etACT)<>0) and (NewActionList=ActionList) then NewActionList:=CloneActionList;
+end;
+
+procedure SetSave(Dialog:HWND;curIdx:integer);
+var
+  i,j:integer;
+  li:LV_ITEMW;
+  wnd:HWND;
+begin
+  if NewGroupList<>GroupList then
+  begin
+
+    DestroyMacros(GroupList,MaxGroups);
+    wnd:=GetDlgItem(Dialog,IDC_ACTION_GROUP);
+    j:=SendMessageW(wnd,LVM_GETITEMCOUNT,0,0);
+    MaxGroups:=j;
+    if j>0 then
+    begin
+      GetMem  (GroupList ,MaxGroups*SizeOf(tHKRecord));
+      FillChar(GroupList^,MaxGroups*SizeOf(tHKRecord),0);
+      li.mask    :=LVIF_PARAM;
+      li.iSubItem:=0;
+      for i:=0 to j-1 do
+      begin
+        li.iItem:=i;
+        SendMessageW(wnd,LVM_GETITEMW,0,lparam(@li)); // GetLParam(wnd,i);
+        move(NewGroupList^[li.lParam],GroupList^[i],SizeOf(tHKRecord));
+        li.lParam:=i;
+        SendMessageW(wnd,LVM_SETITEMW,0,lparam(@li));
+      end;
+    end
+    else
+      GroupList:=nil;
+
+    FreeMem(NewGroupList);
+    NewGroupList:=GroupList;
+    NewMaxGroups:=MaxGroups;
+  end;
+end;
+
+procedure SetCancel;
+begin
+  if NewActionList<>nil then
+  begin
+    if (NewActionList<>ActionList) then
+      DestroyActions(NewActionList,NewMaxActions);
+    NewActionList:=nil;
+  end;
+  if NewGroupList<>nil then
+  begin
+    if (NewGroupList<>GroupList) then
+      DestroyMacros(NewGroupList,NewMaxGroups);
+    NewGroupList:=nil;
+  end;
+end;
+
+//-----  -----
+
+procedure FillAction(act:tBaseAction);
 var
   p:pActModule;
 begin
   if act<>nil then
   begin
-    p:=ModuleLink;
-    while p<>nil do
+    p:=GetLink(act.UID);
+    if p<>nil then
     begin
-      if p.Hash=act.UID then
-      begin
-        SendMessage(p^.DlgHandle,WM_ACT_SETVALUE,0,tlparam(p));
-        ShowWindow(p^.DlgHandle,SW_SHOW);
-        break;
-      end;
-      p:=p^.Next;
+      SendMessage(p^.DlgHandle,WM_ACT_SETVALUE,0,tlparam(p));
+      ShowWindow(p^.DlgHandle,SW_SHOW);
     end;
   end
+  //???
   else
   begin
     ShowWindow(ModuleLink^.DlgHandle,SW_SHOW);
   end;
 end;
-
 
 // Fill action type combobox
 function FillActTypeList(list:hwnd):HWND;
@@ -222,7 +286,7 @@ begin
     li.iItem  :=idx;
     li.lParam :=i;
     SendMessageW(wnd,LVM_INSERTITEMW,0,tlparam(@li));
-    ListView_SetCheckState(wnd,idx,(NewActionList^[i].flags1 and ACF_DISABLED)=0);
+//!!    ListView_SetCheckState(wnd,idx,(NewActionList^[i].flags1 and ACF_DISABLED)=0);
 
 //!!      i:=NewActionList^[i].next;
     inc(idx);
@@ -299,8 +363,8 @@ begin
   
   with NewActionList^[actnum]^ do
   begin
-    flags1:=0; //ACF_ASSIGNED not needed anymore
-    flags2:=0;
+//!!    flags1:=0; //ACF_ASSIGNED not needed anymore
+//!!    flags2:=0;
 
     li.iItem     :=listnum;
     li.mask      :=LVIF_TEXT;
@@ -311,7 +375,7 @@ begin
     StrDupW(ActionDescr,arr);
 
     if ListView_GetCheckState(wnd,listnum)=0 then
-      flags1:=flags1 or ACF_DISABLED;
+;//!!      flags1:=flags1 or ACF_DISABLED;
 
     SendMessage(p.DlgHandle,WM_ACT_SAVE,0,tlparam(NewActionList^[actnum]));
   end;
@@ -970,7 +1034,7 @@ begin
 
             end;
             IDC_GROUP_NEW: begin
-              i:=AddGroup(Dialog,NewGroup(NewGroupList,NewMaxGroups));
+              i:=AddGroup(Dialog,NewMacro(NewGroupList,NewMaxGroups));
               if i>=0 then
               begin
                 ChMask:=ChMask or ACTM_NEW or ACTM_SORT;
@@ -1224,7 +1288,7 @@ begin
                   i:=ACF_DISABLED;
                 j:=PNMLISTVIEW(lParam)^.lParam;
                 if NewActionList^[j]<>nil then
-                  NewActionList^[j].flags1:=(NewActionList^[j].flags1 and not ACF_DISABLED) or dword(i);
+//!!                  NewActionList^[j].flags1:=(NewActionList^[j].flags1 and not ACF_DISABLED) or dword(i);
                 ChMask:=ChMask or ACTM_ACT or ACTM_ACTS;
                 SetChanged(Dialog,etACT);
               end;
