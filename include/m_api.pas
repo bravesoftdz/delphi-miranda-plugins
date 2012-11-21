@@ -241,6 +241,7 @@ var
   {$include m_toptoolbar.inc}
   {$include m_msg_buttonsbar.inc}
   {$include m_json.inc}
+  {$include m_xstatus.inc}
 {$define M_API_UNIT}
   {$include m_helpers.inc}
   {$include m_clistint.inc}

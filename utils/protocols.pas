@@ -442,8 +442,9 @@ begin
 //        flag:=CallProtoService(name,PS_GETCAPS,PFLAGNUM_1,0);
 //        if (flag and PF1_CHAT)<>0 then
         status:=status or psf_chat;
+
       p:=StrCopyE(buf,name);
-      StrCopy(p,PS_ICQ_GETCUSTOMSTATUS);
+      StrCopy(p,PS_GETCUSTOMSTATUSEX);
       if ServiceExists(buf)<>0 then
         status:=status or psf_icq;
 
@@ -518,7 +519,7 @@ end;
 function SetXStatus(proto:PAnsiChar;newstatus:integer;
                     txt:pWideChar=nil;title:pWideChar=nil):integer;
 var
-  ics:TICQ_CUSTOM_STATUS;
+  ics:TCUSTOM_STATUS;
 begin
   result:=0;
   if IsXStatusSupported(uint_ptr(proto)) then
@@ -543,23 +544,24 @@ begin
         szMessage.w:=txt;
       end;
     end;
-    result:=CallProtoService(proto,PS_ICQ_SETCUSTOMSTATUSEX,0,lparam(@ics));
+    result:=CallProtoService(proto,PS_SETCUSTOMSTATUSEX,0,lparam(@ics));
   end;
 end;
 
 function GetXStatus(proto:PAnsiChar;txt:pointer=nil;title:pointer=nil):integer;
 var
+{
   buf:array [0..127] of AnsiChar;
   pc:PAnsiChar;
   param:array [0..63] of AnsiChar;
-
-//  ics:TICQ_CUSTOM_STATUS;
-//  i,j:integer;
+}
+  ics:TCUSTOM_STATUS;
+  i,j:integer;
 begin
   result:=0;
   if IsXStatusSupported(uint_ptr(proto)) then
   begin
-{
+
     with ics do
     begin
       cbSize:=SizeOf(ics);
@@ -567,7 +569,7 @@ begin
       wParam:=@i;
       lParam:=@j;
     end;
-    CallProtoService(0,PS_ICQ_GETCUSTOMSTATUSEX,0,dword(@ics));
+    CallProtoService(proto,PS_GETCUSTOMSTATUSEX,0,dword(@ics));
     if title<>nil then
       mGetMem(title^,(i+1)*SizeOf(WideChar));
     if txt<>nil then
@@ -578,14 +580,14 @@ begin
       cbSize:=SizeOf(ics);
       flags:=CSSF_MASK_STATUS or CSSF_MASK_NAME or CSSF_MASK_MESSAGE or CSSF_UNICODE;
       status:=@result;
-      szName.w   :=pdword(title)^;
-      szMessage.w:=pdword(txt)^;
+      szName.w   :=pWideChar(title);
+      szMessage.w:=pWideChar(txt);
     end;
-    CallProtoService(0,PS_ICQ_GETCUSTOMSTATUSEX,0,dword(@ics));
-}
+    CallProtoService(proto,PS_GETCUSTOMSTATUSEX,0,dword(@ics));
 
+{
     StrCopy(buf,proto);
-    StrCat (buf,PS_ICQ_GETCUSTOMSTATUS);
+    StrCat (buf,PS_GETCUSTOMSTATUS);
     result:=CallService(buf,0,0);
     if (txt<>nil) or (title<>nil) then
     begin
@@ -602,7 +604,7 @@ begin
         StrCopy(pc,'Name'); pWideChar(title^):=DBReadUnicode(0,proto,param,nil);
       end;
     end;
-
+}
   end;
 end;
 
