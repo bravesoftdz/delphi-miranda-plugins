@@ -6,15 +6,11 @@
 {$IMAGEBASE $13200000}
 library actman;
 {%ToDo 'actman.todo'}
-{%File 'i_actlow.inc'}
 {%File 'm_actions.inc'}
 {%File 'm_actman.inc'}
-{%File 'i_action.inc'}
 {%File 'i_const.inc'}
-{%File 'i_contact.inc'}
 {%File 'i_opt_dlg2.inc'}
 {%File 'i_opt_dlg.inc'}
-{%File 'i_visual.inc'}
 {%File 'i_options.inc'}
 {%File 'i_services.inc'}
 {%File 'i_vars.inc'}
@@ -47,8 +43,11 @@ uses
   question,
   mApiCardM,
   global,
+  lowlevel,
   iac_global,
   iac_messagebox,
+//  iac_dbrw,
+  iac_service,
   iac_program,
   iac_chain,
   iac_contact,
@@ -69,7 +68,7 @@ var
   hevaction,hHookChanged,hevinout:cardinal;
   hsel,hinout,hfree,hget,hrun,hrung,hrunp:cardinal;
 
-{$include m_actions.inc}
+{.$include m_actions.inc}
 {$include m_actman.inc}
 
 
@@ -78,7 +77,7 @@ begin
   result:=@PluginInfo;
   PluginInfo.cbSize     :=SizeOf(TPLUGININFOEX);
   PluginInfo.shortName  :='Action manager';
-  PluginInfo.version    :=$00020001;
+  PluginInfo.version    :=$00030001;
   PluginInfo.description:='Plugin for manage hotkeys to open contact window, insert text, '+
                           'run program and call services';
   PluginInfo.author     :='Awkward';
@@ -92,10 +91,7 @@ end;
 {$include i_const.inc}
 {$include i_vars.inc}
 
-{$include i_action.inc}
-{$include i_actlow.inc}
 {$include i_options.inc}
-{$include i_contact.inc}
 {$include i_opt_dlg.inc}
 {.$include i_inoutxm.inc}
 {$include i_services.inc}
@@ -114,7 +110,7 @@ begin
     ptr:=ptr^.Next;
   end;
 
-  FreeGroups;
+  FreeMacroList;
 
   UnhookEvent(hHookShutdown);
   UnhookEvent(opthook);
@@ -137,11 +133,9 @@ var
   p:pActModule;
 begin
   p:=ModuleLink;
-//  NumActTypes:=0;
   while p<>nil do
   begin
     p^.Hash:=Hash(p^.Name,StrLen(p^.Name));
-//    inc(NumActTypes);
     p:=p^.Next;
   end;
 end;
@@ -155,15 +149,15 @@ begin
 
   RegisterActTypes;
 
-  LoadGroups;
-  RegisterIcons;
+  LoadMacros;
+//!!  RegisterIcons;
   
-  opthook      :=HookEvent(ME_OPT_INITIALISE ,@OnOptInitialise);
+//!!  opthook      :=HookEvent(ME_OPT_INITIALISE ,@OnOptInitialise);
   hHookShutdown:=HookEvent(ME_SYSTEM_SHUTDOWN{ME_SYSTEM_OKTOEXIT},@PreShutdown);
   NotifyEventHooks(hHookChanged,twparam(ACTM_LOADED),0);
 
   //----- DBEDITOR support -----
-//  CallService('DBEditorpp/RegisterSingleModule',dword(PluginShort),0);
+//  CallService(MS_DBEDIT_REGISTERSINGLEMODULE,twparam(PluginShort),0);
 
   IsMultiThread:=true;
   // Load additional modules

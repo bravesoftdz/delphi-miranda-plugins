@@ -14,8 +14,8 @@ uses
 {$resource iac_messagebox.res}
 
 const
-  ACF2_MSG_TTL  = $00000001;
-  ACF2_MSG_TXT  = $00000002;
+  ACF_MSG_TTL  = $00000001;
+  ACF_MSG_TXT  = $00000002;
 
 const
   opt_msgtitle = 'msgtitle';
@@ -23,19 +23,39 @@ const
   opt_boxopts  = 'boxopts';
 
 type
-  pMessageAction = ^tMessageAction;
-  tMessageAction = object(tBaseAction)
+  tMessageAction = class(tBaseAction)
     msgtitle:pWideChar;
     msgtext :pWideChar;
     boxopts :uint;
 
-    function DoAction(var WorkData:tWorkData):LRESULT;
+    constructor Create(uid:dword);
+    function  Clone:tBaseAction;
+    function  DoAction(var WorkData:tWorkData):LRESULT;
     procedure Save(node:pointer;fmt:integer);
     procedure Load(node:pointer;fmt:integer);
     procedure Clear;
   end;
 
 //----- Object realization -----
+
+constructor tMessageAction.Create(uid:dword);
+begin
+  inherited Create(uid);
+
+  msgtext :=nil;
+  msgtitle:=nil;
+  boxopts :=0;
+end;
+
+function tMessageAction.Clone:tBaseAction;
+begin
+  result:=tMessageAction.Create(0);
+  Duplicate(result);
+
+  StrDupW(tMessageAction(result).msgtext ,msgtext);
+  StrDupW(tMessageAction(result).msgtitle,msgtitle);
+  tMessageAction(result).boxopts:=boxopts;
+end;
 
 procedure tMessageAction.Clear;
 begin
@@ -80,11 +100,11 @@ begin
   else
     tmpc2:=msgtext;
   // Variables
-  if (flags2 and ACF2_MSG_TTL)<>0 then
+  if (flags and ACF_MSG_TTL)<>0 then
     tmpcv1:=ParseVarString(tmpc1,WorkData.Parameter,tmpc)
   else
     tmpcv1:=tmpc1;
-  if (flags2 and ACF2_MSG_TXT)<>0 then
+  if (flags and ACF_MSG_TXT)<>0 then
     tmpcv2:=ParseVarString(tmpc2,WorkData.Parameter,tmpc)
   else
     tmpcv2:=tmpc2;
@@ -172,8 +192,9 @@ procedure ClearFields(Dialog:HWND);
 begin
   SetDlgItemTextW(Dialog,IDC_MSG_TITLE,nil);
   SetDlgItemTextW(Dialog,IDC_MSG_TEXT ,nil);
-  CheckDlgButton(Dialog,IDC_MSG_TTL,BST_UNCHECKED);
-  CheckDlgButton(Dialog,IDC_MSG_TXT,BST_UNCHECKED);
+
+  CheckDlgButton(Dialog,IDC_MSG_RTL  ,BST_UNCHECKED);
+  CheckDlgButton(Dialog,IDC_MSG_RIGHT,BST_UNCHECKED);
 
   CheckDlgButton(Dialog,IDC_MSGB_OK ,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_MSGB_OC ,BST_UNCHECKED);
@@ -205,13 +226,13 @@ begin
 
     WM_ACT_SETVALUE: begin
       ClearFields(Dialog);
-      with pMessageAction(lParam)^ do
+      with tMessageAction(lParam) do
       begin
         SetDlgItemTextW(Dialog,IDC_MSG_TITLE,msgtitle);
         SetDlgItemTextW(Dialog,IDC_MSG_TEXT ,msgtext);
 
-        if (flags2 and ACF2_MSG_TTL)<>0 then CheckDlgButton(Dialog,IDC_MSG_TTL,BST_CHECKED);
-        if (flags2 and ACF2_MSG_TXT)<>0 then CheckDlgButton(Dialog,IDC_MSG_TXT,BST_CHECKED);
+        SetEditFlags(Dialog,IDC_MSG_TITLE,ord((flags and ACF_MSG_TTL)<>0));
+        SetEditFlags(Dialog,IDC_MSG_TEXT ,ord((flags and ACF_MSG_TXT)<>0));
 
         if (boxopts and MB_RTLREADING)<>0 then CheckDlgButton(Dialog,IDC_MSG_RTL  ,BST_CHECKED);
         if (boxopts and MB_RIGHT     )<>0 then CheckDlgButton(Dialog,IDC_MSG_RIGHT,BST_CHECKED);
@@ -245,14 +266,15 @@ begin
     end;
 
     WM_ACT_SAVE: begin
-      with pMessageAction(lParam)^ do
+      with tMessageAction(lParam) do
       begin
         msgtitle:=GetDlgText(Dialog,IDC_MSG_TITLE);
         msgtext :=GetDlgText(Dialog,IDC_MSG_TEXT);
-        if IsDlgButtonChecked(Dialog,IDC_MSG_TTL)=BST_CHECKED then
-          flags2:=flags2 or ACF2_MSG_TTL;
-        if IsDlgButtonChecked(Dialog,IDC_MSG_TXT)=BST_CHECKED then
-          flags2:=flags2 or ACF2_MSG_TXT;
+
+        flags:=0;
+
+        if GetEditFlags(Dialog,IDC_MSG_TITLE)<>0 then flags:=flags or ACF_MSG_TTL;
+        if GetEditFlags(Dialog,IDC_MSG_TEXT )<>0 then flags:=flags or ACF_MSG_TXT;
 
         boxopts:=0;
 
@@ -305,30 +327,20 @@ begin
   end;
 end;
 
-//----- Export functions -----
+//----- Export/interface functions -----
 
-function CreateAction:pBaseAction;
 var
-  tmp:pMessageAction;
+  vc:tActModule;
+
+function CreateAction:tBaseAction;
 begin
-  New(tmp);
-
-  tmp.msgtext :=nil;
-  tmp.msgtitle:=nil;
-  tmp.boxopts :=0;
-
-  result:=tmp;
+  result:=tMessageAction.Create(vc.Hash);
 end;
 
 function CreateDialog(parent:HWND):HWND;
 begin
   result:=CreateDialogW(hInstance,'IDD_ACTMESSAGEBOX',parent,@DlgProc);
 end;
-
-//----- Interface part -----
-
-var
-  vc:tActModule;
 
 procedure Init;
 begin

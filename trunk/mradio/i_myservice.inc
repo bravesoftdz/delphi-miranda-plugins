@@ -119,8 +119,6 @@ function Service_RadioMute(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
 {$IFDEF KOL_MCK}
   med:TMouseEventData;
-{$ELSE}
-  tmp:pAnsiChar;
 {$ENDIF}
 begin
   if gVolume=0 then
@@ -144,15 +142,6 @@ begin
       btnMute.OnMouseUp  (btnMute,med);
       btnMute.Invalidate;
     end
-  end;
-{$ELSE}
-  if hMuteFrmCtrl<>0 then
-  begin
-    if gVolume<0 then
-      tmp:=IcoBtnOff
-    else
-      tmp:=IcoBtnOn;
-    SetButtonIcon(hMuteFrmCtrl,tmp);
   end;
 {$ENDIF}
 end;

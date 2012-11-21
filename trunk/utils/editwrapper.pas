@@ -6,6 +6,7 @@ uses windows;
 
 function MakeEditField(Dialog:HWND; id:uint):HWND;
 procedure SetEditFlags(Dialog:HWND; id:uint; flags:dword);
+function GetEditFlags(Dialog:HWND; id:uint):dword;
 
 implementation
 
@@ -14,6 +15,7 @@ uses messages,commctrl,common,wrapper,m_api;
 {$R editwrapper.res}
 {$include 'i_text_const.inc'}
 
+// EditFields & EditForm -> Button -> [EditField,WinProc,flags]
 type
   pUserData = ^tUserData;
   tUserData = record
@@ -22,6 +24,18 @@ type
     flags        :dword;
   end;
 
+procedure SetButtonTitle(btnwnd:HWND);
+var
+  title:pWideChar;
+  ptr:pUserData;
+begin
+  ptr:=pUserData(GetWindowLongPtrW(btnwnd,GWLP_USERDATA));
+  if ptr^.flags=0 then
+    title:='T'
+  else
+    title:='S';
+  SendMessageW(btnwnd,WM_SETTEXT,0,tlParam(title));
+end;
 
 // if need to change button text, will pass button (not edit field) handle as parameter
 function EditWndProc(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
@@ -29,7 +43,6 @@ var
   pc:pWideChar;
   btnwnd:HWND;
   ptr:pUserData;
-  title:pWideChar;
 begin
   result:=0;
 
@@ -62,16 +75,10 @@ begin
               ptr:=pUserData(GetWindowLongPtrW(btnwnd,GWLP_USERDATA));
 
               if IsDlgButtonChecked(Dialog,IDC_TEXT_SCRIPT)<>BST_UNCHECKED then
-              begin
-                ptr^.flags:=1;
-                title:='S';
-              end
+                ptr^.flags:=1
               else
-              begin
                 ptr^.flags:=0;
-                title:='T';
-              end;
-              SendMessageW(btnwnd,WM_SETTEXT,0,tlParam(title));
+              SetButtonTitle(btnwnd);
               SendMessageW(ptr^.LinkedControl,WM_SETTEXT,0,tlParam(pc));
               mFreeMem(pc);
 
@@ -129,18 +136,12 @@ var
   rc,rcp:TRECT;
   ctrl:HWND;
   pu:pUserData;
-  title:pWideChar;
 begin
   ctrl:=GetDlgItem(Dialog,id);
   GetWindowRect(ctrl,rc ); // screen coords
   GetWindowRect(Dialog ,rcp); // screen coords of parent
 
-  if GetWindowLongPtrW(ctrl,GWLP_USERDATA)=0 then
-    title:='T'
-  else
-    title:='S';
-
-  result:=CreateWindowW('BUTTON',title,WS_CHILD+WS_VISIBLE+BS_PUSHBUTTON+BS_CENTER+BS_VCENTER,
+  result:=CreateWindowW('BUTTON',nil,WS_CHILD+WS_VISIBLE+BS_PUSHBUTTON+BS_CENTER+BS_VCENTER,
           rc.left-rcp.left, rc.top-rcp.top+(rc.bottom-rc.top-16) div 2, 16,16,
           Dialog,0,hInstance,nil);
   if result<>0 then
@@ -159,12 +160,23 @@ end;
 
 procedure SetEditFlags(Dialog:HWND; id:uint; flags:dword);
 var
-  ctrl:HWND;
+  btnwnd:HWND;
   pu:pUserData;
 begin
-  ctrl:=GetWindowLongPtrW(GetDlgItem(Dialog,id),GWLP_USERDATA);
-  pu:=pUserData(GetWindowLongPtrW(ctrl,GWLP_USERDATA));
+  btnwnd:=GetWindowLongPtrW(GetDlgItem(Dialog,id),GWLP_USERDATA);
+  pu:=pUserData(GetWindowLongPtrW(btnwnd,GWLP_USERDATA));
   pu^.flags:=flags;
+  SetButtonTitle(btnwnd);
+end;
+
+function GetEditFlags(Dialog:HWND; id:uint):dword;
+var
+  btnwnd:HWND;
+  pu:pUserData;
+begin
+  btnwnd:=GetWindowLongPtrW(GetDlgItem(Dialog,id),GWLP_USERDATA);
+  pu:=pUserData(GetWindowLongPtrW(btnwnd,GWLP_USERDATA));
+  result:=pu^.flags;
 end;
 
 end.

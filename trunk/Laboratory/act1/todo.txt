@@ -1,10 +1,38 @@
-messagebox:
-MB_RIGHT
-0x00080000L	
-The text is right-justified.
-MB_RTLREADING
-0x00100000L	
-Displays message and caption text using right-to-left reading order on Hebrew and Arabic systems.
+Флаги для экшенов:
+0 - старый, не затронуто
+1 - старый, надо обновлять (менялся)
+2 - новый
+
+привести в соответствие ACF_* и ACCF_*
+
+Edit dialog:
+0) KEEP OLD ACTION TYPE: if moving to next action, check. if was JUST type scroll,
+   but keep original, no change
+1)duplicate action list if it was changed (not marks only)
+2)
+macro: Add, Delete, Rename, Move
+action: single=change(type,value); mark, rename; list=Add, Delete, Move
+
+getlist: with volatile or not?
+
+Модифицировать запуск макросов: если вызов из макроса, создавать в том же потоке
+и без эвентов?
+
+Актуальные списки макросов и экшенов в диалогах через парент и ИД списков
+изменения - слать по всем диалогам сообщение "список менялся" и код списка.
+перехват изменений списка контактов во время диалогов, чтоб PostMessage на изменение
+при выполнении: возврат значения экшена: -1 - прервать, 0 - всё ок, остальные = номер
+экшена в списке+1
+
++messagebox
++program
++chain
++contact
+service
+database
+text?
+condition?
+
 
 chain:
 ACF_BYNAME - используется лишь для импорта

@@ -19,3 +19,6 @@ FONT 8, "MS Shell Dlg", 0, 0
   PUSHBUTTON "&OK"    , IDOK    , 124, 168,  46, 14
   PUSHBUTTON "C&ancel", IDCANCEL, 176, 168,  46, 14
 }
+
+//IDI_TEXT   ICON "ico\text.ico"
+//IDI_SCRIPT ICON "ico\script.ico"

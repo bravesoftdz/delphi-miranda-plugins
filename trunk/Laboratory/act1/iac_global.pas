@@ -5,37 +5,49 @@ interface
 uses windows, messages;
 
 const
+  NoDescription:PWideChar='No Description';
+const
   DBBranch = 'ActMan';
+const
+  protostr = '<proto>';
 const
   WM_ACT_SETVALUE = WM_USER + 13;
   WM_ACT_RESET    = WM_USER + 14;
   WM_ACT_SAVE     = WM_USER + 15;
   WM_ACT_REFRESH  = WM_USER + 16; // group, action
 
+const // 
+  ACF_DISABLED = $10000000;  // action disabled
+//  ACF_USEDNOW  = $20000000;  // action in use (reserved)
+//  ACF_ASSIGNED = $80000000;  // action assigned
+
 const
   isEScript = 1;
 const
   rtInt  = 1;
   rtWide = 2;
+// maybe will be introduced for initial values only
+  rtAnsi = 3;
+  rtUTF8 = 4;
 
 type
   pWorkData = ^tWorkData;
   tWorkData = record
-    hContact  :THANDLE;
     Parameter :LPARAM;
     LastResult:uint_ptr;
     ResultType:integer;   // rt* const
   end;
 
 type
-  pBaseAction = ^tBaseAction;
-  tBaseAction = object
+  tBaseAction = class
     ActionDescr:pWideChar; // description (user name)
-    UID:dword;             // hash of action type name
-    Flags1,
-    Flags2:dword;
-    parent:pointer;        // pointer to action group (really need?)
+    UID        :dword;     // hash of action type name
+    Flags      :dword;
 
+    procedure Duplicate(var dst:tBaseAction);
+
+    constructor Create(uid:dword);
+    function  Clone:tBaseAction;
     function  DoAction(var WorkData:tWorkData):LRESULT; // process action 
     procedure Load(node:pointer;fmt:integer);           // load/import action
     procedure Save(node:pointer;fmt:integer);           // save/export action
@@ -43,7 +55,7 @@ type
   end;
 
 type
-  tCreateActionFunc = function:pBaseAction;
+  tCreateActionFunc = function:tBaseAction;
   tCreateDialogFunc = function(parent:HWND):HWND;
 
 type
@@ -55,24 +67,50 @@ type
     Create   :tCreateActionFunc; // action object creation
     Icon     :pAnsiChar;         // icon resource name
     // runtime data
-    Hash     :dword;             // will be calculated at registration cycle
     DlgHandle:HWND;
+    Hash     :dword;             // will be calculated at registration cycle
   end;
 
 const
   ModuleLink:pActModule=nil;
 
-procedure ClearResult(var WorkData:tWorkData);
+function ClearResult(var WorkData:tWorkData):int_ptr;
 
 procedure InsertString(wnd:HWND;num:dword;str:PAnsiChar);
+
+function GetLink(hash:dword):pActModule;
 
 implementation
 
 uses Common, m_api;
 
 
+constructor tBaseAction.Create(uid:dword);
+begin
+  if uid<>0 then
+  begin
+    StrDupW(ActionDescr,NoDescription);
+    Self.UID:=uid;
+    Flags:=0;
+  end;
+end;
+
+procedure tBaseAction.Duplicate(var dst:tBaseAction);
+begin
+  StrDupW(dst.ActionDescr,ActionDescr);
+  dst.UID  :=UID;
+  dst.Flags:=Flags;
+end;
+
+function tBaseAction.Clone:tBaseAction;
+begin
+  //dummy
+  result:=nil;
+end;
+
 function tBaseAction.DoAction(var WorkData:tWorkData):LRESULT;
 begin
+  result:=0;
   // nothing
 end;
 
@@ -92,10 +130,15 @@ begin
 end;
 
 
-procedure ClearResult(var WorkData:tWorkData);
+function ClearResult(var WorkData:tWorkData):int_ptr;
 begin
   if WorkData.ResultType=rtWide then
+  begin
     mFreeMem(pWideChar(WorkData.LastResult));
+    result:=0;
+  end
+  else
+    result:=WorkData.LastResult;
 end;
 
 procedure InsertString(wnd:HWND;num:dword;str:PAnsiChar);
@@ -110,6 +153,13 @@ begin
   SendMessageW(wnd,CB_INSERTSTRING,num,
       dword(TranslateW(FastAnsiToWideBuf(str,buf))));
 }
+end;
+
+function GetLink(hash:dword):pActModule;
+begin
+  result:=ModuleLink;
+  while (result<>nil) and (result.Hash<>hash) do
+    result:=result^.Next;
 end;
 
 end.

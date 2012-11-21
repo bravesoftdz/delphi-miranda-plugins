@@ -8,8 +8,10 @@ EXSTYLE  WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0
 {
   RTEXT    "Other Action groups",-1, 0, 2, 160, 10
-  COMBOBOX                       IDC_GROUP_LIST, 1, 13, 166, 128,
+  COMBOBOX                       IDC_MACRO_LIST, 1, 13, 166, 128,
                                  CBS_DROPDOWNLIST | CBS_AUTOHSCROLL | WS_VSCROLL
+  AUTOCHECKBOX "Don't wait end of execution", IDC_MACRO_NOWAIT, 1, 31, 166, 11
+  AUTOCHECKBOX "Keep old result", IDC_MACRO_KEEPOLD, 1, 44, 166, 11
 }
 
 IDI_CHAIN   ICON "ico\chain.ico"

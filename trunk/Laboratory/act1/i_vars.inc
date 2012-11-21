@@ -1,9 +1,7 @@
 {variables}
 type
-  pHKList = ^tHKList;
-  tHKList  = array [0..1023] of tHKRecord;
   pActList = ^tActList;
-  tActList = array [0..1023] of pBaseAction;
+  tActList = array [0..1023] of tBaseAction;
 const
   StructDelim = #7;
 const
@@ -13,12 +11,10 @@ var
   MaxGroups :cardinal=0; // current array size
   MaxActions:cardinal=0; // current array size
 var
-  GroupList :pHKList =nil;
   ActionList:pActList=nil;
 var
   NoDescription:PWideChar;
 var
-  NewGroupList :pHKList  = nil;
   NewActionList:pActList = nil;
   NewMaxGroups :cardinal;
   NewMaxActions:cardinal;

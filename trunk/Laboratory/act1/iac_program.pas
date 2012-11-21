@@ -5,6 +5,7 @@ interface
 implementation
 
 uses
+  editwrapper,
   windows, messages,
   iac_global, m_api, wrapper, syswin,
   mirutils, common, dbsettings;
@@ -13,12 +14,10 @@ uses
 {$resource iac_program.res}
 
 const
-  ACF_CURPATH  = $00000002; // Current (not program) path
-  ACF_PRTHREAD = $00000004; // parallel Program
-
-const
-  ACF2_PRG_PRG  = $00000001;
-  ACF2_PRG_ARG  = $00000002;
+  ACF_CURPATH  = $00000001; // Current (not program) path
+  ACF_PRTHREAD = $00000002; // parallel Program
+  ACF_PRG_PRG  = $00000004;
+  ACF_PRG_ARG  = $00000008;
 
 const
   opt_prg      = 'program';
@@ -27,14 +26,15 @@ const
   opt_show     = 'show';
 
 type
-  pProgramAction = ^tProgramAction;
-  tProgramAction = object(tBaseAction)
+  tProgramAction = class(tBaseAction)
     prgname:pWideChar;
     args   :pWideChar;
     show   :dword;
     time   :dword;
 
-    function DoAction(var WorkData:tWorkData):int;
+    constructor Create(uid:dword);
+    function  Clone:tBaseAction;
+    function  DoAction(var WorkData:tWorkData):int;
     procedure Save(node:pointer;fmt:integer);
     procedure Load(node:pointer;fmt:integer);
     procedure Clear;
@@ -62,6 +62,27 @@ begin
 end;
 
 //----- Object realization -----
+
+constructor tProgramAction.Create(uid:dword);
+begin
+  inherited Create(uid);
+
+  show   :=0;
+  time   :=0;
+  prgname:=nil;
+  args   :=nil;
+end;
+
+function tProgramAction.Clone:tBaseAction;
+begin
+  result:=tProgramAction.Create(0);
+  Duplicate(result);
+
+  tProgramAction(result).show   :=show;
+  tProgramAction(result).time   :=time;
+  StrDupW(tProgramAction(result).prgname,prgname);
+  StrDupW(tProgramAction(result).args   ,args);
+end;
 
 procedure tProgramAction.Clear;
 begin
@@ -94,15 +115,15 @@ begin
   replArg:=args;
   argss  :=replany(replArg,WorkData.Parameter,pWideChar(WorkData.LastResult));
 
-  if ((flags2 and ACF2_PRG_PRG)<>0) or
-     ((flags2 and ACF2_PRG_ARG)<>0) then
+  if ((flags and ACF_PRG_PRG)<>0) or
+     ((flags and ACF_PRG_ARG)<>0) then
   begin
     pd:=WndToContact(WaitFocusedWndChild(GetForegroundwindow){GetFocus});
     if (pd=0) and (CallService(MS_DB_CONTACT_IS,WorkData.Parameter,0)<>0) then
       pd:=WorkData.Parameter;
   end;
 
-  if (flags2 and ACF2_PRG_ARG)<>0 then
+  if (flags and ACF_PRG_ARG)<>0 then
   begin
     vars2:=true;
     tmp :=ParseVarString(replArg,pd,pWideChar(WorkData.LastResult));
@@ -113,7 +134,7 @@ begin
     tmp :=replArg;
   end;
 
-  if (flags2 and ACF2_PRG_PRG)<>0 then
+  if (flags and ACF_PRG_PRG)<>0 then
   begin
     vars1:=true;
     tmpp :=ParseVarString(replPrg,pd,pWideChar(WorkData.LastResult));
@@ -145,12 +166,12 @@ begin
     vars2:=true;
   end;
 
-  if (flags1 and ACF_CURPATH)=0 then
+  if (flags and ACF_CURPATH)=0 then
     lpath:=ExtractW(tmpp,false)
   else
     lpath:=nil;
 
-  if (flags1 and ACF_PRTHREAD)<>0 then
+  if (flags and ACF_PRTHREAD)<>0 then
     time:=0
   else if time=0 then
     time:=INFINITE;
@@ -237,9 +258,6 @@ begin
   CheckDlgButton(Dialog,IDC_FLAG_CURPATH,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_FLAG_CONTINUE,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_FLAG_PARALLEL,BST_UNCHECKED);
-
-  CheckDlgButton(Dialog,IDC_PRG_PRG,BST_UNCHECKED);
-  CheckDlgButton(Dialog,IDC_PRG_ARG,BST_UNCHECKED);
 end;
 
 procedure FillFileName(Dialog:HWND;idc:integer);
@@ -249,7 +267,10 @@ begin
   mGetMem(pw,1024*SizeOf(WideChar));
   ppw:=GetDlgText(Dialog,idc);
   if ShowDlgW(pw,ppw) then
+  begin
     SetDlgItemTextW(Dialog,idc,pw);
+//!!  SetEditFlags(Dialog,idc,0);
+  end;
   mFreeMem(ppw);
   mFreeMem(pw);
 end;
@@ -261,20 +282,22 @@ begin
   case hMessage of
     WM_INITDIALOG: begin
       TranslateDialogDefault(Dialog);
+
+      MakeEditField(Dialog,IDC_EDIT_PRGPATH);
+      MakeEditField(Dialog,IDC_EDIT_PRGARGS);
     end;
 
     WM_ACT_SETVALUE: begin
       ClearFields(Dialog);
 
-      with pProgramAction(lParam)^ do
+      with tProgramAction(lParam) do
       begin
-        if (flags2 and ACF2_PRG_PRG)<>0 then
-          CheckDlgButton(Dialog,IDC_PRG_PRG,BST_CHECKED);
-        if (flags2 and ACF2_PRG_ARG)<>0 then
-          CheckDlgButton(Dialog,IDC_PRG_ARG,BST_CHECKED);
-
         SetDlgItemTextW(Dialog,IDC_EDIT_PRGPATH ,prgname);
         SetDlgItemTextW(Dialog,IDC_EDIT_PRGARGS ,args);
+
+        SetEditFlags(Dialog,IDC_EDIT_PRGPATH,ord((flags and ACF_PRG_PRG)<>0));
+        SetEditFlags(Dialog,IDC_EDIT_PRGARGS,ord((flags and ACF_PRG_ARG)<>0));
+
         SetDlgItemInt  (Dialog,IDC_EDIT_PROCTIME,time,false);
         case show of
           SW_HIDE         : CheckDlgButton(Dialog,IDC_FLAG_HIDDEN,BST_CHECKED);
@@ -283,9 +306,9 @@ begin
         else
           {SW_SHOWNORMAL   :} CheckDlgButton(Dialog,IDC_FLAG_NORMAL,BST_CHECKED);
         end;
-        if (flags1 and ACF_CURPATH)<>0 then
+        if (flags and ACF_CURPATH)<>0 then
           CheckDlgButton(Dialog,IDC_FLAG_CURPATH,BST_CHECKED);
-        if (flags1 and ACF_PRTHREAD)<>0 then
+        if (flags and ACF_PRTHREAD)<>0 then
           CheckDlgButton(Dialog,IDC_FLAG_PARALLEL,BST_CHECKED)
         else
           CheckDlgButton(Dialog,IDC_FLAG_CONTINUE,BST_CHECKED);
@@ -301,37 +324,37 @@ begin
     end;
 
     WM_ACT_SAVE: begin
-      with pProgramAction(lParam)^ do
+      with tProgramAction(lParam) do
       begin
-          prgname:=GetDlgText(Dialog,IDC_EDIT_PRGPATH);
-  {
-          p:=GetDlgText(IDC_EDIT_PRGPATH);
-          if p<>nil then
-          begin
-            CallService(MS_UTILS_PATHTORELATIVE,dword(p),dword(@buf));
-            StrDupW(prgname,@buf);
-            mFreeMem(p);
-          end;
-  }
-          args:=GetDlgText(Dialog,IDC_EDIT_PRGARGS);
-          if IsDlgButtonChecked(Dialog,IDC_FLAG_PARALLEL)=BST_CHECKED then
-            flags1:=flags1 or ACF_PRTHREAD;
-          if IsDlgButtonChecked(Dialog,IDC_FLAG_CURPATH)=BST_CHECKED then
-            flags1:=flags1 or ACF_CURPATH;
-          time:=GetDlgItemInt(Dialog,IDC_EDIT_PROCTIME,pbool(nil)^,false);
-          if IsDlgButtonChecked(Dialog,IDC_FLAG_MINIMIZE)=BST_CHECKED then
-            show:=SW_SHOWMINIMIZED
-          else if IsDlgButtonChecked(Dialog,IDC_FLAG_MAXIMIZE)=BST_CHECKED then
-            show:=SW_SHOWMAXIMIZED
-          else if IsDlgButtonChecked(Dialog,IDC_FLAG_HIDDEN)=BST_CHECKED then
-            show:=SW_HIDE
-          else //if IsDlgButtonChecked(Dialog,IDC_FLAG_NORMAL)=BST_CHECKED then
-            show:=SW_SHOWNORMAL;
+        prgname:=GetDlgText(Dialog,IDC_EDIT_PRGPATH);
+{
+        p:=GetDlgText(IDC_EDIT_PRGPATH);
+        if p<>nil then
+        begin
+          CallService(MS_UTILS_PATHTORELATIVE,dword(p),dword(@buf));
+          StrDupW(prgname,@buf);
+          mFreeMem(p);
+        end;
+}
+        flags:=0;
+        args:=GetDlgText(Dialog,IDC_EDIT_PRGARGS);
+        if IsDlgButtonChecked(Dialog,IDC_FLAG_PARALLEL)=BST_CHECKED then
+          flags:=flags or ACF_PRTHREAD;
+        if IsDlgButtonChecked(Dialog,IDC_FLAG_CURPATH)=BST_CHECKED then
+          flags:=flags or ACF_CURPATH;
+        time:=GetDlgItemInt(Dialog,IDC_EDIT_PROCTIME,pbool(nil)^,false);
 
-          if IsDlgButtonChecked(Dialog,IDC_PRG_PRG)=BST_CHECKED then
-            flags2:=flags2 or ACF2_PRG_PRG;
-          if IsDlgButtonChecked(Dialog,IDC_PRG_ARG)=BST_CHECKED then
-            flags2:=flags2 or ACF2_PRG_ARG;
+        if IsDlgButtonChecked(Dialog,IDC_FLAG_MINIMIZE)=BST_CHECKED then
+          show:=SW_SHOWMINIMIZED
+        else if IsDlgButtonChecked(Dialog,IDC_FLAG_MAXIMIZE)=BST_CHECKED then
+          show:=SW_SHOWMAXIMIZED
+        else if IsDlgButtonChecked(Dialog,IDC_FLAG_HIDDEN)=BST_CHECKED then
+          show:=SW_HIDE
+        else //if IsDlgButtonChecked(Dialog,IDC_FLAG_NORMAL)=BST_CHECKED then
+          show:=SW_SHOWNORMAL;
+
+        if GetEditFlags(Dialog,IDC_EDIT_PRGPATH)<>0 then flags:=flags or ACF_PRG_PRG;
+        if GetEditFlags(Dialog,IDC_EDIT_PRGARGS)<>0 then flags:=flags or ACF_PRG_ARG;
       end;
     end;
 
@@ -362,31 +385,20 @@ begin
   end;
 end;
 
-//----- Export functions -----
+//----- Export/interface functions -----
 
-function CreateAction:pBaseAction;
 var
-  tmp:pProgramAction;
+  vc:tActModule;
+
+function CreateAction:tBaseAction;
 begin
-  New(tmp);
-
-  tmp.show   :=0;
-  tmp.time   :=0;
-  tmp.prgname:=nil;
-  tmp.args   :=nil;
-
-  result:=tmp;
+  result:=tProgramAction.Create(vc.Hash);
 end;
 
 function CreateDialog(parent:HWND):HWND;
 begin
   result:=CreateDialogW(hInstance,'IDD_ACTPROGRAM',parent,@DlgProc);
 end;
-
-//----- Interface part -----
-
-var
-  vc:tActModule;
 
 procedure Init;
 begin
