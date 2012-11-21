@@ -65,7 +65,7 @@ const
 }
   PS_SETCUSTOMSTATUSEX = '/SetXStatusEx';
 
-  LR_BIGICON 0x40
+  LR_BIGICON = $40;
 
 {
   Retrieves specified custom status icon
