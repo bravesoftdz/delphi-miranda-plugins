@@ -142,7 +142,7 @@ begin
   NotifyEventHooks(hHookChanged,twparam(ACTM_LOADED),0);
 
   //----- DBEDITOR support -----
-//  CallService('DBEditorpp/RegisterSingleModule',dword(PluginShort),0);
+//  CallService('DBEditorpp/RegisterSingleModule',WPARAM(PluginShort),0);
 
   IsMultiThread:=true;
   // Load additional modules

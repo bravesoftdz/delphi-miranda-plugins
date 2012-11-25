@@ -918,7 +918,7 @@ function DlgProcOpt2(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lres
           p:=GetDlgText(IDC_EDIT_PRGPATH);
           if p<>nil then
           begin
-            CallService(MS_UTILS_PATHTORELATIVE,dword(p),dword(@buf));
+            CallService(MS_UTILS_PATHTORELATIVE,WPARAM(p),LPARAM(@buf));
             StrDupW(prgname,@buf);
             mFreeMem(p);
           end;
@@ -1477,8 +1477,7 @@ begin
 {
             IDC_EDIT_WPAR,IDC_EDIT_LPAR: begin
               SendMessage(lParam,CB_GETLBTEXT,
-                 SendMessage(lParam,CB_GETCURSEL,0,0),
-                 dword(@buf));
+                 SendMessage(lParam,CB_GETCURSEL,0,0),TLPARAM(@buf));
               if loword(wParam)=IDC_EDIT_WPAR then
                 FixParam(buf,IDC_EDIT_WPAR,IDC_FLAG_WPAR)
               else
@@ -1831,7 +1830,7 @@ begin
               begin
                 li.mask    :=LVIF_PARAM;
                 li.iSubItem:=0;
-                SendMessageW(wnd,LVM_GETITEM,0,dword(@li));
+                SendMessageW(wnd,LVM_GETITEM,0,TLPARAM(@li));
                 FreeAction(@NewActionList^[li.lParam]);
 
                 SendMessage(wnd,LVM_DELETEITEM,li.iItem,0);

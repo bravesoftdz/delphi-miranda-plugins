@@ -504,7 +504,7 @@ var
   protov:PAnsiChar;
 begin
   FillChar(res,SizeOf(tQSRec),0);
-  res.data:=dword(-1);
+  res.data:=uint_ptr(-1);
   res.text:=nil;
   with qsopt.columns[num] do
   begin
@@ -1625,7 +1625,7 @@ end;
           end;
           p^:=#0;
 }
-        CallService(MS_TIPPER_SHOWTIPW,0{dword(txt)},tlparam(@info));
+        CallService(MS_TIPPER_SHOWTIPW,0{twparam(txt)},tlparam(@info));
 //        mFreeMem(txt);
         TTShowed:=true;
       end;
@@ -2898,7 +2898,7 @@ begin
             inc(col);
           end;
 
-        SendMessageW(grid,LVM_SETCOLUMNORDERARRAY,tablecolumns,dword(@lcol[0]));
+        SendMessageW(grid,LVM_SETCOLUMNORDERARRAY,tablecolumns,tlparam(@lcol[0]));
 
         InvalidateRect(grid,nil,false);
 }

@@ -185,18 +185,18 @@ begin
         WideToAnsi(ss,p,UserCP);
         if ccs^.wParam=0 then
         begin
-          ccs^.lParam:=dword(p);
+          ccs^.lParam:=tlparam(p);
         end
         else
         begin
           move(PAnsiChar(ss)^,(PAnsiChar(ss)+StrLen(p)+1)^,
             (StrLenW(ss)+1)*SizeOf(WideChar));
           StrCopy(PAnsiChar(ss),p);
-          ccs^.lParam:=dword(ss);
+          ccs^.lParam:=tlparam(ss);
         end;
         result:=CallService(MS_PROTO_CHAINSEND,wParam,lParam);
         mFreeMem(p);
-        ccs^.lParam:=dword(s);
+        ccs^.lParam:=tlparam(s);
         mFreeMem(ss);
         exit;
       end;
@@ -313,7 +313,7 @@ begin
           i:=WideToCombo(textpos,encbuf,UserCP);
           if (HistMask and hmOutInfo)<>0 then
             AddEvent(ccs^.hContact,EVENTTYPE_WAT_MESSAGE,DBEF_SENT,encbuf,i);
-//          if CallContactService(ccs^.hContact,PSS_MESSAGEW,PREF_UNICODE,dword(encbuf))=
+//          if CallContactService(ccs^.hContact,PSS_MESSAGEW,PREF_UNICODE,tlparam(encbuf))=
 //             ACKRESULT_FAILED then
             CallContactService(ccs^.hContact,PSS_MESSAGE,PREF_UNICODE,tlparam(encbuf));
         end;

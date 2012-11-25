@@ -571,7 +571,7 @@ begin
         wParam:=@i;
         lParam:=@j;
       end;
-      CallProtoService(proto,PS_GETCUSTOMSTATUSEX,0,dword(@ics));
+      CallProtoService(proto,PS_GETCUSTOMSTATUSEX,0,LPARAM(@ics));
     end;
 
     with ics do
@@ -600,7 +600,7 @@ begin
       end;
     end;
 
-    CallProtoService(proto,PS_GETCUSTOMSTATUSEX,0,dword(@ics));
+    CallProtoService(proto,PS_GETCUSTOMSTATUSEX,0,LPARAM(@ics));
 
 {
     StrCopy(buf,proto);

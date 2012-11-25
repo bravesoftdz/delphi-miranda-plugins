@@ -666,11 +666,11 @@ begin
       SendMessageW(wnd,LVM_SETITEMSTATE,i,lparam(@li));
 {
       li.iItem:=i;
-      SendMessageW(list,LVM_GETITEMSTATE,i,dword(@li));
+      SendMessageW(list,LVM_GETITEMSTATE,i,lparam(@li));
       if (li.state shr 12)>1 then
       begin
         li.state:=1 shl 12;
-        SendMessageW(wnd,LVM_SETITEMSTATE,i,dword(@li));
+        SendMessageW(wnd,LVM_SETITEMSTATE,i,lparam(@li));
       end;
 }
     end;

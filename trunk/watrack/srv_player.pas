@@ -628,7 +628,7 @@ begin
         begin
           lwnd:=CheckTmpl(lwnd,plyLink^[i].Check,plyLink^[i].flags);
 // find "Winamp" window
-          if (lwnd<>dword(WAT_RES_NOTFOUND)) and (lwnd<>0) and
+          if (lwnd<>THANDLE(WAT_RES_NOTFOUND)) and (lwnd<>0) and
              ((plyLink^[i].flags and WAT_OPT_WINAMPAPI)<>0) then
           begin
             wwnd:=WinampFindWindow(lwnd);
@@ -641,11 +641,11 @@ begin
           with plyLink^[i] do
           begin
             lwnd:=tCheckProc(Check)(lwnd,flags);
-            if (lwnd<>dword(WAT_RES_NOTFOUND)) and (lwnd<>0) and (GetStatus<>nil) then
+            if (lwnd<>THANDLE(WAT_RES_NOTFOUND)) and (lwnd<>0) and (GetStatus<>nil) then
               stat:=tStatusProc(GetStatus)(lwnd);
           end;
         end;
-        if (lwnd<>dword(WAT_RES_NOTFOUND)) and (lwnd<>0) then
+        if (lwnd<>THANDLE(WAT_RES_NOTFOUND)) and (lwnd<>0) then
         begin
           if (stat=WAT_MES_PLAYING) or ((flags and WAT_OPT_CHECKALL)=0) then
           begin
@@ -740,7 +740,7 @@ var
 begin
   result:=WAT_RES_ERROR;
   wnd:=CheckAllPlayers(flags,lstat,dummy);
-  if wnd<>dword(WAT_RES_NOTFOUND) then
+  if wnd<>THANDLE(WAT_RES_NOTFOUND) then
     if plyLink^[0].Command<>nil then
       result:=tCommandProc(plyLink^[0].Command)(wnd,wParam,lParam)
     else if (plyLink^[0].flags and WAT_OPT_WINAMPAPI)<>0 then

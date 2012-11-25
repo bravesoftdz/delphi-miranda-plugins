@@ -368,7 +368,7 @@ begin
   begin
     ConvertFileName(fname,@INIFile);
   //  CallService(MS_UTILS_PATHTOABSOLUTE,
-  //    dword(PAnsiChar(ServiceHlpFile)),dword(INIFile));
+  //    WPARAM(PAnsiChar(ServiceHlpFile)),LPARAM(INIFile));
     if GetFSize(pAnsiChar(@INIFile))=0 then
     begin
       INIFile[0]:=#0;

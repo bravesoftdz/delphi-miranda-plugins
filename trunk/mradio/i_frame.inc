@@ -72,7 +72,7 @@ begin
   cid.cbSize:=SizeOf(cid);
   StrCopy(cid.group,cPluginName);
   StrCopy(cid.name ,frm_back);
-  frm_bkg:=CallService(MS_COLOUR_GETA,dword(@cid),0);
+  frm_bkg:=CallService(MS_COLOUR_GETA,TWPARAM(@cid),0);
   if hbr<>0 then DeleteObject(hbr);
   hbr:=CreateSolidBrush(frm_bkg);
 
@@ -86,8 +86,8 @@ end;
 function GetIcon(action:integer;stat:integer=AST_NORMAL):cardinal;
 begin
   case stat of
-    AST_NORMAL : result:=CallService(MS_SKIN2_GETICON,0,dword(IcoBtnOn));
-    AST_PRESSED: result:=CallService(MS_SKIN2_GETICON,0,dword(IcoBtnOff));
+    AST_NORMAL : result:=CallService(MS_SKIN2_GETICON,0,TLPARAM(IcoBtnOn));
+    AST_PRESSED: result:=CallService(MS_SKIN2_GETICON,0,TLPARAM(IcoBtnOff));
   else
     result:=0;
   end;
@@ -204,7 +204,7 @@ begin
       end;
     end;
 
-    FrameId:=CallService(MS_CLIST_FRAMES_ADDFRAME,dword(@Frame),0);
+    FrameId:=CallService(MS_CLIST_FRAMES_ADDFRAME,TWPARAM(@Frame),0);
     if FrameId>=0 then
     begin
       CallService(MS_CLIST_FRAMES_UPDATEFRAME,FrameId, FU_FMPOS);
