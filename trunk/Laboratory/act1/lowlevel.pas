@@ -37,9 +37,9 @@ function GetMacroNameById(id:dword):PWideChar;
 procedure FreeMacro(num:cardinal);
 procedure FreeMacroList;
 // clone just assigned values
-procedure CloneMacro(var dst,src:pMacroRecord);
+procedure CloneMacro(var dst,src:pMacroRecord;foredit:boolean);
 // clone main macro list to new (custom)
-function CloneMacroList:pMacroList;
+function CloneMacroList(foredit:boolean):pMacroList;
 // reallocate custom macro list
 procedure ReallocMacroList(var aMacroList:pMacroList;var MaxMacro:cardinal);
 // allocate (main) macro list
@@ -110,10 +110,7 @@ var
   i:integer;
 begin
   for i:=0 to count-1 do
-  begin
-    src^[i].Clear;
     src^[i].Free;
-  end;
   FreeMem(src);
   src:=nil;
 end;
@@ -145,7 +142,7 @@ end;
 
 //----- Clone lists code -----
 
-function CloneActionList(src:pActionList;count:integer):pActionList;
+function CloneActionList(src:pActionList;count:integer;foredit:boolean):pActionList;
 var
   i:integer;
 begin
@@ -155,24 +152,27 @@ begin
     exit;
   end;
   GetMem(result,count);
-  for i:=0 to count-1 do
-    result^[i]:=src^[i].Clone;
+  if foredit then // copy just pointers
+    move(src^,result^,count*SizeOf(tBaseAction))
+  else // full clone
+    for i:=0 to count-1 do
+      result^[i]:=src^[i].Clone;
 end;
 
 // clone just assigned values
-procedure CloneMacro(var dst,src:pMacroRecord);
+procedure CloneMacro(var dst,src:pMacroRecord;foredit:boolean);
 begin
   if (src^.flags and ACF_ASSIGNED)<>0 then
   begin
     move(src^,dst^,SizeOf(tMacroRecord));
     StrCopyW(dst^.descr,src^.descr);
-    dst^.ActionList:=CloneActionList(src^.ActionList,src^.ActionCount);
+    dst^.ActionList:=CloneActionList(src^.ActionList,src^.ActionCount,foredit);
   end;
 end;
 
 // clone main macro list to new (custom)
 //!! nil if list is empty
-function CloneMacroList:pMacroList;
+function CloneMacroList(foredit:boolean):pMacroList;
 var
   src,dst:pMacroRecord;
   i,cnt:integer;
@@ -190,7 +190,7 @@ begin
     begin
       if (src^.flags and ACF_ASSIGNED)<>0 then
       begin
-        CloneMacro(dst,src);
+        CloneMacro(dst,src,foredit);
         inc(dst);
         dec(cnt);
       end;

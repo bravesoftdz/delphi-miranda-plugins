@@ -39,11 +39,11 @@ type
     dbvalue  :uint_ptr;
 
     constructor Create(uid:dword);
+    destructor Destroy; override;
     function  Clone:tBaseAction;
     function  DoAction(var WorkData:tWorkData):int;
     procedure Save(node:pointer;fmt:integer);
     procedure Load(node:pointer;fmt:integer);
-    procedure Clear;
   end;
 
 //----- Support functions -----
@@ -60,11 +60,24 @@ begin
   dbvalue  :=0;
 end;
 
-function CreateAction:tBaseAction;
+destructor tDataBaseAction.Destroy;
+begin
+  mFreeMem(dbmodule);
+  mFreeMem(dbsetting);
+  if (flags and ACF_DBUTEXT)<>0 then
+    mFreeMem(dbvalue)
+  else if (flags and ACF_RW_TVAR)<>0 then
+    mFreeMem(dbvalue);
+
+  inherited Destroy;
+end;
+
+function tDataBaseAction.Clone:tBaseAction;
 var
   tmp:tDataBaseAction;
 begin
-  New(tmp);
+  result:=tDataBaseAction.Create(0);
+  Duplicate(result);
 
   tmp.dbcontact:=dbcontact;
   StrDup(tmp.dbmodule ,dbmodule);
@@ -74,18 +87,6 @@ begin
     tmp.dbvalue:=dbvalue;
 
   result:=tmp;
-end;
-
-procedure tDataBaseAction.Clear;
-begin
-  mFreeMem(dbmodule);
-  mFreeMem(dbsetting);
-  if (flags and ACF_DBUTEXT)<>0 then
-    mFreeMem(dbvalue)
-  else if (flags and ACF_RW_TVAR)<>0 then
-    mFreeMem(dbvalue);
-
-  inherited Clear;
 end;
 
 function DBRW(hContact:THANDLE;avalue:uint_ptr;var WorkData:tWorkData):uint_ptr;

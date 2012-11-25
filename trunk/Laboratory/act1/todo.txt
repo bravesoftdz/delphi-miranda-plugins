@@ -1,3 +1,29 @@
+clone - macro list, copies of action lists
+macro list view - points to macro record(index?)
+action listview points to action class
+save:
+  remove macrolist with action lists, in cycle check and free marked objects,replace by new
+cancel
+  same deletion but for editing lists
+(clear action list)
+  scan all actions. if marked as new, destroy
+Delete macro:
+  remove from list, remove from array, clear it's actions list
+Add macro:
+  do nothing unitl save 1st action, then create action list
+Delete action:
+  if not marked, mark as old, remove from list
+  if marked as new, destroy, remove from list
+Add action:
+  create, mark as new (do nothing except list adding?)
+  BUT real creation is just at saving
+Move action:
+  do nothing, it for list build/final saving only
+Change action:
+  if not marked, mark as old, create, mark as new
+  if marked as new, destroy, create, mark as new
+  if nil (new), create, mark as new
+
 Флаги для экшенов:
 0 - старый, не затронуто
 1 - старый, надо обновлять (менялся)
@@ -14,9 +40,6 @@ macro: Add, Delete, Rename, Move
 action: single=change(type,value); mark, rename; list=Add, Delete, Move
 
 getlist: with volatile or not?
-
-Модифицировать запуск макросов: если вызов из макроса, создавать в том же потоке
-и без эвентов?
 
 Актуальные списки макросов и экшенов в диалогах через парент и ИД списков
 изменения - слать по всем диалогам сообщение "список менялся" и код списка.

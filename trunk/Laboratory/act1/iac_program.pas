@@ -33,11 +33,11 @@ type
     time   :dword;
 
     constructor Create(uid:dword);
+    destructor Destroy; override;
     function  Clone:tBaseAction;
     function  DoAction(var WorkData:tWorkData):int;
     procedure Save(node:pointer;fmt:integer);
     procedure Load(node:pointer;fmt:integer);
-    procedure Clear;
   end;
 
 //----- Support functions -----
@@ -73,6 +73,14 @@ begin
   args   :=nil;
 end;
 
+destructor tProgramAction.Destroy;
+begin
+  mFreeMem(prgname);
+  mFreeMem(args);
+
+  inherited Destroy;
+end;
+
 function tProgramAction.Clone:tBaseAction;
 begin
   result:=tProgramAction.Create(0);
@@ -82,14 +90,6 @@ begin
   tProgramAction(result).time   :=time;
   StrDupW(tProgramAction(result).prgname,prgname);
   StrDupW(tProgramAction(result).args   ,args);
-end;
-
-procedure tProgramAction.Clear;
-begin
-  mFreeMem(prgname);
-  mFreeMem(args);
-
-  inherited Clear;
 end;
 
 function tProgramAction.DoAction(var WorkData:tWorkData):int;

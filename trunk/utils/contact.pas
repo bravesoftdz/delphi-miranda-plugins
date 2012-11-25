@@ -1,4 +1,17 @@
-{hkContact}
+{Contact list in combo}
+unit contact;
+
+interface
+
+uses windows;
+
+procedure FillContactList(list:hwnd; filter:boolean=true;format:pWideChar=nil);
+function FindContact(list:hwnd;contact:THANDLE):integer;
+
+implementation
+
+uses messages, common, m_api, dbsettings, mirutils;
+
 const
   defformat = '%name% - %uid% (%account%:%group%)';
 
@@ -64,7 +77,7 @@ begin
         else
         begin
           uid:=pAnsiChar(CallProtoService(acc,PS_GETCAPS,PFLAG_UNIQUEIDSETTING,0));
-          if uint_ptr(uid)<>CALLSERVICE_NOTFOUND then
+          if int_ptr(uid)<>CALLSERVICE_NOTFOUND then
           begin
             if DBReadSetting(hContact,acc,uid,@ldbv)=0 then
             begin
@@ -98,16 +111,19 @@ end;
 
 function FindContact(list:hwnd;contact:THANDLE):integer;
 var
-  i,j:integer;
+  j:integer;
 begin
   result:=0;
   j:=SendMessage(list,CB_GETCOUNT,0,0);
-  for i:=0 to j-1 do
+  while j>0 do
   begin
-    if THANDLE(SendMessage(list,CB_GETITEMDATA,i,0))=contact then
+    dec(j);
+    if THANDLE(SendMessage(list,CB_GETITEMDATA,j,0))=contact then
     begin
-      result:=i;
+      result:=j;
       break;
     end;
   end;
 end;
+
+end.

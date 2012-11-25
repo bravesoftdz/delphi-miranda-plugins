@@ -30,11 +30,11 @@ type
     actname:pWideChar;
 
     constructor Create(uid:dword);
+    destructor Destroy; override;
     function  Clone:tBaseAction;
     function  DoAction(var WorkData:tWorkData):LRESULT;
     procedure Save(node:pointer;fmt:integer);
     procedure Load(node:pointer;fmt:integer);
-    procedure Clear;
   end;
 
 //----- Support functions -----
@@ -44,8 +44,17 @@ type
 constructor tChainAction.Create(uid:dword);
 begin
   inherited Create(uid);
+
   id     :=0;
   actname:=nil;
+end;
+
+destructor tChainAction.Destroy;
+begin
+  if (flags and ACF_BYNAME)<>0 then
+    mFreeMem(actname);
+
+  inherited Destroy;
 end;
 
 function tChainAction.Clone:tBaseAction;
@@ -119,13 +128,6 @@ begin
     end;
 }
   end;
-end;
-
-procedure tChainAction.Clear;
-begin
-  if (flags and ACF_BYNAME)<>0 then
-    mFreeMem(actname);
-  inherited Clear;
 end;
 
 //----- Dialog realization -----
