@@ -6,7 +6,6 @@
 {$IMAGEBASE $13200000}
 library actman;
 {%ToDo 'actman.todo'}
-{%File 'm_actions.inc'}
 {%File 'm_actman.inc'}
 {%File 'i_const.inc'}
 {%File 'i_opt_dlg2.inc'}
@@ -68,7 +67,6 @@ var
   hevaction,hHookChanged,hevinout:cardinal;
   hsel,hinout,hfree,hget,hrun,hrung,hrunp:cardinal;
 
-{.$include m_actions.inc}
 {$include m_actman.inc}
 
 
@@ -131,11 +129,27 @@ end;
 procedure RegisterActTypes;
 var
   p:pActModule;
+  sid:TSKINICONDESC;
+  buf:array [0..63] of AnsiChar;
+  pc:pAnsiChar;
 begin
+  FillChar(sid,SizeOf(sid),0);
+  sid.cbSize:=SizeOf(sid);
+  sid.cx:=16;
+  sid.cy:=16;
+  sid.szSection.a:='Actions';
+  sid.pszName    :=@buf;
+  pc:=StrCopyE(buf,IcoLibPrefix);
   p:=ModuleLink;
   while p<>nil do
   begin
     p^.Hash:=Hash(p^.Name,StrLen(p^.Name));
+    //!! must add icon registration in icolib
+    sid.hDefaultIcon   :=LoadImageA(hInstance,p^.Icon,IMAGE_ICON,16,16,0);
+    sid.szDescription.a:=p^.Name;
+    StrCopy(pc,p^.Name);
+    Skin_AddIcon(@sid);
+    DestroyIcon(sid.hDefaultIcon);
     p:=p^.Next;
   end;
 end;

@@ -8,9 +8,10 @@ uses windows, iac_global, mirutils;
 
 
 type
-   = ^;
-   = object(tBaseAction)
+   = class(tBaseAction)
 
+    constructor Create(uid:dword);
+    function  Clone:tBaseAction;
     function DoAction(var WorkData:tWorkData):int;
     procedure Save(node:pointer;fmt:integer);
     procedure Load(node:pointer;fmt:integer);
@@ -20,6 +21,11 @@ type
 //----- Support functions -----
 
 //----- Object realization -----
+
+constructor tChainAction.Create(uid:dword);
+begin
+  inherited Create(uid);
+end;
 
 procedure .Clear;
 begin

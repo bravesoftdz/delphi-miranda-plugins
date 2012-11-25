@@ -29,11 +29,11 @@ type
     boxopts :uint;
 
     constructor Create(uid:dword);
+    destructor Destroy; override;
     function  Clone:tBaseAction;
     function  DoAction(var WorkData:tWorkData):LRESULT;
     procedure Save(node:pointer;fmt:integer);
     procedure Load(node:pointer;fmt:integer);
-    procedure Clear;
   end;
 
 //----- Object realization -----
@@ -47,6 +47,14 @@ begin
   boxopts :=0;
 end;
 
+destructor tMessageAction.Destroy;
+begin
+  mFreeMem(msgtitle);
+  mFreeMem(msgtext);
+
+  inherited Destroy;
+end;
+
 function tMessageAction.Clone:tBaseAction;
 begin
   result:=tMessageAction.Create(0);
@@ -55,14 +63,6 @@ begin
   StrDupW(tMessageAction(result).msgtext ,msgtext);
   StrDupW(tMessageAction(result).msgtitle,msgtitle);
   tMessageAction(result).boxopts:=boxopts;
-end;
-
-procedure tMessageAction.Clear;
-begin
-  mFreeMem(msgtitle);
-  mFreeMem(msgtext);
-
-  inherited Clear;
 end;
 
 function tMessageAction.DoAction(var WorkData:tWorkData):LRESULT;

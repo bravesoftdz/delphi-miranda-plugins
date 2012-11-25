@@ -5,6 +5,8 @@ interface
 uses windows, messages;
 
 const
+  IcoLibPrefix = 'action_type_';
+const
   NoDescription:PWideChar='No Description';
 const
   DBBranch = 'ActMan';
@@ -16,10 +18,10 @@ const
   WM_ACT_SAVE     = WM_USER + 15;
   WM_ACT_REFRESH  = WM_USER + 16; // group, action
 
-const // 
-  ACF_DISABLED = $10000000;  // action disabled
-//  ACF_USEDNOW  = $20000000;  // action in use (reserved)
-//  ACF_ASSIGNED = $80000000;  // action assigned
+const
+  ACF_DISABLED   = $10000000;  // action disabled
+  ACF_REPLACED   = $20000000;  // action replaced by new in options
+  ACF_INTRODUCED = $40000000;  // action is newly created (not saved) in options
 
 const
   isEScript = 1;
@@ -47,11 +49,11 @@ type
     procedure Duplicate(var dst:tBaseAction);
 
     constructor Create(uid:dword);
+    destructor Destroy; override;
     function  Clone:tBaseAction;
     function  DoAction(var WorkData:tWorkData):LRESULT; // process action 
     procedure Load(node:pointer;fmt:integer);           // load/import action
     procedure Save(node:pointer;fmt:integer);           // save/export action
-    procedure Clear;                                    // action cleanup
   end;
 
 type
@@ -95,6 +97,13 @@ begin
   end;
 end;
 
+destructor tBaseAction.Destroy;
+begin
+  mFreeMem(ActionDescr);
+
+  inherited Destroy;
+end;
+
 procedure tBaseAction.Duplicate(var dst:tBaseAction);
 begin
   StrDupW(dst.ActionDescr,ActionDescr);
@@ -123,12 +132,6 @@ procedure tBaseAction.Save(node:pointer;fmt:integer);
 begin
   // nothing
 end;
-
-procedure tBaseAction.Clear;
-begin
-  mFreeMem(ActionDescr);
-end;
-
 
 function ClearResult(var WorkData:tWorkData):int_ptr;
 begin

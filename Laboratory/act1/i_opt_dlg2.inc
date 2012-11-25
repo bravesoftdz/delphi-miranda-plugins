@@ -14,6 +14,8 @@ const
   hlpAdvVariables = 31;
 
 var
+  EditMacroList:pMacroList;
+var
   DontReact:bool;
   OldGroupTableProc,
   OldActTableProc:pointer;
@@ -69,7 +71,7 @@ begin
   if ((atype and etHK )<>0) and (NewGroupList =GroupList ) then NewGroupList :=CloneGroupList;
   if ((atype and etACT)<>0) and (NewActionList=ActionList) then NewActionList:=CloneActionList;
 end;
-
+{
 procedure SetSave(Dialog:HWND;curIdx:integer);
 var
   i,j:integer;
@@ -106,25 +108,51 @@ begin
     NewMaxGroups:=MaxGroups;
   end;
 end;
+}
+procedure SetSave;
+var
+  i,j:integer;
+begin
+  //!! first, check,repose and pack array maybe?
+  // for moved and deleted items
+  for i:=0 to MacroCount-1 do
+  begin
+    for j:=0 to MacroList^[i].ActionCount-1 do
+    begin
+      if (MacroList^[i].ActionList^[j].flags and ACF_REPLACED)<>0 then
+        MacroList^[i].ActionList^[j].Free;
+    end;
+    mFreeMem(MacroList^[i].ActionList);
+  end;
+  FreeMem(MacroList);
+  MacroList:=EditMacroList;
+  Macrocount:=EditMacroCount;
+  EditMacroList:=nil;
+  EditMacroCount:=0;
+end;
 
 procedure SetCancel;
+var
+  i,j:integer;
 begin
-  if NewActionList<>nil then
+  //!! check for ACF_ASSIGNED
+  for i:=0 to EditMacroCount-1 do
   begin
-    if (NewActionList<>ActionList) then
-      DestroyActions(NewActionList,NewMaxActions);
-    NewActionList:=nil;
+    for j:=0 to EditMacroList^[i].ActionCount-1 do
+    begin
+      if (EditMacroList^[i].ActionList^[j].flags and ACF_INTRODUCED)<>0 then
+        EditMacroList^[i].ActionList^[j].Free;
+    end;
+    mFreeMem(EditMacroList^[i].ActionList);
   end;
-  if NewGroupList<>nil then
-  begin
-    if (NewGroupList<>GroupList) then
-      DestroyMacros(NewGroupList,NewMaxGroups);
-    NewGroupList:=nil;
-  end;
+  FreeMem(EditMacroList);
+  EditMacroList:=nil;
+  EditMacroCount:=0;
 end;
 
 //-----  -----
 
+// Fill dialog fields by choosen action
 procedure FillAction(act:tBaseAction);
 var
   p:pActModule;
@@ -154,6 +182,7 @@ var
   buf:array [0..127] of WideChar;
   p:pActModule;
   rc:TRECT;
+  dlg:HWND;
 begin
   il:=ImageList_Create(16,16,ILC_COLOR32 or ILC_MASK,0,1);
   SendMessage(list,CB_RESETCONTENT,0,0);
@@ -164,9 +193,12 @@ begin
   i:=0;
   SetRect(rc,134,22,0,0);
   MapDialogRect(GetParent(list),rc);
+  dlg:=GetParent(list);
   while p<>nil do
   begin
-//!!    ImageList_AddIcon(il,CallService(MS_SKIN2_GETICON,0,lparam(ActIds[i].icon)));
+    StrCopy(StrCopyE(buf,IcoLibPrefix),p^.Name);
+    ImageList_AddIcon(il,CallService(MS_SKIN2_GETICON,0,lparam(@buf)));
+
     cbei.pszText       :=TranslateW(FastAnsiToWideBuf(p^.Name,buf));
     cbei.iItem         :=i;
     cbei.lParam        :=p^.Hash;
@@ -174,7 +206,7 @@ begin
     cbei.iSelectedImage:=i;
     if SendMessageW(list,CBEM_INSERTITEMW,0,lparam(@cbei))=-1 then
       break;
-    p^.DlgHandle:=p^.Dialog(GetParent(list));
+    p^.DlgHandle:=p^.Dialog(dlg);
     SetWindowPos(p^.DlgHandle,0,rc.left,rc.top,0,0,SWP_NOZORDER or SWP_NOSIZE or SWP_HIDEWINDOW);
     p:=p^.Next;
     inc(i);
@@ -185,42 +217,24 @@ begin
   result:=GetLink(CB_GetData(list,0))^.DlgHandle;
 end;
 
-procedure CheckActList(Dialog:HWND;num:integer=-1);
+procedure CheckActListDirectionButtons(Dialog:HWND);
 var
   wnd:HWND;
   dir:integer;
   okup,okdown:boolean;
 begin
   wnd:=GetDlgItem(Dialog,IDC_ACTION_LIST);
-//    if num<0 then
-  begin
-    dir:=LV_CheckDirection(wnd);
-    okup  :=odd(loword(dir));
-    okdown:=(loword(dir) and 2)<>0;
-  end;
-{
-  else
-  begin
-    okup  :=num>0;
-    okdown:=(num+1)<SendMessage(wnd,LVM_GETITEMCOUNT,0,0);
-    SendMessage(wnd,LVM_ENSUREVISIBLE,num,0);
-  end;
-}
+
+  dir:=LV_CheckDirection(wnd);
+  okup  :=odd(loword(dir));
+  okdown:=(loword(dir) and 2)<>0;
+
   EnableWindow(GetDlgItem(Dialog,IDC_ACTION_UP  ),okup);
   EnableWindow(GetDlgItem(Dialog,IDC_ACTION_DOWN),okdown);
   SendMessage(wnd,LVM_ENSUREVISIBLE,hiword(dir)-1,0);
-(*
-  wnd:=GetDlgItem(Dialog,IDC_ACTION_LIST);
-  if num<0 then
-    num:=SendMessage(wnd,LVM_GETNEXTITEM,-1,LVNI_FOCUSED);
-  EnableWindow(GetDlgItem(Dialog,IDC_ACTION_UP),num>0);
-  EnableWindow(GetDlgItem(Dialog,IDC_ACTION_DOWN),
-      (num+1)<SendMessage(wnd,LVM_GETITEMCOUNT,0,0));
-  SendMessage(wnd,LVM_ENSUREVISIBLE,num,0);
-*)
 end;
 
-procedure CheckActionList(Dialog:HWND;next:integer);
+procedure CheckActListButtons(Dialog:HWND;next:integer);
 var
   i:integer;
   wnd:HWND;
@@ -245,11 +259,11 @@ begin
     EnableWindow(GetDlgItem(Dialog,IDC_ACTION_DELETE),false);
     next:=0;
   end;
-  CheckActList(Dialog,next);
+  CheckActListDirectionButtons(Dialog);
 end;
 
 // Fill Chain list
-procedure MakeActionList(Dialog:HWND;HK:pHKRecord);
+procedure FillActionList(Dialog:HWND;Macro:pMacroRecord);
 var
   i,idx:integer;
   wnd:HWND;
@@ -261,7 +275,7 @@ begin
   SendMessage(wnd,LVM_DELETEALLITEMS,0,0);
 
   EnableWindow(GetDlgItem(Dialog,IDC_ACTION_UP),false);
-  if (HK=nil) or (HK^.firstAction=0) then
+  if (Macro=nil) or (Macro^.ActionCount=0) then
   begin
     SHActButtons(Dialog,SW_HIDE);
     EnableWindow(GetDlgItem(Dialog,IDC_ACTION_LIST  ),false);
@@ -302,7 +316,7 @@ begin
   EnableWindow(GetDlgItem(Dialog,IDC_ACTION_DOWN),idx>1);
 //--    FillSubList(Dialog);
   FillAction(NewActionList^[HK^.firstAction]);
-  CheckActList(Dialog,0);
+  CheckActListDirectionButtons(Dialog);
 end;
 
 // change current action name ONLY IN LIST
@@ -333,7 +347,7 @@ begin
   end;
 end;
 
-procedure SaveAction(Dialog:HWND;listnum,actnum:integer);
+procedure SaveAction(Dialog:HWND;listnum:integer;actptr:tBaseAction);
 var
   wnd:HWND;
   arr: array [0..255] of WideChar;
@@ -342,75 +356,96 @@ var
 begin
   if (ChMask and ACTM_ACT)=0 then exit;
   ChMask:=ChMask and not ACTM_ACT;
+
   wnd:=GetDlgItem(Dialog,IDC_ACTION_LIST);
+
   if listnum<0 then
   begin
     listnum:=SendMessageW(wnd,LVM_GETNEXTITEM,-1,LVNI_FOCUSED);
     if listnum<0 then
       exit;
+    actptr:=tBaseAction(LV_GetLParam(wnd,listnum));
   end;
-  if actnum<0 then
-    actnum:=LV_GetLParam(wnd,listnum);
-  if NewActionList^[actnum]<>nil then
+
+  // changed existing action
+  if actptr<>nil then
   begin
-    NewActionList^[actnum].Clear;
-    Dispose(NewActionList^[actnum]);
+    if (actptr.flags and ACF_INTRODUCED)<>0 then // new but changed
+      actptr.Free
+    else // old
+      actptr.flags:=actptr.flags or ACF_REPLACED;
   end;
 
   // Action saving
   p:=GetLink(CB_GetData(GetDlgItem(Dialog,IDC_ACTION_TYPE)));
-  NewActionList^[actnum]:=p.Create;
+  actptr:=p.Create;
+  SendMessage(p.DlgHandle,WM_ACT_SAVE,0,tlparam(actptr));
+{ maybe do it at full chain saving?
   
-  with NewActionList^[actnum]^ do
-  begin
-//!!    flags1:=0; //ACF_ASSIGNED not needed anymore
-//!!    flags2:=0;
+  li.iItem     :=listnum;
+  li.mask      :=LVIF_TEXT;
+  li.iSubItem  :=0;
+  li.pszText   :=@arr;
+  li.cchTextMax:=SizeOf(arr) div SizeOf(WideChar);
+  SendDlgItemMessageW(Dialog,IDC_ACTION_LIST,LVM_GETITEMW,0,tlparam(@li));
+  StrDupW(actptr.ActionDescr,arr);
 
-    li.iItem     :=listnum;
-    li.mask      :=LVIF_TEXT;
-    li.iSubItem  :=0;
-    li.pszText   :=@arr;
-    li.cchTextMax:=SizeOf(arr) div SizeOf(WideChar);
-    SendDlgItemMessageW(Dialog,IDC_ACTION_LIST,LVM_GETITEMW,0,tlparam(@li));
-    StrDupW(ActionDescr,arr);
-
-    if ListView_GetCheckState(wnd,listnum)=0 then
-;//!!      flags1:=flags1 or ACF_DISABLED;
-
-    SendMessage(p.DlgHandle,WM_ACT_SAVE,0,tlparam(NewActionList^[actnum]));
-  end;
+  if ListView_GetCheckState(wnd,listnum)=0 then
+    actptr.flags:=actptr.flags or ACF_DISABLED;
+}
+  LV_SetLParam(wnd,tlparam(actptr),listnum);
 end;
 
 procedure BuildActionChain(Dialog:HWND;group:integer=-1);
 var
   i,j,item:integer;
   wnd:HWND;
-  act:pHKAction;
+  act:tBaseAction;
   idx:integer;
 begin
   if (ChMask and ACTM_ACTS)=0 then exit;
   ChMask:=ChMask and not ACTM_ACTS;
-  SaveAction(Dialog,-1,-1);
-  wnd:=GetDlgItem(Dialog,IDC_ACTION_LIST);
-  i:=SendMessageW(wnd,LVM_GETITEMCOUNT,0,0);
+
   idx:=LV_GetLParam(GetDlgItem(Dialog,IDC_ACTION_GROUP),group);
-  if i>0 then
+  if idx>=0 then // we have macro to save
   begin
-    j:=LV_GetLParam(wnd,0);
-    NewGroupList^[idx].firstAction:=j;
-    act:=@NewActionList^[j];
-    for item:=1 to i-1 do
+    with EditMacroList^[idx] do
     begin
-      j:=LV_GetLParam(wnd,item);
-      act^.next:=j;
-      act:=@NewActionList^[j];
+      if ActionCount>0 then
+      begin
+        ActionCount:=0;
+        FreeMem(ActionList);
+        ActionList:=nil;
+      end;
     end;
-    act^.next:=0;
-  end
-  else
-  begin
-    if idx>=0 then
-      NewGroupList^[idx].firstAction:=0;
+
+    SaveAction(Dialog,-1,nil);
+
+    wnd:=GetDlgItem(Dialog,IDC_ACTION_LIST);
+    with EditMacroList^[idx] do
+    begin
+      ActionCount:=SendMessageW(wnd,LVM_GETITEMCOUNT,0,0);
+      if ActionCount>0 then // have some actions - need to build list
+      begin
+        GetMem(ActionList,SizeOf(tBaseAction)*ActionCount);
+        for item:=0 to ActionCount-1 do
+        begin
+          ActionList^[item]:=tBaseAction(LV_GetLParam(wnd,item));
+  {
+          li.iItem     :=listnum;
+          li.mask      :=LVIF_TEXT;
+          li.iSubItem  :=0;
+          li.pszText   :=@arr;
+          li.cchTextMax:=SizeOf(arr) div SizeOf(WideChar);
+          SendDlgItemMessageW(Dialog,IDC_ACTION_LIST,LVM_GETITEMW,0,tlparam(@li));
+          StrDupW(ActionList^[item].ActionDescr,arr);
+
+          if ListView_GetCheckState(wnd,listnum)=0 then
+            ActionList^[item].flags:=ActionList^[item].flags or ACF_DISABLED;
+  }
+        end;
+      end;
+    end;
   end;
 end;
 
@@ -735,7 +770,7 @@ begin
   begin
     EnableWindow(wnd,false);
     EnableWindow(GetDlgItem(Dialog,IDC_GROUP_DELETE),false);
-    CheckActionList(Dialog,0);
+    CheckActListButtons(Dialog,0);
     EnableWindow(GetDlgItem(Dialog,IDC_ACTION_NEW),false);
   end;
   CheckGrpList(Dialog,next);
@@ -750,7 +785,7 @@ var
   lvi:TLVITEMW;
 begin
   SendDlgItemMessage(Dialog,IDC_ACTION_LIST,LVM_DELETEALLITEMS,0,0);
-  CheckActionList(Dialog,-1);
+  CheckActListButtons(Dialog,-1);
   list:=GetDlgItem(Dialog,IDC_ACTION_GROUP);
 
   SendMessage(list,LVM_DELETEALLITEMS,0,0);
@@ -890,7 +925,7 @@ begin
       FillGroupList(Dialog);
 
       // fill current group
-//!!      MakeActionList(Dialog,@NewGroupList^);
+//!!      FillActionList(Dialog,@NewGroupList^);
       ChMask:=0;
       CheckGrpList(Dialog,-1);
       DontReact:=false;
@@ -1124,7 +1159,7 @@ begin
               EnableWindow(GetDlgItem(Dialog,IDC_GROUP_TEST   ),true);
               EnableWindow(GetDlgItem(Dialog,IDC_ACTION_DELETE),true);
               EnableWindow(GetDlgItem(Dialog,IDC_ACTION_TYPE  ),true);
-              CheckActList(Dialog,i);
+              CheckActListDirectionButtons(Dialog);
 
               wnd:=GetDlgItem(Dialog,IDC_ADV_VAL2);
               i:=SendMessage(wnd,CB_GETCURSEL,0,0);
@@ -1142,7 +1177,7 @@ begin
               end;
               Listview_SetItemState(wnd,0,LVIS_FOCUSED or LVIS_SELECTED,
                                           LVIS_FOCUSED or LVIS_SELECTED);
-              CheckActionList(Dialog,0);
+              CheckActListButtons(Dialog,0);
 {              
               wnd:=GetDlgItem(Dialog,IDC_ACTION_LIST);
               li.iItem:=SendMessage(wnd,LVM_GETNEXTITEM,-1,LVNI_FOCUSED); //??
@@ -1154,7 +1189,7 @@ begin
                 FreeAction(@NewActionList^[li.lParam]);
 
                 SendMessage(wnd,LVM_DELETEITEM,li.iItem,0);
-                CheckActionList(Dialog,li.iItem);
+                CheckActListButtons(Dialog,li.iItem);
               end;
 }
             end;
@@ -1176,11 +1211,13 @@ begin
 
             IDC_ACTION_UP: begin
               wnd:=GetDlgItem(Dialog,IDC_ACTION_LIST);
-                CheckActList(Dialog,MoveGroup(wnd,-1,-1));
+              MoveGroup(wnd,-1,-1)
+              CheckActListDirectionButtons(Dialog);
             end;
             IDC_ACTION_DOWN: begin
               wnd:=GetDlgItem(Dialog,IDC_ACTION_LIST);
-                CheckActList(Dialog,MoveGroup(wnd,-1,1));
+              MoveGroup(wnd,-1,1)
+              CheckActListDirectionButtons(Dialog);
             end;
 
           end;
@@ -1240,7 +1277,7 @@ begin
                 DontReact:=true;
 
                 ClearDialogData;
-                MakeActionList(Dialog,@NewGroupList^[PNMLISTVIEW(lParam)^.lParam]);
+                FillActionList(Dialog,@NewGroupList^[PNMLISTVIEW(lParam)^.lParam]);
                 CheckGrpList(Dialog,PNMLISTVIEW(lParam)^.iItem);
 
                 DontReact:=false;
@@ -1269,7 +1306,7 @@ begin
               ResetDialogs;
               j:=PNMLISTVIEW(lParam)^.lParam;
               FillAction(NewActionList^[j]);
-              CheckActList(Dialog,PNMLISTVIEW(lParam)^.iItem);
+              CheckActListDirectionButtons(Dialog);
 
               DontReact:=false;
             end

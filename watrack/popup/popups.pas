@@ -385,7 +385,7 @@ var
   odp:TOPTIONSDIALOGPAGE;
 begin
   FillChar(odp,SizeOf(odp),0);
-  odp.cbSize     :=OPTIONPAGE_OLD_SIZE2; //for 0.5 compatibility
+  odp.cbSize     :=SizeOf(odp);
   odp.flags      :=ODPF_BOLDGROUPS;
   odp.Position   :=900003000;
   odp.hInstance  :=hInstance;

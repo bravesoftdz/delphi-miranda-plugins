@@ -46,11 +46,11 @@ type
     flags2 :dword;
 
     constructor Create(uid:dword);
+    destructor Destroy; override;
     function  Clone:tBaseAction;
     function  DoAction(var WorkData:tWorkData):int;
     procedure Save(node:pointer;fmt:integer);
     procedure Load(node:pointer;fmt:integer);
-    procedure Clear;
   end;
 
 //----- Support functions -----
@@ -60,6 +60,23 @@ type
 constructor tServiceAction.Create(uid:dword);
 begin
   inherited Create(uid);
+end;
+
+procedure ClearParam(flags:dword; var param);
+begin
+  if (flags and (ACF_PARNUM or ACF_RESULT or ACF_PARAM))=0 then
+    mFreeMem(pointer(param))
+  else if ((flags and ACF_PARNUM)<>0) and ((flags and ACF_SCRIPT_PARAM)<>0) then
+    mFreeMem(pointer(param));
+end;
+
+destructor tServiceAction.Destroy;
+begin
+  mFreeMem(service);
+  ClearParam(flags ,wparam);
+  ClearParam(flags2,lparam);
+
+  inherited Destroy;
 end;
 
 function tServiceAction.Clone:tBaseAction;
@@ -83,23 +100,6 @@ begin
     StrDup(pAnsiChar(tServiceAction(result).lparam),pAnsiChar(lparam))
   else
     tServiceAction(result).lparam:=lparam;
-end;
-
-procedure ClearParam(flags:dword; var param);
-begin
-  if (flags and (ACF_PARNUM or ACF_RESULT or ACF_PARAM))=0 then
-    mFreeMem(pointer(param))
-  else if ((flags and ACF_PARNUM)<>0) and ((flags and ACF_SCRIPT_PARAM)<>0) then
-    mFreeMem(pointer(param));
-end;
-
-procedure tServiceAction.Clear;
-begin
-  mFreeMem(service);
-  ClearParam(flags ,wparam);
-  ClearParam(flags2,lparam);
-
-  inherited Clear;
 end;
 
 procedure PreProcess(flags:dword;var l_param:LPARAM;var WorkData:tWorkData);

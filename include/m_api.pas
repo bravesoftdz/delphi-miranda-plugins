@@ -242,6 +242,7 @@ var
   {$include m_msg_buttonsbar.inc}
   {$include m_json.inc}
   {$include m_xstatus.inc}
+  {$include m_zlib.inc}
 {$define M_API_UNIT}
   {$include m_helpers.inc}
   {$include m_clistint.inc}
