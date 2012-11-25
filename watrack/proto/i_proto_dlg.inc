@@ -100,7 +100,7 @@ begin
       cii.cbSize   :=SizeOf(cii);
       cii.flags    :=CLCIIF_GROUPFONT or CLCIIF_CHECKBOX;
       cii.pszText.w:=TranslateW('** All contacts **');
-      hItemAll:=SendMessage(hList,CLM_ADDINFOITEM,0,dword(@cii));
+      hItemAll:=SendMessage(hList,CLM_ADDINFOITEM,0,tlparam(@cii));
 }
       SetAllContactStat(hList);
       SetHistMask(Dialog);

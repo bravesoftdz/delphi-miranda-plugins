@@ -317,7 +317,7 @@ begin
   begin
     ConvertFileName(recpath,buf,ActiveContact);
 //    pcw:=ParseVarString(recpath,ActiveContact);
-//    CallService(MS_UTILS_PATHTOABSOLUTEW,dword(pcw),dword(buf));
+//    CallService(MS_UTILS_PATHTOABSOLUTEW,WPARAM(pcw),LPARAM(buf));
 //    mFreeMem(pcw);
     if not ForceDirectories(buf) then
     begin

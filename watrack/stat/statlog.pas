@@ -142,7 +142,7 @@ begin
      (si^.album =NIL) and (si^.mfile=NIL) then
     exit;
   f:=Append(fname);
-//  if dword(f)=INVALID_HANDLE_VALUE then f:=Rewrite(fname);
+//  if THANDLE(f)=INVALID_HANDLE_VALUE then f:=Rewrite(fname);
   if f=THANDLE(INVALID_HANDLE_VALUE) then exit;
   FillChar(buf,SizeOf(buf),0);
   lp:=@buf;
@@ -414,7 +414,7 @@ var
 begin
   Lock:=true;
   ConvertFileName(fname,buf1);
-//  CallService(MS_UTILS_PATHTOABSOLUTE,dword(fname),dword(@buf1));
+//  CallService(MS_UTILS_PATHTOABSOLUTE,twparam(fname),tlparam(@buf1));
   Root:=BuildTree(buf1,buf);
   if Root<>nil then
   begin
@@ -459,7 +459,7 @@ begin
   else
     fname:=PAnsiChar(wParam);
   ConvertFileName(fname,log);
-//  CallService(MS_UTILS_PATHTOABSOLUTE,dword(fname),dword(@log));
+//  CallService(MS_UTILS_PATHTOABSOLUTE,twparam(fname),tlparam(@log));
   AppendStat(log,pSongInfo(lParam));
 end;
 
@@ -491,9 +491,9 @@ begin
     ConvertFileName(r,report);
     ConvertFileName(l,template);
     ConvertFileName(StatName,log);
-//    CallService(MS_UTILS_PATHTOABSOLUTE,dword(r),dword(@report));
-//    CallService(MS_UTILS_PATHTOABSOLUTE,dword(l),dword(@template));
-//    CallService(MS_UTILS_PATHTOABSOLUTE,dword(StatName),dword(@log));
+//    CallService(MS_UTILS_PATHTOABSOLUTE,twparam(r),tlparam(@report));
+//    CallService(MS_UTILS_PATHTOABSOLUTE,twparam(l),tlparam(@template));
+//    CallService(MS_UTILS_PATHTOABSOLUTE,twparam(StatName),tlparam(@log));
     if DoAddExt=BST_CHECKED then
       ChangeExt(report,'htm');
     if StatOut(report,log,template) then

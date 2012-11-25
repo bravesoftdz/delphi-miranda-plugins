@@ -239,7 +239,7 @@ begin
 
   with filter do
   begin
-//      CallService(MS_UTILS_PATHTOABSOLUTE,dword(@ini1),dword(@ini));
+//      CallService(MS_UTILS_PATHTOABSOLUTE,TWPARAM(@ini1),TLPARAM(@ini));
     lBitrate:=GetDlgItemInt(wnd,IDC_BITRATE,ltmp,false);
     if      IsDlgButtonChecked(wnd,IDC_LT)=BST_CHECKED then lBitrateMode:=-1
     else if IsDlgButtonChecked(wnd,IDC_EQ)=BST_CHECKED then lBitrateMode:=0

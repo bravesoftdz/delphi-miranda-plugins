@@ -31,7 +31,7 @@ var
 begin
   D:=FrameCtrl.CustomData;
   CallService(MS_CLIST_FRAMES_SETFRAMEOPTIONS,
-      (D.FrameId shl 16)+FO_TBNAME+addflag,dword(title));
+      (D.FrameId shl 16)+FO_TBNAME+addflag,tlparam(title));
   CallService(MS_CLIST_FRAMES_SETFRAMEOPTIONS,(D.FrameId shl 16)+FO_ICON,icon);
   CallService(MS_CLIST_FRAMES_UPDATEFRAME,D.FrameId,FU_TBREDRAW);
 end;
@@ -220,7 +220,7 @@ begin
     end;
     FrameHeight:=CLFrame.height;
 
-    PWATFrameData(FrameCtrl.CustomData).FrameId:=CallService(MS_CLIST_FRAMES_ADDFRAME,dword(@CLFrame),0);
+    PWATFrameData(FrameCtrl.CustomData).FrameId:=CallService(MS_CLIST_FRAMES_ADDFRAME,twparam(@CLFrame),0);
     if PWATFrameData(FrameCtrl.CustomData).FrameId>=0 then
     begin
       plStatusHook:=HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);

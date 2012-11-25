@@ -120,7 +120,7 @@ const
   if lParam=0 only internal SongInfo structure will be filled
   Example:
     var p:pSongInfo;
-    CallService(MS_WAT_GETMUSICINFO,0,dword(@p));
+    CallService(MS_WAT_GETMUSICINFO,0,lparam(@p));
 }
   MS_WAT_GETMUSICINFO:PAnsiChar = 'WATrack/GetMusicInfo';
 {

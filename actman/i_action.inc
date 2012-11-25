@@ -677,7 +677,7 @@ begin
     begin
       StrDeleteW(dst,i shr 16,loword(i));
       ConvertFileName(r.text,buf);
-//      CallService(MS_UTILS_PATHTOABSOLUTE,dword(r.text),dword(@buf));
+//      CallService(MS_UTILS_PATHTOABSOLUTE,WPARAM(r.text),LPARAM(@buf));
       lp:=GetFileString(@buf,r.one);
       if lp<>nil then
       begin
@@ -704,7 +704,7 @@ begin
     begin
       buf:=GetDlgText(wnd,false);
 //!!    next line was active. why?
-//      SendMessageW(wnd,WM_GETTEXT,4095,dword(@buf));
+//      SendMessageW(wnd,WM_GETTEXT,4095,LPARAM(@buf));
       buf[sel shr 16]:=#0;
       StrReplaceW(dst,'^s',buf+loword(sel));
       mFreeMem(buf);
@@ -923,7 +923,7 @@ begin
         if DBReadByte(hContact,p,'ChatRoom',0)<>1 then
         begin
           i:=WideToCombo(w,blob,cp);
-  //          if CallContactService(hContact,PSS_MESSAGEW,0,dword(blob))=
+  //          if CallContactService(hContact,PSS_MESSAGEW,0,TLPARAM(blob))=
   //             ACKRESULT_FAILED then
           CallContactService(hContact,PSS_MESSAGE,PREF_UNICODE,tlparam(blob));
           dbei.cbSize   :=sizeof(dbei);
