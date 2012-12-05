@@ -273,7 +273,7 @@ begin
 
     actnode:=getChild(actnode,0);
     tmp:=getName(actnode);
-MessageBoxW(0,tmp,'node',0);
+//MessageBoxW(0,tmp,'node',0);
 
     // CONTACT
     if StrCmpW(tmp,ioContactWindow)=0 then
@@ -290,7 +290,7 @@ MessageBoxW(0,tmp,'node',0);
     begin
       actionType:=ACT_SERVICE;
       FastWideToAnsi(getAttrValue(actnode,ioService),service);
-MessageBoxA(0,service,'service',0);
+//MessageBoxA(0,service,'service',0);
       if StrToInt(getAttrValue(actnode,ioVariables))=1 then
         flags2:=flags2 or ACF2_SRV_SRVC;
 
@@ -322,7 +322,7 @@ MessageBoxA(0,service,'service',0);
       else if lstrcmpiw(tmp,ioHex    )=0 then flags:=flags or ACF_HEX
       else if lstrcmpiw(tmp,ioStruct )=0 then flags:=flags or ACF_STRUCT
       else if lstrcmpiw(tmp,ioInt    )=0 then ;
-MessageBoxW(0,'','end',0);
+//MessageBoxW(0,'','end',0);
     end
 
     // PROGRAM
@@ -571,7 +571,7 @@ begin
   BlockRead(f,res^,i);
   CloseHandle(f);
 
-MessageBoxW(0,res,'SRC',0);
+//MessageBoxW(0,res,'SRC',0);
   xmlparser.cbSize:={XML_API_SIZEOF_V1;//}SizeOf(XML_API_W);
   CallService(MS_SYSTEM_GET_XI,0,lparam(@xmlparser));
   with xmlparser do
@@ -582,10 +582,10 @@ MessageBoxW(0,res,'SRC',0);
     repeat
       actnode:=getNthChild(root,ioAction,j);
       if actnode=0 then break;
-MessageBoxW(0,'not zero','actnode',0);
+//MessageBoxW(0,'not zero','actnode',0);
 //??      if StrCmpW(getName(actnode),ioAction)<>0 then break;
       tmp:=getAttrValue(actnode,ioName);
-MessageBoxW(0,tmp,'nodename',0);
+//MessageBoxW(0,tmp,'nodename',0);
       if tmp<>nil then //!!
       begin
         i:=GetActIdxByName(tmp);
@@ -620,7 +620,7 @@ MessageBoxW(0,tmp,'nodename',0);
             StrDupW(descr,tmp);
             i:=0;
             last:=-1;
-MessageBoxW(0,descr,'descr',0);
+//MessageBoxW(0,descr,'descr',0);
             repeat
               next:=ImportAction(getChild(actnode,i));
               if next=0 then

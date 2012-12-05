@@ -127,6 +127,15 @@ begin
   DestroyServiceFunction(hsel);
 end;
 
+// This function implements autostart action execution after all others plugins loading
+function DoAutostart(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+begin
+  Result:=0;
+  UnhookEvent(onloadhook);
+
+  CallService(MS_ACT_RUNBYNAME,TWPARAM(AutoStartName),0);
+end;
+
 function OnModulesLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
   ptr:pActionLink;
@@ -154,7 +163,8 @@ begin
     ptr:=ptr^.Next;
   end;
 
-  CallService(MS_ACT_RUNBYNAME,TWPARAM(AutoStartName),0);
+  // cheat
+  onloadhook:=HookEvent(ME_SYSTEM_MODULESLOADED,@DoAutostart);
 end;
 
 function Load():int; cdecl;
