@@ -34,12 +34,13 @@ type // array dimension - just for indexing
 
 function GetMacro(id:uint_ptr;byid:boolean):pMacroRecord;
 function GetMacroNameById(id:dword):PWideChar;
-procedure FreeMacro(num:cardinal);
+
+procedure FreeMacro(Macro:pMacroRecord;mask:dword=0);
 procedure FreeMacroList;
-// clone just assigned values
-procedure CloneMacro(var dst,src:pMacroRecord;foredit:boolean);
-// clone main macro list to new (custom)
-function CloneMacroList(foredit:boolean):pMacroList;
+// clone just assigned values (for editing)
+procedure CloneMacro(var dst,src:pMacroRecord);
+// clone one macro list to other (for editing)
+function CloneMacroList(srclist:pMacroList;count:integer;var dstlist:pMacroList):integer;
 // reallocate custom macro list
 procedure ReallocMacroList(var aMacroList:pMacroList;var MaxMacro:cardinal);
 // allocate (main) macro list
@@ -50,7 +51,7 @@ function NewMacro(var aMacroList:pMacroList;var MaxMacro:cardinal):cardinal;
 var
   MacroList:pMacroList;
 const
-  MaxMacros:integer=0;
+  MacroCount:integer=0;
 
 implementation
 
@@ -67,7 +68,7 @@ var
 begin
   if byid then
   begin
-    for i:=0 to MaxMacros-1 do
+    for i:=0 to MacroCount-1 do
     begin
       if ((MacroList^[i].flags and ACF_ASSIGNED)<>0) and
          (id=MacroList^[i].id) then
@@ -79,7 +80,7 @@ begin
   end
   else
   begin
-    for i:=0 to MaxMacros-1 do
+    for i:=0 to MacroCount-1 do
     begin
       if ((MacroList^[i].flags and ACF_ASSIGNED)<>0) and
          (StrCmpW(pWideChar(id),MacroList^[i].descr)=0) then
@@ -98,31 +99,35 @@ var
 begin
   p:=GetMacro(id,true);
   if p<>nil then
-    result:=p^.descr
+    result:=@p^.descr
   else
     result:=nil;
 end;
 
 //----- Free list code -----
 
-procedure FreeActionList(var src:pActionList; count:integer);
+procedure FreeActionList(var src:pActionList; count:integer; mask:dword);
 var
   i:integer;
 begin
   for i:=0 to count-1 do
-    src^[i].Free;
+  begin
+    if (mask=0) or ((src^[i].flags and mask)<>0) then
+      src^[i].Free;
+  end;
   FreeMem(src);
   src:=nil;
 end;
 
-procedure FreeMacro(num:cardinal);
+procedure FreeMacro(Macro:pMacroRecord;mask:dword=0);
 begin
-  with MacroList^[num] do
+  with Macro^ do
   begin
     if (flags and ACF_ASSIGNED)<>0 then
     begin
-      flags:=0;
-      FreeActionList(ActionList,ActionCount);
+      flags:=0; // make Unassigned
+      FreeActionList(ActionList,ActionCount,mask);
+      ActionCount:=0;
     end;
   end;
 end;
@@ -131,74 +136,69 @@ procedure FreeMacroList;
 var
   i:integer;
 begin
-  for i:=0 to MaxMacros-1 do
+  for i:=0 to MacroCount-1 do
   begin
-    FreeMacro(i);
+    FreeMacro(@MacroList[i]);
   end;
-  MaxMacros:=0;
+  MacroCount:=0;
   FreeMem(MacroList);
   MacroList:=nil;
 end;
 
 //----- Clone lists code -----
 
-function CloneActionList(src:pActionList;count:integer;foredit:boolean):pActionList;
-var
-  i:integer;
+function CloneActionList(src:pActionList;count:integer):pActionList;
 begin
   if src=nil then
   begin
     result:=nil;
     exit;
   end;
-  GetMem(result,count);
-  if foredit then // copy just pointers
-    move(src^,result^,count*SizeOf(tBaseAction))
-  else // full clone
-    for i:=0 to count-1 do
-      result^[i]:=src^[i].Clone;
+  GetMem(result,count*SizeOf(tBaseAction));
+  move(src^,result^,count*SizeOf(tBaseAction))
 end;
 
 // clone just assigned values
-procedure CloneMacro(var dst,src:pMacroRecord;foredit:boolean);
+procedure CloneMacro(var dst,src:pMacroRecord);
 begin
   if (src^.flags and ACF_ASSIGNED)<>0 then
   begin
     move(src^,dst^,SizeOf(tMacroRecord));
-    StrCopyW(dst^.descr,src^.descr);
-    dst^.ActionList:=CloneActionList(src^.ActionList,src^.ActionCount,foredit);
+    dst^.ActionList:=CloneActionList(src^.ActionList,src^.ActionCount);
   end;
 end;
 
 // clone main macro list to new (custom)
-//!! nil if list is empty
-function CloneMacroList(foredit:boolean):pMacroList;
+function CloneMacroList(srclist:pMacroList;count:integer;var dstlist:pMacroList):integer;
 var
   src,dst:pMacroRecord;
-  i,cnt:integer;
+  i:integer;
 begin
-  cnt:=0;
-  for i:=0 to MaxMacros-1 do
-    if (MacroList^[i].flags and ACF_ASSIGNED)<>0 then
-      inc(cnt);
-  if cnt>0 then
+  result:=0;
+  dstlist:=nil;
+  if srclist<>nil then
   begin
-    GetMem(result,cnt*SizeOf(tMacroRecord));
-    src:=pMacroRecord(MacroList);
-    dst:=pMacroRecord(result);
-    while cnt>0 do
+    for i:=0 to count-1 do
+      if (srclist^[i].flags and ACF_ASSIGNED)<>0 then
+        inc(result);
+    if result>0 then
     begin
-      if (src^.flags and ACF_ASSIGNED)<>0 then
+      GetMem(dstlist,result*SizeOf(tMacroRecord));
+      src:=pMacroRecord(srclist);
+      dst:=pMacroRecord(dstlist);
+      i:=result;
+      while i>0 do
       begin
-        CloneMacro(dst,src,foredit);
-        inc(dst);
-        dec(cnt);
+        if (src^.flags and ACF_ASSIGNED)<>0 then
+        begin
+          CloneMacro(dst,src);
+          inc(dst);
+          dec(i);
+        end;
+        inc(src);
       end;
-      inc(src);
     end;
-  end
-  else
-    result:=nil;
+  end;
 end;
 
 //----- [re]allocation list code -----
@@ -267,8 +267,8 @@ begin
   end;
   // realloc
   result:=MaxMacro;
-  ReallocMacroList(MacroList,MaxMacro);
-  InitMacroValue(@MacroList^[result]);
+  ReallocMacroList(aMacroList,MaxMacro);
+  InitMacroValue(@(aMacroList^[result]));
 end;
 
 end.

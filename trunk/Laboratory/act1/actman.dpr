@@ -43,9 +43,13 @@ uses
   mApiCardM,
   global,
   lowlevel,
+  dlgshare,
+  iac_settings,
   iac_global,
   iac_messagebox,
-//  iac_dbrw,
+  iac_text,
+  iac_inout,
+  iac_dbrw,
   iac_service,
   iac_program,
   iac_chain,
@@ -87,7 +91,6 @@ begin
 end;
 
 {$include i_const.inc}
-{$include i_vars.inc}
 
 {$include i_options.inc}
 {$include i_opt_dlg.inc}
@@ -132,6 +135,7 @@ var
   sid:TSKINICONDESC;
   buf:array [0..63] of AnsiChar;
   pc:pAnsiChar;
+//  ii:tIconItem;
 begin
   FillChar(sid,SizeOf(sid),0);
   sid.cbSize:=SizeOf(sid);
@@ -141,17 +145,39 @@ begin
   sid.pszName    :=@buf;
   pc:=StrCopyE(buf,IcoLibPrefix);
   p:=ModuleLink;
+{
+  ii.size   :=0;
+  ii.hIcolib:=0;
+  ii.szName :=@buf;
+}
   while p<>nil do
   begin
-    p^.Hash:=Hash(p^.Name,StrLen(p^.Name));
+    if p^.Hash=0 then
+      p^.Hash:=Hash(p^.Name,StrLen(p^.Name));
     //!! must add icon registration in icolib
+{
+    StrCopy(pc,p^.Name);
+    ii.szDescr  :=p^.Name;
+    ii.DefIconID:=;
+    Icon_Register(hInstance,'Actions',@ii,1);
+}
     sid.hDefaultIcon   :=LoadImageA(hInstance,p^.Icon,IMAGE_ICON,16,16,0);
     sid.szDescription.a:=p^.Name;
     StrCopy(pc,p^.Name);
     Skin_AddIcon(@sid);
     DestroyIcon(sid.hDefaultIcon);
+
     p:=p^.Next;
   end;
+end;
+
+// This function implements autostart action execution after all others plugins loading
+function DoAutostart(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+begin
+  Result:=0;
+  UnhookEvent(onloadhook);
+
+  CallService(MS_ACT_RUNBYNAME,TWPARAM(AutoStartName),0);
 end;
 
 function OnModulesLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -164,9 +190,9 @@ begin
   RegisterActTypes;
 
   LoadMacros;
-//!!  RegisterIcons;
+  RegisterIcons;
   
-//!!  opthook      :=HookEvent(ME_OPT_INITIALISE ,@OnOptInitialise);
+  opthook      :=HookEvent(ME_OPT_INITIALISE ,@OnOptInitialise);
   hHookShutdown:=HookEvent(ME_SYSTEM_SHUTDOWN{ME_SYSTEM_OKTOEXIT},@PreShutdown);
   NotifyEventHooks(hHookChanged,twparam(ACTM_LOADED),0);
 
@@ -183,7 +209,8 @@ begin
     ptr:=ptr^.Next;
   end;
 
-  CallService(MS_ACT_RUNBYNAME,TWPARAM(AutoStartName),0);
+  // cheat
+  onloadhook:=HookEvent(ME_SYSTEM_MODULESLOADED,@DoAutostart);
 end;
 
 function Load():int; cdecl;

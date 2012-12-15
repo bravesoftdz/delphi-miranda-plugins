@@ -8,13 +8,11 @@ EXSTYLE  WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg", 0, 0
 {
   RTEXT           "Choose Contact", -1   , 0, 2, 160, 10
-  COMBOBOX        IDC_CONTACTLIST, 1, 13, 166, 128, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL
-  AUTOCHECKBOX    "Keep handle only"   , IDC_CNT_KEEP  , 1, 31, 160, 11
-  AUTOCHECKBOX    "Active accounts only",IDC_CNT_FILTER, 1, 43, 160, 11
-  RTEXT           "Dropdown list format",-1, 0, 56, 160, 11
-  EDITTEXT        IDC_EDIT_FORMAT         , 20, 70, 142, 12, ES_AUTOHSCROLL
-  CONTROL         "Apply",IDC_CNT_APPLY,"MButtonClass",WS_TABSTOP,2,68,16,16,$18000000
-  CTEXT           "You can use %name%, %uid%, %account% and %group% macros",-1, 2, 85, 160, 24
+  CONTROL         "Refresh",IDC_CNT_REFRESH,"MButtonClass",WS_TABSTOP,1,12,16,16,$18000000
+  COMBOBOX        IDC_CONTACTLIST, 19, 14, 148, 128, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL
+  AUTOCHECKBOX    "Keep handle only", IDC_CNT_KEEP  , 1, 31, 160, 11
+
+  AUTOCHECKBOX    "Get from active window", IDC_CNT_GET, 1, 45, 160, 11
 }
 
 IDI_CONTACT ICON "ico\contact.ico"

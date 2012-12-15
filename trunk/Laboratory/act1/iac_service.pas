@@ -6,10 +6,10 @@ implementation
 
 uses
   windows, messages,
-  iac_global,
+  global, iac_global,
   m_api,
-  sedit,strans,
-  mirutils,dbsettings,
+  sedit,strans,mApiCardM,
+  mirutils,dbsettings, editwrapper,
   syswin,wrapper,common;
 
 {$include i_cnst_service.inc}
@@ -32,6 +32,8 @@ const
 
   ACF_SCRIPT_PARAM   = $00001000;
   ACF_SCRIPT_SERVICE = $00002000;
+  // dummy
+  ACF_STRING = 0;
 
 const
   opt_service  = 'service';
@@ -41,16 +43,16 @@ const
 type
   tServiceAction = class(tBaseAction)
     service:PAnsiChar;
-    wparam :WPARAM;
-    lparam :LPARAM;
+    wparam :pWideChar;
+    lparam :pWideChar;
     flags2 :dword;
 
     constructor Create(uid:dword);
     destructor Destroy; override;
-    function  Clone:tBaseAction;
-    function  DoAction(var WorkData:tWorkData):int;
-    procedure Save(node:pointer;fmt:integer);
-    procedure Load(node:pointer;fmt:integer);
+//    function  Clone:tBaseAction; override;
+    function  DoAction(var WorkData:tWorkData):LRESULT; override;
+    procedure Save(node:pointer;fmt:integer); override;
+    procedure Load(node:pointer;fmt:integer); override;
   end;
 
 //----- Support functions -----
@@ -64,9 +66,7 @@ end;
 
 procedure ClearParam(flags:dword; var param);
 begin
-  if (flags and (ACF_PARNUM or ACF_RESULT or ACF_PARAM))=0 then
-    mFreeMem(pointer(param))
-  else if ((flags and ACF_PARNUM)<>0) and ((flags and ACF_SCRIPT_PARAM)<>0) then
+  if (flags and (ACF_CURRENT or ACF_RESULT or ACF_PARAM))=0 then
     mFreeMem(pointer(param));
 end;
 
@@ -78,7 +78,7 @@ begin
 
   inherited Destroy;
 end;
-
+{
 function tServiceAction.Clone:tBaseAction;
 begin
   result:=tServiceAction.Create(0);
@@ -101,7 +101,7 @@ begin
   else
     tServiceAction(result).lparam:=lparam;
 end;
-
+}
 procedure PreProcess(flags:dword;var l_param:LPARAM;var WorkData:tWorkData);
 var
   tmp1:pWideChar;
@@ -124,21 +124,24 @@ begin
     begin
       l_param:=WndToContact(WaitFocusedWndChild(GetForegroundwindow){GetFocus});
     end
-    else if (flags and ACF_SCRIPT_PARAM)<>0 then
+    else
     begin
+      if (flags and ACF_SCRIPT_PARAM)<>0 then
+        l_param:=uint_ptr(ParseVarString(pWideChar(l_param),Parameter));
+
+      tmp1:=pWideChar(l_param);
       if (flags and ACF_PARNUM)=0 then
       begin
         if (flags and ACF_UNICODE)=0 then
-          l_param:=uint_ptr(ParseVarString(pAnsiChar(l_param),Parameter))
+          WideToAnsi(tmp1,pAnsiChar(l_param),MirandaCP)
         else
-          l_param:=uint_ptr(ParseVarString(pWideChar(l_param),Parameter))
+          StrDupW(pWideChar(l_param),tmp1);
       end
       else
-      begin
-        tmp1:=ParseVarString(pWideChar(l_param),Parameter);
         l_param:=StrToInt(tmp1);
+
+      if (flags and ACF_SCRIPT_PARAM)<>0 then
         mFreeMem(tmp1);
-      end;
     end;
   end;
 end;
@@ -193,7 +196,7 @@ begin
   end;
 end;
 
-function tServiceAction.DoAction(var WorkData:tWorkData):int;
+function tServiceAction.DoAction(var WorkData:tWorkData):LRESULT;
 var
   buf:array [0..255] of AnsiChar;
   lservice:pAnsiChar;
@@ -203,8 +206,8 @@ begin
   result:=0;
 
   lservice:=service;
-  lwparam :=wparam;
-  llparam :=lparam;
+  lwparam :=TLPARAM(wparam);
+  llparam :=TLPARAM(lparam);
   // Service name processing
   if (flags and ACF_SCRIPT_SERVICE)<>0 then
     lservice:=ParseVarString(lservice,WorkData.Parameter);
@@ -234,15 +237,13 @@ begin
     begin
 //!! delete old or not?
       if (flags and ACF_RUNICODE)=0 then
-      begin
-        AnsiToWide(pAnsiChar(res),pWideChar(WorkData.LastResult),MirandaCP);
-        if (flags and ACF_RFREEMEM)<>0 then
-          mFreeMem(pAnsiChar(res)); //?? Miranda MM??
-      end
-      //??
-      else if (flags and ACF_RFREEMEM)=0 then
+        AnsiToWide(pAnsiChar(res),pWideChar(WorkData.LastResult),MirandaCP)
+      else
         StrDupW(pWideChar(WorkData.LastResult),pWideChar(res));
       WorkData.ResultType:=rtWide;
+
+      if (flags and ACF_RFREEMEM)<>0 then
+        mFreeMem(pAnsiChar(res)); //?? Miranda MM??
     end
     else if (flags and ACF_RSTRUCT)=0 then
       WorkData.ResultType:=rtInt
@@ -251,41 +252,27 @@ begin
       PostProcess(flags ,lwparam,WorkData);
       PostProcess(flags2,llparam,WorkData);
     end;
-    // if parameters replaced through variables
-    if ((flags and ACF_SCRIPT_PARAM)<>0) and
-       ((flags and ACF_PARNUM  )=0 ) then
+
+    // free string (ansi+unicode) parameters
+    if ((flags and ACF_PARTYPE)=ACF_STRING) or
+       ((flags and ACF_PARTYPE)=ACF_UNICODE) then
       mFreeMem(pointer(lwparam));
-    if ((flags2 and ACF_SCRIPT_PARAM)<>0) and
-       ((flags2 and ACF_PARNUM  )=0 ) then
+    if ((flags2 and ACF_PARTYPE)=ACF_STRING) or
+       ((flags2 and ACF_PARTYPE)=ACF_UNICODE) then
       mFreeMem(pointer(llparam));
   end;
   if (flags and ACF_SCRIPT_SERVICE)<>0 then
     mFreeMem(lservice);
 end;
 
-function LoadNumValue(setting:pAnsiChar;isvar:boolean):uint_ptr;
-begin
-  if isvar then
-    result:=uint_ptr(DBReadUnicode(0,DBBranch,setting,nil))
-  else
-    result:=DBReadDWord(0,DBBranch,setting);
-end;
-
 procedure LoadParam(section:PAnsiChar;flags:dword; var param:pointer);
 begin
   if (flags and (ACF_CURRENT or ACF_RESULT or ACF_PARAM))=0 then
   begin
-    if (flags and ACF_PARNUM)<>0 then
-      param:=pointer(LoadNumValue(section,(flags and ACF_SCRIPT_PARAM)<>0))
-
-    else if (flags and ACF_STRUCT)<>0 then
+    if (flags and ACF_STRUCT)<>0 then
       param:=DBReadUTF8(0,DBBranch,section,nil)
-
-    else if (flags and ACF_UNICODE)<>0 then
-      param:=DBReadUnicode(0,DBBranch,section,nil)
-
     else
-      param:=DBReadString (0,DBBranch,section,nil);
+      param:=DBReadUnicode(0,DBBranch,section,nil);
   end;
 end;
 
@@ -312,31 +299,16 @@ begin
   end;
 end;
 
-procedure SaveNumValue(setting:pAnsiChar;value:uint_ptr;isvar:boolean);
-begin
-  if isvar then
-    DBWriteUnicode(0,DBBranch,setting,pWideChar(value))
-  else
-    DBWriteDWord  (0,DBBranch,setting,value);
-end;
-
 procedure SaveParam(section:PAnsiChar;flags:dword; param:pointer);
 begin
   if (flags and (ACF_CURRENT or ACF_RESULT or ACF_PARAM))=0 then
   begin
-    if (flags and ACF_PARNUM)<>0 then
-      SaveNumValue(section,uint_ptr(param),(flags and ACF_SCRIPT_PARAM)<>0)
-
-    else if pointer(param)<>nil then
+    if pointer(param)<>nil then
     begin
       if (flags and ACF_STRUCT)<>0 then
         DBWriteUTF8(0,DBBranch,section,param)
-
-      else if (flags and ACF_UNICODE)<>0 then
-        DBWriteUnicode(0,DBBranch,section,param)
-
       else
-        DBWriteString(0,DBBranch,section,param);
+        DBWriteUnicode(0,DBBranch,section,param);
     end;
   end;
 end;
@@ -376,15 +348,13 @@ const
   ptStruct  = 6;
 const
   sresInt    = 0;
-  sresHex    = 1;
-  sresString = 2;
-  sresStruct = 3;
+  sresString = 1;
+  sresStruct = 2;
 
 procedure MakeResultTypeList(wnd:HWND);
 begin
   SendMessage(wnd,CB_RESETCONTENT,0,0);
   InsertString(wnd,sresInt   ,'Integer');
-  InsertString(wnd,sresHex   ,'Hexadecimal');
   InsertString(wnd,sresString,'String');
   InsertString(wnd,sresStruct,'Structure');
   SendMessage(wnd,CB_SETCURSEL,0,0);
@@ -403,184 +373,425 @@ begin
   SendMessage(wnd,CB_SETCURSEL,0,0);
 end;
 
+var
+  ApiCard:tmApiCard;
+  
+function FixParam(Dialog:HWND;buf:PAnsiChar;flag:integer):integer;
+begin
+  if      lstrcmpia(buf,Translate('hContact' ))=0 then result:=ptCurrent
+  else if lstrcmpia(buf,Translate('parameter'))=0 then result:=ptParam
+  else if lstrcmpia(buf,Translate('result'   ))=0 then result:=ptResult
+  else if lstrcmpia(buf,Translate('structure'))=0 then result:=ptStruct
+  else
+  begin
+    if (buf[0] in ['0'..'9']) or ((buf[0]='-') and (buf[1] in ['0'..'9'])) or
+      ((buf[0]='$') and (buf[1] in sHexNum)) or
+      ((buf[0]='0') and (buf[1]='x') and (buf[2] in sHexNum)) then
+      result:=ptNumber
+    else
+      result:=ptString;
+  end;
+
+  CB_SelectData(Dialog,flag,result);
+//    SendDlgItemMessage(Dialog,flag,CB_SETCURSEL,result,0);
+  SendMessage(Dialog,WM_COMMAND,(CBN_SELCHANGE shl 16) or flag,GetDlgItem(Dialog,flag));
+end;
+
+procedure ReloadService(Dialog:HWND);
+var
+  pc:pAnsiChar;
+  buf,buf1:array [0..127] of AnsiChar;
+  wnd:hwnd;
+  i:integer;
+  struct:pAnsiChar;
+//    bufw:array [0..MaxDescrLen] of WideChar;
+begin
+  wnd:=GetDlgItem(Dialog,IDC_EDIT_SERVICE);
+  SendMessageA(wnd,CB_GETLBTEXT,SendMessage(wnd,CB_GETCURSEL,0,0),tlparam(@buf));
+  ApiCard.Service:=@buf;
+
+  pc:=ApiCard.FillParams(GetDlgItem(Dialog,IDC_EDIT_WPAR),true);
+  if pc<>nil then
+  begin
+    if GetDlgItemTextA(Dialog,IDC_EDIT_WPAR,buf1,SizeOf(buf1))>0 then
+      case FixParam(Dialog,@buf1,IDC_FLAG_WPAR) of
+        ptStruct: begin
+          struct:=pAnsiChar(GetWindowLongPtrW(GetDlgItem(Dialog,IDC_WSTRUCT),GWLP_USERDATA));
+          mFreeMem(struct);
+          StrDup(struct,StrScan(pc,'|')+1);
+          SetWindowLongPtrW(GetDlgItem(Dialog,IDC_WSTRUCT),GWLP_USERDATA,long_ptr(struct));
+//            AnsiToWide(StrScan(pc,'|')+1,wstruct,MirandaCP);
+        end;
+      end;
+    mFreeMem(pc);
+  end;
+
+  pc:=ApiCard.FillParams(GetDlgItem(Dialog,IDC_EDIT_LPAR),false);
+  if pc<>nil then
+  begin
+    if GetDlgItemTextA(Dialog,IDC_EDIT_LPAR,buf1,SizeOf(buf1))>0 then
+      case FixParam(Dialog,@buf1,IDC_FLAG_LPAR) of
+        ptStruct: begin
+          struct:=pAnsiChar(GetWindowLongPtrW(GetDlgItem(Dialog,IDC_LSTRUCT),GWLP_USERDATA));
+          mFreeMem(struct);
+          StrDup(struct,StrScan(pc,'|')+1);
+          SetWindowLongPtrW(GetDlgItem(Dialog,IDC_LSTRUCT),GWLP_USERDATA,long_ptr(struct));
+//            AnsiToWide(StrScan(pc,'|')+1,lstruct,MirandaCP);
+        end;
+      end;
+    mFreeMem(pc);
+  end;
+
+  pc:=ApiCard.ResultType;
+  i:=sresInt;
+  if pc<>nil then
+  begin
+    if      lstrcmpia(pc,'struct')=0 then i:=sresStruct
+    else if lstrcmpia(pc,'str')=0 then
+    begin
+      i:=sresString;
+      CheckDlgButton(Dialog,IDC_RES_UNICODE,BST_UNCHECKED);
+    end
+    else if lstrcmpia(pc,'wide')=0 then
+    begin
+      i:=sresString;
+      CheckDlgButton(Dialog,IDC_RES_UNICODE,BST_CHECKED);
+    end;
+    mFreeMem(pc);
+  end;
+  CB_SelectData(Dialog,IDC_SRV_RESULT,i);
+//    ApiCard.Show;
+end;
+
+// true - need to show structure
+function SetParam(Dialog:HWND; aflags:dword; id:integer; aparam:pWideChar):integer;
+var
+  wnd:HWND;
+begin
+  wnd:=GetDlgItem(Dialog,id);
+  if (aflags and ACF_PARAM)<>0 then
+  begin
+    EnableWindow(wnd,false);
+    result:=ptParam;
+  end
+  else if (aflags and ACF_RESULT)<>0 then
+  begin
+    EnableWindow(wnd,false);
+    result:=ptResult;
+  end
+  else if (aflags and ACF_PARNUM)<>0 then
+  begin
+    if (aflags and ACF_CURRENT)<>0 then
+    begin
+      EnableWindow(wnd,false);
+      result:=ptCurrent;
+    end
+    else
+    begin
+      result:=ptNumber;
+      SetDlgItemTextW(Dialog,id,aparam);
+    end;
+  end
+  else if (aflags and ACF_STRUCT)<>0 then
+  begin
+    result:=ptStruct;
+  end
+  else if (aflags and ACF_UNICODE)<>0 then
+  begin
+    result:=ptUnicode;
+    SetDlgItemTextW(Dialog,id,aparam);
+  end
+  else
+  begin
+    result:=ptString;
+    SetDlgItemTextW(Dialog,id,aparam);
+  end;
+  SetEditFlags(wnd,EF_SCRIPT,ord(aflags and ACF_SCRIPT_PARAM));
+end;
+
 procedure ClearFields(Dialog:HWND);
+var
+  wnd:HWND;
 begin
   SetDlgItemTextW(Dialog,IDC_EDIT_SERVICE,nil);
-  SetDlgItemTextW(Dialog,IDC_EDIT_WPAR,nil);
-  SetDlgItemTextW(Dialog,IDC_EDIT_LPAR,nil);
 
-  EnableWindow(GetDlgItem(Dialog,IDC_EDIT_WPAR),true);
-  SendMessage (GetDlgItem(Dialog,IDC_EDIT_WPAR),CB_RESETCONTENT,0,0);
-  EnableWindow(GetDlgItem(Dialog,IDC_EDIT_LPAR),true);
-  SendMessage (GetDlgItem(Dialog,IDC_EDIT_LPAR),CB_RESETCONTENT,0,0);
-//    SendDlgItemMessage(Dialog,IDC_FLAG_WPAR,CB_SETCURSEL,0,0);
-//    SendDlgItemMessage(Dialog,IDC_FLAG_LPAR,CB_SETCURSEL,0,0);
+  ShowWindow(GetDlgItem(Dialog,IDC_WSTRUCT),SW_HIDE);
+  wnd:=GetDlgItem(Dialog,IDC_EDIT_WPAR);
+  ShowEditField  (wnd,SW_SHOW);
+  EnableEditField(wnd,true);
+  SendMessage    (wnd,CB_RESETCONTENT,0,0);
+//??  SetDlgItemTextW(Dialog,IDC_EDIT_WPAR,nil);
   CB_SelectData(GetDlgItem(Dialog,IDC_FLAG_WPAR),ptNumber);
+
+  ShowWindow  (GetDlgItem(Dialog,IDC_LSTRUCT),SW_HIDE);
+  wnd:=GetDlgItem(Dialog,IDC_EDIT_LPAR);
+  ShowEditField  (wnd,SW_SHOW);
+  EnableEditField(wnd,true);
+  SendMessage    (wnd,CB_RESETCONTENT,0,0);
+//??  SetDlgItemTextW(Dialog,IDC_EDIT_LPAR,nil);
   CB_SelectData(GetDlgItem(Dialog,IDC_FLAG_LPAR),ptNumber);
 
-  CB_SelectData(GetDlgItem(Dialog,IDC_SRV_RESULT),sresInt);
-
+  ShowWindow(GetDlgItem(Dialog,IDC_RES_FREEMEM),SW_HIDE);
+  ShowWindow(GetDlgItem(Dialog,IDC_RES_UNICODE),SW_HIDE);
   CheckDlgButton(Dialog,IDC_RES_FREEMEM,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_RES_UNICODE,BST_UNCHECKED);
-  CheckDlgButton(Dialog,IDC_RES_SIGNED ,BST_UNCHECKED);
 
   CB_SelectData(Dialog,IDC_SRV_RESULT,sresInt);
 end;
 
 function DlgProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
+var
+  i:integer;
+  pc,pc1:pAnsiChar;
+  wnd,wnd1:HWND;
 begin
   result:=0;
 
   case hMessage of
+    WM_DESTROY: begin
+      ApiCard.Free;
+    end;
+    
     WM_INITDIALOG: begin
+      MakeResultTypeList(GetDlgItem(Dialog,IDC_SRV_RESULT));
+      MakeParamTypeList(GetDlgItem(Dialog,IDC_FLAG_WPAR));
+      MakeParamTypeList(GetDlgItem(Dialog,IDC_FLAG_LPAR));
+
       TranslateDialogDefault(Dialog);
+
+//??      MakeEditField(Dialog,IDC_EDIT_SERVICE);
+      MakeEditField(Dialog,IDC_EDIT_WPAR);
+      MakeEditField(Dialog,IDC_EDIT_LPAR);
+
+      ApiCard:=CreateServiceCard(Dialog);
+      ApiCard.FillList(GetDlgItem(Dialog,IDC_EDIT_SERVICE));
     end;
 
     WM_ACT_SETVALUE: begin
       ClearFields(Dialog);
+
+      with tServiceAction(lParam) do
+      begin
+        if SendDlgItemMessageA(Dialog,IDC_EDIT_SERVICE,CB_SELECTSTRING,twparam(-1),tlparam(service))<>CB_ERR then
+          ReloadService(Dialog)
+        else
+          SetDlgItemTextA(Dialog,IDC_EDIT_SERVICE,service);
+//        SetEditFlags(GetDlgItem(Dialog,IDC_EDIT_SERVICE),EF_SCRIPT,
+//              ord(aflags and ACF_SCRIPT_SERVICE));
+
+        // RESULT
+        if (flags and ACF_RSTRUCT)<>0 then
+          i:=sresStruct
+        else if (flags and ACF_RSTRING)<>0 then
+        begin
+          i:=sresString;
+          if (flags and ACF_RUNICODE)<>0 then CheckDlgButton(Dialog,IDC_RES_UNICODE,BST_CHECKED);
+          if (flags and ACF_RFREEMEM)<>0 then CheckDlgButton(Dialog,IDC_RES_FREEMEM,BST_CHECKED);
+        end
+        else
+        begin
+          i:=sresInt;
+        end;
+        CB_SelectData(Dialog,IDC_SRV_RESULT,i);
+
+        // WPARAM
+        i:=SetParam(Dialog,flags,IDC_EDIT_WPAR,pWideChar(wparam));
+        if i=ptStruct then
+        begin
+          ShowWindow(GetDlgItem(Dialog,IDC_EDIT_WPAR),SW_HIDE);
+          ShowWindow(GetDlgItem(Dialog,IDC_WSTRUCT  ),SW_SHOW);
+
 {
-          if SendDlgItemMessageA(Dialog,IDC_EDIT_SERVICE,CB_SELECTSTRING,twparam(-1),tlparam(service))<>CB_ERR then
-            ReloadService
-          else
-            SetDlgItemTextA(Dialog,IDC_EDIT_SERVICE,service);
-
-          if (flags2 and ACF2_SRV_WPAR)<>0 then ButtonOn(IDC_SRV_WPAR);
-          if (flags2 and ACF2_SRV_LPAR)<>0 then ButtonOn(IDC_SRV_LPAR);
-          if (flags2 and ACF2_SRV_SRVC)<>0 then ButtonOn(IDC_SRV_SRVC);
-
-          if (flags and ACF_MESSAGE)<>0 then ButtonOn(IDC_RES_MESSAGE);
-          if (flags and ACF_POPUP  )<>0 then ButtonOn(IDC_RES_POPUP);
-          if (flags and ACF_INSERT )<>0 then ButtonOn(IDC_RES_INSERT);
-
-          if (flags and ACF_HEX)<>0 then
-            i:=sresHex
-          else if (flags and ACF_STRUCT)<>0 then
-            i:=sresStruct
-          else if (flags and ACF_STRING)<>0 then
-          begin
-            i:=sresString;
-            if (flags  and ACF_UNICODE )<>0 then ButtonOn(IDC_RES_UNICODE);
-            if (flags2 and ACF2_FREEMEM)<>0 then ButtonOn(IDC_RES_FREEMEM);
-          end
-          else
-          begin
-            i:=sresInt;
-            if (flags and ACF_SIGNED)<>0 then
-              ButtonOn(IDC_RES_SIGNED);
-          end;
-          CB_SelectData(Dialog,IDC_SRV_RESULT,i);
-
-          if (flags and ACF_WPARAM)<>0 then
-          begin
-            EnableWindow(GetDlgItem(Dialog,IDC_EDIT_WPAR),false);
-            i:=ptParam;
-          end
-          else if (flags and ACF_WRESULT)<>0 then
-          begin
-            EnableWindow(GetDlgItem(Dialog,IDC_EDIT_WPAR),false);
-            i:=ptResult;
-          end
-          else if (flags and ACF_WPARNUM)<>0 then
-          begin
-            if (flags and ACF_WCURRENT)<>0 then
-            begin
-              EnableWindow(GetDlgItem(Dialog,IDC_EDIT_WPAR),false);
-              i:=ptCurrent
-            end
-            else
-            begin
-              i:=ptNumber;
-              SetNumValue(GetDlgItem(Dialog,IDC_EDIT_WPAR),wparam,
-                  (flags2 and ACF2_SRV_WPAR)<>0,
-                  (flags2 and ACF2_SRV_WHEX)<>0);
-//              SetDlgItemInt(Dialog,IDC_EDIT_WPAR,wparam,true)
-            end;
-          end
-          else if (flags and ACF_WSTRUCT)<>0 then
-          begin
-            i:=ptStruct;
-            SHControl(IDC_EDIT_WPAR,SW_HIDE);
-            SHControl(IDC_WSTRUCT  ,SW_SHOW);
-            mFreeMem(wstruct);
-            StrDup(wstruct,PAnsiChar(wparam));
-          end
-          else if (flags and ACF_WUNICODE)<>0 then
-          begin
-            i:=ptUnicode;
-            SetDlgItemTextW(Dialog,IDC_EDIT_WPAR,pWideChar(wparam));
-          end
-          else
-          begin
-            i:=ptString;
-            SetDlgItemTextA(Dialog,IDC_EDIT_WPAR,PAnsiChar(wparam));
-          end;
-          CB_SelectData(GetDlgItem(Dialog,IDC_FLAG_WPAR),i);
-          SendDlgItemMessage(Dialog,IDC_FLAG_WPAR,CB_SETCURSEL,i,0);
-
-          if (flags and ACF_LPARAM)<>0 then
-          begin
-            EnableWindow(GetDlgItem(Dialog,IDC_EDIT_LPAR),false);
-            i:=ptParam;
-          end
-          else if (flags and ACF_LRESULT)<>0 then
-          begin
-            EnableWindow(GetDlgItem(Dialog,IDC_EDIT_LPAR),false);
-            i:=ptResult;
-          end
-          else if (flags and ACF_LPARNUM)<>0 then
-          begin
-            if (flags and ACF_LCURRENT)<>0 then
-            begin
-              EnableWindow(GetDlgItem(Dialog,IDC_EDIT_LPAR),false);
-              i:=ptCurrent;
-            end
-            else
-            begin
-              i:=ptNumber;
-              SetNumValue(GetDlgItem(Dialog,IDC_EDIT_LPAR),lparam,
-                  (flags2 and ACF2_SRV_LPAR)<>0,
-                  (flags2 and ACF2_SRV_LHEX)<>0);
-//              SetDlgItemInt(Dialog,IDC_EDIT_LPAR,lparam,true)
-            end;
-          end
-          else if (flags and ACF_LSTRUCT)<>0 then
-          begin
-            i:=ptStruct;
-            SHControl(IDC_EDIT_LPAR,SW_HIDE);
-            SHControl(IDC_LSTRUCT  ,SW_SHOW);
-            mFreeMem(lstruct);
-            StrDup(lstruct,PAnsiChar(lparam));
-          end
-          else if (flags and ACF_LUNICODE)<>0 then
-          begin
-            i:=ptUnicode;
-            SetDlgItemTextW(Dialog,IDC_EDIT_LPAR,pWideChar(lparam));
-          end
-          else
-          begin
-            i:=ptString;
-            SetDlgItemTextA(Dialog,IDC_EDIT_LPAR,PAnsiChar(lparam));
-          end;
-          CB_SelectData(GetDlgItem(Dialog,IDC_FLAG_LPAR),i);
-
+          p:=pAnsiChar(GetWindowLongPtrW(GetDlgItem(Dialog,IDC_WSTRUCT),GWLP_USERDATA));
+          mFreeMem(p);
 }
+          SetWindowLongPtrW(GetDlgItem(Dialog,IDC_WSTRUCT),GWLP_USERDATA,long_ptr(wparam));
+        end;
+        CB_SelectData(GetDlgItem(Dialog,IDC_FLAG_WPAR),i);
+
+        // LPARAM
+        i:=SetParam(Dialog,flags2,IDC_EDIT_LPAR,pWideChar(lparam));
+        if i=ptStruct then
+        begin
+          ShowWindow(GetDlgItem(Dialog,IDC_EDIT_LPAR),SW_HIDE);
+          ShowWindow(GetDlgItem(Dialog,IDC_LSTRUCT  ),SW_SHOW);
+
+{
+          p:=pAnsiChar(GetWindowLongPtrW(GetDlgItem(Dialog,IDC_LSTRUCT),GWLP_USERDATA));
+          mFreeMem(p);
+}
+          SetWindowLongPtrW(GetDlgItem(Dialog,IDC_LSTRUCT),GWLP_USERDATA,long_ptr(lparam));
+        end;
+        CB_SelectData(GetDlgItem(Dialog,IDC_FLAG_LPAR),i);
+
+      end;
     end;
 
     WM_ACT_RESET: begin
       ClearFields(Dialog);
+{
+      ShowWindow(GetDlgItem(Dialog,IDC_WSTRUCT),SW_HIDE);
+      ShowWindow(GetDlgItem(Dialog,IDC_LSTRUCT),SW_HIDE);
+}
     end;
 
     WM_ACT_SAVE: begin
+      with tServiceAction(lParam) do
+      begin
+        flags :=0;
+        flags2:=0;
+
+        //WPARAM
+        case CB_GetData(GetDlgItem(Dialog,IDC_FLAG_WPAR)) of
+          ptParam: begin
+            flags:=flags or ACF_PARAM
+          end;
+          ptResult: begin
+            flags:=flags or ACF_RESULT
+          end;
+          ptCurrent: begin
+            flags:=flags or ACF_CURRENT
+          end;
+          ptNumber: begin
+            flags:=flags or ACF_PARNUM;
+            wparam:=GetDlgText(Dialog,IDC_EDIT_WPAR);
+          end;
+          ptStruct: begin
+            flags:=flags or ACF_STRUCT;
+            StrDup(pAnsiChar(wparam),
+                pAnsiChar(GetWindowLongPtrW(GetDlgItem(Dialog,IDC_WSTRUCT),GWLP_USERDATA)));
+          end;
+          ptUnicode: begin
+            flags:=flags or ACF_UNICODE;
+            wparam:=GetDlgText(Dialog,IDC_EDIT_WPAR);
+          end;
+          ptString: wparam:=GetDlgText(Dialog,IDC_EDIT_WPAR);
+        end;
+        if (GetEditFlags(Dialog,IDC_EDIT_WPAR) and EF_SCRIPT)<>0 then
+           flags:=flags or ACF_SCRIPT_PARAM;
+
+        // LPARAM
+        case CB_GetData(GetDlgItem(Dialog,IDC_FLAG_LPAR)) of
+          ptParam: begin
+            flags2:=flags2 or ACF_PARAM
+          end;
+          ptResult: begin
+            flags2:=flags2 or ACF_RESULT
+          end;
+          ptCurrent: begin
+            flags2:=flags2 or ACF_CURRENT
+          end;
+          ptNumber: begin
+            flags2:=flags2 or ACF_PARNUM;
+            lparam:=GetDlgText(Dialog,IDC_EDIT_LPAR);
+          end;
+          ptStruct: begin
+            flags2:=flags2 or ACF_STRUCT;
+            StrDup(pAnsiChar(lparam),
+                pAnsiChar(GetWindowLongPtrW(GetDlgItem(Dialog,IDC_LSTRUCT),GWLP_USERDATA)));
+          end;
+          ptUnicode: begin
+            flags2:=flags2 or ACF_UNICODE;
+            lparam:=GetDlgText(Dialog,IDC_EDIT_LPAR);
+          end;
+          ptString: lparam:=GetDlgText(Dialog,IDC_EDIT_LPAR);
+        end;
+        if (GetEditFlags(Dialog,IDC_EDIT_LPAR) and EF_SCRIPT)<>0 then
+           flags2:=flags2 or ACF_SCRIPT_PARAM;
+
+        // RESULT
+        case CB_GetData(GetDlgItem(Dialog,IDC_SRV_RESULT)) of
+          sresString: begin
+            flags:=flags or ACF_RSTRING;
+            if IsDlgButtonChecked(Dialog,IDC_RES_UNICODE)=BST_CHECKED then
+              flags:=flags or ACF_RUNICODE;
+            if IsDlgButtonChecked(Dialog,IDC_RES_FREEMEM)=BST_CHECKED then
+              flags:=flags or ACF_RFREEMEM;
+          end;
+          sresStruct: flags:=flags or ACF_RSTRUCT;
+        end;
+
+        service:=GetDlgText(Dialog,IDC_EDIT_SERVICE,true);
+//        if (GetEditFlags(Dialog,IDC_EDIT_SERVICE) and EF_SCRIPT)<>0 then
+//           flags:=flags or ACF_SCRIPT_SERVICE;
+      end;
     end;
 
     WM_COMMAND: begin
       case wParam shr 16 of
         EN_CHANGE: begin
         end;
+        CBN_SELCHANGE:  begin
+          case loword(wParam) of
+            IDC_SRV_RESULT: begin
+              i:=CB_GetData(lParam);
+              case i of
+                sresInt,sresStruct: begin
+                  ShowWindow(GetDlgItem(Dialog,IDC_RES_FREEMEM),SW_HIDE);
+                  ShowWindow(GetDlgItem(Dialog,IDC_RES_UNICODE),SW_HIDE);
+                end;
+                sresString: begin
+                  ShowWindow(GetDlgItem(Dialog,IDC_RES_FREEMEM),SW_SHOW);
+                  ShowWindow(GetDlgItem(Dialog,IDC_RES_UNICODE),SW_SHOW);
+                end;
+              end;
+            end;
+
+            IDC_FLAG_WPAR,IDC_FLAG_LPAR: begin
+              if loword(wParam)=IDC_FLAG_WPAR then
+              begin
+                wnd :=GetDlgItem(Dialog,IDC_EDIT_WPAR);
+                wnd1:=GetDlgItem(Dialog,IDC_WSTRUCT);
+              end
+              else
+              begin
+                wnd :=GetDlgItem(Dialog,IDC_EDIT_LPAR);
+                wnd1:=GetDlgItem(Dialog,IDC_LSTRUCT);
+              end;
+              i:=CB_GetData(GetDlgItem(Dialog,loword(wParam)));
+
+              if i=ptStruct then
+              begin
+                ShowEditField(wnd,SW_HIDE);
+                ShowWindow(wnd1,SW_SHOW);
+              end
+              else
+              begin
+                ShowEditField(wnd,SW_SHOW);
+                ShowWindow(wnd1,SW_HIDE);
+                if i in [ptCurrent,ptResult,ptParam] then
+                  EnableEditField(wnd,false)
+                else
+                begin
+                  EnableEditField(wnd,true);
+                end;
+              end;
+            end;
+
+            IDC_EDIT_SERVICE: ReloadService(Dialog);
+          end;
+        end;
+
+        BN_CLICKED: begin
+          case loword(wParam) of
+            IDC_WSTRUCT, IDC_LSTRUCT: begin
+              pc:=pAnsiChar(GetWindowLongPtrW(GetDlgItem(Dialog,loword(wParam)),GWLP_USERDATA));
+//!!!!
+              pc1:=EditStructure(pAnsiChar(pc),Dialog);
+              if pc1<>nil then
+              begin
+                mFreeMem(pc);
+                SetWindowLongPtrW(GetDlgItem(Dialog,loword(wParam)),GWLP_USERDATA,long_ptr(pc1));
+              end;
+            end;
+          end;
+        end;
+
       end;
     end;
 
     WM_HELP: begin
+      result:=1;
     end;
 
   end;
@@ -608,6 +819,8 @@ begin
   vc.Name    :='Service';
   vc.Dialog  :=@CreateDialog;
   vc.Create  :=@CreateAction;
+  vc.Icon    :='IDI_SERVICE';
+  vc.Hash    :=0;
 
   ModuleLink :=@vc;
 end;

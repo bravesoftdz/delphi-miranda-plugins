@@ -7,7 +7,7 @@ implementation
 uses
   editwrapper,
   windows, messages,
-  m_api, iac_global,
+  m_api, global, iac_global,
   wrapper, mirutils, common, dbsettings;
 
 {$include i_cnst_message.inc}
@@ -30,10 +30,10 @@ type
 
     constructor Create(uid:dword);
     destructor Destroy; override;
-    function  Clone:tBaseAction;
-    function  DoAction(var WorkData:tWorkData):LRESULT;
-    procedure Save(node:pointer;fmt:integer);
-    procedure Load(node:pointer;fmt:integer);
+//    function  Clone:tBaseAction; override;
+    function  DoAction(var WorkData:tWorkData):LRESULT; override;
+    procedure Save(node:pointer;fmt:integer); override;
+    procedure Load(node:pointer;fmt:integer); override;
   end;
 
 //----- Object realization -----
@@ -54,7 +54,7 @@ begin
 
   inherited Destroy;
 end;
-
+{
 function tMessageAction.Clone:tBaseAction;
 begin
   result:=tMessageAction.Create(0);
@@ -64,7 +64,7 @@ begin
   StrDupW(tMessageAction(result).msgtitle,msgtitle);
   tMessageAction(result).boxopts:=boxopts;
 end;
-
+}
 function tMessageAction.DoAction(var WorkData:tWorkData):LRESULT;
 var
   i:integer;
@@ -76,10 +76,10 @@ begin
   result:=0;
 
   if WorkData.ResultType=rtWide then
-    tmpc:=PWideChar(WorkData.ResultType)
+    tmpc:=pWidechar(WorkData.LastResult)
   else
   begin
-    IntToStr(buf,WorkData.ResultType);
+    IntToStr(buf,WorkData.LastResult);
     tmpc:=@buf;
   end;
   // LastResult
@@ -192,6 +192,8 @@ procedure ClearFields(Dialog:HWND);
 begin
   SetDlgItemTextW(Dialog,IDC_MSG_TITLE,nil);
   SetDlgItemTextW(Dialog,IDC_MSG_TEXT ,nil);
+  SetEditFlags(Dialog,IDC_MSG_TITLE,EF_ALL,0);
+  SetEditFlags(Dialog,IDC_MSG_TITLE,EF_ALL,0);
 
   CheckDlgButton(Dialog,IDC_MSG_RTL  ,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_MSG_RIGHT,BST_UNCHECKED);
@@ -231,8 +233,8 @@ begin
         SetDlgItemTextW(Dialog,IDC_MSG_TITLE,msgtitle);
         SetDlgItemTextW(Dialog,IDC_MSG_TEXT ,msgtext);
 
-        SetEditFlags(Dialog,IDC_MSG_TITLE,ord((flags and ACF_MSG_TTL)<>0));
-        SetEditFlags(Dialog,IDC_MSG_TEXT ,ord((flags and ACF_MSG_TXT)<>0));
+        SetEditFlags(Dialog,IDC_MSG_TITLE,EF_SCRIPT,ord((flags and ACF_MSG_TTL)<>0));
+        SetEditFlags(Dialog,IDC_MSG_TEXT ,EF_SCRIPT,ord((flags and ACF_MSG_TXT)<>0));
 
         if (boxopts and MB_RTLREADING)<>0 then CheckDlgButton(Dialog,IDC_MSG_RTL  ,BST_CHECKED);
         if (boxopts and MB_RIGHT     )<>0 then CheckDlgButton(Dialog,IDC_MSG_RIGHT,BST_CHECKED);
@@ -268,13 +270,13 @@ begin
     WM_ACT_SAVE: begin
       with tMessageAction(lParam) do
       begin
-        msgtitle:=GetDlgText(Dialog,IDC_MSG_TITLE);
-        msgtext :=GetDlgText(Dialog,IDC_MSG_TEXT);
+        {mFreeMem(msgtitle); }msgtitle:=GetDlgText(Dialog,IDC_MSG_TITLE);
+        {mFreeMem(msgtext ); }msgtext :=GetDlgText(Dialog,IDC_MSG_TEXT);
 
         flags:=0;
 
-        if GetEditFlags(Dialog,IDC_MSG_TITLE)<>0 then flags:=flags or ACF_MSG_TTL;
-        if GetEditFlags(Dialog,IDC_MSG_TEXT )<>0 then flags:=flags or ACF_MSG_TXT;
+        if (GetEditFlags(Dialog,IDC_MSG_TITLE) and EF_SCRIPT)<>0 then flags:=flags or ACF_MSG_TTL;
+        if (GetEditFlags(Dialog,IDC_MSG_TEXT ) and EF_SCRIPT)<>0 then flags:=flags or ACF_MSG_TXT;
 
         boxopts:=0;
 
@@ -323,6 +325,7 @@ begin
           'NO'#9'= 7'#13#10+
           'CLOSE'#9'= 8'),
         TranslateW('MessageBox'),0);
+      result:=1;
     end;
   end;
 end;
@@ -350,6 +353,7 @@ begin
   vc.Dialog  :=@CreateDialog;
   vc.Create  :=@CreateAction;
   vc.Icon    :='IDI_MESSAGE';
+  vc.Hash    :=0;
 
   ModuleLink :=@vc;
 end;

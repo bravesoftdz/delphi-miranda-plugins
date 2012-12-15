@@ -11,24 +11,33 @@ type
    = class(tBaseAction)
 
     constructor Create(uid:dword);
-    function  Clone:tBaseAction;
-    function DoAction(var WorkData:tWorkData):int;
-    procedure Save(node:pointer;fmt:integer);
-    procedure Load(node:pointer;fmt:integer);
-    procedure Clear;
+    destructor Destroy; override;
+    function  Clone:tBaseAction; override;
+    function  DoAction(var WorkData:tWorkData):LRESULT; override;
+    procedure Save(node:pointer;fmt:integer); override;
+    procedure Load(node:pointer;fmt:integer); override;
   end;
 
 //----- Support functions -----
 
 //----- Object realization -----
 
-constructor tChainAction.Create(uid:dword);
+constructor .Create(uid:dword);
 begin
   inherited Create(uid);
 end;
 
-procedure .Clear;
+destructor .Destroy;
 begin
+
+  inherited Destroy;
+end;
+
+function .Clone:tBaseAction;
+begin
+  result:=.Create(0);
+  Duplicate(result);
+
 end;
 
 function .DoAction(var WorkData:tWorkData):int;
@@ -41,6 +50,7 @@ var
   section: array [0..127] of AnsiChar;
   pc:pAnsiChar;
 begin
+  inherited Load(node,fmt);
   case fmt of
     0: begin
       pc:=StrCopyE(section,pAnsiChar(node));
@@ -57,6 +67,7 @@ var
   section: array [0..127] of AnsiChar;
   pc:pAnsiChar;
 begin
+  inherited Save(node,fmt);
   case fmt of
     0: begin
       pc:=StrCopyE(section,pAnsiChar(node));
@@ -85,6 +96,9 @@ begin
 
     WM_ACT_SETVALUE: begin
       ClearFields(Dialog);
+      with (lParam) do
+      begin
+      end;
     end;
 
     WM_ACT_RESET: begin
@@ -92,6 +106,9 @@ begin
     end;
 
     WM_ACT_SAVE: begin
+      with (lParam) do
+      begin
+      end;
     end;
 
     WM_COMMAND: begin
@@ -100,26 +117,20 @@ begin
     end;
 
     WM_HELP: begin
+      result:=1;
     end;
 
   end;
 end;
 
-//----- Export functions -----
+//----- Export/interface functions -----
 
-function CreateAction:pBaseAction;
 var
-  tmp:;
+  vc:tActModule;
+
+function CreateAction:tBaseAction;
 begin
-  New(tmp);
-  tmp.OnAction:=tmp.DoAction;
-  tmp.OnSave  :=tmp.Save;
-  tmp.OnLoad  :=tmp.Load;
-  tmp.OnClear :=tmp.Clear;
-
-  tmp.contact:=0;
-
-  result:=tmp;
+  result:=.Create(vc.Hash);
 end;
 
 function CreateDialog(parent:HWND):HWND;
@@ -127,18 +138,14 @@ begin
   result:=CreateDialogW(hInstance,,parent,@DlgProc);
 end;
 
-//----- Interface part -----
-
-var
-  vc:tActModule;
-
 procedure Init;
 begin
   vc.Next    :=ModuleLink;
 
-  vc.Name    :=
+  vc.Name    :=;
   vc.Dialog  :=@CreateDialog;
   vc.Create  :=@CreateAction;
+  vc.Icon    :=;
 
   ModuleLink :=@vc;
 end;

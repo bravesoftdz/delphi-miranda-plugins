@@ -10,7 +10,6 @@ FONT 8, "MS Shell Dlg", 0, 0
   GROUPBOX     "Result"        , -1,              1,  0, 166, 64, WS_GROUP
   RTEXT        "Result type"   , -1             , 4, 10, 159, 11
   COMBOBOX                       IDC_SRV_RESULT , 4, 21, 159, 76, CBS_DROPDOWN | WS_VSCROLL | CBS_AUTOHSCROLL
-  AUTOCHECKBOX "Signed value"  , IDC_RES_SIGNED , 4, 38, 159, 11
   AUTOCHECKBOX "Free memory"   , IDC_RES_FREEMEM, 4, 38, 159, 11
   AUTOCHECKBOX "Unicode string", IDC_RES_UNICODE, 4, 50, 159, 11
 

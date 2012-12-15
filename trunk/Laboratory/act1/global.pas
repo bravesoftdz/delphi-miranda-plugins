@@ -2,6 +2,9 @@ unit global;
 
 interface
 
+const
+  DBBranch = 'ActMan';
+
 type
   tAddOption = function(var tmpl:pAnsiChar;var proc:pointer;var name:PAnsiChar):integer;
 type

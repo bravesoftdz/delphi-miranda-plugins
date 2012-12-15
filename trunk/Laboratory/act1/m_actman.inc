@@ -7,8 +7,6 @@
 const
   AutoStartName:PWideChar = '#Autostart';
 const
-  DBBranch = 'ActMan';
-const
   ACCF_DISABLED = $10000000;  // action disabled
   ACCF_EXPORT   = $08000000;  // action to export
   ACCF_VOLATILE = $04000000;  // don't save in DB
@@ -74,14 +72,12 @@ type
   end;
 
 const
-  ACTM_NEW    = $00000001;
-  ACTM_DELETE = $00000002;
-  ACTM_RELOAD = $00000004;
-  ACTM_RENAME = $00000008;
-  ACTM_SORT   = $00000010;
-  ACTM_ACT    = $10000000; // do not check, internal
-  ACTM_ACTS   = $20000000; // do not check, internal
-  ACTM_LOADED = $80000000;
+  ACTM_NEW    = $00000001; // new macros was added
+  ACTM_DELETE = $00000002; // some macros was deleted
+//  ACTM_RELOAD = $00000004;
+  ACTM_RENAME = $00000008; // possible, some macro names was changed
+  ACTM_SORT   = $00000010; // possible, macro order in list was changed
+  ACTM_LOADED = $80000000; // All macros loaded and ready to work (at plugin start)
 
   {
     Event: action group list was changed: some was added or deleted

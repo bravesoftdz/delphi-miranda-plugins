@@ -12,28 +12,25 @@ FONT 8, "MS Shell Dlg", 0, 0
   AUTORADIOBUTTON "Parameter"   , IDC_RW_PARAM  , 86,  0, 81, 11
   AUTORADIOBUTTON "Last result" , IDC_RW_RESULT , 86, 12, 81, 11
 
-  RTEXT           "Module"      , -1  , 1,  25, 160,  8, SS_CENTERIMAGE
-//  AUTOCHECKBOX "", IDC_RW_MVAR,135,84,8,8,BS_ICON | BS_PUSHLIKE
-  EDITTEXT                        IDC_RW_MODULE , 1,  34, 166, 12, ES_AUTOHSCROLL
-  RTEXT           "Setting"     , -1  , 1,  49, 160,  8, SS_CENTERIMAGE
-//  AUTOCHECKBOX "", IDC_RW_SVAR,135,108,8,8,BS_ICON | BS_PUSHLIKE
-  EDITTEXT                        IDC_RW_SETTING, 1, 58, 166, 12, ES_AUTOHSCROLL
+  CONTROL         "Refresh",IDC_CNT_REFRESH,"MButtonClass",WS_TABSTOP,1,23,16,16,$18000000
+  COMBOBOX        IDC_CONTACTLIST, 18, 25, 148, 128, CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL
 
-  GROUPBOX        "Operation"   , -1   , 1, 74, 166, 23, WS_GROUP
-  AUTORADIOBUTTON "Read"        , IDC_RW_READ   ,   4, 83,  52, 11
-  AUTORADIOBUTTON "Write"       , IDC_RW_WRITE  ,  57, 83,  52, 11
-  AUTORADIOBUTTON "Delete"      , IDC_RW_DELETE , 110, 83,  52, 11
+  RTEXT           "Module"      , -1,             1, 43, 160,  8, SS_CENTERIMAGE
+  EDITTEXT                        IDC_RW_MODULE , 1, 52, 166, 12, ES_AUTOHSCROLL
+  RTEXT           "Setting"     , -1,             1, 67, 160,  8, SS_CENTERIMAGE
+  EDITTEXT                        IDC_RW_SETTING, 1, 76, 166, 12, ES_AUTOHSCROLL
 
-  GROUPBOX        "Value"       , -1    , 1, 98, 166, 76, WS_GROUP
+  GROUPBOX        "Operation"   , -1,               1,  92, 166, 23, WS_GROUP
+  AUTORADIOBUTTON "Read"        , IDC_RW_READ   ,   4, 101,  52, 11
+  AUTORADIOBUTTON "Write"       , IDC_RW_WRITE  ,  57, 101,  52, 11
+  AUTORADIOBUTTON "Delete"      , IDC_RW_DELETE , 110, 101,  52, 11
 
-  COMBOBOX                       IDC_RW_DATATYPE, 86, 107,  79, 96,
-                                 CBS_DROPDOWNLIST | WS_VSCROLL
+  GROUPBOX        "Value"       , -1, 1, 116, 166, 53, WS_GROUP
 
-  AUTOCHECKBOX    "Last result" , IDC_RW_LAST   , 6, 131, 156, 11, BS_RIGHT | BS_LEFTTEXT
-  EDITTEXT                        IDC_RW_VALUE  , 15, 143, 147, 11, ES_AUTOHSCROLL | ES_RIGHT// | ES_NUMBER
-//  AUTOCHECKBOX "", IDC_RW_TVAR,140,191,8,8,BS_ICON | BS_PUSHLIKE
-  EDITTEXT                        IDC_RW_TEXT   , 15, 143, 147, 29,
-                                  ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_WANTRETURN
+  COMBOBOX        IDC_RW_DATATYPE, 86, 125, 79, 96, CBS_DROPDOWNLIST | WS_VSCROLL
+
+  AUTOCHECKBOX    "Last result" , IDC_RW_LAST , 6, 142, 156, 11, BS_RIGHT | BS_LEFTTEXT
+  EDITTEXT                        IDC_RW_VALUE, 4, 154, 160, 11, ES_AUTOHSCROLL
 }
 
 IDI_DATABASE   ICON "ico\rw.ico"

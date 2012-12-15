@@ -6,25 +6,26 @@ implementation
 
 uses
   windows, messages,
-  m_api, iac_global, common,
-  contact,
+  m_api, global, iac_global, common,
+  contact, dlgshare, syswin,
   wrapper, mirutils, dbsettings;
 
 {$include i_cnst_contact.inc}
 {$resource iac_contact.res}
 
 const
-  ACF_KEEPONLY = $00000001; // keep contact handle in Last, don't show window
+  ACF_KEEPONLY  = $00000001; // keep contact handle in Last, don't show window
+  ACF_GETACTIVE = $00000002; // try to get contact from active window
 
 type
   tContactAction = class(tBaseAction)
     contact:THANDLE;
 
     constructor Create(uid:dword);
-    function  Clone:tBaseAction;
-    function  DoAction(var WorkData:tWorkData):LRESULT;
-    procedure Save(node:pointer;fmt:integer);
-    procedure Load(node:pointer;fmt:integer);
+//    function  Clone:tBaseAction; override;
+    function  DoAction(var WorkData:tWorkData):LRESULT; override;
+    procedure Save(node:pointer;fmt:integer); override;
+    procedure Load(node:pointer;fmt:integer); override;
   end;
 
 //----- Support functions -----
@@ -35,7 +36,7 @@ begin
 
   contact:=0;
 end;
-
+{
 function tContactAction.Clone:tBaseAction;
 begin
   result:=tContactAction.Create(0);
@@ -43,35 +44,28 @@ begin
 
   tContactAction(result).contact:=contact;
 end;
-
-function OpenContact(hContact:THANDLE):THANDLE;
-begin
-  ShowContactDialog(hContact);
-{
-  if CallService(MS_DB_CONTACT_IS,hContact,0)<>0 then
-  begin
-    if ServiceExists(MS_MSG_CONVERS)<>0 then
-    begin
-      CallService(MS_MSG_CONVERS,hContact,0)
-    end
-    else
-      CallService(MS_MSG_SENDMESSAGE,hContact,0)
-  end;
 }
-  result:=hContact;
-end;
 
 //----- Object realization -----
 
 function tContactAction.DoAction(var WorkData:tWorkData):LRESULT;
+var
+  wnd:HWND;
 begin
   ClearResult(WorkData);
 
-  if (flags and ACF_KEEPONLY)=0 then
-    WorkData.LastResult:=OpenContact(contact)
-  else
-    WorkData.LastResult:=contact;
+  if (flags and ACF_GETACTIVE)<>0 then
+  begin
+    wnd:=WaitFocusedWndChild(GetForegroundWindow){GetFocus};
+    if wnd<>0 then
+      contact:=WndToContact(wnd)
+    else
+      contact:=0;
+  end
+  else if (flags and ACF_KEEPONLY)=0 then
+    ShowContactDialog(contact);
 
+  WorkData.LastResult:=contact;
   WorkData.ResultType:=rtInt;
 
   result:=0;
@@ -81,7 +75,8 @@ procedure tContactAction.Load(node:pointer;fmt:integer);
 begin
   inherited Load(node,fmt);
   case fmt of
-    0: contact:=LoadContact(DBBranch,node);
+    0: if (flags and ACF_GETACTIVE)=0 then
+      contact:=LoadContact(DBBranch,node);
 {
     1: begin
       if StrCmpW(tmp,ioContactWindow)=0 then
@@ -101,7 +96,8 @@ procedure tContactAction.Save(node:pointer;fmt:integer);
 begin
   inherited Save(node,fmt);
   case fmt of
-    0: SaveContact(contact,DBBranch,node);
+    0: if (flags and ACF_GETACTIVE)=0 then
+      SaveContact(contact,DBBranch,node);
 {
     1: begin
         sub:=AddChild(actnode,ioContactWindow,nil);
@@ -115,46 +111,59 @@ end;
 
 //----- Dialog realization -----
 
-var
-  fCLfilter:byte;
-  fCLformat:pWideChar;
+procedure ClearFields(Dialog:HWND);
+begin
+  CheckDlgButton(Dialog,IDC_CNT_KEEP,BST_UNCHECKED);
+  CheckDlgButton(Dialog,IDC_CNT_GET ,BST_UNCHECKED);
+end;
 
 function DlgProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
   wnd:HWND;
-  i:integer;
+  bb:boolean;
 begin
   result:=0;
 
   case hMessage of
-    WM_DESTROY: begin
-      mFreeMem(fCLformat);
-    end;
-
     WM_INITDIALOG: begin
       TranslateDialogDefault(Dialog);
 
-      fCLfilter:=DBReadByte   (0,DBBranch,'CLfilter',BST_UNCHECKED);
-      fCLformat:=DBReadUnicode(0,DBBranch,'CLformat');
-      FillContactList(GetDlgItem(Dialog,IDC_CONTACTLIST),fCLfilter<>BST_UNCHECKED,fCLformat);
+      wnd:=GetDlgItem(Dialog,IDC_CNT_REFRESH);
+      OptSetButtonIcon(wnd,ACI_REFRESH);
+      SendMessage(wnd,BUTTONADDTOOLTIP,TWPARAM(TranslateW('Refresh')),BATF_UNICODE);
+      OptFillContactList(GetDlgItem(Dialog,IDC_CONTACTLIST));
     end;
 
     WM_ACT_SETVALUE: begin
+      ClearFields(Dialog);
+
       with tContactAction(lParam) do
       begin
-        if (flags and ACF_KEEPONLY)<>0 then
-          CheckDlgButton(Dialog,IDC_CNT_KEEP,BST_CHECKED);
+        if (flags and ACF_GETACTIVE)<>0 then
+        begin
+          bb:=false;
+          CheckDlgButton(Dialog,IDC_CNT_GET,BST_CHECKED);
+        end
+        else
+        begin
+          bb:=true;
+          if (flags and ACF_KEEPONLY)<>0 then
+            CheckDlgButton(Dialog,IDC_CNT_KEEP,BST_CHECKED);
 
-        SendDlgItemMessage(Dialog,IDC_CONTACTLIST,CB_SETCURSEL,
-          FindContact(GetDlgItem(Dialog,IDC_CONTACTLIST),contact),0);
+          SendDlgItemMessage(Dialog,IDC_CONTACTLIST,CB_SETCURSEL,
+            FindContact(GetDlgItem(Dialog,IDC_CONTACTLIST),contact),0);
+        end;
+        EnableWindow(GetDlgItem(Dialog,IDC_CNT_REFRESH),bb);
+        EnableWindow(GetDlgItem(Dialog,IDC_CONTACTLIST),bb);
+        EnableWindow(GetDlgItem(Dialog,IDC_CNT_KEEP   ),bb);
       end;
     end;
 
     WM_ACT_RESET: begin
-      CheckDlgButton(Dialog,IDC_CNT_KEEP,BST_UNCHECKED);
-
-      CheckDlgButton(Dialog,IDC_CNT_FILTER,fCLfilter);
-      SetDlgItemTextW(Dialog,IDC_EDIT_FORMAT,fCLformat);
+      ClearFields(Dialog);
+      EnableWindow(GetDlgItem(Dialog,IDC_CNT_REFRESH),true);
+      EnableWindow(GetDlgItem(Dialog,IDC_CONTACTLIST),true);
+      EnableWindow(GetDlgItem(Dialog,IDC_CNT_KEEP   ),true);
     end;
 
     WM_ACT_SAVE: begin
@@ -171,30 +180,24 @@ begin
       case wParam shr 16 of
         BN_CLICKED: begin
           case loword(wParam) of
-            IDC_CNT_FILTER,
-            IDC_CNT_APPLY: begin
-              if loword(wParam)=IDC_CNT_APPLY then
-              begin
-                mFreeMem(fCLformat);
-                fCLformat:=GetDlgText(Dialog,IDC_EDIT_FORMAT);
-                DBWriteUnicode(0,DBBranch,'CLformat',fCLformat);
-              end
-              else
-              begin
-                fCLfilter:=IsDlgButtonChecked(Dialog,IDC_CNT_FILTER);
-                DBWriteByte(0,DBBranch,'CLfilter',fCLfilter);
-              end;
-// Saving and restoring contact after list rebuild
-              wnd:=GetDlgItem(Dialog,IDC_CONTACTLIST);
-              i:=SendMessage(wnd,CB_GETITEMDATA,SendMessage(wnd,CB_GETCURSEL,0,0),0);
+            IDC_CNT_GET: begin
+              bb:=IsDlgButtonChecked(Dialog,IDC_CNT_GET)=BST_UNCHECKED;
+              EnableWindow(GetDlgItem(Dialog,IDC_CNT_REFRESH),bb);
+              EnableWindow(GetDlgItem(Dialog,IDC_CONTACTLIST),bb);
+              EnableWindow(GetDlgItem(Dialog,IDC_CNT_KEEP   ),bb);
+            end;
 
-              FillContactList(wnd,fCLfilter<>BST_UNCHECKED,fCLformat);
-              
-              SendMessage(wnd,CB_SETCURSEL,FindContact(wnd,i),0);
+            IDC_CNT_REFRESH: begin
+              OptFillContactList(GetDlgItem(Dialog,IDC_CONTACTLIST));
             end;
           end;
         end;
+
       end;
+    end;
+
+    WM_HELP: begin
+      result:=1;
     end;
   end;
 end;
@@ -222,6 +225,7 @@ begin
   vc.Dialog  :=@CreateDialog;
   vc.Create  :=@CreateAction;
   vc.Icon    :='IDI_CONTACT';
+  vc.Hash    :=0;
 
   ModuleLink :=@vc;
 end;
