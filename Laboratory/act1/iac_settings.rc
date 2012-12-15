@@ -1,0 +1,19 @@
+#include "i_cnst_settings.inc"
+
+LANGUAGE 0,0
+
+IDD_SETTINGS DIALOGEX 0, 0, 168, 200, 0
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_VISIBLE
+EXSTYLE  WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 0, 0
+{
+  GROUPBOX      "Contact list", -1, 1, 2, 166, 77, WS_GROUP
+  AUTOCHECKBOX  "Active accounts only",IDC_CNT_FILTER, 4, 11, 160, 11
+  RTEXT         "Contact list format",-1, 4, 24, 160, 11
+  EDITTEXT      IDC_EDIT_FORMAT, 22, 38, 142, 12, ES_AUTOHSCROLL
+  //!! remove later
+  CONTROL       "Apply",IDC_CNT_APPLY,"MButtonClass",WS_TABSTOP,4,36,16,16,$18000000
+  CTEXT         "You can use %name%, %uid%, %account% and %group% substitutes",-1, 4, 53, 160, 24
+}
+
+IDI_SETTINGS ICON "ico\settings.ico"

@@ -13,3 +13,6 @@ const
   IDC_RW_MANUAL     = 2616;
   IDC_RW_RESULT     = 2619;
   IDC_RW_LAST       = 2620;
+
+  IDC_CONTACTLIST   = 2141;
+  IDC_CNT_REFRESH   = 2142;

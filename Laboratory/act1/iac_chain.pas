@@ -6,7 +6,7 @@ implementation
 
 uses
   windows, messages,
-  iac_global, mirutils, m_api,
+  global, iac_global, mirutils, m_api,
   common,dbsettings;
 
 {$include m_actman.inc}
@@ -31,10 +31,10 @@ type
 
     constructor Create(uid:dword);
     destructor Destroy; override;
-    function  Clone:tBaseAction;
-    function  DoAction(var WorkData:tWorkData):LRESULT;
-    procedure Save(node:pointer;fmt:integer);
-    procedure Load(node:pointer;fmt:integer);
+//    function  Clone:tBaseAction; override;
+    function  DoAction(var WorkData:tWorkData):LRESULT; override;
+    procedure Save(node:pointer;fmt:integer); override;
+    procedure Load(node:pointer;fmt:integer); override;
   end;
 
 //----- Support functions -----
@@ -56,7 +56,7 @@ begin
 
   inherited Destroy;
 end;
-
+{
 function tChainAction.Clone:tBaseAction;
 begin
   result:=tChainAction.Create(0);
@@ -65,7 +65,7 @@ begin
   tChainAction(result).id:=id;
   StrDupW(tChainAction(result).actname,actname);
 end;
-
+}
 function tChainAction.DoAction(var WorkData:tWorkData):LRESULT;
 var
   params:tAct_Param;
@@ -132,17 +132,41 @@ end;
 
 //----- Dialog realization -----
 
+function ActListChange(wParam:WPARAM;lParam:LPARAM):integer; cdecl;
+var
+  ptr,ptr1:pChain;
+  count:integer;
+begin
+  result:=0;
+
+  count:=CallService(MS_ACT_GETLIST,0,TLPARAM(@ptr));
+
+  if count>0 then
+  begin
+    ptr1:=ptr;
+    inc(pbyte(ptr),4);
+    CallService(MS_ACT_FREELIST,0,TLPARAM(ptr1));
+  end;
+
+end;
+
 procedure FillChainList(Dialog:hwnd);
 var
-  wnd:HWND;
+  wnd{,list}:HWND;
   i,count:integer;
   ptr,ptr1:pChain;
+
+{
+  li:LV_ITEMW;
+  arr: array [0..255] of WideChar;
+}
 begin
   wnd:=GetDlgItem(Dialog,IDC_MACRO_LIST);
 
   SendMessage(wnd,CB_RESETCONTENT,0,0);
   SendMessage(wnd,CB_SETITEMDATA,
     SendMessageW(wnd,CB_ADDSTRING,0,lparam(TranslateW(NoChainText))),0);
+
 
   count:=CallService(MS_ACT_GETLIST,0,TLPARAM(@ptr));
   if count>0 then
@@ -160,24 +184,21 @@ begin
 
     CallService(MS_ACT_FREELIST,0,TLPARAM(ptr1));
   end;
-end;
 
-function ActListChange(wParam:WPARAM;lParam:LPARAM):integer; cdecl;
-var
-  ptr,ptr1:pChain;
-  count:integer;
-begin
-  result:=0;
-
-  count:=CallService(MS_ACT_GETLIST,0,TLPARAM(@ptr));
-
-  if count>0 then
+{
+  list:=GetDlgItem(GetParent(Dialog),IDC_ACTION_GROUP);
+  li.mask      :=LVIF_TEXT;
+  li.iSubItem  :=0;
+  li.pszText   :=@arr;
+  li.cchTextMax:=SizeOf(arr) div SizeOf(WideChar);
+  for i:=0 to SendMessage(list,LVM_GETCOUNT,0,0)-1 do
   begin
-    ptr1:=ptr;
-    inc(pbyte(ptr),4);
-    CallService(MS_ACT_FREELIST,0,TLPARAM(ptr1));
+    li.iItem:=item;
+    SendMessageW(list,LVM_GETITEMW,0,tlparam(@li));
+    SendMessage(wnd,CB_SETITEMDATA,
+        SendMessageW(wnd,CB_ADDSTRING,0,lparam(@arr)),!!!!!!!!);
   end;
-
+}
 end;
 
 procedure SelectMacro(Dialog:HWND;id:dword);
@@ -275,7 +296,11 @@ begin
       end;
     end;
 }
+    WM_HELP: begin
+      result:=1;
+    end;
   end;
+//  result:=DefWindowProc(Dialog,hMessage,wParam,lParam);
 end;
 
 //----- Export/interface functions -----
@@ -301,6 +326,7 @@ begin
   vc.Dialog  :=@CreateDialog;
   vc.Create  :=@CreateAction;
   vc.Icon    :='IDI_CHAIN';
+  vc.Hash    :=0;
 
   ModuleLink :=@vc;
 end;

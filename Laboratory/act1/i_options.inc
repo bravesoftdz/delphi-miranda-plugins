@@ -32,7 +32,7 @@ begin
 
 //??    StrCopy(p,opt_uid); DBWriteDWord(0,DBBranch,section,Macro^.ActionList[i].uid);
     p^:=#0;
-    Macro^.ActionList[i].Save(p,0);
+    Macro^.ActionList[i].Save(section,0);
   end;
 
 end;
@@ -48,11 +48,8 @@ begin
 // even if crap in settings, skip on read
 //  DBDeleteGroup(0,DBBranch,opt_group);
   Macro:=pMacroRecord(MacroList);
-  i:=MaxMacros;
+  i:=MacroCount;
   NumMacro:=0;
-
-  DBWriteUnicode(0,DBBranch,'CLformat',fCLformat);
-  DBWriteByte   (0,DBBranch,'CLfilter',ord(fCLfilter));
 
   p1:=StrCopyE(section,opt_group);
   while i>0 do
@@ -97,7 +94,7 @@ begin
   StrCopy(p,opt_numacts); Macro^.ActionCount:=DBReadWord(0,DBBranch,section);
   if Macro^.ActionCount>0 then
   begin
-//!!    Macro^.ActionList:=CreateActionList(Macro^.ActionCount);
+    GetMem(Macro^.ActionList,SizeOf(tBaseAction)*Macro^.ActionCount);
     p1:=StrCopyE(p,opt_actions); // "Group#/Action"
 
     num:=0;
@@ -108,14 +105,14 @@ begin
 
       // get uid
       StrCopy(p,opt_uid); uid:=DBReadDWord(0,DBBranch,section,0);
-      p^:=#0;
       if uid<>0 then
       begin
+        p^:=#0;
         // call proper constructor
         actm:=GetLink(uid);
         action:=actm.Create;
         // call proper loader
-        action.Load(p,0);
+        action.Load(section,0);
 
         Macro^.ActionList[num]:=action;
         inc(num);
@@ -134,8 +131,8 @@ var
   tmp:pWideChar;
 begin
   // Allocate macro list
-  NumMacros:=DBReadWord(0,DBBranch,opt_nummacro,0);
-  MaxMacros:=CreateMacroList(MacroList,NumMacros);
+  NumMacros :=DBReadWord(0,DBBranch,opt_nummacro,0);
+  MacroCount:=CreateMacroList(MacroList,NumMacros);
 
   // read macro list settings
   if NumMacros>0 then //?? really, not so necessary
@@ -166,8 +163,4 @@ begin
       inc(i);
     end;
   end;
-
-  // read contact list format
-  fCLfilter:=DBReadByte   (0,DBBranch,'CLfilter',0)<>0;
-  fCLformat:=DBReadUnicode(0,DBBranch,'CLformat');
 end;

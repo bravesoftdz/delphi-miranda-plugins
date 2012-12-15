@@ -44,16 +44,16 @@ type
   tBaseAction = class
     ActionDescr:pWideChar; // description (user name)
     UID        :dword;     // hash of action type name
-    Flags      :dword;
+    flags      :dword;
 
     procedure Duplicate(var dst:tBaseAction);
 
     constructor Create(uid:dword);
     destructor Destroy; override;
-    function  Clone:tBaseAction;
-    function  DoAction(var WorkData:tWorkData):LRESULT; // process action 
-    procedure Load(node:pointer;fmt:integer);           // load/import action
-    procedure Save(node:pointer;fmt:integer);           // save/export action
+//    function  Clone:tBaseAction; virtual;
+    function  DoAction(var WorkData:tWorkData):LRESULT; virtual; // process action
+    procedure Load(node:pointer;fmt:integer); virtual;           // load/import action
+    procedure Save(node:pointer;fmt:integer); virtual;           // save/export action
   end;
 
 type
@@ -76,7 +76,8 @@ type
 const
   ModuleLink:pActModule=nil;
 
-function ClearResult(var WorkData:tWorkData):int_ptr;
+function ClearResult(var WorkData:tWorkData):uint_ptr;
+function GetResultNumber(var WorkData:tWorkData):uint_ptr;
 
 procedure InsertString(wnd:HWND;num:dword;str:PAnsiChar);
 
@@ -84,8 +85,12 @@ function GetLink(hash:dword):pActModule;
 
 implementation
 
-uses Common, m_api;
+uses Common, m_api, global, dbsettings;
 
+const
+  opt_uid   = 'uid';
+  opt_descr = 'descr';
+  opt_flags = 'flags';
 
 constructor tBaseAction.Create(uid:dword);
 begin
@@ -110,13 +115,13 @@ begin
   dst.UID  :=UID;
   dst.Flags:=Flags;
 end;
-
+{
 function tBaseAction.Clone:tBaseAction;
 begin
   //dummy
   result:=nil;
 end;
-
+}
 function tBaseAction.DoAction(var WorkData:tWorkData):LRESULT;
 begin
   result:=0;
@@ -124,16 +129,45 @@ begin
 end;
 
 procedure tBaseAction.Load(node:pointer;fmt:integer);
+var
+  section: array [0..127] of AnsiChar;
+  pc:pAnsiChar;
 begin
-  // nothing
+  case fmt of
+    0: begin
+      pc:=StrCopyE(section,pAnsiChar(node));
+      mFreeMem(ActionDescr); // created by constructor
+      StrCopy(pc,opt_descr); ActionDescr:=DBReadUnicode(0,DBBranch,section,NoDescription);
+      StrCopy(pc,opt_flags); flags      :=DBReadDword  (0,DBBranch,section);
+      // UID reading in main program, set by constructor
+    end;
+{
+    1: begin
+    end;
+}
+  end;
 end;
 
 procedure tBaseAction.Save(node:pointer;fmt:integer);
+var
+  section: array [0..127] of AnsiChar;
+  pc:pAnsiChar;
 begin
-  // nothing
+  case fmt of
+    0: begin
+      pc:=StrCopyE(section,pAnsiChar(node));
+      StrCopy(pc,opt_uid  ); DBWriteDWord  (0,DBBranch,section,uid);
+      StrCopy(pc,opt_flags); DBWriteDWord  (0,DBBranch,section,flags);
+      StrCopy(pc,opt_descr); DBWriteUnicode(0,DBBranch,section,ActionDescr);
+    end;
+{
+    1: begin
+    end;
+}
+  end;
 end;
 
-function ClearResult(var WorkData:tWorkData):int_ptr;
+function ClearResult(var WorkData:tWorkData):uint_ptr;
 begin
   if WorkData.ResultType=rtWide then
   begin
@@ -142,6 +176,25 @@ begin
   end
   else
     result:=WorkData.LastResult;
+end;
+
+function GetResultNumber(var WorkData:tWorkData):uint_ptr;
+begin
+  if WorkData.ResultType=rtInt then
+    result:=WorkData.LastResult
+  else
+  begin
+    if (pWideChar(WorkData.LastResult)[0]='$') and
+       (AnsiChar(pWideChar(WorkData.LastResult)[1]) in sHexNum) then
+      result:=HexToInt(pWideChar(WorkData.LastResult)+1)
+    else
+    if (pWideChar(WorkData.LastResult)[0]='0') and
+       (pWideChar(WorkData.LastResult)[1]='x') and
+       (AnsiChar(pWideChar(WorkData.LastResult)[2]) in sHexNum) then
+      result:=HexToInt(pWideChar(WorkData.LastResult)+2)
+    else
+      result:=StrToInt(pWideChar(WorkData.LastResult));
+  end;
 end;
 
 procedure InsertString(wnd:HWND;num:dword;str:PAnsiChar);

@@ -10,7 +10,6 @@ FONT 8, "MS Shell Dlg", 0, 0
   CONTROL "New"   ,IDC_GROUP_NEW   ,"MButtonClass",WS_TABSTOP,114,  1,16,16,$18000000 | WS_GROUP
   CONTROL "Up"    ,IDC_GROUP_UP    ,"MButtonClass",WS_TABSTOP,114, 18,16,16,$18000000
   CONTROL "Down"  ,IDC_GROUP_DOWN  ,"MButtonClass",WS_TABSTOP,114, 34,16,16,$18000000
-  CONTROL "Reload",IDC_GROUP_RELOAD,"MButtonClass",WS_TABSTOP,114, 51,16,16,$18000000
   CONTROL "Delete",IDC_GROUP_DELETE,"MButtonClass",WS_TABSTOP,114, 68,16,16,$18000000
   CONTROL "Test"  ,IDC_GROUP_TEST  ,"MButtonClass",WS_TABSTOP,114, 85,16,16,$18000000
   CONTROL "Export",IDC_GROUP_EXPORT,"MButtonClass",WS_TABSTOP,114,102,16,16,$18000000
@@ -56,20 +55,6 @@ FONT 8, "MS Shell Dlg", 0, 0
   PUSHBUTTON    "Yes to &All", IDC_YESALL, 160, 54, 52, 16
   PUSHBUTTON    "N&o to All" , IDC_NOALL , 220, 54, 52, 16
 }
-
-IDI_NEW     ICON "ico\new.ico"
-IDI_UP      ICON "ico\up.ico"
-IDI_DOWN    ICON "ico\down.ico"
-IDI_DELETE  ICON "ico\delete.ico"
-IDI_RELOAD  ICON "ico\reload.ico"
-IDI_TEST    ICON "ico\test.ico"
-IDI_EXPORT  ICON "ico\export.ico"
-IDI_IMPORT  ICON "ico\import.ico"
-
-IDI_APPLY  ICON "ico\apply.ico"
-
-IDI_VAR_CHECKED   ICON "ico\vcheck.ico"
-IDI_VAR_UNCHECKED ICON "ico\vuncheck.ico"
 
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION 0,3,0,1

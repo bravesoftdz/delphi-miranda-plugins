@@ -7,7 +7,7 @@ implementation
 uses
   editwrapper,
   windows, messages,
-  iac_global, m_api, wrapper, syswin,
+  global, iac_global, m_api, wrapper, syswin,
   mirutils, common, dbsettings;
 
 {$include i_cnst_program.inc}
@@ -16,8 +16,8 @@ uses
 const
   ACF_CURPATH  = $00000001; // Current (not program) path
   ACF_PRTHREAD = $00000002; // parallel Program
-  ACF_PRG_PRG  = $00000004;
-  ACF_PRG_ARG  = $00000008;
+  ACF_PRG_PRG  = $00000004; // script for program path
+  ACF_PRG_ARG  = $00000008; // script for program args
 
 const
   opt_prg      = 'program';
@@ -34,10 +34,10 @@ type
 
     constructor Create(uid:dword);
     destructor Destroy; override;
-    function  Clone:tBaseAction;
-    function  DoAction(var WorkData:tWorkData):int;
-    procedure Save(node:pointer;fmt:integer);
-    procedure Load(node:pointer;fmt:integer);
+//    function  Clone:tBaseAction; override;
+    function  DoAction(var WorkData:tWorkData):LRESULT; override;
+    procedure Save(node:pointer;fmt:integer); override;
+    procedure Load(node:pointer;fmt:integer); override;
   end;
 
 //----- Support functions -----
@@ -80,7 +80,7 @@ begin
 
   inherited Destroy;
 end;
-
+{
 function tProgramAction.Clone:tBaseAction;
 begin
   result:=tProgramAction.Create(0);
@@ -91,8 +91,8 @@ begin
   StrDupW(tProgramAction(result).prgname,prgname);
   StrDupW(tProgramAction(result).args   ,args);
 end;
-
-function tProgramAction.DoAction(var WorkData:tWorkData):int;
+}
+function tProgramAction.DoAction(var WorkData:tWorkData):LRESULT;
 var
   tmp,tmpp,lpath:PWideChar;
   replPrg ,replArg :PWideChar;
@@ -249,6 +249,8 @@ begin
   SetDlgItemTextW(Dialog,IDC_EDIT_PROCTIME,nil);
   SetDlgItemTextW(Dialog,IDC_EDIT_PRGPATH,nil);
   SetDlgItemTextW(Dialog,IDC_EDIT_PRGARGS,nil);
+  SetEditFlags(Dialog,IDC_EDIT_PRGPATH,EF_ALL,0);
+  SetEditFlags(Dialog,IDC_EDIT_PRGARGS,EF_ALL,0);
 
   CheckDlgButton(Dialog,IDC_FLAG_NORMAL,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_FLAG_HIDDEN,BST_UNCHECKED);
@@ -269,7 +271,7 @@ begin
   if ShowDlgW(pw,ppw) then
   begin
     SetDlgItemTextW(Dialog,idc,pw);
-//!!  SetEditFlags(Dialog,idc,0);
+    SetEditFlags(Dialog,idc,EF_SCRIPT,0);
   end;
   mFreeMem(ppw);
   mFreeMem(pw);
@@ -295,8 +297,8 @@ begin
         SetDlgItemTextW(Dialog,IDC_EDIT_PRGPATH ,prgname);
         SetDlgItemTextW(Dialog,IDC_EDIT_PRGARGS ,args);
 
-        SetEditFlags(Dialog,IDC_EDIT_PRGPATH,ord((flags and ACF_PRG_PRG)<>0));
-        SetEditFlags(Dialog,IDC_EDIT_PRGARGS,ord((flags and ACF_PRG_ARG)<>0));
+        SetEditFlags(Dialog,IDC_EDIT_PRGPATH,EF_SCRIPT,ord((flags and ACF_PRG_PRG)<>0));
+        SetEditFlags(Dialog,IDC_EDIT_PRGARGS,EF_SCRIPT,ord((flags and ACF_PRG_ARG)<>0));
 
         SetDlgItemInt  (Dialog,IDC_EDIT_PROCTIME,time,false);
         case show of
@@ -326,7 +328,8 @@ begin
     WM_ACT_SAVE: begin
       with tProgramAction(lParam) do
       begin
-        prgname:=GetDlgText(Dialog,IDC_EDIT_PRGPATH);
+        {mFreeMem(prgname); }prgname:=GetDlgText(Dialog,IDC_EDIT_PRGPATH);
+        {mFreeMem(args   ); }args   :=GetDlgText(Dialog,IDC_EDIT_PRGARGS);
 {
         p:=GetDlgText(IDC_EDIT_PRGPATH);
         if p<>nil then
@@ -337,11 +340,11 @@ begin
         end;
 }
         flags:=0;
-        args:=GetDlgText(Dialog,IDC_EDIT_PRGARGS);
         if IsDlgButtonChecked(Dialog,IDC_FLAG_PARALLEL)=BST_CHECKED then
           flags:=flags or ACF_PRTHREAD;
         if IsDlgButtonChecked(Dialog,IDC_FLAG_CURPATH)=BST_CHECKED then
           flags:=flags or ACF_CURPATH;
+
         time:=GetDlgItemInt(Dialog,IDC_EDIT_PROCTIME,pbool(nil)^,false);
 
         if IsDlgButtonChecked(Dialog,IDC_FLAG_MINIMIZE)=BST_CHECKED then
@@ -353,8 +356,8 @@ begin
         else //if IsDlgButtonChecked(Dialog,IDC_FLAG_NORMAL)=BST_CHECKED then
           show:=SW_SHOWNORMAL;
 
-        if GetEditFlags(Dialog,IDC_EDIT_PRGPATH)<>0 then flags:=flags or ACF_PRG_PRG;
-        if GetEditFlags(Dialog,IDC_EDIT_PRGARGS)<>0 then flags:=flags or ACF_PRG_ARG;
+        if (GetEditFlags(Dialog,IDC_EDIT_PRGPATH) and EF_SCRIPT)<>0 then flags:=flags or ACF_PRG_PRG;
+        if (GetEditFlags(Dialog,IDC_EDIT_PRGARGS) and EF_SCRIPT)<>0 then flags:=flags or ACF_PRG_ARG;
       end;
     end;
 
@@ -380,6 +383,7 @@ begin
           'Text <param> replacing'#13#10+
           'by parameter'),
         TranslateW('Text'),0);
+      result:=1;
     end;
 
   end;
@@ -407,6 +411,8 @@ begin
   vc.Name    :='Program';
   vc.Dialog  :=@CreateDialog;
   vc.Create  :=@CreateAction;
+  vc.Icon    :='IDI_PROGRAM';
+  vc.Hash    :=0;
 
   ModuleLink :=@vc;
 end;

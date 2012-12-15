@@ -93,7 +93,7 @@ function db_get_dw(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:p
                    external CoreDLL name 'db_get_dw';
 function db_get(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; dbv:PDBVARIANT):int_ptr; stdcall;
                 external CoreDLL name 'db_get';
-function db_get_s(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; dbv:PDBVARIANT; const nType:int):int_ptr; stdcall;
+function db_get_s(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; dbv:PDBVARIANT; const nType:int=DBVT_ASCIIZ):int_ptr; stdcall;
                   external CoreDLL name 'db_get_s';
 function db_get_sa(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar):pAnsiChar; stdcall;
                    external CoreDLL name 'db_get_sa';
@@ -129,7 +129,7 @@ function DBGetContactSettingDWord(hContact:THANDLE; const szModule:pAnsiChar; co
                                   external CoreDLL name 'db_get_dw';
 function DBGetContactSetting(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; dbv:PDBVARIANT):int_ptr; stdcall;
                              external CoreDLL name 'db_get';
-function DBGetContactSettingStr(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; dbv:PDBVARIANT; const nType:int):int_ptr; stdcall;
+function DBGetContactSettingStr(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; dbv:PDBVARIANT; const nType:int=DBVT_ASCIIZ):int_ptr; stdcall;
                                 external CoreDLL name 'db_get_s';
 function DBGetContactSettingString(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar):pAnsiChar; stdcall;
                                    external CoreDLL name 'db_get_sa';
@@ -249,6 +249,37 @@ function GetExceptionFilter():pfnExceptionFilter; stdcall;
 function SetExceptionFilter(pMirandaExceptFilter:pfnExceptionFilter):pfnExceptionFilter; stdcall;
                             external CoreDLL name 'SetExceptionFilter';
 
+
+///////////////////////////////////////////////////////////////////////////////
+// icons support
+
+type
+  pIconItem = ^tIconItem;
+  tIconItem = record
+    szDescr:pAnsiChar;
+    szName :pAnsiChar;
+    defIconID,
+    size   :int;
+    hIcolib:THANDLE;
+  end;
+  tagIconItem = tIconItem;
+
+  pIconItemW = ^tIconItemW;
+  tIconItemW = record
+    szDescr:pWideChar;
+    szName :pAnsiChar;
+    defIconID,
+    size   :int;
+    hIcolib:THANDLE;
+  end;
+  tagIconItemW = tIconItemW;
+
+procedure Icon_Register(hInst:HINST; const szSection:pAnsiChar; pIcons:pIconItem;
+    iCount:size_t; prefix:PAnsiChar=NIL; hLangpack:int=0); stdcall;
+                        external CoreDLL name 'Icon_Register';
+procedure Icon_RegisterT(hInst:HINST; const szSection:pWideChar; pIcons:pIconItemW;
+    iCount:size_t; prefix:PAnsiChar=NIL; hLangpack:int=0); stdcall;
+                        external CoreDLL name 'Icon_RegisterT';
 
 ///////////////////////////////////////////////////////////////////////////////
 // language packs support

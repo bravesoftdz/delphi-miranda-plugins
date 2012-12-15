@@ -27,7 +27,7 @@ var
 begin
   p:=pMacroRecord(MacroList);
   cnt:=0;
-  for i:=0 to MaxMacros-1 do
+  for i:=0 to MacroCount-1 do
   begin
     if (p^.flags and (ACF_ASSIGNED or ACCF_VOLATILE))=ACF_ASSIGNED then inc(cnt);
     inc(p);
@@ -38,12 +38,11 @@ begin
   begin
     mGetMem(pc,cnt*SizeOf(tChain)+4);
     puint_ptr(lParam)^:=uint_ptr(pc);
-//    {$IFDEF WIN64}pqword{$ELSE}pdword{$ENDIF}(lParam)^:=uint_ptr(pc);
     pdword(pc)^:=SizeOf(tChain);
     inc(PByte(pc),4);
 
     p:=pMacroRecord(MacroList);
-    for i:=0 to MaxMacros-1 do
+    for i:=0 to MacroCount-1 do
     begin
       if (p^.flags and (ACF_ASSIGNED or ACCF_VOLATILE))=ACF_ASSIGNED then
       begin
@@ -57,7 +56,6 @@ begin
   end
   else
     puint_ptr(lParam)^:=0;
-//    {$IFDEF WIN64}pqword{$ELSE}pdword{$ENDIF}(lParam)^:=0;
 end;
 
 //====================== Execute code =======================
@@ -67,7 +65,7 @@ var
   res:LRESULT;
   i,cnt:integer;
 begin
-  cnt:=Macro.ActionCount;
+  cnt:=Macro^.ActionCount;
   if cnt<>0 then
   begin
 //!!    act:=CloneActions(action);
