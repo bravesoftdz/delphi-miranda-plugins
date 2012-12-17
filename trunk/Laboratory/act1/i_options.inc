@@ -27,7 +27,7 @@ begin
 
   for i:=0 to Macro^.ActionCount-1 do
   begin
-    p:=StrEnd(IntToStr(p1,i)); //!!!
+    p:=StrEnd(IntToStr(p1,i));
     p^:='/'; inc(p); // "Group#/Action#/"
 
 //??    StrCopy(p,opt_uid); DBWriteDWord(0,DBBranch,section,Macro^.ActionList[i].uid);
@@ -63,7 +63,6 @@ begin
 
         StrCopy(p,opt_id   ); DBWriteDWord(0,DBBranch,section,id);
         StrCopy(p,opt_flags); DBWriteDWord(0,DBBranch,section,flags);
-        //!! descr MUST NOT be NIL
         StrCopy(p,opt_descr); DBWriteUnicode (0,DBBranch,section,descr);
 
         p^:=#0;

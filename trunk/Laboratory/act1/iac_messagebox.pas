@@ -157,7 +157,7 @@ begin
       pc:=StrCopyE(section,pAnsiChar(node));
       StrCopy(pc,opt_msgtitle); DBWriteUnicode(0,DBBranch,section,msgtitle);
       StrCopy(pc,opt_msgtext ); DBWriteUnicode(0,DBBranch,section,msgtext);
-      StrCopy(pc,opt_boxopts ); DBWriteDWord  (0,DBBranch,section,boxopts); //!!
+      StrCopy(pc,opt_boxopts ); DBWriteDWord  (0,DBBranch,section,boxopts);
     end;
 {
     1: begin

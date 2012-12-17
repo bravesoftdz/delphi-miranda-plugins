@@ -70,6 +70,8 @@ begin
   begin
 //!!    act:=CloneActions(action);
     i:=0;
+    WorkData.ActionList :=Macro^.ActionList;
+    WorkData.ActionCount:=Macro^.ActionCount;
     while i<cnt do
     begin
       if (Macro^.ActionList^[i].flags and ACF_DISABLED)=0 then

@@ -2,11 +2,15 @@ unit dlgshare;
 
 interface
 
-uses windows;
+uses windows,lowlevel;
 
 const
   IDC_ACTION_LIST  = 2007;
   IDC_ACTION_GROUP = 2012;
+
+var
+  EditMacroList:pMacroList;
+  EditMacroCount:cardinal;
 
 const
   ACI_APPLY   = 0;

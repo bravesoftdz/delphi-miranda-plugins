@@ -86,7 +86,7 @@ var
 
 function CreateAction:tBaseAction;
 begin
-  result:=nil; //!!
+  result:=nil;
 end;
 
 function CreateDialog(parent:HWND):HWND;
