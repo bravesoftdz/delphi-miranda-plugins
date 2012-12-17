@@ -172,7 +172,7 @@ begin
   end;
   FreeMem(MacroList);
 
-  wnd:=GetDlgItem(Dialog,IDC_ACTION_GROUP);
+  wnd:=MacroListWindow;
   TmpMacroCount:=SendMessageW(wnd,LVM_GETITEMCOUNT,0,0);
   if TmpMacroCount>0 then
   begin
@@ -270,7 +270,7 @@ var
   dir:integer;
   okup,okdown:boolean;
 begin
-  wnd:=GetDlgItem(Dialog,IDC_ACTION_LIST);
+  wnd:=ActionListWindow;
 
   dir:=LV_CheckDirection(wnd);
   okup  :=odd(loword(dir));
@@ -286,7 +286,7 @@ var
   i:integer;
   wnd:HWND;
 begin
-  wnd:=GetDlgItem(Dialog,IDC_ACTION_LIST);
+  wnd:=ActionListWindow;
   i:=SendMessage(wnd,LVM_GETITEMCOUNT,0,0);
   if i>0 then
   begin
@@ -339,7 +339,7 @@ var
   wnd:HWND;
   li:LV_ITEMW;
 begin
-  wnd:=GetDlgItem(Dialog,IDC_ACTION_LIST);
+  wnd:=ActionListWindow;
   SendMessage(wnd,LVM_DELETEALLITEMS,0,0);
 
   EnableWindow(GetDlgItem(Dialog,IDC_ACTION_UP),false);
@@ -389,7 +389,7 @@ var
   wnd:HWND;
   buf:array [0..127] of WideChar;
 begin
-  wnd:=GetDlgItem(Dialog,IDC_ACTION_LIST);
+  wnd:=ActionListWindow;
   if num<0 then
     li.iItem:=SendMessage(wnd,LVM_GETNEXTITEM,-1,LVNI_FOCUSED)
   else
@@ -430,7 +430,7 @@ begin
     p:=GetLink(CB_GetData(wnd,GetWindowLongPtrW(wnd,GWLP_USERDATA)));
   end;
 
-  wnd:=GetDlgItem(Dialog,IDC_ACTION_LIST);
+  wnd:=ActionListWindow;
 
   if listnum<0 then
   begin
@@ -477,7 +477,7 @@ var
   li:LV_ITEMW;
   arr: array [0..255] of WideChar;
 begin
-  idx:=LV_GetLParam(GetDlgItem(Dialog,IDC_ACTION_GROUP),group);
+  idx:=LV_GetLParam(MacroListWindow,group);
   if idx>=0 then // we have macro to save
   begin
     SaveAction(Dialog,-1,nil);
@@ -492,7 +492,7 @@ begin
       end;
     end;
 
-    wnd:=GetDlgItem(Dialog,IDC_ACTION_LIST);
+    wnd:=ActionListWindow;
     with EditMacroList^[idx] do
     begin
       ActionCount:=SendMessageW(wnd,LVM_GETITEMCOUNT,0,0);
@@ -625,7 +625,7 @@ var
 begin
   with EditMacroList^[MacroNum] do
   begin
-    list:=GetDlgItem(Dialog,IDC_ACTION_GROUP);
+    list:=MacroListWindow;
     li.mask     :=LVIF_PARAM+LVIF_TEXT;
     li.iItem    :=SendMessage(list,LVM_GETNEXTITEM,-1,LVNI_FOCUSED)+1;
     li.iSubItem :=0;
@@ -689,7 +689,7 @@ var
   dir:integer;
   okup,okdown:boolean;
 begin
-  wnd:=GetDlgItem(Dialog,IDC_ACTION_GROUP);
+  wnd:=MacroListWindow;
   dir:=LV_CheckDirection(wnd);
   okup  :=odd(loword(dir));
   okdown:=(loword(dir) and 2)<>0;
@@ -704,7 +704,7 @@ var
   wnd:HWND;
   li:LV_ITEMW;
 begin
-  wnd:=GetDlgItem(Dialog,IDC_ACTION_GROUP);
+  wnd:=MacroListWindow;
 
   //?? was iItem=next=-1
   if SendMessage(wnd,LVM_GETITEMCOUNT,0,0)>0 then
@@ -737,7 +737,7 @@ var
 begin
   SendDlgItemMessage(Dialog,IDC_ACTION_LIST,LVM_DELETEALLITEMS,0,0);
   CheckActListButtons(Dialog,-1);
-  list:=GetDlgItem(Dialog,IDC_ACTION_GROUP);
+  list:=MacroListWindow;
 
   SendMessage(list,LVM_DELETEALLITEMS,0,0);
   CurMacro:=pMacroRecord(EditMacroList);
@@ -757,7 +757,7 @@ begin
     inc(CurMacro);
   end;
 
-  EnableWindow(GetDlgItem(Dialog,IDC_ACTION_GROUP),result>=0);
+  EnableWindow(GetDlgItem(Dialog,IDC_MACRO_LIST  ),result>=0);
   EnableWindow(GetDlgItem(Dialog,IDC_ACTION_LIST ),result>=0);
   EnableWindow(GetDlgItem(Dialog,IDC_ACTION_NEW  ),result>=0);
   EnableWindow(GetDlgItem(Dialog,IDC_GROUP_DELETE),result>=0);
@@ -887,8 +887,12 @@ begin
       DontReact :=true;
       // variant - put after all dialogs adds (to translate them too)
       TranslateDialogDefault(Dialog);
+      // For some actions
+      MacroListWindow :=GetDlgItem(Dialog,IDC_MACRO_LIST);
+      ActionListWindow:=GetDlgItem(Dialog,IDC_ACTION_LIST);
+
       SetButtonIcons2(Dialog);
-      wnd:=GetDlgItem(Dialog,IDC_ACTION_LIST);
+      wnd:=ActionListWindow;
       SendMessage(wnd,LVM_SETEXTENDEDLISTVIEWSTYLE,LVS_EX_CHECKBOXES,LVS_EX_CHECKBOXES);
       SendMessage(wnd,LVM_SETUNICODEFORMAT,1,0);
       FillChar(lv,SizeOf(lv),0);
@@ -908,14 +912,14 @@ begin
       end;
       
       OldActTableProc  :=pointer(SetWindowLongPtrW(wnd,GWL_WNDPROC,long_ptr(@NewActTableProc)));
-      OldGroupTableProc:=pointer(SetWindowLongPtrW(GetDlgItem(Dialog,IDC_ACTION_GROUP),
+      OldGroupTableProc:=pointer(SetWindowLongPtrW(MacroListWindow,
             GWL_WNDPROC,long_ptr(@NewGroupTableProc)));
 
       ClearDialogData;
       ResetDialogs;
 
       // fill group list
-      wnd:=GetDlgItem(Dialog,IDC_ACTION_GROUP);
+      wnd:=MacroListWindow;
       SendMessage(wnd,LVM_SETUNICODEFORMAT,1,0);
       lv.mask:=LVCF_WIDTH;
       lv.cx  :=110;
@@ -987,7 +991,7 @@ begin
             IDC_GROUP_EXPORT: begin
               if ShowDlgW(xmlfilename,xmlfilename,inoutfilter,false) then
               begin
-                wnd:=GetDlgItem(Dialog,IDC_ACTION_GROUP);
+                wnd:=MacroListWindow;
                 for i:=0 to ListView_GetItemCount(wnd)-1 do
                 begin
                   if ListView_GetItemState(wnd,i,LVIS_SELECTED)<>0 then
@@ -1033,40 +1037,18 @@ begin
               end;
             end;
 }
-{
             IDC_GROUP_TEST: begin
-              wnd:=GetDlgItem(Dialog,IDC_ACTION_LIST);
               li.mask    :=LVIF_PARAM;
               li.iSubItem:=0;
-              li.iItem   :=0;
-              SendMessageW(wnd,LVM_GETITEMW,0,tlparam(@li));
-              j:=SendMessage(wnd,LVM_GETNEXTITEM,-1,LVNI_FOCUSED);
+              // Get selected macro
+              li.iItem   :=SendMessage(MacroListWindow,LVM_GETNEXTITEM,-1,LVNI_FOCUSED);
+              // "save" selected macro (in edit list only)
+              BuildActionChain(Dialog,li.iItem);
+              // Get lParam = EditMacroList element
+              SendMessageW(MacroListWindow,LVM_GETITEMW,0,tlparam(@li));
 
-              ActionStarterWait(li.lParam);
-              // doubling from  "reload" button
-              wnd:=GetDlgItem(Dialog,IDC_ACTION_GROUP);
-              i:=SendMessage(wnd,LVM_GETNEXTITEM,-1,LVNI_FOCUSED);
-              NewGroupList :=GroupList;
-              NewMaxGroups :=MaxGroups;
-              NewActionList:=ActionList;
-              NewMaxActions:=MaxActions;
-              FillGroupList(Dialog);
-
-              Listview_SetItemState(wnd,0,0,LVIS_FOCUSED or LVIS_SELECTED);
-              Listview_SetItemState(wnd,i,
-                   LVIS_FOCUSED or LVIS_SELECTED,
-                   LVIS_FOCUSED or LVIS_SELECTED);
-              SendMessage(wnd,LVM_ENSUREVISIBLE,i,0);
-
-              wnd:=GetDlgItem(Dialog,IDC_ACTION_LIST);
-              Listview_SetItemState(wnd,0,0,LVIS_FOCUSED or LVIS_SELECTED);
-              Listview_SetItemState(wnd,j,
-                   LVIS_FOCUSED or LVIS_SELECTED,
-                   LVIS_FOCUSED or LVIS_SELECTED);
-              SendMessage(wnd,LVM_ENSUREVISIBLE,j,0);
-
+              ActionStarter(@(EditMacroList[li.lParam]),nil,ACTP_SAMETHREAD or ACTP_WAIT);
             end;
-}
 {
             IDC_GROUP_RELOAD: begin
 //              EventMask:=EventMask or ACTM_RELOAD;
@@ -1077,7 +1059,7 @@ begin
             IDC_GROUP_NEW: begin
               if AddMacro(Dialog,NewMacro(EditMacroList,EditMacroCount))>=0 then
               begin
-                EnableWindow(GetDlgItem(Dialog,IDC_ACTION_GROUP),true);
+                EnableWindow(MacroListWindow,true);
                 EnableWindow(GetDlgItem(Dialog,IDC_GROUP_DELETE),true);
                 EnableWindow(GetDlgItem(Dialog,IDC_GROUP_EXPORT),true);
                 EnableWindow(GetDlgItem(Dialog,IDC_ACTION_NEW  ),true);
@@ -1086,7 +1068,7 @@ begin
               end;
             end;
             IDC_GROUP_DELETE: begin
-              wnd:=GetDlgItem(Dialog,IDC_ACTION_GROUP);
+              wnd:=MacroListWindow;
               for i:=ListView_GetItemCount(wnd)-1 downto 0 do
               begin
                 if ListView_GetItemState(wnd,i,LVIS_SELECTED)<>0 then
@@ -1109,7 +1091,7 @@ begin
             end;
 
             IDC_ACTION_NEW: begin
-              wnd:=GetDlgItem(Dialog,IDC_ACTION_LIST);
+              wnd:=ActionListWindow;
               li.mask    :=LVIF_PARAM;
               i          :=SendMessage(wnd,LVM_GETNEXTITEM,-1,LVNI_FOCUSED);
               li.iItem   :=i+1;
@@ -1134,7 +1116,7 @@ begin
               ChangeListNotify(2);
             end;
             IDC_ACTION_DELETE: begin
-              wnd:=GetDlgItem(Dialog,IDC_ACTION_LIST);
+              wnd:=ActionListWindow;
               for i:=ListView_GetItemCount(wnd)-1 downto 0 do
               begin
                 if ListView_GetItemState(wnd,i,LVIS_SELECTED)<>0 then
@@ -1157,25 +1139,25 @@ begin
             end;
 
             IDC_GROUP_UP: begin
-              MoveMacro(GetDlgItem(Dialog,IDC_ACTION_GROUP),-1,-1);
+              MoveMacro(MacroListWindow,-1,-1);
               CheckMacroListDirectionButtons(Dialog);
               EventMask:=EventMask or ACTM_SORT;
               ChangeListNotify(1);
             end;
             IDC_GROUP_DOWN: begin
-              MoveMacro(GetDlgItem(Dialog,IDC_ACTION_GROUP),-1,1);
+              MoveMacro(MacroListWindow,-1,1);
               CheckMacroListDirectionButtons(Dialog);
               EventMask:=EventMask or ACTM_SORT;
               ChangeListNotify(1);
             end;
 
             IDC_ACTION_UP: begin
-              MoveMacro(GetDlgItem(Dialog,IDC_ACTION_LIST),-1,-1);
+              MoveMacro(ActionListWindow,-1,-1);
               CheckActListDirectionButtons(Dialog);
               ChangeListNotify(2);
             end;
             IDC_ACTION_DOWN: begin
-              MoveMacro(GetDlgItem(Dialog,IDC_ACTION_LIST),-1,1);
+              MoveMacro(ActionListWindow,-1,1);
               CheckActListDirectionButtons(Dialog);
               ChangeListNotify(2);
             end;
@@ -1218,7 +1200,7 @@ begin
         LVN_ITEMCHANGED: begin
           if DontReact then exit; // bug when group moved avoid
 
-          if wParam=IDC_ACTION_GROUP then
+          if wParam=IDC_MACRO_LIST then
           begin
             if PNMLISTVIEW(lParam)^.uChanged=LVIF_STATE then
             begin
@@ -1287,7 +1269,7 @@ begin
         LVN_ENDLABELEDITW: begin
           if DontReact then exit;
 
-          if wParam=IDC_ACTION_GROUP then
+          if wParam=IDC_MACRO_LIST then
           begin
             with PLVDISPINFOW(lParam)^ do
             begin

@@ -153,8 +153,7 @@ end;
 procedure FillChainList(Dialog:hwnd);
 var
   wnd,list:HWND;
-  i{,count}:integer;
-//  ptr,ptr1:pChain;
+  i:integer;
 
   li:LV_ITEMW;
   Macro:pMacroRecord;
@@ -165,26 +164,7 @@ begin
   SendMessage(wnd,CB_SETITEMDATA,
     SendMessageW(wnd,CB_ADDSTRING,0,lparam(TranslateW(NoChainText))),0);
 
-{
-  count:=CallService(MS_ACT_GETLIST,0,TLPARAM(@ptr));
-  if count>0 then
-  begin
-    ptr1:=ptr;
-    inc(pbyte(ptr),4);
-    for i:=0 to count-1 do
-    begin
-      if (ptr^.flags and ACCF_VOLATILE)=0 then
-      begin
-        SendMessage(wnd,CB_SETITEMDATA,
-          SendMessageW(wnd,CB_ADDSTRING,0,lparam(ptr^.descr)),ptr^.id);
-      end;
-    end;
-
-    CallService(MS_ACT_FREELIST,0,TLPARAM(ptr1));
-  end;
-}
-
-  list:=GetDlgItem(GetParent(Dialog),IDC_ACTION_GROUP);
+  list:=MacroListWindow;
   li.mask      :=LVIF_PARAM;
   li.iSubItem  :=0;
   for i:=0 to SendMessage(list,LVM_GETITEMCOUNT,0,0)-1 do
@@ -197,37 +177,7 @@ begin
   end;
 
 end;
-{
-procedure SelectMacro(Dialog:HWND;id:dword);
-var
-  i:integer;
-  ptr,ptr1:pChain;
-  count:integer;
-  pc:pWideChar;
-begin
-  count:=CallService(MS_ACT_GETLIST,0,TLPARAM(@ptr));
-  if count>0 then
-  begin
-    pc:=NoChainText;
-    ptr1:=ptr;
-    inc(pbyte(ptr),4);
-    for i:=0 to count-1 do
-    begin
-      if ((ptr^.flags and ACCF_VOLATILE)=0) and
-         (id=ptr^.id) then
-      begin
-        pc:=ptr^.descr;
-        break;
-      end;
-    end;
 
-    SendDlgItemMessageW(Dialog,IDC_MACRO_LIST,CB_SELECTSTRING,twparam(-1),tlparam(pc));
-    CallService(MS_ACT_FREELIST,0,TLPARAM(ptr1));
-    exit;
-  end;
-  SendDlgItemMessageW(Dialog,IDC_MACRO_LIST,CB_SELECTSTRING,twparam(-1),tlparam(NoChainText));
-end;
-}
 function DlgProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 const
   onactchanged:THANDLE=0;
@@ -257,7 +207,6 @@ begin
           SendDlgItemMessageW(Dialog,IDC_MACRO_LIST,CB_SELECTSTRING,twparam(-1),tlparam(actname))
         else
           CB_SelectData(Dialog,IDC_MACRO_LIST,id);
-//          SelectMacro(Dialog,id);
         if (flags and ACF_NOWAIT)<>0 then
           CheckDlgButton(Dialog,IDC_MACRO_NOWAIT,BST_CHECKED);
         if (flags and ACF_KEEPOLD)<>0 then

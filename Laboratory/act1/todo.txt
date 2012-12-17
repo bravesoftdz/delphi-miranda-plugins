@@ -1,4 +1,7 @@
 -------------
+ActionStarter = WorkData через GetMem, а не статика (в стеке)
+флаги по-умолчанию: samethread+wait
+-------------
 ѕќћЌ»“№!!! хранить в списке индекс, т.к. при изменении размера списка адреса помен€ютс€!!!
 -------------
 редактор структур -= пропадает кнопка хэлпа по переменным
@@ -32,7 +35,7 @@ getlist: with volatile or not?
 ?just text
 +contact
 +-call chain (change to edit macro list)
-jump action
++-jump action
 +read/write settings
 
 

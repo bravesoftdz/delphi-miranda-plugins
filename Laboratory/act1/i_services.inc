@@ -129,21 +129,28 @@ var
   tmp:pActStartData;
 begin
   mGetMem(tmp,SizeOf(tActStartData));
+  FillChar(tmp^,SizeOf(tActStartData),0);
 
-  tmp^.WorkData.ResultType:=wd^.ResultType;
-  case wd^.ResultType of
-    rtInt : tmp^.WorkData.LastResult:=wd^.LastResult;
-    rtWide: StrDupW(pWideChar(tmp^.WorkData.LastResult),pWideChar(wd^.LastResult));
-    rtAnsi: begin
-      AnsiToWide(pAnsiChar(wd^.LastResult),pWideChar(tmp^.WorkData.LastResult));
-      tmp^.WorkData.ResultType:=rtWide;
+  if wd<>nil then
+  begin
+    tmp^.WorkData.ResultType:=wd^.ResultType;
+    case wd^.ResultType of
+      rtInt : tmp^.WorkData.LastResult:=wd^.LastResult;
+      rtWide: StrDupW(pWideChar(tmp^.WorkData.LastResult),pWideChar(wd^.LastResult));
+      rtAnsi: begin
+        AnsiToWide(pAnsiChar(wd^.LastResult),pWideChar(tmp^.WorkData.LastResult));
+        tmp^.WorkData.ResultType:=rtWide;
+      end;
+      rtUTF8: begin
+        UTF8ToWide(pAnsiChar(wd^.LastResult),pWideChar(tmp^.WorkData.LastResult));
+        tmp^.WorkData.ResultType:=rtWide;
+      end;
     end;
-    rtUTF8: begin
-      UTF8ToWide(pAnsiChar(wd^.LastResult),pWideChar(tmp^.WorkData.LastResult));
-      tmp^.WorkData.ResultType:=rtWide;
-    end;
-  end;
-  tmp^.WorkData.Parameter:=wd^.Parameter;
+    tmp^.WorkData.Parameter:=wd^.Parameter;
+  end
+  else
+  tmp^.WorkData.ResultType:=rtInt;
+
   tmp^.macro :=macro;
   tmp^.flags :=flags;
 
@@ -204,6 +211,7 @@ begin
   if p<>nil then
   begin
     FillChar(w,SizeOf(w),0);
+    w.ResultType:=rtInt;
     w.Parameter:=lParam;
     result:=ActionStarter(p,@w,0);
   end;
@@ -219,6 +227,7 @@ begin
   if p<>nil then
   begin
     FillChar(w,SizeOf(w),0);
+    w.ResultType:=rtInt;
     w.Parameter:=lParam;
     result:=ActionStarter(p,@w,0);
   end;

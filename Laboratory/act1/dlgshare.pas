@@ -4,10 +4,9 @@ interface
 
 uses windows,lowlevel;
 
-const
-  IDC_ACTION_LIST  = 2007;
-  IDC_ACTION_GROUP = 2012;
-
+var
+  MacroListWindow,
+  ActionListWindow:HWND;
 var
   EditMacroList:pMacroList;
   EditMacroCount:cardinal;

@@ -94,9 +94,9 @@ end;
 {$include i_const.inc}
 
 {$include i_options.inc}
+{$include i_services.inc}
 {$include i_opt_dlg.inc}
 {.$include i_inoutxm.inc}
-{$include i_services.inc}
 
 function PreShutdown(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
