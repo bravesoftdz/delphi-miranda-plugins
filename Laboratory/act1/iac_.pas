@@ -40,7 +40,7 @@ begin
 
 end;
 
-function .DoAction(var WorkData:tWorkData):int;
+function .DoAction(var WorkData:tWorkData):LRESULT;
 begin
   result:=0;
 end;

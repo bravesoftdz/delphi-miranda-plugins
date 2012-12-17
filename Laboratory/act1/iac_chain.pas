@@ -5,9 +5,9 @@ interface
 implementation
 
 uses
-  windows, messages,
+  windows, messages, commctrl,
   global, iac_global, mirutils, m_api,
-  common,dbsettings;
+  dlgshare,lowlevel,common,dbsettings, wrapper;
 
 {$include m_actman.inc}
 {$include i_cnst_chain.inc}
@@ -152,14 +152,12 @@ end;
 
 procedure FillChainList(Dialog:hwnd);
 var
-  wnd{,list}:HWND;
-  i,count:integer;
-  ptr,ptr1:pChain;
+  wnd,list:HWND;
+  i{,count}:integer;
+//  ptr,ptr1:pChain;
 
-{
   li:LV_ITEMW;
-  arr: array [0..255] of WideChar;
-}
+  Macro:pMacroRecord;
 begin
   wnd:=GetDlgItem(Dialog,IDC_MACRO_LIST);
 
@@ -167,7 +165,7 @@ begin
   SendMessage(wnd,CB_SETITEMDATA,
     SendMessageW(wnd,CB_ADDSTRING,0,lparam(TranslateW(NoChainText))),0);
 
-
+{
   count:=CallService(MS_ACT_GETLIST,0,TLPARAM(@ptr));
   if count>0 then
   begin
@@ -184,23 +182,22 @@ begin
 
     CallService(MS_ACT_FREELIST,0,TLPARAM(ptr1));
   end;
-
-{
-  list:=GetDlgItem(GetParent(Dialog),IDC_ACTION_GROUP);
-  li.mask      :=LVIF_TEXT;
-  li.iSubItem  :=0;
-  li.pszText   :=@arr;
-  li.cchTextMax:=SizeOf(arr) div SizeOf(WideChar);
-  for i:=0 to SendMessage(list,LVM_GETCOUNT,0,0)-1 do
-  begin
-    li.iItem:=item;
-    SendMessageW(list,LVM_GETITEMW,0,tlparam(@li));
-    SendMessage(wnd,CB_SETITEMDATA,
-        SendMessageW(wnd,CB_ADDSTRING,0,lparam(@arr)),!!!!!!!!);
-  end;
 }
-end;
 
+  list:=GetDlgItem(GetParent(Dialog),IDC_ACTION_GROUP);
+  li.mask      :=LVIF_PARAM;
+  li.iSubItem  :=0;
+  for i:=0 to SendMessage(list,LVM_GETITEMCOUNT,0,0)-1 do
+  begin
+    li.iItem:=i;
+    SendMessageW(list,LVM_GETITEMW,0,tlparam(@li));
+    Macro:=@(EditMacroList^[li.lParam]);
+    SendMessage(wnd,CB_SETITEMDATA,
+        SendMessageW(wnd,CB_ADDSTRING,0,lparam(@(Macro.descr))),Macro.id);
+  end;
+
+end;
+{
 procedure SelectMacro(Dialog:HWND;id:dword);
 var
   i:integer;
@@ -230,13 +227,13 @@ begin
   end;
   SendDlgItemMessageW(Dialog,IDC_MACRO_LIST,CB_SELECTSTRING,twparam(-1),tlparam(NoChainText));
 end;
-
+}
 function DlgProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 const
   onactchanged:THANDLE=0;
 
 var
-  i:integer;
+  tmp:dword;
   wnd:HWND;
 begin
   result:=0;
@@ -259,7 +256,8 @@ begin
         if (flags and ACF_BYNAME)<>0 then
           SendDlgItemMessageW(Dialog,IDC_MACRO_LIST,CB_SELECTSTRING,twparam(-1),tlparam(actname))
         else
-          SelectMacro(Dialog,id);
+          CB_SelectData(Dialog,IDC_MACRO_LIST,id);
+//          SelectMacro(Dialog,id);
         if (flags and ACF_NOWAIT)<>0 then
           CheckDlgButton(Dialog,IDC_MACRO_NOWAIT,BST_CHECKED);
         if (flags and ACF_KEEPOLD)<>0 then
@@ -276,12 +274,7 @@ begin
     WM_ACT_SAVE: begin
       with tChainAction(lParam) do
       begin
-        wnd:=GetDlgItem(Dialog,IDC_MACRO_LIST);
-        i:=SendMessage(wnd,CB_GETCURSEL,0,0);
-        if i>0 then
-          id:=SendMessage(wnd,CB_GETITEMDATA,i,0)
-        else
-          id:=0;
+        id:=CB_GetData(GetDlgItem(Dialog,IDC_MACRO_LIST));
 
         if IsDlgButtonChecked(Dialog,IDC_MACRO_NOWAIT)<>BST_UNCHECKED then
           flags:=flags or ACF_NOWAIT;
@@ -290,6 +283,15 @@ begin
       end;
     end;
 
+    WM_ACT_LISTCHANGE: begin
+      if wParam=1 then
+      begin
+        wnd:=GetDlgItem(Dialog,IDC_MACRO_LIST);
+        tmp:=CB_GetData(wnd);
+        FillChainList(Dialog);
+        CB_SelectData(wnd,tmp);
+      end;
+    end;
 {
     WM_COMMAND: begin
       case wParam shr 16 of

@@ -257,7 +257,7 @@ begin
   end;
 end;
 
-function tTextAction.DoAction(var WorkData:tWorkData):int;
+function tTextAction.DoAction(var WorkData:tWorkData):LRESULT;
 var
   buf:array [0..31] of WideChar;
   w:pWideChar;

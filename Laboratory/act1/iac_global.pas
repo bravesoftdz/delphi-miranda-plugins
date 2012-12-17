@@ -13,10 +13,10 @@ const
 const
   protostr = '<proto>';
 const
-  WM_ACT_SETVALUE = WM_USER + 13;
-  WM_ACT_RESET    = WM_USER + 14;
-  WM_ACT_SAVE     = WM_USER + 15;
-  WM_ACT_REFRESH  = WM_USER + 16; // group, action
+  WM_ACT_SETVALUE   = WM_USER + 13;
+  WM_ACT_RESET      = WM_USER + 14;
+  WM_ACT_SAVE       = WM_USER + 15;
+  WM_ACT_LISTCHANGE = WM_USER + 16; // group, action
 
 const
   ACF_DISABLED   = $10000000;  // action disabled
@@ -35,12 +35,15 @@ const
 type
   pWorkData = ^tWorkData;
   tWorkData = record
-    Parameter :LPARAM;
-    LastResult:uint_ptr;
-    ResultType:integer;   // rt* const
+    Parameter  :LPARAM;
+    LastResult :uint_ptr;
+    ResultType :integer;   // rt* const
+    ActionList :pointer;
+    ActionCount:integer;
   end;
 
 type
+  pBaseAction = ^tBaseAction;
   tBaseAction = class
     ActionDescr:pWideChar; // description (user name)
     UID        :dword;     // hash of action type name

@@ -69,7 +69,7 @@ begin
 
 end;
 }
-function tInOutAction.DoAction(var WorkData:tWorkData):int;
+function tInOutAction.DoAction(var WorkData:tWorkData):LRESULT;
 var
   tmp:PWideChar;
   blob,p:PAnsiChar;
@@ -134,13 +134,13 @@ begin
 
       case cp of
         1: begin
-          llen:=StrLen(WideToAnsi(w,pAnsiChar(lstr),MirandaCP));
+          llen:=StrLen(WideToAnsi(last,pAnsiChar(lstr),MirandaCP));
         end;
         2,3: begin
-          llen:=StrLen(WideToUTF8(w,pAnsiChar(lstr)));
+          llen:=StrLen(WideToUTF8(last,pAnsiChar(lstr)));
         end;
       else
-        lstr:=w;
+        lstr:=last;
         llen:=StrLenW(lstr)*SizeOf(WideChar);
       end;
 

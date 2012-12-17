@@ -9,13 +9,22 @@ const
   hlpAdvVariables = 31;
 
 var
-  EditMacroList:pMacroList;
-  EditMacroCount:cardinal;
-var
   DontReact:bool;
   OldGroupTableProc,
   OldActTableProc:pointer;
   EventMask:dword;
+
+procedure ChangeListNotify(list:integer);
+var
+  p:pActModule;
+begin
+  p:=ModuleLink;
+  while p<>nil do
+  begin
+    SendMessage(p^.DlgHandle,WM_ACT_LISTCHANGE,list,0);
+    p:=p^.Next;
+  end;
+end;
 
 procedure ResetDialogs;
 var
@@ -224,7 +233,7 @@ begin
   SendMessage(list,CB_RESETCONTENT,0,0);
 
   FillChar(cbei,SizeOf(cbei),0);
-  cbei.mask:=CBEIF_IMAGE or CBEIF_SELECTEDIMAGE or CBEIF_TEXT or CBEIF_LPARAM; //!!
+  cbei.mask:=CBEIF_IMAGE or CBEIF_SELECTEDIMAGE or CBEIF_TEXT or CBEIF_LPARAM;
   p:=ModuleLink;
   i:=0;
   SetRect(rc,134,22,0,0);
@@ -621,7 +630,7 @@ begin
     li.iItem    :=SendMessage(list,LVM_GETNEXTITEM,-1,LVNI_FOCUSED)+1;
     li.iSubItem :=0;
     li.lParam   :=MacroNum;
-    li.pszText  :=@descr; //!! must not be empty
+    li.pszText  :=@descr;
     li.iItem    :=SendMessageW(list,LVM_INSERTITEMW,0,lparam(@li));
     if li.iItem>0 then
       dec(li.iItem);
@@ -697,7 +706,7 @@ var
 begin
   wnd:=GetDlgItem(Dialog,IDC_ACTION_GROUP);
 
-  //!! was iItem=next=-1
+  //?? was iItem=next=-1
   if SendMessage(wnd,LVM_GETITEMCOUNT,0,0)>0 then
   begin
     ListView_SetItemState(wnd,0,LVIS_FOCUSED or LVIS_SELECTED,
@@ -741,7 +750,7 @@ begin
     begin
       lvi.iItem :=i;
       lvi.lParam:=i;
-      lvi.pszText:=@(CurMacro^.descr); //!! must NOT be empty
+      lvi.pszText:=@(CurMacro^.descr);
       SendMessageW(list,LVM_INSERTITEMW,0,tlparam(@lvi));
       inc(result);
     end;
@@ -912,9 +921,11 @@ begin
       lv.cx  :=110;
       SendMessageW(wnd,LVM_INSERTCOLUMNW,0,tlparam(@lv));
       FillMacroList(Dialog);
+      ChangeListNotify(1);
 
       // fill current group
       FillActionList(Dialog,pMacroRecord(EditMacroList));
+      ChangeListNotify(2);
       EventMask:=0;
       CheckMacroListDirectionButtons(Dialog);
       DontReact:=false;
@@ -1071,6 +1082,7 @@ begin
                 EnableWindow(GetDlgItem(Dialog,IDC_GROUP_EXPORT),true);
                 EnableWindow(GetDlgItem(Dialog,IDC_ACTION_NEW  ),true);
                 CheckMacroListDirectionButtons(Dialog);
+                ChangeListNotify(1);
               end;
             end;
             IDC_GROUP_DELETE: begin
@@ -1087,6 +1099,7 @@ begin
               Listview_SetItemState(wnd,0,LVIS_FOCUSED or LVIS_SELECTED,
                                           LVIS_FOCUSED or LVIS_SELECTED);
               CheckMacroList(Dialog);
+              ChangeListNotify(1);
             end;
 
             IDC_ACTION_HELP: begin
@@ -1118,6 +1131,7 @@ begin
               EnableWindow(GetDlgItem(Dialog,IDC_ACTION_DELETE),true);
               EnableWindow(GetDlgItem(Dialog,IDC_ACTION_TYPE  ),true);
               CheckActListDirectionButtons(Dialog);
+              ChangeListNotify(2);
             end;
             IDC_ACTION_DELETE: begin
               wnd:=GetDlgItem(Dialog,IDC_ACTION_LIST);
@@ -1139,26 +1153,31 @@ begin
               Listview_SetItemState(wnd,0,LVIS_FOCUSED or LVIS_SELECTED,
                                           LVIS_FOCUSED or LVIS_SELECTED);
               CheckActListButtons(Dialog,0);
+              ChangeListNotify(2);
             end;
 
             IDC_GROUP_UP: begin
               MoveMacro(GetDlgItem(Dialog,IDC_ACTION_GROUP),-1,-1);
               CheckMacroListDirectionButtons(Dialog);
               EventMask:=EventMask or ACTM_SORT;
+              ChangeListNotify(1);
             end;
             IDC_GROUP_DOWN: begin
               MoveMacro(GetDlgItem(Dialog,IDC_ACTION_GROUP),-1,1);
               CheckMacroListDirectionButtons(Dialog);
               EventMask:=EventMask or ACTM_SORT;
+              ChangeListNotify(1);
             end;
 
             IDC_ACTION_UP: begin
               MoveMacro(GetDlgItem(Dialog,IDC_ACTION_LIST),-1,-1);
               CheckActListDirectionButtons(Dialog);
+              ChangeListNotify(2);
             end;
             IDC_ACTION_DOWN: begin
               MoveMacro(GetDlgItem(Dialog,IDC_ACTION_LIST),-1,1);
               CheckActListDirectionButtons(Dialog);
+              ChangeListNotify(2);
             end;
 
           end;
@@ -1216,6 +1235,7 @@ begin
                 ResetDialogs;
                 FillActionList(Dialog,@(EditMacroList^[PNMLISTVIEW(lParam)^.lParam]));
                 CheckMacroListDirectionButtons(Dialog);
+                ChangeListNotify(2);
 
                 DontReact:=false;
               end
@@ -1284,6 +1304,7 @@ begin
                 begin
                   StrCopyW(descr,item.pszText,MacroNameLen-1);
                 end;
+                ChangeListNotify(1);
 
                 result:=1;
               end;
@@ -1297,6 +1318,7 @@ begin
               begin
                 SetChanged(Dialog,etACT);
                 ChangeActionName(Dialog,item.iItem,pWideChar(item.pszText));
+                ChangeListNotify(2);
                 result:=1;
               end;
             end;

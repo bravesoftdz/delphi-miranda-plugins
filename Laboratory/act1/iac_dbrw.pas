@@ -429,6 +429,7 @@ begin
     WM_ACT_RESET: begin
       ClearFields(Dialog);
 
+      CB_SelectData(GetDlgItem(Dialog,IDC_RW_DATATYPE),0);
       CheckDlgButton(Dialog,IDC_RW_READ  ,BST_CHECKED);
       CheckDlgButton(Dialog,IDC_RW_MANUAL,BST_CHECKED);
 
