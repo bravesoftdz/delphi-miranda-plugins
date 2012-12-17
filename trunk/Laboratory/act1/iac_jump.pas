@@ -194,7 +194,6 @@ begin
         end;
         inc(lptr);
       end;
-      //!!!! here must be jump calculation
     end;
 end;
 
@@ -295,7 +294,7 @@ begin
 
   SendMessage(wnd,CB_RESETCONTENT,0,0);
 
-  list:=GetDlgItem(Dialog,IDC_ACTION_LIST);
+  list:=ActionListWindow;
   act:=SendMessageW(list,LVM_GETITEMCOUNT,0,0);
   i:=0;
   li.mask      :=LVIF_TEXT;
@@ -381,7 +380,7 @@ begin
       ClearFields(Dialog);
       with tJumpAction(lParam) do
       begin
-//!!        FillActionList(Dialog);
+        FillActionList(Dialog);
 //        SendDlgItemMessage(Dialog,IDC_JMP_ACTLIST,CB_SETCURSEL,0,0);
         // Condition
         if (flags and ACF_NOP)<>0 then

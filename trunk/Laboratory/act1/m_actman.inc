@@ -61,6 +61,7 @@ const
   ACTP_NOTIFY     =  4; // notify (raise event) for start/finish macro
   ACTP_SAMETHREAD =  8; // execute macro in same thread (with finish waiting)
   ACTP_KEEPRESULT = 16; // (internal) keep last result
+  ACTP_POINTER    = 32; // (internal) "id" field is pointer to macro
 type
   pAct_Param = ^tAct_Param;
   tAct_Param = record
