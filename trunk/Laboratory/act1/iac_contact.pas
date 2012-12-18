@@ -5,7 +5,7 @@ interface
 implementation
 
 uses
-  windows, messages,
+  windows, messages, commctrl,
   m_api, global, iac_global, common,
   contact, dlgshare, syswin,
   wrapper, mirutils, dbsettings;
@@ -178,6 +178,7 @@ begin
 
     WM_COMMAND: begin
       case wParam shr 16 of
+        CBN_SELCHANGE: SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
         BN_CLICKED: begin
           case loword(wParam) of
             IDC_CNT_GET: begin
@@ -189,9 +190,11 @@ begin
 
             IDC_CNT_REFRESH: begin
               OptFillContactList(GetDlgItem(Dialog,IDC_CONTACTLIST));
+              exit;
             end;
           end;
-        end;
+          SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
+         end;
 
       end;
     end;

@@ -5,7 +5,7 @@ interface
 implementation
 
 uses
-  windows, messages,
+  windows, messages, commctrl,
   global, iac_global,
   m_api,dbsettings,
   common,mirutils,wrapper,
@@ -325,6 +325,7 @@ end;
 
 procedure ClearFields(Dialog:HWND);
 begin
+
   SetDlgItemTextW(Dialog,IDC_RW_MODULE ,nil);
   SetDlgItemTextW(Dialog,IDC_RW_SETTING,nil);
   SetDlgItemTextW(Dialog,IDC_RW_VALUE  ,nil);
@@ -345,6 +346,8 @@ begin
 end;
 
 function DlgProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
+const
+  NoProcess:boolean=true;
 var
   wnd:HWND;
   i:integer;
@@ -370,6 +373,7 @@ begin
     end;
 
     WM_ACT_SETVALUE: begin
+      NoProcess:=true;
       ClearFields(Dialog);
 
       with tDataBaseAction(lParam) do
@@ -424,9 +428,11 @@ begin
         SetDlgItemTextW(Dialog,IDC_RW_VALUE,dbvalue);
         SetEditFlags(Dialog,IDC_RW_VALUE,EF_SCRIPT,ord((flags and ACF_RW_VALUE)<>0));
       end;
+      NoProcess:=false;
     end;
 
     WM_ACT_RESET: begin
+      NoProcess:=true;
       ClearFields(Dialog);
 
       CB_SelectData(GetDlgItem(Dialog,IDC_RW_DATATYPE),0);
@@ -435,6 +441,7 @@ begin
 
       EnableWindow(GetDlgItem(Dialog,IDC_CONTACTLIST),true);
       EnableWindow(GetDlgItem(Dialog,IDC_RW_VALUE),true);
+      NoProcess:=false;
     end;
 
     WM_ACT_SAVE: begin
@@ -449,8 +456,8 @@ begin
           dbcontact:=SendDlgItemMessage(Dialog,IDC_CONTACTLIST,CB_GETITEMDATA,
               SendDlgItemMessage(Dialog,IDC_CONTACTLIST,CB_GETCURSEL,0,0),0);
 
-        {mFreeMem(dbmodule ); }dbmodule :=GetDlgText(Dialog,IDC_RW_MODULE ,true);
-        {mFreeMem(dbsetting); }dbsetting:=GetDlgText(Dialog,IDC_RW_SETTING,true);
+        {mFreeMem(dbmodule ); }dbmodule :=GetDlgText(Dialog,IDC_RW_MODULE);
+        {mFreeMem(dbsetting); }dbsetting:=GetDlgText(Dialog,IDC_RW_SETTING);
         if (GetEditFlags(Dialog,IDC_RW_MODULE ) and EF_SCRIPT)<>0 then flags:=flags or ACF_RW_MODULE;
         if (GetEditFlags(Dialog,IDC_RW_SETTING) and EF_SCRIPT)<>0 then flags:=flags or ACF_RW_SETTING;
 
@@ -480,8 +487,9 @@ begin
 
     WM_COMMAND: begin
       case wParam shr 16 of
-        EN_CHANGE: begin
-        end;
+        CBN_SELCHANGE,
+        EN_CHANGE: if not NoProcess then
+            SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
 
         BN_CLICKED: begin
           case loword(wParam) of
@@ -507,8 +515,10 @@ begin
 
             IDC_CNT_REFRESH: begin
               OptFillContactList(GetDlgItem(Dialog,IDC_CONTACTLIST));
+              exit;
             end;
           end;
+          SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
         end;
 
       end;

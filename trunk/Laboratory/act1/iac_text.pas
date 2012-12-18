@@ -5,7 +5,7 @@ interface
 implementation
 
 uses
-  windows, messages,
+  windows, messages, commctrl,
   iac_global, m_api, editwrapper,
   dbsettings, common, io,
   mirutils, syswin, wrapper;
@@ -340,6 +340,8 @@ begin
 end;
 
 function DlgProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
+const
+  NoProcess:boolean=true;
 begin
   result:=0;
 
@@ -351,6 +353,7 @@ begin
     end;
 
     WM_ACT_SETVALUE: begin
+      NoProcess:=true;
       ClearFields(Dialog);
 
       with tTextAction(lParam) do
@@ -358,10 +361,13 @@ begin
         SetDlgItemTextW(Dialog,IDC_TXT_TEXT,text);
         SetEditFlags(Dialog,IDC_TXT_TEXT,EF_SCRIPT,ord((flags and ACF_TEXTSCRIPT)<>0));
       end;
+      NoProcess:=false;
     end;
 
     WM_ACT_RESET: begin
+      NoProcess:=true;
       ClearFields(Dialog);
+      NoProcess:=false;
     end;
 
     WM_ACT_SAVE: begin
@@ -375,12 +381,13 @@ begin
       end;
     end;
 
-{
     WM_COMMAND: begin
       case wParam shr 16 of
+        EN_CHANGE: if not NoProcess then
+            SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
       end;
     end;
-}
+
     WM_HELP: begin
       MessageBoxW(0,
         TranslateW('^s - selected (and replaced) part'#13#10+

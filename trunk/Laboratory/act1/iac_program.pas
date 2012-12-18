@@ -6,7 +6,7 @@ implementation
 
 uses
   editwrapper,
-  windows, messages,
+  windows, messages, commctrl,
   global, iac_global, m_api, wrapper, syswin,
   mirutils, common, dbsettings;
 
@@ -278,6 +278,8 @@ begin
 end;
 
 function DlgProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
+const
+  NoProcess:boolean=true;
 begin
   result:=0;
 
@@ -290,6 +292,7 @@ begin
     end;
 
     WM_ACT_SETVALUE: begin
+      NoProcess:=true;
       ClearFields(Dialog);
 
       with tProgramAction(lParam) do
@@ -315,14 +318,17 @@ begin
         else
           CheckDlgButton(Dialog,IDC_FLAG_CONTINUE,BST_CHECKED);
       end;
+      NoProcess:=false;
     end;
 
     WM_ACT_RESET: begin
+      NoProcess:=true;
       ClearFields(Dialog);
 
       CheckDlgButton(Dialog,IDC_FLAG_PARALLEL,BST_CHECKED);
       CheckDlgButton(Dialog,IDC_FLAG_NORMAL,BST_CHECKED);
       SetDlgItemInt(Dialog,IDC_EDIT_PROCTIME,0,false);
+      NoProcess:=false;
     end;
 
     WM_ACT_SAVE: begin
@@ -363,8 +369,8 @@ begin
 
     WM_COMMAND: begin
       case wParam shr 16 of
-        EN_CHANGE: begin
-        end;
+        EN_CHANGE: if not NoProcess then
+            SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
 
         BN_CLICKED: begin
           case loword(wParam) of
@@ -372,6 +378,7 @@ begin
               FillFileName(Dialog,IDC_EDIT_PRGPATH);
             end;
           end;
+          SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
         end;
       end;
     end;

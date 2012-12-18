@@ -6,7 +6,7 @@ implementation
 
 uses
   editwrapper,
-  windows, messages,
+  windows, messages, commctrl,
   m_api, global, iac_global,
   wrapper, mirutils, common, dbsettings;
 
@@ -213,6 +213,8 @@ begin
 end;
 
 function DlgProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
+const
+  NoProcess:boolean=true;
 begin
   result:=0;
 
@@ -227,6 +229,7 @@ begin
     end;
 
     WM_ACT_SETVALUE: begin
+      NoProcess:=true;
       ClearFields(Dialog);
       with tMessageAction(lParam) do
       begin
@@ -258,13 +261,16 @@ begin
           CheckDlgButton(Dialog,IDC_MSGI_NONE,BST_CHECKED);
         end;
       end;
+      NoProcess:=false;
     end;
 
     WM_ACT_RESET: begin
+      NoProcess:=true;
       ClearFields(Dialog);
 
       CheckDlgButton(Dialog,IDC_MSGB_OK  ,BST_CHECKED);
       CheckDlgButton(Dialog,IDC_MSGI_NONE,BST_CHECKED);
+      NoProcess:=false;
     end;
 
     WM_ACT_SAVE: begin
@@ -300,12 +306,9 @@ begin
 
     WM_COMMAND: begin
       case wParam shr 16 of
-        BN_CLICKED: begin
-          case loword(wParam) of
-            IDC_MSG_TTL ,
-            IDC_MSG_TXT : ;//SetButtonIcon(lParam,checknames[IsDlgButtonChecked(Dialog,loword(wParam))]);
-          end;
-        end;
+        EN_CHANGE,
+        BN_CLICKED: if not NoProcess then
+            SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
       end;
     end;
 

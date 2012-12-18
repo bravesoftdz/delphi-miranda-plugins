@@ -359,6 +359,8 @@ begin
 end;
 
 function DlgProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
+const
+  NoProcess:boolean=true;
 var
   bb:boolean;
   wnd:HWND;
@@ -377,6 +379,7 @@ begin
     end;
 
     WM_ACT_SETVALUE: begin
+      NoProcess:=true;
       ClearFields(Dialog);
       with tJumpAction(lParam) do
       begin
@@ -424,9 +427,11 @@ begin
         end;
 
       end;
+      NoProcess:=false;
     end;
 
     WM_ACT_RESET: begin
+      NoProcess:=true;
       ClearFields(Dialog);
 
       CheckDlgButton(Dialog,IDC_FLAG_BREAK,BST_CHECKED);
@@ -435,6 +440,7 @@ begin
       CB_SelectData(GetDlgItem(Dialog,IDC_JMP_MATH),aeEQ);
       CB_SelectData(GetDlgItem(Dialog,IDC_JMP_TEXT),aeEQU);
       EnableWindow(GetDlgItem(Dialog,IDC_JMP_ACTLIST),false);
+      NoProcess:=false;
     end;
 
     WM_ACT_SAVE: begin
@@ -489,6 +495,9 @@ begin
 
     WM_COMMAND: begin
       case wParam shr 16 of
+        EN_CHANGE: if not NoProcess then
+            SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
+
         CBN_SELCHANGE:  begin
           case loword(wParam) of
             IDC_JMP_TEXT: begin
@@ -500,6 +509,7 @@ begin
               EnableEditField(GetDlgItem(Dialog,IDC_JMP_VALUE),bb);
             end;
           end;
+          SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
         end;
 
         BN_CLICKED: begin
@@ -514,6 +524,7 @@ begin
               EnableWindow(GetDlgItem(Dialog,IDC_JMP_ACTLIST),true);
             end;
           end;
+          SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
         end;
       end;
     end;

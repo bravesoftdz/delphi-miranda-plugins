@@ -21,7 +21,7 @@ FONT 8, "MS Shell Dlg", 0, 0
 
   AUTOCHECKBOX    "NOT"      , IDC_FLAG_NOT ,  4, 118,  32, 11
   RTEXT           "Value"    , -1           , 86, 118,  78, 11, SS_CENTERIMAGE
-  EDITTEXT                     IDC_JMP_VALUE,  4, 132, 160, 11
+  EDITTEXT                     IDC_JMP_VALUE,  4, 132, 160, 11, ES_AUTOHSCROLL
 
   GROUPBOX        "Operation", -1             ,  1, 152, 166, 39, WS_GROUP
   AUTORADIOBUTTON "BREAK"    , IDC_FLAG_BREAK ,  4, 161,  62, 12
