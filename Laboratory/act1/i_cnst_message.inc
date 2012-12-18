@@ -15,6 +15,3 @@ const
   IDC_MSGI_ERROR    = 2717;
   IDC_MSG_RTL       = 2718;
   IDC_MSG_RIGHT     = 2719;
-
-  IDC_MSG_TTL  = 3011;
-  IDC_MSG_TXT  = 3012;

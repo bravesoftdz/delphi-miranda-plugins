@@ -948,7 +948,6 @@ begin
         end;
 }
         CBN_SELCHANGE:  begin
-          SetChanged(Dialog,etACT);
           case loword(wParam) of
             IDC_ACTION_TYPE: begin
               ClearDialogData;
@@ -957,8 +956,11 @@ begin
 
               // Saving prevoius "normal" action type
               if p^.Hash>10 then
+              begin
                 SetWindowLongPtrW(lParam,GWLP_USERDATA,
                     SendMessage(lParam,CB_GETCURSEL,0,0));
+                SetChanged(Dialog,etACT);
+              end;
             end;
           end;
         end;

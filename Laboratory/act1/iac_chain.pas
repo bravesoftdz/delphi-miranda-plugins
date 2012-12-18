@@ -241,12 +241,14 @@ begin
         CB_SelectData(wnd,tmp);
       end;
     end;
-{
+	
     WM_COMMAND: begin
       case wParam shr 16 of
+        CBN_SELCHANGE,
+        BN_CLICKED: SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
       end;
     end;
-}
+
     WM_HELP: begin
       result:=1;
     end;

@@ -5,7 +5,7 @@ interface
 implementation
 
 uses
-  windows, messages,
+  windows, messages, commctrl,
   iac_global,
   mirutils, common, dbsettings,
   wrapper, editwrapper, io, syswin,
@@ -400,6 +400,8 @@ begin
 end;
 
 function DlgProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
+const
+  NoProcess:boolean=true;
 var
   i:integer;
 begin
@@ -415,6 +417,7 @@ begin
     end;
 
     WM_ACT_SETVALUE: begin
+      NoProcess:=true;
       ClearFields(Dialog);
 
       with tInOutAction(lParam) do
@@ -465,15 +468,18 @@ begin
           SetSet(Dialog,2);
         end;
       end;
+      NoProcess:=false;
     end;
 
     WM_ACT_RESET: begin
+      NoProcess:=true;
       ClearFields(Dialog);
 
       CheckDlgButton(Dialog,IDC_FLAG_CLIP,BST_CHECKED);
       CheckDlgButton(Dialog,IDC_CLIP_COPYTO,BST_CHECKED);
       CheckDlgButton(Dialog,IDC_FILE_READ,BST_CHECKED);
       SetSet(Dialog,0); // clipboard
+      NoProcess:=false;
     end;
 
     WM_ACT_SAVE: begin
@@ -518,6 +524,9 @@ begin
 
     WM_COMMAND: begin
       case wParam shr 16 of
+        EN_CHANGE: if not NoProcess then
+            SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
+
         BN_CLICKED: begin
           case loword(wParam) of
             IDC_FLAG_CLIP: begin
@@ -533,6 +542,7 @@ begin
               FillFileName(Dialog,IDC_FILE_PATH);
             end;
           end;
+          SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
         end;
       end;
     end;

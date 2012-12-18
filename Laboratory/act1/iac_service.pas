@@ -5,7 +5,7 @@ interface
 implementation
 
 uses
-  windows, messages,
+  windows, messages, commctrl,
   global, iac_global,
   m_api,
   sedit,strans,mApiCardM,
@@ -540,6 +540,8 @@ begin
 end;
 
 function DlgProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
+const
+  NoProcesS:boolean=true;
 var
   i:integer;
   pc,pc1:pAnsiChar;
@@ -568,6 +570,7 @@ begin
     end;
 
     WM_ACT_SETVALUE: begin
+      NoProcess:=true;
       ClearFields(Dialog);
 
       with tServiceAction(lParam) do
@@ -625,14 +628,17 @@ begin
         CB_SelectData(GetDlgItem(Dialog,IDC_FLAG_LPAR),i);
 
       end;
+      NoProcess:=false;
     end;
 
     WM_ACT_RESET: begin
+      NoProcess:=true;
       ClearFields(Dialog);
 {
       ShowWindow(GetDlgItem(Dialog,IDC_WSTRUCT),SW_HIDE);
       ShowWindow(GetDlgItem(Dialog,IDC_LSTRUCT),SW_HIDE);
 }
+      NoProcess:=false;
     end;
 
     WM_ACT_SAVE: begin
@@ -719,8 +725,9 @@ begin
 
     WM_COMMAND: begin
       case wParam shr 16 of
-        EN_CHANGE: begin
-        end;
+        EN_CHANGE: if not NoProcess then
+            SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
+
         CBN_SELCHANGE:  begin
           case loword(wParam) of
             IDC_SRV_RESULT: begin
@@ -770,6 +777,7 @@ begin
 
             IDC_EDIT_SERVICE: ReloadService(Dialog);
           end;
+          SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
         end;
 
         BN_CLICKED: begin
@@ -784,6 +792,8 @@ begin
                 SetWindowLongPtrW(GetDlgItem(Dialog,loword(wParam)),GWLP_USERDATA,long_ptr(pc1));
               end;
             end;
+          else
+            SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
           end;
         end;
 
