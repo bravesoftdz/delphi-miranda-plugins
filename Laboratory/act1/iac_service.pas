@@ -39,6 +39,23 @@ const
   opt_service  = 'service';
   opt_wparam   = 'wparam';
   opt_lparam   = 'lparam';
+const
+  ioService   = 'service';
+  ioType      = 'type';
+  ioResult    = 'result';
+  ioCurrent   = 'current';
+  ioParam     = 'param';
+  ioStruct    = 'struct';
+  ioValue     = 'value';
+  ioNumber    = 'number';
+  ioUnicode   = 'unicode';
+  ioVariables = 'variables';
+  ioWParam    = 'WPARAM';
+  ioLParam    = 'LPARAM';
+  ioOutput    = 'OUTPUT';
+  ioFree      = 'free';
+  ioAnsi      = 'ansi';
+  ioInt       = 'int';
 
 type
   tServiceAction = class(tBaseAction)
@@ -276,10 +293,41 @@ begin
   end;
 end;
 
+function ReadParam(act:HXML; var param:pWideChar;isvar:boolean):dword;
+var
+  tmp:pWideChar;
+begin
+  result:=0;
+  if act=0 then
+    exit;
+  with xmlparser do
+  begin
+    tmp:=getAttrValue(act,ioType);
+    if      lstrcmpiw(tmp,ioCurrent)=0 then result:=result or ACF_CURRENT
+    else if lstrcmpiw(tmp,ioResult )=0 then result:=result or ACF_RESULT
+    else if lstrcmpiw(tmp,ioParam  )=0 then result:=result or ACF_PARAM
+    else if lstrcmpiw(tmp,ioStruct )=0 then
+    begin
+      result:=result or ACF_STRUCT;
+//!!!!      param:=ReadStruct(act);
+    end
+    else
+    begin
+      StrDupW(pWideChar(param),getAttrValue(act,ioValue));
+
+      if      lstrcmpiw(tmp,ioNumber )=0 then result:=result or ACF_PARNUM
+      else if lstrcmpiw(tmp,ioUnicode)=0 then result:=result or ACF_UNICODE;
+//      else if lstrcmpiw(tmp,ioAnsi)=0 then;
+    end;
+  end;
+end;
+
 procedure tServiceAction.Load(node:pointer;fmt:integer);
 var
   section: array [0..127] of AnsiChar;
   pc:pAnsiChar;
+  sub:HXML;
+  tmp:pWideChar;
 begin
   inherited Load(node,fmt);
 
@@ -292,10 +340,36 @@ begin
       StrCopy(pc,opt_wparam); LoadParam(section,flags ,pointer(wparam));
       StrCopy(pc,opt_lparam); LoadParam(section,flags2,pointer(lparam));
     end;
-{
+
     1: begin
+      with xmlparser do
+      begin
+        FastWideToAnsi(getAttrValue(HXML(node),ioService),service);
+//!!!!        StrDupW(service,getAttrValue(HXML(node),ioService));
+        if StrToInt(getAttrValue(HXML(node),ioVariables))=1 then
+          flags:=flags or ACF_SCRIPT_SERVICE;
+
+        sub:=getNthChild(HXML(node),ioWParam,0);
+        if StrToInt(getAttrValue(sub,ioVariables))=1 then
+          flags:=flags or ACF_SCRIPT_PARAM;
+        flags:=flags or ReadParam(sub,wparam,(flags and ACF_SCRIPT_PARAM)<>0);
+
+        sub:=getNthChild(HXML(node),ioLParam,0);
+        if StrToInt(getAttrValue(sub,ioVariables))=1 then
+          flags2:=flags2 or ACF_SCRIPT_PARAM;
+        flags2:=flags2 or ReadParam(sub,lparam,(flags2 and ACF_SCRIPT_PARAM)<>0);
+
+        sub:=getNthChild(HXML(node),ioOutput,0);
+        if StrToInt(getAttrValue(sub,ioFree))=1 then flags:=flags or ACF_RFREEMEM;
+
+        tmp:=getAttrValue(sub,ioType);
+        if      lstrcmpiw(tmp,ioUnicode)=0 then flags:=flags or ACF_RUNICODE
+        else if lstrcmpiw(tmp,ioAnsi   )=0 then flags:=flags or ACF_RSTRING
+        else if lstrcmpiw(tmp,ioStruct )=0 then flags:=flags or ACF_RSTRUCT
+        else if lstrcmpiw(tmp,ioInt    )=0 then ;
+      end;
     end;
-}
+
   end;
 end;
 

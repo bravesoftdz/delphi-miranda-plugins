@@ -109,6 +109,9 @@ begin
         p^:=#0;
         // call proper constructor
         actm:=GetLink(uid);
+        if actm=nil then
+          continue;
+
         action:=actm.Create;
         // call proper loader
         action.Load(section,0);

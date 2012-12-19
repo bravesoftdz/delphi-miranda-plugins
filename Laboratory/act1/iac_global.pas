@@ -2,7 +2,10 @@ unit iac_global;
 
 interface
 
-uses windows, messages;
+uses windows, messages,m_api;
+
+var
+  xmlparser:XML_API_W;
 
 const
   IcoLibPrefix = 'action_type_';
@@ -85,11 +88,18 @@ function GetResultNumber(var WorkData:tWorkData):uint_ptr;
 procedure InsertString(wnd:HWND;num:dword;str:PAnsiChar);
 
 function GetLink(hash:dword):pActModule;
+function GetLinkByName(name:pAnsiChar):pActModule;
+
+function ImportContact(node:HXML):THANDLE;
 
 implementation
 
-uses Common, m_api, global, dbsettings;
 
+uses Common, global, dbsettings, base64, mirutils;
+
+const
+  ioDisabled = 'disabled';
+  ioName     = 'name';
 const
   opt_uid   = 'uid';
   opt_descr = 'descr';
@@ -144,10 +154,16 @@ begin
       StrCopy(pc,opt_flags); flags      :=DBReadDword  (0,DBBranch,section);
       // UID reading in main program, set by constructor
     end;
-{
+
     1: begin
+      with xmlparser do
+      begin
+        if StrToInt(getAttrValue(HXML(node),ioDisabled))=1 then
+          flags:=flags or ACF_DISABLED;
+
+        StrDupW(ActionDescr,getAttrValue(HXML(node),ioName));
+      end;
     end;
-}
   end;
 end;
 
@@ -219,6 +235,67 @@ begin
   result:=ModuleLink;
   while (result<>nil) and (result.Hash<>hash) do
     result:=result^.Next;
+end;
+
+function GetLinkByName(name:pAnsiChar):pActModule;
+begin
+  result:=ModuleLink;
+  while (result<>nil) and (StrCmp(result.Name,name)<>0) do
+    result:=result^.Next;
+end;
+
+const
+  ioCProto   = 'cproto';
+  ioIsChat   = 'ischat';
+  ioCUID     = 'cuid';
+  ioCUIDType = 'cuidtype';
+
+function ImportContact(node:HXML):THANDLE;
+var
+  proto:pAnsiChar;
+  tmpbuf:array [0..63] of AnsiChar;
+  dbv:TDBVARIANT;
+  is_chat:boolean;
+begin
+  with xmlparser do
+  begin
+    proto:=FastWideToAnsiBuf(getAttrValue(node,ioCProto),tmpbuf);
+    if (proto=nil) or (proto^=#0) then
+    begin
+      result:=0;
+      exit;
+    end;
+    is_chat:=StrToInt(getAttrValue(node,ioIsChat))<>0;
+
+    if is_chat then
+    begin
+      dbv.szVal.W:=getAttrValue(node,ioCUID);
+    end
+    else
+    begin
+      FillChar(dbv,SizeOf(TDBVARIANT),0);
+      dbv._type:=StrToInt(getAttrValue(node,ioCUIDType));
+      case dbv._type of
+        DBVT_BYTE  : dbv.bVal:=StrToInt(getAttrValue(node,ioCUID));
+        DBVT_WORD  : dbv.wVal:=StrToInt(getAttrValue(node,ioCUID));
+        DBVT_DWORD : dbv.dVal:=StrToInt(getAttrValue(node,ioCUID));
+        DBVT_ASCIIZ: FastWideToAnsi(getAttrValue(node,ioCUID),dbv.szVal.A);
+        DBVT_UTF8  : WideToUTF8(getAttrValue(node,ioCUID),dbv.szVal.A);
+        DBVT_WCHAR : StrDupW(dbv.szVal.W,getAttrValue(node,ioCUID));
+        DBVT_BLOB  : begin
+          Base64Decode(FastWideToAnsi(getAttrValue(node,ioCUID),pAnsiChar(dbv.pbVal)),dbv.pbVal);
+        end;
+      end;
+    end;
+  end;
+  result:=FindContactHandle(proto,dbv,is_chat);
+  if not is_chat then
+    case dbv._type of
+      DBVT_WCHAR,
+      DBVT_ASCIIZ,
+      DBVT_UTF8  : mFreeMem(dbv.szVal.A);
+      DBVT_BLOB  : mFreeMem(dbv.pbVal);
+    end;
 end;
 
 end.

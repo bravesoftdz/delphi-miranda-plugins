@@ -1026,19 +1026,28 @@ begin
               end;
             end;
 }
-{
             IDC_GROUP_IMPORT: begin
               if ShowDlgW(xmlfilename,xmlfilename,inoutfilter) then
               begin
-                if CallService(MS_ACT_INOUT,0,TLPARAM(@xmlfilename))<>0 then
+                // "save" selected macro (in edit list only)
+                BuildActionChain(Dialog,li.iItem);
+
+                if Import(xmlfilename,0)<>0 then
+//                if CallService(MS_ACT_INOUT,0,TLPARAM(@xmlfilename))<>0 then
                 begin
-                  SendMessage(Dialog,WM_COMMAND,IDC_GROUP_RELOAD+(BN_CLICKED shl 16),
-                    GetDlgItem(Dialog,IDC_GROUP_RELOAD));
-//(in reload)       FillChainList(Dialog);
+                  // copy from WM_INITDIALOG
+                  FillMacroList(Dialog);
+                  ChangeListNotify(1);
+
+                  // fill current group
+                  FillActionList(Dialog,pMacroRecord(EditMacroList));
+                  ChangeListNotify(2);
+
+                  CheckMacroListDirectionButtons(Dialog);
                 end;
               end;
             end;
-}
+
             IDC_GROUP_TEST: begin
               li.mask    :=LVIF_PARAM;
               li.iSubItem:=0;
@@ -1051,13 +1060,7 @@ begin
 
               ActionStarter(@(EditMacroList[li.lParam]),nil,ACTP_SAMETHREAD or ACTP_WAIT);
             end;
-{
-            IDC_GROUP_RELOAD: begin
-//              EventMask:=EventMask or ACTM_RELOAD;
-              SetCancel;
-              SetStart; //!!
-            end;
-}
+
             IDC_GROUP_NEW: begin
               if AddMacro(Dialog,NewMacro(EditMacroList,EditMacroCount))>=0 then
               begin
