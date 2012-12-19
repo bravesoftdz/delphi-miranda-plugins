@@ -55,6 +55,7 @@ uses
   iac_program,
   iac_chain,
   iac_contact,
+  inoutxml,
   sedit,
   strans;
 //  ua in 'ua\ua.pas',

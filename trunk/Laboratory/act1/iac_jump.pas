@@ -17,6 +17,8 @@ const // condition code
   aeGT  = 1;
   aeLT  = 2;
   aeEQ  = 3;
+  aeXR  = 4;
+  aeND  = 5;
 
   aeEMP = 1;
   aeEQU = 2;
@@ -27,6 +29,16 @@ const
   opt_value     = 'value';
   opt_condition = 'condition';
   opt_label     = 'label';
+const
+  ioIf    = 'IF';
+  ioCond  = 'cond';
+  ioNop   = 'nop';
+  ioNot   = 'not';
+  ioValue = 'value';
+  ioOper  = 'oper';
+  ioBreak = 'break';
+  ioJump  = 'jump';
+  ioPost  = 'POST';
 const
   ACF_NOP   = $00000001;
   ACF_MATH  = $00000002;
@@ -121,6 +133,8 @@ begin
         aeGT: res:=vnum>tmpint;
         aeLT: res:=vnum<tmpint;
         aeEQ: res:=vnum=tmpint;
+        aeXR: res:=(vnum xor tmpint)<>0;
+        aeND: res:=(vnum and tmpint)<>0;
       end;
 
     end
@@ -201,6 +215,8 @@ procedure tJumpAction.Load(node:pointer;fmt:integer);
 var
   section: array [0..127] of AnsiChar;
   pc:pAnsiChar;
+  tmp:pWideChar;
+  sub:HXML;
 begin
   inherited Load(node,fmt);
   case fmt of
@@ -216,10 +232,35 @@ begin
         StrCopy(pc,opt_label); actlabel:=DBReadUnicode(0,DBBranch,section,nil);
       end;
     end;
-{
+
     1: begin
+      with xmlparser do
+      begin
+        sub:=getNthChild(HXML(node),ioIf,0);
+        if sub<>0 then
+        begin
+          tmp:=getAttrValue(sub,ioCond);
+          if      lstrcmpiw(tmp,'gt' )=0 then condition:=aeGT
+          else if lstrcmpiw(tmp,'lt' )=0 then condition:=aeLT
+          else if lstrcmpiw(tmp,'eq' )=0 then condition:=aeEQ
+          else if lstrcmpiw(tmp,ioNop)=0 then flags:=flags or ACF_NOP;
+
+          if StrToInt(getAttrValue(sub,ioNot))=1 then
+            flags:=flags or ACF_NOT;
+
+          StrDupW(value,getAttrValue(sub,ioValue));
+        end;
+
+        sub:=getNthChild(HXML(node),ioPost,0);
+        if sub<>0 then
+        begin
+          tmp:=getAttrValue(sub,ioOper);
+          if      lstrcmpiw(tmp,ioBreak)=0 then flags:=flags or ACF_BREAK
+          else if lstrcmpiw(tmp,ioJump )=0 then StrDupW(actlabel,getAttrValue(sub,ioValue));
+        end;
+      end;
     end;
-}
+
   end;
 end;
 
@@ -262,6 +303,8 @@ begin
   InsertString(wnd,cardinal(aeGT),'> greater');
   InsertString(wnd,cardinal(aeLT),'> lesser');
   InsertString(wnd,cardinal(aeEQ),'= equ');
+  InsertString(wnd,cardinal(aeXR),'^ xor');
+  InsertString(wnd,cardinal(aeND),'& and');
 
   SendMessage(wnd,CB_SETCURSEL,0,0);
 end;

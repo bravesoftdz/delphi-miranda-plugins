@@ -11,6 +11,9 @@ const
   ACF_VOLATILE = $04000000;  // don't save in DB
   ACF_ASSIGNED = $80000000;  // action assigned
 
+  ACF_IMPORT   = $08000000;
+  ACF_OVERLOAD = $01000000;
+
 type
   pActionList = ^tActionList;
   tActionList = array [0..1023] of tBaseAction;
@@ -51,7 +54,7 @@ function NewMacro(var aMacroList:pMacroList;var MaxMacro:cardinal):cardinal;
 var
   MacroList:pMacroList;
 const
-  MacroCount:integer=0;
+  MacroCount:cardinal=0;
 
 implementation
 

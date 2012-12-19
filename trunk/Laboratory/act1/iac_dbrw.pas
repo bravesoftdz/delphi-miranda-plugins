@@ -18,6 +18,25 @@ const
   opt_module  = 'module';
   opt_setting = 'setting';
   opt_value   = 'value';
+const
+  ioOper         = 'oper';
+  ioDelete       = 'delete';
+  ioWrite        = 'write';
+  ioCurrent      = 'current';
+  ioParam        = 'param';
+  ioResult       = 'result';
+  ioModule       = 'module';
+  ioSetting      = 'setting';
+  ioContact      = 'contact';
+  ioFileVariable = 'modvariables';
+  ioArgVariable  = 'argvariables';
+  ioVariables    = 'variables';
+  ioType         = 'type';
+  ioByte         = 'byte';
+  ioWord         = 'word';
+  ioDword        = 'dword';
+  ioAnsi         = 'ansi';
+  ioLast         = 'last';
 
 const
   ACF_DBWRITE   = $00000001; // write to (not read from) DB 
@@ -262,6 +281,7 @@ procedure tDataBaseAction.Load(node:pointer;fmt:integer);
 var
   section: array [0..127] of AnsiChar;
   pc:pAnsiChar;
+  tmp:pWideChar;
 begin
   inherited Load(node,fmt);
   case fmt of
@@ -277,10 +297,44 @@ begin
         StrCopy(pc,opt_value); dbvalue:=DBReadUnicode(0,DBBranch,section);
       end;
     end;
-{
+
     1: begin
+      with xmlparser do
+      begin
+        tmp:=getAttrValue(HXML(node),ioOper);
+        if      lstrcmpiw(tmp,ioDelete)=0 then flags:=flags or ACF_DBDELETE
+        else if lstrcmpiw(tmp,ioWrite )=0 then flags:=flags or ACF_DBWRITE;
+  //      else if lstrcmpiw(tmp,ioRead)=0 then ;
+        tmp:=getAttrValue(HXML(node),ioContact);
+        if      lstrcmpiw(tmp,ioCurrent)=0 then flags:=flags or ACF_CURRENT
+        else if lstrcmpiw(tmp,ioResult )=0 then flags:=flags or ACF_RESULT
+        else if lstrcmpiw(tmp,ioParam  )=0 then flags:=flags or ACF_PARAM
+        else if lstrcmpiw(tmp,ioContact)=0 then
+        begin
+          dbcontact:=ImportContact(HXML(node));
+        end;
+
+        StrDupW(dbmodule ,getAttrValue(HXML(node),ioModule));
+        StrDupW(dbsetting,getAttrValue(HXML(node),ioSetting));
+
+        if StrToInt(getAttrValue(HXML(node),ioFileVariable))=1 then flags:=flags or ACF_RW_MODULE;
+        if StrToInt(getAttrValue(HXML(node),ioArgVariable ))=1 then flags:=flags or ACF_RW_SETTING;
+        if StrToInt(getAttrValue(HXML(node),ioVariables   ))=1 then flags:=flags or ACF_RW_VALUE;
+	
+        tmp:=getAttrValue(HXML(node),ioType);
+        if      lstrcmpiw(tmp,ioByte )=0 then flags:=flags or ACF_DBBYTE
+        else if lstrcmpiw(tmp,ioWord )=0 then flags:=flags or ACF_DBWORD
+        else if lstrcmpiw(tmp,ioDword)=0 then
+        else if lstrcmpiw(tmp,ioAnsi )=0 then flags:=flags or ACF_DBANSI
+        else                                  flags:=flags or ACF_DBUTEXT;
+
+        if StrToInt(getAttrValue(HXML(node),ioLast))=1 then
+          flags:=flags or ACF_LAST
+        else
+          StrDupW(dbvalue,getText(HXML(node)));
+      end;
     end;
-}
+
   end;
 end;
 

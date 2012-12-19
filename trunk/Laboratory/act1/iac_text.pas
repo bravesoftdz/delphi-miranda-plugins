@@ -305,10 +305,13 @@ begin
 
       StrCopy(pc,opt_text); text:=DBReadUnicode(0,DBBranch,section,nil);
     end;
-{
+
     1: begin
+      with xmlparser do
+      begin
+        StrDupW(text,getText(HXML(node)));
+      end;
     end;
-}
   end;
 end;
 

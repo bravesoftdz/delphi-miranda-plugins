@@ -21,7 +21,11 @@ const
   opt_msgtitle = 'msgtitle';
   opt_msgtext  = 'msgtext';
   opt_boxopts  = 'boxopts';
-
+const
+  ioTitle       = 'title';
+  ioType        = 'type';
+  ioArgVariable = 'argvariables';
+  ioVariables   = 'variables';
 type
   tMessageAction = class(tBaseAction)
     msgtitle:pWideChar;
@@ -139,10 +143,19 @@ begin
       StrCopy(pc,opt_msgtext ); msgtext :=DBReadUnicode(0,DBBranch,section);
       StrCopy(pc,opt_boxopts ); boxopts :=DBReadDword  (0,DBBranch,section);
     end;
-{
+
     1: begin
+      with xmlparser do
+      begin
+        StrDupW(msgtitle,getAttrValue(HXML(node),ioTitle));
+        StrDupW(msgtext,getText(HXML(node)));
+        boxopts:=StrToInt(getAttrValue(HXML(node),ioType));
+
+        if StrToInt(getAttrValue(HXML(node),ioArgVariable))=1 then flags:=flags or ACF_MSG_TXT;
+        if StrToInt(getAttrValue(HXML(node),ioVariables  ))=1 then flags:=flags or ACF_MSG_TTL;
+      end;
     end;
-}
+
   end;
 end;
 

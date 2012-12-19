@@ -17,6 +17,10 @@ const
   ACF_KEEPONLY  = $00000001; // keep contact handle in Last, don't show window
   ACF_GETACTIVE = $00000002; // try to get contact from active window
 
+const
+  ioKeepOnly = 'keeponly';
+  ioWindow   = 'window';
+
 type
   tContactAction = class(tBaseAction)
     contact:THANDLE;
@@ -77,18 +81,18 @@ begin
   case fmt of
     0: if (flags and ACF_GETACTIVE)=0 then
       contact:=LoadContact(DBBranch,node);
-{
+
     1: begin
-      if StrCmpW(tmp,ioContactWindow)=0 then
+      with xmlparser do
       begin
-        actionType:=ACT_CONTACT;
-        contact:=ImportContact(actnode);
-  //      contact:=StrToInt(getAttrValue(actnode,ioNumber));
-        if StrToInt(getAttrValue(actnode,ioKeepOnly))=1 then
+        contact:=ImportContact(HXML(node));
+        if StrToInt(getAttrValue(HXML(node),ioKeepOnly))=1 then
           flags:=flags or ACF_KEEPONLY;
-      end
+        if StrToInt(getAttrValue(HXML(node),ioWindow))=1 then
+          flags:=flags or ACF_GETACTIVE;
+      end;
     end;
-}
+
   end;
 end;
 

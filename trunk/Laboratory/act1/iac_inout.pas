@@ -17,6 +17,16 @@ uses
 const
   opt_file = 'file';
 const
+  ioObject       = 'object';
+  ioClipboard    = 'clipboard';
+  ioOper         = 'oper';
+  ioCopy         = 'copy';
+  ioFile         = 'file';
+  ioFileVariable = 'modvariables';
+  ioWrite        = 'write';
+  ioAppend       = 'append';
+  ioEnc          = 'enc';
+const
   ACF_CLIPBRD   = $00000002; // Clipboard operations, not window
   ACF_ANSI      = $00000004; // File: ANSI or Unicode (UTF8/UTF16) text
   ACF_COPYTO    = $00000008; // Clipboard operations: 'copy to' or 'paste from'
@@ -290,6 +300,7 @@ procedure tInOutAction.Load(node:pointer;fmt:integer);
 var
   section: array [0..127] of AnsiChar;
   pc:pAnsiChar;
+  tmp:pWideChar;
 begin
   inherited Load(node,fmt);
   case fmt of
@@ -300,10 +311,42 @@ begin
         StrCopy(pc,opt_file); tfile:=DBReadUnicode(0,DBBranch,section,nil);
       end;
     end;
-{
+
     1: begin
+      with xmlparser do
+      begin
+        tmp:=getAttrValue(HXML(node),ioObject);
+        if lstrcmpiw(tmp,ioClipboard)=0 then
+        begin
+          flags:=flags or ACF_CLIPBRD;
+          tmp:=getAttrValue(HXML(node),ioOper);
+          if lstrcmpiw(tmp,ioCopy)=0 then flags:=flags or ACF_COPYTO;
+  //        else if lstrcmpiw(tmp,'paste')=0 then ;
+        end
+        else
+        begin
+          if lstrcmpiw(tmp,ioFile)=0 then
+          begin
+
+            if StrToInt(getAttrValue(HXML(node),ioFileVariable))=1 then
+              flags:=flags or ACF_FILE_PATH;
+
+            flags:=flags or ACF_FILE;
+            StrDupW(tfile,getAttrValue(HXML(node),ioFile));
+            tmp:=getAttrValue(HXML(node),ioOper);
+            if      lstrcmpiw(tmp,ioWrite )=0 then flags:=flags or ACF_FWRITE
+            else if lstrcmpiw(tmp,ioAppend)=0 then flags:=flags or ACF_FAPPEND;
+            case StrToInt(getAttrValue(HXML(node),ioEnc)) of
+              0: flags:=flags or ACF_ANSI;
+              1: flags:=flags or ACF_UTF8;
+              2: flags:=flags or ACF_UTF8 or ACF_SIGN;
+              3: flags:=flags or 0;
+              4: flags:=flags or ACF_SIGN;
+            end;
+          end;
+        end;
+      end;
     end;
-}
   end;
 end;
 

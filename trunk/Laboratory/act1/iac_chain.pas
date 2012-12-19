@@ -17,7 +17,9 @@ const
   ACF_BYNAME  = $00000001; // Address action link by name, not Id
   ACF_NOWAIT  = $00000002; // Don't wait execution result, continue
   ACF_KEEPOLD = $00000004; // Don't change LastResult value
-
+const
+  ioNoWait  = 'nowait';
+  ioKeepOld = 'keepold';
 const
   opt_chain = 'chain';
 //  opt_actname = 'actname';
@@ -104,10 +106,21 @@ begin
       StrCopy(pc,opt_chain); id:=DBReadDWord(0,DBBranch,section);
 //      StrCopy(pc,opt_actname); actname:=DBReadUnicode(0,DBBranch,section);
     end;
-{
+
     1: begin
+      with xmlparser do
+      begin
+        StrDupW(actname,getText(HXML(node)));
+        flags:=flags or ACF_BYNAME;
+
+        if StrToInt(getAttrValue(HXML(node),ioNoWait))=1 then
+          flags:=flags or ACF_NOWAIT;
+
+        if StrToInt(getAttrValue(HXML(node),ioKeepOld))=1 then
+          flags:=flags or ACF_KEEPOLD;
+      end;
     end;
-}
+
   end;
 end;
 
