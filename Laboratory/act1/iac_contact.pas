@@ -23,8 +23,9 @@ const
 
 type
   tContactAction = class(tBaseAction)
+  private
     contact:THANDLE;
-
+  public
     constructor Create(uid:dword);
 //    function  Clone:tBaseAction; override;
     function  DoAction(var WorkData:tWorkData):LRESULT; override;

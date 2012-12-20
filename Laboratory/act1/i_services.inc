@@ -2,7 +2,11 @@
 
 function ActSelect(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 begin
-  result:=int_ptr(GetMacro(lParam,(wParam and ACCF_ID)<>0));
+  if (wParam and ACCF_ID)<>0 then
+    result:=int_ptr(MacroList.GetMacro(lParam))
+  else
+    result:=int_ptr(MacroList.GetMacro(pWideChar(lParam)));
+
   if result<>0 then
     with pMacroRecord(result)^ do
     begin
@@ -25,9 +29,9 @@ var
   p:pMacroRecord;
   i,cnt:integer;
 begin
-  p:=pMacroRecord(MacroList);
+  p:=MacroList[0];
   cnt:=0;
-  for i:=0 to MacroCount-1 do
+  for i:=0 to MacroList.Count-1 do
   begin
     if (p^.flags and (ACF_ASSIGNED or ACCF_VOLATILE))=ACF_ASSIGNED then inc(cnt);
     inc(p);
@@ -41,8 +45,8 @@ begin
     pdword(pc)^:=SizeOf(tChain);
     inc(PByte(pc),4);
 
-    p:=pMacroRecord(MacroList);
-    for i:=0 to MacroCount-1 do
+    p:=MacroList[0];
+    for i:=0 to MacroList.Count-1 do
     begin
       if (p^.flags and (ACF_ASSIGNED or ACCF_VOLATILE))=ACF_ASSIGNED then
       begin
@@ -207,7 +211,7 @@ var
   w:tWorkData;
 begin
   result:=-1;
-  p:=GetMacro(wParam,true);
+  p:=MacroList.GetMacro(wParam);
   if p<>nil then
   begin
     FillChar(w,SizeOf(w),0);
@@ -223,7 +227,7 @@ var
   w:tWorkData;
 begin
   result:=-1;
-  p:=GetMacro(wParam,false);
+  p:=MacroList.GetMacro(pWideChar(wParam));
   if p<>nil then
   begin
     FillChar(w,SizeOf(w),0);
@@ -239,7 +243,10 @@ var
   w:tWorkData;
 begin
   result:=-1;
-  p:=GetMacro(pAct_Param(lParam)^.Id,(pAct_Param(lParam)^.flags and ACTP_BYNAME)=0);
+  if (pAct_Param(lParam)^.flags and ACTP_BYNAME)=0 then
+    p:=MacroList.GetMacro(pAct_Param(lParam)^.Id)
+  else
+    p:=MacroList.GetMacro(pWideChar(pAct_Param(lParam)^.Id));
 
   if p<>nil then
   begin
@@ -248,5 +255,11 @@ begin
     w.LastResult:=pAct_Param(lParam)^.lParam;
     w.ResultType:=pAct_Param(lParam)^.lPType;
     result:=ActionStarter(p,@w,pAct_Param(lParam)^.flags);
+    if (pAct_Param(lParam)^.flags and (ACTP_KEEPRESULT or ACTP_SAMETHREAD))=
+        (ACTP_KEEPRESULT or ACTP_SAMETHREAD) then
+    begin
+      pAct_Param(lParam)^.lParam:=w.LastResult;
+      pAct_Param(lParam)^.lPType:=w.ResultType;
+    end;
   end;
 end;

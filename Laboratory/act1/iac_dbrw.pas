@@ -65,11 +65,12 @@ const
 
 type
   tDataBaseAction = class(tBaseAction)
+  private
     dbcontact:THANDLE;
     dbmodule :PWideChar;
     dbsetting:PWideChar;
     dbvalue  :PWideChar; // keep all in unicode (str to int translation fast)
-
+  public
     constructor Create(uid:dword);
     destructor Destroy; override;
 //    function  Clone:tBaseAction; override;
@@ -379,14 +380,6 @@ end;
 
 procedure ClearFields(Dialog:HWND);
 begin
-
-  SetDlgItemTextW(Dialog,IDC_RW_MODULE ,nil);
-  SetDlgItemTextW(Dialog,IDC_RW_SETTING,nil);
-  SetDlgItemTextW(Dialog,IDC_RW_VALUE  ,nil);
-  SetEditFlags(Dialog,IDC_RW_MODULE ,EF_ALL,0);
-  SetEditFlags(Dialog,IDC_RW_SETTING,EF_ALL,0);
-  SetEditFlags(Dialog,IDC_RW_VALUE  ,EF_ALL,0);
-
   CheckDlgButton(Dialog,IDC_RW_LAST,BST_UNCHECKED);
 
   CheckDlgButton(Dialog,IDC_RW_CURRENT,BST_UNCHECKED);
@@ -489,6 +482,13 @@ begin
       NoProcess:=true;
       ClearFields(Dialog);
 
+      SetDlgItemTextW(Dialog,IDC_RW_MODULE ,nil);
+      SetDlgItemTextW(Dialog,IDC_RW_SETTING,nil);
+      SetDlgItemTextW(Dialog,IDC_RW_VALUE  ,nil);
+      SetEditFlags(Dialog,IDC_RW_MODULE ,EF_ALL,0);
+      SetEditFlags(Dialog,IDC_RW_SETTING,EF_ALL,0);
+      SetEditFlags(Dialog,IDC_RW_VALUE  ,EF_ALL,0);
+
       CB_SelectData(GetDlgItem(Dialog,IDC_RW_DATATYPE),0);
       CheckDlgButton(Dialog,IDC_RW_READ  ,BST_CHECKED);
       CheckDlgButton(Dialog,IDC_RW_MANUAL,BST_CHECKED);
@@ -501,7 +501,6 @@ begin
     WM_ACT_SAVE: begin
       with tDataBaseAction(lParam) do
       begin
-        flags:=0;
         // contact
         if      IsDlgButtonChecked(Dialog,IDC_RW_CURRENT)=BST_CHECKED then flags:=flags or ACF_CURRENT
         else if IsDlgButtonChecked(Dialog,IDC_RW_RESULT )=BST_CHECKED then flags:=flags or ACF_RESULT

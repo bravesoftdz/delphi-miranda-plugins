@@ -1,26 +1,3 @@
-  procedure FreeMacro(Macro:pMacroRecord;mask:dword=0);
-
-tMacroList = class
-  MacroList:pMacroList;
-  MacroCount:cardinal;
-
-  // allocate (main) macro list
-//  function CreateMacroList(var ML:pMacroList;isize:cardinal):integer;
-  constructor Create(isize:cardinal);
-  destructor Destroy; override; // FreeMacroList;
-
-  // clone one macro list to other (for editing)
-//  function CloneMacroList(srclist:pMacroList;count:integer;var dstlist:pMacroList):integer;
-  function Clone(var dstlist:pMacroList):integer;
-  // new macro record in custom list
-  function NewMacro(var aMacroList:pMacroList;var MaxMacro:cardinal):cardinal;
-private
-  // clone just assigned values (for editing)
-  procedure CloneMacro(var dst,src:pMacroRecord);
-  // reallocate custom macro list
-  procedure ReallocMacroList(var aMacroList:pMacroList;var MaxMacro:cardinal);
-end;
-
 -------------
 volatile должны сохраняться в EditMacroList чтоб существовать до конца сессии...
 сейчас volatile добавляется в editmacrolist при заполнении списка
@@ -28,6 +5,7 @@ volatile должны сохраняться в EditMacroList чтоб существовать до конца сессии...
 -------------
 Сервис - имя сервиса + структура (строка?)
 Chain - импорт по имени, сохранение по id - проверить!
+сэйв корня идёт ДО чайна, значит, флаг не заменить...
 -------------
 ПОМНИТЬ!!! хранить в списке индекс, т.к. при изменении размера списка адреса поменяются!!!
 -------------

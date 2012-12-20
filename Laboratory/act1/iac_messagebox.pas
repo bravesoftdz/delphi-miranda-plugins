@@ -28,10 +28,11 @@ const
   ioVariables   = 'variables';
 type
   tMessageAction = class(tBaseAction)
+  private
     msgtitle:pWideChar;
     msgtext :pWideChar;
     boxopts :uint;
-
+  public
     constructor Create(uid:dword);
     destructor Destroy; override;
 //    function  Clone:tBaseAction; override;
@@ -203,11 +204,6 @@ end;
 
 procedure ClearFields(Dialog:HWND);
 begin
-  SetDlgItemTextW(Dialog,IDC_MSG_TITLE,nil);
-  SetDlgItemTextW(Dialog,IDC_MSG_TEXT ,nil);
-  SetEditFlags(Dialog,IDC_MSG_TITLE,EF_ALL,0);
-  SetEditFlags(Dialog,IDC_MSG_TITLE,EF_ALL,0);
-
   CheckDlgButton(Dialog,IDC_MSG_RTL  ,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_MSG_RIGHT,BST_UNCHECKED);
 
@@ -281,6 +277,11 @@ begin
       NoProcess:=true;
       ClearFields(Dialog);
 
+      SetDlgItemTextW(Dialog,IDC_MSG_TITLE,nil);
+      SetDlgItemTextW(Dialog,IDC_MSG_TEXT ,nil);
+      SetEditFlags(Dialog,IDC_MSG_TITLE,EF_ALL,0);
+      SetEditFlags(Dialog,IDC_MSG_TEXT ,EF_ALL,0);
+
       CheckDlgButton(Dialog,IDC_MSGB_OK  ,BST_CHECKED);
       CheckDlgButton(Dialog,IDC_MSGI_NONE,BST_CHECKED);
       NoProcess:=false;
@@ -292,12 +293,8 @@ begin
         {mFreeMem(msgtitle); }msgtitle:=GetDlgText(Dialog,IDC_MSG_TITLE);
         {mFreeMem(msgtext ); }msgtext :=GetDlgText(Dialog,IDC_MSG_TEXT);
 
-        flags:=0;
-
         if (GetEditFlags(Dialog,IDC_MSG_TITLE) and EF_SCRIPT)<>0 then flags:=flags or ACF_MSG_TTL;
         if (GetEditFlags(Dialog,IDC_MSG_TEXT ) and EF_SCRIPT)<>0 then flags:=flags or ACF_MSG_TXT;
-
-        boxopts:=0;
 
         if IsDlgButtonChecked(Dialog,IDC_MSG_RTL  )=BST_CHECKED then boxopts:=boxopts or MB_RTLREADING;
         if IsDlgButtonChecked(Dialog,IDC_MSG_RIGHT)=BST_CHECKED then boxopts:=boxopts or MB_RIGHT;

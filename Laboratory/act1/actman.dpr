@@ -42,7 +42,7 @@ uses
   question,
   mApiCardM,
   global,
-  lowlevel,
+  lowlevelc,
   dlgshare,
   iac_settings,
   iac_global,
@@ -113,7 +113,8 @@ begin
     ptr:=ptr^.Next;
   end;
 
-  FreeMacroList;
+  MacroList.Clear;
+  MacroList.Free;
 
   UnhookEvent(hHookShutdown);
   UnhookEvent(opthook);
@@ -215,10 +216,10 @@ begin
   onloadhook:=HookEvent(ME_SYSTEM_MODULESLOADED,@DoAutostart);
 end;
 
-function Load():int; cdecl;
+function Load:int; cdecl;
 begin
   Result:=0;
-  Langpack_register;
+  Langpack_Register;
 
   hHookChanged:=CreateHookableEvent(ME_ACT_CHANGED);
   hevinout    :=CreateHookableEvent(ME_ACT_INOUT);

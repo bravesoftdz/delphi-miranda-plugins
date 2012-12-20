@@ -37,11 +37,12 @@ const
   ioMaximized    = 'maximized';
 type
   tProgramAction = class(tBaseAction)
+  private
     prgname:pWideChar;
     args   :pWideChar;
     show   :dword;
     time   :dword;
-
+  public
     constructor Create(uid:dword);
     destructor Destroy; override;
 //    function  Clone:tBaseAction; override;
@@ -281,12 +282,6 @@ end;
 
 procedure ClearFields(Dialog:HWND);
 begin
-  SetDlgItemTextW(Dialog,IDC_EDIT_PROCTIME,nil);
-  SetDlgItemTextW(Dialog,IDC_EDIT_PRGPATH,nil);
-  SetDlgItemTextW(Dialog,IDC_EDIT_PRGARGS,nil);
-  SetEditFlags(Dialog,IDC_EDIT_PRGPATH,EF_ALL,0);
-  SetEditFlags(Dialog,IDC_EDIT_PRGARGS,EF_ALL,0);
-
   CheckDlgButton(Dialog,IDC_FLAG_NORMAL,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_FLAG_HIDDEN,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_FLAG_MINIMIZE,BST_UNCHECKED);
@@ -338,7 +333,7 @@ begin
         SetEditFlags(Dialog,IDC_EDIT_PRGPATH,EF_SCRIPT,ord((flags and ACF_PRG_PRG)<>0));
         SetEditFlags(Dialog,IDC_EDIT_PRGARGS,EF_SCRIPT,ord((flags and ACF_PRG_ARG)<>0));
 
-        SetDlgItemInt  (Dialog,IDC_EDIT_PROCTIME,time,false);
+        SetDlgItemInt(Dialog,IDC_EDIT_PROCTIME,time,false);
         case show of
           SW_HIDE         : CheckDlgButton(Dialog,IDC_FLAG_HIDDEN,BST_CHECKED);
           SW_SHOWMINIMIZED: CheckDlgButton(Dialog,IDC_FLAG_MINIMIZE,BST_CHECKED);
@@ -360,8 +355,13 @@ begin
       NoProcess:=true;
       ClearFields(Dialog);
 
+      SetDlgItemTextW(Dialog,IDC_EDIT_PRGPATH,nil);
+      SetDlgItemTextW(Dialog,IDC_EDIT_PRGARGS,nil);
+      SetEditFlags(Dialog,IDC_EDIT_PRGPATH,EF_ALL,0);
+      SetEditFlags(Dialog,IDC_EDIT_PRGARGS,EF_ALL,0);
+
       CheckDlgButton(Dialog,IDC_FLAG_PARALLEL,BST_CHECKED);
-      CheckDlgButton(Dialog,IDC_FLAG_NORMAL,BST_CHECKED);
+      CheckDlgButton(Dialog,IDC_FLAG_NORMAL  ,BST_CHECKED);
       SetDlgItemInt(Dialog,IDC_EDIT_PROCTIME,0,false);
       NoProcess:=false;
     end;
@@ -380,7 +380,6 @@ begin
           mFreeMem(p);
         end;
 }
-        flags:=0;
         if IsDlgButtonChecked(Dialog,IDC_FLAG_PARALLEL)=BST_CHECKED then
           flags:=flags or ACF_PRTHREAD;
         if IsDlgButtonChecked(Dialog,IDC_FLAG_CURPATH)=BST_CHECKED then

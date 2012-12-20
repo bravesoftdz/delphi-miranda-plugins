@@ -1,4 +1,4 @@
-unit iac_InOut;
+unit iac_inout;
 
 interface
 
@@ -6,7 +6,7 @@ implementation
 
 uses
   windows, messages, commctrl,
-  iac_global,
+  iac_global, global,
   mirutils, common, dbsettings,
   wrapper, editwrapper, io, syswin,
   m_api;
@@ -44,8 +44,9 @@ const
   
 type
   tInOutAction = class(tBaseAction)
+  private
     tfile:pWideChar;
-
+  public
     constructor Create(uid:dword);
     destructor Destroy; override;
 //    function  Clone:tBaseAction; override;
