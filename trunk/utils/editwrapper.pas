@@ -189,7 +189,11 @@ begin
               with vhi do
               begin
                 cbSize:=SizeOf(vhi);
-                flags :=VHF_NOINPUTDLG;
+                flags :=VHF_FULLDLG or VHF_SETLASTSUBJECT;
+                if (ptr^.flags and EF_WRAP)<>0 then
+                  hwndCtrl:=GetDlgItem(Dialog,IDC_TEXT_EDIT_W)
+                else
+                  hwndCtrl:=GetDlgItem(Dialog,IDC_TEXT_EDIT_NW);
               end;
               CallService(MS_VARS_SHOWHELPEX,Dialog,tlparam(@vhi));
             end;
@@ -206,7 +210,7 @@ begin
               SendMessageW(ptr^.LinkedControl,WM_SETTEXT,0,tlParam(pc));
               mFreeMem(pc);
 
-              EndDialog(Dialog,0);
+              EndDialog(Dialog,1);
             end;
 
             IDCANCEL: begin // clear result / restore old value

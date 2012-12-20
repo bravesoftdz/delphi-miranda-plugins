@@ -33,7 +33,7 @@ function DBWriteString (hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;
 function DBWriteUTF8   (hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:PAnsiChar):int_ptr;
 function DBWriteUnicode(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:PWideChar):int_ptr;
 
-function DBFreeVariant(dbv:PDBVARIANT):int_ptr;
+//function DBFreeVariant(dbv:PDBVARIANT):int_ptr;
 function DBDeleteSetting(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar):int_ptr;
 
 function DBDeleteGroup(hContact:THANDLE;szModule:PAnsiChar;prefix:pAnsiChar=nil):int_ptr;
@@ -370,7 +370,7 @@ begin
 }
 end;
 {$ENDIF}
-
+(*
 function DBFreeVariant(dbv:PDBVARIANT):int_ptr;
 {$IFDEF UseCore}
   {$IFDEF AllowInline}inline;{$ENDIF}
@@ -382,7 +382,7 @@ begin
   Result:=CallService(MS_DB_CONTACT_FREEVARIANT,0,lParam(dbv));
 end;
 {$ENDIF}
-
+*)
 function DBDeleteSetting(hContact:THandle;szModule:PAnsiChar;szSetting:PAnsiChar):int_ptr;
 {$IFDEF UseCore}
   {$IFDEF AllowInline}inline;{$ENDIF}
