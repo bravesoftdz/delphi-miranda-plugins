@@ -13,7 +13,7 @@ type
     procedure SetCurrentService(item:pAnsiChar);
   public
     constructor Create(fname:pAnsiChar; lparent:HWND=0);
-    destructor Free;
+    destructor Destroy; override;
     procedure FillList(combo:HWND; mode:integer=0);
 
     function FillParams(wnd:HWND{;item:pAnsiChar};wparam:boolean):pAnsiChar;
@@ -378,10 +378,11 @@ begin
   storage:=OpenStorage(@IniFile);
 end;
 
-destructor tmApiCard.Free;
+destructor tmApiCard.Destroy;
 begin
   CloseStorage(storage);
-//  inherited;
+
+  inherited;
 end;
 
 function CreateServiceCard(parent:HWND=0):tmApiCard;
