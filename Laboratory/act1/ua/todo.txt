@@ -1,0 +1,7 @@
+Hotkeys - различать (опционно) global/local (по отношению к контактам)
+добавить toptoolbar
+
+перехват ME_TTB_MODULELOADED - ПОСЛЕ загрузки кнопок, но успеем ли?
+
+
+icolib icon changing - reassign for menus and toolbars?

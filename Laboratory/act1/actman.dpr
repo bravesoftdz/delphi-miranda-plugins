@@ -57,10 +57,10 @@ uses
   iac_contact,
   inoutxml,
   sedit,
-  strans;
-//  ua in 'ua\ua.pas',
-//  hooks in 'hooks\hooks.pas',
-//  scheduler in 'tasks\scheduler.pas';
+  strans,
+  ua in 'ua\ua.pas',
+  hooks in 'hooks\hooks.pas',
+  scheduler in 'tasks\scheduler.pas';
 
 {$r options.res}
 

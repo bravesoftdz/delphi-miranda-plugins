@@ -912,7 +912,7 @@ begin
       ChangeListNotify(1);
 
       // fill current group
-      FillActionList(Dialog,pMacroRecord(EditMacroList));
+      FillActionList(Dialog,EditMacroList[0]);
       ChangeListNotify(2);
       EventMask:=0;
       CheckMacroListDirectionButtons(Dialog);
@@ -1024,7 +1024,7 @@ begin
                   ChangeListNotify(1);
 
                   // fill current group
-                  FillActionList(Dialog,pMacroRecord(EditMacroList));
+                  FillActionList(Dialog,EditMacroList[0]);
                   ChangeListNotify(2);
 
                   CheckMacroListDirectionButtons(Dialog);
