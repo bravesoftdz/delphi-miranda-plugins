@@ -5,8 +5,8 @@ interface
 implementation
 
 uses
-   windows, messages,
-  iac_global, dlgshare,
+  windows, messages,
+  global,iac_global, dlgshare,
   m_api, mirutils, dbsettings, common, wrapper;
 
 {$include i_cnst_settings.inc}
@@ -48,9 +48,6 @@ begin
       fCLformat:=DBReadUnicode(0,DBBranch,'CLformat');
       SetDlgItemTextW(Dialog,IDC_EDIT_FORMAT,fCLformat);
       mFreeMem(fCLformat);
-    end;
-
-    WM_ACT_SAVE: begin
     end;
 
     WM_COMMAND: begin

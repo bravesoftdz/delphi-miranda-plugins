@@ -36,20 +36,27 @@ type // array dimension - just for indexing
 
 type
   tMacroList = class
+  private
     fMacroList:pMacroList;
     fMacroCount:cardinal;
 
-    constructor Create(isize:cardinal);
-    destructor Destroy; override;
+    procedure ReallocMacroList;
+    function GetMacroElement(i:integer):pMacroRecord;
+  public
 
-    function Clone():tMacroList;
-    function NewMacro():cardinal;
+    constructor Create(isize:cardinal);
+//    destructor Destroy; override;
+
+    procedure Clear(filter:dword=0);
+    function Clone:tMacroList;
+    function NewMacro:cardinal;
 
     function GetMacro(id:uint_ptr   ):pMacroRecord; overload;
     function GetMacro(name:pWideChar):pMacroRecord; overload;
     function GetMacroNameById(id:dword):PWideChar;
-  private
-    procedure ReallocMacroList();
+
+    property List[i:integer]:pMacroRecord read GetMacroElement; default;
+    property Count: cardinal read fMacroCount;
   end;
 
 procedure FreeMacro(Macro:pMacroRecord;mask:dword=0);
@@ -64,6 +71,12 @@ uses Common;
 
 const
   MacroListPage = 8;
+
+
+function tMacroList.GetMacroElement(i:integer):pMacroRecord;
+begin
+  result:=@fMacroList[i];
+end;
 
 function tMacroList.GetMacro(id:uint_ptr):pMacroRecord;
 var
@@ -134,6 +147,22 @@ begin
   end;
 end;
 
+procedure tMacroList.Clear(filter:dword=0);
+var
+  i:integer;
+begin
+  if fMacroList<>nil then
+  begin
+    for i:=0 to fMacroCount-1 do
+    begin
+      FreeMacro(@(fMacroList[i]),filter);
+    end;
+    FreeMem(fMacroList);
+    fMacroList:=nil;
+    fMacroCount:=0;
+  end;
+end;
+{
 destructor tMacroList.Destroy;
 var
   i:integer;
@@ -148,7 +177,7 @@ begin
 
   inherited Destroy;
 end;
-
+}
 function CloneActionList(src:pActionList;count:integer):pActionList;
 begin
   if src=nil then
@@ -160,7 +189,7 @@ begin
   move(src^,result^,count*SizeOf(tBaseAction))
 end;
 
-procedure CloneMacro(var dst,src:pMacroRecord);
+procedure CloneMacro(var dst:pMacroRecord; src:pMacroRecord);
 begin
   if (src^.flags and ACF_ASSIGNED)<>0 then
   begin
@@ -169,7 +198,7 @@ begin
   end;
 end;
 
-function tMacroList.Clone():tMacroList;
+function tMacroList.Clone:tMacroList;
 var
   src,dst:pMacroRecord;
   i:integer;
@@ -204,7 +233,7 @@ begin
   end;
 end;
 
-procedure tMacroList.ReallocMacroList();
+procedure tMacroList.ReallocMacroList;
 var
   i:cardinal;
   tmp:pMacroList;
@@ -246,7 +275,7 @@ begin
   end;
 end;
 
-function tMacroList.NewMacro():cardinal;
+function tMacroList.NewMacro:cardinal;
 var
   i:cardinal;
   pMacro:pMacroRecord;
@@ -266,7 +295,7 @@ begin
   end;
   // realloc
   result:=fMacroCount;
-  ReallocMacroList();
+  ReallocMacroList;
   InitMacroValue(@(fMacroList^[result]));
 end;
 

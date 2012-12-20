@@ -58,7 +58,7 @@ end;
 
 procedure SetStart;
 begin
-  EditMacroCount:=CloneMacroList(MacroList,MacroCount,EditMacroList);
+  EditMacroList:=MacroList.Clone();
 end;
 
 function CheckChanges:dword;
@@ -69,15 +69,15 @@ begin
   result:=0;
   // 1 - search new items (EditMacroList elements which don't exists in MacroList)
   found:=false;
-  for i:=0 to EditMacroCount-1 do
+  for i:=0 to EditMacroList.Count-1 do
   begin
-    if (EditMacroList[i].flags and ACF_ASSIGNED)<>0 then
+    if (EditMacroList[i]^.flags and ACF_ASSIGNED)<>0 then
     begin
-      for j:=0 to MacroCount-1 do
+      for j:=0 to MacroList.Count-1 do
       begin
-        if (MacroList[j].flags and ACF_ASSIGNED)<>0 then
+        if (MacroList[j]^.flags and ACF_ASSIGNED)<>0 then
         begin
-          if EditMacroList[i].id = MacroList[j].id then
+          if EditMacroList[i]^.id=MacroList[j]^.id then
           begin
             found:=true;
             break;
@@ -91,15 +91,15 @@ begin
     result:=result or ACTM_NEW;
   // 2 - search deleted items (MacroList elements which don't exists in EditMacroList)
   found:=false;
-  for i:=0 to MacroCount-1 do
+  for i:=0 to MacroList.Count-1 do
   begin
-    if (MacroList[i].flags and ACF_ASSIGNED)<>0 then
+    if (MacroList[i]^.flags and ACF_ASSIGNED)<>0 then
     begin
-      for j:=0 to EditMacroCount-1 do
+      for j:=0 to EditMacroList.Count-1 do
       begin
-        if (EditMacroList[j].flags and ACF_ASSIGNED)<>0 then
+        if (EditMacroList[j]^.flags and ACF_ASSIGNED)<>0 then
         begin
-          if MacroList[i].id = EditMacroList[j].id then
+          if MacroList[i]^.id=EditMacroList[j]^.id then
           begin
             found:=true;
             break;
@@ -129,20 +129,11 @@ var
   i,j:integer;
 begin
   // Delete changed data
-  if EditMacroList<>nil then
-  begin
-    for i:=0 to EditMacroCount-1 do
-    begin
-      FreeMacro(@(EditMacroList^[i]),ACF_INTRODUCED);
-    end;
-    FreeMem(EditMacroList);
-    EditMacroList:=nil;
-    EditMacroCount:=0;
-  end;
+  EditMacroList.Clear(ACF_INTRODUCED);
   // Clear editing flags
-  for i:=0 to MacroCount-1 do
+  for i:=0 to MacroList.Count-1 do
   begin
-    with MacroList^[i] do
+    with MacroList[i]^ do
       if (flags and ACF_ASSIGNED)<>0 then
       begin
         for j:=0 to ActionCount-1 do
@@ -160,26 +151,22 @@ end;
 procedure SetSave(Dialog:HWND);
 var
   i,j:integer;
-  TmpMacroList:pMacroList;
+  TmpMacroList:tMacroList;
   TmpMacroCount:integer;
   wnd:HWND;
   li:LV_ITEMW;
 begin
   // Delete old macro values
-  for i:=0 to MacroCount-1 do
-  begin
-    FreeMacro(@(MacroList^[i]),ACF_REPLACED);
-  end;
-  FreeMem(MacroList);
+  MacroList.Clear(ACF_REPLACED);
 
   wnd:=MacroListWindow;
   TmpMacroCount:=SendMessageW(wnd,LVM_GETITEMCOUNT,0,0);
   if TmpMacroCount>0 then
   begin
     // Clear editing flags
-    for i:=0 to EditMacroCount-1 do
+    for i:=0 to EditMacroList.Count-1 do
     begin
-      with EditMacroList^[i] do
+      with EditMacroList[i]^ do
         if (flags and ACF_ASSIGNED)<>0 then
         begin
           for j:=0 to ActionCount-1 do
@@ -190,8 +177,7 @@ begin
     end;
 
     // Making EditMacroList element reposition
-    GetMem  (TmpMacroList ,TmpMacroCount*SizeOf(tMacroRecord));
-    FillChar(TmpMacroList^,TmpMacroCount*SizeOf(tMacroRecord),0);
+    TmpMacroList:=tMacroList.Create(TmpMacroCount);
 
     li.mask    :=LVIF_PARAM;
     li.iSubItem:=0;
@@ -199,23 +185,20 @@ begin
     begin
       li.iItem:=i;
       SendMessageW(wnd,LVM_GETITEMW,0,lparam(@li)); // GetLParam(wnd,i);
-      move(EditMacroList^[li.lParam],TmpMacroList^[i],SizeOf(tMacroRecord));
+      move(EditMacroList[li.lParam]^,TmpMacroList[i]^,SizeOf(tMacroRecord));
       li.lParam:=i;
       SendMessageW(wnd,LVM_SETITEMW,0,lparam(@li));
     end;
-    FreeMem(EditMacroList);
-    EditMacroList :=TmpMacroList;
-    EditMacroCount:=TmpMacroCount;
+    EditMacroList.Clear;
+    EditMacroList.Free;
+    EditMacroList:=TmpMacroList;
 
     // copy of edited values
-    MacroCount:=CloneMacroList(EditMacroList,EditMacroCount,MacroList);
+    MacroList.Free;
+    MacroList:=EditMacroList.Clone;
   end
   else
-  begin
-    MacroList:=nil;
-    MAcroCount:=0;
     SetCancel;
-  end;
 end;
 
 // Fill action type combobox
@@ -482,7 +465,7 @@ begin
   begin
     SaveAction(Dialog,-1,nil);
 
-    with EditMacroList^[idx] do
+    with EditMacroList[idx]^ do
     begin
       if ActionCount>0 then
       begin
@@ -493,7 +476,7 @@ begin
     end;
 
     wnd:=ActionListWindow;
-    with EditMacroList^[idx] do
+    with EditMacroList[idx]^ do
     begin
       ActionCount:=SendMessageW(wnd,LVM_GETITEMCOUNT,0,0);
       if ActionCount>0 then // have some actions - need to build list
@@ -623,7 +606,7 @@ var
   li:LV_ITEMW;
   list:HWND;
 begin
-  with EditMacroList^[MacroNum] do
+  with EditMacroList[MacroNum]^ do
   begin
     list:=MacroListWindow;
     li.mask     :=LVIF_PARAM+LVIF_TEXT;
@@ -740,11 +723,11 @@ begin
   list:=MacroListWindow;
 
   SendMessage(list,LVM_DELETEALLITEMS,0,0);
-  CurMacro:=pMacroRecord(EditMacroList);
+  CurMacro:=EditMacroList[0];
   result:=-1;
   lvi.mask:=LVIF_TEXT+LVIF_PARAM;
   lvi.iSubItem:=0;
-  for i:=0 to EditMacroCount-1 do
+  for i:=0 to EditMacroList.Count-1 do
   begin
     if (CurMacro^.flags and ACF_ASSIGNED)<>0 then
     begin
@@ -880,6 +863,7 @@ begin
   case hMessage of
     WM_DESTROY: begin
       SetCancel;
+      EditMacroList.Free;
     end;
 
     WM_INITDIALOG: begin
@@ -1032,7 +1016,7 @@ begin
                 // "save" selected macro (in edit list only)
                 BuildActionChain(Dialog,li.iItem);
 
-                if Import(xmlfilename,0)<>0 then
+                if Import(EditMacroList,xmlfilename,0)<>0 then
 //                if CallService(MS_ACT_INOUT,0,TLPARAM(@xmlfilename))<>0 then
                 begin
                   // copy from WM_INITDIALOG
@@ -1058,11 +1042,11 @@ begin
               // Get lParam = EditMacroList element
               SendMessageW(MacroListWindow,LVM_GETITEMW,0,tlparam(@li));
 
-              ActionStarter(@(EditMacroList[li.lParam]),nil,ACTP_SAMETHREAD or ACTP_WAIT);
+              ActionStarter(EditMacroList[li.lParam],nil,ACTP_SAMETHREAD or ACTP_WAIT);
             end;
 
             IDC_GROUP_NEW: begin
-              if AddMacro(Dialog,NewMacro(EditMacroList,EditMacroCount))>=0 then
+              if AddMacro(Dialog,EditMacroList.NewMacro())>=0 then
               begin
                 EnableWindow(MacroListWindow,true);
                 EnableWindow(GetDlgItem(Dialog,IDC_GROUP_DELETE),true);
@@ -1078,7 +1062,7 @@ begin
               begin
                 if ListView_GetItemState(wnd,i,LVIS_SELECTED)<>0 then
                 begin
-                  FreeMacro(@(EditMacroList^[LV_GetLParam(wnd,i)]),ACF_INTRODUCED);
+                  FreeMacro(EditMacroList[LV_GetLParam(wnd,i)],ACF_INTRODUCED);
                   SendMessage(wnd,LVM_DELETEITEM,i,0);
                 end;
               end;
@@ -1220,7 +1204,7 @@ begin
 
                 ClearDialogData;
                 ResetDialogs;
-                FillActionList(Dialog,@(EditMacroList^[PNMLISTVIEW(lParam)^.lParam]));
+                FillActionList(Dialog,EditMacroList[PNMLISTVIEW(lParam)^.lParam]);
                 CheckMacroListDirectionButtons(Dialog);
                 ChangeListNotify(2);
 
@@ -1287,7 +1271,7 @@ begin
                   pWideChar(item.pszText):=NoDescription;
                 SendMessageW(hdr.hWndFrom,LVM_SETITEMW,0,tlparam(@item));
 
-                with EditMacroList^[item.lParam] do
+                with EditMacroList[item.lParam]^ do
                 begin
                   StrCopyW(descr,item.pszText,MacroNameLen-1);
                 end;

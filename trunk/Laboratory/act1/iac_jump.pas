@@ -7,7 +7,7 @@ implementation
 uses
   windows, messages, commctrl,
   m_api, dbsettings,
-  iac_global, editwrapper, dlgshare,
+  global,iac_global, editwrapper, dlgshare,
   common, mirutils, wrapper;
 
 {$include i_cnst_jump.inc}
@@ -39,6 +39,8 @@ const
   ioBreak = 'break';
   ioJump  = 'jump';
   ioPost  = 'POST';
+  ioCase  = 'case';
+  ioBack  = 'back';
 const
   ACF_NOP   = $00000001;
   ACF_MATH  = $00000002;
@@ -50,10 +52,11 @@ const
 
 type
   tJumpAction = class(tBaseAction)
+  private
     value    :pWideChar;
     actlabel :pWideChar;
     condition:integer;
-
+  public
     constructor Create(uid:dword);
     destructor Destroy; override;
 //    function  Clone:tBaseAction; override;
@@ -239,16 +242,41 @@ begin
         sub:=getNthChild(HXML(node),ioIf,0);
         if sub<>0 then
         begin
+          tmp:=getAttrValue(sub,ioOper);
+          if      lstrcmpiw(tmp,'math')=0 then flags:=flags or ACF_MATH
+          else if lstrcmpiw(tmp,ioNop )=0 then flags:=flags or ACF_NOP;
+
           tmp:=getAttrValue(sub,ioCond);
-          if      lstrcmpiw(tmp,'gt' )=0 then condition:=aeGT
-          else if lstrcmpiw(tmp,'lt' )=0 then condition:=aeLT
-          else if lstrcmpiw(tmp,'eq' )=0 then condition:=aeEQ
-          else if lstrcmpiw(tmp,ioNop)=0 then flags:=flags or ACF_NOP;
+          if lstrcmpiw(tmp,ioNop)=0 then flags:=flags or ACF_NOP // compatibility
+          else if (flags and ACF_NOP)=0 then
+          begin
+            if flags and ACF_MATH<>0 then
+            begin
+              if      lstrcmpiw(tmp,'gt' )=0 then condition:=aeGT
+              else if lstrcmpiw(tmp,'lt' )=0 then condition:=aeLT
+              else if lstrcmpiw(tmp,'eq' )=0 then condition:=aeEQ
+              else if lstrcmpiw(tmp,'xor')=0 then condition:=aeXR
+              else if lstrcmpiw(tmp,'and')=0 then condition:=aeND;
+            end
+            else
+            begin
+              if      lstrcmpiw(tmp,'empty')=0 then condition:=aeEMP
+              else if lstrcmpiw(tmp,'eq'   )=0 then condition:=aeEQU
+              else if lstrcmpiw(tmp,'cont' )=0 then condition:=aeCON
+              else if lstrcmpiw(tmp,'start')=0 then condition:=aeSTR
+              else if lstrcmpiw(tmp,'ends' )=0 then condition:=aeEND;
 
-          if StrToInt(getAttrValue(sub,ioNot))=1 then
-            flags:=flags or ACF_NOT;
+              if StrToInt(getAttrValue(sub,ioCase))=1 then
+                flags:=flags or ACF_CASE;
+              if StrToInt(getAttrValue(sub,ioBack))=1 then
+                flags:=flags or ACF_BACK;
+            end;
+            if StrToInt(getAttrValue(sub,ioNot))=1 then
+              flags:=flags or ACF_NOT;
 
-          StrDupW(value,getAttrValue(sub,ioValue));
+            if ((flags and ACF_MATH)<>0) or (condition<>aeEMP) then
+              StrDupW(value,getAttrValue(sub,ioValue));
+          end;
         end;
 
         sub:=getNthChild(HXML(node),ioPost,0);
@@ -489,7 +517,6 @@ begin
     WM_ACT_SAVE: begin
       with tJumpAction(lParam) do
       begin
-        flags:=0;
         // Condition
         if IsDlgButtonChecked(Dialog,IDC_FLAG_NOP)<>BST_UNCHECKED then
           flags:=flags or ACF_NOP
@@ -544,10 +571,7 @@ begin
         CBN_SELCHANGE:  begin
           case loword(wParam) of
             IDC_JMP_TEXT: begin
-              if CB_GetData(lParam)=aeEMP then
-                bb:=false
-              else
-                bb:=true;
+              bb:=CB_GetData(lParam)<>aeEMP;
               EnableWindow   (GetDlgItem(Dialog,IDC_FLAG_CASE),bb);
               EnableEditField(GetDlgItem(Dialog,IDC_JMP_VALUE),bb);
             end;

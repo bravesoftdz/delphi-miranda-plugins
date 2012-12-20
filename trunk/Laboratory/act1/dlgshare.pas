@@ -2,14 +2,13 @@ unit dlgshare;
 
 interface
 
-uses windows,lowlevel;
+uses windows,lowlevelc;
 
 var
   MacroListWindow,
   ActionListWindow:HWND;
 var
-  EditMacroList:pMacroList;
-  EditMacroCount:cardinal;
+  EditMacroList:tMacroList;
 
 const
   ACI_APPLY   = 0;

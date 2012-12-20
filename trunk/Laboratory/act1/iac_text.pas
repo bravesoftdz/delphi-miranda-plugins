@@ -6,7 +6,7 @@ implementation
 
 uses
   windows, messages, commctrl,
-  iac_global, m_api, editwrapper,
+  global, iac_global, m_api, editwrapper,
   dbsettings, common, io,
   mirutils, syswin, wrapper;
 
@@ -18,14 +18,16 @@ const
 
 const
   opt_text = 'text';
-
+const
+  ioVariables = 'variables';
 const
   ACF_TEXTSCRIPT = $00000001;
 
 type
   tTextAction = class(tBaseAction)
+  private
     text: pWideChar;
-
+  public
     constructor Create(uid:dword);
     destructor Destroy; override;
 //    function  Clone:tBaseAction; override;
@@ -102,14 +104,14 @@ begin
     else if linenum<0 then
     begin
       randomize;
-      linenum:=random(NumLines)+1;
+      j:=random(NumLines)+1;
       pc:=FileBuf;
       NumLines:=1;
       CurLine:=pc;
       repeat
         if (pc^=#13) or (pc^=#0) then
         begin
-          if linenum=NumLines then
+          if j=NumLines then
             break;
           if pc^<>#0 then
           begin
@@ -310,6 +312,8 @@ begin
       with xmlparser do
       begin
         StrDupW(text,getText(HXML(node)));
+        if StrToInt(getAttrValue(HXML(node),ioVariables))=1 then
+          flags:=flags or ACF_TEXTSCRIPT;
       end;
     end;
   end;

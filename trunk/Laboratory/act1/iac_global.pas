@@ -12,8 +12,6 @@ const
 const
   NoDescription:PWideChar='No Description';
 const
-  DBBranch = 'ActMan';
-const
   protostr = '<proto>';
 const
   WM_ACT_SETVALUE   = WM_USER + 13;
@@ -107,11 +105,13 @@ const
 
 constructor tBaseAction.Create(uid:dword);
 begin
+  inherited Create;
+
   if uid<>0 then
   begin
     StrDupW(ActionDescr,NoDescription);
     Self.UID:=uid;
-    Flags:=0;
+    flags:=0;
   end;
 end;
 
@@ -126,7 +126,7 @@ procedure tBaseAction.Duplicate(var dst:tBaseAction);
 begin
   StrDupW(dst.ActionDescr,ActionDescr);
   dst.UID  :=UID;
-  dst.Flags:=Flags;
+  dst.flags:=flags;
 end;
 {
 function tBaseAction.Clone:tBaseAction;

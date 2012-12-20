@@ -40,15 +40,15 @@ end;
 procedure SaveMacros;
 var
   Macro:pMacroRecord;
-  NumMAcro:integer;
+  NumMacro:integer;
   i:integer;
   section:array [0..127] of AnsiChar;
   p,p1:PAnsiChar;
 begin
 // even if crap in settings, skip on read
 //  DBDeleteGroup(0,DBBranch,opt_group);
-  Macro:=pMacroRecord(MacroList);
-  i:=MacroCount;
+  Macro:=MacroList[0];
+  i:=MacroList.Count;
   NumMacro:=0;
 
   p1:=StrCopyE(section,opt_group);
@@ -134,12 +134,12 @@ var
 begin
   // Allocate macro list
   NumMacros :=DBReadWord(0,DBBranch,opt_nummacro,0);
-  MacroCount:=CreateMacroList(MacroList,NumMacros);
+  MacroList:=tMacroList.Create(NumMacros);
 
   // read macro list settings
   if NumMacros>0 then //?? really, not so necessary
   begin
-    Macro:=pMacroRecord(MacroList);
+    Macro:=MacroList[0];
     i:=0;
     p1:=StrCopyE(section,opt_group);
     while i<NumMacros do

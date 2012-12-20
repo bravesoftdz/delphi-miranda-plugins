@@ -2,15 +2,15 @@ unit inoutxml;
 
 interface
 
-uses windows;
+uses windows, lowlevelc;
 
-function Import(fname:PWideChar;aflags:dword):integer;
+function Import(list:tMacroList;fname:PWideChar;aflags:dword):integer;
 
 implementation
 
 uses
   io, common, m_api, question,
-  iac_global, lowlevel;
+  iac_global;
 
 const
   ioAction = 'Action';
@@ -44,7 +44,7 @@ begin
   end;
 end;
 
-function Import(fname:PWideChar;aflags:dword):integer;
+function Import(list:tMacroList;fname:PWideChar;aflags:dword):integer;
 var
   f:THANDLE;
   i,nodenum,actcnt:integer;
@@ -59,8 +59,8 @@ var
 begin
   result:=0;
 
-  for i:=0 to MacroCount-1 do
-    with MacroList[i] do
+  for i:=0 to list.Count-1 do
+    with list[i]^ do
       if (flags and (ACF_IMPORT or ACF_ASSIGNED))=
                     (ACF_IMPORT or ACF_ASSIGNED) then
         flags:=flags and not (ACF_IMPORT or ACF_OVERLOAD);
@@ -91,7 +91,7 @@ begin
       tmp:=getAttrValue(actnode,ioName);
       if tmp<>nil then //!!
       begin
-        p:=GetMacro(uint_ptr(tmp),false);
+        p:=list.GetMacro(tmp);
         oldid:=$FFFFFFFF;
         if p<>nil then
         begin
@@ -109,7 +109,7 @@ begin
         // if new or overwriting then read macro details/actions
         if (p=nil) or (impact=imp_yesall) or (impact=imp_yes) or (impact=imp_append) then
         begin
-          with MacroList^[NewMacro(MacroList,MacroCount)] do
+          with List[list.NewMacro()]^ do
           begin
             if (p<>nil) and (oldid<>$FFFFFFFF) then // set old id to keep UseAction setting
             begin
@@ -147,7 +147,7 @@ begin
       end;
       inc(nodenum);
     until false;
-    DestroyNode(root);
+    destroyNode(root);
   end;
   mFreeMem(res);
 end;

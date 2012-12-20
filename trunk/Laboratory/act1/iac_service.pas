@@ -59,11 +59,12 @@ const
 
 type
   tServiceAction = class(tBaseAction)
+  private
     service:PAnsiChar;
     wparam :pWideChar;
     lparam :pWideChar;
     flags2 :dword;
-
+  public
     constructor Create(uid:dword);
     destructor Destroy; override;
 //    function  Clone:tBaseAction; override;
@@ -119,7 +120,7 @@ begin
     tServiceAction(result).lparam:=lparam;
 end;
 }
-procedure PreProcess(flags:dword;var l_param:LPARAM;var WorkData:tWorkData);
+procedure PreProcess(flags:dword;var l_param:LPARAM;const WorkData:tWorkData);
 var
   tmp1:pWideChar;
 begin
@@ -587,8 +588,6 @@ procedure ClearFields(Dialog:HWND);
 var
   wnd:HWND;
 begin
-  SetDlgItemTextW(Dialog,IDC_EDIT_SERVICE,nil);
-
   ShowWindow(GetDlgItem(Dialog,IDC_WSTRUCT),SW_HIDE);
   wnd:=GetDlgItem(Dialog,IDC_EDIT_WPAR);
   ShowEditField  (wnd,SW_SHOW);
@@ -596,6 +595,7 @@ begin
   SendMessage    (wnd,CB_RESETCONTENT,0,0);
 //??  SetDlgItemTextW(Dialog,IDC_EDIT_WPAR,nil);
   CB_SelectData(GetDlgItem(Dialog,IDC_FLAG_WPAR),ptNumber);
+  SetEditFlags(wnd,EF_ALL,0);
 
   ShowWindow  (GetDlgItem(Dialog,IDC_LSTRUCT),SW_HIDE);
   wnd:=GetDlgItem(Dialog,IDC_EDIT_LPAR);
@@ -604,6 +604,7 @@ begin
   SendMessage    (wnd,CB_RESETCONTENT,0,0);
 //??  SetDlgItemTextW(Dialog,IDC_EDIT_LPAR,nil);
   CB_SelectData(GetDlgItem(Dialog,IDC_FLAG_LPAR),ptNumber);
+  SetEditFlags(wnd,EF_ALL,0);
 
   ShowWindow(GetDlgItem(Dialog,IDC_RES_FREEMEM),SW_HIDE);
   ShowWindow(GetDlgItem(Dialog,IDC_RES_UNICODE),SW_HIDE);
@@ -615,7 +616,7 @@ end;
 
 function DlgProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 const
-  NoProcesS:boolean=true;
+  NoProcess:boolean=true;
 var
   i:integer;
   pc,pc1:pAnsiChar;
@@ -708,6 +709,7 @@ begin
     WM_ACT_RESET: begin
       NoProcess:=true;
       ClearFields(Dialog);
+      SetDlgItemTextW(Dialog,IDC_EDIT_SERVICE,nil);
 {
       ShowWindow(GetDlgItem(Dialog,IDC_WSTRUCT),SW_HIDE);
       ShowWindow(GetDlgItem(Dialog,IDC_LSTRUCT),SW_HIDE);
@@ -718,9 +720,6 @@ begin
     WM_ACT_SAVE: begin
       with tServiceAction(lParam) do
       begin
-        flags :=0;
-        flags2:=0;
-
         //WPARAM
         case CB_GetData(GetDlgItem(Dialog,IDC_FLAG_WPAR)) of
           ptParam: begin
