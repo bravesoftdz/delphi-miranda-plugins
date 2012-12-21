@@ -1,5 +1,5 @@
 {}
-
+(*
 const
   MenuServices:array [tMenuType] of pAnsiChar = (
     'CList/AddMainMenuItem'   {MS_CLIST_ADDMAINMENUITEM   },
@@ -8,6 +8,7 @@ const
     'CList/AddProtoMenuItem'  {MS_CLIST_ADDPROTOMENUITEM  },
     'CList/AddStatusMenuItem' {MS_CLIST_ADDSTATUSMENUITEM }
   );
+*)
 type
   tuaMenuRec = record
     hMenuRoot:HMENU;
@@ -25,7 +26,7 @@ begin
   result:=CallService(MS_ACT_RUNBYID, lParam, wParam);
 end;
 
-procedure SetTTBState(var ActionItem:tMyActionItem);
+procedure SetTTBState(const ActionItem:tMyActionItem);
 var
   lflag:integer;
 begin
@@ -47,7 +48,7 @@ begin
   CallService(MS_TTB_SETBUTTONSTATE,ActionItem.hTTBButton,lflag);
 end;
 
-procedure SetTABState(hContact:THANDLE;var ActionItem:tMyActionItem;pressed:integer);
+procedure SetTABState(hContact:THANDLE;const ActionItem:tMyActionItem;pressed:integer);
 var
   tabb:BBButton;
   pc:pWideChar;

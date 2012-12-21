@@ -8,12 +8,8 @@ uses
 
 const
   ACF_USEDNOW  = $20000000;  // action in use (reserved)
-  ACF_VOLATILE = $04000000;  // don't save in DB
+  ACF_VOLATILE = $10000000;  // don't save in DB
   ACF_ASSIGNED = $80000000;  // action assigned
-
-  ACF_IMPORT   = $08000000;
-  ACF_OVERLOAD = $01000000;
-
 type
   pActionList = ^tActionList;
   tActionList = array [0..1023] of tBaseAction;
@@ -151,26 +147,19 @@ procedure tMacroList.Clear(filter:dword=0);
 var
   i:integer;
 begin
-  if fMacroList<>nil then
+  for i:=0 to fMacroCount-1 do
   begin
-    for i:=0 to fMacroCount-1 do
-    begin
-      FreeMacro(@(fMacroList[i]),filter);
-    end;
-    FreeMem(fMacroList);
-    fMacroList:=nil;
-    fMacroCount:=0;
+    FreeMacro(@(fMacroList[i]),filter);
   end;
+  FreeMem(fMacroList);
+  fMacroList:=nil;
+  fMacroCount:=0;
 end;
 {
 destructor tMacroList.Destroy;
 var
   i:integer;
 begin
-  for i:=0 to fMacroCount-1 do
-  begin
-    FreeMacro(@fMacroList[i]);
-  end;
   fMacroCount:=0;
   FreeMem(fMacroList);
   fMacroList:=nil;
@@ -231,6 +220,8 @@ begin
       end;
     end;
   end;
+  if result=nil then
+    result:=tMacroList.Create(0);
 end;
 
 procedure tMacroList.ReallocMacroList;

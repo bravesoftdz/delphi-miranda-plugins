@@ -10,7 +10,7 @@ implementation
 
 uses
   io, common, m_api, question,
-  iac_global;
+  iac_global, global;
 
 const
   ioAction = 'Action';

@@ -13,8 +13,6 @@ begin
   begin
     // get Action settings
     dwActID:=ptr^.id;
-    if (ptr^.flags and ACCF_DISABLED)<>0 then
-      flags:=UAF_DISABLED;
     StrDupW(szActDescr,ptr^.descr);
     wSortIndex:=idx;
     
@@ -71,8 +69,8 @@ begin
   begin
     ptr1:=ptr;
     inc(pbyte(ptr),4);
-    // maybe add ACTM_RELOAD (as NEW and DELETE) here too?
-    if (wParam and (ACTM_NEW or ACTM_RENAME or ACTM_SORT or ACTM_DELETE))<>0 then
+    if wParam<>0 then
+//    if (wParam and (ACTM_NEW or ACTM_RENAME or ACTM_SORT or ACTM_DELETE))<>0 then
       for i:=0 to count-1 do
       begin
         // search corresponding element

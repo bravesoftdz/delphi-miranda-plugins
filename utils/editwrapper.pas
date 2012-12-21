@@ -4,10 +4,9 @@ interface
 
 uses windows;
 
+// exported flags
 const
   EF_SCRIPT = 1;
-  EF_WRAP   = 2;
-
   EF_ALL    = EF_SCRIPT; // what can be changed
 
 function MakeEditField(Dialog:HWND; id:uint):HWND;
@@ -26,6 +25,10 @@ uses messages,commctrl,common,wrapper,m_api;
 
 {$R editwrapper.res}
 {$include 'i_text_const.inc'}
+
+// internal flags
+const
+  EF_WRAP = 2;
 
 // EditFields & EditForm -> Button -> [EditField,WinProc,flags]
 type

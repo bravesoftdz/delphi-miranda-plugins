@@ -5,6 +5,14 @@ interface
 
 uses windows,m_api;
 
+// for miranda services
+const
+  rtInt  = 1;
+  rtWide = 2;
+  rtAnsi = 3;
+  rtUTF8 = 4;
+
+
 // icons
 function SetButtonIcon(btn:HWND;name:PAnsiChar):HICON;
 function RegisterSingleIcon(resname,ilname,descr,group:PAnsiChar):int;
@@ -68,7 +76,10 @@ function LoadImageURL(url:pAnsiChar;size:integer=0):HBITMAP;
 
 implementation
 
-uses Messages,dbsettings,common,io,freeimage,syswin;
+uses
+  Messages,
+  dbsettings,freeimage,
+  common,io,syswin;
 
 const
   clGroup = 'Group';

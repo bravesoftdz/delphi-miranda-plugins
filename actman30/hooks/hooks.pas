@@ -2,10 +2,6 @@ unit hooks;
 
 interface
 
-procedure Init;
-procedure DeInit;
-function AddOptionPage(var tmpl:pAnsiChar;var proc:pointer;var name:PAnsiChar):integer;
-
 implementation
 
 uses

@@ -56,7 +56,7 @@ begin
   begin
     with Macro^ do
     begin
-      if (flags and (ACF_ASSIGNED or ACCF_VOLATILE))=ACF_ASSIGNED then
+      if (flags and (ACF_ASSIGNED or ACF_VOLATILE))=ACF_ASSIGNED then
       begin
         p:=StrEnd(IntToStr(p1,NumMacro));
         p^:='/'; inc(p);
@@ -87,6 +87,7 @@ var
   actm:pActModule;
   action:tBaseAction;
   uid:dword;
+  tmp:pActionList;
 begin
   result:=0;
   p:=StrEnd(section);
@@ -116,9 +117,17 @@ begin
         // call proper loader
         action.Load(section,0);
 
-        Macro^.ActionList[num]:=action;
+        Macro^.ActionList^[num]:=action;
         inc(num);
       end;
+    end;
+    if Macro^.ActionCount<>num then
+    begin
+      GetMem(tmp,SizeOf(tBaseAction)*num);
+      move(Macro^.ActionList^,tmp^,SizeOf(tBaseAction)*num);
+      Macro^.ActionCount:=num;
+      FreeMem(Macro^.ActionList);
+      Macro^.ActionList:=tmp;
     end;
   end;
 end;
