@@ -2,7 +2,9 @@ unit iac_global;
 
 interface
 
-uses windows, messages,m_api;
+uses
+  windows, messages,
+  m_api;
 
 var
   xmlparser:XML_API_W;
@@ -23,15 +25,6 @@ const
   ACF_DISABLED   = $10000000;  // action disabled
   ACF_REPLACED   = $20000000;  // action replaced by new in options
   ACF_INTRODUCED = $40000000;  // action is newly created (not saved) in options
-
-const
-  isEScript = 1;
-const
-  rtInt  = 1;
-  rtWide = 2;
-// maybe will be introduced for initial values only
-  rtAnsi = 3;
-  rtUTF8 = 4;
 
 type
   pWorkData = ^tWorkData;
@@ -91,7 +84,6 @@ function GetLinkByName(name:pAnsiChar):pActModule;
 function ImportContact(node:HXML):THANDLE;
 
 implementation
-
 
 uses Common, global, dbsettings, base64, mirutils;
 

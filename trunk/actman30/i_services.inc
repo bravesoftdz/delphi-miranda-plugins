@@ -2,7 +2,7 @@
 
 function ActSelect(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 begin
-  if (wParam and ACCF_ID)<>0 then
+  if odd(wParam) then
     result:=int_ptr(MacroList.GetMacro(lParam))
   else
     result:=int_ptr(MacroList.GetMacro(pWideChar(lParam)));
@@ -10,10 +10,15 @@ begin
   if result<>0 then
     with pMacroRecord(result)^ do
     begin
-      if (wParam and ACCF_CLEAR)<>0 then
-        flags:=flags and not (uint_ptr(wParam) and ACCF_FLAGS)
+      if (wParam and 4)<>0 then
+        result:=ord((flags and ACF_SELECTED)<>0)
       else
-        flags:=flags or      (uint_ptr(wParam) and ACCF_FLAGS);
+      begin
+        if (wParam and 2)<>0 then
+          flags:=flags and not ACF_SELECTED
+        else
+          flags:=flags or      ACF_SELECTED;
+      end;
     end;
 end;
 
@@ -33,7 +38,7 @@ begin
   cnt:=0;
   for i:=0 to MacroList.Count-1 do
   begin
-    if (p^.flags and (ACF_ASSIGNED or ACCF_VOLATILE))=ACF_ASSIGNED then inc(cnt);
+    if (p^.flags and (ACF_ASSIGNED or ACF_VOLATILE))=ACF_ASSIGNED then inc(cnt);
     inc(p);
   end;
   result:=cnt;
@@ -48,7 +53,7 @@ begin
     p:=MacroList[0];
     for i:=0 to MacroList.Count-1 do
     begin
-      if (p^.flags and (ACF_ASSIGNED or ACCF_VOLATILE))=ACF_ASSIGNED then
+      if (p^.flags and (ACF_ASSIGNED or ACF_VOLATILE))=ACF_ASSIGNED then
       begin
         pc^.descr:=p^.descr;
         pc^.id   :=p^.id;

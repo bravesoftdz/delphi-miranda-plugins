@@ -69,9 +69,9 @@ const
 var
   hHookShutdown,
   onloadhook,
-  opthook:cardinal;
-  hevaction,hHookChanged,hevinout:cardinal;
-  hsel,hinout,hfree,hget,hrun,hrung,hrunp:cardinal;
+  opthook:THANDLE;
+  hevaction,hHookChanged,hevinout:THANDLE;
+  hsel,{!!hinout,}hfree,hget,hrun,hrung,hrunp:THANDLE;
 
 {$include m_actman.inc}
 
@@ -128,7 +128,7 @@ begin
   DestroyServiceFunction(hrun);
   DestroyServiceFunction(hrung);
   DestroyServiceFunction(hrunp);
-  DestroyServiceFunction(hinout);
+//!!  DestroyServiceFunction(hinout);
   DestroyServiceFunction(hsel);
 end;
 

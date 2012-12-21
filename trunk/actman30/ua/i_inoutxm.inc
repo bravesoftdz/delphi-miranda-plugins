@@ -150,12 +150,12 @@ begin
       inc(pbyte(ptr),4);
       for i:=0 to num-1 do
       begin
-        if (ptr.flags and ACCF_IMPORTED)<>0 then
+        if (ptr.flags and ACF_SELECTED)<>0 then
         begin
           if StrCmpw(pcw,ptr.descr)=0 then
           begin
             // delete old UA for overwrited actions
-            if (ptr.flags and ACCF_OVERLOAD)<>0 then
+            if (ptr.flags and ACF_OVERLOAD)<>0 then
             begin
               for act:=0 to HIGH(UActionList) do
               begin
@@ -191,7 +191,7 @@ end;
 
 //--------------------------
 
-function ExportMenuItems(node:HXML;MenuItem:tUAMenuItem):HXML;
+function ExportMenuItems(node:HXML;const MenuItem:tUAMenuItem):HXML;
 begin
   with xmlparser do
   begin

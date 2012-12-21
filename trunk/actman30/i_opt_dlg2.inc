@@ -56,11 +56,6 @@ begin
   ShowWindow(GetDlgItem(Dialog,IDC_ACTION_TYPE),mode);
 end;
 
-procedure SetStart;
-begin
-  EditMacroList:=MacroList.Clone();
-end;
-
 function CheckChanges:dword;
 var
   i,j:integer;
@@ -121,6 +116,11 @@ begin
 //  if ((atype and etACT  )<>0) and (NewActionList=ActionList) then NewActionList:=CloneActionList;
 end;
 
+procedure SetStart;
+begin
+  EditMacroList:=MacroList.Clone();
+end;
+
 // Cancel button pressed OR Edit window closed (After apply action)
 // No main list changed (except flags clearance - not necessary)
 // Edit macro list freeing with actions marked as introduced
@@ -130,6 +130,8 @@ var
 begin
   // Delete changed data
   EditMacroList.Clear(ACF_INTRODUCED);
+  EditMacroList.Free;
+
   // Clear editing flags
   for i:=0 to MacroList.Count-1 do
   begin
@@ -156,14 +158,13 @@ var
   wnd:HWND;
   li:LV_ITEMW;
 begin
-  // Delete old macro values
-  MacroList.Clear(ACF_REPLACED);
-
   wnd:=MacroListWindow;
   TmpMacroCount:=SendMessageW(wnd,LVM_GETITEMCOUNT,0,0);
+
+  // need to clear flags and resort
   if TmpMacroCount>0 then
   begin
-    // Clear editing flags
+    // Clear actions editing flags
     for i:=0 to EditMacroList.Count-1 do
     begin
       with EditMacroList[i]^ do
@@ -176,9 +177,9 @@ begin
         end;
     end;
 
-    // Making EditMacroList element reposition
     TmpMacroList:=tMacroList.Create(TmpMacroCount);
 
+    // resort/copy macros
     li.mask    :=LVIF_PARAM;
     li.iSubItem:=0;
     for i:=0 to TmpMacroCount-1 do
@@ -189,16 +190,14 @@ begin
       li.lParam:=i;
       SendMessageW(wnd,LVM_SETITEMW,0,lparam(@li));
     end;
-    EditMacroList.Clear;
+
     EditMacroList.Free;
     EditMacroList:=TmpMacroList;
+  end;
 
-    // copy of edited values
-    MacroList.Free;
-    MacroList:=EditMacroList.Clone;
-  end
-  else
-    SetCancel;
+  MacroList.Clear(ACF_REPLACED);
+  MacroList.Free;
+  MacroList:=EditMacroList.Clone;
 end;
 
 // Fill action type combobox
@@ -481,27 +480,42 @@ begin
       ActionCount:=SendMessageW(wnd,LVM_GETITEMCOUNT,0,0);
       if ActionCount>0 then // have some actions - need to build list
       begin
-        GetMem(ActionList,SizeOf(tBaseAction)*ActionCount);
+        // fix count for empty actions
+        item:=0;
+        idx:=0;
+        while item<ActionCount do
+        begin
+          // if created but not changed action (fools proof)
+          if LV_GetLParam(wnd,item)<>0 then
+            Inc(idx);
+          Inc(item);
+        end;
+        GetMem(ActionList,SizeOf(tBaseAction)*idx);
 
         li.mask      :=LVIF_TEXT;
         li.iSubItem  :=0;
         li.pszText   :=@arr;
         li.cchTextMax:=SizeOf(arr) div SizeOf(WideChar);
 
+        idx:=0;
         for item:=0 to ActionCount-1 do
         begin
-          ActionList^[item]:=tBaseAction(LV_GetLParam(wnd,item));
-          // set name and enabled/disabled flag
-          li.iItem:=item;
-          SendDlgItemMessageW(Dialog,IDC_ACTION_LIST,LVM_GETITEMW,0,tlparam(@li));
-          StrDupW(ActionList^[item].ActionDescr,arr);
+          ActionList^[idx]:=tBaseAction(LV_GetLParam(wnd,item));
+          if ActionList^[idx]<>nil then
+          begin
+            // set name and enabled/disabled flag
+            li.iItem:=item;
+            SendDlgItemMessageW(Dialog,IDC_ACTION_LIST,LVM_GETITEMW,0,tlparam(@li));
+            StrDupW(ActionList^[idx].ActionDescr,arr);
 
-          if ListView_GetCheckState(wnd,item)=0 then
-            ActionList^[item].flags:=ActionList^[item].flags or ACF_DISABLED
-          else
-            ActionList^[item].flags:=ActionList^[item].flags and not ACF_DISABLED;
-
+            if ListView_GetCheckState(wnd,item)=0 then
+              ActionList^[idx].flags:=ActionList^[item].flags or ACF_DISABLED
+            else
+              ActionList^[idx].flags:=ActionList^[item].flags and not ACF_DISABLED;
+            inc(idx);
+          end;
         end;
+        ActionCount:=idx; // fix for empty actions
       end;
     end;
   end;
@@ -723,21 +737,24 @@ begin
   list:=MacroListWindow;
 
   SendMessage(list,LVM_DELETEALLITEMS,0,0);
-  CurMacro:=EditMacroList[0];
   result:=-1;
-  lvi.mask:=LVIF_TEXT+LVIF_PARAM;
-  lvi.iSubItem:=0;
-  for i:=0 to EditMacroList.Count-1 do
+  if EditMacroList.Count>0 then
   begin
-    if (CurMacro^.flags and ACF_ASSIGNED)<>0 then
+    CurMacro:=EditMacroList[0];
+    lvi.mask:=LVIF_TEXT+LVIF_PARAM;
+    lvi.iSubItem:=0;
+    for i:=0 to EditMacroList.Count-1 do
     begin
-      lvi.iItem :=i;
-      lvi.lParam:=i;
-      lvi.pszText:=@(CurMacro^.descr);
-      SendMessageW(list,LVM_INSERTITEMW,0,tlparam(@lvi));
-      inc(result);
+      if (CurMacro^.flags and ACF_ASSIGNED)<>0 then
+      begin
+        lvi.iItem :=i;
+        lvi.lParam:=i;
+        lvi.pszText:=@(CurMacro^.descr);
+        SendMessageW(list,LVM_INSERTITEMW,0,tlparam(@lvi));
+        inc(result);
+      end;
+      inc(CurMacro);
     end;
-    inc(CurMacro);
   end;
 
   EnableWindow(GetDlgItem(Dialog,IDC_MACRO_LIST  ),result>=0);
@@ -863,7 +880,6 @@ begin
   case hMessage of
     WM_DESTROY: begin
       SetCancel;
-      EditMacroList.Free;
     end;
 
     WM_INITDIALOG: begin
@@ -1014,7 +1030,7 @@ begin
               if ShowDlgW(xmlfilename,xmlfilename,inoutfilter) then
               begin
                 // "save" selected macro (in edit list only)
-                BuildActionChain(Dialog,li.iItem);
+                BuildActionChain(Dialog);
 
                 if Import(EditMacroList,xmlfilename,0)<>0 then
 //                if CallService(MS_ACT_INOUT,0,TLPARAM(@xmlfilename))<>0 then

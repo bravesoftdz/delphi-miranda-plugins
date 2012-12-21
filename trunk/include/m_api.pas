@@ -42,13 +42,12 @@ interface
 {$ENDIF}
 
 uses
-  Windows;//, FreeImage;
+  Windows,Messages;//, FreeImage;
 
 // often used
 const
   strCList:PAnsiChar = 'CList';
 const
-  WM_USER  = $0400; // from Messages
   NM_FIRST = 0;     // from CommCtrl
 
 // RichEdit definitions
@@ -180,7 +179,7 @@ const
 var
   { has to be returned via MirandaPluginInfo and has to be statically allocated,
   this means only one module can return info, you shouldn't be merging them anyway! }
-  PLUGININFO: TPLUGININFOEX;
+  PluginInfo: TPLUGININFOEX;
 
   {$include m_database.inc}
   {$include m_db_int.inc}
