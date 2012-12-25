@@ -50,12 +50,6 @@ begin
   end;
 end;
 
-procedure SHActButtons(Dialog:HWND;mode:integer);
-begin
-  ShowWindow(GetDlgItem(Dialog,IDC_STAT_ACTION),mode);
-  ShowWindow(GetDlgItem(Dialog,IDC_ACTION_TYPE),mode);
-end;
-
 function CheckChanges:dword;
 var
   i,j:integer;
@@ -246,6 +240,14 @@ end;
 
 //----- Action list stuff -----
 
+procedure SHActButtons(Dialog:HWND;mode:integer);
+begin
+  ShowWindow(GetDlgItem(Dialog,IDC_STAT_ACTION),mode);
+  ShowWindow(GetDlgItem(Dialog,IDC_ACTION_TYPE),mode);
+  if mode=SW_HIDE then
+    ClearDialogData;
+end;
+
 procedure CheckActListDirectionButtons(Dialog:HWND);
 var
   wnd:HWND;
@@ -263,30 +265,32 @@ begin
   SendMessage(wnd,LVM_ENSUREVISIBLE,hiword(dir)-1,0);
 end;
 
-procedure CheckActListButtons(Dialog:HWND;next:integer);
+procedure CheckActListButtons(Dialog:HWND);
 var
-  i:integer;
+  mode:integer;
   wnd:HWND;
+  b:boolean;
 begin
   wnd:=ActionListWindow;
-  i:=SendMessage(wnd,LVM_GETITEMCOUNT,0,0);
-  if i>0 then
-  begin
-    EnableWindow(GetDlgItem(Dialog,IDC_ACTION_HELP),true);
-    if next=i then
-      dec(next);
+  b:=SendMessage(wnd,LVM_GETITEMCOUNT,0,0)>0;
+  if b then
+{
     ListView_SetItemState(wnd,next,
         LVIS_FOCUSED or LVIS_SELECTED,
         LVIS_FOCUSED or LVIS_SELECTED);
-  end
+}
+    mode:=SW_SHOW
   else
-  begin
-    SHActButtons(Dialog,SW_HIDE);
-    EnableWindow(wnd,false);
-    EnableWindow(GetDlgItem(Dialog,IDC_ACTION_HELP  ),false);
-    EnableWindow(GetDlgItem(Dialog,IDC_GROUP_TEST   ),false);
-    EnableWindow(GetDlgItem(Dialog,IDC_ACTION_DELETE),false);
-  end;
+    mode:=SW_HIDE;
+
+  SHActButtons(Dialog,mode);
+
+  EnableWindow(wnd,b);
+  EnableWindow(GetDlgItem(Dialog,IDC_ACTION_HELP  ),b);
+  EnableWindow(GetDlgItem(Dialog,IDC_GROUP_TEST   ),b);
+  EnableWindow(GetDlgItem(Dialog,IDC_ACTION_DELETE),b);
+  EnableWindow(GetDlgItem(Dialog,IDC_ACTION_TYPE  ),b);
+
   CheckActListDirectionButtons(Dialog);
 end;
 
@@ -324,44 +328,28 @@ begin
   wnd:=ActionListWindow;
   SendMessage(wnd,LVM_DELETEALLITEMS,0,0);
 
-  EnableWindow(GetDlgItem(Dialog,IDC_ACTION_UP),false);
-  if (Macro=nil) or (Macro^.ActionCount=0) then
+  if (Macro<>nil) and (Macro^.ActionCount>0) then
   begin
-    SHActButtons(Dialog,SW_HIDE);
-    EnableWindow(GetDlgItem(Dialog,IDC_ACTION_LIST  ),false);
-    EnableWindow(GetDlgItem(Dialog,IDC_GROUP_TEST   ),false);
-    EnableWindow(GetDlgItem(Dialog,IDC_ACTION_HELP  ),false);
-    EnableWindow(GetDlgItem(Dialog,IDC_ACTION_DELETE),false);
-    EnableWindow(GetDlgItem(Dialog,IDC_ACTION_DOWN  ),false);
-    exit;
+    li.mask    :=LVIF_TEXT or LVIF_PARAM;
+    li.iSubitem:=0;
+    idx:=0;
+    while idx<Macro^.ActionCount do
+    begin
+      li.pszText:=Macro^.ActionList^[idx].ActionDescr;
+      li.iItem  :=idx;
+      li.lParam :=tlparam(Macro^.ActionList^[idx]);
+      SendMessageW(wnd,LVM_INSERTITEMW,0,tlparam(@li));
+      ListView_SetCheckState(wnd,idx,(Macro^.ActionList^[idx].flags and ACF_DISABLED)=0);
+      inc(idx);
+    end;
+
+    Listview_SetItemState(wnd,0,
+        LVIS_FOCUSED or LVIS_SELECTED,
+        LVIS_FOCUSED or LVIS_SELECTED);
+
+    FillAction(Dialog,Macro^.ActionList^[0]);
   end;
-
-  SHActButtons(Dialog,SW_SHOW);
-
-  li.mask    :=LVIF_TEXT or LVIF_PARAM;
-  li.iSubitem:=0;
-  idx:=0;
-  while idx<Macro^.ActionCount do
-  begin
-    li.pszText:=Macro^.ActionList^[idx].ActionDescr;
-    li.iItem  :=idx;
-    li.lParam :=tlparam(Macro^.ActionList^[idx]);
-    SendMessageW(wnd,LVM_INSERTITEMW,0,tlparam(@li));
-    ListView_SetCheckState(wnd,idx,(Macro^.ActionList^[idx].flags and ACF_DISABLED)=0);
-    inc(idx);
-  end;
-
-  Listview_SetItemState(wnd,0,
-      LVIS_FOCUSED or LVIS_SELECTED,
-      LVIS_FOCUSED or LVIS_SELECTED);
-  EnableWindow(GetDlgItem(Dialog,IDC_ACTION_LIST  ),true);
-  EnableWindow(GetDlgItem(Dialog,IDC_GROUP_TEST   ),true);
-  EnableWindow(GetDlgItem(Dialog,IDC_ACTION_HELP  ),true);
-  EnableWindow(GetDlgItem(Dialog,IDC_ACTION_DELETE),true);
-  EnableWindow(GetDlgItem(Dialog,IDC_ACTION_DOWN),idx>1);
-//--    FillSubList(Dialog);
-  FillAction(Dialog,Macro^.ActionList^[0]);
-  CheckActListDirectionButtons(Dialog);
+  CheckActListButtons(Dialog);
 end;
 
 // change current action name ONLY IN LIST
@@ -374,6 +362,7 @@ begin
   wnd:=ActionListWindow;
   if num<0 then
     li.iItem:=SendMessage(wnd,LVM_GETNEXTITEM,-1,LVNI_FOCUSED)
+
   else
     li.iItem:=num;
   if li.iItem>=0 then
@@ -490,29 +479,33 @@ begin
             Inc(idx);
           Inc(item);
         end;
-        GetMem(ActionList,SizeOf(tBaseAction)*idx);
-
-        li.mask      :=LVIF_TEXT;
-        li.iSubItem  :=0;
-        li.pszText   :=@arr;
-        li.cchTextMax:=SizeOf(arr) div SizeOf(WideChar);
-
-        idx:=0;
-        for item:=0 to ActionCount-1 do
+        // if REAL amount to save>0 (macro not empty)
+        if idx>0 then
         begin
-          ActionList^[idx]:=tBaseAction(LV_GetLParam(wnd,item));
-          if ActionList^[idx]<>nil then
-          begin
-            // set name and enabled/disabled flag
-            li.iItem:=item;
-            SendDlgItemMessageW(Dialog,IDC_ACTION_LIST,LVM_GETITEMW,0,tlparam(@li));
-            StrDupW(ActionList^[idx].ActionDescr,arr);
+          GetMem(ActionList,SizeOf(tBaseAction)*idx);
 
-            if ListView_GetCheckState(wnd,item)=0 then
-              ActionList^[idx].flags:=ActionList^[item].flags or ACF_DISABLED
-            else
-              ActionList^[idx].flags:=ActionList^[item].flags and not ACF_DISABLED;
-            inc(idx);
+          li.mask      :=LVIF_TEXT;
+          li.iSubItem  :=0;
+          li.pszText   :=@arr;
+          li.cchTextMax:=SizeOf(arr) div SizeOf(WideChar);
+
+          idx:=0;
+          for item:=0 to ActionCount-1 do
+          begin
+            ActionList^[idx]:=tBaseAction(LV_GetLParam(wnd,item));
+            if ActionList^[idx]<>nil then
+            begin
+              // set name and enabled/disabled flag
+              li.iItem:=item;
+              SendDlgItemMessageW(Dialog,IDC_ACTION_LIST,LVM_GETITEMW,0,tlparam(@li));
+              StrDupW(ActionList^[idx].ActionDescr,arr);
+
+              if ListView_GetCheckState(wnd,item)=0 then
+                ActionList^[idx].flags:=ActionList^[item].flags or ACF_DISABLED
+              else
+                ActionList^[idx].flags:=ActionList^[item].flags and not ACF_DISABLED;
+              inc(idx);
+            end;
           end;
         end;
         ActionCount:=idx; // fix for empty actions
@@ -699,28 +692,19 @@ end;
 procedure CheckMacroList(Dialog:HWND);
 var
   wnd:HWND;
-  li:LV_ITEMW;
+  b:boolean;
 begin
   wnd:=MacroListWindow;
 
-  //?? was iItem=next=-1
-  if SendMessage(wnd,LVM_GETITEMCOUNT,0,0)>0 then
-  begin
-    ListView_SetItemState(wnd,0,LVIS_FOCUSED or LVIS_SELECTED,
-      LVIS_FOCUSED or LVIS_SELECTED);
-    li.iItem   :=0;
-    li.iSubItem:=0;
-    li.mask    :=LVIF_PARAM;
-    SendMessage(wnd,LVM_GETITEM,0,tlparam(@li));
-  end
-  else
-  begin
-    EnableWindow(wnd,false);
-    EnableWindow(GetDlgItem(Dialog,IDC_GROUP_DELETE),false);
-    EnableWindow(GetDlgItem(Dialog,IDC_GROUP_EXPORT),false);
-    CheckActListButtons(Dialog,0);
-    EnableWindow(GetDlgItem(Dialog,IDC_ACTION_NEW),false);
-  end;
+  b:=SendMessage(wnd,LVM_GETITEMCOUNT,0,0)>0;
+  if not b then
+    CheckActListButtons(Dialog);
+
+  EnableWindow(wnd,b);
+  EnableWindow(GetDlgItem(Dialog,IDC_ACTION_NEW  ),b);
+  EnableWindow(GetDlgItem(Dialog,IDC_GROUP_DELETE),b);
+  EnableWindow(GetDlgItem(Dialog,IDC_GROUP_EXPORT),b);
+
   CheckMacroListDirectionButtons(Dialog);
 end;
 
@@ -733,7 +717,8 @@ var
   lvi:TLVITEMW;
 begin
   SendDlgItemMessage(Dialog,IDC_ACTION_LIST,LVM_DELETEALLITEMS,0,0);
-  CheckActListButtons(Dialog,-1);
+  CheckActListButtons(Dialog);
+
   list:=MacroListWindow;
 
   SendMessage(list,LVM_DELETEALLITEMS,0,0);
@@ -757,22 +742,7 @@ begin
     end;
   end;
 
-  EnableWindow(GetDlgItem(Dialog,IDC_MACRO_LIST  ),result>=0);
-  EnableWindow(GetDlgItem(Dialog,IDC_ACTION_LIST ),result>=0);
-  EnableWindow(GetDlgItem(Dialog,IDC_ACTION_NEW  ),result>=0);
-  EnableWindow(GetDlgItem(Dialog,IDC_GROUP_DELETE),result>=0);
-  EnableWindow(GetDlgItem(Dialog,IDC_GROUP_EXPORT),result>=0);
-  if result<0 then
-  begin
-    EnableWindow(GetDlgItem(Dialog,IDC_GROUP_TEST   ),false);
-    EnableWindow(GetDlgItem(Dialog,IDC_ACTION_HELP  ),false);
-    EnableWindow(GetDlgItem(Dialog,IDC_ACTION_DELETE),false);
-    EnableWindow(GetDlgItem(Dialog,IDC_ACTION_UP    ),false);
-    EnableWindow(GetDlgItem(Dialog,IDC_ACTION_DOWN  ),false);
-    EnableWindow(GetDlgItem(Dialog,IDC_ACTION_TYPE  ),false);
-  end
-  else
-    result:=0;
+  CheckMacroList(Dialog);
 //??  SendMessage(list,CB_SETCURSEL,0,0);
   SendMessage(list,LVM_SETCOLUMNWIDTH,0,LVSCW_AUTOSIZE_USEHEADER);
 
@@ -931,7 +901,6 @@ begin
       FillActionList(Dialog,EditMacroList[0]);
       ChangeListNotify(2);
       EventMask:=0;
-      CheckMacroListDirectionButtons(Dialog);
       DontReact:=false;
     end;
 
@@ -1064,15 +1033,12 @@ begin
             IDC_GROUP_NEW: begin
               if AddMacro(Dialog,EditMacroList.NewMacro())>=0 then
               begin
-                EnableWindow(MacroListWindow,true);
-                EnableWindow(GetDlgItem(Dialog,IDC_GROUP_DELETE),true);
-                EnableWindow(GetDlgItem(Dialog,IDC_GROUP_EXPORT),true);
-                EnableWindow(GetDlgItem(Dialog,IDC_ACTION_NEW  ),true);
-                CheckMacroListDirectionButtons(Dialog);
+                CheckMacroList(Dialog);
                 ChangeListNotify(1);
               end;
             end;
             IDC_GROUP_DELETE: begin
+              DontReact:=true;
               wnd:=MacroListWindow;
               for i:=ListView_GetItemCount(wnd)-1 downto 0 do
               begin
@@ -1082,6 +1048,8 @@ begin
                   SendMessage(wnd,LVM_DELETEITEM,i,0);
                 end;
               end;
+              Listview_SetItemState(wnd,-1,0,LVIS_FOCUSED or LVIS_SELECTED);
+              DontReact:=false;
               SendDlgItemMessage(Dialog,IDC_ACTION_LIST,LVM_DELETEALLITEMS,0,0);
               Listview_SetItemState(wnd,0,LVIS_FOCUSED or LVIS_SELECTED,
                                           LVIS_FOCUSED or LVIS_SELECTED);
@@ -1112,15 +1080,12 @@ begin
                 SendDlgItemMessage(Dialog,IDC_ACTION_TYPE,CB_SETCURSEL,0,0);
               end;
               ChangeActionName(Dialog,li.iItem);
-              EnableWindow(GetDlgItem(Dialog,IDC_ACTION_LIST  ),true);
-              EnableWindow(GetDlgItem(Dialog,IDC_ACTION_HELP  ),true);
-              EnableWindow(GetDlgItem(Dialog,IDC_GROUP_TEST   ),true);
-              EnableWindow(GetDlgItem(Dialog,IDC_ACTION_DELETE),true);
-              EnableWindow(GetDlgItem(Dialog,IDC_ACTION_TYPE  ),true);
-              CheckActListDirectionButtons(Dialog);
+
+              CheckActListButtons(Dialog);
               ChangeListNotify(2);
             end;
             IDC_ACTION_DELETE: begin
+              DontReact:=true;
               wnd:=ActionListWindow;
               for i:=ListView_GetItemCount(wnd)-1 downto 0 do
               begin
@@ -1137,9 +1102,11 @@ begin
                   SendMessage(wnd,LVM_DELETEITEM,i,0);
                 end;
               end;
+              Listview_SetItemState(wnd,-1,0,LVIS_FOCUSED or LVIS_SELECTED);
+              DontReact:=false;
               Listview_SetItemState(wnd,0,LVIS_FOCUSED or LVIS_SELECTED,
                                           LVIS_FOCUSED or LVIS_SELECTED);
-              CheckActListButtons(Dialog,0);
+              CheckActListButtons(Dialog);
               ChangeListNotify(2);
             end;
 
@@ -1228,13 +1195,17 @@ begin
               end
               else
               begin
+{??
                 lvflag:=(PNMLISTVIEW(lParam)^.uOldState and LVNI_SELECTED)-
                         (PNMLISTVIEW(lParam)^.uNewState and LVNI_SELECTED);
+
                 if lvflag<>0 then
                   CheckMacroListDirectionButtons(Dialog);
+}
               end;
             end;
           end
+
           else if wParam=IDC_ACTION_LIST then
           begin
             lvflag:=(PNMLISTVIEW(lParam)^.uOldState and LVNI_FOCUSED)-
@@ -1258,11 +1229,13 @@ begin
             end
             else
             begin // checkboxes
+{??
               lvflag:=(PNMLISTVIEW(lParam)^.uOldState and LVNI_SELECTED)-
                       (PNMLISTVIEW(lParam)^.uNewState and LVNI_SELECTED);
+
               if lvflag<>0 then
                 CheckMacroListDirectionButtons(Dialog);
-
+}
               if (PNMLISTVIEW(lParam)^.uOldState or PNMLISTVIEW(lParam)^.uNewState)=$3000 then
               begin
                 SetChanged(Dialog,etACT);

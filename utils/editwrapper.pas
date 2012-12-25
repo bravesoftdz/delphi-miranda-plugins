@@ -8,6 +8,9 @@ uses windows;
 const
   EF_SCRIPT = 1;
   EF_ALL    = EF_SCRIPT; // what can be changed
+  EF_FORCES = $80;
+  EF_FORCET = $40;
+  EF_FORCE  = EF_FORCES or EF_FORCET;
 
 function MakeEditField(Dialog:HWND; id:uint):HWND;
 procedure SetEditFlags(wnd:HWND; mask, flags:dword); overload;
@@ -45,14 +48,10 @@ var
   ptr:pUserData;
 begin
   ptr:=pUserData(GetWindowLongPtrW(btnwnd,GWLP_USERDATA));
-  if (ptr^.flags and EF_SCRIPT)=0 then
-    title:='T'
-{
-  else if (ptr^.flags and EF_HEX)=0 then
-    title:='H'
-}
+  if (ptr^.flags and EF_SCRIPT)<>0 then
+    title:='S'
   else
-    title:='S';
+    title:='T';
   SendMessageW(btnwnd,WM_SETTEXT,0,tlParam(title));
 end;
 
@@ -94,14 +93,17 @@ begin
       ptr:=pUserData(GetWindowLongPtrW(HWND(lParam),GWLP_USERDATA));
 
       SetWindowLongPtrW(Dialog,GWLP_USERDATA,lParam);
+      pc:=GetDlgText(ptr^.LinkedControl);
+
+      if (ptr^.flags and (EF_FORCES or EF_FORCET))<>0 then
+        EnableWindow(GetDlgItem(Dialog,IDC_TEXT_SCRIPT),false);
+
       if (ptr^.flags and EF_SCRIPT)<>0 then
         CheckDlgButton(Dialog,IDC_TEXT_SCRIPT,BST_CHECKED);
-      if (ptr^.flags and EF_WRAP)<>0 then
-        CheckDlgButton(Dialog,IDC_TEXT_WRAP,BST_CHECKED);
 
-      pc:=GetDlgText(ptr^.LinkedControl);
       if (ptr^.flags and EF_WRAP)<>0 then
       begin
+        CheckDlgButton(Dialog,IDC_TEXT_WRAP,BST_CHECKED);
         idshow:=IDC_TEXT_EDIT_W;
         idhide:=IDC_TEXT_EDIT_NW;
       end
@@ -110,6 +112,7 @@ begin
         idshow:=IDC_TEXT_EDIT_NW;
         idhide:=IDC_TEXT_EDIT_W;
       end;
+
       SetDlgItemTextW(Dialog,idshow,pc);
       mFreeMem(pc);
       ShowWindow(GetDlgItem(Dialog,idshow),SW_SHOW);
@@ -303,7 +306,10 @@ begin
     if btnwnd<>0 then
     begin
       pu:=pUserData(GetWindowLongPtrW(btnwnd,GWLP_USERDATA));
-      pu^.flags:=flags and mask;
+      pu^.flags:=pu^.flags and not mask;
+      pu^.flags:=pu^.flags or flags;
+      if      (pu^.flags and EF_FORCES)<>0 then pu^.flags:=pu^.flags or EF_SCRIPT
+      else if (pu^.flags and EF_FORCET)<>0 then pu^.flags:=pu^.flags and not EF_SCRIPT;
       SetButtonTitle(btnwnd);
     end;
   end;

@@ -11,9 +11,12 @@ FONT 8, "MS Shell Dlg", 0, 0
   AUTOCHECKBOX  "Active accounts only",IDC_CNT_FILTER, 4, 11, 160, 11
   RTEXT         "Contact list format",-1, 4, 24, 160, 11
   EDITTEXT      IDC_EDIT_FORMAT, 22, 38, 142, 12, ES_AUTOHSCROLL
-  //!! remove later
   CONTROL       "Apply",IDC_CNT_APPLY,"MButtonClass",WS_TABSTOP,4,36,16,16,$18000000
   CTEXT         "You can use %name%, %uid%, %account% and %group% substitutes",-1, 4, 53, 160, 24
+
+  RTEXT         "Service list format",-1,  0, 82, 166, 11
+  COMBOBOX      IDC_SERVICELIST         , 19, 94, 148, 96, CBS_DROPDOWNLIST | WS_VSCROLL
+  CONTROL       "Apply",IDC_SRV_APPLY,"MButtonClass",WS_TABSTOP,1,93,16,16,$18000000
 }
 
 IDI_SETTINGS ICON "ico\settings.ico"

@@ -5,7 +5,6 @@ const
   IDC_RW_DELETE     = 2603;
   IDC_RW_MODULE     = 2606;
   IDC_RW_SETTING    = 2608;
-  IDC_RW_TEXT       = 2609;
   IDC_RW_VALUE      = 2610;
   IDC_RW_DATATYPE   = 2611;
   IDC_RW_CURRENT    = 2614;

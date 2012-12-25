@@ -18,6 +18,16 @@ uses
 
 //----- Dialog realization -----
 
+procedure FillServiceModeList(wnd:HWND);
+begin
+  SendMessage(wnd,CB_RESETCONTENT,0,0);
+  InsertString(wnd,0 ,'value');
+  InsertString(wnd,1 ,'name');
+  InsertString(wnd,2 ,'value (name)');
+  InsertString(wnd,3 ,'name ''value''');
+  SendMessage(wnd,CB_SETCURSEL,0,0);
+end;
+
 procedure ClearFields(Dialog:HWND);
 begin
   CheckDlgButton(Dialog,IDC_CNT_FILTER,BST_UNCHECKED);
@@ -35,6 +45,9 @@ begin
       TranslateDialogDefault(Dialog);
 
       OptSetButtonIcon(GetDlgItem(Dialog,IDC_CNT_APPLY),ACI_APPLY);
+
+      OptSetButtonIcon(GetDlgItem(Dialog,IDC_SRV_APPLY),ACI_APPLY);
+      FillServiceModeList(GetDlgItem(Dialog,IDC_SERVICELIST));
     end;
 
     WM_ACT_SETVALUE: begin
@@ -43,17 +56,25 @@ begin
 
     WM_ACT_RESET: begin
       ClearFields(Dialog);
-
+      // Contact list settings
       CheckDlgButton (Dialog,IDC_CNT_FILTER,DBReadByte(0,DBBranch,'CLfilter',BST_UNCHECKED));
       fCLformat:=DBReadUnicode(0,DBBranch,'CLformat');
       SetDlgItemTextW(Dialog,IDC_EDIT_FORMAT,fCLformat);
       mFreeMem(fCLformat);
+
+      // Servicelist mode settings
+      CB_SelectData(Dialog,IDC_SERVICELIST,DBReadByte(0,DBBranch,'SrvListMode'));
     end;
 
     WM_COMMAND: begin
       case wParam shr 16 of
         BN_CLICKED: begin
           case loword(wParam) of
+            IDC_SRV_APPLY: begin
+              DBWriteByte(0,DBBranch,'SrvListMode',
+                  CB_GetData(GetDlgItem(Dialog,IDC_SERVICELIST)));
+            end;
+
             IDC_CNT_APPLY: begin
               fCLformat:=GetDlgText(Dialog,IDC_EDIT_FORMAT);
               DBWriteUnicode(0,DBBranch,'CLformat',fCLformat);

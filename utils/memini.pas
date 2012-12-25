@@ -258,7 +258,9 @@ begin
       pc2:=ProcessParamValue(pc);
 
       AddParam(data,pc1,pc2,false);
-    end;
+    end
+    else // wrong thing, skip line
+      while not (pc^ in [#10,#13]) do inc(pc);
   end;
 
 end;

@@ -519,11 +519,11 @@ begin
         else if IsDlgButtonChecked(Dialog,IDC_RW_DELETE)=BST_CHECKED then flags:=flags or ACF_DBDELETE;
 
         // value
-        if IsDlgButtonChecked(Dialog,IDC_RW_LAST)=BST_CHECKED then
+        if IsDlgButtonChecked(Dialog,IDC_RW_LAST)<>BST_UNCHECKED then
           flags:=flags or ACF_LAST
         else if (flags and ACF_DBDELETE)=0 then
         begin
-          {mFreeMem(dbvalue); }dbvalue:=GetDlgText(Dialog,IDC_RW_TEXT);
+          {mFreeMem(dbvalue); }dbvalue:=GetDlgText(Dialog,IDC_RW_VALUE);
           if (GetEditFlags(Dialog,IDC_RW_VALUE) and EF_SCRIPT)<>0 then flags:=flags or ACF_RW_VALUE;
         end;
 
