@@ -183,7 +183,7 @@ function CB_SelectData(cb:HWND;data:lparam):lresult; overload;
 var
   i:integer;
 begin
-  result:=0;
+  result:=CB_ERR;
   for i:=0 to SendMessage(cb,CB_GETCOUNT,0,0)-1 do
   begin
     if data=lparam(SendMessage(cb,CB_GETITEMDATA,i,0)) then

@@ -641,7 +641,8 @@ begin
       MakeEditField(Dialog,IDC_EDIT_LPAR);
 
       ApiCard:=CreateServiceCard(Dialog);
-      ApiCard.FillList(GetDlgItem(Dialog,IDC_EDIT_SERVICE));
+      ApiCard.FillList(GetDlgItem(Dialog,IDC_EDIT_SERVICE),
+        DBReadByte(0,DBBranch,'SrvListMode'));
     end;
 
     WM_ACT_SETVALUE: begin
@@ -650,7 +651,8 @@ begin
 
       with tServiceAction(lParam) do
       begin
-        if SendDlgItemMessageA(Dialog,IDC_EDIT_SERVICE,CB_SELECTSTRING,twparam(-1),tlparam(service))<>CB_ERR then
+        if CB_SelectData(Dialog,IDC_EDIT_SERVICE,Hash(service,StrLen(service)))<>CB_ERR then
+//        if SendDlgItemMessageA(Dialog,IDC_EDIT_SERVICE,CB_SELECTSTRING,twparam(-1),tlparam(service))<>CB_ERR then
           ReloadService(Dialog)
         else
           SetDlgItemTextA(Dialog,IDC_EDIT_SERVICE,service);
@@ -790,7 +792,8 @@ begin
           sresStruct: flags:=flags or ACF_RSTRUCT;
         end;
 
-        service:=GetDlgText(Dialog,IDC_EDIT_SERVICE,true);
+        service:=ApiCard.NameFromList(GetDlgItem(Dialog,IDC_EDIT_SERVICE));
+
 //        if (GetEditFlags(Dialog,IDC_EDIT_SERVICE) and EF_SCRIPT)<>0 then
 //           flags:=flags or ACF_SCRIPT_SERVICE;
       end;
