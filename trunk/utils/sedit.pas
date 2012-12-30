@@ -25,7 +25,7 @@ const
   ACI_DELETE :PAnsiChar = 'ACI_Delete';
 
 const
-  API_STRUCT_FILE = 'plugins\services.ini';
+  API_STRUCT_FILE:pAnsiChar = 'plugins\services.ini';
   namespace = 'Structure';
 {$ENDIF}
 

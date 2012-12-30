@@ -26,6 +26,7 @@ const
   opt_show     = 'show';
 const
   ioArgs         = 'args';
+  ioProgram      = 'program';
   ioCurrent      = 'current';
   ioParallel     = 'parallel';
   ioWait         = 'wait';
@@ -240,7 +241,31 @@ begin
         else                                      show:=SW_SHOWNORMAL;
       end;
     end;
+{
+    2: begin
+      UTF8ToWide(GetParamSectionStr(node,ioProgram),prgname);
+      UTF8ToWide(GetParamSectionStr(node,ioArgs   ),args);
+      if GetParamSectionInt(node,ioCurrent)=1 then
+        flags:=flags or ACF_CURPATH;
 
+      if GetParamSectionInt(node,ioParallel)=1 then
+        flags:=flags or ACF_PRTHREAD
+      else
+        time:=GetParamSectionInt(node,ioWait);
+
+      if GetParamSectionInt(node,ioFileVariable)=1 then
+        flags:=flags or ACF_PRG_PRG;
+
+      if GetParamSectionInt(node,ioArgVariable)=1 then
+        flags:=flags or ACF_PRG_ARG;
+
+      pc:=GetParamSectionStr(node,ioWindow);
+      if      lstrcmpi(pc,ioHidden   )=0 then show:=SW_HIDE
+      else if lstrcmpi(pc,ioMinimized)=0 then show:=SW_SHOWMINIMIZED
+      else if lstrcmpi(pc,ioMaximized)=0 then show:=SW_SHOWMAXIMIZED
+      else                                     show:=SW_SHOWNORMAL;
+    end;
+}
   end;
 end;
 

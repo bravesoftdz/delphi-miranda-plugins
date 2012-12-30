@@ -20,6 +20,7 @@ const
   opt_text = 'text';
 const
   ioVariables = 'variables';
+  ioText      = 'text';
 const
   ACF_TEXTSCRIPT = $00000001;
 
@@ -284,7 +285,7 @@ begin
   else
   begin
     StrReplaceW(w,'^l',pWideChar(WorkData.LastResult));
-    StrReplaceW(w,'^h',IntToHex(buf,StrToInt(pWideChar(WorkData.LastResult))));
+    StrReplaceW(w,'^h',IntToHex(buf,NumToInt(pWideChar(WorkData.LastResult))));
   end;
 
   StrReplaceW(w,'^t',#9);   // ^t
@@ -316,6 +317,13 @@ begin
           flags:=flags or ACF_TEXTSCRIPT;
       end;
     end;
+{
+    2: begin
+      UTF8ToWide(GetParamSectionInt(node,ioText),text);
+      if GetParamSectionInt(node,ioVariables)=1 then
+        flags:=flags or ACF_TEXTSCRIPT;
+    end;
+}
   end;
 end;
 

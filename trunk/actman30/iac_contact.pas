@@ -93,7 +93,16 @@ begin
           flags:=flags or ACF_GETACTIVE;
       end;
     end;
+{
+    2: begin
+      contact:=ImportContactINI(node);
 
+      if GetParamSectionInt(node,ioKeepOnly)=1 then
+        flags:=flags or ACF_KEEPONLY;
+      if GetParamSectionInt(node,ioWindow)=1 then
+        flags:=flags or ACF_GETACTIVE;
+    end;
+}
   end;
 end;
 

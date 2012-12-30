@@ -6,7 +6,7 @@ implementation
 
 uses
   windows, commctrl, messages,
-  mirutils, common, dbsettings, io, m_api, wrapper,
+  mirutils, common, dbsettings, m_api, wrapper,
   global, mApiCardM;
 
 {$R hooks.res}

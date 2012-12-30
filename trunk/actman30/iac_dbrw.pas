@@ -197,7 +197,7 @@ begin
       end
       // got wide text
       else if (flags and ACF_TEXT)=0 then // need number
-        avalue:=StrToInt(pWideChar(avalue));
+        avalue:=NumToInt(pWideChar(avalue));
 {
     val=LR(wide) (wide,ansi)
     val=pointer to static buffer (wide, ansi)
@@ -216,7 +216,7 @@ begin
       if (flags and ACF_TEXT)=0 then // need a number
       begin
         tmp:=pWideChar(avalue);
-        avalue:=StrToInt(pWideChar(avalue));
+        avalue:=NumToInt(pWideChar(avalue));
         if (flags and ACF_RW_VALUE)<>0 then
           mFreeMem(tmp);
       end;
@@ -335,7 +335,41 @@ begin
           StrDupW(dbvalue,getText(HXML(node)));
       end;
     end;
+{
+    2: begin
+      pc:=GetParamSectionStr(node,ioOper);
+      if      lstrcmpi(pc,ioDelete)=0 then flags:=flags or ACF_DBDELETE
+      else if lstrcmpi(pc,ioWrite )=0 then flags:=flags or ACF_DBWRITE;
+//      else if lstrcmpiw(tmp,ioRead)=0 then ;
+      pc:=GetParamSectionStr(node,ioContact);
+      if      lstrcmpi(pc,ioCurrent)=0 then flags:=flags or ACF_CURRENT
+      else if lstrcmpi(pc,ioResult )=0 then flags:=flags or ACF_RESULT
+      else if lstrcmpi(pc,ioParam  )=0 then flags:=flags or ACF_PARAM
+      else if lstrcmpi(pc,ioContact)=0 then
+      begin
+        dbcontact:=ImportContactINI(node);
+      end;
 
+      UF8ToWide(GetParamSectionStr(node,ioModule ),dbmodule);
+      UF8ToWide(GetParamSectionStr(node,ioSetting),dbsetting);
+
+      if GetParamSectionInt(node,ioFileVariable)=1 then flags:=flags or ACF_RW_MODULE;
+      if GetParamSectionInt(node,ioArgVariable )=1 then flags:=flags or ACF_RW_SETTING;
+      if GetParamSectionInt(node,ioVariables   )=1 then flags:=flags or ACF_RW_VALUE;
+
+      pc:=GetParamSectionStr(node,ioType);
+      if      lstrcmpi(pc,ioByte )=0 then flags:=flags or ACF_DBBYTE
+      else if lstrcmpi(pc,ioWord )=0 then flags:=flags or ACF_DBWORD
+      else if lstrcmpi(pc,ioDword)=0 then
+      else if lstrcmpi(pc,ioAnsi )=0 then flags:=flags or ACF_DBANSI
+      else                                flags:=flags or ACF_DBUTEXT;
+
+      if GetParamSectionInt(node,ioLast))=1 then
+        flags:=flags or ACF_LAST
+      else
+        UF8ToWide(GetParamSectionStr(node,'value'),dbvalue); //!!
+    end;
+}
   end;
 end;
 

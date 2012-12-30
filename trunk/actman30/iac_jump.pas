@@ -30,17 +30,19 @@ const
   opt_condition = 'condition';
   opt_label     = 'label';
 const
-  ioIf    = 'IF';
-  ioCond  = 'cond';
-  ioNop   = 'nop';
-  ioNot   = 'not';
-  ioValue = 'value';
-  ioOper  = 'oper';
-  ioBreak = 'break';
-  ioJump  = 'jump';
-  ioPost  = 'POST';
-  ioCase  = 'case';
-  ioBack  = 'back';
+  ioIf     = 'IF';
+  ioCond   = 'cond';
+  ioNop    = 'nop';
+  ioNot    = 'not';
+  ioValue  = 'value';
+  ioOper   = 'oper';
+  ioAction = 'action';
+  ioLabel  = 'label';
+  ioBreak  = 'break';
+  ioJump   = 'jump';
+  ioPost   = 'POST';
+  ioCase   = 'case';
+  ioBack   = 'back';
 const
   ACF_NOP   = $00000001;
   ACF_MATH  = $00000002;
@@ -288,7 +290,49 @@ begin
         end;
       end;
     end;
+{
+    2: begin
+      pc:=GetParamSectionStr(node,ioOper);
+      if      lstrcmpi(pc,'math')=0 then flags:=flags or ACF_MATH
+      else if lstrcmpi(pc,ioNop )=0 then flags:=flags or ACF_NOP;
 
+      pc:=GetParamSectionStr(node,ioCond);
+      if lstrcmpi(pc,ioNop)=0 then flags:=flags or ACF_NOP // compatibility
+      else if (flags and ACF_NOP)=0 then
+      begin
+        if flags and ACF_MATH<>0 then
+        begin
+          if      lstrcmpi(pc,'gt' )=0 then condition:=aeGT
+          else if lstrcmpi(pc,'lt' )=0 then condition:=aeLT
+          else if lstrcmpi(pc,'eq' )=0 then condition:=aeEQ
+          else if lstrcmpi(pc,'xor')=0 then condition:=aeXR
+          else if lstrcmpi(pc,'and')=0 then condition:=aeND;
+        end
+        else
+        begin
+          if      lstrcmpi(pc,'empty')=0 then condition:=aeEMP
+          else if lstrcmpi(pc,'eq'   )=0 then condition:=aeEQU
+          else if lstrcmpi(pc,'cont' )=0 then condition:=aeCON
+          else if lstrcmpi(pc,'start')=0 then condition:=aeSTR
+          else if lstrcmpi(pc,'ends' )=0 then condition:=aeEND;
+
+          if GetParamSectionInt(node,ioCase)=1 then
+            flags:=flags or ACF_CASE;
+          if GetParamSectionInt(node,ioBack)=1 then
+            flags:=flags or ACF_BACK;
+        end;
+        if GetParamSectionInt(node,ioNot)=1 then
+          flags:=flags or ACF_NOT;
+
+        if ((flags and ACF_MATH)<>0) or (condition<>aeEMP) then
+          UTF8ToWide(GetParamSectionStr(node,ioValue),value);
+      end;
+
+      pc:=GetParamSectionStr(node,ioAction);
+      if      lstrcmpi(pc,ioBreak)=0 then flags:=flags or ACF_BREAK
+      else if lstrcmpi(pc,ioJump )=0 then UTF8ToWide(GetParamSectionStr(node,ioLabel),actlabel);
+    end;
+}
   end;
 end;
 

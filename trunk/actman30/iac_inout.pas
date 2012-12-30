@@ -348,6 +348,42 @@ begin
         end;
       end;
     end;
+{
+    2: begin
+      pc:=GetParamSectionStr(node,ioObject);
+      if lstrcmpi(tmp,ioClipboard)=0 then
+      begin
+        flags:=flags or ACF_CLIPBRD;
+        pc:=GetParamSectionStr(node,ioOper);
+        if lstrcmpi(pc,ioCopy)=0 then flags:=flags or ACF_COPYTO;
+//        else if lstrcmpi(pc,'paste')=0 then ;
+      end
+      else
+      begin
+        if lstrcmpi(pc,ioFile)=0 then
+        begin
+          flags:=flags or ACF_FILE;
+
+          if GetParamSectionInt(node,ioFileVariable))=1 then
+            flags:=flags or ACF_FILE_PATH;
+
+          UTF8ToWide(GetParamSectionStr(node,ioFile),tfile);
+
+          pc:=GetParamSectionStr(node,ioOper);
+          if      lstrcmpi(pc,ioWrite )=0 then flags:=flags or ACF_FWRITE
+          else if lstrcmpi(pc,ioAppend)=0 then flags:=flags or ACF_FAPPEND;
+
+          case GetParamSectionInt(node,ioEnc)) of
+            0: flags:=flags or ACF_ANSI;
+            1: flags:=flags or ACF_UTF8;
+            2: flags:=flags or ACF_UTF8 or ACF_SIGN;
+            3: flags:=flags or 0;
+            4: flags:=flags or ACF_SIGN;
+          end;
+        end;
+      end;
+    end;
+}
   end;
 end;
 

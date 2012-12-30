@@ -81,7 +81,8 @@ procedure InsertString(wnd:HWND;num:dword;str:PAnsiChar);
 function GetLink(hash:dword):pActModule;
 function GetLinkByName(name:pAnsiChar):pActModule;
 
-function ImportContact(node:HXML):THANDLE;
+function ImportContact   (node:HXML   ):THANDLE;
+function ImportContactINI(node:pointer):THANDLE;
 
 implementation
 
@@ -156,6 +157,14 @@ begin
         StrDupW(ActionDescr,getAttrValue(HXML(node),ioName));
       end;
     end;
+{
+    2: begin
+      if GetParamSectionInt(node,ioDisabled))=1 then
+        flags:=flags or ACF_DISABLED;
+
+      UF8ToWide(GetParamSectionStr(node,ioName),ActionDescr);
+    end;
+}
   end;
 end;
 
@@ -195,6 +204,8 @@ begin
     result:=WorkData.LastResult
   else
   begin
+    result:=NumToInt(pWideChar(WorkData.LastResult));
+{
     if (pWideChar(WorkData.LastResult)[0]='$') and
        (AnsiChar(pWideChar(WorkData.LastResult)[1]) in sHexNum) then
       result:=HexToInt(pWideChar(WorkData.LastResult)+1)
@@ -205,6 +216,7 @@ begin
       result:=HexToInt(pWideChar(WorkData.LastResult)+2)
     else
       result:=StrToInt(pWideChar(WorkData.LastResult));
+}
   end;
 end;
 
@@ -247,6 +259,7 @@ var
   proto:pAnsiChar;
   tmpbuf:array [0..63] of AnsiChar;
   dbv:TDBVARIANT;
+  tmp:pWideChar;
   is_chat:boolean;
 begin
   with xmlparser do
@@ -259,23 +272,24 @@ begin
     end;
     is_chat:=StrToInt(getAttrValue(node,ioIsChat))<>0;
 
+    tmp:=getAttrValue(node,ioCUID);
     if is_chat then
     begin
-      dbv.szVal.W:=getAttrValue(node,ioCUID);
+      dbv.szVal.W:=tmp;
     end
     else
     begin
       FillChar(dbv,SizeOf(TDBVARIANT),0);
       dbv._type:=StrToInt(getAttrValue(node,ioCUIDType));
       case dbv._type of
-        DBVT_BYTE  : dbv.bVal:=StrToInt(getAttrValue(node,ioCUID));
-        DBVT_WORD  : dbv.wVal:=StrToInt(getAttrValue(node,ioCUID));
-        DBVT_DWORD : dbv.dVal:=StrToInt(getAttrValue(node,ioCUID));
-        DBVT_ASCIIZ: FastWideToAnsi(getAttrValue(node,ioCUID),dbv.szVal.A);
-        DBVT_UTF8  : WideToUTF8(getAttrValue(node,ioCUID),dbv.szVal.A);
-        DBVT_WCHAR : StrDupW(dbv.szVal.W,getAttrValue(node,ioCUID));
+        DBVT_BYTE  : dbv.bVal:=StrToInt(tmp);
+        DBVT_WORD  : dbv.wVal:=StrToInt(tmp);
+        DBVT_DWORD : dbv.dVal:=StrToInt(tmp);
+        DBVT_ASCIIZ: FastWideToAnsi(tmp,dbv.szVal.A);
+        DBVT_UTF8  : WideToUTF8(tmp,dbv.szVal.A);
+        DBVT_WCHAR : dbv.szVal.W:=tmp;
         DBVT_BLOB  : begin
-          Base64Decode(FastWideToAnsi(getAttrValue(node,ioCUID),pAnsiChar(dbv.pbVal)),dbv.pbVal);
+          Base64Decode(FastWideToAnsi(tmp,pAnsiChar(dbv.pbVal)),dbv.pbVal);
         end;
       end;
     end;
@@ -283,11 +297,60 @@ begin
   result:=FindContactHandle(proto,dbv,is_chat);
   if not is_chat then
     case dbv._type of
-      DBVT_WCHAR,
       DBVT_ASCIIZ,
       DBVT_UTF8  : mFreeMem(dbv.szVal.A);
       DBVT_BLOB  : mFreeMem(dbv.pbVal);
     end;
+end;
+
+function ImportContactINI(node:pointer):THANDLE;
+{
+var
+  proto:pAnsiChar;
+  dbv:TDBVARIANT;
+  tmp:pAnsiChar;
+  is_chat:boolean;
+}
+begin
+  result:=0;
+{
+  proto:=GetParamSectionStr(node,ioCProto); // LATIN chars must be
+  if (proto=nil) or (proto^=#0) then
+  begin
+    result:=0;
+    exit;
+  end;
+  is_chat:=GetParamSectionInt(node,ioIsChat)<>0;
+
+  tmp:=GetParamSectionStr(node,ioCUID);
+  if is_chat then
+  begin
+    dbv.szVal.W:=UTF8ToWide(tmp);
+  end
+  else
+  begin
+    FillChar(dbv,SizeOf(TDBVARIANT),0);
+    dbv._type:=GetParamSectionInt(node,ioCUIDType);
+    case dbv._type of
+      DBVT_BYTE  : dbv.bVal:=StrToInt(tmp);
+      DBVT_WORD  : dbv.wVal:=StrToInt(tmp);
+      DBVT_DWORD : dbv.dVal:=StrToInt(tmp);
+      DBVT_ASCIIZ: dbv.szVal.A:=tmp; // must be LATIN
+      DBVT_UTF8  : dbv.szVal.A:=tmp;
+      DBVT_WCHAR : UTF8ToWide(tmp);
+      DBVT_BLOB  : begin // must be LATIN (base64)
+        Base64Decode(tmp,dbv.pbVal);
+      end;
+    end;
+  end;
+
+  result:=FindContactHandle(proto,dbv,is_chat);
+
+  if is_chat or (dbv._type=DBVT_WCHAR) then
+    mFreeMem(dbv.szVal.W)
+  else if dbv._type=DBVT_BLOB then
+    mFreeMem(dbv.pbVal);
+}
 end;
 
 end.

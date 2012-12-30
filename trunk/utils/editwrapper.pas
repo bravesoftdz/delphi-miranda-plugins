@@ -39,6 +39,7 @@ type
   tUserData = record
     SavedProc    :pointer;
     LinkedControl:HWND;
+    LinkedCtrlId :integer;
     flags        :dword;
   end;
 
@@ -205,6 +206,7 @@ begin
             end;
 
             IDOK: begin
+              ptr^.flags:=ptr^.flags and not EF_ALL; // /clear changing flags
               if IsDlgButtonChecked(Dialog,IDC_TEXT_SCRIPT)<>BST_UNCHECKED then
                 ptr^.flags:=ptr^.flags or EF_SCRIPT;
               SetButtonTitle(btnwnd);
@@ -215,6 +217,10 @@ begin
                 pc:=GetDlgText(Dialog,IDC_TEXT_EDIT_NW);
               SendMessageW(ptr^.LinkedControl,WM_SETTEXT,0,tlParam(pc));
               mFreeMem(pc);
+
+              // !! cheat
+              SendMessage(GetParent(ptr^.LinkedControl),WM_COMMAND,
+                  (EN_CHANGE shl 16)+ptr^.LinkedCtrlId,ptr^.LinkedControl);
 
               EndDialog(Dialog,1);
             end;
@@ -285,6 +291,7 @@ begin
     mGetMem(pu,SizeOf(tUserData));
     pu^.SavedProc    :=pointer(SetWindowLongPtrW(result,GWL_WNDPROC,long_ptr(@EditControlProc)));
     pu^.LinkedControl:=ctrl;
+    pu^.LinkedCtrlId :=id;
     pu^.flags        :=0;
     SetWindowLongPtrW(result,GWLP_USERDATA,long_ptr(pu));
     inc(rc.left,20);

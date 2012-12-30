@@ -23,6 +23,7 @@ const
   opt_boxopts  = 'boxopts';
 const
   ioTitle       = 'title';
+  ioText        = 'text';
   ioType        = 'type';
   ioArgVariable = 'argvariables';
   ioVariables   = 'variables';
@@ -156,7 +157,16 @@ begin
         if StrToInt(getAttrValue(HXML(node),ioVariables  ))=1 then flags:=flags or ACF_MSG_TTL;
       end;
     end;
+{
+    2: begin
+      UTF8ToWide(GetParamSectionInt(node,ioTitle),msgtitle);
+      UTF8ToWide(GetParamSectionInt(node,ioText ),msgtext);
+      boxopts:=GetParamSectionInt(node,ioType);
 
+      if GetParamSectionInt(node,ioArgVariable)=1 then flags:=flags or ACF_MSG_TXT;
+      if GetParamSectionInt(node,ioVariables  )=1 then flags:=flags or ACF_MSG_TTL;
+    end;
+}
   end;
 end;
 
