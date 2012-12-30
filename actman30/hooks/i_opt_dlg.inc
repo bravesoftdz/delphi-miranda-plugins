@@ -133,7 +133,9 @@ end;
 procedure SaveHookData(Dialog:HWND; item:integer=-1);
 var
   wnd:HWND;
-  li:LV_ITEM;
+  li:LV_ITEMW;
+  p:pAnsiChar;
+  buf:array [0..127] of WideChar;
 begin
   wnd:=GetDlgItem(Dialog,IDC_HOOKLIST);
   if item<0 then
@@ -146,7 +148,9 @@ begin
   SendMessageW(wnd,LVM_SETITEMW,0,LPARAM(@li));
   li.mask      :=LVIF_TEXT;
   li.iSubItem  :=1;
-  li.pszText   :=GetDlgText(Dialog,IDC_EVENTLIST);
+  p:=ApiCard.NameFromList(GetDlgItem(Dialog,IDC_EVENTLIST));
+  li.pszText   :=FastAnsitoWideBuf(p,buf);
+  //GetDlgText(Dialog,IDC_EVENTLIST);
   SendMessageW(wnd,LVM_SETITEMW,0,LPARAM(@li));
   mFreeMem(li.pszText);
 end;
@@ -294,7 +298,9 @@ begin
 
       SetIcons(Dialog);
 
-      ApiCard.FillList(GetDlgItem(Dialog,IDC_EVENTLIST));
+      ApiCard.FillList(GetDlgItem(Dialog,IDC_EVENTLIST),
+        DBReadByte(0,DBBranch,'SrvListMode'));
+ 
       FillActionList(GetDlgItem(Dialog,IDC_ACTIONLIST));
       FillHookList(wnd);
       ShowHookData(Dialog);

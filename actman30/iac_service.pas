@@ -156,7 +156,7 @@ begin
           StrDupW(pWideChar(l_param),tmp1);
       end
       else
-        l_param:=StrToInt(tmp1);
+        l_param:=NumToInt(tmp1);
 
       if (flags and ACF_SCRIPT_PARAM)<>0 then
         mFreeMem(tmp1);
@@ -322,7 +322,33 @@ begin
     end;
   end;
 end;
+{
+function ReadParamINI(node:pointer;prefix:pAnsiChar;var param:pWideChar;isvar:boolean):dword;
+var
+  pc,pc1:pAnsiChar;
+  buf:array [0..63] of AnsiChar;
+begin
+  result:=0;
+  pc1:=StrCopyE(buf,prefix);
+  pc:=GetParamSectionStr(node,StrCopy(pc1,ioType));
+  if      lstrcmpi(pc,ioCurrent)=0 then result:=result or ACF_CURRENT
+  else if lstrcmpi(pc,ioResult )=0 then result:=result or ACF_RESULT
+  else if lstrcmpi(pc,ioParam  )=0 then result:=result or ACF_PARAM
+  else if lstrcmpi(pc,ioStruct )=0 then
+  begin
+    result:=result or ACF_STRUCT;
+//!!!!      param:=ReadStruct(act);
+  end
+  else
+  begin
+    UTF8ToWide(GetParamSectionInt(node,StrCopy(pc1,ioValue)),param);
 
+    if      lstrcmpi(pc,ioNumber )=0 then result:=result or ACF_PARNUM
+    else if lstrcmpi(pc,ioUnicode)=0 then result:=result or ACF_UNICODE;
+//      else if lstrcmpi(pc,ioAnsi)=0 then;
+  end;
+end;
+}
 procedure tServiceAction.Load(node:pointer;fmt:integer);
 var
   section: array [0..127] of AnsiChar;
@@ -370,7 +396,30 @@ begin
         else if lstrcmpiw(tmp,ioInt    )=0 then ;
       end;
     end;
+{
+    2: begin
+      StrDup(service,GetParamSectionStr(node,ioService));
+//!!!!      UTF8ToWide(GetParamSectionStr(node,ioService),service);
+      if GetParamSectionInt(node,ioVariables)=1 then
+        flags:=flags or ACF_SCRIPT_SERVICE;
 
+      if GetParamSectionInt(node,ioWParam+'.'+ioVariables))=1 then
+        flags:=flags or ACF_SCRIPT_PARAM;
+      flags:=flags or ReadParamINI(node,ioWParam+'.',wparam,(flags and ACF_SCRIPT_PARAM)<>0);
+
+      if GetParamSectionInt(node,ioLParam+'.'+ioVariables))=1 then
+        flags2:=flags2 or ACF_SCRIPT_PARAM;
+      flags2:=flags2 or ReadParamINI(node,ioLParam+'.',lparam,(flags2 and ACF_SCRIPT_PARAM)<>0);
+
+      if GetParamSectionInt(node,ioFree)=1 then flags:=flags or ACF_RFREEMEM;
+
+      pc:=GetParamSectionStr(node,ioType);
+      if      lstrcmpi(pñ,ioUnicode)=0 then flags:=flags or ACF_RUNICODE
+      else if lstrcmpi(pñ,ioAnsi   )=0 then flags:=flags or ACF_RSTRING
+      else if lstrcmpi(pñ,ioStruct )=0 then flags:=flags or ACF_RSTRUCT
+//      else if lstrcmpi(pñ,ioInt    )=0 then ;
+    end;
+}
   end;
 end;
 
@@ -801,7 +850,9 @@ begin
 
     WM_COMMAND: begin
       case wParam shr 16 of
-        EN_CHANGE: if not NoProcess then
+{        CBN_EDITUPDATE,
+        CBN_EDITCHANGE,
+}        EN_CHANGE: if not NoProcess then
             SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
 
         CBN_SELCHANGE:  begin
@@ -853,7 +904,8 @@ begin
 
             IDC_EDIT_SERVICE: ReloadService(Dialog);
           end;
-          SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
+          if not NoProcess then
+            SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
         end;
 
         BN_CLICKED: begin

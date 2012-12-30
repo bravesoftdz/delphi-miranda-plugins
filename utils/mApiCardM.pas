@@ -192,9 +192,6 @@ begin
   result:=pc;
 end;
 
-
-
-
 procedure tmApiCard.FillList(combo:hwnd; mode:integer=0);
 var
   tmpbuf:array [0..127] of AnsiChar;
@@ -425,7 +422,7 @@ begin
     end;
     parent:=lparent;
   end;
-  storage:=OpenStorage(@IniFile);
+  storage:=OpenStorage(pAnsiChar(@IniFile));
 end;
 
 destructor tmApiCard.Destroy;
