@@ -98,7 +98,7 @@ var
   Sel: Boolean;
   RTL: Boolean;
   FullHeader: Boolean;
-  RichBMP: PBitmap;
+  RichBMP: PCacheBitmap;
   ic: HICON;
   HeadRect: TRect;
   dtf: Integer;
@@ -260,7 +260,7 @@ begin
 
     BitBlt(FClient.Canvas.Handle, ItemClipRect.Left, ItemClipRect.Top,
       ItemClipRect.Right - ItemClipRect.Left, ItemClipRect.Bottom - ItemClipRect.Top,
-      RichBMP.Canvas.Handle, ItemClipRect.Left - ItemRect.Left,
+      RichBMP.DC, ItemClipRect.Left - ItemRect.Left,
       ItemClipRect.Top - ItemRect.Top, SRCCOPY);
   end;
 

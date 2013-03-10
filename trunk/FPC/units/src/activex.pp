@@ -44,7 +44,7 @@ type
    pFMTID = pGUID;
 
    { Glue types, should be linked to the proper windows unit types}
-   Size_t              = DWord;       {??, probably, like Unix, typecastable to pointer?!?}
+   Size_t              = PTRUINT;       {??, probably, like Unix, typecastable to pointer?!?}
    OleChar             = WChar;
    LPOLESTR            = ^OLECHAR;
    POLECHAR            = LPOLESTR;
@@ -71,6 +71,8 @@ type
 
 CONST
    GUID_NULL  : TGUID =  '{00000000-0000-0000-0000-000000000000}';
+   IID_IPrint : TGUID = '{B722BCC9-4E68-101B-A2BC-00AA00404770}';
+   IID_IOleCommandTarget : TGUID = '{B722BCCB-4E68-101B-A2BC-00AA00404770}';
 
      // bit flags for IExternalConnection
 CONST
@@ -805,16 +807,97 @@ Const
     PROPSETFLAG_NONSIMPLE = DWORD(1);
     PROPSETFLAG_ANSI      = DWORD(2);
 
+Type
+    OLECMDF 	  = LongWord;
+    OLECMDTEXTF   = LongWord;
+    OLECMDEXECOPT = LongWord;
+    OLECMDID      = LongWord;
+
+Const
+    OLECMDF_SUPPORTED     = $0000000000000001;
+    OLECMDF_ENABLED       = $0000000000000002;
+    OLECMDF_LATCHED 	  = $0000000000000004;
+    OLECMDF_NINCHED 	  = $0000000000000008;
+    OLECMDF_INVISIBLE 	  = $0000000000000010;
+    OLECMDF_DEFHIDEONCTXTMENU = $0000000000000020;
+
+    OLECMDTEXTF_NONE      = $0000000000000000;
+    OLECMDTEXTF_NAME      = $0000000000000001;
+    OLECMDTEXTF_STATUS    = $0000000000000002;
+
+    OLECMDEXECOPT_DODEFAULT = $0000000000000000;
+    OLECMDEXECOPT_PROMPTUSER= $0000000000000001;
+    OLECMDEXECOPT_DONTPROMPTUSER = $0000000000000002;
+    OLECMDEXECOPT_SHOWHELP  = $0000000000000003;
+
+    OLECMDID_OPEN         = $0000000000000001;
+    OLECMDID_NEW 	  = $0000000000000002;
+    OLECMDID_SAVE 	  = $0000000000000003;
+    OLECMDID_SAVEAS       = $0000000000000004;
+    OLECMDID_SAVECOPYAS   = $0000000000000005;
+    OLECMDID_PRINT 	  = $0000000000000006;
+    OLECMDID_PRINTPREVIEW = $0000000000000007;
+    OLECMDID_PAGESETUP    = $0000000000000008;
+    OLECMDID_SPELL 	  = $0000000000000009;
+    OLECMDID_PROPERTIES   = $000000000000000A;
+    OLECMDID_CUT 	  = $000000000000000B;
+    OLECMDID_COPY 	  = $000000000000000C;
+    OLECMDID_PASTE 	  = $000000000000000D;
+    OLECMDID_PASTESPECIAL = $000000000000000E;
+    OLECMDID_UNDO 	  = $000000000000000F;
+    OLECMDID_REDO 	  = $0000000000000010;
+    OLECMDID_SELECTALL    = $0000000000000011;
+    OLECMDID_CLEARSELECTION = $0000000000000012;
+    OLECMDID_ZOOM         = $0000000000000013;
+    OLECMDID_GETZOOMRANGE = $0000000000000014;
+    OLECMDID_UPDATECOMMANDS = $0000000000000015;
+    OLECMDID_REFRESH      = $0000000000000016;
+    OLECMDID_STOP 	  = $0000000000000017;
+    OLECMDID_HIDETOOLBARS = $0000000000000018;
+    OLECMDID_SETPROGRESSMAX = $0000000000000019;
+    OLECMDID_SETPROGRESSPOS = $000000000000001A;
+    OLECMDID_SETPROGRESSTEXT = $000000000000001B;
+    OLECMDID_SETTITLE     = $000000000000001C;
+    OLECMDID_SETDOWNLOADSTATE = $000000000000001D;
+    OLECMDID_STOPDOWNLOAD = $000000000000001E;
+    OLECMDID_ONTOOLBARACTIVATED = $000000000000001F;
+    OLECMDID_FIND         = $0000000000000020;
+    OLECMDID_DELETE 	  = $0000000000000021;
+    OLECMDID_HTTPEQUIV    = $0000000000000022;
+    OLECMDID_HTTPEQUIV_DONE = $0000000000000023;
+    OLECMDID_ENABLE_INTERACTION = $0000000000000024;
+    OLECMDID_ONUNLOAD     = $0000000000000025;
+    OLECMDID_PROPERTYBAG2 = $0000000000000026;
+    OLECMDID_PREREFRESH   = $0000000000000027;
+    OLECMDID_SHOWSCRIPTERROR = $0000000000000028;
+    OLECMDID_SHOWMESSAGE  = $0000000000000029;
+    OLECMDID_SHOWFIND     = $000000000000002A;
+    OLECMDID_SHOWPAGESETUP= $000000000000002B;
+    OLECMDID_SHOWPRINT    = $000000000000002C;
+    OLECMDID_CLOSE 	  = $000000000000002D;
+    OLECMDID_ALLOWUILESSSAVEAS = $000000000000002E;
+    OLECMDID_DONTDOWNLOADCSS = $000000000000002F;
+    OLECMDID_UPDATEPAGESTATUS = $0000000000000030;
+    OLECMDID_PRINT2       = $0000000000000031;
+    OLECMDID_PRINTPREVIEW2= $0000000000000032;
+    OLECMDID_SETPRINTTEMPLATE = $0000000000000033;
+    OLECMDID_GETPRINTTEMPLATE = $0000000000000034;
+    OLECMDID_UPDATEVSCROLL= $0000000000000035;
+    OLECMDID_UPDATEHSCROLL= $0000000000000036;
+    OLECMDID_FITTOSCREEN  = $0000000000000037;
+
 TYPE
-    VARTYPE             = USHORT;
+    TVarType            = USHORT;
+    VARTYPE             = TVarType deprecated;  // not in Delphi, and clashes with VarType function
 
 //TypeInfo stuff.
 
-    DISPID              = Long ;
+    TDispID             = Long;
+    DISPID              = TDispID deprecated;  // not in Delphi and clashes with property modifier
     SCODE               = Long;
     pSCODE              = ^SCODE;
-    lpDISPID            = ^DISPID;
-    MEMBERID            = DispId;
+    lpDISPID            = ^TDispID;
+    MEMBERID            = TDispID;
     HREFTYPE            = DWord;
     TResultList		= array[0..high(integer) div 4-50] of HResult;
     PResultList         = ^TResultList;
@@ -1278,6 +1361,7 @@ TYPE
 
    DVTARGETDEVICE               = TagDVTARGETDEVICE;
    PDVTARGETDEVICE              = ^tagDVTARGETDEVICE;
+   PTAGDVTARGETDEVICE           = PDVTARGETDEVICE;
    LPCLIPFORMAT                 = ^TCLIPFORMAT;
    TCLIPFORMAT                  = Word;
    CLIPFORMAT                   = TCLIPFORMAT;
@@ -1379,16 +1463,91 @@ TYPE
                                     End;
    FLAG_STGMEDIUM               = _FLAG_STGMEDIUM;
 
+   PPSafeArray = ^PSafeArray;
+   PSafeArray = ^TSafeArray;
 
-   VARIANTARG                   = VARIANT;
-   LPVARIANT                    = ^VARIANT;
-   LPVARIANTARG                 = ^VARIANT;
+   tagDEC = record //  simpler remoting variant without nested unions. see wtypes.h
+         wReserved : ushort;
+         scale,
+         sign : byte;
+         hi32 : ULONG;
+         lo64 : ULONGLONG;
+         end;
+   TDECIMAL=tagDEC;
+   PDecimal=^TDECIMAL;
+
+   tagVariant = record
+   case Integer of
+   0: (
+     vt: TVarType;
+     wReserved1: Word;
+     wReserved2: Word;
+     wReserved3: Word;
+     case Integer of
+       VT_UI1:                  (bVal: Byte);
+       VT_UI2:                  (uiVal: Word);
+       VT_UI4:                  (ulVal: LongWord);
+       VT_UI8:                  (ullVal: QWord);
+       VT_I1:                   (cVal: Char);  { shortint,perhaps? But it is Char both in PSDK and Delphi }
+       VT_I2:                   (iVal: Smallint);
+       VT_I4:                   (lVal: Longint);
+       VT_I8:                   (llVal: Int64);
+       VT_R4:                   (fltVal: Single);
+       VT_R8:                   (dblVal: Double);
+       VT_BOOL:                 (vbool: VARIANT_BOOL);
+       VT_ERROR:                (scode: HResult);
+       VT_CY:                   (cyVal: Currency);
+       VT_DATE:                 (date: TOleDate);
+       { managed types cannot be used in a variant record like this one. }
+       VT_BSTR:                 (bstrVal: POleStr{WideString});
+       VT_UNKNOWN:              (unkVal: Pointer{IUnknown});
+       VT_DISPATCH:             (dispVal: Pointer{IDispatch});
+       VT_ARRAY:                (parray: PSafeArray);
+       VT_BYREF or VT_UI1:      (pbVal: PByte);
+       VT_BYREF or VT_UI2:      (puiVal: PWord);
+       VT_BYREF or VT_UI4:      (pulVal: PInteger);
+       VT_BYREF or VT_UI8:      (pullVal: PQWord);
+       VT_BYREF or VT_I1:       (pcVal: PChar); { PShortInt?? }
+       VT_BYREF or VT_I2:       (piVal: PSmallint);
+       VT_BYREF or VT_I4:       (plVal: PLongint);
+       VT_BYREF or VT_I8:       (pllVal: PInt64);
+       VT_BYREF or VT_R4:       (pfltVal: PSingle);
+       VT_BYREF or VT_R8:       (pdblVal: PDouble);
+       VT_BYREF or VT_BOOL:     (pbool: PVARIANT_BOOL);
+       VT_BYREF or VT_ERROR:    (pscode: ^HResult);
+       VT_BYREF or VT_CY:       (pcyVal: PCurrency);
+       VT_BYREF or VT_DATE:     (pdate: POleDate);
+       VT_BYREF or VT_BSTR:     (pbstrVal: ^WideString);
+       VT_BYREF or VT_UNKNOWN:  (punkVal: ^IUnknown);
+       VT_BYREF or VT_DISPATCH: (pdispVal: ^IDispatch);
+       VT_BYREF or VT_ARRAY:    (pparray: PPSafeArray);
+       VT_BYREF or VT_VARIANT:  (pvarVal: PVariant);
+       VT_BYREF:                (byRef: Pointer);
+       VT_INT:                  (intVal: Longint);
+       VT_UINT:                 (uintVal: LongWord);
+       VT_BYREF or VT_DECIMAL:  (pdecVal: PDecimal);
+
+       VT_BYREF or VT_INT:      (pintVal: PLongint);
+       VT_BYREF or VT_UINT:     (puintVal: PLongWord);
+       VT_RECORD:               (pvRecord: Pointer; pRecInfo: Pointer {IRecordInfo});
+     );
+   1: (decVal: TDECIMAL);
+   end;
+
+   TVariantArg = tagVariant;
+   PVariantArg = ^TVariantArg;
+
+   PVariantArgList = ^TVariantArgList;
+   TVariantArgList = array[0..65535] of TVariantArg;
+
+   PDispIDList = ^TDispIDList;
+   TDispIDList = array[0..65535] of TDispID;
 
 // parameter description
 
    tagPARAMDESCEX               = Record
                                     cBytes         : ULong;      // size of this structure
-                                    varDefaultValue: VariantARG; // default value of this parameter
+                                    varDefaultValue: TVariantArg; // default value of this parameter
                                     End;
 
    PARAMDESCEX                  = tagPARAMDESCEX;
@@ -1409,6 +1568,8 @@ TYPE
                                      End;
    SAFEARRAYBOUND               = tagSAFEARRAYBOUND;
    LPSAFEARRAYBOUND             = ^SAFEARRAYBOUND;
+   TSafeArrayBound = tagSAFEARRAYBOUND;
+   PSafeArrayBound = ^TSafeArrayBound;
 
    tagSAFEARRAY = record
      cDims: USHORT;
@@ -1420,7 +1581,6 @@ TYPE
    end;
    TSafeArray = tagSAFEARRAY;
    SAFEARRAY = TSafeArray;
-   PSafeArray = ^TSafeArray;
 
 // additional interface information about the incoming call
    tagINTERFACEINFO             = Record
@@ -1473,7 +1633,7 @@ TYPE
    tagTYPEDESC                  = Record
                                     Case Integer OF
                                       VT_PTR,
-                                      VT_SAFEARRAY   :  (lptdesc : PTYPEDESC;vt : VARTYPE);
+                                      VT_SAFEARRAY   :  (lptdesc : PTYPEDESC;vt : TVarType);
                                       VT_CARRAY      :  (lpadesc : PARRAYDESC);
                                       VT_USERDEFINED :  (hreftype : HREFTYPE);
                                       End;
@@ -1523,8 +1683,8 @@ TYPE
   LPVARDESC                     = ^VARDESC;
   pVARDESC			= LPVARDESC;
   tagDISPPARAMS                 = Record
-                                   rgvarg            : lpVARIANTARG;
-                                   rgdispidNamedArgs : lpDISPID;
+                                   rgvarg            : PVariantArgList;
+                                   rgdispidNamedArgs : PDispIDList;
                                    cArgs,
                                    cNamedArgs        : UINT;
                                    End;
@@ -1628,7 +1788,7 @@ TYPE
 
   tagCUSTDATAITEM                = Record
                                      GUID         : TGuid;           // guid identifying this custom data item
-                                     varValue     : VARIANTARG;      // value of this custom data item
+                                     varValue     : TVariantArg;     // value of this custom data item
                                      End;
 
   CUSTDATAITEM                   = tagCUSTDATAITEM;
@@ -1661,7 +1821,7 @@ TYPE
   tagSTATPROPSTG = record
                     lpwstrName : LPOLESTR ;
                     propid:PROPID ;
-                    vt : VARTYPE;
+                    vt : TVarType;
                     end;
   STATPROPSTG = tagSTATPROPSTG;
   TSTATPROPSTG = STATPROPSTG;
@@ -1686,20 +1846,11 @@ TYPE
      end;
    VERSIONEDSTREAM = tagVersionedStream;
    TVERSIONEDSTREAM = tagVersionedStream;
-   LPVERSIONEDSTREAM = tagVersionedStream;
+   LPVERSIONEDSTREAM = ^tagVersionedStream;
    PVERSIONEDSTREAM = ^TagVersionedStream;
 
 
    LPSAFEARRAY = ^SAFEARRAY;
-   tagDEC = record //  simpler remoting variant without nested unions. see wtypes.h
-         wReserved : ushort;
-         scale,
-         sign : byte;
-         hi32 : ULONG;
-         lo64 : ULONGLONG;
-         end;
-   TDECIMAL=tagDEC;
-   PDecimal=^TDECIMAL;
 
    tagCAC = record
         cElems : ULONG;
@@ -1856,8 +2007,9 @@ TYPE
    IPropertyStorage    = Interface;
    IEnumSTATPROPSETSTG = interface;
 
-   TPROPVARIANT = record
-          vt : VARTYPE;
+   { size of this record must be 16, i.e. match Variant }
+   TPROPVARIANT = packed record
+          vt : TVarType;
           wReserved1 : PROPVAR_PAD1;
           wReserved2 : PROPVAR_PAD2;
           wReserved3 : PROPVAR_PAD3;
@@ -2060,7 +2212,7 @@ TYPE
      IEnumUnknown = Interface(IUnknown)
         ['{00000100-0000-0000-C000-000000000046}']
         //    pointer_default(unique)
-     Function Next(Celt:Ulong;out rgelt;out pCeltFetched:pulong):HRESULT;StdCall;
+     Function Next(Celt:Ulong; out rgelt;pCeltFetched:pulong):HRESULT;StdCall;
 //    HRESULT RemoteNext(        [in] ULONG celt,        [out, size_is(celt), length_is( *pceltFetched)]        IUnknown **rgelt,        [out] ULONG *pceltFetched);
      Function Skip(Celt:Ulong):HResult;StdCall;
      Function Reset():HResult;
@@ -2458,10 +2610,10 @@ TYPE
     IConnectionPoint = Interface (IUnknown)
        ['{B196B286-BAB4-101A-B69C-00AA00341D07}']
        Function GetConnectionInterface(out piid : TIID):HResult;StdCall;
-       Function GetConnectionPointContainer(CPC : IConnectionPointContainer):HResult;StdCall;
-       Function Advise(unkSink : IUnknown;Out dwCookie : DWord):HResult;StdCall;
+       Function GetConnectionPointContainer(out CPC : IConnectionPointContainer):HResult;StdCall;
+       Function Advise(Const unkSink : IUnknown;Out dwCookie : DWord):HResult;StdCall;
        Function UnAdvise(dwCookie : DWord):HResult;StdCall;
-       Function EnumConnection(out pEnum : IEnumConnections):HResult;stdCall;
+       Function EnumConnections(out pEnum : IEnumConnections):HResult;StdCall;
       End;
 
     IConnectionPointContainer = Interface (IUnknown)
@@ -2854,7 +3006,7 @@ TYPE
       Function  LocalGetIDsOfNames():HResult;StdCall;
      {$endif}
      {$ifndef Call_as}
-     Function  Invoke(pvInstance: Pointer; memid: MEMBERID; wFlags: WORD; VAR pDispParams: DISPPARAMS; OUT pVarResult: VARIANT; OUT pExcepInfo: EXCEPINFO; OUT puArgErr: UINT):HResult;StdCall;
+     Function  Invoke(pvInstance: Pointer; memid: MEMBERID; wFlags: WORD; VAR pDispParams: DISPPARAMS; pVarResult: PVARIANT; pExcepInfo: PEXCEPINFO; puArgErr: PUINT):HResult;StdCall;
      {$else}
      Function  LocalInvoke ():HResult;StdCall;
      {$endif}
@@ -3089,6 +3241,15 @@ TYPE
      Function ParseDisplayName(CONST bc: IBindCtx; pszDisplayName: POleStr;OUT chEaten: Longint; OUT mkOut: IMoniker): HResult;StdCall;
      End;
 
+const
+     // IOleContainer.EnumObjects() flags
+     OLECONTF_EMBEDDINGS    = 1;
+     OLECONTF_LINKS         = 2;
+     OLECONTF_OTHERS        = 4;
+     OLECONTF_ONLYUSER      = 8;
+     OLECONTF_ONLYIFRUNNING = 16;
+
+type
    IOleContainer = interface(IParseDisplayName)
      ['{0000011B-0000-0000-C000-000000000046}']
      Function EnumObjects(grfFlags: Longint; OUT Enum: IEnumUnknown):HResult;StdCall;
@@ -3148,6 +3309,38 @@ TYPE
   LPOleInPlaceFrameInfo = POleInPlaceFrameInfo;
   OLEINPLACEFRAMEINFO = tagOIFI;
 
+   PtagPAGESET = ^tagPAGESET;
+
+   PtagPAGERANGE = ^tagPAGERANGE;
+
+   tagPAGESET = packed record
+       cbStruct : LongWord;
+       fOddPages : Integer;
+       fEvenPages : Integer;
+       cPageRange : LongWord;
+       rgPages : PtagPAGERANGE;
+   end;
+
+   tagPAGERANGE = packed record
+       nFromPage : Integer;
+       nToPage : Integer;
+   end;
+
+   P_tagOLECMD = ^_tagOLECMD;
+
+   _tagOLECMD = packed record
+       cmdID : LongWord;
+       cmdf : LongWord;
+   end;
+
+   P_tagOLECMDTEXT = ^_tagOLECMDTEXT;
+
+   _tagOLECMDTEXT = packed record
+       cmdtextf : LongWord;
+       cwActual : LongWord;
+       cwBuf : LongWord;
+       rgwz : PWord;
+   end;
 
 { redefinitions }
   function CoCreateGuid(out _para1:TGUID):HRESULT;stdcall;external 'ole32.dll' name 'CoCreateGuid';
@@ -3162,6 +3355,9 @@ TYPE
 { OleIdl.h }
 type
   IOleInPlaceActiveObject = interface;
+  IPrint 		  = interface;
+  IOleCommandTarget 	  = interface;
+  IContinueCallback       = interface;
 
   IOleAdviseHolder = interface(IUnknown)
     ['{00000111-0000-0000-C000-000000000046}']
@@ -3184,8 +3380,8 @@ type
   IDropSource = interface(IUnknown)
     ['{00000121-0000-0000-C000-000000000046}']
     function QueryContinueDrag(fEscapePressed: BOOL;
-      grfKeyState: Longint):HResult;StdCall;
-    function GiveFeedback(dwEffect: Longint): HResult;StdCall;
+      grfKeyState: DWORD):HResult;StdCall;
+    function GiveFeedback(dwEffect: DWORD): HResult;StdCall;
   end;
 
   IOleObject = interface(IUnknown)
@@ -3265,9 +3461,9 @@ type
 
    IOleInPlaceSite = interface(IOleWindow)
       ['{00000119-0000-0000-C000-000000000046}']
-      function CanInPlaceActivate : HResult;
-      function OnInPlaceActivate : HResult;
-      function OnUIActivate : HResult;
+      function CanInPlaceActivate : HResult;stdcall;
+      function OnInPlaceActivate : HResult;stdcall;
+      function OnUIActivate : HResult;stdcall;
       function GetWindowContext(out ppframe:IOleInPlaceFrame;out ppdoc:IOleInPlaceUIWindow;lprcposrect:LPRECT;lprccliprect:LPRECT;lpframeinfo:LPOLEINPLACEFRAMEINFO):hresult; stdcall;
       function Scroll(scrollExtant:TSIZE):hresult; stdcall;
       function OnUIDeactivate(fUndoable:BOOL):hresult; stdcall;
@@ -3279,10 +3475,10 @@ type
 
     IOleInPlaceObject = interface(IOleWindow)
       ['{00000113-0000-0000-C000-000000000046}']
-      function InPlaceDeactivate : HResult;
-      function UIDeactivate : HResult;
+      function InPlaceDeactivate : HResult;stdcall;
+      function UIDeactivate : HResult;stdcall;
       function SetObjectRects(lprcPosRect:LPRect;lprcClipRect:LPRect):hresult; stdcall;
-      function ReactivateAndUndo : HResult;
+      function ReactivateAndUndo : HResult;stdcall;
      end;
 
     IOleDocumentView = interface(IUnknown)
@@ -3294,12 +3490,12 @@ type
         function Getrect(prcView:LPRect):hresult; stdcall;
         function SetRectComplex(prcview:LPRect;prcHScroll:LPRect;prcVScroll:LPRect;prcSizeBox:LPRect):hresult; stdcall;
         function Show(fshow:Bool) :hresult; stdcall;
-        function UIActivate(fUIActive :BOOL): HResult;
+        function UIActivate(fUIActive :BOOL): HResult;stdcall;
         function Open :hresult; stdcall;
         function Closeview(dwreserved:DWORD):hresult; stdcall;
         function SaveViewState(pstm:IStream):hresult; stdcall;
         function ApplyViewState(pstm:IStream):hresult; stdcall;
-        function Clone(pipsitenew: IOleInPlaceSite;out ppviewNew:IOleDocumentView):HResult;
+        function Clone(pipsitenew: IOleInPlaceSite;out ppviewNew:IOleDocumentView):HResult;stdcall;
         end;
 
     IEnumOleDocumentViews = Interface(IUnknown)
@@ -3322,12 +3518,24 @@ type
        function ActivateMe(pviewtoactivate:IOleDocumentView):hresult; stdcall;
        end;
 
+    IPrint = interface(IUnknown)
+       ['{B722BCC9-4E68-101B-A2BC-00AA00404770}']
+       function SetInitialPageNum(nFirstPage:Integer):HRESULT;stdcall;
+       function GetPageInfo(out pnFirstPage:Integer;out pcPages:Integer):HRESULT;stdcall;
+       function RemotePrint(grfFlags:LongWord;var pptd:PtagDVTARGETDEVICE;var pppageset:PtagPAGESET;var pstgmOptions:tagRemSTGMEDIUM;pcallback:IContinueCallback;nFirstPage:Integer;out pcPagesPrinted:Integer;out pnLastPage:Integer):HRESULT;stdcall;
+      end;
+  
+    IOleCommandTarget = interface(IUnknown)
+       ['{B722BCCB-4E68-101B-A2BC-00AA00404770}']
+       function QueryStatus(var pguidCmdGroup:GUID;cCmds:LongWord;var prgCmds:_tagOLECMD;var pCmdText:_tagOLECMDTEXT):HRESULT;stdcall;
+       function Exec(var pguidCmdGroup:GUID;nCmdID:LongWord;nCmdexecopt:LongWord;var pvaIn:OleVariant;var pvaOut:OleVariant):HRESULT;stdcall;
+      end;
+
     IContinueCallback = interface(IUnknown)
        ['{b722bcca-4e68-101b-a2bc-00aa00404770}']
         function FContinue:HResult;Stdcall;
         function FContinuePrinting( nCntPrinted:LONG;nCurPage:Long;pwzprintstatus:polestr):HResult;Stdcall;
       end;
-
 
 { ObjSafe.idl}
   IObjectSafety = interface(IUnknown)
@@ -3354,6 +3562,11 @@ type
     function GetExtent(dwDrawAspect:dword;lindex:DWord;ptd:pDVTARGETDEVICE;lpsizel:LPSIZEL):HRESULT;stdcall;
     end;
 
+  IObjectWithSite = interface
+    ['{FC4801A3-2BA9-11CF-A229-00AA003D7352}']
+    function SetSite(const pUnkSite: IUnknown):HRESULT; stdcall;
+    function GetSite(const riid: TIID; out Site: IUnknown):HRESULT; stdcall;
+  end;
 
 
 { COMCAT}
@@ -3823,11 +4036,6 @@ type
 {$endif wince}
 
   type
-    TDispID = DISPID;
-
-    TDispIDList = array[0..65535] of TDispID;
-    PDispIDList = ^TDispIDList;
-
     REFIID = TIID;
     TREFIID = TIID;
 
@@ -3870,7 +4078,8 @@ function LoadTypeLib(szfile : lpolestr; var pptlib: ITypelib):HResult; stdcall; 
 function LoadRegTypeLib(const rguid:TGUID;wVerMajor:ushort;wVerMinor:ushort;_lcid:lcid;out pptlib:ITypeLib):HResult; stdcall; external oleaut32dll name 'LoadRegTypeLib';
 function RegisterTypeLib(const ptrlib :ITypeLib;szfullpath:lpolestr;szhelpdir:lpolestr):HResult; stdcall; external oleaut32dll name 'RegisterTypeLib';
 function CreateTypeLib2(sysk:TSysKind;szfile:lpolestr;out ppctlib:ICreateTypeLib2):HResult; stdcall; external oleaut32dll name 'CreateTypeLib2';
-function DispInvoke(this:pointer;const ptinfo: ITypeInfo;dispidMember:TDISPID;wflags:ushort;pparams:pDISPParams;var pvarresult:OLEVARIANT;pexcepinfo:EXCEPINFO;puArgErr:puint):HRESULT; stdcall; external oleaut32dll name 'CreateTypeLib2';
+function DispInvoke(this:pointer;const ptinfo: ITypeInfo;dispidMember:TDISPID;wflags:ushort;pparams:pDISPParams;
+   var pvarresult:OLEVARIANT;pexcepinfo:EXCEPINFO;puArgErr:puint):HRESULT; stdcall; external oleaut32dll name 'DispInvoke';
 {$ifndef wince}
 function LoadTypeLibEx(szfile : lpolestr; regk:tregkind; var pptlib: ITypelib):HResult; stdcall; external oleaut32dll name 'LoadTypeLibEx';
 function QueryPathOfRegTypeLib(const guid:TGUID;wVerMajor:ushort;wVerMinor:ushort;_lcid:lcid;lpbstr:LPolestr):HResult; stdcall; external oleaut32dll name 'QueryPathOfRegTypeLib';
@@ -4132,6 +4341,51 @@ function VarUI8FromUI4(ulIn:ULONG; pi64Out:PULONG64):HResult;stdcall;external ol
 function VarUI8FromDec(var pdecIn:TDecimal; pi64Out:PULONG64):HResult;stdcall;external oleaut32dll name 'VarUI8FromDec';
 function VarUI8FromInt(intIn:cint; pi64Out:PULONG64):HResult;stdcall;external oleaut32dll name 'VarUI8FromInt';
 
+{ SafeArray API }
+
+function SafeArrayAllocDescriptor(cDims: UINT; out psaOut: PSafeArray): HResult; stdcall;
+  external oleaut32dll name 'SafeArrayAllocDescriptor';
+function SafeArrayAllocData(psa: PSafeArray): HResult; stdcall;
+  external oleaut32dll name 'SafeArrayAllocData';
+function SafeArrayCreate(vt: TVarType; cDims: UINT; rgsabound: PSafeArrayBound): PSafeArray; stdcall;
+  external oleaut32dll name 'SafeArrayCreate';
+function SafeArrayCreateVector(vt: TVarType; Lbound: Longint; cElements: ULONG): PSafeArray; stdcall;
+  external oleaut32dll name 'SafeArrayCreateVector';
+function SafeArrayCopyData(psaSource, psaTarget: PSafeArray): HResult; stdcall;
+  external oleaut32dll name 'SafeArrayCopyData';
+function SafeArrayDestroyDescriptor(psa: PSafeArray): HResult; stdcall;
+  external oleaut32dll name 'SafeArrayDestroyDescriptor';
+function SafeArrayDestroyData(psa: PSafeArray): HResult; stdcall;
+  external oleaut32dll name 'SafeArrayDestroyData';
+function SafeArrayDestroy(psa: PSafeArray): HResult; stdcall;
+  external oleaut32dll name 'SafeArrayDestroy';
+function SafeArrayRedim(psa: PSafeArray; saboundNew: PSafeArrayBound): HResult; stdcall;
+  external oleaut32dll name 'SafeArrayRedim';
+function SafeArrayGetDim(psa: PSafeArray): UINT; stdcall;
+  external oleaut32dll name 'SafeArrayGetDim';
+function SafeArrayGetElemsize(psa: PSafeArray): UINT; stdcall;
+  external oleaut32dll name 'SafeArrayGetElemsize';
+function SafeArrayGetUBound(psa: PSafeArray; nDim: UINT; out lUbound: Longint): HResult; stdcall;
+  external oleaut32dll name 'SafeArrayGetUBound';
+function SafeArrayGetLBound(psa: PSafeArray; nDim: UINT; out lLbound: Longint): HResult; stdcall;
+  external oleaut32dll name 'SafeArrayGetLBound';
+function SafeArrayLock(psa: PSafeArray): HResult; stdcall;
+  external oleaut32dll name 'SafeArrayLock';
+function SafeArrayUnlock(psa: PSafeArray): HResult; stdcall;
+  external oleaut32dll name 'SafeArrayUnlock';
+function SafeArrayAccessData(psa: PSafeArray; out pvData: Pointer): HResult; stdcall;
+  external oleaut32dll name 'SafeArrayAccessData';
+function SafeArrayUnaccessData(psa: PSafeArray): HResult; stdcall;
+  external oleaut32dll name 'SafeArrayUnaccessData';
+function SafeArrayGetElement(psa: PSafeArray; rgIndices: PLongint; out pv): HResult; stdcall;
+  external oleaut32dll name 'SafeArrayGetElement';
+function SafeArrayPutElement(psa: PSafeArray; rgIndices: PLongint; const pv): HResult; stdcall;
+  external oleaut32dll name 'SafeArrayPutElement';
+function SafeArrayCopy(psa: PSafeArray; out psaOut: PSafeArray): HResult; stdcall;
+  external oleaut32dll name 'SafeArrayCopy';
+function SafeArrayPtrOfIndex(psa: PSafeArray; rgIndices: PLongint; out pvData: Pointer): HResult; stdcall;
+  external oleaut32dll name 'SafeArrayPtrOfIndex';
+  
 implementation
 
 function Succeeded(Res: HResult) : Boolean;inline;

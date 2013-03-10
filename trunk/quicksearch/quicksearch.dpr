@@ -164,7 +164,7 @@ begin
   odp.hInstance  :=hInstance;
   odp.pszTemplate:=PAnsiChar(IDD_DIALOG1);
   odp.szTitle.a  :=qs_name;
-  odp.szGroup.a  :='Contact List';
+  odp.szGroup.a  :='Contacts';
   odp.pfnDlgProc :=@sr_optdialog.DlgProcOptions;
   odp.flags      :=ODPF_BOLDGROUPS;
   Options_AddPage(wParam,@odp);

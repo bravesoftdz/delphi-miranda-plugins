@@ -2,10 +2,11 @@
 set myopts=-dMiranda
 set dprname=actman.dpr
 
-..\delphi\brcc32.exe %myopts% options.rc     -fooptions.res
-..\delphi\brcc32.exe %myopts% hooks\hooks.rc -fohooks\hooks.res
-..\delphi\brcc32.exe %myopts% tasks\tasks.rc -fotasks\tasks.res
-..\delphi\brcc32.exe %myopts% ua\ua.rc       -foua\ua.res
+for /R %%I in (*.rc) do ..\delphi\brcc32.exe %myopts% %%I -fo%%~npI.res
+:..\delphi\brcc32.exe %myopts% options.rc     -fooptions.res
+:..\delphi\brcc32.exe %myopts% hooks\hooks.rc -fohooks\hooks.res
+:..\delphi\brcc32.exe %myopts% tasks\tasks.rc -fotasks\tasks.res
+:..\delphi\brcc32.exe %myopts% ua\ua.rc       -foua\ua.res
 
 if /i '%1' == 'fpc' (
   ..\FPC\bin\fpc.exe %myopts% %dprname% %2 %3 %4 %5 %6 %7 %8 %9

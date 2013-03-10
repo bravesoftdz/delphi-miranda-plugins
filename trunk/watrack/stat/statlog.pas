@@ -641,6 +641,7 @@ begin
   Stat.Init      :=@InitProc;
   Stat.DeInit    :=@DeInitProc;
   Stat.AddOption :=@AddOptionsPage;
+  Stat.Check     :=nil;
   Stat.ModuleName:='Statistic';
   ModuleLink     :=@Stat;
 end;

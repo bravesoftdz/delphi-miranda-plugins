@@ -60,7 +60,10 @@ function Menu_AddTrayMenuItem(mi:PCLISTMENUITEM):HGENMENU;
 function UserInfo_AddPage(wParam:WPARAM; odp:POPTIONSDIALOGPAGE):int_ptr;
 function Options_AddPage(wParam:WPARAM; odp:POPTIONSDIALOGPAGE):int_ptr;
 function Hotkey_Register(hk:PHOTKEYDESC):int_ptr;
+
 function Skin_AddIcon(si:PSKINICONDESC):THANDLE;
+procedure Icon_Register (hInst:HINST; const szSection:pAnsiChar; pIcons:pIconItem ; iCount:size_t; prefix:PAnsiChar);
+procedure Icon_RegisterW(hInst:HINST; const szSection:pWideChar; pIcons:pIconItemW; iCount:size_t; prefix:PAnsiChar);
 
 procedure FontRegister(pFontID:pFontID);
 procedure FontRegisterW(pFontID:pFontIDW);
@@ -465,6 +468,16 @@ end;
 function Skin_AddIcon(si:PSKINICONDESC):THANDLE;
 begin
   result:=CallService(MS_SKIN2_ADDICON, hLangpack, LPARAM(si));
+end;
+
+procedure Icon_Register(hInst:HINST; const szSection:pAnsiChar; pIcons:pIconItem; iCount:size_t; prefix:PAnsiChar);
+begin
+	mir_Icon_Register(hInst, szSection, pIcons, iCount, prefix, hLangpack);
+end;
+
+procedure Icon_RegisterW(hInst:HINST; const szSection:pWideChar; pIcons:pIconItemW; iCount:size_t; prefix:PAnsiChar);
+begin
+	mir_Icon_RegisterW(hInst, szSection, pIcons, iCount, prefix, hLangpack);
 end;
 
 procedure FontRegister(pFontID:pFontID);

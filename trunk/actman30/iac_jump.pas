@@ -460,6 +460,7 @@ begin
   EnableWindow(GetDlgItem(Dialog,IDC_FLAG_NOT ),true);
   EnableWindow(GetDlgItem(Dialog,IDC_FLAG_CASE),true);
   EnableEditField(GetDlgItem(Dialog,IDC_JMP_VALUE),true);
+  SetDlgItemTextW(Dialog,IDC_JMP_VALUE,nil);
   SetEditFlags(Dialog,IDC_JMP_VALUE,EF_ALL,0);
 
   CheckDlgButton(Dialog,IDC_FLAG_NOP  ,BST_UNCHECKED);
@@ -469,8 +470,6 @@ begin
   CheckDlgButton(Dialog,IDC_FLAG_CASE ,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_FLAG_BREAK,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_FLAG_JUMP ,BST_UNCHECKED);
-
-//  TextClear(IDC_JMP_VALUE);
 end;
 
 function DlgProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;

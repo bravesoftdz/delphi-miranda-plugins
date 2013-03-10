@@ -105,6 +105,7 @@ type
 {-- start newpluginapi --}
 const
   UNICODE_AWARE = 1;
+  STATIC_PLUGIN = 2;
 
 // The UUID structure below is used to for plugin UUID's and module type definitions
 type
@@ -251,8 +252,8 @@ var
 
 implementation
 
-const
-  hLangpack:THANDLE = 0;
+var
+  hLangpack:int = 0;
 
 {$undef M_API_UNIT}
   {$include m_helpers.inc}

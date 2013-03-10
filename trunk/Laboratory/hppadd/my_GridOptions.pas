@@ -9,6 +9,9 @@ uses
   kol,
   hpp_global;
 
+//type
+//  TColor = Integer;
+
 type
   TItemOption = record
     MessageType  : TMessageTypes;
@@ -285,7 +288,7 @@ begin
   StrCopyW(fid.name, hppFontItems[Order].name);
   col := CallService(MS_FONT_GETW, WPARAM(@fid), LPARAM(@lf));
 
-  aFont.LogFontStruct:=lf;
+  aFont.LogFontStruct:={$IFDEF FPC}PLogFontA(@lf)^{$ELSE}lf{$ENDIF};
   aFont.Color:=col;
 end;
 

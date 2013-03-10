@@ -212,9 +212,10 @@ begin
   cbei.mask:=CBEIF_IMAGE or CBEIF_SELECTEDIMAGE or CBEIF_TEXT or CBEIF_LPARAM;
   p:=ModuleLink;
   i:=0;
+  // initial action dialogs position
   SetRect(rc,134,22,0,0);
-  MapDialogRect(GetParent(list),rc);
   dlg:=GetParent(list);
+  MapDialogRect(dlg,rc);
   while p<>nil do
   begin
     StrCopy(StrCopyE(@buf,IcoLibPrefix),p^.Name);

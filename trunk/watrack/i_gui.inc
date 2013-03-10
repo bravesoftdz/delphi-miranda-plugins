@@ -4,7 +4,8 @@ function OnTTBLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
   ttb:m_api.TTBButton;
 begin
-  UnhookEvent(onloadhook);
+  if onloadhook<>0 then
+    UnhookEvent(onloadhook);
 
   FillChar(ttb,SizeOf(ttb),0);
   ttb.cbSize :=SizeOf(ttb);

@@ -420,6 +420,61 @@ end;
 
 // ------------ base interface functions -------------
 
+function CheckProc(load:boolean):boolean;
+var
+  newstate:boolean;
+begin
+  result:=true;
+  // Popups
+  newstate:=ServiceExists(MS_POPUP_ADDPOPUPW)<>0;
+  if newstate=PopupPresent then
+    exit;
+
+  PopupPresent:=newstate;
+  if PopupPresent then
+  begin
+    IsFreeImagePresent:=ServiceExists(MS_IMG_LOAD       )<>0;
+    IsPopup2Present   :=ServiceExists(MS_POPUP_ADDPOPUP2)<>0;
+    opthook:=HookEvent(ME_OPT_INITIALISE,@OnOptInitialise);
+
+    if ServiceExists(MS_POPUP_REGISTERACTIONS)<>0 then
+    begin
+      if RegisterButtonIcons then
+      begin
+        ActionList:=MakeActions;
+        if ActionList<>nil then
+          CallService(MS_POPUP_REGISTERACTIONS,wparam(ActionList),7);
+      end;
+    end;
+  end
+  else
+  begin
+    UnhookEvent(opthook);
+    mFreeMem(ActionList);
+  end;
+
+  // TTB
+  newstate:=ServiceExists(MS_TTB_ADDBUTTON)<>0;
+  if newstate=(ttbInfo<>0) then
+    exit;
+
+  if ttbInfo=0 then
+  begin
+    onttbhook:=0;
+    OnTTBLoaded(0,0);
+    if ttbInfo=0 then
+      onttbhook:=HookEvent(ME_TTB_MODULELOADED,@OnTTBLoaded);
+  end
+  else
+  begin
+    if ServiceExists(MS_TTB_REMOVEBUTTON)>0 then
+      CallService(MS_TTB_REMOVEBUTTON,WPARAM(ttbInfo),0);
+    ttbInfo:=0;
+  end;
+
+  // Variables ?
+end;
+
 function InitProc(aGetStatus:boolean=false):integer;
 var
   mi:TCListMenuItem;
@@ -460,6 +515,7 @@ begin
   mi.popupPosition:=MenuInfoPos;
   hMenuInfo       :=Menu_AddMainMenuItem(@mi);
 
+  ActionList:=nil;
   if ServiceExists(MS_POPUP_ADDPOPUPW)<>0 then
   begin
     IsFreeImagePresent:=ServiceExists(MS_IMG_LOAD       )<>0;
@@ -467,9 +523,7 @@ begin
     PopupPresent:=true;
     opthook:=HookEvent(ME_OPT_INITIALISE,@OnOptInitialise);
     loadpopup;
-    regpophotkey;
 
-    ActionList:=nil;
     if ServiceExists(MS_POPUP_REGISTERACTIONS)<>0 then
     begin
       if RegisterButtonIcons then
@@ -483,7 +537,9 @@ begin
   else
   begin
     PopupPresent:=false;
+    opthook:=0;
   end;
+  regpophotkey;
 
   plStatusHook:=HookEvent(ME_WAT_NEWSTATUS,@NewPlStatus);
 
@@ -533,6 +589,7 @@ begin
   Popup.Init      :=@InitProc;
   Popup.DeInit    :=@DeInitProc;
   Popup.AddOption :=nil;
+  Popup.Check     :=@CheckProc;
   Popup.ModuleName:='PopUps';
   ModuleLink      :=@Popup;
 end;

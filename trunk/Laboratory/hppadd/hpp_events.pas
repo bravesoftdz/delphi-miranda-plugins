@@ -642,19 +642,19 @@ procedure GetEventTextForMessage(EventInfo: TDBEventInfo; var Hi: THistoryItem);
 var
   msgA: PAnsiChar;
   msgW: PWideChar;
-  msglen,lenW: Cardinal;
+  msglen,lenW: integer;
   i: integer;
 begin
   msgA := PAnsiChar(EventInfo.pBlob);
   msgW := nil;
   msglen := lstrlenA(PAnsiChar(EventInfo.pBlob)) + 1;
-  if msglen > Cardinal(EventInfo.cbBlob) then
+  if msglen > integer(EventInfo.cbBlob) then
     msglen := EventInfo.cbBlob;
   if Boolean(EventInfo.flags and DBEF_UTF) then
   begin
     SetLength(Hi.Text, msglen);
     lenW := Utf8ToWideChar(PWideChar(Hi.Text), msglen, msgA, msglen - 1, Hi.CodePage);
-    if Integer(lenW) > 0 then
+    if lenW > 0 then
       SetLength(Hi.Text, lenW - 1)
     else
       Hi.Text := AnsiToWideString(msgA, Hi.CodePage, msglen - 1);

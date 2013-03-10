@@ -9,18 +9,18 @@ uses
 //function InitRichEditLibrary: Integer;
 
 function GetRichRTFW(RichEditHandle: THandle; var RTFStream: WideString;
-                    SelectionOnly, PlainText, NoObjects, PlainRTF: Boolean): Integer; overload;
+                    SelectionOnly, PlainText, NoObjects, PlainRTF: Boolean): Integer;// overload;
 function GetRichRTFA(RichEditHandle: THandle; var RTFStream: AnsiString;
-                    SelectionOnly, PlainText, NoObjects, PlainRTF: Boolean): Integer; overload;
+                    SelectionOnly, PlainText, NoObjects, PlainRTF: Boolean): Integer;// overload;
 function GetRichString(RichEditHandle: THandle; SelectionOnly: Boolean = false): WideString;
 
 function SetRichRTFW(RichEditHandle: THandle; const RTFStream: WideString;
-                    SelectionOnly, PlainText, PlainRTF: Boolean): Integer; overload;
+                    SelectionOnly, PlainText, PlainRTF: Boolean): Integer;// overload;
 function SetRichRTFA(RichEditHandle: THandle; const RTFStream: AnsiString;
-                    SelectionOnly, PlainText, PlainRTF: Boolean): Integer; overload;
+                    SelectionOnly, PlainText, PlainRTF: Boolean): Integer;// overload;
 
-function FormatString2RTFW(const Source: WideString; const Suffix: AnsiString = ''): AnsiString; overload;
-function FormatString2RTFA(const Source: AnsiString; const Suffix: AnsiString = ''): AnsiString; overload;
+function FormatString2RTFW(const Source: WideString; const Suffix: AnsiString = ''): AnsiString;// overload;
+function FormatString2RTFA(const Source: AnsiString; const Suffix: AnsiString = ''): AnsiString;// overload;
 
 procedure ReplaceCharFormatRange(RichEditHandle: THandle;
      const fromCF, toCF: CHARFORMAT2; idx, len: Integer);
@@ -33,8 +33,8 @@ function GetTextRange(RichEditHandle:THandle; cpMin,cpMax: Integer): AnsiString;
 implementation
 
 uses
-  common,
-  hpp_global;
+  common, // inttostr
+  hpp_global; // AnsiToWideString, WideToAnsiString
 
 type
   PTextStream = ^TTextStream;
@@ -114,7 +114,7 @@ begin
   Result := FRichEditVersion;
 end;
 }
-function RichEditStreamLoad(dwCookie: Longint; pbBuff: PByte; cb: Longint; var pcb: Longint): Longint; stdcall;
+function RichEditStreamLoad(dwCookie: DWORD_PTR; pbBuff: PByte; cb: Longint; var pcb: Longint): dword; stdcall;
 var
   pBuff: PAnsiChar;
 begin
@@ -131,7 +131,7 @@ begin
   Result := 0;
 end;
 
-function RichEditStreamSave(dwCookie: Longint; pbBuff: PByte; cb: Longint; var pcb: Longint): Longint; stdcall;
+function RichEditStreamSave(dwCookie: DWORD_PTR; pbBuff: PByte; cb: Longint; var pcb: Longint): dword; stdcall;
 var
   prevSize: Integer;
 begin
@@ -176,7 +176,7 @@ begin
   end;
   TextStream^.Size := 0;
   TextStream^.Data := nil;
-  es.dwCookie := LPARAM(TextStream);
+  es.dwCookie := DWORD_PTR(TextStream);
   es.dwError := 0;
   es.pfnCallback := @RichEditStreamSave;
   SendMessage(RichEditHandle, EM_STREAMOUT, format, LPARAM(@es));

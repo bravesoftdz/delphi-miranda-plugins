@@ -77,7 +77,7 @@ uses
   common,
   my_rtf,
   my_GridOptions,
-//  my_idobject,
+  hpp_richedit,
   hpp_global, hpp_events{, hpp_richedit, }{, RichEdit -- used for CHARRANGE and EM_EXTSETSEL};
 
 {$include m_mathmodule.inc}
@@ -546,7 +546,7 @@ begin
     cr.cpMax := cr.cpMin;
     SendMessage(awParam, EM_EXSETSEL, 0, LPARAM(@cr));
     SetRichRTFA(awParam, '{\rtf1{\line }}', true, false, true);
-//!!    RichEdit_InsertBitmap(awParam, hBmp, Cardinal(-1));
+    RichEdit_InsertBitmap(awParam, hBmp, Cardinal(-1));
   end;
 end;
 

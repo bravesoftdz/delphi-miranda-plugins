@@ -66,7 +66,6 @@ begin
     move(SongInfo,SongInfoA,SizeOf(tSongInfo));
     with SongInfoA do
     begin
-      FastWideToAnsi(SongInfo.url,url);
       if enc=WAT_INF_ANSI then
       begin
         WideToAnsi(SongInfo.artist ,artist ,cp);
@@ -125,9 +124,15 @@ begin
   result:=1;
   if (lParam=0) or (pSongInfo(lParam).mfile=nil) then exit;
   dst:=pointer(lParam);
+
+  p:=dst^.mfile;
+  ClearTrackInfo(dst^,false);
+  dst^.mfile:=p;
+{
   StrDupW(p,dst^.mfile);
   ClearTrackInfo(dst^,false); //!!!!
   dst^.mfile:=p;
+}
 //  FillChar(dst,SizeOf(dst),0);
 //  FillChar(si,SizeOf(si),0);
 {
@@ -484,6 +489,53 @@ begin
   CloseHandle(hEvent);
 end;
 
+procedure DoTheDew(load:boolean);
+var
+  ptr:pwModule;
+  newstate:boolean;
+begin
+  ptr:=ModuleLink;
+  while ptr<>nil do
+  begin
+    if @ptr^.Check<>nil then
+      ptr^.Check(load);
+    ptr:=ptr^.Next;
+  end;
+
+  // TTB
+  newstate:=ServiceExists(MS_TTB_ADDBUTTON)<>0;
+  if newstate=(ttbState<>0) then
+    exit;
+
+  if ttbState=0 then
+  begin
+{
+    onloadhook:=0;
+    OnTTBLoaded(0,0);
+    if ttbState=0 then
+}
+    onloadhook:=HookEvent(ME_TTB_MODULELOADED,@OnTTBLoaded);
+  end
+  else
+  begin
+    if ServiceExists(MS_TTB_REMOVEBUTTON)>0 then
+      CallService(MS_TTB_REMOVEBUTTON,WPARAM(ttbState),0);
+    ttbState:=0;
+  end;
+end;
+
+function OnPluginLoad(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+begin
+  DoTheDew(true);
+  result:=0;
+end;
+
+function OnPluginUnload(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+begin
+  DoTheDew(false);
+  result:=0;
+end;
+
 function OnModulesLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
   p:PAnsiChar;
@@ -541,6 +593,9 @@ begin
   StartMSNHook;
 
   result:=0;
+
+  hLoad  :=HookEvent(ME_SYSTEM_MODULELOAD  ,@OnPluginLoad);
+  hUnLoad:=HookEvent(ME_SYSTEM_MODULEUNLOAD,@OnPluginUnLoad);
 end;
 
 procedure FreeVariables;
@@ -600,6 +655,8 @@ begin
     ptr:=ptr^.Next;
   end;
 
+  UnhookEvent(hLoad);
+  UnhookEvent(hUnload);
 //  UnhookEvent(plStatusHook);
   UnhookEvent(hHookShutdown);
   UnhookEvent(opthook);

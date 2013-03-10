@@ -3,7 +3,6 @@ library hppadd;
 
 uses
   m_api, Windows, kol,
-//  my_idobject in 'my_idobject.pas',
   my_GridOptions in 'my_GridOptions.pas',
   my_RichCache in 'my_RichCache.pas',
   my_grid in 'my_grid.pas',

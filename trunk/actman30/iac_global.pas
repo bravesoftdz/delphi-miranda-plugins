@@ -56,6 +56,7 @@ type
 type
   tCreateActionFunc = function:tBaseAction;
   tCreateDialogFunc = function(parent:HWND):HWND;
+//  tCheckImportFunc  = function(node:pointer;fmt:integer):boolean;
 
 type
   pActModule = ^tActModule;
@@ -64,6 +65,7 @@ type
     Name     :pAnsiChar;         // action type name
     Dialog   :tCreateDialogFunc; // action dialog creating
     Create   :tCreateActionFunc; // action object creation
+//    CheckImp :tCheckImportFunc;  // check for action type
     Icon     :pAnsiChar;         // icon resource name
     // runtime data
     DlgHandle:HWND;
@@ -352,5 +354,30 @@ begin
     mFreeMem(dbv.pbVal);
 }
 end;
+{
+function CreateImportClass(node:pointer;fmt:integer):tBaseAction;
+var
+  module:pActModule;
+  uid:dword;
+  section:array [0..127] of AnsiChar;
+begin
+  result:=nil;
+  module:=ModuleLink;
+  case fmt of
+    0: begin
+      StrCopy(StrCopyE(section,pAnsiChar(node)),opt_uid);
+      uid:=DBReadDWord(0,DBBranch,section,0);
 
+      while module<>nil do
+      begin
+        module:=module^.Next;
+      end;
+    end;
+    1: begin
+    end;
+    2: begin
+    end;
+  end;
+end;
+}
 end.

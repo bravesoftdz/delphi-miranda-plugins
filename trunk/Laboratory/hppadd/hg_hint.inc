@@ -86,13 +86,14 @@ begin
   P := MakePoint(X - RichEditRect.Left, Y - RichEditRect.Top);
   ApplyItemToRich(Item);
 
-  if not Assigned(FRich.RichEditOle) then
+  if not Assigned(FRich.iOle) then
     exit;
 
   repeat
-    if FRich.RichEditOle.QueryInterface(IID_ITextDocument, textDoc) <> S_OK then
+    if not Assigned(FRich.itextDoc) then
+//    if FRich.iOle.QueryInterface(IID_ITextDocument, textDoc) <> S_OK then
       break;
-    P := FRich.Client2Screen(P);
+    ClientToScreen(FRich.Handle, P);
     textRange := textDoc.RangeFromPoint(P.X, P.Y);
     if not Assigned(textRange) then
       break;
@@ -118,11 +119,11 @@ begin
       break;
 
     textRange.GetPoint(tomStart + TA_TOP + TA_LEFT, Size.X, Size.Y);
-    Size := FRich.Screen2Client(Size);
+    ScreenToClient(FRich.Handle, Size);
     ObjectRect.TopLeft := Size;
 
     textRange.GetPoint(tomStart + TA_BOTTOM + TA_RIGHT, Size.X, Size.Y);
-    Size := FRich.Screen2Client(Size);
+    ScreenToClient(FRich.Handle, Size);
     ObjectRect.BottomRight := Size;
 
     OffsetRect(ObjectRect, RichEditRect.Left, RichEditRect.Top);

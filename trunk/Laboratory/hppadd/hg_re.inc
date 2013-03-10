@@ -46,17 +46,17 @@ begin
   P := MakePoint(X - RichEditRect.Left, Y - RichEditRect.Top);
   ApplyItemToRich(Item);
 
-  cp := FRich.Perform(EM_CHARFROMPOS, 0, lParam(@P));
+  cp := SendMessage(FRich.Handle, EM_CHARFROMPOS, 0, lParam(@P));
   if cp = -1 then
     exit; // out of richedit area
   cr.cpMin := cp;
   cr.cpMax := cp + 1;
-  FRich.Perform(EM_EXSETSEL, 0, lParam(@cr));
+  SendMessage(FRich.Handle, EM_EXSETSEL, 0, lParam(@cr));
 
   ZeroMemory(@cf, SizeOf(cf));
   cf.cbSize := SizeOf(cf);
   cf.dwMask := CFM_LINK or CFM_REVISED;
-  res := FRich.Perform(EM_GETCHARFORMAT, SCF_SELECTION, lParam(@cf));
+  res := SendMessage(FRich.Handle, EM_GETCHARFORMAT, SCF_SELECTION, lParam(@cf));
   // no link under point
   Result := (((res and CFM_LINK) > 0) and ((cf.dwEffects and CFE_LINK) > 0)) or
             (((res and CFM_REVISED) > 0) and ((cf.dwEffects and CFE_REVISED) > 0));
@@ -85,10 +85,10 @@ begin
   while cr.cpMin > 0 do
   begin
     Dec(cr.cpMin);
-    FRich.Perform(EM_EXSETSEL, 0, lParam(@cr));
+    SendMessage(FRich.Handle, EM_EXSETSEL, 0, lParam(@cr));
     cf.cbSize := SizeOf(cf);
     cf.dwMask := CFM_LINK or CFM_REVISED;
-    res := FRich.Perform(EM_GETCHARFORMAT, SCF_SELECTION, lParam(@cf));
+    res := SendMessage(FRich.Handle, EM_GETCHARFORMAT, SCF_SELECTION, lParam(@cf));
     if (((res and CFM_LINK) = 0) or ((cf.dwEffects and CFE_LINK) = 0)) and
       (((res and CFM_REVISED) = 0) or ((cf.dwEffects and CFE_REVISED) = 0)) then
     begin
@@ -101,10 +101,10 @@ begin
   while cr.cpMax < Max do
   begin
     Inc(cr.cpMax);
-    FRich.Perform(EM_EXSETSEL, 0, lParam(@cr));
+    SendMessage(FRich.Handle, EM_EXSETSEL, 0, lParam(@cr));
     cf.cbSize := SizeOf(cf);
     cf.dwMask := CFM_LINK or CFM_REVISED;
-    res := FRich.Perform(EM_GETCHARFORMAT, SCF_SELECTION, lParam(@cf));
+    res := SendMessage(FRich.Handle, EM_GETCHARFORMAT, SCF_SELECTION, lParam(@cf));
     if (((res and CFM_LINK) = 0) or ((cf.dwEffects and CFE_LINK) = 0)) and
       (((res and CFM_REVISED) = 0) or ((cf.dwEffects and CFE_REVISED) = 0)) then
     begin
