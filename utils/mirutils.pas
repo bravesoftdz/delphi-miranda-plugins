@@ -205,7 +205,7 @@ begin
     end;
     tmp:=pointer(CallService(MS_VARS_FORMATSTRING,wparam(@tfi),0));
     StrDup(result,tmp);
-    CallService(MS_VARS_FREEMEMORY,wparam(tmp),0);
+    mir_free(tmp);
   end
   else
   begin
@@ -244,7 +244,7 @@ begin
     end;
     tmp:=pointer(CallService(MS_VARS_FORMATSTRING,wparam(@tfi),0));
     StrDupW(result,tmp);
-    CallService(MS_VARS_FREEMEMORY,wparam(tmp),0);
+    mir_free(tmp);
   end
   else
   begin
@@ -277,6 +277,9 @@ procedure ShowPopupW(text:pWideChar;title:pWideChar=nil);
 var
   ppdu:TPOPUPDATAW;
 begin
+  if ServiceExists(MS_POPUP_ADDPOPUPW)=0 then
+    exit;
+
   FillChar(ppdu,SizeOf(TPOPUPDATAW),0);
   if CallService(MS_POPUP_ISSECONDLINESHOWN,0,0)<>0 then
   begin

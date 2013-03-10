@@ -25,6 +25,7 @@ var
   hTimer:cardinal;
   ttbState,
   hMenuDisable:THANDLE;
+  hLoad,hUnload:THANDLE;
 var
   CoverPaths:PWideChar;
   MTHCheck,

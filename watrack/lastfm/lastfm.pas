@@ -290,6 +290,7 @@ begin
   last.Init      :=@InitProc;
   last.DeInit    :=@DeInitProc;
   last.AddOption:=@AddOptionsPage;
+  last.Check     :=nil;
   last.ModuleName:='Last.FM';
   ModuleLink     :=@last;
 

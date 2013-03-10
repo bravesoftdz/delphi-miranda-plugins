@@ -55,7 +55,8 @@ interface
 
 uses
   Windows,Messages,
-  kol,m_api;
+  kol,
+  m_api;
 
 // KOL unit needs for this type only
 type

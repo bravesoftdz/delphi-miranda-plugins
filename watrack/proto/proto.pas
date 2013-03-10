@@ -555,6 +555,7 @@ begin
   vproto.Init      :=@InitProc;
   vproto.DeInit    :=@DeInitProc;
   vproto.AddOption :=@AddOptionsPage;
+  vproto.Check     :=nil;
   vproto.ModuleName:='Protocol';
   ModuleLink       :=@vproto;
 end;

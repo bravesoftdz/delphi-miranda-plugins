@@ -69,10 +69,22 @@ end;
 
 //====================== Execute code =======================
 
+{$IFDEF DEBUG}
+procedure ActmanMacroDebug(txt:pWideChar);
+begin
+  OutputDebugStringW(txt);
+end;
+{$ENDIF}
+
 procedure DoAction(Macro:pMacroRecord;var WorkData:tWorkData);
 var
   res:LRESULT;
   i,cnt:integer;
+{$IFDEF DEBUG}
+  buf:array [0..1023] of WideChar;
+  buf1,buf2:array [0..31] of WideChar;
+  p:pWideChar;
+{$ENDIF}
 begin
   cnt:=Macro^.ActionCount;
   if cnt<>0 then
@@ -85,6 +97,31 @@ begin
     begin
       if (Macro^.ActionList^[i].flags and ACF_DISABLED)=0 then
       begin
+{$IFDEF DEBUG}
+        if WorkData.ResultType=rtWide then
+          p:=pWideChar(WorkData.LastResult)
+        else
+          p:=IntToStr(buf2,WorkData.LastResult);
+        StrCopyEW(
+          StrCopyEW(
+            StrCopyEW(
+              StrCopyEW(
+                StrCopyEW(
+                  StrCopyEW(
+                    StrCopyEW(
+                      StrCopyEW(buf,'ActMan: Macro "'),
+                      Macro^.descr
+                    ),'", Action #'
+                  ),IntToStr(buf1,i)
+                ),' "'
+              ),Macro^.ActionList^[i].ActionDescr
+            ),'", LR: '
+          ),p{IIF(WorkData.ResultType=rtWide,
+                pWideChar(WorkData.LastResult),
+                IntToStr(buf1,WorkData.LastResult))}
+        );
+        ActmanMacroDebug(buf);
+{$ENDIF}
         res:=Macro^.ActionList^[i].DoAction(WorkData);
         if res<0 then break
         else if res>0 then // res = next action number+1

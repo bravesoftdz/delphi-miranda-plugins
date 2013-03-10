@@ -171,9 +171,9 @@ type
 
 const
   {$IFDEF WIN64}
-  CALLSERVICE_NOTFOUND = int_ptr($8000000000000000);
+  CALLSERVICE_NOTFOUND = $8000000000000000;
   {$ELSE}
-  CALLSERVICE_NOTFOUND = int_ptr($80000000);
+  CALLSERVICE_NOTFOUND = $80000000;
   {$ENDIF}
 
 function CreateHookableEvent(const name: PAnsiChar): THANDLE; stdcall;
@@ -274,10 +274,10 @@ type
   end;
   tagIconItemW = tIconItemW;
 
-procedure Icon_Register(hInst:HINST; const szSection:pAnsiChar; pIcons:pIconItem;
+procedure mir_Icon_Register(hInst:HINST; const szSection:pAnsiChar; pIcons:pIconItem;
     iCount:size_t; prefix:PAnsiChar=NIL; hLangpack:int=0); stdcall;
                         external CoreDLL name 'Icon_Register';
-procedure Icon_RegisterT(hInst:HINST; const szSection:pWideChar; pIcons:pIconItemW;
+procedure mir_Icon_RegisterW(hInst:HINST; const szSection:pWideChar; pIcons:pIconItemW;
     iCount:size_t; prefix:PAnsiChar=NIL; hLangpack:int=0); stdcall;
                         external CoreDLL name 'Icon_RegisterT';
 
@@ -435,7 +435,7 @@ procedure CreatePathToFile(wszFilePath:pAnsiChar); stdcall;
                            external CoreDLL name 'CreatePathToFile';
 function CreateDirectoryTree(const szDir:pAnsiChar):int; stdcall;
                              external CoreDLL name 'CreateDirectoryTree';
-function PathToAbsolute(const pSrc:pAnsiChar; pOut:pAnsiChar; base:pAnsiChar):int; stdcall;
+function PathToAbsolute(const pSrc:pAnsiChar; pOut:pAnsiChar; base:pAnsiChar=nil):int; stdcall;
                         external CoreDLL name 'PathToAbsolute';
 function PathToRelative(const pSrc:pAnsiChar; pOut:pAnsiChar):int; stdcall;
                         external CoreDLL name 'PathToRelative';
@@ -444,7 +444,7 @@ procedure CreatePathToFileW(wszFilePath:pWideChar); stdcall;
                             external CoreDLL name 'CreatePathToFileW';
 function CreateDirectoryTreeW(const szDir:pWideChar):int; stdcall;
                               external CoreDLL name 'CreateDirectoryTreeW';
-function PathToAbsoluteW(const pSrc:pWideChar; pOut:pWideChar; base:pWideChar):int; stdcall;
+function PathToAbsoluteW(const pSrc:pWideChar; pOut:pWideChar; base:pWideChar=nil):int; stdcall;
                          external CoreDLL name 'PathToAbsoluteW';
 function PathToRelativeW(const pSrc:pWideChar; pOut:pWideChar):int; stdcall;
                          external CoreDLL name 'PathToRelativeW';
@@ -603,6 +603,19 @@ function mir_utf8lenW(const src:pWideChar):int; stdcall;
 
 function mir_utf8checkstring(const astr:PAnsiChar):bool;stdcall;
                          external CoreDLL name 'Utf8CheckString';
+
+///////////////////////////////////////////////////////////////////////////////
+// Window subclassing
+
+procedure mir_subclassWindow(Wnd:HWND; WndProc:TWNDPROC); stdcall;
+                       external CoreDLL name 'mir_subclassWindow';
+procedure mir_subclassWindowFull(Wnd:HWND; WndProc, OldWndProc:TWNDPROC); stdcall;
+                       external CoreDLL name 'mir_subclassWindowFull';
+function  mir_callNextSubclass(Wnd:HWND; WndProc:TWNDPROC; uMsg:uint; wParam:WPARAM; lParam:LPARAM ):LRESULT; stdcall;
+                       external CoreDLL name 'mir_callNextSubclass';
+
+procedure KillModuleSubclassing(hInst: HMODULE);
+                       external CoreDLL name 'KillModuleSubclassing';
 
 ///////////////////////////////////////////////////////////////////////////////
 

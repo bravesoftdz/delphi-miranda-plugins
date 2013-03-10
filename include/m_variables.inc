@@ -23,51 +23,6 @@
 const MIID_VARIABLES:MUUID = '{630756DE-3681-440B-991E-77A4742DA595}';
 
 // --------------------------------------------------------------------------
-// Memory management
-// --------------------------------------------------------------------------
-
-// Release memory that was allocated by the Variables plugin, e.g. returned 
-// strings.
-
-  MS_VARS_FREEMEMORY:PAnsiChar = 'Vars/FreeMemory';
-{
-  Parameters:
-  ------------------------
-  wParam = (WPARAM)(void *)pntr 
-    Pointer to memory that was allocated by the Variables plugin (e.g. a 
-    returned string) (can be NULL).
-  lParam = 0
-
-  Return Value:
-  ------------------------
-  Does return 0 on success, nozero otherwise.
-
-  Note: Do only use this service to free memory that was *explicitliy* 
-  stated that it should be free with this service.
-}
-
-  MS_VARS_GET_MMI:PAnsiChar = 'Vars/GetMMI';
-{
-  Get Variable's RTL/CRT function poiners to malloc(), free() and
-  realloc().
-
-  Parameters:
-  ------------------------
-  wParam = 0
-  lParam = (LPARAM) &MM_INTERFACE  
-    Pointer to a memory manager interface struct (see m_system.h).
-
-  Return Value:
-  ------------------------
-  Returns 0 on success, nozero otherwise
-
-  Note: Works exactly the same as the MS_SYSTEM_GET_MMI service 
-  service of m_system.h.
-}
-
-// Helper function for easy using:
-
-// --------------------------------------------------------------------------
 // String formatting
 // --------------------------------------------------------------------------
 
@@ -90,7 +45,7 @@ const MIID_VARIABLES:MUUID = '{630756DE-3681-440B-991E-77A4742DA595}';
   ------------------------
   Returns a pointer to the resolved string or NULL in case of an error.
 
-  Note: The returned pointer needs to be freed using MS_VARS_FREEMEMORY.
+  Note: The returned pointer needs to be freed using mir_free.
 }
 
 type
@@ -215,8 +170,10 @@ const
 // Available Memory Storage Types:
 // These values describe which method Variables Plugin will use to free the 
 // buffer returned by the parse function or service
+{ deprecated
   TR_MEM_VARIABLES = 1;  // Memory is allocated using the functions 
                          // retrieved by MS_VARS_GET_MMI.
+}
   TR_MEM_MIRANDA   = 2;  // Memory is allocated using Miranda's Memory
                          // Manager Interface (using the functions 
                          // returned by MS_SYSTEM_GET_MMI), if 
@@ -454,8 +411,7 @@ const
   The hContacts array of CONTACTSINFO struct contains these hContacts after 
   the call.
 
-  Note: The hContacts array needs to be freed after use using 
-  MS_VARS_FREEMEMORY.
+  Note: The hContacts array needs to be freed after use using mir_free.
 }
 
 type

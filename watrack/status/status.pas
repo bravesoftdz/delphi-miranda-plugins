@@ -132,6 +132,7 @@ begin
   mStatus.Init      :=@InitProc;
   mStatus.DeInit    :=@DeInitProc;
   mStatus.AddOption :=@AddOptionsPage;
+  mStatus.Check     :=nil;
   mStatus.ModuleName:='Statuses';
 //  mStatus.ModuleStat:=0;
   ModuleLink        :=@mStatus;

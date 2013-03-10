@@ -17,7 +17,7 @@ uses windows,messages,winampapi,common,srv_player,wat_api
 ;
 
 const
-  COMName:PAnsiChar = 'SongsDB.SDBApplication';
+  COMName:PWideChar = 'SongsDB.SDBApplication';
 
 const
   WM_WA_IPC      = WM_USER;

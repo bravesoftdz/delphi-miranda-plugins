@@ -550,9 +550,15 @@ begin
 
     UTF8ToWide(GetParamSectionStr(sec,'notes'),rec.Notes);
 
-    ServicePlayer(WAT_ACT_REGISTER,lparam(@rec));
+    if ServicePlayer(WAT_ACT_REGISTER,lparam(@rec))=WAT_RES_ERROR then
+    begin
+      ClearTemplate(pcell);
+//      mFreeMem(rec.URL);
+      mFreeMem(rec.Notes);
+    end
+    else
+      inc(NumPlayers);
 
-    inc(NumPlayers);
     while ptr^<>#0 do inc(ptr);
     inc(ptr);
   end;

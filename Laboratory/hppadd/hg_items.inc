@@ -422,8 +422,8 @@ begin
     BackColor := BackColor;
   end;
 
-  // aRichEdit.Perform(WM_SETTEXT,0,0);
-  aRichEdit.Clear;
+  SendMessage(aRichEdit.Handle, WM_SETTEXT,0,0);
+//  aRichEdit.Clear;
 
   SetRichRTL(GetItemRTL(Item), aRichEdit);
   // for use with WM_COPY
@@ -478,7 +478,7 @@ begin
 
 //  aRichEdit.RE_Text[reRTF,false]:=RTF;
   SetRichRTFA(aRichEdit.Handle, RTF, False, False, True);
-  aRichEdit.Perform(EM_SETBKGNDCOLOR, 0, BackColor);
+  SendMessage(aRichEdit.Handle, EM_SETBKGNDCOLOR, 0, BackColor);
 
   if reItemUseFormat and Assigned(FOnProcessRichText) then
   begin
@@ -504,8 +504,8 @@ begin
         ReplaceCharFormat(RichEdit.Handle, cf, cf2);
         cf.dwMask      := CFM_COLOR;
         cf.crTextColor := textColor;
-        aRichEdit.Perform(EM_SETBKGNDCOLOR, 0, BackColor);
-        aRichEdit.Perform(EM_SETCHARFORMAT, SCF_ALL, lParam(@cf));
+        SendMessage(aRichEdit.Handle, EM_SETBKGNDCOLOR, 0, BackColor);
+        SendMessage(aRichEdit.Handle, EM_SETCHARFORMAT, SCF_ALL, lParam(@cf));
       end
       else if reItemInline then
       begin

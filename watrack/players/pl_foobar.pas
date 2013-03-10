@@ -18,7 +18,7 @@ uses {$IFDEF KOL_MCK}err,{$ENDIF}
 ;
 
 const
-  COMName:PAnsiChar = 'Foobar2000.Application.0.7';
+  COMName:PWideChar = 'Foobar2000.Application.0.7';
 const
   dummywnd  = 'uninteresting';
 const

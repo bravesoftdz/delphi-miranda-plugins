@@ -318,6 +318,7 @@ begin
   Frame.Init      :=@InitProc;
   Frame.DeInit    :=@DeInitProc;
   Frame.AddOption :=@AddOptionsPage;
+  Frame.Check     :=nil;
   Frame.ModuleName:='Frame';
   ModuleLink      :=@Frame;
 end;

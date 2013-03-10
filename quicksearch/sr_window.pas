@@ -500,7 +500,7 @@ var
   cni:TCONTACTINFO;
   dbei:TDBEVENTINFO;
   hDbEvent:cardinal;
-  tmp:int_ptr;
+  tmp:uint_ptr;
   protov:PAnsiChar;
 begin
   FillChar(res,SizeOf(tQSRec),0);
@@ -526,7 +526,7 @@ begin
       ST_SERVICE: begin
         if wparam._type=ptCurrent then wparam.n:=hContact;
         if lparam._type=ptCurrent then lparam.n:=hContact;
-        tmp:=CallService(protov,wparam.n,lparam.n);
+        tmp:=uint_ptr(CallService(protov,wparam.n,lparam.n));
         if tmp=CALLSERVICE_NOTFOUND then exit;
         case setting_cnftype of
           ptString: begin
@@ -1949,7 +1949,8 @@ begin
         FastWideToAnsiBuf(MainBuf[i,sub].text,buf);
         
 //        ListView_GetItemTextA(grid,lplvcd^.nmcd.dwItemSpec,lplvcd^.iSubItem,buf,SizeOf(buf));
-        if buf[0]<>#0 then
+//!!
+        if (buf[0]<>#0) and (ServiceExists(MS_FP_GETCLIENTICON)<>0) then
         begin
           h:=CallService(MS_FP_GETCLIENTICON,tlparam(@buf),0);
           ListView_GetSubItemRect(grid,lplvcd^.nmcd.dwItemSpec,lplvcd^.iSubItem,LVIR_ICON,@rc);
@@ -2239,13 +2240,12 @@ end;
 procedure FillProtoCombo(cb:HWND);
 var
   i:integer;
-  buf:array [0..63] of WideChar;
 begin
   SendMessage(cb,CB_RESETCONTENT,0,0);
   CB_AddStrDataW(cb,TranslateW('All'));
   for i:=1 to GetNumProto do
   begin
-    CB_AddStrDataW(cb,FastAnsiToWideBuf(GetProtoName(i),@buf),i);
+    CB_AddStrDataW(cb,GetProtoAccName(i),i);
   end;
   SendMessage(cb,CB_SETCURSEL,0,0);
 end;

@@ -317,7 +317,7 @@ type
   pPlayerCell = ^tPlayerCell;
   tPlayerCell = record
     Desc     :PAnsiChar; // Short player name
-    flags    :cardinal;
+    flags    :dword;
     Icon     :HICON;     // can be 0. for registration only
     Init     :pointer;   // tInitProc;    can be NIL. initialize any data
     DeInit   :pointer;   // tDeInitProc;  can be NIL. finalize player processing

@@ -144,7 +144,7 @@ procedure GridProcessRichText(Sender: PObj; Handle: THandle; Item: Integer);
     procedure SetProfileName(const Value: WideString);
     procedure SetContactName(const Value: WideString);
 
-    procedure SetRichRTL(RTL: Boolean; aRichEdit: PHPPRichEdit; ProcessTag: Boolean = True);
+    procedure SetRichRTL(RTL: Boolean; aRichEdit: PHPPRichEdit);
     function GetItemRTL(Item: Integer): Boolean;
     //----- Select-related functions -----
     procedure MakeSelected(Value: Integer);
@@ -273,9 +273,10 @@ implementation
 uses
   Messages,
   RichEdit,
-  KolOleRe2, //!!
+//  KolOleRe2, //!!
   Common,
   m_api,
+  hpp_richedit,
   hpp_options,
   hpp_arrays,
   hpp_strparser,
@@ -318,7 +319,7 @@ end;
 
 //----- History Grid implementation -----
 
-procedure THistoryGrid.SetRichRTL(RTL: Boolean; aRichEdit: PHPPRichEdit; ProcessTag: Boolean = True);
+procedure THistoryGrid.SetRichRTL(RTL: Boolean; aRichEdit: PHPPRichEdit);
 var
   pf: PARAFORMAT2;
   lExStyle: DWord;
@@ -326,8 +327,9 @@ begin
   // we use RichEdit.Tag here to save previous RTL state to prevent from
   // reapplying same state, because SetRichRTL is called VERY OFTEN
   // (from ApplyItemToRich)
-  if (aRichEdit.Tag = Cardinal(RTL)) and ProcessTag then
+  if aRichEdit.RTL = RTL then
     exit;
+
   ZeroMemory(@pf, SizeOf(pf));
   pf.cbSize := SizeOf(pf);
   pf.dwMask := PFM_RTLPARA;
@@ -336,17 +338,17 @@ begin
   if RTL then
   begin
     lExStyle := lExStyle or (WS_EX_RTLREADING or WS_EX_LEFTSCROLLBAR or WS_EX_LEFT);
-    pf.wReserved := PFE_RTLPARA;
+    {$IFDEF FPC}pf.wEffects{$ELSE}pf.wReserved{$ENDIF} := PFE_RTLPARA;
   end
   else
   begin
     lExStyle := lExStyle or WS_EX_RIGHT;
-    pf.wReserved := 0;
+    {$IFDEF FPC}pf.wEffects{$ELSE}pf.wReserved{$ENDIF} := 0;
   end;
-  RichEdit.Perform(EM_SETPARAFORMAT, 0, lParam(@pf));
+  SendMessage(RichEdit.Handle, EM_SETPARAFORMAT, 0, lParam(@pf));
   SetWindowLongPtr(aRichEdit.Handle, GWL_EXSTYLE, lExStyle);
-  if ProcessTag then
-    aRichEdit.Tag := Cardinal(RTL);
+
+  aRichEdit.RTL := RTL;
 end;
 
 {$include hg_support.inc}
@@ -403,7 +405,7 @@ messagebox(0,'destroy Grid','',0);
 
 //  FRichInline.Free;
 
-  FRich := nil;
+  FRich := nil; //!!
   FRichCache.Free;
 
   FClient.Free;
@@ -457,6 +459,7 @@ begin
   result.FClient := NewPanel(result.FForm,esNone).SetAlign(caClient);
 //  result.FClient := NewAlienPanel(0,esNone);
 //  result.FClient := NewForm(nil{aParent},'panel');
+
   result.FRichCache:=NewRichCache(result.FClient);
   result.FRichCache.OnRichApply:=result.ApplyItemToRichCache;
 //  result.InlineRichEdit:=NewHPPRichEdit(result.FClient,[]);

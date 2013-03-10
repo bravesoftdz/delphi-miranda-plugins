@@ -90,8 +90,8 @@ Msg.pt
                 if DoRectsIntersect(smRect, FClient.Canvas.ClipRect) then
                 begin
                   nmh.bAction       := FVCA_CUSTOMDRAW;
-                  nmh.HDC           := RichItem.Bitmap.Canvas.Handle;
-                  nmh.clrBackground := RichItem.Bitmap.Canvas.Brush.Color;
+                  nmh.HDC           := RichItem.Bitmap.DC;
+                  nmh.clrBackground := RichItem.Bitmap.Color;
                   nmh.fTransparent  := False;
                   nmh.lParam        := FRichCache.LockItem(RichItem, smRect);
                 end;

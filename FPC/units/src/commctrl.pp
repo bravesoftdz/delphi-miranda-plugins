@@ -43,7 +43,7 @@ Unit CommCtrl;
 Interface
 
 {$Mode ObjFPC}
-Uses Windows,CTypes;
+Uses Windows,CTypes,ActiveX;
 
 // --------------------
 
@@ -74,7 +74,7 @@ CONST CommCtrlDLL = 'comctl32.dll';
 {$endif win64}
 
 {$DEFINE WIN32_WINNT=0}                     // NO XP
-{.$DEFINE __IStream_INTERFACE_DEFINED__}  // lpstream defined in activex afaik.
+{$DEFINE __IStream_INTERFACE_DEFINED__}  // lpstream defined in activex afaik.
 
 // Sanity check in source. Not translated:
 //if (WIN32_IE < $0400) && defined(WIN32_WINNT) && (WIN32_WINNT >= $0500)}
@@ -746,7 +746,7 @@ CONST
          ILP_DOWNLEVEL                  = 1;                  // Write or reads the stream using downlevel sematics.
 
 
-function ImageList_ReadEx(dwFlags:DWORD;pstm:ISTREAM;riid:TIID;ppv:PPointer):HRESULT; stdcall; external commctrldll name 'ImageList_ReadEx';
+function ImageList_ReadEx(dwFlags:DWORD;pstm:ISTREAM;riid:REFIID;ppv:PPointer):HRESULT; stdcall; external commctrldll name 'ImageList_ReadEx';
 function ImageList_WriteEx(himl:HIMAGELIST;dwFlags:DWORD;pstm:ISTREAM):HRESULT; stdcall; external commctrldll name 'ImageList_WriteEx';
 {$ENDIF}
 
@@ -6565,11 +6565,11 @@ CONST
          TVM_GETITEMSTATE               = (TV_FIRST + 39);
 
 // Macro 211
-Function TreeView_GetItemState( hwndTV : hwnd; hti : WPARAM; mask : LPARAM):UINT;
+Function TreeView_GetItemState( hwndTV : hwnd; hti : HTreeItem; statemask : UINT):UINT;
 
 
 // Macro 212
-Function TreeView_GetCheckState( hwndTV : hwnd; hti : WPARAM):UINT;
+Function TreeView_GetCheckState( hwndTV : hwnd; hti : HTreeItem):UINT;
 
 
 CONST
@@ -10920,6 +10920,7 @@ end;
 //   SNDMSG((hwndLV), LVM_SETITEMSTATE, (WPARAM)(i), (LPARAM)(LV_ITEM *)&_ms_lvi);\
 // }
 
+
 Procedure ListView_SetItemState(hwndLV :hwnd; i :cint ;data,mask:UINT);
 
 Var _ms_lvi : LV_ITEM;
@@ -12437,27 +12438,26 @@ end;
 
 
 {$ifdef IE5plus}
+
 // Macro 211
 
 //#define TreeView_GetItemState(hwndTV, hti, mask) \
 //    (UINT)SNDMSG((hwndTV), TVM_GETITEMSTATE, (WPARAM)(hti), (LPARAM)(mask))
 
-Function TreeView_GetItemState( hwndTV : hwnd; hti : WPARAM; mask : LPARAM):UINT;
+Function TreeView_GetItemState( hwndTV : hwnd; hti : HTreeItem; statemask : UINT):UINT;
 
 Begin
- Result:=UINT(SendMessage((hwndTV), TVM_GETITEMSTATE, hti, mask))
+ Result:=UINT(SendMessage((hwndTV), TVM_GETITEMSTATE, WPARAM(hti), LPARAM(statemask)))
 end;
-
-
 
 // Macro 212
 // #define TreeView_GetCheckState(hwndTV, hti) \
 //    ((((UINT)(SNDMSG((hwndTV), TVM_GETITEMSTATE, (WPARAM)(hti), TVIS_STATEIMAGEMASK))) >> 12) -1)
 
-Function TreeView_GetCheckState( hwndTV : hwnd; hti : WPARAM):UINT;
+Function TreeView_GetCheckState( hwndTV : hwnd; hti : HTreeItem):UINT;
 
 Begin
- Result:=((UINT(SendMessage((hwndTV), TVM_GETITEMSTATE, hti, TVIS_STATEIMAGEMASK) shr 12) -1));
+ Result:=((UINT(SendMessage((hwndTV), TVM_GETITEMSTATE, wparam(hti), TVIS_STATEIMAGEMASK) shr 12) -1));
 end;
 
 

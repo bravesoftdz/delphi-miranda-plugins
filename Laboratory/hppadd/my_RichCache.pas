@@ -9,12 +9,19 @@ uses
   Windows;
 
 type
-  CacheBitmap = KOL.PBitmap;
+  pCacheBitmap = ^tCacheBitmap;
+  tCacheBitmap = record
+    DC: HDC;
+    oldbitmap:HBITMAP; // to restore
+    Width,
+    Height: integer;
+    Color: tColor;
+  end;
 type
   PRichItem = ^TRichItem;
   TRichItem = record
     Rich       : PHPPRichEdit;
-    Bitmap     : CacheBitmap;
+    Bitmap     : tCacheBitmap;
     BitmapDrawn: Boolean;
     Height     : Integer; // "real" height for bottomless RichEdit
     GridItem   : Integer;
@@ -38,7 +45,7 @@ type
 
     FRichWidth: Integer;   // save width to trace width changes only
     FRichHeight: Integer;  // temporary, to set RichItem Height
-    FLockedList: PList;    // list of locked items
+    fLockedList:array of TLockedItem; // list of locked items
     Items: array of PRichItem;
 
     function FindGridItem(GridItem: Integer): Integer;
@@ -66,7 +73,7 @@ type
     procedure WorkOutItemDeleted(GridItem: Integer); // for DeleteItem
 
     function RequestItem(GridItem: Integer): PRichItem;
-    function GetItemRichBitmap(GridItem: Integer): CacheBitmap;
+    function GetItemRichBitmap(GridItem: Integer): pCacheBitmap;
     function GetItemByHandle(Handle: THandle): PRichItem;
     // redraw protection (idk what is for)
     function LockItem(Item: PRichItem; SaveRect: TRect): Integer;
@@ -77,9 +84,6 @@ function NewRichCache(aParent:PControl):PRichCache;
 
 implementation
 
-uses
-  hpp_global;
-
 const
   CACHE_SIZE = 20;
 
@@ -89,13 +93,13 @@ begin
   FRichHeight := -1;
   if Assigned(FOnRichApply) then
   begin
-    Item^.Rich.Perform(EM_SETEVENTMASK, 0, 0);
+    SendMessage(Item^.Rich.Handle, EM_SETEVENTMASK, 0, 0);
     OnRichApply(@Self,Item^.GridItem,Item^.Rich);
 
-    Item^.Rich.Perform(EM_SETEVENTMASK, 0, ENM_REQUESTRESIZE);
-    Item^.Rich.Perform(EM_REQUESTRESIZE, 0, 0);
+    SendMessage(Item^.Rich.Handle, EM_SETEVENTMASK, 0, ENM_REQUESTRESIZE);
+    SendMessage(Item^.Rich.Handle, EM_REQUESTRESIZE, 0, 0);
 
-    Item^.Rich.Perform(EM_SETEVENTMASK, 0, RichEventMasks);
+    SendMessage(Item^.Rich.Handle, EM_SETEVENTMASK, 0, RichEventMasks);
   end;
 end;
 
@@ -124,7 +128,9 @@ begin
   begin
     ApplyItemToRich(Result);
     Result.Height := FRichHeight;
-    Result.Rich.Height := FRichHeight;
+//!!!!    Result.Rich.Height := FRichHeight;
+    SetWindowPos(Result.Rich.Handle,0,0,0,FRichWidth,FRichHeight,
+        SWP_NOACTIVATE or SWP_NOMOVE or SWP_NOOWNERZORDER or SWP_NOREDRAW or SWP_NOZORDER);
     Result.BitmapDrawn := False;
     MoveToTop(idx);
   end;
@@ -162,44 +168,41 @@ end;
 
 function TRichCache.LockItem(Item: PRichItem; SaveRect: TRect): Integer;
 var
-  LockedItem: PLockedItem;
+  i:integer;
 begin
   Result := -1;
   if Item <> nil then
   begin
-    try
-      New(LockedItem);
-    except
-      LockedItem := nil;
-    end;
-    if Assigned(LockedItem) then
+    for i:=0 to HIGH(fLockedList) do
     begin
-  //??    Item.Bitmap.Canvas.Lock;
-      LockedItem.RichItem := Item;
-      LockedItem.SaveRect := SaveRect;
-      FLockedList.Add(LockedItem);
-      Result := FLockedList.Count-1;
+      if fLockedList[i].RichItem=nil then
+      begin
+        Result:=i;
+        break;
+      end;
     end;
+    if Result=-1 then
+    begin
+      Result:=Length(fLockedList);
+      SetLength(fLockedList,Result+8);
+      //?? clear new items?
+    end;
+
+    fLockedList[Result].RichItem := Item;
+    fLockedList[Result].SaveRect := SaveRect;
   end;
 end;
 
 function TRichCache.UnlockItem(Item: Integer): TRect;
-var
-  LockedItem: PLockedItem;
 begin
   SetRect(Result, 0, 0, 0, 0);
   if Item = -1 then
     exit;
-  LockedItem := FLockedList.Items[Item];
-  if not Assigned(LockedItem) then
+  if fLockedList[Item].RichItem=nil then
     exit;
-{??
-  if Assigned(LockedItem.RichItem) then
-    LockedItem.RichItem.Bitmap.Canvas.Unlock;
-}
-  Result := LockedItem.SaveRect;
-  Dispose(LockedItem);
-  FLockedList.Delete(Item);
+
+  Result := fLockedList[Item].SaveRect;
+  fLockedList[Item].RichItem:=nil;
 end;
 
 procedure TRichCache.MoveToTop(Index: Integer);
@@ -218,47 +221,54 @@ end;
 procedure TRichCache.PaintRichToBitmap(Item: PRichItem);
 var
   BkColor: TCOLORREF;
-  Range: TFormatRange;
+  Range: RichEdit.TFormatRange;
+  br:HBRUSH;
+  rc:TRect;
+  lhandle:HBITMAP;
+  tmpdc:HDC;
 begin
-  if (Item^.Bitmap.Width <> Item^.Rich.Width) or (Item^.Bitmap.Height <> Item^.Height) then
-  begin
-    // to prevent image copy
-    Item^.Bitmap.Assign(nil);
-    // or Item^.Bitmap.Clear;
-    Item^.Bitmap.Width :=Item^.Rich.Width;
-    Item^.Bitmap.Height:=Item^.Height;
-  end;
+  with Item^.Bitmap do
+    if (Width <> FRichWidth) or (Height <> Item^.Height) then
+    begin
+      Width :=FRichWidth;
+      Height:=Item^.Height;
+      tmpdc:=GetDC(0);
+      lhandle:=SelectObject(DC,CreateCompatibleBitmap(tmpdc,Width,Height));
+      ReleaseDC(0,tmpdc);
+      if oldbitmap=0 then
+        oldbitmap:=lhandle
+      else
+        DeleteObject(lhandle);
+    end;
   // because RichEdit sometimes paints smaller image
   // than it said when calculating height, we need
   // to fill the background
-  BkColor := Item^.Rich.Perform(EM_SETBKGNDCOLOR, 0, 0);
-  Item^.Rich.Perform(EM_SETBKGNDCOLOR, 0, BkColor);
+  BkColor := SendMessage(Item^.Rich.Handle, EM_SETBKGNDCOLOR, 0, 0);
+  SendMessage(Item^.Rich.Handle, EM_SETBKGNDCOLOR, 0, BkColor);
 //??  Item^.Bitmap.TransparentColor := BkColor;
-  Item^.Bitmap.Canvas.Brush.Color := BkColor;
-  Item^.Bitmap.Canvas.FillRect(Item^.Bitmap.Canvas.ClipRect);
-  with Range do
-  begin
-    HDC := Item^.Bitmap.Canvas.Handle;
-    hdcTarget := HDC;
-    SetRect(rc, 0, 0,
-      Item^.Bitmap.Width * 1440 div LogX,
-      Item^.Bitmap.Height * 1440 div LogY);
-{
-      MulDiv(Item^.Bitmap.Width , 1440, LogX),
-      MulDiv(Item^.Bitmap.Height, 1440, LogY));
-}
-    rcPage := rc;
-    chrg.cpMin := 0;
-    chrg.cpMax := -1;
-  end;
+
+  Item^.Bitmap.Color:=BkColor;
+  br:=CreateSolidBrush(BkColor);
+  SetRect(rc,0,0,Item^.Bitmap.Width,Item^.Bitmap.Height);
+  FillRect(Item^.Bitmap.DC,rc,br);
+  DeleteObject(br);
+
+  Range.hdc := Item^.Bitmap.DC;
+  Range.hdcTarget := Range.hdc;
+  SetRect(Range.rc, 0, 0,
+    Item^.Bitmap.Width  * 1440 div LogX,
+    Item^.Bitmap.Height * 1440 div LogY);
+  Range.rcPage := rc;
+  Range.chrg.cpMin := 0;
+  Range.chrg.cpMax := -1;
   SetBkMode(Range.hdcTarget, TRANSPARENT);
-//messageboxa(0,PAnsiChar(Item^.Rich.RE_Text[reRTF,false]),'',0);
-  Item^.Rich.Perform(EM_FORMATRANGE, 1, lParam(@Range));
-  Item^.Rich.Perform(EM_FORMATRANGE, 0, 0);
+
+  SendMessage(Item^.Rich.Handle, EM_FORMATRANGE, 1, lParam(@Range));
+  SendMessage(Item^.Rich.Handle, EM_FORMATRANGE, 0, 0);
   Item^.BitmapDrawn := True;
 end;
 
-function TRichCache.GetItemRichBitmap(GridItem: Integer): CacheBitmap;
+function TRichCache.GetItemRichBitmap(GridItem: Integer): pCacheBitmap;
 var
   Item: PRichItem;
 begin
@@ -270,7 +280,7 @@ begin
   end;
   if not Item^.BitmapDrawn then
     PaintRichToBitmap(Item);
-  Result := Item^.Bitmap;
+  Result := @Item^.Bitmap;
 end;
 
 procedure TRichCache.ResetAllItems;
@@ -325,7 +335,9 @@ begin
   FRichWidth := Value;
   for i := 0 to HIGH(Items) do
   begin
-    Items[i].Rich.Width := Value;
+//!!!!    Items[i].Rich.Width := Value;
+    SetWindowPos(Items[i].Rich.Handle,0,0,0,FRichWidth,FRichHeight,
+        SWP_NOACTIVATE or SWP_NOMOVE or SWP_NOOWNERZORDER or SWP_NOREDRAW or SWP_NOZORDER);
     Items[i].Height := -1;
   end;
 end;
@@ -361,16 +373,27 @@ begin
   FRichHeight := rc.Bottom - rc.Top;
 end;
 
-function NewRichItem(aParent:PControl):PRichItem;
+function NewRichItem(aParent:HWND):PRichItem;
 var
-  ExStyle: dword;
+//  ExStyle: dword;
+  tmp:PHPPRichEdit;
 begin
+  tmp := NewHPPRichEdit(aParent);
+  if tmp = nil then
+    exit;
+
   New(result);
-  result^.Bitmap := NewDIBBitmap(0,0,pf32bit);
+  result.Bitmap.Width :=0;
+  result.Bitmap.Height:=0;
+//!!
+  result.Bitmap.DC    :=CreateCompatibleDC(0);
+  result.Bitmap.oldbitmap:=0;
 
   result^.Height   := -1;
   result^.GridItem := -1;
 
+  result^.Rich := tmp;
+{
   result^.Rich := NewHPPRichEdit(aParent,[eoNoHScroll, eoNoVScroll,eoMultiline]);
   result^.Rich.RE_Bottomless;
   // make richedit transparent:
@@ -381,11 +404,11 @@ begin
   result^.Rich.Top     := -MaxInt;
   result^.Rich.Height  := -1;
   result^.Rich.Visible := False;
-  { Don't give him grid as parent, or we'll have wierd problems with scroll bar }
+
   result^.Rich.WordWrap:= True;
   result^.Rich.Border  := 0;
   result^.Rich.Brush.BrushStyle := bsClear;
-
+}
 end;
 
 destructor TRichCache.Destroy;
@@ -393,14 +416,19 @@ var
   i: Integer;
 begin
 messagebox(0,'destroy Cache','',0);
-  for i := 0 to FLockedList.Count - 1 do
-    Dispose(PLockedItem(FLockedList.Items[i]));
-  FLockedList.Free;
+
+//  Finalize(fLockedList);
+  fLockedList := nil;
 
   for i := 0 to HIGH(Items) do
   begin
-    Items[i]^.Rich.Free;
-    Items[i]^.Bitmap.Free;
+    with Items[i]^ do
+    begin
+      DestroyWindow(Rich.Handle);
+      if Bitmap.oldbitmap<>0 then
+        DeleteObject(SelectObject(Bitmap.DC,Bitmap.oldbitmap));
+      DeleteDC(Bitmap.DC);
+    end;
     Dispose(Items[i]);
   end;
   Finalize(Items);
@@ -412,6 +440,7 @@ function NewRichCache(aParent:PControl):PRichCache;
 var
   dc:HDC;
   i:integer;
+  lparent:HWND;
 begin
   New(Result,Create);
   with result^ do
@@ -426,11 +455,12 @@ begin
     LogY := GetDeviceCaps(dc, LOGPIXELSY);
     ReleaseDC(0, dc);
 
-    FLockedList := NewList;
-
     SetLength(Items, CACHE_SIZE);
+    lparent:=aParent.GetWindowHandle;
     for i := 0 to HIGH(Items) do
-      Items[i]:=NewRichItem(aParent);
+    begin
+      Items[i]:=NewRichItem(lparent);
+    end;
   end;
 end;
 

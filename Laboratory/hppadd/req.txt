@@ -16,3 +16,55 @@
 скроллбар
   для прокрутки в гриде
 контейнеры поиска и истории:
+
+TFont
+TColor - integer (from KOL or Graphics)
+TRichEdit
+
+Font:
+  +Charset
+  +Height
+  +Name
+  Pitch
+  PixelPerInch
+  Size
+  Style: 
+  
+hg_gridsettings.inc - DoOptionsChanged
+  assign
+hg_items
+  color          TFontSettings
+  charset        TFontSettings
+  fontname       TFontSettings
+  fontheight     size?
+  fontstyle      TFontSettings
+hg_mouse
+  assign
+hg_paint
+  assign
+  (color)
+hpp_options
+  (fontservice)
+my_GridOptions.pas
+
+Rich:
+  my_RichCache
+    Top
+    Height
+    Width
+    Visible
+    Handle
+    RE_Bottomless
+    {
+      if Msg.message = WM_SIZE then
+        Self_.Perform( EM_REQUESTRESIZE, 0, 0 );
+      Result := False;
+    }
+    WordWrap
+    Border
+    Brush.BrushStyle=bsClear
+  hg_hint
+    RichEditOle
+    http://msdn.microsoft.com/en-us/library/dd387916(v=vs.85).aspx
+    Client2Screen
+    Screen2Client

@@ -1,0 +1,47 @@
+hpp_contacts.pas
+  hpp_options
+
+hpp_events.pas
+  hpp_contacts
+  hpp_options
+  KOL
+    Format
+    StrLCopy
+    Trim
+    TrimRight
+
+hpp_global.pas
+  KOL
+    TFont = KOL.TGraphicTool
+
+hpp_itemprocess.pas
+  my_rtf
+  my_GridOptions
+  hpp_events
+  KOL
+    Format
+
+hpp_opt_dialog.pas
+  my_GridOptions
+  hpp_options
+
+hpp_options.pas
+  hpp_events
+  KOL
+    TColor
+
+my_GridOptions.pas
+  hpp_contacts
+  hpp_options
+  KOL
+    TColor??
+
+my_RichCache.pas
+  my_richedit
+  KOL
+    TList
+    TObj-PControl
+
+my_richedit.pas
+  KolOleRe2
+  kol
