@@ -28,6 +28,7 @@ library actman;
 {%File 'ua\i_uconst.inc'}
 
 uses
+//  fastmm4,
   m_api,
   Windows,
   messages,
@@ -86,7 +87,7 @@ begin
                           'run program and call services';
   PluginInfo.author     :='Awkward';
   PluginInfo.authorEmail:='panda75@bk.ru; awk1975@ya.ru';
-  PluginInfo.copyright  :='(c) 2007-2012 Awkward';
+  PluginInfo.copyright  :='(c) 2007-2013 Awkward';
   PluginInfo.homepage   :='http://code.google.com/p/delphi-miranda-plugins/';
   PluginInfo.flags      :=UNICODE_AWARE;
   PluginInfo.uuid       :=MIID_ACTMAN;
@@ -245,4 +246,6 @@ exports
   Load, Unload,
   MirandaPluginInfoEx;
 
+begin
+  DisableThreadLibraryCalls(hInstance);
 end.

@@ -89,7 +89,7 @@ const
   CMIF_ROOTHANDLE = 384; // means that hParentMenu member is set (since 0.8#26)
   CMIF_UNICODE    = 512; // will return TCHAR* instead of AnsiChar*
   CMIF_KEEPUNTRANSLATED = 1024; // don't translate a menu item
-  CMIF_ICONFROMICOLIB   = 2048; // use icolibName instead of hIcon
+//  CMIF_ICONFROMICOLIB   = 2048; // use icolibName instead of hIcon
 
   CMIF_DEFAULT = 4096; // this menu item is the default one
 
@@ -146,6 +146,14 @@ const
     Version: v0.1.0.1+
   }
   MS_CLIST_MODIFYMENUITEM:PAnsiChar = 'CList/ModifyMenuItem';
+
+  {
+    wParam : (HGENMENU)hMenuItem
+    lParam : (BOOL) enable = TRUE, disable = FALSE
+    Notes  : changes menu item's visibility
+    Version: v0.94.2+
+  }
+  MS_CLIST_SHOWHIDEMENUITEM:PAnsiChar = 'CList/ShowHideMenuItem';
 
   {
     wParam : HCONTACT

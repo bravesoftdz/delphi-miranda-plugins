@@ -961,7 +961,7 @@ begin
           case loword(wParam) of
 {
             IDC_GROUP_EXPORT: begin
-              if ShowDlgW(xmlfilename,xmlfilename,inoutfilter,false) then
+              if ShowDlgW(xmlfilename,xmlfilename,TranslateW(inoutfilter),false) then
               begin
                 wnd:=MacroListWindow;
                 for i:=0 to ListView_GetItemCount(wnd)-1 do
@@ -997,7 +997,7 @@ begin
             end;
 }
             IDC_GROUP_IMPORT: begin
-              if ShowDlgW(xmlfilename,xmlfilename,inoutfilter) then
+              if ShowDlgW(xmlfilename,xmlfilename,TranslateW(inoutfilter)) then
               begin
                 // "save" selected macro (in edit list only)
                 BuildActionChain(Dialog);

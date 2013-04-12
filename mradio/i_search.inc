@@ -380,24 +380,20 @@ begin
       begin
 {
 // find contact
-        hContact:=CallService(MS_DB_CONTACT_FINDFIRST,0,0);
+        hContact:=db_find_first(PluginName);
         while hContact<>0 do
         begin
-          if StrCmp(PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO,hContact,0)),
-             PluginName)=0 then
+          p:=DBReadString(hContact,PluginName,optStationURL);
+          l:=StrCmp(p,lurl)=0;
+          mFreeMem(p);
+          if l then
           begin
-            p:=DBReadString(hContact,PluginName,optStationURL);
-            l:=StrCmp(p,lurl)=0;
-            mFreeMem(p);
-            if l then
-            begin
-              DBDeleteSetting(hContact,strCList,'NotOnList');
-              DBDeleteSetting(hContact,strCList,'Hidden');
-              result:=hContact;
-              exit;
-            end;
+            DBDeleteSetting(hContact,strCList,'NotOnList');
+            DBDeleteSetting(hContact,strCList,'Hidden');
+            result:=hContact;
+            exit;
           end;
-          hContact:=CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
+          hContact:=db_find_next(hContact,PluginName);
         end;
 // if not found
 }

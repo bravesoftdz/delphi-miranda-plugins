@@ -45,7 +45,7 @@ begin
     'users version of miranda,group or city.';
   PluginInfo.author     :='Awkward, based on Bethoven sources';
   PluginInfo.authorEmail:='panda75@bk.ru; awk1975@ya.ru';
-  PluginInfo.copyright  :='(c) 2004,2005 Bethoven; 2006-2012 Awkward';
+  PluginInfo.copyright  :='(c) 2004,2005 Bethoven; 2006-2013 Awkward';
   PluginInfo.homepage   :='http://code.google.com/p/delphi-miranda-plugins/';
   PluginInfo.flags      :=UNICODE_AWARE;
   PluginInfo.uuid       :=MIID_QUICKSEARCH;
@@ -241,4 +241,5 @@ exports
   MirandaPluginInfoEx;
 
 begin
+  DisableThreadLibraryCalls(hInstance);
 end.

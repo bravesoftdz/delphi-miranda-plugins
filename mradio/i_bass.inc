@@ -732,7 +732,7 @@ begin
         end;
       end;
 {$IFDEF Debug}      
-logmeta(tag,artist,title);
+//logmeta(tag,artist,title);
 {$ENDIF}
       mFreeMem(oldartist);
       mFreeMem(oldtitle);

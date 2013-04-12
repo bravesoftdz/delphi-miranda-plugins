@@ -15,3 +15,4 @@ if /i '%1' == 'fpc' (
 ) else (
   ..\delphi\dcc32 -b -dUNICODE_CTRLS %myopts% %dprname% %1 %2 %3 %4 %5 %6 %7 %8 %9
 )
+del /Q /S *.res

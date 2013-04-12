@@ -72,7 +72,7 @@ function Fill:integer;
 var
   i:integer;
 begin
-  CurrentStation:=CallService(MS_DB_CONTACT_FINDFIRST,0,0);
+  CurrentStation:=db_find_first(playername);
   while CurrentStation<>0 do
   begin
     i:=DBReadWord(CurrentStation,playername,'Status',WORD(-1));
@@ -81,7 +81,7 @@ begin
       result:=1;
       exit;
     end;
-    CurrentStation:=CallService(MS_DB_CONTACT_FINDNEXT,CurrentStation,0);
+    CurrentStation:=db_find_next(CurrentStation,playername);
   end;
   result:=WAT_RES_NOTFOUND;
 end;
