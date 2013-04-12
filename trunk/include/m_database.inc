@@ -253,14 +253,14 @@ Always returns 0.
 type
   PDBEVENTTYPEDESCR = ^TDBEVENTTYPEDESCR;
   TDBEVENTTYPEDESCR = record
-    cbSize     :int;      // structure size in bytes
-    module     :PAnsiChar;    // event module name
-    eventType  :int;      // event id, unique for this module
-    descr      :PAnsiChar;    // event type description (i.e. "File Transfer")
-    textService:PAnsiChar;    // service name for MS_DB_EVENT_GETTEXT (0.8+, default Module+'/GetEventText'+EvtID)
-    iconService:PAnsiChar;    // service name for MS_DB_EVENT_GETICON (0.8+, default Module+'/GetEventIcon'+EvtID)
-    eventIcon  :THANDLE;  // icolib handle to eventicon (0.8+, default 'eventicon_'+Module+EvtID)
-    flags      :DWORD;    // flags, combination of the DETF_*
+    cbSize     :int;       // structure size in bytes
+    module     :PAnsiChar; // event module name
+    eventType  :int;       // event id, unique for this module (actually, word size)
+    descr      :PAnsiChar; // event type description (i.e. "File Transfer")
+    textService:PAnsiChar; // service name for MS_DB_EVENT_GETTEXT (0.8+, default Module+'/GetEventText'+EvtID)
+    iconService:PAnsiChar; // service name for MS_DB_EVENT_GETICON (0.8+, default Module+'/GetEventIcon'+EvtID)
+    eventIcon  :THANDLE;   // icolib handle to eventicon           (0.8+, default 'eventicon_'+Module+EvtID)
+    flags      :DWORD;     // flags, combination of the DETF_*
   end;
 
 const
@@ -315,32 +315,6 @@ const
              modules are free to define their own, beginning at 2000
              DBEVENTINFO.timestamp is in GMT, as returned by time()
   }
-
-  DBEF_FIRST =  1; // internally only, do not use
-  DBEF_SENT  =  2; // if set, the event was sent by the user, otherwise it was received
-  DBEF_READ  =  4; // event has been read by the user -- only needed for history
-  DBEF_RTL   =  8; // event contains the right-to-left aligned text
-  DBEF_UTF   = 16; // event contains a text in utf-8
-
-  EVENTTYPE_MESSAGE     = 0;
-  EVENTTYPE_URL         = 1;
-  EVENTTYPE_CONTACTS    = 2;     // v0.1.2.2+
-  EVENTTYPE_ADDED       = 1000;  // v0.1.1.0+: these used to be module-
-  EVENTTYPE_AUTHREQUEST = 1001;  // specific codes, hence the module-
-  EVENTTYPE_FILE        = 1002;  // specific limit has been raised to 2000
-
-type
-  PDBEVENTINFO = ^TDBEVENTINFO;
-  TDBEVENTINFO = record
-    cbSize   : int;  // size of the structure
-    szModule : PAnsiChar; // module that 'owns' this event and controls the data format
-    timestamp: DWORD; // timestamp in UNIX time
-    flags    : DWORD; // the DBEF_* flags above
-    eventType: WORD;  // event type, such as message, can be module defined
-    cbBlob   : DWORD; // size in bytes of pBlob^
-    pBlob    : PByte; // pointer to buffer containing the module defined event data
-  end;
-
 const
   MS_DB_EVENT_ADD:PAnsiChar = 'DB/Event/Add';
 

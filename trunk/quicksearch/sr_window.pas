@@ -619,12 +619,12 @@ begin
       end;
 
       ST_LASTEVENT: begin
-        hDbEvent:=CallService(MS_DB_EVENT_FINDLAST,hContact,0);
+        hDbEvent:=db_event_last(hContact);
         if hDbEvent<>0 then
         begin
           ZeroMemory(@dbei,sizeof(dbei));
           dbei.cbSize:=SizeOf(dbei);
-          CallService(MS_DB_EVENT_GET,hDbEvent,tlparam(@dbei));
+          db_event_get(hDbEvent, @dbei);
           res.data:=dbei.timestamp;
           res.text:=TimeToStrW(res.data);
         end
@@ -1190,14 +1190,14 @@ begin
   // filling buffer
   LastMeta:=0;
   cnt1:=0;
-  hContact:=CallService(MS_DB_CONTACT_FINDFIRST,0,0);
+  hContact:=db_find_first();
   while hContact<>0 do
   begin
     //!! check account
     AddContact(cnt1,hContact);
     inc(cnt1);
     if cnt1=cnt then break; // additional checking
-    hContact:=CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
+    hContact:=db_find_next(hContact);
   end;
   if cnt1<>cnt then
   begin

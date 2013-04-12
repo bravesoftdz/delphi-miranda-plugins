@@ -20,7 +20,7 @@ Unit ActiveX;
 
 Interface
 
-Uses variants,Windows,ctypes,types;
+Uses {variants,}Windows,ctypes,types;
 
 
 type

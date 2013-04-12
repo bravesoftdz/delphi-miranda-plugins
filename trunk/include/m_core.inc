@@ -53,7 +53,7 @@ const
   DBVTF_DENYUNICODE    = $10000;
 
 type
-  HDBEVENT = Integer;
+  HDBEVENT = THANDLE;
   PDBVARIANT = ^TDBVARIANT;
   TDBVARIANT = record
     _type: Byte;
@@ -74,6 +74,58 @@ type
     );
   end;
 
+
+
+const
+  DBEF_FIRST =  1; // internally only, do not use
+  DBEF_SENT  =  2; // if set, the event was sent by the user, otherwise it was received
+  DBEF_READ  =  4; // event has been read by the user -- only needed for history
+  DBEF_RTL   =  8; // event contains the right-to-left aligned text
+  DBEF_UTF   = 16; // event contains a text in utf-8
+
+  EVENTTYPE_MESSAGE     = 0;
+  EVENTTYPE_URL         = 1;
+  EVENTTYPE_CONTACTS    = 2;     // v0.1.2.2+
+  EVENTTYPE_ADDED       = 1000;  // v0.1.1.0+: these used to be module-
+  EVENTTYPE_AUTHREQUEST = 1001;  // specific codes, hence the module-
+  EVENTTYPE_FILE        = 1002;  // specific limit has been raised to 2000
+
+type
+  PDBEVENTINFO = ^TDBEVENTINFO;
+  TDBEVENTINFO = record
+    cbSize   : int;  // size of the structure
+    szModule : PAnsiChar; // module that 'owns' this event and controls the data format
+    timestamp: DWORD; // timestamp in UNIX time
+    flags    : DWORD; // the DBEF_* flags above
+    eventType: WORD;  // event type, such as message, can be module defined
+    cbBlob   : DWORD; // size in bytes of pBlob^
+    pBlob    : PByte; // pointer to buffer containing the module defined event data
+  end;
+
+function db_event_add(hContact:THANDLE; dbei:PDBEVENTINFO):THANDLE; stdcall;
+                 external CoreDLL name 'db_event_add';
+function db_event_count(hContact:THANDLE):int; stdcall;
+                 external CoreDLL name 'db_event_count';
+function db_event_delete(hContact:THANDLE; hDbEvent:THANDLE):int; stdcall;
+                 external CoreDLL name 'db_event_delete';
+function db_event_first(hContact:THANDLE):THANDLE; stdcall;
+                 external CoreDLL name 'db_event_first';
+function db_event_firstUnread(hContact:THANDLE):THANDLE; stdcall;
+                 external CoreDLL name 'db_event_firstUnread';
+function db_event_get(hDbEvent:THANDLE; dbei:PDBEVENTINFO):int; stdcall;
+                 external CoreDLL name 'db_event_get';
+function db_event_getBlobSize(hDbEvent:THANDLE):int; stdcall;
+                 external CoreDLL name 'db_event_getBlobSize';
+function db_event_getContact(hDbEvent:THANDLE):THANDLE; stdcall;
+                 external CoreDLL name 'db_event_getContact';
+function db_event_last(hDbEvent:THANDLE):THANDLE; stdcall;
+                 external CoreDLL name 'db_event_last';
+function db_event_markRead(hContact, hDbEvent:THANDLE):int; stdcall;
+                 external CoreDLL name 'db_event_markRead';
+function db_event_next(hDbEvent:THANDLE):THANDLE; stdcall;
+                 external CoreDLL name 'db_event_next';
+function db_event_prev(hDbEvent:THANDLE):THANDLE; stdcall;
+                 external CoreDLL name 'db_event_prev';
 
 function db_free(dbv:PDBVARIANT):int_ptr; stdcall;
                  external CoreDLL name 'db_free';
@@ -115,12 +167,11 @@ function db_set_utf(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:
 function db_set_blob(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; val:pointer; len:uint):int_ptr; stdcall;
                      external CoreDLL name 'db_set_blob';
 
-// Aliases
+// deprecated Aliases
 function DBFreeVariant(dbv:PDBVARIANT):int_ptr; stdcall;
                  external CoreDLL name 'db_free';
 function DBDeleteContactSetting(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar):int_ptr; stdcall;
                   external CoreDLL name 'db_unset';
-
 function DBGetContactSettingByte(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; errorValue:int):int; stdcall;
                                  external CoreDLL name 'db_get_b';
 function DBGetContactSettingWord(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; errorValue:int):int; stdcall;
@@ -151,7 +202,6 @@ function DBWriteContactSettingUTF8String(hContact:THANDLE; const szModule:pAnsiC
 function DBWriteContactSettingBlob(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; val:pointer; len:uint):int_ptr; stdcall;
                                    external CoreDLL name 'db_set_blob';
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // events, hooks & services
 
@@ -171,7 +221,7 @@ type
 
 const
   {$IFDEF WIN64}
-  CALLSERVICE_NOTFOUND = $8000000000000000;
+  CALLSERVICE_NOTFOUND = uint($8000000000000000);
   {$ELSE}
   CALLSERVICE_NOTFOUND = $80000000;
   {$ENDIF}
@@ -236,6 +286,13 @@ function CallContactService(hContact:THANDLE;const name:PAnsiChar;wParam:WPARAM;
 function CallProtoService(const szModule:PAnsiChar;const szService:PAnsiChar;wParam:WPARAM;lParam:LPARAM):int_ptr; cdecl;
                           external CoreDLL name 'CallProtoService';
 
+
+///////////////////////////////////////////////////////////////////////////////
+// http
+
+// returned result must be freed using mir_free()
+function mir_urlEncode(url:pAnsiChar): pAnsiChar; stdcall;
+                            external CoreDLL name 'mir_urlEncode';
 
 ///////////////////////////////////////////////////////////////////////////////
 // exceptions
@@ -414,6 +471,8 @@ function mir_wstrdup(const src:PWideChar):PWideChar; stdcall;
                      external CoreDLL name 'mir_wstrdup';
 function mir_strndup(const src:PAnsiChar; len:size_t):PAnsiChar; stdcall;
                      external CoreDLL name 'mir_strndup';
+function mir_wstrndup(const src:PWideChar; len:size_t):PWideChar; stdcall;
+                     external CoreDLL name 'mir_wstrndup';
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -613,6 +672,8 @@ procedure mir_subclassWindowFull(Wnd:HWND; WndProc, OldWndProc:TWNDPROC); stdcal
                        external CoreDLL name 'mir_subclassWindowFull';
 function  mir_callNextSubclass(Wnd:HWND; WndProc:TWNDPROC; uMsg:uint; wParam:WPARAM; lParam:LPARAM ):LRESULT; stdcall;
                        external CoreDLL name 'mir_callNextSubclass';
+procedure mir_unsubclassWindow(Wnd:HWND; WndProc:TWNDPROC); stdcall;
+                       external CoreDLL name 'mir_unsubclassWindow';
 
 procedure KillModuleSubclassing(hInst: HMODULE);
                        external CoreDLL name 'KillModuleSubclassing';

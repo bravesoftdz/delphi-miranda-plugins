@@ -28,7 +28,7 @@ begin
     ttbState:=0
   else
     CallService(MS_TTB_SETBUTTONOPTIONS,(ttbState shl 16)+TTBO_TIPNAME,
-        tlparam(Translate('Disable Plugin')));
+        tlparam(Translate('Disable WATrack')));
   result:=0;
 end;
 
@@ -41,7 +41,7 @@ begin
   mi.szPopupName.a:=PluginShort;
 
   mi.hIcon        :=CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnEnable));
-  mi.szName.a     :='Disable Plugin';
+  mi.szName.a     :='Disable WATrack';
   mi.pszService   :=MS_WAT_PLUGINSTATUS;
   mi.popupPosition:=MenuDisablePos;
   hMenuDisable:=Menu_AddMainMenuItem(@mi);
@@ -58,12 +58,12 @@ begin
   if f1<>0 then
   begin
     mi.hIcon   :=CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnDisable));
-    mi.szName.a:='Enable Plugin';
+    mi.szName.a:='Enable WATrack';
   end
   else
   begin
     mi.hIcon   :=CallService(MS_SKIN2_GETICON,0,lparam(IcoBtnEnable));
-    mi.szName.a:='Disable Plugin';
+    mi.szName.a:='Disable WATrack';
   end;
   CallService(MS_CLIST_MODIFYMENUITEM,hMenuDisable,lparam(@mi));
 
@@ -71,12 +71,12 @@ begin
   begin
     if f1<>0 then
     begin
-      p:='Enable Plugin';
+      p:='Enable WATrack';
       CallService(MS_TTB_SETBUTTONSTATE,ttbState,TTBST_RELEASED)
     end
     else
     begin
-      p:='Disable Plugin';
+      p:='Disable WATrack';
       CallService(MS_TTB_SETBUTTONSTATE,ttbState,TTBST_PUSHED);
     end;
     CallService(MS_TTB_SETBUTTONOPTIONS,(ttbState shl 16)+TTBO_TIPNAME,

@@ -43,7 +43,7 @@ type
   PFontSettings_tag = ^TFontSettings_tag;
   TFontSettings_tag = record
     colour  : TCOLORREF;
-    size    : BYTE;
+    size    : ShortInt;
     style   : BYTE; // see the DBFONTF_* flags above
     charset : BYTE;
     szFace  : array[0..(LF_FACESIZE)-1] of AnsiChar;
@@ -54,7 +54,7 @@ type
   PFontSettingsW_tag = ^TFontSettingsW_tag;
   TFontSettingsW_tag = record
     colour  : TCOLORREF;
-    size    : BYTE;
+    size    : ShortInt;
     style   : BYTE; // see the DBFONTF_* flags above
     charset : BYTE;
     szFace  : array[0..(LF_FACESIZE)-1] of WideChar;

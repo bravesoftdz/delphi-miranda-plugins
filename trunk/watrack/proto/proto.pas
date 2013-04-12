@@ -80,7 +80,7 @@ begin
     else
       Timestamp:=GetCurrentTime;
   end;
-  CallService(MS_DB_EVENT_ADD,hContact,lparam(@dbeo));
+  db_event_add(hContact, @dbeo);
 end;
 
 {SEND-time text translation}
@@ -409,12 +409,12 @@ procedure RegisterContacts;
 var
   hContact:integer;
 begin
-  hContact:=CallService(MS_DB_CONTACT_FINDFIRST,0,0);
+  hContact:=db_find_first();
   while hContact<>0 do
   begin
     if not IsChat(hContact) then
       CallService(MS_PROTO_ADDTOCONTACT,hContact,lparam(PluginShort));
-    hContact:=CallService(MS_DB_CONTACT_FINDNEXT,hContact,0);
+    hContact:=db_find_next(hContact);
   end;
 end;
 

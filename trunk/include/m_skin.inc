@@ -120,13 +120,15 @@ type
 
 const
   {
-    wParam : ICON_ID or handle
-    lParam : 0 if ICON_ID, else 1
+    wParam : ICON_ID
+    lParam : 0 - return HICON
+             1 - return icolib handle
+             2 - return big icon HICON
+             3 - return icolib icon name
     Affect : Load an icon from the user's custom skin lib, or from the exe
              if there isn't one loaded, see notes
     Return : HICON for the new icon, do *not* DestroyIcon() the return value
-             returns NULL(0) if ICON_ID is invalid, but always success for a
-             valid ID.
+             returns NULL(0) if ICON_ID is invalid, but always success for a valid ID.
   }
   MS_SKIN_LOADICON:PAnsiChar = 'Skin/Icons/Load';
 
@@ -155,11 +157,18 @@ const
     wParam : 0
     lParam : Pointer to a null terminated string containing the name of the
              sound to play
-    Affect : play a named sound event, play name should of been added
+    Affect : plays a named sound event, play name should of been added
              with MS_SKIN_ADDNEWSOUND,  see notes
     Notes  : function will not fail, it will play the Windows
   }
   MS_SKIN_PLAYSOUND:PAnsiChar = 'Skin/Sounds/Play';
+
+  {
+    wParam = 0
+    lParam = (WideChar *) ptszFileName
+    Affect: plays any sound file
+  }
+  MS_SKIN_PLAYSOUNDFILE:PAnsiChar = 'Skin/Sounds/PlayFile';
 
   {
     wParam : 0

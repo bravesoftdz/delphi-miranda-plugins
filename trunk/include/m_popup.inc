@@ -54,26 +54,8 @@ type
   end;
 
 type
-  // for info on what this stuff is, see m_popup.h
   PPOPUPDATA = ^TPOPUPDATA;
   TPOPUPDATA = record
-    lchContact      : THANDLE;  // Handle to the contact, can be NULL (main contact).
-    lchIcon         : HICON;    // Handle to a icon to be shown. Cannot be NULL.
-// This is the contact name or the first line in the plugin. Cannot be NULL.
-    lpszContactName : array [0..MAX_CONTACTNAME-1] of AnsiChar;
-// This is the second line text. Users can choose to hide it. Cannot be NULL.
-    lpszText        : array [0..MAX_SECONDLINE-1] of AnsiChar;
-    colorBack       : COLORREF; // COLORREF to be used for the background.
-                                // Can be NULL, default will be used.
-    colorText       : COLORREF; // COLORREF to be used for the text.
-                                // Can be NULL, default will be used.
-    PluginWindowProc: pointer;  // Read below. Can be NULL; default will be used.
-    PluginData      : Pointer;  // Read below. Can be NULL.
-  end;
-
-type
-  PPOPUPDATAEX = ^TPOPUPDATAEX;
-  TPOPUPDATAEX = record
     lchContact      : THANDLE;
     lchIcon         : HICON;
     lpszContactName : array [0..MAX_CONTACTNAME-1] of AnsiChar;
@@ -180,9 +162,8 @@ You may pass additional creation flags via lParam:
   APF_NO_POPUP     = 8;
   APF_NEWDATA      = $10;
 
-  MS_POPUP_ADDPOPUP  :PAnsiChar = 'PopUp/AddPopUp';
-  MS_POPUP_ADDPOPUPW :PAnsiChar = 'PopUp/AddPopUpW';
-  MS_POPUP_ADDPOPUPEX:PAnsiChar = 'PopUp/AddPopUpEx';
+  MS_POPUP_ADDPOPUPW:PAnsiChar = 'PopUp/AddPopUpW';
+  MS_POPUP_ADDPOPUP :PAnsiChar = 'PopUp/AddPopUpEx';
 
 {
   Returns the handle to the contact associated to the specified PopUpWindow.
@@ -253,7 +234,6 @@ You may pass additional creation flags via lParam:
   returns: > 0 for success, -1 for failure, 0 if the failure is due to second line not being shown. (but you could call PUIsSecondLineShown() before changing the text...)
   Changes the text displayed in the second line of the popup.
 }
-  MS_POPUP_CHANGETEXT :PAnsiChar = 'PopUp/Changetext';
   MS_POPUP_CHANGETEXTW:PAnsiChar = 'PopUp/ChangetextW';
 
 {
@@ -261,7 +241,6 @@ You may pass additional creation flags via lParam:
   lParam = (LPARAM)(POPUPDATAEX*)newData
   Changes the entire popup
 }
-  MS_POPUP_CHANGE :PAnsiChar = 'PopUp/Change';
   MS_POPUP_CHANGEW:PAnsiChar = 'PopUp/ChangeW';
 
 {
@@ -276,8 +255,6 @@ You may pass additional creation flags via lParam:
   CPT_TEXTW  = 2; // lParam = (WCHAR *)text
   CPT_TITLE  = 3; // lParam = (AnsiChar *)title
   CPT_TITLEW = 4; // lParam = (WCHAR *)title
-  CPT_DATA   = 5; // lParam = (POPUPDATA *)data
-  CPT_DATAEX = 6; // lParam = (POPUPDATAEX *)data
   CPT_DATAW  = 7; // lParam = (POPUPDATAW *)data
   CPT_DATA2  = 8; // lParam = (POPUPDATA2 *)data
 
@@ -357,6 +334,7 @@ const
 // wParam = 0
 // lParam = (POPUPCLASS *)&pc
   MS_POPUP_REGISTERCLASS = 'PopUp/RegisterClass';
+  MS_POPUP_UNREGISTERCLASS = 'PopUp/UnregisterClass';
 
 type
   TPOPUPDATACLASS = record

@@ -8,7 +8,7 @@ library WATrack;
 uses
   // FastMM not compatible with FPC, internal for delphi xe
 //  {$IFNDEF COMPILER_16_UP}{$IFNDEF FPC}fastmm4,{$ENDIF}{$ENDIF}
-  m_api,dbsettings,activex,winampapi,
+  m_api,dbsettings,{activex,}winampapi,
   Windows,messages,commctrl,//uxtheme,
   srv_format,srv_player,wat_api,wrapper,
   common,syswin,HlpDlg,mirutils
@@ -546,7 +546,7 @@ begin
 
   hTimer:=0;
 
-  OleInitialize(nil);
+//!!  OleInitialize(nil);
 
   if RegisterIcons then
     wsic:=HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged)
@@ -668,7 +668,7 @@ begin
   DestroyHookableEvent(hHookWATLoaded);
   DestroyHookableEvent(hHookWATStatus);
 
-  OleUnInitialize;
+//!!  OleUnInitialize;
 
   //delete cover files
   buf[0]:=#0;
@@ -729,4 +729,5 @@ exports
   MirandaPluginInfoEx;
 
 begin
+  DisableThreadLibraryCalls(hInstance);
 end.
