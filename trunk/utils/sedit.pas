@@ -70,11 +70,7 @@ var
 begin
   SendMessageW(wnd,CB_SETITEMDATA,
       SendMessageW(wnd,CB_ADDSTRING,0,
-{$IFDEF Miranda}
-          lparam(TranslateW(FastAnsiToWideBuf(str,buf)))),
-{$ELSE}
-          lparam(FastAnsiToWideBuf(str,buf))),
-{$ENDIF}
+        lparam({$IFDEF Miranda}TranslateW{$ENDIF}(FastAnsiToWideBuf(str,buf)))),
       num);
 end;
 
@@ -628,6 +624,7 @@ begin
     IDC_DATA_LEN:    result:=RD_ANCHORX_RIGHT or RD_ANCHORY_TOP;
     IDC_DATA_SLEN:   result:=RD_ANCHORX_RIGHT or RD_ANCHORY_TOP;
 
+    IDC_VAR_HELP:    result:=RD_ANCHORX_RIGHT or RD_ANCHORY_BOTTOM;
     IDC_DATA_VARS:   result:=RD_ANCHORX_RIGHT or RD_ANCHORY_BOTTOM;
     IDC_DATA_MMI:    result:=RD_ANCHORX_RIGHT or RD_ANCHORY_BOTTOM;
 
@@ -690,7 +687,7 @@ end;
 procedure FillLVData(Dialog:HWND;list:HWND;item:integer);
 var
   buf:array [0..15] of WideChar;
-  i:integer;
+  dtype,i:integer;
   p:pWideChar;
   b,b1:boolean;
   idcshow,idchide:integer;
@@ -700,13 +697,13 @@ var
   wnd:HWND;
 begin
   len:=LV_GetLParam(list,item);
-  i  :=loword(len);
-  len:=hiword(len);
+  dtype:=loword(len);
+  len  :=hiword(len);
   idcshow:=IDC_DATA_EDIT;
   idchide:=IDC_DATA_EDTN;
 
   buf[0]:=#0;
-  case i of
+  case dtype of
     SST_BYTE,SST_WORD,SST_DWORD,
     SST_QWORD,SST_NATIVE: begin
       idchide:=IDC_DATA_EDIT;
@@ -775,7 +772,7 @@ begin
     mFreeMem(p);
 
   wnd:=GetDlgItem(Dialog,IDC_DATA_TYPE);
-  CB_SelectData(wnd,i);
+  CB_SelectData(wnd,dtype);
   SendMessage(Dialog,WM_COMMAND,(CBN_SELENDOK shl 16)+IDC_DATA_TYPE,wnd);
 end;
 

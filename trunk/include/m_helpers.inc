@@ -376,8 +376,8 @@ begin
   Result := CreateServiceFunction(szStr, @serviceProc);
 end;
 
+// Hidden variable hLangpack - do not use Inline style
 function Srmm_AddIcon(sid: PStatusIconData):int_ptr;
-  {$IFDEF AllowInline}inline;{$ENDIF}
 begin
   result:=CallService(MS_MSG_ADDICON, hLangpack, LPARAM(sid));
 end;
