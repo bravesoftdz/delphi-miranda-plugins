@@ -21,8 +21,10 @@ const
 const
   ioVariables = 'variables';
   ioText      = 'text';
+  ioPost      = 'post';
 const
-  ACF_TEXTSCRIPT = $00000001;
+  ACF_TEXTSCRIPT  = $00000001;
+  ACF_POSTPROCESS = $00000002;
 
 type
   tTextAction = class(tBaseAction)
@@ -263,13 +265,28 @@ end;
 function tTextAction.DoAction(var WorkData:tWorkData):LRESULT;
 var
   buf:array [0..31] of WideChar;
-  w:pWideChar;
+  w,tmp,last:pWideChar;
 begin
   result:=0;
 
+  tmp:=text;
+  if (flags and ACF_POSTPROCESS)=0 then
+    if (flags and ACF_TEXTSCRIPT)<>0 then
+    begin
+      if WorkData.ResultType=rtInt then
+        last:=pWideChar(IntToStr(buf,WorkData.LastResult))
+      else
+        last:=pWideChar(WorkData.LastResult);
+
+      tmp:=ParseVarString(text,WorkData.Parameter,last);
+    end;
+
   mGetMem (w ,BufferSize*SizeOf(WideChar));
   FillChar(w^,BufferSize*SizeOf(WideChar),0);
-  StrCopyW(w,text);
+  StrCopyW(w,tmp);
+  if (flags and ACF_POSTPROCESS)=0 then
+    if (flags and ACF_TEXTSCRIPT)<>0 then
+      mFreeMem(tmp);
 
   PasteClipboard(w);    // ^v
   PasteFileString(w);   // ^f
@@ -290,6 +307,19 @@ begin
 
   StrReplaceW(w,'^t',#9);   // ^t
   StrReplaceW(w,'^e',nil);  // ^e
+
+  if (flags and ACF_POSTPROCESS)<>0 then
+    if (flags and ACF_TEXTSCRIPT)<>0 then
+    begin
+      if WorkData.ResultType=rtInt then
+        last:=pWideChar(IntToStr(buf,WorkData.LastResult))
+      else
+        last:=pWideChar(WorkData.LastResult);
+
+      tmp:=ParseVarString(w,WorkData.Parameter,last);
+      mFreeMem(w);
+      w:=tmp;
+    end;
 
   ClearResult(WorkData);
   WorkData.LastResult:=uint_ptr(w);
@@ -315,6 +345,8 @@ begin
         StrDupW(text,getText(HXML(node)));
         if StrToInt(getAttrValue(HXML(node),ioVariables))=1 then
           flags:=flags or ACF_TEXTSCRIPT;
+        if StrToInt(getAttrValue(HXML(node),ioPost))=1 then
+          flags:=flags or ACF_POSTPROCESS;
       end;
     end;
 {
@@ -351,7 +383,8 @@ end;
 procedure ClearFields(Dialog:HWND);
 begin
   SetDlgItemTextW(Dialog,IDC_TXT_TEXT,nil);
-  SetEditFlags(Dialog,IDC_TXT_TEXT,EF_ALL,0);
+  SetEditFlags   (Dialog,IDC_TXT_TEXT,EF_ALL,0);
+  CheckDlgButton (Dialog,IDC_TXT_POST,BST_UNCHECKED);
 end;
 
 function DlgProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
@@ -375,6 +408,8 @@ begin
       begin
         SetDlgItemTextW(Dialog,IDC_TXT_TEXT,text);
         SetEditFlags(Dialog,IDC_TXT_TEXT,EF_SCRIPT,ord((flags and ACF_TEXTSCRIPT)<>0));
+        if (flags and ACF_POSTPROCESS)<>0 then
+          CheckDlgButton(Dialog,IDC_TXT_POST,BST_CHECKED);
       end;
       NoProcess:=false;
     end;
