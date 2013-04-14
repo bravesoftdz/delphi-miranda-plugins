@@ -542,13 +542,13 @@ begin
     end;
 
     SST_BARR,SST_WARR,SST_BPTR,SST_WPTR: begin
+      dst^:=' '; inc(dst);
       // length
       li.iSubItem  :=col_len;
       li.cchTextMax:=32;
       li.pszText   :=@buf;
       if SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li))>0 then
       begin
-        dst^:=' '; inc(dst);
         pc:=@buf;
         while pc^<>#0 do
         begin
