@@ -2,7 +2,7 @@
 set myopts=-dMiranda
 set dprname=quicksearch.dpr
 
-..\delphi\brcc32.exe qs.rc -foqs.res
+..\delphi\brcc32.exe qs.rc -foqs.res >nul
 
 if /i '%1' == 'fpc' (
   ..\FPC\bin\fpc.exe %myopts% %dprname% %2 %3 %4 %5 %6 %7 %8 %9
@@ -15,4 +15,4 @@ if /i '%1' == 'fpc' (
 ) else (
   ..\delphi\dcc32 %myopts% %dprname% %1 %2 %3 %4 %5 %6 %7 %8 %9
 )
-del /Q /S *.res
+del /Q /S *.res >nul

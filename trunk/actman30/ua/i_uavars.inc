@@ -119,6 +119,3 @@ var
   UActionList:array of tMyActionItem;
 var
   szMyPath:array [0..MAX_PATH] of WideChar;
-var
-  hServiceWithLParam:THANDLE;
-  hTTBService:THANDLE;

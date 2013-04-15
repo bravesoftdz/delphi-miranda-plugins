@@ -6,7 +6,7 @@
 {$IMAGEBASE $13000000}
 library WATrack;
 uses
-  // FastMM not compatible with FPC, internal for delphi xe
+// FastMM not compatible with FPC, internal for delphi xe
 //  {$IFNDEF COMPILER_16_UP}{$IFNDEF FPC}fastmm4,{$ENDIF}{$ENDIF}
   m_api,dbsettings,{activex,}winampapi,
   Windows,messages,commctrl,//uxtheme,
@@ -514,7 +514,7 @@ begin
     OnTTBLoaded(0,0);
     if ttbState=0 then
 }
-    onloadhook:=HookEvent(ME_TTB_MODULELOADED,@OnTTBLoaded);
+    HookEvent(ME_TTB_MODULELOADED,@OnTTBLoaded);
   end
   else
   begin
@@ -540,7 +540,6 @@ function OnModulesLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
   p:PAnsiChar;
 begin
-  UnhookEvent(onloadhook);
 
   CallService(MS_DBEDIT_REGISTERSINGLEMODULE,twparam(PluginShort),0);
 
@@ -549,14 +548,12 @@ begin
 //!!  OleInitialize(nil);
 
   if RegisterIcons then
-    wsic:=HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged)
-  else
-    wsic:=0;
+    HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
 
   CreateMenus;
 
   if ServiceExists(MS_TTB_ADDBUTTON)<>0 then
-    onloadhook:=HookEvent(ME_TTB_MODULELOADED,@OnTTBLoaded)
+    HookEvent(ME_TTB_MODULELOADED,@OnTTBLoaded)
   else
     ttbState:=0;
 
@@ -582,7 +579,7 @@ begin
   if hEvent<>0 then
   begin
     p:='WAT_INIT';
-    hWATI:=CreateServiceFunction(p,@WaitAllModules);
+    CreateServiceFunction(p,@WaitAllModules);
     CallService(MS_SYSTEM_WAITONHANDLE,hEvent,tlparam(p));
   end;
 
@@ -594,8 +591,8 @@ begin
 
   result:=0;
 
-  hLoad  :=HookEvent(ME_SYSTEM_MODULELOAD  ,@OnPluginLoad);
-  hUnLoad:=HookEvent(ME_SYSTEM_MODULEUNLOAD,@OnPluginUnLoad);
+  HookEvent(ME_SYSTEM_MODULELOAD  ,@OnPluginLoad);
+  HookEvent(ME_SYSTEM_MODULEUNLOAD,@OnPluginUnLoad);
 end;
 
 procedure FreeVariables;
@@ -606,22 +603,6 @@ begin
   mFreeMem(CoverPaths);
   ClearFormats;
   ClearPlayers;
-end;
-
-procedure FreeServices;
-begin
-  DestroyServiceFunction(hGFI);
-  DestroyServiceFunction(hRGS);
-
-  DestroyServiceFunction(hWI);
-  DestroyServiceFunction(hGMI);
-  DestroyServiceFunction(hPS);
-  DestroyServiceFunction(hPB);
-  DestroyServiceFunction(hWATI);
-  DestroyServiceFunction(hWC);
-
-  DestroyServiceFunction(hFMT);
-  DestroyServiceFunction(hPLR);
 end;
 
 function PreShutdown(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -655,14 +636,6 @@ begin
     ptr:=ptr^.Next;
   end;
 
-  UnhookEvent(hLoad);
-  UnhookEvent(hUnload);
-//  UnhookEvent(plStatusHook);
-  UnhookEvent(hHookShutdown);
-  UnhookEvent(opthook);
-  if wsic<>0 then UnhookEvent(wsic);
-
-  FreeServices;
   FreeVariables;
 
   DestroyHookableEvent(hHookWATLoaded);
@@ -698,25 +671,26 @@ begin
 
   hHookWATLoaded:=CreateHookableEvent(ME_WAT_MODULELOADED);
   hHookWATStatus:=CreateHookableEvent(ME_WAT_NEWSTATUS);
-  hHookShutdown :=HookEvent(ME_SYSTEM_OKTOEXIT,@PreShutdown);
-  opthook       :=HookEvent(ME_OPT_INITIALISE ,@OnOptInitialise);
 
-  hGFI:=CreateServiceFunction(MS_WAT_GETFILEINFO  ,@WATGetFileInfo);
-  hRGS:=CreateServiceFunction(MS_WAT_RETURNGLOBAL ,@WATReturnGlobal);
+  HookEvent(ME_SYSTEM_OKTOEXIT,@PreShutdown);
+  HookEvent(ME_OPT_INITIALISE ,@OnOptInitialise);
 
-  hGMI:=CreateServiceFunction(MS_WAT_GETMUSICINFO ,@WATGetMusicInfo);
-  hPS :=CreateServiceFunction(MS_WAT_PLUGINSTATUS ,@WATPluginStatus);
-  hPB :=CreateServiceFunction(MS_WAT_PRESSBUTTON  ,@PressButton);
-  hWI :=CreateServiceFunction(MS_WAT_WINAMPINFO   ,@WinampGetInfo);
-  hWC :=CreateServiceFunction(MS_WAT_WINAMPCOMMAND,@WinampCommand);
+  CreateServiceFunction(MS_WAT_GETFILEINFO  ,@WATGetFileInfo);
+  CreateServiceFunction(MS_WAT_RETURNGLOBAL ,@WATReturnGlobal);
 
-  hFMT:=CreateServiceFunction(MS_WAT_FORMAT,@ServiceFormat);
-  hPLR:=CreateServiceFunction(MS_WAT_PLAYER,@ServicePlayer);
+  CreateServiceFunction(MS_WAT_GETMUSICINFO ,@WATGetMusicInfo);
+  CreateServiceFunction(MS_WAT_PLUGINSTATUS ,@WATPluginStatus);
+  CreateServiceFunction(MS_WAT_PRESSBUTTON  ,@PressButton);
+  CreateServiceFunction(MS_WAT_WINAMPINFO   ,@WinampGetInfo);
+  CreateServiceFunction(MS_WAT_WINAMPCOMMAND,@WinampCommand);
+
+  CreateServiceFunction(MS_WAT_FORMAT,@ServiceFormat);
+  CreateServiceFunction(MS_WAT_PLAYER,@ServicePlayer);
 
   FillChar(SongInfoA,SizeOf(SongInfoA),0);
   FillChar(SongInfo ,SizeOf(SongInfo ),0);
   FillChar(WorkSI   ,SizeOf(SongInfo ),0);
-  onloadhook:=HookEvent(ME_SYSTEM_MODULESLOADED,@OnModulesLoaded);
+  HookEvent(ME_SYSTEM_MODULESLOADED,@OnModulesLoaded);
 end;
 
 function Unload:int; cdecl;

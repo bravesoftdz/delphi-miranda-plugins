@@ -281,8 +281,11 @@ begin
   if aSetDisable then
     SetModStatus(0);
 
-  if sic<>0 then UnhookEvent(sic);
-  sic:=0;
+  if sic<>0 then
+  begin
+    UnhookEvent(sic);
+    sic:=0;
+  end;
   DestroyFrame;
 end;
 

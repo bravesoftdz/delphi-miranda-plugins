@@ -68,11 +68,7 @@ uses
 const
   PluginName  = 'Action Manager';
 var
-  hHookShutdown,
-  onloadhook,
-  opthook:THANDLE;
   hevaction,hHookChanged,hevinout:THANDLE;
-  hsel,{!!hinout,}hfree,hget,hrun,hrung,hrunp:THANDLE;
 
 {$include m_actman.inc}
 
@@ -117,20 +113,10 @@ begin
   MacroList.Clear;
   MacroList.Free;
 
-  UnhookEvent(hHookShutdown);
-  UnhookEvent(opthook);
-
   DestroyHookableEvent(hHookChanged);
   DestroyHookableEvent(hevinout);
   DestroyHookableEvent(hevaction);
 
-  DestroyServiceFunction(hfree);
-  DestroyServiceFunction(hget);
-  DestroyServiceFunction(hrun);
-  DestroyServiceFunction(hrung);
-  DestroyServiceFunction(hrunp);
-//!!  DestroyServiceFunction(hinout);
-  DestroyServiceFunction(hsel);
 end;
 
 procedure RegisterActTypes;
@@ -179,8 +165,6 @@ end;
 function DoAutostart(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
   Result:=0;
-  UnhookEvent(onloadhook);
-
   CallService(MS_ACT_RUNBYNAME,TWPARAM(AutoStartName),0);
 end;
 
@@ -189,15 +173,14 @@ var
   ptr:pActionLink;
 begin
   Result:=0;
-  UnhookEvent(onloadhook);
 
   RegisterActTypes;
 
   LoadMacros;
   RegisterIcons;
   
-  opthook      :=HookEvent(ME_OPT_INITIALISE ,@OnOptInitialise);
-  hHookShutdown:=HookEvent(ME_SYSTEM_SHUTDOWN{ME_SYSTEM_OKTOEXIT},@PreShutdown);
+  HookEvent(ME_OPT_INITIALISE ,@OnOptInitialise);
+  HookEvent(ME_SYSTEM_SHUTDOWN{ME_SYSTEM_OKTOEXIT},@PreShutdown);
   NotifyEventHooks(hHookChanged,twparam(ACTM_LOADED),0);
 
   //----- DBEDITOR support -----
@@ -213,8 +196,9 @@ begin
     ptr:=ptr^.Next;
   end;
 
-  // cheat
-  onloadhook:=HookEvent(ME_SYSTEM_MODULESLOADED,@DoAutostart);
+  // cheat (commented to avoid conflicts)
+//  onloadhook:=HookEvent(ME_SYSTEM_MODULESLOADED,@DoAutostart);
+  CallService(MS_ACT_RUNBYNAME,TWPARAM(AutoStartName),0);
 end;
 
 function Load:int; cdecl;
@@ -226,15 +210,15 @@ begin
   hevinout    :=CreateHookableEvent(ME_ACT_INOUT);
   hevaction   :=CreateHookableEvent(ME_ACT_ACTION);
 
-  hfree :=CreateServiceFunction(MS_ACT_FREELIST ,@ActFreeList);
-  hget  :=CreateServiceFunction(MS_ACT_GETLIST  ,@ActGetList);
-  hrun  :=CreateServiceFunction(MS_ACT_RUNBYID  ,@ActRun);
-  hrung :=CreateServiceFunction(MS_ACT_RUNBYNAME,@ActRunGroup);
-  hrunp :=CreateServiceFunction(MS_ACT_RUNPARAMS,@ActRunParam);
-//!!  hinout:=CreateServiceFunction(MS_ACT_INOUT    ,@ActInOut);
-  hsel  :=CreateServiceFunction(MS_ACT_SELECT   ,@ActSelect);
+  CreateServiceFunction(MS_ACT_FREELIST ,@ActFreeList);
+  CreateServiceFunction(MS_ACT_GETLIST  ,@ActGetList);
+  CreateServiceFunction(MS_ACT_RUNBYID  ,@ActRun);
+  CreateServiceFunction(MS_ACT_RUNBYNAME,@ActRunGroup);
+  CreateServiceFunction(MS_ACT_RUNPARAMS,@ActRunParam);
+//!!  CreateServiceFunction(MS_ACT_INOUT    ,@ActInOut);
+  CreateServiceFunction(MS_ACT_SELECT   ,@ActSelect);
 
-  onloadhook:=HookEvent(ME_SYSTEM_MODULESLOADED,@OnModulesLoaded);
+  HookEvent(ME_SYSTEM_MODULESLOADED,@OnModulesLoaded);
 end;
 
 function Unload: int; cdecl;

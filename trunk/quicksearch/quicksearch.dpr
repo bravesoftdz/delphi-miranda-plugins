@@ -20,18 +20,6 @@ uses
   mirutils,
   common;
 
-var
-  opthook:cardinal;
-  onloadhook:cardinal;
-  onstatus,
-  ondelete,
-//  onaccount,
-  onadd:cardinal;
-  servshow:cardinal;
-
-const
-  icohook:THANDLE = 0;
-
 function MirandaPluginInfoEx(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
 begin
   result:=@PluginInfo;
@@ -151,7 +139,7 @@ begin
   Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 
-  icohook:=HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
+  HookEvent(ME_SKIN2_ICONSCHANGED,@IconChanged);
 end;
 
 function OnOptInitialise(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -183,22 +171,20 @@ end;
 
 function OnModulesLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
-  UnhookEvent(onloadhook);
-
   CallService(MS_DBEDIT_REGISTERSINGLEMODULE,twparam(qs_module),0);
 
   RegisterIcons;
   RegisterColors;
 
-  servshow:=CreateServiceFunction(QS_SHOWSERVICE,@OpenSearchWindow);
+  CreateServiceFunction(QS_SHOWSERVICE,@OpenSearchWindow);
   AddRemoveMenuItemToMainMenu;
 
   reghotkeys;
 
-  onadd    :=HookEvent(ME_DB_CONTACT_ADDED        ,@OnContactAdded);
-  ondelete :=HookEvent(ME_DB_CONTACT_DELETED      ,@OnContactDeleted);
-  onstatus :=HookEvent(ME_CLIST_CONTACTICONCHANGED,@OnStatusChanged);
-//  onaccount:=HookEvent(ME_PROTO_ACCLISTCHANGED    ,@OnAccountChanged);
+  HookEvent(ME_DB_CONTACT_ADDED        ,@OnContactAdded);
+  HookEvent(ME_DB_CONTACT_DELETED      ,@OnContactDeleted);
+  HookEvent(ME_CLIST_CONTACTICONCHANGED,@OnStatusChanged);
+//  HookEvent(ME_PROTO_ACCLISTCHANGED    ,@OnAccountChanged);
   HookEvent(ME_TTB_MODULELOADED,@OnTTBLoaded);
 
   CreateFrame(0);
@@ -209,8 +195,8 @@ function Load():Integer;cdecl;
 begin
   Result:=0;
   Langpack_register;
-  opthook   :=HookEvent(ME_OPT_INITIALISE      ,@OnOptInitialise);
-  onloadhook:=HookEvent(ME_SYSTEM_MODULESLOADED,@OnModulesLoaded);
+  HookEvent(ME_OPT_INITIALISE      ,@OnOptInitialise);
+  HookEvent(ME_SYSTEM_MODULESLOADED,@OnModulesLoaded);
   loadopt_db(true);
 end;
 
@@ -219,15 +205,6 @@ begin
   result:=0;
   removetoolbar; //??
   DestroyFrame;
-
-  DestroyServiceFunction(servshow);
-  UnhookEvent(opthook);
-  UnhookEvent(onadd);
-  UnhookEvent(ondelete);
-  UnhookEvent(onstatus);
-//  UnhookEvent(onaccount);
-  if icohook<>0 then
-    UnhookEvent(icohook);
 
 //  unreghotkeys;
 
