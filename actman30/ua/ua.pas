@@ -49,53 +49,31 @@ var
 
 // ------------ base interface functions -------------
 
-var
-  iohook:THANDLE;
-  hontabloaded,
-  honttbloaded,
-  ontabbtnpressed,
-  onactchanged:THANDLE;
-  hPreBuildMMenu,
-  hPreBuildCMenu,
-  hPreBuildTMenu:THANDLE;
-
 procedure Init;
 begin
   GetModuleFileNameW(hInstance,szMyPath,MAX_PATH);
 
-  hServiceWithLParam:=CreateServiceFunction(SERVICE_WITH_LPARAM_NAME,@ServiceCallWithLParam);
-  hTTBService       :=CreateServiceFunction(TTB_SERVICE_NAME        ,@TTBServiceCall);
+  CreateServiceFunction(SERVICE_WITH_LPARAM_NAME,@ServiceCallWithLParam);
+  CreateServiceFunction(TTB_SERVICE_NAME        ,@TTBServiceCall);
   CheckPlacesAbility;
 
   CreateUActionList;
 
-  honttbloaded   :=HookEvent(ME_TTB_MODULELOADED ,@OnTTBLoaded);
-  hontabloaded   :=HookEvent(ME_MSG_TOOLBARLOADED,@OnTabBBLoaded);
-  ontabbtnpressed:=HookEvent(ME_MSG_BUTTONPRESSED,@OnTabButtonPressed);
-  onactchanged   :=HookEvent(ME_ACT_CHANGED      ,@ActListChange);
+  HookEvent(ME_TTB_MODULELOADED ,@OnTTBLoaded);
+  HookEvent(ME_MSG_TOOLBARLOADED,@OnTabBBLoaded);
+  HookEvent(ME_MSG_BUTTONPRESSED,@OnTabButtonPressed);
+  HookEvent(ME_ACT_CHANGED      ,@ActListChange);
 
-  hPreBuildMMenu:=HookEvent(ME_CLIST_PREBUILDMAINMENU   , PreBuildMainMenu);
-  hPreBuildCMenu:=HookEvent(ME_CLIST_PREBUILDCONTACTMENU, PreBuildContactMenu);
-  hPreBuildTMenu:=HookEvent(ME_CLIST_PREBUILDTRAYMENU   , PreBuildTrayMenu);
+  HookEvent(ME_CLIST_PREBUILDMAINMENU   , PreBuildMainMenu);
+  HookEvent(ME_CLIST_PREBUILDCONTACTMENU, PreBuildContactMenu);
+  HookEvent(ME_CLIST_PREBUILDTRAYMENU   , PreBuildTrayMenu);
 
-  iohook:=HookEvent(ME_ACT_INOUT,@ActInOut);
+  HookEvent(ME_ACT_INOUT,@ActInOut);
 end;
 
 procedure DeInit;
 begin
   SetLength(arMenuRec,0);
-
-  UnhookEvent(hPreBuildMMenu);
-  UnhookEvent(hPreBuildCMenu);
-  UnhookEvent(hPreBuildTMenu);
-
-  UnhookEvent(honttbloaded);
-  UnhookEvent(hontabloaded);
-  UnhookEvent(ontabbtnpressed);
-  UnhookEvent(onactchanged);
-  UnhookEvent(iohook);
-  DestroyServiceFunction(hServiceWithLParam);
-  DestroyServiceFunction(hTTBService);
 end;
 
 function AddOptionPage(var tmpl:pAnsiChar;var proc:pointer;var name:PAnsiChar):integer;

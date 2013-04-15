@@ -115,8 +115,6 @@ var
   szTemp:array [0..255] of AnsiChar;
   i:integer;
 begin
-  UnhookEvent(onloadhook);
-
   DBWriteDWord(0,PluginName,optVersion,PluginInfo.version);
 
   szTemp[0]:='E';
@@ -185,8 +183,8 @@ begin
   else
     ActiveContact:=0;
 
-  onsetting:=HookEvent(ME_DB_CONTACT_SETTINGCHANGED,@OnSettingsChanged);
-  ondelete :=HookEvent(ME_DB_CONTACT_DELETED       ,@OnContactDeleted);
+  HookEvent(ME_DB_CONTACT_SETTINGCHANGED,@OnSettingsChanged);
+  HookEvent(ME_DB_CONTACT_DELETED       ,@OnContactDeleted);
   randomize;
   CreateFrame(0);
 
@@ -215,27 +213,7 @@ begin
   MyFreeBASS;
   DBWriteByte(0,PluginName,optVolume,gVolume);
 
-  DestroyServiceFunction(hsTrayMenu);
-  DestroyServiceFunction(hsPlayStop);
-  DestroyServiceFunction(hsRecord);
-  DestroyServiceFunction(hsSettings);
-  DestroyServiceFunction(hsSetVol);
-  DestroyServiceFunction(hsGetVol);
-  DestroyServiceFunction(hsMute);
-  DestroyServiceFunction(hsCommand);
-  DestroyServiceFunction(hsEqOnOff);
-
-  DestroyServiceFunction(hsExport);
-  DestroyServiceFunction(hsImport);
-
   DestroyHookableEvent(hhRadioStatus);
-
-  UnhookEvent(onsetting);
-  UnhookEvent(ondelete);
-  UnhookEvent(hHookShutdown);
-  UnhookEvent(hDblClick);
-  UnhookEvent(opthook);
-  UnhookEvent(contexthook);
 
   CallService(MS_NETLIB_CLOSEHANDLE,hNetLib,0);
   mFreeMem(storage);
@@ -301,28 +279,29 @@ begin
 
     hhRadioStatus:=CreateHookableEvent(ME_RADIO_STATUS);
 
-    hsPlayStop:=CreateServiceFunction(MS_RADIO_PLAYSTOP,@Service_RadioPlayStop);
-    hsRecord  :=CreateServiceFunction(MS_RADIO_RECORD  ,@Service_RadioRecord);
-    hsSettings:=CreateServiceFunction(MS_RADIO_SETTINGS,@Service_RadioSettings);
-    hsSetVol  :=CreateServiceFunction(MS_RADIO_SETVOL  ,@Service_RadioSetVolume);
-    hsGetVol  :=CreateServiceFunction(MS_RADIO_GETVOL  ,@Service_RadioGetVolume);
-    hsMute    :=CreateServiceFunction(MS_RADIO_MUTE    ,@Service_RadioMute);
-    hsCommand :=CreateServiceFunction(MS_RADIO_COMMAND ,@ControlCenter);
-    hsEqOnOff :=CreateServiceFunction(MS_RADIO_EQONOFF ,@Service_EqOnOff);
+    CreateServiceFunction(MS_RADIO_PLAYSTOP,@Service_RadioPlayStop);
+    CreateServiceFunction(MS_RADIO_RECORD  ,@Service_RadioRecord);
+    CreateServiceFunction(MS_RADIO_SETTINGS,@Service_RadioSettings);
+    CreateServiceFunction(MS_RADIO_SETVOL  ,@Service_RadioSetVolume);
+    CreateServiceFunction(MS_RADIO_GETVOL  ,@Service_RadioGetVolume);
+    CreateServiceFunction(MS_RADIO_MUTE    ,@Service_RadioMute);
+    CreateServiceFunction(MS_RADIO_COMMAND ,@ControlCenter);
+    CreateServiceFunction(MS_RADIO_EQONOFF ,@Service_EqOnOff);
 
     hiddenwindow:=CreateHiddenWindow;
-    hsTrayMenu:=CreateServiceFunction(MS_RADIO_TRAYMENU,@CreateTrayMenu);
+    CreateServiceFunction(MS_RADIO_TRAYMENU,@CreateTrayMenu);
 
-    hsExport  :=CreateServiceFunction(MS_RADIO_EXPORT  ,@ExportAll);
-    hsImport  :=CreateServiceFunction(MS_RADIO_IMPORT  ,@ImportAll);
+    CreateServiceFunction(MS_RADIO_EXPORT  ,@ExportAll);
+    CreateServiceFunction(MS_RADIO_IMPORT  ,@ImportAll);
 
 
     CreateProtoServices;
-    onloadhook   :=HookEvent(ME_SYSTEM_MODULESLOADED     ,@OnModulesLoaded);
-    hHookShutdown:=HookEvent(ME_SYSTEM_OKTOEXIT          ,@PreShutdown);
-    hDblClick    :=HookEvent(ME_CLIST_DOUBLECLICKED      ,@Service_RadioPlayStop{@DblClickProc});
-    opthook      :=HookEvent(ME_OPT_INITIALISE           ,@OnOptInitialise);
-    contexthook  :=HookEvent(ME_CLIST_PREBUILDCONTACTMENU,@OnContactMenu);
+
+    HookEvent(ME_SYSTEM_MODULESLOADED     ,@OnModulesLoaded);
+    HookEvent(ME_SYSTEM_OKTOEXIT          ,@PreShutdown);
+    HookEvent(ME_CLIST_DOUBLECLICKED      ,@Service_RadioPlayStop{@DblClickProc});
+    HookEvent(ME_OPT_INITIALISE           ,@OnOptInitialise);
+    HookEvent(ME_CLIST_PREBUILDCONTACTMENU,@OnContactMenu);
 
     PluginStatus:=ID_STATUS_OFFLINE;
   end;

@@ -24,11 +24,6 @@ var
 
 // ------------ base interface functions -------------
 
-var
-  hendis,
-  hcount,
-  hdel: THANDLE;
-
 procedure Init;
 begin
 
@@ -41,19 +36,18 @@ begin
   else
     SetAllTasks;
 
-  hcount:=CreateServiceFunction(MS_ACT_TASKCOUNT ,@TaskCount);
-  hendis:=CreateServiceFunction(MS_ACT_TASKENABLE,@TaskEnable);
-  hdel  :=CreateServiceFunction(MS_ACT_TASKDELETE,@TaskDelete);
+  CreateServiceFunction(MS_ACT_TASKCOUNT ,@TaskCount);
+  CreateServiceFunction(MS_ACT_TASKENABLE,@TaskEnable);
+  CreateServiceFunction(MS_ACT_TASKDELETE,@TaskDelete);
+
   hevent:=CreateHookableEvent(ME_ACT_BELL);
 
 end;
 
 procedure DeInit;
 begin
+  DestroyHookableEvent(hevent);
   StopAllTasks;
-  DestroyServiceFunction(hendis);
-  DestroyServiceFunction(hdel);
-  DestroyServiceFunction(hcount);
   ClearTasks;
 end;
 

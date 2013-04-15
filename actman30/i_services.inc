@@ -259,7 +259,7 @@ begin
     FillChar(w,SizeOf(w),0);
     w.ResultType:=rtInt;
     w.Parameter:=lParam;
-    result:=ActionStarter(p,@w,0);
+    result:=ActionStarter(p,@w,ACTP_SAMETHREAD);
   end;
 end;
 
@@ -275,7 +275,7 @@ begin
     FillChar(w,SizeOf(w),0);
     w.ResultType:=rtInt;
     w.Parameter:=lParam;
-    result:=ActionStarter(p,@w,0);
+    result:=ActionStarter(p,@w,ACTP_SAMETHREAD);
   end;
 end;
 
