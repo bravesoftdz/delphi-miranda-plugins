@@ -37,6 +37,7 @@ const
 
 const
   opt_service  = 'service';
+  opt_flags2   = 'flags2';
   opt_wparam   = 'wparam';
   opt_lparam   = 'lparam';
 const
@@ -363,6 +364,7 @@ begin
       pc:=StrCopyE(section,pAnsiChar(node));
 
       StrCopy(pc,opt_service); service:=DBReadString(0,DBBranch,section,nil);
+      StrCopy(pc,opt_flags2 ); flags2 :=DBReadDword (0,DBBranch,section);
 
       StrCopy(pc,opt_wparam); LoadParam(section,flags ,pointer(wparam));
       StrCopy(pc,opt_lparam); LoadParam(section,flags2,pointer(lparam));
@@ -449,6 +451,7 @@ begin
       pc:=StrCopyE(section,pAnsiChar(node));
 
       StrCopy(pc,opt_service); DBWriteString(0,DBBranch,section,service);
+      StrCopy(pc,opt_flags2 ); DBWriteDWord (0,DBBranch,section,flags2);
 
       StrCopy(pc,opt_wparam); SaveParam(section,flags ,pointer(wparam));
       StrCopy(pc,opt_lparam); SaveParam(section,flags2,pointer(lparam));
