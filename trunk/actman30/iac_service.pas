@@ -797,8 +797,8 @@ begin
       with tServiceAction(lParam) do
       begin
         //WPARAM
-        wnd:=GetDlgItem(Dialog,IDC_FLAG_WPAR);
-        case CB_GetData(wnd) of
+        wnd:=GetDlgItem(Dialog,IDC_EDIT_WPAR);
+        case CB_GetData(GetDlgItem(Dialog,IDC_FLAG_WPAR)) of
           ptParam: begin
             flags:=flags or ACF_PARAM
           end;
@@ -827,8 +827,8 @@ begin
            flags:=flags or ACF_SCRIPT_PARAM;
 
         // LPARAM
-        wnd:=GetDlgItem(Dialog,IDC_FLAG_LPAR);
-        case CB_GetData(wnd) of
+        wnd:=GetDlgItem(Dialog,IDC_EDIT_LPAR);
+        case CB_GetData(GetDlgItem(Dialog,IDC_FLAG_LPAR)) of
           ptParam: begin
             flags2:=flags2 or ACF_PARAM
           end;
