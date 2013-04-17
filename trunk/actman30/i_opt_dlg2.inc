@@ -304,18 +304,16 @@ begin
   begin
     p:=GetLink(act.UID);
     if p<>nil then
-    begin
       SendMessage(p^.DlgHandle,WM_ACT_SETVALUE,0,tlparam(act));
-      ShowWindow(p^.DlgHandle,SW_SHOW);
-      CB_SelectData(Dialog,IDC_ACTION_TYPE,tlparam(p^.Hash{act.UID}));
-    end;
   end
   // for newly added and activated action
   else
+    p:=ModuleLink;
+
+  if p<>nil then
   begin
-    CB_SelectData(Dialog,IDC_ACTION_TYPE,tlparam(ModuleLink^.Hash));
-    // show manually coz SB_SETCURSEL don't raise CBN_SELCHANGE
-    ShowWindow(ModuleLink^.DlgHandle,SW_SHOW);
+    CB_SelectData(Dialog,IDC_ACTION_TYPE,tlparam(p^.Hash));
+    ShowWindow(p^.DlgHandle,SW_SHOW);
   end;
 end;
 

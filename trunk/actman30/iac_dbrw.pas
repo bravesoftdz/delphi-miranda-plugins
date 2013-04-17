@@ -37,6 +37,7 @@ const
   ioDword        = 'dword';
   ioAnsi         = 'ansi';
   ioLast         = 'last';
+  ioSaveValue    = 'savevalue';
 
 const
   ACF_DBWRITE   = $00000001; // write to (not read from) DB 
@@ -49,6 +50,7 @@ const
   ACF_CURRENT   = $00000080; // hContact is 0 (user settings)
   ACF_RESULT    = $00000100; // hContact is last result value
   ACF_LAST      = $00000200; // use last result for DB writing
+  ACF_SAVE      = $00000400; // save writing value to Last Result
   // dummy
   ACF_DBDWORD   = 0;
   ACF_DBREAD    = 0;
@@ -243,6 +245,18 @@ begin
       else
         DBWriteDWord(hContact,ambuf,asbuf,avalue);
       end;
+
+      if (flags and ACF_SAVE)<>0 then
+      begin
+        ClearResult(WorkData);
+        WorkData.LastResult:=avalue;
+        case (flags and ACF_VALUETYPE) of
+          ACF_DBANSI,
+          ACF_DBUTEXT: WorkData.ResultType:=rtWide;
+        else
+          WorkData.ResultType:=rtInt;
+        end;
+      end;
     end
     // Read value
     else
@@ -328,6 +342,9 @@ begin
         else if lstrcmpiw(tmp,ioDword)=0 then
         else if lstrcmpiw(tmp,ioAnsi )=0 then flags:=flags or ACF_DBANSI
         else                                  flags:=flags or ACF_DBUTEXT;
+
+        if StrToInt(getAttrValue(HXML(node),ioSaveValue))=1 then
+          flags:=flags or ACF_SAVE;
 
         if StrToInt(getAttrValue(HXML(node),ioLast))=1 then
           flags:=flags or ACF_LAST
@@ -415,6 +432,7 @@ end;
 procedure ClearFields(Dialog:HWND);
 begin
   CheckDlgButton(Dialog,IDC_RW_LAST,BST_UNCHECKED);
+  CheckDlgButton(Dialog,IDC_RW_SAVE,BST_UNCHECKED);
 
   CheckDlgButton(Dialog,IDC_RW_CURRENT,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_RW_MANUAL ,BST_UNCHECKED);
@@ -496,6 +514,10 @@ begin
           bb:=false;
         EnableWindow(GetDlgItem(Dialog,IDC_RW_VALUE),bb);
 
+        if (flags and ACF_SAVE)<>0 then
+          CheckDlgButton(Dialog,IDC_RW_SAVE,BST_CHECKED);
+        EnableWindow(GetDlgItem(Dialog,IDC_RW_SAVE),(flags and ACF_DBWRITE)<>0);
+
         case (flags and ACF_VALUETYPE) of
           ACF_DBBYTE : i:=0;
           ACF_DBWORD : i:=1;
@@ -561,6 +583,9 @@ begin
           if (GetEditFlags(Dialog,IDC_RW_VALUE) and EF_SCRIPT)<>0 then flags:=flags or ACF_RW_VALUE;
         end;
 
+        if IsDlgButtonChecked(Dialog,IDC_RW_SAVE)<>BST_UNCHECKED then
+          flags:=flags or ACF_SAVE;
+
         i:=CB_GetData(GetDlgItem(Dialog,IDC_RW_DATATYPE));
         case i of
           0: flags:=flags or ACF_DBBYTE;
@@ -589,6 +614,9 @@ begin
               if bb then
                 bb:=IsDlgButtonChecked(Dialog,IDC_RW_LAST)=BST_UNCHECKED;
               EnableEditField(GetDlgItem(Dialog,IDC_RW_VALUE),bb);
+
+              bb:=loword(wParam)=IDC_RW_WRITE;
+              EnableWindow(GetDlgItem(Dialog,IDC_RW_SAVE),bb);
             end;
             IDC_RW_CURRENT,
             IDC_RW_PARAM,

@@ -524,7 +524,7 @@ begin
   SendMessage(Dialog,WM_COMMAND,(CBN_SELCHANGE shl 16) or flag,GetDlgItem(Dialog,flag));
 end;
 
-procedure ReloadService(Dialog:HWND);
+procedure ReloadService(Dialog:HWND;setvalue:boolean);
 var
   pc:pAnsiChar;
   buf,buf1:array [0..127] of AnsiChar;
@@ -543,11 +543,19 @@ begin
     if GetDlgItemTextA(Dialog,IDC_EDIT_WPAR,buf1,SizeOf(buf1))>0 then
       case FixParam(Dialog,@buf1,IDC_FLAG_WPAR) of
         ptStruct: begin
-          struct:=pAnsiChar(GetWindowLongPtrW(GetDlgItem(Dialog,IDC_WSTRUCT),GWLP_USERDATA));
+          if setvalue then
+          begin
+            struct:=pAnsiChar(SetWindowLongPtrW(GetDlgItem(Dialog,IDC_WSTRUCT),GWLP_USERDATA,
+            long_ptr(StrDup(struct,StrScan(pc,'|')+1))));
+            mFreeMem(struct);
+          end;
+
+{          struct:=pAnsiChar(GetWindowLongPtrW(GetDlgItem(Dialog,IDC_WSTRUCT),GWLP_USERDATA));
           mFreeMem(struct);
           StrDup(struct,StrScan(pc,'|')+1);
           SetWindowLongPtrW(GetDlgItem(Dialog,IDC_WSTRUCT),GWLP_USERDATA,long_ptr(struct));
 //            AnsiToWide(StrScan(pc,'|')+1,wstruct,MirandaCP);
+}
         end;
       end;
     mFreeMem(pc);
@@ -559,11 +567,19 @@ begin
     if GetDlgItemTextA(Dialog,IDC_EDIT_LPAR,buf1,SizeOf(buf1))>0 then
       case FixParam(Dialog,@buf1,IDC_FLAG_LPAR) of
         ptStruct: begin
+          if setvalue then
+          begin
+            struct:=pAnsiChar(SetWindowLongPtrW(GetDlgItem(Dialog,IDC_LSTRUCT),GWLP_USERDATA,
+            long_ptr(StrDup(struct,StrScan(pc,'|')+1))));
+            mFreeMem(struct);
+          end;
+{
           struct:=pAnsiChar(GetWindowLongPtrW(GetDlgItem(Dialog,IDC_LSTRUCT),GWLP_USERDATA));
           mFreeMem(struct);
           StrDup(struct,StrScan(pc,'|')+1);
           SetWindowLongPtrW(GetDlgItem(Dialog,IDC_LSTRUCT),GWLP_USERDATA,long_ptr(struct));
 //            AnsiToWide(StrScan(pc,'|')+1,lstruct,MirandaCP);
+}
         end;
       end;
     mFreeMem(pc);
@@ -679,6 +695,10 @@ begin
   case hMessage of
     WM_DESTROY: begin
       ApiCard.Free;
+      pc:=pAnsiChar(GetWindowLongPtrW(GetDlgItem(Dialog,IDC_WSTRUCT),GWLP_USERDATA));
+      mFreeMem(pc);
+      pc:=pAnsiChar(GetWindowLongPtrW(GetDlgItem(Dialog,IDC_LSTRUCT),GWLP_USERDATA));
+      mFreeMem(pc);
     end;
     
     WM_INITDIALOG: begin
@@ -705,7 +725,7 @@ begin
       begin
         if CB_SelectData(Dialog,IDC_EDIT_SERVICE,Hash(service,StrLen(service)))<>CB_ERR then
 //        if SendDlgItemMessageA(Dialog,IDC_EDIT_SERVICE,CB_SELECTSTRING,twparam(-1),tlparam(service))<>CB_ERR then
-          ReloadService(Dialog)
+          ReloadService(Dialog,false)
         else
           SetDlgItemTextA(Dialog,IDC_EDIT_SERVICE,service);
 //        SetEditFlags(GetDlgItem(Dialog,IDC_EDIT_SERVICE),EF_SCRIPT,
@@ -730,14 +750,15 @@ begin
         i:=SetParam(Dialog,flags,IDC_EDIT_WPAR,pWideChar(wparam));
         if i=ptStruct then
         begin
-          ShowWindow(GetDlgItem(Dialog,IDC_EDIT_WPAR),SW_HIDE);
-          ShowWindow(GetDlgItem(Dialog,IDC_WSTRUCT  ),SW_SHOW);
+          ShowEditField(GetDlgItem(Dialog,IDC_EDIT_WPAR),SW_HIDE);
+          ShowWindow   (GetDlgItem(Dialog,IDC_WSTRUCT  ),SW_SHOW);
 
 {
           p:=pAnsiChar(GetWindowLongPtrW(GetDlgItem(Dialog,IDC_WSTRUCT),GWLP_USERDATA));
           mFreeMem(p);
 }
-          SetWindowLongPtrW(GetDlgItem(Dialog,IDC_WSTRUCT),GWLP_USERDATA,long_ptr(wparam));
+          SetWindowLongPtrW(GetDlgItem(Dialog,IDC_WSTRUCT),GWLP_USERDATA,
+            long_ptr(StrDup(pc,pAnsiChar(wparam))));
         end;
         CB_SelectData(GetDlgItem(Dialog,IDC_FLAG_WPAR),i);
 
@@ -745,14 +766,15 @@ begin
         i:=SetParam(Dialog,flags2,IDC_EDIT_LPAR,pWideChar(lparam));
         if i=ptStruct then
         begin
-          ShowWindow(GetDlgItem(Dialog,IDC_EDIT_LPAR),SW_HIDE);
-          ShowWindow(GetDlgItem(Dialog,IDC_LSTRUCT  ),SW_SHOW);
+          ShowEditField(GetDlgItem(Dialog,IDC_EDIT_LPAR),SW_HIDE);
+          ShowWindow   (GetDlgItem(Dialog,IDC_LSTRUCT  ),SW_SHOW);
 
 {
           p:=pAnsiChar(GetWindowLongPtrW(GetDlgItem(Dialog,IDC_LSTRUCT),GWLP_USERDATA));
           mFreeMem(p);
 }
-          SetWindowLongPtrW(GetDlgItem(Dialog,IDC_LSTRUCT),GWLP_USERDATA,long_ptr(lparam));
+          SetWindowLongPtrW(GetDlgItem(Dialog,IDC_LSTRUCT),GWLP_USERDATA,
+            long_ptr(StrDup(pc,pAnsiChar(lparam))));
         end;
         CB_SelectData(GetDlgItem(Dialog,IDC_FLAG_LPAR),i);
 
@@ -775,7 +797,8 @@ begin
       with tServiceAction(lParam) do
       begin
         //WPARAM
-        case CB_GetData(GetDlgItem(Dialog,IDC_FLAG_WPAR)) of
+        wnd:=GetDlgItem(Dialog,IDC_FLAG_WPAR);
+        case CB_GetData(wnd) of
           ptParam: begin
             flags:=flags or ACF_PARAM
           end;
@@ -787,7 +810,7 @@ begin
           end;
           ptNumber: begin
             flags:=flags or ACF_PARNUM;
-            wparam:=GetDlgText(Dialog,IDC_EDIT_WPAR);
+            wparam:=GetDlgText(wnd);
           end;
           ptStruct: begin
             flags:=flags or ACF_STRUCT;
@@ -796,15 +819,16 @@ begin
           end;
           ptUnicode: begin
             flags:=flags or ACF_UNICODE;
-            wparam:=GetDlgText(Dialog,IDC_EDIT_WPAR);
+            wparam:=GetDlgText(wnd);
           end;
-          ptString: wparam:=GetDlgText(Dialog,IDC_EDIT_WPAR);
+          ptString: wparam:=GetDlgText(wnd);
         end;
-        if (GetEditFlags(Dialog,IDC_EDIT_WPAR) and EF_SCRIPT)<>0 then
+        if (GetEditFlags(wnd) and EF_SCRIPT)<>0 then
            flags:=flags or ACF_SCRIPT_PARAM;
 
         // LPARAM
-        case CB_GetData(GetDlgItem(Dialog,IDC_FLAG_LPAR)) of
+        wnd:=GetDlgItem(Dialog,IDC_FLAG_LPAR);
+        case CB_GetData(wnd) of
           ptParam: begin
             flags2:=flags2 or ACF_PARAM
           end;
@@ -816,7 +840,7 @@ begin
           end;
           ptNumber: begin
             flags2:=flags2 or ACF_PARNUM;
-            lparam:=GetDlgText(Dialog,IDC_EDIT_LPAR);
+            lparam:=GetDlgText(wnd);
           end;
           ptStruct: begin
             flags2:=flags2 or ACF_STRUCT;
@@ -825,11 +849,11 @@ begin
           end;
           ptUnicode: begin
             flags2:=flags2 or ACF_UNICODE;
-            lparam:=GetDlgText(Dialog,IDC_EDIT_LPAR);
+            lparam:=GetDlgText(wnd);
           end;
-          ptString: lparam:=GetDlgText(Dialog,IDC_EDIT_LPAR);
+          ptString: lparam:=GetDlgText(wnd);
         end;
-        if (GetEditFlags(Dialog,IDC_EDIT_LPAR) and EF_SCRIPT)<>0 then
+        if (GetEditFlags(wnd) and EF_SCRIPT)<>0 then
            flags2:=flags2 or ACF_SCRIPT_PARAM;
 
         // RESULT
@@ -848,6 +872,17 @@ begin
 
 //        if (GetEditFlags(Dialog,IDC_EDIT_SERVICE) and EF_SCRIPT)<>0 then
 //           flags:=flags or ACF_SCRIPT_SERVICE;
+      end;
+    end;
+
+    WM_SHOWWINDOW: begin
+      // hide window by ShowWindow function
+      if (lParam=0) and (wParam=0) then
+      begin
+        pc:=pAnsiChar(SetWindowLongPtrW(GetDlgItem(Dialog,IDC_WSTRUCT),GWLP_USERDATA,0));
+        mFreeMem(pc);
+        pc:=pAnsiChar(SetWindowLongPtrW(GetDlgItem(Dialog,IDC_LSTRUCT),GWLP_USERDATA,0));
+        mFreeMem(pc);
       end;
     end;
 
@@ -905,7 +940,7 @@ begin
               end;
             end;
 
-            IDC_EDIT_SERVICE: ReloadService(Dialog);
+            IDC_EDIT_SERVICE: ReloadService(Dialog,true);
           end;
           if not NoProcess then
             SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
@@ -914,13 +949,13 @@ begin
         BN_CLICKED: begin
           case loword(wParam) of
             IDC_WSTRUCT, IDC_LSTRUCT: begin
-              pc:=pAnsiChar(GetWindowLongPtrW(GetDlgItem(Dialog,loword(wParam)),GWLP_USERDATA));
+              pc:=pAnsiChar(GetWindowLongPtrW(lParam,GWLP_USERDATA));
 //!!!!
               pc1:=EditStructure(pAnsiChar(pc),Dialog);
               if pc1<>nil then
               begin
                 mFreeMem(pc);
-                SetWindowLongPtrW(GetDlgItem(Dialog,loword(wParam)),GWLP_USERDATA,long_ptr(pc1));
+                SetWindowLongPtrW(lParam,GWLP_USERDATA,long_ptr(pc1));
               end;
             end;
           else
