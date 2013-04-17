@@ -428,12 +428,18 @@ begin
         {mFreeMem(text); }text:=GetDlgText(Dialog,IDC_TXT_TEXT);
         if (GetEditFlags(Dialog,IDC_TXT_TEXT) and EF_SCRIPT)<>0 then
            flags:=flags or ACF_TEXTSCRIPT;
+
+        if IsDlgButtonChecked(Dialog,IDC_TXT_POST)=BST_CHECKED then
+          flags:=flags or ACF_POSTPROCESS;
       end;
     end;
 
     WM_COMMAND: begin
       case wParam shr 16 of
-        BN_CLICKED,
+        BN_CLICKED:
+          if loword(wParam)=IDC_TXT_POST then
+            SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
+
         EN_CHANGE: if not NoProcess then
             SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
       end;
