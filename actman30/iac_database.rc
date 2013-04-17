@@ -25,12 +25,13 @@ FONT 8, "MS Shell Dlg", 0, 0
   AUTORADIOBUTTON "Write"       , IDC_RW_WRITE  ,  57, 101,  52, 11
   AUTORADIOBUTTON "Delete"      , IDC_RW_DELETE , 110, 101,  52, 11
 
-  GROUPBOX        "Value"       , -1, 1, 116, 166, 53, WS_GROUP
+  GROUPBOX        "Value"       , -1, 1, 116, 166, 64, WS_GROUP
 
   COMBOBOX        IDC_RW_DATATYPE, 86, 125, 79, 96, CBS_DROPDOWNLIST | WS_VSCROLL
 
   AUTOCHECKBOX    "Last result" , IDC_RW_LAST , 6, 142, 156, 11, BS_RIGHT | BS_LEFTTEXT
   EDITTEXT                        IDC_RW_VALUE, 4, 154, 160, 11, ES_AUTOHSCROLL
+  AUTOCHECKBOX    "Save value"  , IDC_RW_SAVE , 6, 166, 156, 11, BS_RIGHT | BS_LEFTTEXT
 }
 
 IDI_DATABASE   ICON "ico\rw.ico"
