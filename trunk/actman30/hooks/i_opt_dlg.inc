@@ -310,6 +310,9 @@ begin
     end;
 
     WM_HELP: begin
+      tmp:=ApiCard.NameFromList(GetDlgItem(Dialog,IDC_EVENTLIST));
+      ApiCard.Event:=tmp;
+      mFreeMem(tmp);
       ApiCard.Show;
     end;
 
@@ -356,7 +359,7 @@ begin
 
         BN_CLICKED: begin
           case loword(wParam) of
-            IDC_EVENT_CHELP: ;
+            IDC_EVENT_CHELP: SendMessage(Dialog,WM_HELP,0,0);
             IDC_EVENT_HELP : ;
             IDC_HOOK_NEW   : NewHook(Dialog);
             IDC_HOOK_DELETE: DeleteHook(Dialog);

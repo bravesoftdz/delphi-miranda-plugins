@@ -967,6 +967,11 @@ begin
     end;
 
     WM_HELP: begin
+      pc:=ApiCard.NameFromList(GetDlgItem(Dialog,IDC_EDIT_SERVICE));
+      ApiCard.Service:=pc;
+      mFreeMem(pc);
+      ApiCard.Show;
+
       result:=1;
     end;
 
