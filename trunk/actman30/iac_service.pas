@@ -622,18 +622,15 @@ begin
     EnableWindow(wnd,false);
     result:=ptResult;
   end
+  else if (aflags and ACF_CURRENT)<>0 then
+  begin
+    EnableWindow(wnd,false);
+    result:=ptCurrent;
+  end
   else if (aflags and ACF_PARNUM)<>0 then
   begin
-    if (aflags and ACF_CURRENT)<>0 then
-    begin
-      EnableWindow(wnd,false);
-      result:=ptCurrent;
-    end
-    else
-    begin
-      result:=ptNumber;
-      SetDlgItemTextW(Dialog,id,aparam);
-    end;
+    result:=ptNumber;
+    SetDlgItemTextW(Dialog,id,aparam);
   end
   else if (aflags and ACF_STRUCT)<>0 then
   begin
