@@ -249,11 +249,14 @@ begin
       if (flags and ACF_SAVE)<>0 then
       begin
         ClearResult(WorkData);
-        WorkData.LastResult:=avalue;
         case (flags and ACF_VALUETYPE) of
           ACF_DBANSI,
-          ACF_DBUTEXT: WorkData.ResultType:=rtWide;
+          ACF_DBUTEXT: begin
+            StrDupW(pWideChar(WorkData.LastResult),pWideChar(avalue));
+            WorkData.ResultType:=rtWide;
+          end;
         else
+          WorkData.LastResult:=avalue;
           WorkData.ResultType:=rtInt;
         end;
       end;
@@ -262,6 +265,7 @@ begin
     else
     begin
       ClearResult(WorkData);
+      WorkData.ResultType:=rtInt;
       case (flags and ACF_VALUETYPE) of
         ACF_DBBYTE: WorkData.LastResult:=DBReadByte(hContact,ambuf,asbuf,avalue);
         ACF_DBWORD: WorkData.LastResult:=DBReadWord(hContact,ambuf,asbuf,avalue);
@@ -269,26 +273,23 @@ begin
           WideToAnsi(pWideChar(avalue),tmpa1,MirandaCP);
           tmpa:=DBReadString(hContact,ambuf,asbuf,tmpa1);
           AnsiToWide(tmpa,PWideChar(WorkData.LastResult),MirandaCP);
+          WorkData.ResultType:=rtWide;
           mFreeMem(tmpa1);
           mFreeMem(tmpa);
         end;
         ACF_DBUTEXT: begin
           WorkData.LastResult:=uint_ptr(DBReadUnicode(hContact,ambuf,asbuf,pWideChar(avalue)));
+          WorkData.ResultType:=rtWide;
         end
       else
         WorkData.LastResult:=DBReadDWord(hContact,ambuf,asbuf,avalue);
       end;
     end;
-    if (flags and ACF_TEXT)<>0 then // need a number
+
+    if (flags and ACF_RW_VALUE)<>0 then
     begin
-      if (flags and ACF_RW_VALUE)<>0 then
-      begin
-        mFreeMem(avalue);
-      end;
-      WorkData.ResultType:=rtWide;
-    end
-    else
-      WorkData.ResultType:=rtInt;
+      mFreeMem(avalue);
+    end;
   end;
 end;
 

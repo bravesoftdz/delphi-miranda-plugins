@@ -91,6 +91,7 @@ function  mReallocMem(var dst; size:integer):pointer;
 
 // String processing
 function FormatStrW(fmt:pWideChar; arr:array of pWideChar):pWideChar;
+function FormatSimpleW(fmt:pWideChar; arr:array of const):pWideChar;
 
 function WideToCombo(src:PWideChar;var dst;cp:integer=CP_ACP):integer;
 
@@ -1238,6 +1239,62 @@ begin
   pc^:=#0;
 end;
 
+function FormatSimpleW(fmt:pWideChar; arr:array of const):pWideChar;
+var
+  i,len:integer;
+  pc:pWideChar;
+  number:integer;
+begin
+  result:=nil;
+  if (fmt=nil) or (fmt^=#0) then
+    exit;
+
+  // calculate length
+  len:=StrLenW(fmt); // -2*Length(arr)
+  for i:=0 to HIGH(arr) do
+  begin
+    case arr[i].VType of
+      vtInteger  : inc(len,10); // max len of VInteger text
+      vtPWideChar: inc(len,StrLenW(arr[i].VPWideChar));
+    end;
+  end;
+
+  // format
+  mGetMem(result,(len+1)*SizeOf(WideChar));
+  pc:=result;
+  number:=0;
+  while fmt^<>#0 do
+  begin
+    if (fmt^='%') then
+    begin
+      case (fmt+1)^ of
+        's': begin
+          if number<=HIGH(arr) then
+          begin
+            pc:=StrCopyEW(pc,arr[number].VPWideChar);
+            inc(number);
+          end;
+          inc(fmt,2);
+        end;
+        'd': begin
+          pc:=StrEndW(IntToStr(pc,arr[number].VInteger));
+          inc(fmt,2);
+        end;
+        '%': begin
+          pc^:='%';
+          inc(pc);
+          inc(fmt,2);
+        end;
+      else
+        pc^:=fmt^;
+        inc(pc);
+        inc(fmt);
+      end;
+    end;
+  end;
+  pc^:=#0;
+end;
+
 // ----- base string functions -----
 function StrDup(var dst:PAnsiChar;src:PAnsiChar;len:cardinal=0):PAnsiChar;
 var
@@ -2098,6 +2155,9 @@ end;
 
 function NumToInt(src:pWideChar):int64;
 begin
+  result:=0;
+  if src=nil then exit;
+
   if (src[0]='$') and
      (AnsiChar(src[1]) in sHexNum) then
     result:=HexToInt(src+1)
@@ -2112,6 +2172,9 @@ end;
 
 function NumToInt(src:pAnsiChar):int64;
 begin
+  result:=0;
+  if src=nil then exit;
+
   if (src[0]='$') and
      (src[1] in sHexNum) then
     result:=HexToInt(src+1)

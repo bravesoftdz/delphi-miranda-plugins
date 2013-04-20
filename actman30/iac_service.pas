@@ -689,6 +689,7 @@ var
   i:integer;
   pc,pc1:pAnsiChar;
   wnd,wnd1:HWND;
+  pcw:PWideChar;
 begin
   result:=0;
 
@@ -786,6 +787,8 @@ begin
       NoProcess:=true;
       ClearFields(Dialog);
       SetDlgItemTextW(Dialog,IDC_EDIT_SERVICE,nil);
+      SetDlgItemTextW(Dialog,IDC_EDIT_WPAR,'0');
+      SetDlgItemTextW(Dialog,IDC_EDIT_LPAR,'0');
 {
       ShowWindow(GetDlgItem(Dialog,IDC_WSTRUCT),SW_HIDE);
       ShowWindow(GetDlgItem(Dialog,IDC_LSTRUCT),SW_HIDE);
@@ -889,8 +892,9 @@ begin
     WM_COMMAND: begin
       case wParam shr 16 of
 {        CBN_EDITUPDATE,
+}
         CBN_EDITCHANGE,
-}        EN_CHANGE: if not NoProcess then
+        EN_CHANGE: if not NoProcess then
             SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
 
         CBN_SELCHANGE:  begin
@@ -935,6 +939,11 @@ begin
                   EnableEditField(wnd,false)
                 else
                 begin
+                  if i=ptNumber then
+                  begin
+                    pcw:='0';
+                    SendMessageW(wnd,WM_SETTEXT,0,TLParam(pcw));
+                  end;
                   EnableEditField(wnd,true);
                 end;
               end;

@@ -11,6 +11,7 @@ type
     function  GetDescription:pAnsiChar; 
     function  GetResultType :pAnsiChar; 
     procedure SetCurrentService(item:pAnsiChar);
+    function  GetWindowStatus:boolean;
   public
     constructor Create(fname:pAnsiChar; lparent:HWND=0);
     destructor Destroy; override;
@@ -25,6 +26,7 @@ type
     property ResultType :pAnsiChar read GetResultType;
     property Service    :pAnsiChar write SetCurrentService;
     property Event      :pAnsiChar write SetCurrentService;
+    property IsShown    :boolean   read GetWindowStatus;
   private
     storage:pointer;
     current:pointer;
@@ -84,6 +86,11 @@ begin
   end
   else
     result:=nil;
+end;
+
+function tmApiCard.GetWindowStatus:boolean;
+begin
+  result:=HelpWindow<>0;
 end;
 
 function tmApiCard.FillParams(wnd:HWND{;item:pAnsiChar};wparam:boolean):pAnsiChar;
