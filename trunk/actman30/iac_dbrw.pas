@@ -183,7 +183,10 @@ begin
   // Delete data
   if (flags and ACF_DBDELETE)<>0 then
   begin
-    DBDeleteSetting(hContact,ambuf,asbuf);
+    if (asbuf[0]='*') or (asbuf[StrLen(asbuf)-1]='*') then
+      DBDeleteGroup(hContact,ambuf,asbuf)
+    else
+      DBDeleteSetting(hContact,ambuf,asbuf);
   end
   else
   begin

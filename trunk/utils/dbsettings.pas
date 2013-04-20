@@ -420,17 +420,21 @@ var
   ces:TDBCONTACTENUMSETTINGS;
   cgs:TDBCONTACTGETSETTING;
   p:PAnsiChar;
-  num,len:integer;
+  code,num:integer;
   ptr:pAnsiChar;
+  res:boolean;
+  len:cardinal;
+  mask:array [0..31] of AnsiChar;
 begin
   ces.szModule:=szModule;
   num:=0;
-
+  //calculate size for setting names buffer
   ces.pfnEnumProc:=@EnumSettingsProcCalc;
   ces.lParam     :=lParam(@num);
   ces.ofsSettings:=0;
   CallService(MS_DB_CONTACT_ENUMSETTINGS,hContact,lparam(@ces));
 
+  //get setting names list
   GetMem(p,num+1);
   ptr:=p;
   ces.pfnEnumProc:=@EnumSettingsProc;
@@ -441,13 +445,51 @@ begin
 
   cgs.szModule:=szModule;
   ptr:=p;
+  code:=0;
   if (prefix<>nil) and (prefix^<>#0) then
-    len:=StrLen(prefix)
+  begin
+    len:=StrLen(prefix);
+
+    if prefix[len-1]='*' then // bla*
+    begin
+      code:=1;
+      dec(len);
+    end;
+    if prefix^='*' then // *bla
+    begin
+      code:=code or 2;
+      dec(len);
+      inc(prefix);
+    end;
+  end
   else
     len:=0;
+  StrCopy(mask,prefix,len);
+
   while ptr^<>#0 do
   begin
-    if (len=0) or (StrCmp(prefix,ptr,len)=0) then
+    if len<>0 then
+    begin
+      res:=false;
+      case code of
+        // postfix (right side)
+        2: begin
+          num:=StrLen(ptr)-len;
+          if num>=0 then
+            res:=StrCmp(mask,ptr+num,len)=0;
+        end;
+        // content (left, middle or right, no matter)
+        3: begin
+          res:=StrPos(ptr,mask)<>nil;
+        end;
+      else // 0 or 1, prefix (left side)
+        res:=StrCmp(mask,ptr,len)=0;
+      end;
+    end
+    else
+      res:=true;
+
+    if res then
     begin
       cgs.szSetting:=ptr;
       CallService(MS_DB_CONTACT_DELETESETTING,hContact,lParam(@cgs));
