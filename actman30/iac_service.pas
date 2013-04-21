@@ -23,7 +23,9 @@ const
   ACF_RESULT  = $00000008; // Param is previous action result
   ACF_PARAM   = $00000010; // Param is Call parameter
   ACF_STRUCT  = $00000020;
-  ACF_PARTYPE = ACF_PARNUM or ACF_UNICODE or ACF_CURRENT or ACF_PARAM or ACF_STRUCT;
+  ACF_PARTYPE = ACF_PARNUM  or ACF_UNICODE or
+                ACF_CURRENT or ACF_RESULT  or
+                ACF_PARAM   or ACF_STRUCT;
 
   ACF_RSTRING  = $00010000; // Service result is string
   ACF_RUNICODE = $00020000; // Service result is Widestring
@@ -646,7 +648,7 @@ begin
     result:=ptString;
     SetDlgItemTextW(Dialog,id,aparam);
   end;
-  SetEditFlags(wnd,EF_SCRIPT,ord(aflags and ACF_SCRIPT_PARAM));
+  SetEditFlags(wnd,EF_SCRIPT,ord((aflags and ACF_SCRIPT_PARAM)<>0));
 end;
 
 procedure ClearFields(Dialog:HWND);
@@ -706,7 +708,8 @@ begin
 
       TranslateDialogDefault(Dialog);
 
-//??      MakeEditField(Dialog,IDC_EDIT_SERVICE);
+//??
+      MakeEditField(Dialog,IDC_EDIT_SERVICE);
       MakeEditField(Dialog,IDC_EDIT_WPAR);
       MakeEditField(Dialog,IDC_EDIT_LPAR);
 
@@ -726,8 +729,9 @@ begin
           ReloadService(Dialog,false)
         else
           SetDlgItemTextA(Dialog,IDC_EDIT_SERVICE,service);
-//        SetEditFlags(GetDlgItem(Dialog,IDC_EDIT_SERVICE),EF_SCRIPT,
-//              ord(aflags and ACF_SCRIPT_SERVICE));
+//!!
+        SetEditFlags(GetDlgItem(Dialog,IDC_EDIT_SERVICE),EF_SCRIPT,
+              ord((flags and ACF_SCRIPT_SERVICE)<>0));
 
         // RESULT
         if (flags and ACF_RSTRUCT)<>0 then
@@ -869,9 +873,9 @@ begin
         end;
 
         service:=ApiCard.NameFromList(GetDlgItem(Dialog,IDC_EDIT_SERVICE));
-
-//        if (GetEditFlags(Dialog,IDC_EDIT_SERVICE) and EF_SCRIPT)<>0 then
-//           flags:=flags or ACF_SCRIPT_SERVICE;
+//!!
+        if (GetEditFlags(Dialog,IDC_EDIT_SERVICE) and EF_SCRIPT)<>0 then
+           flags:=flags or ACF_SCRIPT_SERVICE;
       end;
     end;
 
@@ -962,6 +966,7 @@ begin
               begin
                 mFreeMem(pc);
                 SetWindowLongPtrW(lParam,GWLP_USERDATA,long_ptr(pc1));
+                SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
               end;
             end;
           else
