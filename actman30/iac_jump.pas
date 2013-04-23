@@ -451,6 +451,13 @@ begin
   EnableWindow(GetDlgItem(Dialog,IDC_FLAG_BACK),btext);
   EnableWindow(GetDlgItem(Dialog,IDC_FLAG_NOT ),bmath or btext);
   EnableEditField(GetDlgItem(Dialog,IDC_JMP_VALUE),bmath or btext);
+  if btext then
+  begin
+    btext:=CB_GetData(GetDlgItem(Dialog,IDC_JMP_TEXT))<>aeEMP;
+    EnableWindow   (GetDlgItem(Dialog,IDC_FLAG_CASE),btext);
+    EnableWindow   (GetDlgItem(Dialog,IDC_FLAG_BACK),btext);
+    EnableEditField(GetDlgItem(Dialog,IDC_JMP_VALUE),btext);
+  end;
 end;
 
 procedure ClearFields(Dialog:HWND);
@@ -527,11 +534,6 @@ begin
               CheckDlgButton(Dialog,IDC_FLAG_BACK,BST_CHECKED);
             CheckDlgButton(Dialog,IDC_FLAG_TEXT,BST_CHECKED);
             CB_SelectData(Dialog,IDC_JMP_TEXT,condition);
-
-            bb:=condition<>aeEMP;
-            EnableWindow   (GetDlgItem(Dialog,IDC_FLAG_CASE),bb);
-            EnableWindow   (GetDlgItem(Dialog,IDC_FLAG_BACK),bb);
-            EnableEditField(GetDlgItem(Dialog,IDC_JMP_VALUE),bb);
           end;
         end;
         SetFields(Dialog);
