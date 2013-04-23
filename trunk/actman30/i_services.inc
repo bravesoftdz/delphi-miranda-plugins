@@ -174,7 +174,7 @@ function ActionStarter(macro:pMacroRecord;wd:pWorkData;flags:dword):LPARAM;
 var
   tmp:pActStartData;
 begin
-  mGetMem(tmp,SizeOf(tActStartData));
+  mGetMem (tmp ,SizeOf(tActStartData));
   FillChar(tmp^,SizeOf(tActStartData),0);
 
   if wd<>nil then

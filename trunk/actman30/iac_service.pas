@@ -507,10 +507,11 @@ var
   
 function FixParam(Dialog:HWND;buf:PAnsiChar;flag:integer):integer;
 begin
-  if      lstrcmpia(buf,Translate('hContact' ))=0 then result:=ptCurrent
-  else if lstrcmpia(buf,Translate('parameter'))=0 then result:=ptParam
-  else if lstrcmpia(buf,Translate('result'   ))=0 then result:=ptResult
-  else if lstrcmpia(buf,Translate('structure'))=0 then result:=ptStruct
+  if      StrCmp(buf,Translate('hContact'    ))=0 then result:=ptCurrent
+  else if StrCmp(buf,Translate('parameter'   ))=0 then result:=ptParam
+  else if StrCmp(buf,Translate('result'      ))=0 then result:=ptResult
+  else if StrCmp(buf,Translate('structure'   ))=0 then result:=ptStruct
+  else if StrCmp(buf,Translate('Unicode text'))=0 then result:=ptUnicode
   else
   begin
     if (buf[0] in ['0'..'9']) or ((buf[0]='-') and (buf[1] in ['0'..'9'])) or
