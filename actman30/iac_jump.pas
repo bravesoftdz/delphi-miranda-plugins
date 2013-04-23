@@ -468,6 +468,7 @@ begin
   CheckDlgButton(Dialog,IDC_FLAG_TEXT ,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_FLAG_NOT  ,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_FLAG_CASE ,BST_UNCHECKED);
+  CheckDlgButton(Dialog,IDC_FLAG_BACK ,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_FLAG_BREAK,BST_UNCHECKED);
   CheckDlgButton(Dialog,IDC_FLAG_JUMP ,BST_UNCHECKED);
 end;
@@ -511,17 +512,26 @@ begin
           SetDlgItemTextW(Dialog,IDC_JMP_VALUE,value);
           SetEditFlags(Dialog,IDC_JMP_VALUE,EF_SCRIPT,ord((flags and ACF_VALUE)<>0));
 
+          // Math
           if (flags and ACF_MATH)<>0 then
           begin
             CheckDlgButton(Dialog,IDC_FLAG_MATH,BST_CHECKED);
             CB_SelectData(Dialog,IDC_JMP_MATH,condition);
           end
+          // Text
           else
           begin
             if (flags and ACF_CASE)<>0 then
               CheckDlgButton(Dialog,IDC_FLAG_CASE,BST_CHECKED);
+            if (flags and ACF_BACK)<>0 then
+              CheckDlgButton(Dialog,IDC_FLAG_BACK,BST_CHECKED);
             CheckDlgButton(Dialog,IDC_FLAG_TEXT,BST_CHECKED);
             CB_SelectData(Dialog,IDC_JMP_TEXT,condition);
+
+            bb:=condition<>aeEMP;
+            EnableWindow   (GetDlgItem(Dialog,IDC_FLAG_CASE),bb);
+            EnableWindow   (GetDlgItem(Dialog,IDC_FLAG_BACK),bb);
+            EnableEditField(GetDlgItem(Dialog,IDC_JMP_VALUE),bb);
           end;
         end;
         SetFields(Dialog);
@@ -572,16 +582,24 @@ begin
           if (GetEditFlags(Dialog,IDC_JMP_VALUE) and EF_SCRIPT)<>0 then
             flags:=flags or ACF_VALUE;
 
+          // math
           if IsDlgButtonChecked(Dialog,IDC_FLAG_MATH)<>BST_UNCHECKED then
           begin
             flags:=flags or ACF_MATH;
             condition:=CB_GetData(GetDlgItem(Dialog,IDC_JMP_MATH));
           end
+          // text
           else
           begin
             condition:=CB_GetData(GetDlgItem(Dialog,IDC_JMP_TEXT));
-            if IsDlgButtonChecked(Dialog,IDC_FLAG_TEXT)<>BST_UNCHECKED then
-              flags:=flags or ACF_CASE;
+            if condition<>aeEMP then
+            begin
+              if IsDlgButtonChecked(Dialog,IDC_FLAG_CASE)<>BST_UNCHECKED then
+                flags:=flags or ACF_CASE;
+
+              if IsDlgButtonChecked(Dialog,IDC_FLAG_BACK)<>BST_UNCHECKED then
+                flags:=flags or ACF_BACK;
+            end;
           end;
         end;
 
@@ -616,6 +634,7 @@ begin
             IDC_JMP_TEXT: begin
               bb:=CB_GetData(lParam)<>aeEMP;
               EnableWindow   (GetDlgItem(Dialog,IDC_FLAG_CASE),bb);
+              EnableWindow   (GetDlgItem(Dialog,IDC_FLAG_BACK),bb);
               EnableEditField(GetDlgItem(Dialog,IDC_JMP_VALUE),bb);
             end;
           end;

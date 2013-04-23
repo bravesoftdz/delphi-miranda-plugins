@@ -277,6 +277,7 @@ begin
 
     WM_ACT_RESET: begin
       ClearFields(Dialog);
+      CheckDlgButton(Dialog,IDC_MACRO_SAMETHREAD,BST_CHECKED);
       SendDlgItemMessage(Dialog,IDC_MACRO_LIST,CB_SETCURSEL,0,0);
     end;
 

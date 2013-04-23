@@ -604,6 +604,7 @@ begin
 
     WM_COMMAND: begin
       case wParam shr 16 of
+        CBN_SELCHANGE,
         EN_CHANGE: if not NoProcess then
             SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
 
