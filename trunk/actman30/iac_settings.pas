@@ -5,8 +5,8 @@ interface
 implementation
 
 uses
-  windows, messages,
-  global,iac_global, dlgshare,
+  windows, messages, commctrl,
+  global,iac_global, dlgshare, lowlevelc,
   m_api, mirutils, dbsettings, common, wrapper;
 
 {$include i_cnst_settings.inc}
@@ -32,11 +32,15 @@ procedure ClearFields(Dialog:HWND);
 begin
   CheckDlgButton(Dialog,IDC_CNT_FILTER,BST_UNCHECKED);
   SetDlgItemTextW(Dialog,IDC_EDIT_FORMAT,'');
+
+  CheckDlgButton(Dialog,IDC_FR_FLAG,BST_UNCHECKED);
 end;
 
 function DlgProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
   fCLformat:pWideChar;
+  lp:TLPARAM;
+  stat:integer;
 begin
   result:=0;
 
@@ -66,6 +70,19 @@ begin
       CB_SelectData(Dialog,IDC_SERVICELIST,DBReadByte(0,DBBranch,'SrvListMode'));
     end;
 
+    WM_SHOWWINDOW: begin
+      // Show window by ShowWindow function
+      if (lParam=0) and (wParam=1) then
+      begin
+        lp:=LV_GetLParam(MacroListWindow);
+        if (lp and ACF_FIRSTRUN)<>0 then
+          stat:=BST_CHECKED
+        else
+          stat:=BST_UNCHECKED;
+          CheckDlgButton(Dialog,IDC_FR_FLAG,stat);
+      end;
+    end;
+
     WM_COMMAND: begin
       case wParam shr 16 of
         BN_CLICKED: begin
@@ -85,6 +102,16 @@ begin
               DBWriteByte(0,DBBranch,'CLfilter',IsDlgButtonChecked(Dialog,IDC_CNT_FILTER));
             end;
 
+            IDC_FR_FLAG: begin
+              lp:=LV_GetLParam(MacroListWindow);
+              if IsDlgButtonChecked(Dialog,IDC_FR_FLAG)=BST_UNCHECKED then
+                lp:=lp and not ACF_FIRSTRUN
+              else
+                lp:=lp or ACF_FIRSTRUN;
+              LV_SetLParam(MacroListWindow,lp);
+
+              SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
+            end;
           end;
         end;
       end;

@@ -229,7 +229,7 @@ begin
   begin
     li.iItem:=i;
     SendMessageW(list,LVM_GETITEMW,0,tlparam(@li));
-    Macro:=EditMacroList[li.lParam];
+    Macro:=EditMacroList[loword(li.lParam)];
     SendMessage(wnd,CB_SETITEMDATA,
         SendMessageW(wnd,CB_ADDSTRING,0,lparam(@(Macro.descr))),Macro.id);
   end;

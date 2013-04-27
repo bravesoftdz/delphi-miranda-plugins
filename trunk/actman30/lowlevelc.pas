@@ -7,9 +7,12 @@ uses
   iac_global;
 
 const
-  ACF_USEDNOW  = $20000000;  // action in use (reserved)
-  ACF_VOLATILE = $10000000;  // don't save in DB
-  ACF_ASSIGNED = $80000000;  // action assigned
+  ACF_ASSIGNED = $80000000; // action assigned
+  ACF_FIRSTRUN = $40000000; // FirstRun flag
+  ACF_USEDNOW  = $20000000; // action in use (reserved)
+  ACF_VOLATILE = $10000000; // don't save in DB
+
+  ACF_TOSAVE  = ACF_ASSIGNED or ACF_FIRSTRUN;
 type
   pActionList = ^tActionList;
   tActionList = array [0..1023] of tBaseAction;

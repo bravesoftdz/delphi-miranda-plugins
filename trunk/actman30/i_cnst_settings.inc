@@ -6,3 +6,6 @@ const
 
   IDC_SERVICELIST = 2150;
   IDC_SRV_APPLY   = 2151;
+
+  IDC_FR_FLAG     = 2155;
+  IDC_FR_APPLY    = 2156;

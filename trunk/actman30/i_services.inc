@@ -225,7 +225,8 @@ begin
   begin
     tmp^.event:=CreateEvent(nil,FALSE,FALSE,nil);
     CloseHandle(mir_forkthread(@ThDoAction,tmp));
-    WaitForSingleObjectEx(tmp.event,INFINITE,true);
+    //!!!!!!!!! movetmp structure (event handle) to array, not stack?
+    WaitForSingleObjectEx(tmp^.event,INFINITE,true);
     CloseHandle(tmp^.event);
     if tmp^.WorkData.ResultType=rtWide then
       result:=StrToInt(pWideChar(tmp^.WorkData.LastResult))

@@ -248,7 +248,7 @@ begin
     DestroyServiceFunction(ActionItem.hMenuService);
     ActionItem.hMenuService:=0;
   end;
-
+{!!
   // First run (ok ok, if ppl ask for it....)
   p:=GetUABranch(setting,ActionItem.dwActID);
   if p<>nil then
@@ -262,7 +262,7 @@ begin
       DBDeleteSetting(0,DBBranch,setting);
     end;
   end;
-
+}
 end;
 
 procedure DeleteUAction(num:integer);
@@ -314,7 +314,7 @@ begin
     DestroyServiceFunction(ActionItem.hMenuService);
     ActionItem.hMenuService:=0;
   end;
-
+{!!
   p:=GetUABranch(setting,ActionItem.dwActID);
   if p<>nil then
   begin
@@ -323,7 +323,7 @@ begin
     StrCopy(p,'_FirstRun');
     DBDeleteSetting(0,DBBranch,setting);
   end;
-
+}
   // Free Memory
   mFreeMem(ActionItem.szNameID);
   mFreeMem(ActionItem.szActDescr);

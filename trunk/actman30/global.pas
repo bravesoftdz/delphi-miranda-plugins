@@ -5,9 +5,9 @@ interface
 const
   DBBranch = 'ActMan';
 const
-  ACF_EXPORT   = $08000000;
-  ACF_IMPORT   = $08000000;
   ACF_SELECTED = $08000000;
+  ACF_EXPORT   = ACF_SELECTED;
+  ACF_IMPORT   = ACF_SELECTED;
   ACF_OVERLOAD = $01000000;
 
 type
