@@ -159,7 +159,7 @@ begin
       StrCopy(p,opt_flags);
       with Macro^ do
       begin
-        flags:=DBReadDWord(0,DBBranch,section,0{integer(ACF_ASSIGNED or ACF_DISABLED)});
+        flags:=DBReadDWord(0,DBBranch,section,0) and ACF_TOSAVE;
         if (flags and ACF_ASSIGNED)<>0 then //?? not needed in normal cases
         begin
           StrCopy(p,opt_id   ); id :=DBReadDWord  (0,DBBranch,section);

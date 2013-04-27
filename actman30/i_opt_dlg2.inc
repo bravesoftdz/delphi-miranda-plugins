@@ -180,8 +180,12 @@ begin
     begin
       li.iItem:=i;
       SendMessageW(wnd,LVM_GETITEMW,0,lparam(@li)); // GetLParam(wnd,i);
-      move(EditMacroList[li.lParam]^,TmpMacroList[i]^,SizeOf(tMacroRecord));
-      li.lParam:=i;
+      move(EditMacroList[loword(li.lParam)]^,TmpMacroList[i]^,SizeOf(tMacroRecord));
+      if (li.lParam and ACF_FIRSTRUN)<>0 then
+        TmpMacroList[i]^.flags:=TmpMacroList[i]^.flags or ACF_FIRSTRUN
+      else
+        TmpMacroList[i]^.flags:=TmpMacroList[i]^.flags and not ACF_FIRSTRUN;
+      li.lParam:=(li.lParam and (not $FFFF)) or i;
       SendMessageW(wnd,LVM_SETITEMW,0,lparam(@li));
     end;
 
@@ -299,6 +303,8 @@ end;
 procedure FillAction(Dialog:HWND;act:tBaseAction);
 var
   p:pActModule;
+  i:lresult;
+  wnd:HWND;
 begin
   if act<>nil then
   begin
@@ -312,8 +318,14 @@ begin
 
   if p<>nil then
   begin
-    CB_SelectData(Dialog,IDC_ACTION_TYPE,tlparam(p^.Hash));
+    wnd:=GetDlgItem(Dialog,IDC_ACTION_TYPE);
+    i:=CB_SelectData(wnd,tlparam(p^.Hash));
     ShowWindow(p^.DlgHandle,SW_SHOW);
+    // Saving "normal" action type
+    if p^.Hash>10 then
+    begin
+      SetWindowLongPtrW(wnd,GWLP_USERDATA,i);
+    end;
   end;
 end;
 
@@ -447,7 +459,7 @@ var
   li:LV_ITEMW;
   arr: array [0..255] of WideChar;
 begin
-  idx:=LV_GetLParam(MacroListWindow,group);
+  idx:=loword(LV_GetLParam(MacroListWindow,group));
   if idx>=0 then // we have macro to save
   begin
     SaveAction(Dialog,-1,nil);
@@ -732,7 +744,11 @@ begin
       if (CurMacro^.flags and ACF_ASSIGNED)<>0 then
       begin
         lvi.iItem :=i;
+
         lvi.lParam:=i;
+        if (CurMacro^.flags and ACF_FIRSTRUN)<>0 then
+          lvi.lParam:=lvi.lParam or ACF_FIRSTRUN;
+
         lvi.pszText:=@(CurMacro^.descr);
         SendMessageW(list,LVM_INSERTITEMW,0,tlparam(@lvi));
         inc(result);
@@ -1026,7 +1042,7 @@ begin
               // Get lParam = EditMacroList element
               SendMessageW(MacroListWindow,LVM_GETITEMW,0,tlparam(@li));
 
-              ActionStarter(EditMacroList[li.lParam],nil,ACTP_SAMETHREAD or ACTP_WAIT);
+              ActionStarter(EditMacroList[loword(li.lParam)],nil,ACTP_SAMETHREAD or ACTP_WAIT);
             end;
 
             IDC_GROUP_NEW: begin
@@ -1043,7 +1059,7 @@ begin
               begin
                 if ListView_GetItemState(wnd,i,LVIS_SELECTED)<>0 then
                 begin
-                  FreeMacro(EditMacroList[LV_GetLParam(wnd,i)],ACF_INTRODUCED);
+                  FreeMacro(EditMacroList[Loword(LV_GetLParam(wnd,i))],ACF_INTRODUCED);
                   SendMessage(wnd,LVM_DELETEITEM,i,0);
                 end;
               end;
@@ -1186,7 +1202,7 @@ begin
 
                 ClearDialogData;
                 ResetDialogs;
-                FillActionList(Dialog,EditMacroList[PNMLISTVIEW(lParam)^.lParam]);
+                FillActionList(Dialog,EditMacroList[Loword(PNMLISTVIEW(lParam)^.lParam)]);
                 CheckMacroListDirectionButtons(Dialog);
                 ChangeListNotify(2);
 
@@ -1259,7 +1275,7 @@ begin
                   pWideChar(item.pszText):=NoDescription;
                 SendMessageW(hdr.hWndFrom,LVM_SETITEMW,0,tlparam(@item));
 
-                with EditMacroList[item.lParam]^ do
+                with EditMacroList[loword(item.lParam)]^ do
                 begin
                   StrCopyW(descr,item.pszText,MacroNameLen-1);
                 end;

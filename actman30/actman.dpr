@@ -5,7 +5,6 @@
 {$ENDIF}
 {$IMAGEBASE $13200000}
 library actman;
-{%ToDo 'actman.todo'}
 {%File 'm_actman.inc'}
 {%File 'i_const.inc'}
 {%File 'i_opt_dlg2.inc'}
@@ -163,9 +162,28 @@ end;
 
 // This function implements autostart action execution after all others plugins loading
 function DoAutostart(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+var
+  i:integer;
+  Macro:pMacroRecord;
+  section:array [0..127] of AnsiChar;
+  p,p1:pAnsiChar;
 begin
   Result:=0;
   CallService(MS_ACT_RUNBYNAME,TWPARAM(AutoStartName),0);
+
+  p1:=StrCopyE(section,opt_group);
+  for i:=0 to MacroList.Count-1 do
+  begin
+    Macro:=MacroList[i];
+    if (Macro^.flags and ACF_FIRSTRUN)<>0 then
+    begin
+      CallService(MS_ACT_RUNBYID,TWPARAM(Macro^.id),0);
+      Macro^.flags:=Macro^.flags and not ACF_FIRSTRUN;
+      p:=StrEnd(IntToStr(p1,i));
+      p^:='/'; inc(p);
+      StrCopy(p,opt_flags); DBWriteDWord(0,DBBranch,section,Macro^.flags);
+    end;
+  end;
 end;
 
 function OnModulesLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -196,9 +214,9 @@ begin
     ptr:=ptr^.Next;
   end;
 
-  // cheat (commented to avoid conflicts)
-//  onloadhook:=HookEvent(ME_SYSTEM_MODULESLOADED,@DoAutostart);
-  CallService(MS_ACT_RUNBYNAME,TWPARAM(AutoStartName),0);
+  // cheat
+  HookEvent(ME_SYSTEM_MODULESLOADED,@DoAutostart);
+//  DoAutostart(0,0);
 end;
 
 function Load:int; cdecl;

@@ -17,6 +17,9 @@ FONT 8, "MS Shell Dlg", 0, 0
   RTEXT         "Service list format",-1,  0, 82, 166, 11
   COMBOBOX      IDC_SERVICELIST         , 19, 94, 148, 96, CBS_DROPDOWNLIST | WS_VSCROLL
   CONTROL       "Apply",IDC_SRV_APPLY,"MButtonClass",WS_TABSTOP,1,93,16,16,$18000000
+
+  GROUPBOX      "Current Macro", -1, 1, 116, 166, 28, WS_GROUP
+  AUTOCHECKBOX  "Select for FirstRun",IDC_FR_FLAG, 4, 125, 160, 12
 }
 
 IDI_SETTINGS ICON "ico\settings.ico"
