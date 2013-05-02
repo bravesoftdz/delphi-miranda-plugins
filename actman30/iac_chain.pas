@@ -88,7 +88,9 @@ begin
     params.flags:=0;
     params.Id   :=id;
   end;
-  if (flags and ACF_NOWAIT)=0 then
+  if (flags and ACF_SAMETHREAD)<>0 then
+    params.flags:=params.flags or ACTP_SAMETHREAD
+  else if (flags and ACF_NOWAIT)=0 then
     params.flags:=params.flags or ACTP_WAIT;
 
   if (flags and ACF_KEEPOLD)=0 then
@@ -244,10 +246,10 @@ begin
 end;
 
 function DlgProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
-
 var
   tmp:dword;
   wnd:HWND;
+  bb:boolean;
 begin
   result:=0;
 
@@ -266,12 +268,21 @@ begin
           SendDlgItemMessageW(Dialog,IDC_MACRO_LIST,CB_SELECTSTRING,twparam(-1),tlparam(actname))
         else
           CB_SelectData(Dialog,IDC_MACRO_LIST,id);
-        if (flags and ACF_NOWAIT)<>0 then
-          CheckDlgButton(Dialog,IDC_MACRO_NOWAIT,BST_CHECKED);
         if (flags and ACF_KEEPOLD)<>0 then
           CheckDlgButton(Dialog,IDC_MACRO_KEEPOLD,BST_CHECKED);
+
         if (flags and ACF_SAMETHREAD)<>0 then
+        begin
+          bb:=false;
           CheckDlgButton(Dialog,IDC_MACRO_SAMETHREAD,BST_CHECKED);
+        end
+        else
+        begin
+          bb:=true;
+          if (flags and ACF_NOWAIT)<>0 then
+            CheckDlgButton(Dialog,IDC_MACRO_NOWAIT,BST_CHECKED);
+        end;
+        EnableWindow(GetDlgItem(Dialog,IDC_MACRO_NOWAIT),bb);
       end;
     end;
 
@@ -286,12 +297,13 @@ begin
       begin
         id:=CB_GetData(GetDlgItem(Dialog,IDC_MACRO_LIST));
 
-        if IsDlgButtonChecked(Dialog,IDC_MACRO_NOWAIT)<>BST_UNCHECKED then
+        if IsDlgButtonChecked(Dialog,IDC_MACRO_SAMETHREAD)<>BST_UNCHECKED then
+          flags:=flags or ACF_SAMETHREAD
+        else if IsDlgButtonChecked(Dialog,IDC_MACRO_NOWAIT)<>BST_UNCHECKED then
           flags:=flags or ACF_NOWAIT;
+
         if IsDlgButtonChecked(Dialog,IDC_MACRO_KEEPOLD)<>BST_UNCHECKED then
           flags:=flags or ACF_KEEPOLD;
-        if IsDlgButtonChecked(Dialog,IDC_MACRO_SAMETHREAD)<>BST_UNCHECKED then
-          flags:=flags or ACF_SAMETHREAD;
       end;
     end;
 
@@ -307,8 +319,16 @@ begin
 	
     WM_COMMAND: begin
       case wParam shr 16 of
-        CBN_SELCHANGE,
-        BN_CLICKED: SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
+        CBN_SELCHANGE: SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
+        BN_CLICKED: begin
+          if loword(wParam)=IDC_MACRO_SAMETHREAD then
+          begin
+            EnableWindow(GetDlgItem(Dialog,IDC_MACRO_NOWAIT),
+                IsDlgButtonChecked(Dialog,IDC_MACRO_SAMETHREAD)=BST_UNCHECKED);
+          end;
+
+          SendMessage(GetParent(GetParent(Dialog)),PSM_CHANGED,0,0);
+        end;
       end;
     end;
 
