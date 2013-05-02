@@ -656,10 +656,9 @@ begin
       begin
         if SendMessage(list,LVM_GETITEMSTATE,i,LVIS_SELECTED)<>0 then
         begin
-          if i=0 then break;
+          if i=0 then break; // first selected is first already, nothing to move
           LV_MoveItem(list,incr,i);
           if result<0 then result:=i+incr;
-          break;
         end;
       end;
     end
@@ -669,7 +668,7 @@ begin
       begin
         if SendMessage(list,LVM_GETITEMSTATE,i,LVIS_SELECTED)<>0 then
         begin
-          if i=j then break;
+          if i=j then break; // last selected is last already, nothing to move
           LV_MoveItem(list,incr,i);
           if result<0 then result:=i+incr;
         end;
