@@ -224,7 +224,7 @@ begin
   else if (flags and ACTP_WAIT)<>0 then // with waiting, service
   begin
     tmp^.event:=CreateEvent(nil,FALSE,FALSE,nil);
-    CloseHandle(mir_forkthread(@ThDoAction,tmp));
+    {CloseHandle}(mir_forkthread(@ThDoAction,tmp));
     //!!!!!!!!! movetmp structure (event handle) to array, not stack?
     WaitForSingleObjectEx(tmp^.event,INFINITE,true);
     CloseHandle(tmp^.event);
@@ -237,7 +237,7 @@ begin
   else // no waiting, service or macro
   begin
     tmp^.event:=0;
-    CloseHandle(mir_forkthread(@ThDoAction,tmp));
+    {CloseHandle}(mir_forkthread(@ThDoAction,tmp));
     result:=0;
     exit;
   end;

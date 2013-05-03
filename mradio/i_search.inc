@@ -268,7 +268,7 @@ begin
   else
   begin
     result:=AckHandle;
-    CloseHandle(mir_forkthread(@BasicSearch,StrDup(PAnsiChar(lParam),PAnsiChar(lParam))));
+    {CloseHandle}(mir_forkthread(@BasicSearch,StrDup(PAnsiChar(lParam),PAnsiChar(lParam))));
   end;
 end;
 
@@ -279,7 +279,7 @@ begin
   else
   begin
     result:=AckHandle;
-    CloseHandle(mir_forkthread(@ExtSearch,pointer(lParam)));
+    {CloseHandle}(mir_forkthread(@ExtSearch,pointer(lParam)));
   end;
 end;
 

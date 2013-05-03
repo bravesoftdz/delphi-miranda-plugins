@@ -182,7 +182,7 @@ begin
           ControlCenter(MRC_STATUS,RD_STATUS_NEWSTATION);
           if Assigned(plist) then
             ControlCenter(MRC_STATUS,RD_STATUS_CONNECT);
-          CloseHandle(mir_forkthread(@OpenURL,ActiveURLw));
+          {CloseHandle}(mir_forkthread(@OpenURL,ActiveURLw));
         end;
       end
       // play current from start
@@ -195,7 +195,7 @@ begin
       // play playlist entry?
       else if Assigned(plist) and (ActiveURLw<>nil) and (ActiveURLw^<>#0) then
       begin
-        CloseHandle(mir_forkthread(@OpenURL,ActiveURLw));
+        {CloseHandle}(mir_forkthread(@OpenURL,ActiveURLw));
       end;
     end;
 

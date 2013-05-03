@@ -92,7 +92,7 @@ begin
 
   if (msh_login   <>nil) and (msh_login^   <>#0) and
      (msh_password<>nil) and (msh_password^<>#0) then
-    CloseHandle(mir_forkthread(@ThScrobble,nil));
+    {CloseHandle}(mir_forkthread(@ThScrobble,nil));
 end;
 
 function NewPlStatus(wParam:WPARAM;lParam:LPARAM):int;cdecl;
