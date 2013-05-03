@@ -73,7 +73,7 @@ begin
 
   if (lfm_login   <>nil) and (lfm_login^   <>#0) and
      (lfm_password<>nil) and (lfm_password^<>#0) then
-    CloseHandle(mir_forkthread(@ThScrobble,nil));
+    {CloseHandle}(mir_forkthread(@ThScrobble,nil));
 end;
 
 function NewPlStatus(wParam:WPARAM;lParam:LPARAM):int;cdecl;
