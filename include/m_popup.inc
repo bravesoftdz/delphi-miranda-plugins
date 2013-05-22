@@ -67,7 +67,7 @@ type
     iSeconds        : int;      // Custom delay time in seconds.
                                 // -1 means "forever", 0 means = 'default time".
 { Data prior $02010003 version
-    lpzClass        : PAnsiChar;    // PopUp class. Used with skinning. See PopUp/AddClass for details
+    lpzClass        : PAnsiChar;    // PopUp class. Used with skinning. See Popup/AddClass for details
     skinBack        : COLORREF; // Background color for colorizable skins
     cZero: array [0..15-SizeOf(PAnsiChar)-SizeOf(COLORREF)] of byte;
 }
@@ -162,8 +162,8 @@ You may pass additional creation flags via lParam:
   APF_NO_POPUP     = 8;
   APF_NEWDATA      = $10;
 
-  MS_POPUP_ADDPOPUPW:PAnsiChar = 'PopUp/AddPopUpW';
-  MS_POPUP_ADDPOPUP :PAnsiChar = 'PopUp/AddPopUpEx';
+  MS_POPUP_ADDPOPUPW:PAnsiChar = 'Popup/AddPopupW';
+  MS_POPUP_ADDPOPUP :PAnsiChar = 'Popup/AddPopupEx';
 
 {
   Returns the handle to the contact associated to the specified PopUpWindow.
@@ -173,7 +173,7 @@ You may pass additional creation flags via lParam:
   lParam = 0;
   Returns: the HANDLE of the contact. Can return NULL, meaning it's the main contact. -1 means failure.
 }
-  MS_POPUP_GETCONTACT:PAnsiChar = 'PopUp/GetContact';
+  MS_POPUP_GETCONTACT:PAnsiChar = 'Popup/GetContact';
 
 {
   wParam = hPopUpWindow
@@ -186,14 +186,14 @@ You may pass additional creation flags via lParam:
   aPointerToStruct = CallService(..., (LPARAM)aPointerToAStruct);
   and it will work. Just look at the example I've written above (PopUpDlgProc).
 }
-  MS_POPUP_GETPLUGINDATA:PAnsiChar = 'PopUp/GetPluginData';
+  MS_POPUP_GETPLUGINDATA:PAnsiChar = 'Popup/GetPluginData';
 
 {
   wParam = 0
   lParam = 0
   Returns: 0 if the user has chosen not to have the second line, 1 if he choose to have the second line.
 }
-  MS_POPUP_ISSECONDLINESHOWN:PAnsiChar = 'PopUp/IsSecondLineShown';
+  MS_POPUP_ISSECONDLINESHOWN:PAnsiChar = 'Popup/IsSecondLineShown';
 
 {
   Requests an action or an answer from PopUp module.
@@ -204,7 +204,7 @@ You may pass additional creation flags via lParam:
   PUQS_DISABLEPOPUPS = 2; // " "
   PUQS_GETSTATUS     = 3; // Returns 1 if popups are enabled, 0 if popups are disabled.
 
-  MS_POPUP_QUERY:PAnsiChar = 'PopUp/Query';
+  MS_POPUP_QUERY:PAnsiChar = 'Popup/Query';
 
 {
   UM_FREEPLUGINDATA
@@ -234,14 +234,14 @@ You may pass additional creation flags via lParam:
   returns: > 0 for success, -1 for failure, 0 if the failure is due to second line not being shown. (but you could call PUIsSecondLineShown() before changing the text...)
   Changes the text displayed in the second line of the popup.
 }
-  MS_POPUP_CHANGETEXTW:PAnsiChar = 'PopUp/ChangetextW';
+  MS_POPUP_CHANGETEXTW:PAnsiChar = 'Popup/ChangetextW';
 
 {
   wParam = (WPARAM)(HWND)hPopUpWindow
   lParam = (LPARAM)(POPUPDATAEX*)newData
   Changes the entire popup
 }
-  MS_POPUP_CHANGEW:PAnsiChar = 'PopUp/ChangeW';
+  MS_POPUP_CHANGEW:PAnsiChar = 'Popup/ChangeW';
 
 {
  UM_CHANGEPOPUP
@@ -299,10 +299,10 @@ const
   lParam = SM_* flag
   Returns: 0 if the popup was shown, -1 in case of failure.
 }
-  MS_POPUP_SHOWMESSAGE :PAnsiChar = 'PopUp/ShowMessage';
-  MS_POPUP_SHOWMESSAGEW:PAnsiChar = 'PopUp/ShowMessageW';
+  MS_POPUP_SHOWMESSAGE :PAnsiChar = 'Popup/ShowMessage';
+  MS_POPUP_SHOWMESSAGEW:PAnsiChar = 'Popup/ShowMessageW';
 
-{ PopUp/RegisterActions
+{ Popup/RegisterActions
 Registers your action in popup action list
 
 wParam = (WPARAM)(LPPOPUPACTION)actions
@@ -310,7 +310,7 @@ lParam = (LPARAM)actionCount
 
 Returns: 0 if the popup was shown, -1 in case of failure.
 }
-  MS_POPUP_REGISTERACTIONS:PAnsiChar = 'PopUp/RegisterActions';
+  MS_POPUP_REGISTERACTIONS:PAnsiChar = 'Popup/RegisterActions';
 
 //------------- Class API ----------------//
 
@@ -333,8 +333,8 @@ const
 
 // wParam = 0
 // lParam = (POPUPCLASS *)&pc
-  MS_POPUP_REGISTERCLASS = 'PopUp/RegisterClass';
-  MS_POPUP_UNREGISTERCLASS = 'PopUp/UnregisterClass';
+  MS_POPUP_REGISTERCLASS = 'Popup/RegisterClass';
+  MS_POPUP_UNREGISTERCLASS = 'Popup/UnregisterClass';
 
 type
   TPOPUPDATACLASS = record
@@ -350,7 +350,7 @@ type
 const
 // wParam = 0
 // lParam = (POPUPDATACLASS *)&pdc
-  MS_POPUP_ADDPOPUPCLASS = 'PopUp/AddPopupClass';
+  MS_POPUP_ADDPOPUPCLASS = 'Popup/AddPopupClass';
 
 (* OLD
 {
@@ -360,7 +360,7 @@ const
   would became able to choose skin for your popups independently from others)
 
   You have to register popup class before using it. To do so call
-  "PopUp/AddClass" with lParam = (LPARAM)(const AnsiChar * )popUpClassName.
+  "Popup/AddClass" with lParam = (LPARAM)(const AnsiChar * )popUpClassName.
 
   All class names are translated (via Translate()) before being added to list.
   You should use english names for them.
@@ -370,7 +370,7 @@ const
   Note that you can add clases after popup wal loaded, e.g. you shoul intercept
   ME_SYSTEM_MODULESLOADED event
 }
-  MS_POPUP_ADDCLASS = 'PopUp/AddClass';
+  MS_POPUP_ADDCLASS = 'Popup/AddClass';
 
   POPUP_CLASS_DEFAULT = 'Default';
   POPUP_CLASS_WARNING = 'Warning';

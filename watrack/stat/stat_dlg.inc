@@ -185,7 +185,8 @@ begin
         if buf[0]<>#0 then
         begin
           buf1[0]:=#0;
-          CallService(MS_UTILS_PATHTORELATIVE,TWPARAM(@buf),TLPARAM(@buf1));
+          PathToRelative(buf,buf1);
+//          CallService(MS_UTILS_PATHTORELATIVE,TWPARAM(@buf),TLPARAM(@buf1));
           StrDup(StatName,buf1);
         end;
 
@@ -194,7 +195,8 @@ begin
         if buf[0]<>#0 then
         begin
           buf1[0]:=#0;
-          CallService(MS_UTILS_PATHTORELATIVE,TWPARAM(@buf),TLPARAM(@buf1));
+          PathToRelative(buf,buf1);
+//          CallService(MS_UTILS_PATHTORELATIVE,TWPARAM(@buf),TLPARAM(@buf1));
           StrDup(ReportName,buf1);
         end;
 
@@ -203,7 +205,8 @@ begin
         if buf[0]<>#0 then
         begin
           buf1[0]:=#0;
-          CallService(MS_UTILS_PATHTORELATIVE,TWPARAM(@buf),TLPARAM(@buf1));
+          PathToRelative(buf,buf1);
+//          CallService(MS_UTILS_PATHTORELATIVE,TWPARAM(@buf),TLPARAM(@buf1));
           StrDup(TmplName,buf1);
         end;
 

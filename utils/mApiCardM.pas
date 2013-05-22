@@ -146,7 +146,7 @@ begin
       begin
         FastAnsitoWideBuf(p,tmp);
         SendMessageW(wnd,CB_ADDSTRING,0,lparam(TranslateW(tmp)));
-        if (p=@buf) and (lstrcmpia(p,'structure')=0) then
+        if (p=@buf) and (StrCmp(p,'structure')=0) then
           break;
       end;
       p:=pc+1;

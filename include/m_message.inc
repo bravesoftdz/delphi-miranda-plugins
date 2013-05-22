@@ -120,6 +120,28 @@ const
 }
   MS_MSG_GETWINDOWDATA:PAnsiChar = 'MessageAPI/GetWindowData';
 
+{ wparam=(THANDLE)hContact
+  lparam=(pWideChar)ptszMessageText
+  Sets a status line text for the appropriate contact
+}
+  MS_MSG_SETSTATUSTEXT:PAnsiChar = 'MessageAPI/SetStatusText';
+
+type
+  pMessageWindowEvent = ^MessageWindowEvent;
+  MessageWindowEvent = record
+    cbSize   :int;
+    seq      :int;          // number returned by PSS_MESSAGE
+    hContact :THANDLE;
+    dbei     :PDBEVENTINFO; // database event written on the basis of message sent
+  end;
+
+const
+{ wparam=0(unused)
+  lparam=(pMessageWindowEvent) event written
+  fired before SRMM writes an entered message into the database
+}
+  ME_MSG_PRECREATEEVENT:PAnsiChar = 'MessageAPI/PreCreateEvent';
+
 { wParam = 0
  lParam = (MessageWindowPopupData *)&MessageWindowPopupData;
  Fired to allow plugins to add itens to the msg window popup menu
