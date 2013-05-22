@@ -81,6 +81,22 @@ begin
     DBWriteWord(hContact,PluginName,optStatus,status);
 end;
 
+function GetDefaultRecPath:pWideChar;
+var
+  dat:TREPLACEVARSDATA;
+  mstr,szData:pWideChar;
+  buf:array [0..MAX_PATH-1] of WideChar;
+begin
+  FillChar(dat,SizeOf(dat),0);
+  dat.cbSize :=SizeOf(TREPLACEVARSDATA);
+  dat.dwFlags:=RVF_UNICODE;
+  szData:='%miranda_userdata%'+'\'+cPluginName;
+  mstr:=pWideChar(CallService(MS_UTILS_REPLACEVARS, WPARAM(szData), LPARAM(@dat)));
+  PathToRelativeW(mstr,buf);
+  StrDupW(result,buf);
+  mir_free(mstr);
+end;
+
 {$include i_search.inc}
 {$include i_bass.inc}
 {$include i_cc.inc}
@@ -144,6 +160,11 @@ begin
 //  CallService(MS_RADIO_COMMAND,MRC_RECORD,2); record off - not so necessary
 
   recpath:=DBReadUnicode(0,PluginName,optRecPath);
+  if (recpath=nil) or (recpath^=#0) then
+  begin
+    recpath:=GetDefaultRecPath;
+  end;
+
   usedevice:=DBReadString(0,PluginName,optDevice);
 
   sPreBuf:=DBReadWord(0,PluginName,optPreBuf,75);

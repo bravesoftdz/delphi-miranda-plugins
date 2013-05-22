@@ -110,7 +110,8 @@ begin
     end
     else
       pc:=nil;
-    CallService(MS_UTILS_PATHTOABSOLUTEW,wparam(src),lparam(dst));
+    PathToAbsoluteW(src,dst);
+//    CallService(MS_UTILS_PATHTOABSOLUTEW,wparam(src),lparam(dst));
     mFreeMem(pc);
   end;
 end;
@@ -140,7 +141,8 @@ begin
     end
     else
       pc:=nil;
-    CallService(MS_UTILS_PATHTOABSOLUTE,wparam(src),lparam(dst));
+    PathToAbsolute(src,dst);
+//    CallService(MS_UTILS_PATHTOABSOLUTE,wparam(src),lparam(dst));
     mFreeMem(pc);
   end;
 end;
@@ -490,7 +492,8 @@ begin
   begin
     if path<>nil then
     begin
-      CallService(MS_UTILS_PATHTOABSOLUTE,wparam(path),lparam(@buf));
+      PathToAbsolute(path,buf);
+//      CallService(MS_UTILS_PATHTOABSOLUTE,wparam(path),lparam(@buf));
       p:=StrEnd(buf);
       if p^<>'\' then
       begin

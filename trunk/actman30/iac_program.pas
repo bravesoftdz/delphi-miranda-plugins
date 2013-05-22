@@ -130,8 +130,11 @@ begin
   if ((flags and ACF_PRG_PRG)<>0) or
      ((flags and ACF_PRG_ARG)<>0) then
   begin
-    pd:=WndToContact(WaitFocusedWndChild(GetForegroundwindow){GetFocus});
-    if (pd=0) and (CallService(MS_DB_CONTACT_IS,WorkData.Parameter,0)<>0) then
+    if CallService(MS_DB_CONTACT_IS,WorkData.Parameter,0)<>0 then
+      pd:=WorkData.Parameter
+    else
+      pd:=WndToContact(WaitFocusedWndChild(GetForegroundwindow){GetFocus});
+    if (pd=0) and (WorkData.Parameter<>0) then
       pd:=WorkData.Parameter;
   end;
 

@@ -236,7 +236,6 @@ var
   {$include m_iconheader.inc}
   {$include m_extraicons.inc}
   {$include m_errors.inc}
-  {$include m_help.inc}
   {$include m_proto_listeningto.inc}
   {$include m_toptoolbar.inc}
   {$include m_msg_buttonsbar.inc}
