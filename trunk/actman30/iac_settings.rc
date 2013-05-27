@@ -20,6 +20,7 @@ FONT 8, "MS Shell Dlg", 0, 0
 
   GROUPBOX      "Current Macro", -1, 1, 116, 166, 28, WS_GROUP
   AUTOCHECKBOX  "Select for FirstRun",IDC_FR_FLAG, 4, 125, 160, 12
+//  AUTOCHECKBOX  "hContact in wParam" ,IDC_HC_WPAR, 4, 138, 160, 12
 }
 
 IDI_SETTINGS ICON "ico\settings.ico"

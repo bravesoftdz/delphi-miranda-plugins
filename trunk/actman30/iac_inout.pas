@@ -565,7 +565,7 @@ begin
     WM_ACT_SAVE: begin
       with tInOutAction(lParam) do
       begin
-        flags:=0;
+//        flags:=0;
         // Clipboard
         if IsDlgButtonChecked(Dialog,IDC_FLAG_CLIP)<>BST_UNCHECKED then
         begin

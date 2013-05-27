@@ -146,6 +146,8 @@ type
   end;
 
 procedure ThDoAction(arg:pActStartData); cdecl;
+var
+  i:integer;
 begin
   if (arg^.flags and ACTP_NOTIFY)<>0 then
   begin
@@ -166,6 +168,9 @@ begin
   else if (arg^.flags and ACTP_SAMETHREAD)=0 then // no waiting
   begin
     ClearResult(arg^.WorkData); // free last result memory if needs
+    // Free Storage
+    for i:=0 to 9 do
+      ClearResult(arg^.WorkData,i);
     mFreeMem(arg);              // free ActStartData (no time to free after)
   end;
 end;
@@ -173,6 +178,7 @@ end;
 function ActionStarter(macro:pMacroRecord;wd:pWorkData;flags:dword):LPARAM;
 var
   tmp:pActStartData;
+  i:integer;
 begin
   mGetMem (tmp ,SizeOf(tActStartData));
   FillChar(tmp^,SizeOf(tActStartData),0);
@@ -195,7 +201,7 @@ begin
     tmp^.WorkData.Parameter:=wd^.Parameter;
   end
   else
-  tmp^.WorkData.ResultType:=rtInt;
+    tmp^.WorkData.ResultType:=rtInt;
 
   tmp^.macro :=macro;
   tmp^.flags :=flags;
@@ -243,6 +249,9 @@ begin
   end;
 
   ClearResult(tmp^.WorkData); // free last result memory if needs
+  // Free Storage
+  for i:=0 to 9 do
+    ClearResult(tmp^.WorkData,i);
   mFreeMem(tmp);              // free ActStartData (no time to free after)
 end;
 

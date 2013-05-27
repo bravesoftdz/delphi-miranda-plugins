@@ -27,13 +27,19 @@ const
   ACF_INTRODUCED = $40000000;  // action is newly created (not saved) in options
 
 type
+  tLRType = record
+    value:uint_ptr;
+    rtype:byte; // rt* const
+  end;
+type
   pWorkData = ^tWorkData;
   tWorkData = record
     Parameter  :LPARAM;
-    LastResult :uint_ptr;
-    ResultType :integer;   // rt* const
     ActionList :pointer;
+    LastResult :uint_ptr;
     ActionCount:integer;
+    ResultType :integer;   // rt* const
+    Storage    :array [0..9] of tLRType;
   end;
 
 type
@@ -75,8 +81,8 @@ type
 const
   ModuleLink:pActModule=nil;
 
-function ClearResult(var WorkData:tWorkData):uint_ptr;
-function GetResultNumber(var WorkData:tWorkData):uint_ptr;
+function ClearResult(var WorkData:tWorkData;num:integer=-1):uint_ptr;
+function GetResultNumber(var WorkData:tWorkData;num:integer=-1):uint_ptr;
 
 procedure InsertString(wnd:HWND;num:dword;str:PAnsiChar);
 
@@ -90,6 +96,7 @@ implementation
 
 uses Common, global, dbsettings, base64, mirutils;
 
+//----- tBaseAction code -----
 const
   ioDisabled = 'disabled';
   ioName     = 'name';
@@ -189,24 +196,62 @@ begin
   end;
 end;
 
-function ClearResult(var WorkData:tWorkData):uint_ptr;
+//----- LastResult processing -----
+
+function ClearResult(var WorkData:tWorkData;num:integer=-1):uint_ptr;
+var
+  rt:pbyte;
+  lr:^uint_ptr;
 begin
-  if WorkData.ResultType=rtWide then
+  result:=0;
+
+  if num<0 then
   begin
-    mFreeMem(pWideChar(WorkData.LastResult));
-    result:=0;
+    rt:=@WorkData.ResultType;
+    lr:=@WorkData.LastResult;
+  end
+  else if num<10 then
+  begin
+    rt:=@WorkData.Storage[num].rtype;
+    lr:=@WorkData.Storage[num].value;
   end
   else
-    result:=WorkData.LastResult;
+    exit;
+
+  if rt^=rtInt then
+    result:=lr^
+  else if rt^<>rtUnkn then
+  begin
+    mFreeMem(pWideChar(lr^));
+    result:=0;
+  end;
 end;
 
-function GetResultNumber(var WorkData:tWorkData):uint_ptr;
+function GetResultNumber(var WorkData:tWorkData;num:integer=-1):uint_ptr;
+var
+  rt:pbyte;
+  lr:^uint_ptr;
 begin
-  if WorkData.ResultType=rtInt then
-    result:=WorkData.LastResult
-  else
+  result:=0;
+
+  if num<0 then
   begin
-    result:=NumToInt(pWideChar(WorkData.LastResult));
+    rt:=@WorkData.ResultType;
+    lr:=@WorkData.LastResult;
+  end
+  else if num<10 then
+  begin
+    rt:=@WorkData.Storage[num].rtype;
+    lr:=@WorkData.Storage[num].value;
+  end
+  else
+    exit;
+
+  if rt^=rtInt then
+    result:=lr^
+  else if rt^<>rtUnkn then
+  begin
+    result:=NumToInt(pWideChar(lr^));
 {
     if (pWideChar(WorkData.LastResult)[0]='$') and
        (AnsiChar(pWideChar(WorkData.LastResult)[1]) in sHexNum) then

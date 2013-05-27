@@ -8,4 +8,4 @@ const
   IDC_SRV_APPLY   = 2151;
 
   IDC_FR_FLAG     = 2155;
-  IDC_FR_APPLY    = 2156;
+  IDC_HC_WPAR     = 2156;

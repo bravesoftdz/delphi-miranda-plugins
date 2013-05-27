@@ -242,12 +242,13 @@ var
   {$include m_json.inc}
   {$include m_xstatus.inc}
   {$include m_zlib.inc}
-{$define M_API_UNIT}
-  {$include m_helpers.inc}
-  {$include m_clistint.inc}
+  {$include m_pluginupdater.inc}
   {$include m_metacontacts.inc}
   {$include m_timezones.inc}
   {$include m_crypto.inc}
+{$define M_API_UNIT}
+  {$include m_helpers.inc}
+  {$include m_clistint.inc}
 
 implementation
 
