@@ -541,6 +541,12 @@ type
 	 *************************************************************************************)
     pfnReloadExtraIcons: procedure;
     pfnSetAllExtraIcons: procedure(hwndList:HWND; hContact:THANDLE);
+
+	(*************************************************************************************
+	 * Miranda NG additions
+	 *************************************************************************************)
+
+	  pfnGetContactIcon: function(hContact:THANDLE):int;
   end;
 
 {

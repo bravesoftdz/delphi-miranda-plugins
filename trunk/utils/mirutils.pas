@@ -7,6 +7,7 @@ uses windows,m_api;
 
 // for miranda services
 const
+  rtUnkn = 0;
   rtInt  = 1;
   rtWide = 2;
   rtAnsi = 3;

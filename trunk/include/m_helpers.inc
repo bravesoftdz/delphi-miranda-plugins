@@ -1,7 +1,5 @@
 {$IFDEF M_API_UNIT}
 
-function ProtoServiceExists(const proto,service: PAnsiChar): int;
-
 function CreateVersionString(version:dword;buf:PAnsiChar):PAnsiChar;
 function CreateVersionStringPlugin(pluginInfo:PPluginInfoEx;buf:PAnsiChar):PAnsiChar;
 function PLUGIN_MAKE_VERSION(a,b,c,d: Cardinal): int;
@@ -40,7 +38,6 @@ procedure TranslateDialogDefault(hwndDlg: THandle);
 procedure TranslateMenu(hMenu: HMENU);
 function Langpack_Register:int_ptr;
 
-function ProtoBroadcastAck(const szModule: PAnsiChar; hContact: THandle; type_: int; result_: int; hProcess: THandle; lParam: LPARAM): int_ptr;
 function CreateProtoServiceFunction(const szModule, szService: PAnsiChar; serviceProc: TMIRANDASERVICE): int_ptr;
 
 function  Srmm_AddIcon   (sid: PStatusIconData):int_ptr;
@@ -89,21 +86,6 @@ function Options_Open(ood:POPENOPTIONSDIALOG):int_ptr;
 function Options_OpenPage(ood:POPENOPTIONSDIALOG):HWND;
 
 {$ELSE}
-
-function ProtoServiceExists(const proto,service: PAnsiChar): int;
-var
-  buf:array [0..127] of AnsiChar;
-begin
-  if (proto=nil) or (service=nil) then
-  begin
-    result:=0;
-    exit;
-  end;
-  lStrCpyA(@buf,proto);
-  lStrCatA(@buf,service);
-  result:=ServiceExists(@buf);
-end;
-
 
 function CreateVersionString(version:dword;buf:PAnsiChar):PAnsiChar;
 var
@@ -347,20 +329,6 @@ begin
   result:=CallService(MS_LANGPACK_REGISTER,WPARAM(@hLangpack),LPARAM(@PluginInfo));
 end;
 
-
-function ProtoBroadcastAck(const szModule: PAnsiChar; hContact: THandle; type_: int; result_: int; hProcess: THandle; lParam: LPARAM): int_ptr;
-var
-  ack: TACKDATA;
-begin
-  ack.cbSize   := sizeof(TACKDATA);
-  ack.szModule := szModule;
-  ack.hContact := hContact;
-  ack._type    := type_;
-  ack._result  := result_;
-  ack.hProcess := hProcess;
-  ack.lParam   := lParam;
-  Result := CallService(MS_PROTO_BROADCASTACK, 0, tlParam(@ack));
-end;
 
 function CreateProtoServiceFunction(const szModule, szService: PAnsiChar; serviceProc: TMIRANDASERVICE): int_ptr;
 var

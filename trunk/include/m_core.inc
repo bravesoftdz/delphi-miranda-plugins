@@ -523,6 +523,19 @@ function mir_vsntprintf(buffer:pWideChar;count:size_t;fmt:pWideChar;va:va_list):
 
 
 ///////////////////////////////////////////////////////////////////////////////
+// protocol functions
+
+function ProtoBroadcastAck(const szModule: PAnsiChar; hContact: THandle; type_: int; result_: int; hProcess: THandle; lParam: LPARAM): int_ptr; stdcall;
+                 external CoreDLL name 'ProtoBroadcastAck';
+
+function ProtoServiceExists(const szModule, szName:PAnsiChar):int; stdcall;
+                 external CoreDLL name 'ProtoServiceExists';
+
+function ProtoCallService(const szModule, szName:PAnsiChar; wParam:WPARAM; lParam:LPARAM):int_ptr; stdcall;
+                 external CoreDLL name 'ProtoServiceExists';
+
+
+///////////////////////////////////////////////////////////////////////////////
 // sha1 functions
 type
   pmir_sha1_byte_t = ^mir_sha1_byte_t;
@@ -556,6 +569,11 @@ procedure mir_sha1_hash(dataIn:pmir_sha1_byte_t; len:int;hashout:SHA1Hash); stdc
 
 ///////////////////////////////////////////////////////////////////////////////
 // strings
+
+function mir_base64_decode(str:pAnsiChar; var resultSize:int):pByte; stdcall;
+               external CoreDLL name 'mir_base64_decode';
+function mir_base64_encode(str:pAnsiChar; dataSize:int):pAnsiChar; stdcall;
+               external CoreDLL name 'mir_base64_encode';
 
 function rtrim(str:pAnsiChar):pAnsiChar; stdcall;
                external CoreDLL name 'rtrim';
