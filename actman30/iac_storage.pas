@@ -17,6 +17,8 @@ const
   opt_number = 'number';
 const
   ioNumber = 'number';
+  ioOper   = 'oper';
+  ioCopy   = 'copy';
 const
   ACF_COPYFROM = $00000001;
 type
@@ -150,10 +152,15 @@ begin
       pc:=StrCopyE(section,pAnsiChar(node));
       StrCopy(pc,opt_number); Number:=DBReadByte(0,DBBranch,section,0);
     end;
-{
+
     1: begin
+      with xmlparser do
+      begin
+        if lstrcmpiw(getAttrValue(HXML(node),ioOper),ioCopy)=1 then
+           flags:=flags or ACF_COPYFROM;
+        Number:=StrToInt(getAttrValue(HXML(node),ioNumber));
+      end;
     end;
-}
   end;
 end;
 

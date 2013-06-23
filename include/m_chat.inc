@@ -469,6 +469,8 @@ const
 
   GCEF_ADDTOLOG      = $0001;
   GCEF_REMOVECONTACT = $0002;
+// Added in Miranda NG 0.94.4+
+  GCEF_NOTNOTIFY     = $0004;
 
 // OK! That was about everything that you need to know about for operating Chat in a basic way.
 // There are however some more things you will need to know about. Some you may use and some you may not need,
