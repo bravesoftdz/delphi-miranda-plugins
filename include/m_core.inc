@@ -102,49 +102,177 @@ type
     pBlob    : PByte; // pointer to buffer containing the module defined event data
   end;
 
+(******************************************************************************
+ * DATABASE EVENTS
+ *)
+
+{
+Adds a new event to a contact's event list
+Returns a handle to the newly added event, or NULL on failure
+Triggers a db/event/added event just before it returns.
+Events are sorted chronologically as they are entered, so you cannot guarantee
+that the new hEvent is the last event in the chain, however if a new event is
+added that has a timestamp less than 90 seconds *before* the event that should
+be after it, it will be added afterwards, to allow for protocols that only
+store times to the nearest minute, and slight delays in transports.
+There are a few predefined eventTypes below for easier compatibility, but
+modules are free to define their own, beginning at 2000
+DBEVENTINFO.timestamp is in GMT, as returned by time(). There are services
+db/time/x below with useful stuff for dealing with it.
+}
 function db_event_add(hContact:THANDLE; dbei:PDBEVENTINFO):THANDLE; stdcall;
                  external CoreDLL name 'db_event_add';
+
+{
+Gets the number of events in the chain belonging to a contact in the database.
+Returns the number of events in the chain owned by hContact or -1 if hContact
+is invalid. They can be retrieved using the db_event_first/last() services.
+}
 function db_event_count(hContact:THANDLE):int; stdcall;
                  external CoreDLL name 'db_event_count';
+
+{
+Removes a single event from the database
+hDbEvent should have been returned by db_event_add/first/last/next/prev()
+Returns 0 on success, or nonzero if hDbEvent was invalid
+Triggers a db/event/deleted event just *before* the event is deleted
+}
 function db_event_delete(hContact:THANDLE; hDbEvent:THANDLE):int; stdcall;
                  external CoreDLL name 'db_event_delete';
+
+{
+Retrieves a handle to the first event in the chain for hContact
+Returns the handle, or NULL if hContact is invalid or has no events
+Events in a chain are sorted chronologically automatically
+}
 function db_event_first(hContact:THANDLE):THANDLE; stdcall;
                  external CoreDLL name 'db_event_first';
+
+{
+Retrieves a handle to the first unread event in the chain for hContact
+Returns the handle, or NULL if hContact is invalid or all its events have been
+read
+
+Events in a chain are sorted chronologically automatically, but this does not
+necessarily mean that all events after the first unread are unread too. They
+should be checked individually with db_event_next() and db_event_get()
+This service is designed for startup, reloading all the events that remained
+unread from last time
+}
 function db_event_firstUnread(hContact:THANDLE):THANDLE; stdcall;
                  external CoreDLL name 'db_event_firstUnread';
+
+{
+Retrieves all the information stored in hDbEvent
+hDbEvent should have been returned by db_event_add/first/last/next/prev()
+Returns 0 on success or nonzero if hDbEvent is invalid
+Don't forget to set dbe.cbSize, dbe.pBlob and dbe.cbBlob before calling this
+service
+The correct value dbe.cbBlob can be got using db/event/getblobsize
+If successful, all the fields of dbe are filled. dbe.cbBlob is set to the
+actual number of bytes retrieved and put in dbe.pBlob
+If dbe.cbBlob is too small, dbe.pBlob is filled up to the size of dbe.cbBlob
+and then dbe.cbBlob is set to the required size of data to go in dbe.pBlob
+On return, dbe.szModule is a pointer to the database module's own internal list
+of modules. Look but don't touch.
+}
 function db_event_get(hDbEvent:THANDLE; dbei:PDBEVENTINFO):int; stdcall;
                  external CoreDLL name 'db_event_get';
+
+{
+Retrieves the space in bytes required to store the blob in hDbEvent
+hDbEvent should have been returned by db_event_add/first/last/next/prev()
+Returns the space required in bytes, or -1 if hDbEvent is invalid
+}
 function db_event_getBlobSize(hDbEvent:THANDLE):int; stdcall;
                  external CoreDLL name 'db_event_getBlobSize';
+
+{
+Retrieves a handle to the contact that owns hDbEvent.
+hDbEvent should have been returned by db_event_add/first/last/next/prev()
+NULL is a valid return value, meaning, as usual, the user.
+Returns (HANDLE)(-1) if hDbEvent is invalid, or the handle to the contact on
+success
+This service is exceptionally slow. Use only when you have no other choice at
+all.
+}
 function db_event_getContact(hDbEvent:THANDLE):THANDLE; stdcall;
                  external CoreDLL name 'db_event_getContact';
+
+{
+Retrieves a handle to the last event in the chain for hContact
+Returns the handle, or NULL if hContact is invalid or has no events
+Events in a chain are sorted chronologically automatically
+}
 function db_event_last(hDbEvent:THANDLE):THANDLE; stdcall;
                  external CoreDLL name 'db_event_last';
+
+{
+Changes the flags for an event to mark it as read.
+hDbEvent should have been returned by db_event_add/first/last/next/prev()
+Returns the entire flag DWORD for the event after the change, or -1 if hDbEvent
+is invalid.
+This is the one database write operation that does not trigger an event.
+Modules should not save flags states for any length of time.
+}
 function db_event_markRead(hContact, hDbEvent:THANDLE):int; stdcall;
                  external CoreDLL name 'db_event_markRead';
+
+{
+Retrieves a handle to the next event in a chain after hDbEvent
+Returns the handle, or NULL if hDbEvent is invalid or is the last event
+Events in a chain are sorted chronologically automatically
+}
 function db_event_next(hDbEvent:THANDLE):THANDLE; stdcall;
                  external CoreDLL name 'db_event_next';
+
+{
+Retrieves a handle to the previous event in a chain before hDbEvent
+Returns the handle, or NULL if hDbEvent is invalid or is the first event
+Events in a chain are sorted chronologically automatically
+}
 function db_event_prev(hDbEvent:THANDLE):THANDLE; stdcall;
                  external CoreDLL name 'db_event_prev';
 
 function db_free(dbv:PDBVARIANT):int_ptr; stdcall;
                  external CoreDLL name 'db_free';
-function db_unset(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar):int_ptr; stdcall;
-                  external CoreDLL name 'db_unset';
 
+(******************************************************************************
+ * DATABASE CONTACTS
+ *)
+
+{
+Gets the handle of the first contact in the database. This handle can be used
+with loads of functions. It does not need to be closed.
+You can specify szProto to find only its contacts
+Returns a handle to the first contact in the db on success, or NULL if there
+are no contacts in the db.
+}
 function db_find_first(const szModule:pAnsiChar=nil):THANDLE; stdcall;
                  external CoreDLL name 'db_find_first';
+
+{
+Gets the handle of the next contact after hContact in the database. This handle
+can be used with loads of functions. It does not need to be closed.
+You can specify szProto to find only its contacts
+Returns a handle to the contact after hContact in the db on success or NULL if
+hContact was the last contact in the db or hContact was invalid.
+}
 function db_find_next(hContact:THANDLE; const szModule:pAnsiChar=nil):THANDLE; stdcall;
                   external CoreDLL name 'db_find_next';
 
+(******************************************************************************
+ * DATABASE SETTINGS
+ *)
+
+function db_get(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; dbv:PDBVARIANT):int_ptr; stdcall;
+                external CoreDLL name 'db_get';
 function db_get_b(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; errorValue:int):int; stdcall;
                   external CoreDLL name 'db_get_b';
 function db_get_w(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; errorValue:int):int; stdcall;
                   external CoreDLL name 'db_get_w';
 function db_get_dw(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; errorValue:dword):dword; stdcall;
                    external CoreDLL name 'db_get_dw';
-function db_get(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; dbv:PDBVARIANT):int_ptr; stdcall;
-                external CoreDLL name 'db_get';
 function db_get_s(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; dbv:PDBVARIANT; const nType:int=DBVT_ASCIIZ):int_ptr; stdcall;
                   external CoreDLL name 'db_get_s';
 function db_get_sa(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar):pAnsiChar; stdcall;
@@ -152,6 +280,8 @@ function db_get_sa(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:p
 function db_get_wsa(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar):pWideChar; stdcall;
                     external CoreDLL name 'db_get_wsa';
 
+function db_set(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; dbv:PDBVARIANT):int_ptr; stdcall;
+                external CoreDLL name 'db_set';
 function db_set_b(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; val:byte):int_ptr; stdcall;
                   external CoreDLL name 'db_set_b';
 function db_set_w(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; val:word):int_ptr; stdcall;
@@ -166,6 +296,12 @@ function db_set_utf(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:
                     external CoreDLL name 'db_set_utf';
 function db_set_blob(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; val:pointer; len:uint):int_ptr; stdcall;
                      external CoreDLL name 'db_set_blob';
+
+function db_unset(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar):int_ptr; stdcall;
+                  external CoreDLL name 'db_unset';
+
+function db_set_resident(const szModule:pAnsiChar; const szSetting:pAnsiChar; bEnable:int):int; stdcall;
+                 external CoreDLL name 'db_set_resident';
 
 // deprecated Aliases
 function DBFreeVariant(dbv:PDBVARIANT):int_ptr; stdcall;
