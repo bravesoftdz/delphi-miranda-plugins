@@ -818,7 +818,7 @@ begin
   end;
 
   StrCopy(@grbuf[1],name);
-  grbuf[0]:=CHAR(1 or GROUPF_EXPANDED);
+  grbuf[0]:=AnsiChar(1 or GROUPF_EXPANDED);
 
   // Check for duplicate & find unused id
   groupId:=0;

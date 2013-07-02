@@ -110,6 +110,7 @@ begin
 end;
 
 function DBReadUTF8(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;default:PAnsiChar=nil):PAnsiChar;
+{$IFDEF AllowInline}inline;{$ENDIF}
 begin
   result:=DBReadString(hContact,szModule,szSetting,default,DBVT_UTF8);
 end;
@@ -299,7 +300,7 @@ begin
 
     if res then
     begin
-      db_unset(hContact,szModule,ptr);
+      DBDeleteSetting(hContact,szModule,ptr);
     end;
     while ptr^<>#0 do inc(ptr);
     inc(ptr);
@@ -307,7 +308,7 @@ begin
   FreeMem(p);
 end;
 
-function DBDeleteModule(szModule:PAnsiChar):integer; // 0.8.0+
+function DBDeleteModule(szModule:PAnsiChar):integer;
 begin
   result:=0;
   CallService(MS_DB_MODULE_DELETE,0,lParam(szModule));
