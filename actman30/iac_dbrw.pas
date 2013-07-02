@@ -291,7 +291,10 @@ begin
 
     if (flags and ACF_RW_VALUE)<>0 then
     begin
-      mFreeMem(avalue);
+      if (flags and ACF_TEXT)<>0 then
+      begin
+        mFreeMem(avalue);
+      end;
     end;
   end;
 end;
