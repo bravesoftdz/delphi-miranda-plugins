@@ -38,12 +38,8 @@ const
   col_alias=0;
   col_type =1;
   col_len  =2;
-{$IFDEF Miranda}
   col_flag =3;
   col_data =4;
-{$ELSE}
-  col_data =3;
-{$ENDIF}
 var
   OldLVProc:pointer;
   storage:pointer;
@@ -213,10 +209,10 @@ begin
   SendMessageW(list,LVM_INSERTCOLUMNW,col_type ,lparam(@lv)); // type
   lv.cx  :=32; lv.pszText:={$IFDEF Miranda}TranslateW{$ENDIF}('length');
   SendMessageW(list,LVM_INSERTCOLUMNW,col_len  ,lparam(@lv)); // length
-{$IFDEF Miranda}
+
   lv.cx  :=20; lv.pszText:={$IFDEF Miranda}TranslateW{$ENDIF}('');
-  SendMessageW(list,LVM_INSERTCOLUMNW,col_flag ,lparam(@lv)); // variables flag
-{$ENDIF}
+  SendMessageW(list,LVM_INSERTCOLUMNW,col_flag ,lparam(@lv)); // flags
+
   lv.cx  :=72; lv.pszText:={$IFDEF Miranda}TranslateW{$ENDIF}('data');
   SendMessageW(list,LVM_INSERTCOLUMNW,col_data ,lparam(@lv)); // value
 
@@ -293,8 +289,14 @@ begin
   SendMessageW(list,LVM_SETITEMW,0,lparam(@li));
 
   // flags
-{$IFDEF Miranda}
   llen:=0;
+
+  if (element.flags and SF_SIZE)<>0 then
+  begin
+    tmp1[llen]:=char_size; inc(llen);
+  end;
+
+{$IFDEF Miranda}
   if (element.flags and SF_SCRIPT)<>0 then
   begin
     tmp1[llen]:=char_script; inc(llen);
@@ -303,11 +305,11 @@ begin
   begin
     tmp1[llen]:=char_mmi; inc(llen);
   end;
+{$ENDIF}
   tmp1[llen]:=#0;
   li.iSubItem:=col_flag;
   li.pszText :=@tmp1;
   SendMessageW(list,LVM_SETITEMW,0,lparam(@li));
-{$ENDIF}
 
   // alias
   if element.alias[0]<>#0 then
@@ -453,14 +455,21 @@ begin
     inc(dst);
   end;
 
-{$IFDEF Miranda}
   li.mask      :=LVIF_TEXT;
   li.iSubItem  :=col_flag;
   li.cchTextMax:=32;
   li.pszText   :=@buf;
+{$IFDEF Miranda}
   isScript:=false;
+{$ENDIF}
   if SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li))>0 then
   begin
+    if StrScanW(buf,char_size)<>nil then
+    begin
+      dst^:=char_size;
+      inc(dst);
+    end;
+{$IFDEF Miranda}
     if StrScanW(buf,char_script)<>nil then
     begin
       dst^:=char_script;
@@ -473,8 +482,8 @@ begin
       dst^:=char_mmi;
       inc(dst);
     end;
-  end;
 {$ENDIF}
+  end;
 {
   // type text (can skip and use type code)
   li.mask      :=LVIF_TEXT;
@@ -627,6 +636,7 @@ begin
     IDC_VAR_HELP:    result:=RD_ANCHORX_RIGHT or RD_ANCHORY_BOTTOM;
     IDC_DATA_VARS:   result:=RD_ANCHORX_RIGHT or RD_ANCHORY_BOTTOM;
     IDC_DATA_MMI:    result:=RD_ANCHORX_RIGHT or RD_ANCHORY_BOTTOM;
+    IDC_DATA_SIZE:   result:=RD_ANCHORX_RIGHT or RD_ANCHORY_BOTTOM;
 
     IDC_DATA_NEW:    result:=RD_ANCHORX_RIGHT or RD_ANCHORY_TOP;
     IDC_DATA_UP:     result:=RD_ANCHORX_RIGHT or RD_ANCHORY_TOP;
@@ -692,7 +702,7 @@ var
   b,b1:boolean;
   idcshow,idchide:integer;
   li:TLVITEMW;
-  {$IFDEF Miranda}vflag,mflag,{$ENDIF}
+  {$IFDEF Miranda}vflag,{$ENDIF}mflag,
   len:integer;
   wnd:HWND;
 begin
@@ -761,7 +771,22 @@ begin
       mGetMem(p,(len+1)*SizeOf(WideChar));
       li.cchTextMax:=len+1;
       li.pszText   :=p;
+      i:=SW_HIDE;
+    end
+    else
+    begin
+      i:=SW_SHOW;
+
+      if StrScanW(p,char_size)<>nil then
+        mflag:=BST_CHECKED
+      else
+        mflag:=BST_UNCHECKED;
+      CheckDlgButton(Dialog,IDC_DATA_SIZE,mflag);
+
+      EnableWindow(GetDlgItem(Dialog,IDC_DATA_EDTN),mflag=BST_UNCHECKED);
     end;
+    ShowWindow(GetDlgItem(Dialog,IDC_DATA_SIZE),i);
+
     li.iSubItem:=col_data;
     SendMessage(list,LVM_GETITEMTEXTW,item,lparam(@li));
   end;
@@ -780,9 +805,7 @@ end;
 procedure FillLVRow(Dialog:hwnd;list:HWND;item:integer);
 var
   ltype,j,idc:integer;
-{$IFDEF Miranda}
   idx:integer;
-{$ENDIF}
   wnd:HWND;
   buf:array [0..63] of WideChar;
   tmp:pWideChar;
@@ -795,8 +818,13 @@ begin
   LV_SetItemW(list,FastAnsiToWideBuf(StructElems[j].short,buf),item,col_type);
 
   // flags
-{$IFDEF Miranda}
   idx:=0;
+
+  if IsDlgButtonChecked(Dialog,IDC_DATA_SIZE)<>BST_UNCHECKED then
+  begin
+    buf[idx]:=char_size; inc(idx);
+  end;
+{$IFDEF Miranda}
   if IsDlgButtonChecked(Dialog,IDC_DATA_VARS)<>BST_UNCHECKED then
   begin
     buf[idx]:=char_script; inc(idx);
@@ -806,9 +834,9 @@ begin
   begin
     buf[idx]:=char_mmi; inc(idx);
   end;
+{$ENDIF}
   buf[idx]:=#0;
   LV_SetItemW(list,@buf,item,col_flag);
-{$ENDIF}
   
   // values
   tmp:=nil;
@@ -1087,7 +1115,8 @@ begin
 
               if b then
               begin
-                if i IN [SST_BYTE,SST_WORD,SST_DWORD,SST_QWORD,SST_NATIVE] then
+                if not b1 then
+//                if i IN [SST_BYTE,SST_WORD,SST_DWORD,SST_QWORD,SST_NATIVE] then
                 begin
 {$IFDEF Miranda}
                   if IsDlgButtonChecked(Dialog,IDC_DATA_VARS)<>BST_UNCHECKED then
@@ -1175,6 +1204,11 @@ begin
               end;
             end;
 {$ENDIF}
+            IDC_DATA_SIZE: begin
+              EnableWindow(GetDlgItem(Dialog,IDC_DATA_EDTN),
+                  IsDlgButtonChecked(Dialog,IDC_DATA_SIZE)=BST_UNCHECKED);
+            end;
+
             IDC_DATA_NEW: begin
               wnd:=GetDlgItem(Dialog,IDC_DATA_FULL);
               i:=InsertLVLine(wnd);
