@@ -998,8 +998,8 @@ var
   wnd:HWND;
   i:integer;
   li:TLVITEMW;
-  b,b1:boolean;
-  idchide,idcshow:integer;
+  b,b1,b2:boolean;
+  idchide,idcshow,csize:integer;
 {$IFDEF Miranda}
   pc:pAnsiChar;
   urd:TUTILRESIZEDIALOG;
@@ -1113,13 +1113,16 @@ begin
               EnableWindow(GetDlgItem(Dialog,IDC_DATA_EDTN),b);
               EnableWindow(GetDlgItem(Dialog,IDC_DATA_LEN ),b1);
 
+              csize:=SW_HIDE;
               if b then
               begin
                 if not b1 then
 //                if i IN [SST_BYTE,SST_WORD,SST_DWORD,SST_QWORD,SST_NATIVE] then
                 begin
+                  csize:=SW_SHOW;
+                  b2:=IsDlgButtonChecked(Dialog,IDC_DATA_SIZE)=BST_UNCHECKED;
 {$IFDEF Miranda}
-                  if IsDlgButtonChecked(Dialog,IDC_DATA_VARS)<>BST_UNCHECKED then
+                  if b2 and (IsDlgButtonChecked(Dialog,IDC_DATA_VARS)<>BST_UNCHECKED) then
                   begin
                     idchide:=IDC_DATA_EDTN;
                     idcshow:=IDC_DATA_EDIT;
@@ -1138,7 +1141,10 @@ begin
                 end;
                 ShowWindow(GetDlgItem(Dialog,idcshow),SW_SHOW);
                 ShowWindow(GetDlgItem(Dialog,idchide),SW_HIDE);
+
+                EnableWindow(GetDlgItem(Dialog,IDC_DATA_EDTN),b2);
               end;
+              ShowWindow(GetDlgItem(Dialog,IDC_DATA_SIZE),csize);
 
 {$IFDEF Miranda}
               if i IN [SST_PARAM,SST_LAST] then
