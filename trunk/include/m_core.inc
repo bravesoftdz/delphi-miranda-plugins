@@ -671,6 +671,15 @@ function ProtoCallService(const szModule, szName:PAnsiChar; wParam:WPARAM; lPara
                  external CoreDLL name 'ProtoServiceExists';
 
 
+// Call it in the very beginning of your proto's constructor
+procedure ProtoConstructor(pThis:pointer{PPROTO_INTERFACE}; const pszModuleName:PAnsiChar;
+                           ptszUserName:PWideChar); stdcall;
+                 external CoreDLL name 'ProtoConstructor';
+
+// Call it in the very end of your proto's destructor
+procedure ProtoDestructor(pThis:pointer{PPROTO_INTERFACE}); stdcall;
+                 external CoreDLL name 'ProtoDestructor';
+
 ///////////////////////////////////////////////////////////////////////////////
 // sha1 functions
 type

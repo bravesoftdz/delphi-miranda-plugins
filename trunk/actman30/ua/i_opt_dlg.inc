@@ -67,11 +67,6 @@ begin
   end;
 end;
 
-function CompareItem(lParam1,lParam2:LPARAM;SortType:LPARAM):int; stdcall;
-begin
-  result:=UActionList[lParam1].wSortIndex-UActionList[lParam2].wSortIndex;
-end;
-
 //  Show or hide option items
 procedure SetupControls(Dialog:HWND;atype:integer;item:integer=-1);
 var
@@ -352,6 +347,11 @@ begin
   if item<0 then
     SaveUA(num);
   end;
+end;
+
+function CompareItem(lParam1,lParam2:LPARAM;SortType:LPARAM):int; stdcall;
+begin
+  result:=UActionList[lParam1].wSortIndex-UActionList[lParam2].wSortIndex;
 end;
 
 procedure FillActionList(wnd:HWND);
