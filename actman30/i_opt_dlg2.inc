@@ -57,11 +57,12 @@ var
 begin
   result:=0;
   // 1 - search new items (EditMacroList elements which don't exists in MacroList)
-  found:=false;
+  found:=true;
   for i:=0 to EditMacroList.Count-1 do
   begin
     if (EditMacroList[i]^.flags and ACF_ASSIGNED)<>0 then
     begin
+      found:=false;
       for j:=0 to MacroList.Count-1 do
       begin
         if (MacroList[j]^.flags and ACF_ASSIGNED)<>0 then
@@ -73,17 +74,18 @@ begin
           end;
         end;
       end;
-      if found then break;
+      if not found then break;
     end;
   end;
   if not found then
     result:=result or ACTM_NEW;
   // 2 - search deleted items (MacroList elements which don't exists in EditMacroList)
-  found:=false;
+  found:=true;
   for i:=0 to MacroList.Count-1 do
   begin
     if (MacroList[i]^.flags and ACF_ASSIGNED)<>0 then
     begin
+      found:=false;
       for j:=0 to EditMacroList.Count-1 do
       begin
         if (EditMacroList[j]^.flags and ACF_ASSIGNED)<>0 then
@@ -95,7 +97,7 @@ begin
           end;
         end;
       end;
-      if found then break;
+      if not found then break;
     end;
   end;
   if not found then

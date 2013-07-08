@@ -1138,6 +1138,7 @@ begin
                 begin
                   idchide:=IDC_DATA_EDTN;
                   idcshow:=IDC_DATA_EDIT;
+                  b2:=true;
                 end;
                 ShowWindow(GetDlgItem(Dialog,idcshow),SW_SHOW);
                 ShowWindow(GetDlgItem(Dialog,idchide),SW_HIDE);

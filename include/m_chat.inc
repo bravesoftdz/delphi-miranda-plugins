@@ -401,6 +401,7 @@ const
   GC_SSE_ONLYLISTED    = $0001; // processes only listed contacts, resets all contacts otherwise
   GC_SSE_ONLINE        = $0002; // displays a contact online, otherwise away
   GC_SSE_TABDELIMITED  = $0004; // use tabs as delimiters
+  GC_SSE_OFFLINE       = $0008; // displays a contact offline, otherwise away
 
   GC_EVENT_SETSTATUSEX = $1009;
 
