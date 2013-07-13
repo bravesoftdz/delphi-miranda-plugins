@@ -72,7 +72,17 @@ begin
 end;
 
 procedure DeInit;
+var
+  i:integer;
 begin
+  if Length(UActionList)>0 then
+  begin
+    for i:=HIGH(UActionList) downto 0 do
+    begin
+      DeleteUAction(i,false);
+    end;
+    SetLength(UActionList,0);
+  end;
   SetLength(arMenuRec,0);
 end;
 

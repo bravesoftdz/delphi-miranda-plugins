@@ -511,6 +511,7 @@ begin
               // set name and enabled/disabled flag
               li.iItem:=item;
               SendDlgItemMessageW(Dialog,IDC_ACTION_LIST,LVM_GETITEMW,0,tlparam(@li));
+              mFreeMem(ActionList^[idx].ActionDescr);
               StrDupW(ActionList^[idx].ActionDescr,arr);
 
               if ListView_GetCheckState(wnd,item)=0 then
@@ -857,7 +858,7 @@ function DlgProcOpt2(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lres
 var
   wnd:HWND;
   p:pActModule;
-  i,j:int_ptr;
+  i,j,num:int_ptr;
   lvflag:integer;
   li:LV_ITEMW;
   lv:LV_COLUMNW;
@@ -1060,7 +1061,14 @@ begin
               begin
                 if ListView_GetItemState(wnd,i,LVIS_SELECTED)<>0 then
                 begin
-                  FreeMacro(EditMacroList[Loword(LV_GetLParam(wnd,i))],ACF_INTRODUCED);
+                  num:=Loword(LV_GetLParam(wnd,i));
+                  // mark old to delete on apply (must be first)
+                  with EditMacroList[num]^ do
+                    for j:=0 to ActionCount-1 do
+                      ActionList[j].flags:=ActionList[j].flags or ACF_REPLACED;
+                  // delete new actions
+                  FreeMacro(EditMacroList[num],ACF_INTRODUCED);
+
                   SendMessage(wnd,LVM_DELETEITEM,i,0);
                 end;
               end;
