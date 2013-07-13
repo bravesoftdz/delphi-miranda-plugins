@@ -55,13 +55,15 @@ begin
   end;
 end;
 
-procedure DeleteUAction(num:integer);
+// "compact" means need to compact list/delete settings (Delete, not just exit)
+procedure DeleteUAction(num:integer;compact:boolean);
 var
   ActionItem:pMyActionItem;
   luse:boolean;
   lmenu:tMenuType;
 begin
-  DeleteUASettings(num);
+  if compact then
+    DeleteUASettings(num);
 
   ActionItem:=@UActionList[num];
 
@@ -107,12 +109,15 @@ begin
   mFreeMem(ActionItem.szNameID);
   mFreeMem(ActionItem.szActDescr);
   
-  // compact list
-  if num<HIGH(UActionList) then
+  if compact then
   begin
-    move(UActionList[num+1],UActionList[num],(HIGH(UACtionList)-num)*SizeOf(tMyActionItem));
+    // compact list
+    if num<HIGH(UActionList) then
+    begin
+      move(UActionList[num+1],UActionList[num],(HIGH(UACtionList)-num)*SizeOf(tMyActionItem));
+    end;
+    SetLength(UActionList,Length(UActionList)-1);
   end;
-  SetLength(UActionList,Length(UActionList)-1);
 end;
 
 function ActListChange(wParam:WPARAM;lParam:LPARAM):integer; cdecl;
@@ -191,7 +196,7 @@ begin
         end;
       end;
       if not bFound then
-        DeleteUAction(j);
+        DeleteUAction(j,true);
     end;
   end;
 

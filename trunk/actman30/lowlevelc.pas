@@ -44,7 +44,7 @@ type
   public
 
     constructor Create(isize:cardinal);
-//    destructor Destroy; override;
+    destructor Destroy; override;
 
     procedure Clear(filter:dword=0);
     function Clone:tMacroList;
@@ -154,14 +154,12 @@ begin
   begin
     FreeMacro(@(fMacroList[i]),filter);
   end;
+  fMacroCount:=0;
   FreeMem(fMacroList);
   fMacroList:=nil;
-  fMacroCount:=0;
 end;
-{
+
 destructor tMacroList.Destroy;
-var
-  i:integer;
 begin
   fMacroCount:=0;
   FreeMem(fMacroList);
@@ -169,7 +167,7 @@ begin
 
   inherited Destroy;
 end;
-}
+
 function CloneActionList(src:pActionList;count:integer):pActionList;
 begin
   if src=nil then

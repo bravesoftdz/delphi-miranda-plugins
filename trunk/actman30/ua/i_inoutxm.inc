@@ -161,7 +161,7 @@ begin
               begin
                 if ptr.id=UActionList[act].dwActID then
                 begin
-                  DeleteUAction(act);
+                  DeleteUAction(act,true);
                   break;
                 end;
               end;

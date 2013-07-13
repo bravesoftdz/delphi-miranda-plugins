@@ -51,6 +51,55 @@ type
     szModuleName  :PAnsiChar;
     hProtoIcon    :THandle;
 
+	//////////////////////////////////////////////////////////////////////////////////////
+	// Helpers
+(*!!
+	__forceinline INT_PTR ProtoBroadcastAck(HANDLE hContact, int type, int hResult, HANDLE hProcess, LPARAM lParam)
+	{	return ::ProtoBroadcastAck(m_szModuleName, hContact, type, hResult, hProcess, lParam); }
+
+	__forceinline int delSetting(const char *name) { return db_unset(NULL, m_szModuleName, name); }
+	__forceinline int delSetting(HANDLE hContact, const char *name) { return db_unset(hContact, m_szModuleName, name); }
+
+	__forceinline bool getBool(const char *name, bool defaultValue) { return ProtoGetBool0(this, name, defaultValue); }
+	__forceinline bool getBool(HANDLE hContact, const char *name, bool defaultValue) { return ProtoGetBool(this, hContact, name, defaultValue); }
+
+	__forceinline int getByte(const char *name, BYTE defaultValue) { return ProtoGetByte0(this, name, defaultValue); }
+	__forceinline int getByte(HANDLE hContact, const char *name, BYTE defaultValue) { return ProtoGetByte(this, hContact, name, defaultValue); }
+
+	__forceinline int getWord(const char *name, WORD defaultValue) { return ProtoGetWord0(this, name, defaultValue); }
+	__forceinline int getWord(HANDLE hContact, const char *name, WORD defaultValue) { return ProtoGetWord(this, hContact, name, defaultValue); }
+
+	__forceinline DWORD getDword(const char *name, DWORD defaultValue) { return ProtoGetDword0(this, name, defaultValue); }
+	__forceinline DWORD getDword(HANDLE hContact, const char *name, DWORD defaultValue) { return ProtoGetDword(this, hContact, name, defaultValue); }
+
+	__forceinline int getString(const char *name, DBVARIANT *result) { return ProtoGetString0(this, name, result); }
+	__forceinline int getString(HANDLE hContact, const char *name, DBVARIANT *result) { return ProtoGetString(this, hContact, name, result); }
+
+	__forceinline int getTString(const char *name, DBVARIANT *result) { return ProtoGetTString0(this, name, result); }
+	__forceinline int getTString(HANDLE hContact, const char *name, DBVARIANT *result) { return ProtoGetTString(this, hContact, name, result); }
+
+	__forceinline char* getStringA(const char *name) { return ProtoGetStringA0(this, name); }
+	__forceinline char* getStringA(HANDLE hContact, const char *name) { return ProtoGetStringA(this, hContact, name); }
+
+	__forceinline void setByte(const char *name, BYTE value) { ProtoSetByte0(this, name, value); }
+	__forceinline void setByte(HANDLE hContact, const char *name, BYTE value) { ProtoSetByte(this, hContact, name, value); }
+
+	__forceinline void setWord(const char *name, WORD value) { ProtoSetWord0(this, name, value); }
+	__forceinline void setWord(HANDLE hContact, const char *name, WORD value) { ProtoSetWord(this, hContact, name, value); }
+
+	__forceinline void setDword(const char *name, DWORD value) { ProtoSetDword0(this, name, value); }
+	__forceinline void setDword(HANDLE hContact, const char *name, DWORD value) { ProtoSetDword(this, hContact, name, value); }
+
+	__forceinline void setString(const char *name, const char* value) { ProtoSetString0(this, name, value); }
+	__forceinline void setString(HANDLE hContact, const char *name, const char* value) { ProtoSetString(this, hContact, name, value); }
+
+	__forceinline void setTString(const char *name, const TCHAR* value) { ProtoSetTString0(this, name, value); }
+	__forceinline void setTString(HANDLE hContact, const char *name, const TCHAR* value) { ProtoSetTString(this, hContact, name, value); }
+*)
+	//////////////////////////////////////////////////////////////////////////////////////
+	// Virtual functions
+
+    
     AddToList       :function(intf:PPROTO_INTERFACE;flags:int; var psr:TPROTOSEARCHRESULT):THANDLE; cdecl;
     AddToListByEvent:function(intf:PPROTO_INTERFACE;flags:int; iContact:int; hDbEvent:THANDLE):THANDLE; cdecl;
 

@@ -680,6 +680,106 @@ procedure ProtoConstructor(pThis:pointer{PPROTO_INTERFACE}; const pszModuleName:
 procedure ProtoDestructor(pThis:pointer{PPROTO_INTERFACE}); stdcall;
                  external CoreDLL name 'ProtoDestructor';
 
+{!!
+typedef void (__cdecl PROTO_INTERFACE::*ProtoThreadFunc)(void*);
+procedure   ProtoForkThread(PROTO_INTERFACE *pThis, ProtoThreadFunc, void *param);
+function ProtoForkThreadEx(PROTO_INTERFACE *pThis, ProtoThreadFunc, void *param, UINT* threadID):THANDLE;
+
+typedef int (__cdecl PROTO_INTERFACE::*ProtoEventFunc)(WPARAM, LPARAM);
+procedure   ProtoHookEvent(PROTO_INTERFACE *pThis, const char* szName, ProtoEventFunc pFunc);
+function ProtoCreateHookableEvent(PROTO_INTERFACE *pThis, const char* szService):THANDLE;
+
+typedef INT_PTR (__cdecl PROTO_INTERFACE::*ProtoServiceFunc)(WPARAM, LPARAM);
+procedure ProtoCreateService(PROTO_INTERFACE *pThis, const char* szService, ProtoServiceFunc);
+
+typedef INT_PTR (__cdecl PROTO_INTERFACE::*ProtoServiceFuncParam)(WPARAM, LPARAM, LPARAM);
+procedure ProtoCreateServiceParam(PROTO_INTERFACE *pThis, const char* szService, ProtoServiceFuncParam, LPARAM);
+}
+
+function ProtoGetBool0(pThis:pointer{PPROTO_INTERFACE};
+                       name:pAnsiChar; defaultValue:bool):bool; stdcall;
+                       external CoreDLL name 'ProtoGetBool0';
+function ProtoGetBool (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
+                       name:pAnsiChar; defaultValue:bool):bool; stdcall;
+                       external CoreDLL name 'ProtoGetBool';
+
+function ProtoGetByte0(pThis:pointer{PPROTO_INTERFACE};
+                       name:pAnsiChar; defaultValue:byte):int; stdcall;
+                       external CoreDLL name 'ProtoGetByte0';
+function ProtoGetByte (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
+                       name:pAnsiChar; defaultValue:byte):int; stdcall;
+                       external CoreDLL name 'ProtoGetByte';
+
+function ProtoGetWord0(pThis:pointer{PPROTO_INTERFACE};
+                       name:pAnsiChar; defaultValue:word):word; stdcall;
+                       external CoreDLL name 'ProtoGetWord0';
+function ProtoGetWord (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
+                       name:pAnsiChar; defaultValue:word):word; stdcall;
+                       external CoreDLL name 'ProtoGetWord';
+
+function ProtoGetDword0(pThis:pointer{PPROTO_INTERFACE};
+                        name:pAnsiChar; defaultValue:dword):dword; stdcall;
+                        external CoreDLL name 'ProtoGetDword0';
+function ProtoGetDword (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
+                        name:pAnsiChar; defaultValue:dword):dword; stdcall;
+                        external CoreDLL name 'ProtoGetDword';
+
+function ProtoGetString0(pThis:pointer{PPROTO_INTERFACE};
+                        name:pAnsiChar; result:PDBVARIANT):int; stdcall;
+                        external CoreDLL name 'ProtoGetString0';
+function ProtoGetString (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
+                        name:pAnsiChar; result:PDBVARIANT):int; stdcall;
+                        external CoreDLL name 'ProtoGetString';
+
+function ProtoGetTString0(pThis:pointer{PPROTO_INTERFACE};
+                          name:pAnsiChar; result:PDBVARIANT):int; stdcall;
+                          external CoreDLL name 'ProtoGetTString0';
+function ProtoGetTString (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
+                          name:pAnsiChar; result:PDBVARIANT):int; stdcall;
+                          external CoreDLL name 'ProtoGetTString';
+
+function ProtoGetStringA0(pThis:pointer{PPROTO_INTERFACE};
+                          setting:pAnsiChar):pAnsiChar; stdcall;
+                          external CoreDLL name 'ProtoGetStringA0';
+function ProtoGetStringA (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
+                          setting:pAnsiChar):pAnsiChar; stdcall;
+                          external CoreDLL name 'ProtoGetStringA';
+
+procedure ProtoSetByte0(pThis:pointer{PPROTO_INTERFACE};
+                        name:pAnsiChar; value:byte); stdcall;
+                        external CoreDLL name 'ProtoSetByte0';
+procedure ProtoSetByte (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
+                        name:pAnsiChar; value:byte); stdcall;
+                        external CoreDLL name 'ProtoSetByte';
+
+procedure ProtoSetWord0(pThis:pointer{PPROTO_INTERFACE};
+                        name:pAnsiChar; value:word); stdcall;
+                        external CoreDLL name 'ProtoSetWord0';
+procedure ProtoSetWord (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
+                        name:pAnsiChar; value:word); stdcall;
+                        external CoreDLL name 'ProtoSetWord';
+
+procedure ProtoSetDword0(pThis:pointer{PPROTO_INTERFACE};
+                         name:pAnsiChar; value:dword); stdcall;
+                         external CoreDLL name 'ProtoSetDword0';
+procedure ProtoSetDword (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
+                         name:pAnsiChar; value:dword); stdcall;
+                         external CoreDLL name 'ProtoSetDword';
+
+procedure ProtoSetString0(pThis:pointer{PPROTO_INTERFACE};
+                         name:pAnsiChar; value:pAnsiChar); stdcall;
+                         external CoreDLL name 'ProtoSetString0';
+procedure ProtoSetString (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
+                         name:pAnsiChar; value:pAnsiChar); stdcall;
+                         external CoreDLL name 'ProtoSetString';
+
+procedure ProtoSetTString0(pThis:pointer{PPROTO_INTERFACE};
+                           name:pAnsiChar; value:pWideChar); stdcall;
+                           external CoreDLL name 'ProtoSetTString0';
+procedure ProtoSetTString (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
+                           name:pAnsiChar; value:pWideChar); stdcall;
+                           external CoreDLL name 'ProtoSetTString';
+
 ///////////////////////////////////////////////////////////////////////////////
 // sha1 functions
 type

@@ -191,6 +191,7 @@ begin
     // edit field is text from list
     if StrCmp(pc,@buf)=0 then
     begin
+      mFreeMem(pc);
       result:=HashToName(CB_GetData(cb,idx));
       exit;
     end;
