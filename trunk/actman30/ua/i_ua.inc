@@ -203,19 +203,17 @@ begin
   if count>0 then
     CallService(MS_ACT_FREELIST,0,TLPARAM(ptr1));
 
+  // show changes in dialog
   if settings<>0 then
   begin
     FillActionList(settings);
     ShowAction(settings,-1);
-    SendMessage(GetParent(settings),PSM_CHANGED,0,0);
-  end
-  else
+  end;
+
+  SaveUAs;
+  FillChar(arMenuRec[0],Length(arMenuRec)*SizeOf(tuaMenuRecA),0);
+  for i:=0 to HIGH(UActionList) do
   begin
-    SaveUAs;
-    FillChar(arMenuRec[0],Length(arMenuRec)*SizeOf(tuaMenuRecA),0);
-    for i:=0 to HIGH(UActionList) do
-    begin
-      SetAllActionUsers(UActionList[i],false);
-    end;
+    SetAllActionUsers(UActionList[i],false);
   end;
 end;
