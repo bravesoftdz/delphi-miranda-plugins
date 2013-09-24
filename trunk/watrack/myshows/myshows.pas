@@ -111,7 +111,7 @@ begin
       begin
         if pSongInfo(lParam).width>0 then // for video only
         begin
-          if ServiceExists(MS_JSON_GETINTERFACE)<>0 then
+//!!          if ServiceExists(MS_JSON_GETINTERFACE)<>0 then
           begin
             timervalue:=integer(pSongInfo(lParam).total)*10*msh_scrobpos; // 1000(msec) div 100(%)
             if timervalue=0 then

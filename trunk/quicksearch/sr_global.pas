@@ -681,7 +681,7 @@ begin
     qsopt.savepattern     :=GetBool(so_savepattern     ,true);
     qsopt.colorize        :=GetBool(so_colorize        ,true);
 
-    if ServiceExists(MS_FP_GETCLIENTICON)<>0 then
+    if ServiceExists(MS_FP_GETCLIENTICONW)<>0 then
       qsopt.showclienticons:=GetBool(so_showclienticons,true)
     else
       qsopt.showclienticons:=false;

@@ -391,7 +391,7 @@ begin
   odp.hInstance  :=hInstance;
   odp.szTitle.a  :=PluginName;
 
-  odp.szGroup.a  :='PopUps';
+  odp.szGroup.a  :='Popups';
   odp.pszTemplate:=DLGPOPUP;
   odp.pfnDlgProc :=@DlgPopUpOpt;
   CallService(MS_OPT_ADDPAGE,wParam,tlparam(@odp));
@@ -590,7 +590,7 @@ begin
   Popup.DeInit    :=@DeInitProc;
   Popup.AddOption :=nil;
   Popup.Check     :=@CheckProc;
-  Popup.ModuleName:='PopUps';
+  Popup.ModuleName:='Popups';
   ModuleLink      :=@Popup;
 end;
 

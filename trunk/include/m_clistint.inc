@@ -255,6 +255,7 @@ const
   CLCDEFAULT_FULLGREYOUTFLAGS  = MODEF_OFFLINE or PF2_INVISIBLE or GREYF_UNFOCUS;
   CLCDEFAULT_QUICKSEARCHCOLOUR = $0000FFFF; //RGB(255,255,0);
   CLCDEFAULT_LEFTMARGIN        = 0;
+  CLCDEFAULT_RIGHTMARGIN       = 2;
   CLCDEFAULT_GAMMACORRECT      = 1;
   CLCDEFAULT_SHOWIDLE          = 1;
   CLCDEFAULT_USEWINDOWSCOLOURS = 0;
@@ -539,14 +540,15 @@ type
 	(*************************************************************************************
 	 * version 7 additions (0.11.0.x) - extra images
 	 *************************************************************************************)
-    pfnReloadExtraIcons: procedure;
-    pfnSetAllExtraIcons: procedure(hwndList:HWND; hContact:THANDLE);
+    pfnReloadExtraIcons: procedure; cdecl;
+    pfnSetAllExtraIcons: procedure(hwndList:HWND; hContact:THANDLE); cdecl;
 
 	(*************************************************************************************
 	 * Miranda NG additions
 	 *************************************************************************************)
 
-	  pfnGetContactIcon: function(hContact:THANDLE):int;
+	  pfnGetContactIcon: function(hContact:THANDLE):int; cdecl;
+	  pfnTrayCalcChanged:function(szChangedProto:pAnsiChar; averageMode:int; iProtoCount:int):int; cdecl;
   end;
 
 {
@@ -600,6 +602,7 @@ begin
     result:=RGB(0,0,255)
   else
 }
-    result:=GetSysColor(COLOR_HOTLIGHT);
+//    result:=GetSysColor(COLOR_HOTLIGHT);
+  result:=RGB(0,0,255)
 end;
 {$ENDIF}

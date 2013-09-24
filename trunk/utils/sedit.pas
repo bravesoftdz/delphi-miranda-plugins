@@ -42,7 +42,9 @@ const
   col_data =4;
 var
   OldLVProc:pointer;
+{$IFDEF Miranda}
   storage:pointer;
+{$ENDIF}
 
 function GetTypeIndex(etype:integer):integer;
 var

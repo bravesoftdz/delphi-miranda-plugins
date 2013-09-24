@@ -562,31 +562,37 @@ procedure List_ObjCopy(src:PSortedList; dst:PSortedList; size:size_t); stdcall;
 
 
 ///////////////////////////////////////////////////////////////////////////////
+// logging functions
+
+function mir_createLog(pszName:PAnsiChar; ptszDescr, ptszFile:PWideChar; options:Cardinal):THandle;stdcall;
+                 external CoreDLL name 'mir_createLog';
+
+function mir_writeLogA(hLog:THandle; format:PAnsiChar):int;cdecl;
+                 external CoreDLL name 'mir_writeLogA';
+function mir_writeLogW(hLog:THandle; format:PWideChar):int;cdecl;
+                 external CoreDLL name 'mir_writeLogW';
+
+///////////////////////////////////////////////////////////////////////////////
 // md5 functions
 
 // Define the state of the MD5 Algorithm.
 type
-  pmir_md5_byte_t = ^mir_md5_byte_t;
-  pmir_md5_word_t = ^mir_md5_word_t;
-  mir_md5_byte_t = byte;     // 8-bit byte
-  mir_md5_word_t = cardinal; // 32-bit word
-
   pmir_md5_state_t = ^mir_md5_state_t;
   mir_md5_state_t = record
-    count:array [0.. 1] of mir_md5_word_t; // message length in bits, lsw first
-    abcd :array [0.. 3] of mir_md5_word_t; // digest buffer
-    buf  :array [0..63] of mir_md5_byte_t; // accumulate block
+    count:array [0.. 1] of cardinal; // message length in bits, lsw first
+    abcd :array [0.. 3] of cardinal; // digest buffer
+    buf  :array [0..63] of byte;     // accumulate block
   end;
 
-  TMD5Hash = array [0..15] of mir_md5_byte_t;
+  TMD5Hash = array [0..15] of byte;
 
 procedure mir_md5_init(pms:pmir_md5_state_t); stdcall;
                        external CoreDLL name 'mir_md5_init';
-procedure mir_md5_append(pms:pmir_md5_state_t; const data:pmir_md5_byte_t; nbytes:int); stdcall;
+procedure mir_md5_append(pms:pmir_md5_state_t; const data:byte; nbytes:int); stdcall;
                          external CoreDLL name 'mir_md5_append';
 procedure mir_md5_finish(pms:pmir_md5_state_t; digest:TMD5Hash); stdcall;
                          external CoreDLL name 'mir_md5_finish';
-procedure mir_md5_hash(const data:pmir_md5_byte_t; len:int; digest:TMD5Hash); stdcall;
+procedure mir_md5_hash(const data:byte; len:int; digest:TMD5Hash); stdcall;
                        external CoreDLL name 'mir_md5_hash';
 
 
@@ -650,12 +656,12 @@ function PathToRelativeW(const pSrc:pWideChar; pOut:pWideChar):int; stdcall;
 
 function mir_snprintf(buffer:pAnsiChar;count:size_t;fmt:pAnsiChar{, ...}):int; stdcall;
                       external CoreDLL name 'mir_snprintf';
-function mir_sntprintf(buffer:pWideChar;count:size_t;fmt:pWideChar{, ...}):int; stdcall;
-                       external CoreDLL name 'mir_sntprintf';
+function mir_snwprintf(buffer:pWideChar;count:size_t;fmt:pWideChar{, ...}):int; stdcall;
+                       external CoreDLL name 'mir_snwprintf';
 function mir_vsnprintf(buffer:pAnsiChar;count:size_t;fmt:pAnsiChar;va:va_list):int; stdcall;
                        external CoreDLL name 'mir_vsnprintf';
-function mir_vsntprintf(buffer:pWideChar;count:size_t;fmt:pWideChar;va:va_list):int; stdcall;
-                        external CoreDLL name 'mir_vsntprintf';
+function mir_vsnwprintf(buffer:pWideChar;count:size_t;fmt:pWideChar;va:va_list):int; stdcall;
+                        external CoreDLL name 'mir_vsnwprintf';
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -696,97 +702,27 @@ typedef INT_PTR (__cdecl PROTO_INTERFACE::*ProtoServiceFuncParam)(WPARAM, LPARAM
 procedure ProtoCreateServiceParam(PROTO_INTERFACE *pThis, const char* szService, ProtoServiceFuncParam, LPARAM);
 }
 
-function ProtoGetBool0(pThis:pointer{PPROTO_INTERFACE};
-                       name:pAnsiChar; defaultValue:bool):bool; stdcall;
-                       external CoreDLL name 'ProtoGetBool0';
-function ProtoGetBool (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
-                       name:pAnsiChar; defaultValue:bool):bool; stdcall;
-                       external CoreDLL name 'ProtoGetBool';
 
-function ProtoGetByte0(pThis:pointer{PPROTO_INTERFACE};
-                       name:pAnsiChar; defaultValue:byte):int; stdcall;
-                       external CoreDLL name 'ProtoGetByte0';
-function ProtoGetByte (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
-                       name:pAnsiChar; defaultValue:byte):int; stdcall;
-                       external CoreDLL name 'ProtoGetByte';
+// returns image extension by a PA_* constant or empty string for PA_FORMAT_UNKNOWN
+function ProtoGetAvatarExtension(format:int):PWideChar; stdcall;
+                 external CoreDLL name 'ProtoGetAvatarExtension';
 
-function ProtoGetWord0(pThis:pointer{PPROTO_INTERFACE};
-                       name:pAnsiChar; defaultValue:word):word; stdcall;
-                       external CoreDLL name 'ProtoGetWord0';
-function ProtoGetWord (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
-                       name:pAnsiChar; defaultValue:word):word; stdcall;
-                       external CoreDLL name 'ProtoGetWord';
+// detects image format by extension
+function ProtoGetAvatarFormat(const szFileName:PWideChar):int; stdcall;
+                 external CoreDLL name 'ProtoGetAvatarFormat';
 
-function ProtoGetDword0(pThis:pointer{PPROTO_INTERFACE};
-                        name:pAnsiChar; defaultValue:dword):dword; stdcall;
-                        external CoreDLL name 'ProtoGetDword0';
-function ProtoGetDword (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
-                        name:pAnsiChar; defaultValue:dword):dword; stdcall;
-                        external CoreDLL name 'ProtoGetDword';
+// detects image format by its contents
+function ProtoGetAvatarFileFormat(const szFileName:PWideChar):int; stdcall;
+                 external CoreDLL name 'ProtoGetAvatarFileFormat';
 
-function ProtoGetString0(pThis:pointer{PPROTO_INTERFACE};
-                        name:pAnsiChar; result:PDBVARIANT):int; stdcall;
-                        external CoreDLL name 'ProtoGetString0';
-function ProtoGetString (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
-                        name:pAnsiChar; result:PDBVARIANT):int; stdcall;
-                        external CoreDLL name 'ProtoGetString';
+// returns the image format and extension by the first bytes of picture
+// ptszExtension might be NULL
+function ProtoGetBufferFormat(const buf:PByte; var ext:PWideChar):int; stdcall;
+                 external CoreDLL name 'ProtoGetBufferFormat';
 
-function ProtoGetTString0(pThis:pointer{PPROTO_INTERFACE};
-                          name:pAnsiChar; result:PDBVARIANT):int; stdcall;
-                          external CoreDLL name 'ProtoGetTString0';
-function ProtoGetTString (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
-                          name:pAnsiChar; result:PDBVARIANT):int; stdcall;
-                          external CoreDLL name 'ProtoGetTString';
-
-function ProtoGetStringA0(pThis:pointer{PPROTO_INTERFACE};
-                          setting:pAnsiChar):pAnsiChar; stdcall;
-                          external CoreDLL name 'ProtoGetStringA0';
-function ProtoGetStringA (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
-                          setting:pAnsiChar):pAnsiChar; stdcall;
-                          external CoreDLL name 'ProtoGetStringA';
-
-procedure ProtoSetByte0(pThis:pointer{PPROTO_INTERFACE};
-                        name:pAnsiChar; value:byte); stdcall;
-                        external CoreDLL name 'ProtoSetByte0';
-procedure ProtoSetByte (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
-                        name:pAnsiChar; value:byte); stdcall;
-                        external CoreDLL name 'ProtoSetByte';
-
-procedure ProtoSetWord0(pThis:pointer{PPROTO_INTERFACE};
-                        name:pAnsiChar; value:word); stdcall;
-                        external CoreDLL name 'ProtoSetWord0';
-procedure ProtoSetWord (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
-                        name:pAnsiChar; value:word); stdcall;
-                        external CoreDLL name 'ProtoSetWord';
-
-procedure ProtoSetDword0(pThis:pointer{PPROTO_INTERFACE};
-                         name:pAnsiChar; value:dword); stdcall;
-                         external CoreDLL name 'ProtoSetDword0';
-procedure ProtoSetDword (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
-                         name:pAnsiChar; value:dword); stdcall;
-                         external CoreDLL name 'ProtoSetDword';
-
-procedure ProtoSetString0(pThis:pointer{PPROTO_INTERFACE};
-                         name:pAnsiChar; value:pAnsiChar); stdcall;
-                         external CoreDLL name 'ProtoSetString0';
-procedure ProtoSetString (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
-                         name:pAnsiChar; value:pAnsiChar); stdcall;
-                         external CoreDLL name 'ProtoSetString';
-
-procedure ProtoSetTString0(pThis:pointer{PPROTO_INTERFACE};
-                           name:pAnsiChar; value:pWideChar); stdcall;
-                           external CoreDLL name 'ProtoSetTString0';
-procedure ProtoSetTString (pThis:pointer{PPROTO_INTERFACE}; hContact:THANDLE;
-                           name:pAnsiChar; value:pWideChar); stdcall;
-                           external CoreDLL name 'ProtoSetTString';
 
 ///////////////////////////////////////////////////////////////////////////////
 // sha1 functions
-type
-  pmir_sha1_byte_t = ^mir_sha1_byte_t;
-  pmir_sha1_long_t = ^mir_sha1_long_t;
-  mir_sha1_byte_t = byte;
-  mir_sha1_long_t = longword;
 
 const
   MIR_SHA1_HASH_SIZE = 20;
@@ -794,22 +730,26 @@ const
 type
   pmir_sha1_ctx = ^mir_sha1_ctx;
   mir_sha1_ctx = record
-    H:array [0.. 4] of mir_sha1_long_t;
-    W:array [0..79] of mir_sha1_long_t;
+    H:array [0.. 4] of longword;
+    W:array [0..79] of longword;
     lenW:int;
-    sizeHi,sizeLo:mir_sha1_long_t;
+    sizeHi,sizeLo:longword;
   end;
 
-  SHA1Hash = array [0..MIR_SHA1_HASH_SIZE-1] of mir_sha1_byte_t;
+  SHA1Hash = array [0..MIR_SHA1_HASH_SIZE-1] of byte;
 
 procedure mir_sha1_init(ctx:pmir_sha1_ctx); stdcall;
                         external CoreDLL name 'mir_sha1_init';
-procedure mir_sha1_append(ctx:pmir_sha1_ctx; dataIn:pmir_sha1_byte_t; len:int); stdcall;
+procedure mir_sha1_append(ctx:pmir_sha1_ctx; dataIn:pbyte; len:int); stdcall;
                           external CoreDLL name 'mir_sha1_append';
 procedure mir_sha1_finish(ctx:pmir_sha1_ctx; hashout:SHA1Hash); stdcall;
                           external CoreDLL name 'mir_sha1_finish';
-procedure mir_sha1_hash(dataIn:pmir_sha1_byte_t; len:int;hashout:SHA1Hash); stdcall;
+procedure mir_sha1_hash(dataIn:pbyte; len:int;hashout:SHA1Hash); stdcall;
                         external CoreDLL name 'mir_sha1_hash';
+
+procedure mir_hmac_sha1(hashout:SHA1Hash; const key:pbyte; keyLen:size_t;
+                        const dataIn:pbyte; dataLen:size_t); stdcall;
+                 external CoreDLL name 'mir_hmac_sha1';
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -819,6 +759,8 @@ function mir_base64_decode(str:pAnsiChar; var resultSize:int):pByte; stdcall;
                external CoreDLL name 'mir_base64_decode';
 function mir_base64_encode(str:pAnsiChar; dataSize:int):pAnsiChar; stdcall;
                external CoreDLL name 'mir_base64_encode';
+function mir_base64_encodebuf(data:PByte; dataSize:int; output:pAnsiChar; outputLen:int):pAnsiChar; stdcall;
+               external CoreDLL name 'mir_base64_encodebuf';
 
 function rtrim(str:pAnsiChar):pAnsiChar; stdcall;
                external CoreDLL name 'rtrim';
@@ -852,6 +794,13 @@ function replaceStr(var dest:pAnsiChar; const src:pAnsiChar):pAnsiChar; stdcall;
                  external CoreDLL name 'replaceStr';
 function replaceStrW(var dest:pWideChar; const src:pWideChar):pWideChar; stdcall;
                  external CoreDLL name 'replaceStrW';
+
+function bin2hex(data:pointer; dataLen:size_t; pDest:pAnsiChar):pAnsiChar; stdcall;
+                 external CoreDLL name 'bin2hex';
+function bin2hexW(data:pointer; dataLen:size_t; pDest:pWideChar):pWideChar; stdcall;
+                 external CoreDLL name 'bin2hexW';
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // text conversion functions
 
@@ -955,7 +904,12 @@ procedure KillModuleSubclassing(hInst: HMODULE);
 
 ///////////////////////////////////////////////////////////////////////////////
 
+function IsWinVerVistaPlus():bool; stdcall;
+         external CoreDLL name 'IsWinVerVistaPlus';
+function IsWinVer7Plus():bool; stdcall;
+         external CoreDLL name 'IsWinVer7Plus';
+
 procedure UnloadCoreModule(); stdcall;
-                           external CoreDLL name 'UnloadCoreModule';
+          external CoreDLL name 'UnloadCoreModule';
 
 {$ENDIF}

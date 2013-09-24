@@ -223,10 +223,12 @@ type
 
   PPROTORECVEVENT = ^TPROTORECVEVENT;
   TPROTORECVEVENT = record
-    flags    : DWORD;
-    timestamp: DWORD;
-    szMessage: TChar;
-    lParam   : LPARAM;
+    flags           : DWORD;
+    timestamp       : DWORD;
+    szMessage       : TChar;
+    lParam          : LPARAM;
+    pCustomData     : pointer;
+    cbCustomDataSize: DWORD;
   end;
 
   PPROTORECVFILE = ^TPROTORECVFILE;

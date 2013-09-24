@@ -305,8 +305,9 @@ var
   tmp:pWideChar;
 begin
   mGetMem(tmp,(StrLen(sz)+1)*SizeOf(WideChar));
-  Result:=PWideChar(CallService(MS_LANGPACK_TRANSLATESTRING,LANG_UNICODE,
-          lParam(FastAnsiToWideBuf(sz,tmp))));
+//  Result:=PWideChar(CallService(MS_LANGPACK_TRANSLATESTRING,LANG_UNICODE,
+//          lParam(FastAnsiToWideBuf(sz,tmp))));
+  Result:=TranslateW(FastAnsiToWideBuf(sz,tmp));
   if Result<>tmp then
   begin
     StrDupW(Result,Result);

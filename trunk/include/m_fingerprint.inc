@@ -40,7 +40,7 @@ const
   lParam - TChar second MirVer value 
   return pointer to AnsiChar string - client desription (DO NOT DESTROY) if clients are same otherwise NULL
 }
-  MS_FP_SAMECLIENTS :PAnsiChar = 'Fingerprint/SameClients';
+//  MS_FP_SAMECLIENTS :PAnsiChar = 'Fingerprint/SameClients';
   MS_FP_SAMECLIENTSW:PAnsiChar = 'Fingerprint/SameClientsW';
 
 {
@@ -48,16 +48,16 @@ const
   wParam - TChar MirVer value to get client for.
   lParam - int noCopy - if wParam is equal to "1"  will return icon handler without copiing icon.
 }
-  MS_FP_GETCLIENTICON :PAnsiChar = 'Fingerprint/GetClientIcon';
+//  MS_FP_GETCLIENTICON :PAnsiChar = 'Fingerprint/GetClientIcon';
   MS_FP_GETCLIENTICONW:PAnsiChar = 'Fingerprint/GetClientIconW';
 
-// Plugin UUIDs for New plugin loader
-// req. 0.7.18+ core
-const MIID_FINGERPRINT         :MUUID='{FFF4B77A-CE40-11DB-A5CD-06A755D89593}';
-const MIID_FINGERPRINT_MOD     :MUUID='{BAC0BBBE-CE40-11DB-A11E-72A655D89593}';
-const MIID_FINGERPRINT_FULL    :MUUID='{0AFE5BBB-CE62-11DB-8314-0800200C9A66}';
-const MIID_FINGERPRINT_STANDARD:MUUID='{0AFE5ABC-CE62-11DB-8314-0800200C9A66}';
-const MIID_FINGERPRINT_LITE    :MUUID='{0AFE5DEF-CE62-11DB-8314-0800200C9A66}';
-const MIID_FINGERPRINT_CUSTOM  :MUUID='{0AFE5BAD-CE62-11DB-8314-0800200C9A66}';
+{
+  Service GetClientDescrW MS_FP_GETCLIENTDESCRW
+  wParam - LPCWSTR MirVer value to get client for.
+  lParam - NULL (unused)
+  returns LPCWSTR: client description (DO NOT DESTROY) otherwise NULL
+}
+  MS_FP_GETCLIENTDESCRW:PAnsiChar = 'Fingerprint/GetClientDescrW';
+
 
 {$ENDIF}
