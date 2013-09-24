@@ -1884,6 +1884,7 @@ var
   rc:TRECT;
   h:HICON;
   buf:array [0..255] of AnsiChar;
+  MirVerW:pWideChar;
   i,j,sub:integer;
 begin
   lplvcd:=pointer(lParam);
@@ -1946,13 +1947,12 @@ begin
       if (qsopt.columns[sub].flags and COL_CLIENT)<>0 then
       begin
         i:=LV_GetLParam(grid,lplvcd^.nmcd.dwItemSpec);
-        FastWideToAnsiBuf(MainBuf[i,sub].text,buf);
+        MirVerW:=MainBuf[i,sub].text;
         
-//        ListView_GetItemTextA(grid,lplvcd^.nmcd.dwItemSpec,lplvcd^.iSubItem,buf,SizeOf(buf));
 //!!
-        if (buf[0]<>#0) and (ServiceExists(MS_FP_GETCLIENTICON)<>0) then
+        if (MirVerW<>nil) and (MirVerW[0]<>#0) and (ServiceExists(MS_FP_GETCLIENTICONW)<>0) then
         begin
-          h:=CallService(MS_FP_GETCLIENTICON,tlparam(@buf),0);
+          h:=CallService(MS_FP_GETCLIENTICONW,tlparam(MirVerW),0);
           ListView_GetSubItemRect(grid,lplvcd^.nmcd.dwItemSpec,lplvcd^.iSubItem,LVIR_ICON,@rc);
           DrawIconEx(lplvcd^.nmcd.hdc,rc.left+1,rc.top,h,16,16,0,0,DI_NORMAL);
           DestroyIcon(h);
@@ -2184,7 +2184,7 @@ begin
     else if (wparam.a<>NIL) and // FingerPrint preprocess
        (setting_type=ST_STRING) and
        (lstrcmpia(wparam.a,'MirVer')=0) and
-       (ServiceExists(MS_FP_GETCLIENTICON)<>0) then
+       (ServiceExists(MS_FP_GETCLIENTICONW)<>0) then
       flags:=flags or COL_CLIENT;
   end;
 end;
@@ -2298,7 +2298,9 @@ begin
       grid:=0;
 
       if qsopt.savepattern then
+      begin
         DBWriteUnicode(0,qs_module,'pattern',pattern);
+      end;
 
       mFreeMem(patstr);
       mFreeMem(pattern);

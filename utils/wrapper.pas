@@ -456,6 +456,11 @@ function ShowDlg(dst:PAnsiChar;fname:PAnsiChar=nil;Filter:PAnsiChar=nil;open:boo
 var
   NameRec:OpenFileNameA;
 begin
+  if dst=nil then
+  begin
+    result:=false;
+    exit;
+  end;
   FillChar(NameRec,SizeOf(NameRec),0);
   with NameRec do
   begin
@@ -485,6 +490,11 @@ function ShowDlgW(dst:PWideChar;fname:PWideChar=nil;Filter:PWideChar=nil;open:bo
 var
   NameRec:OpenFileNameW;
 begin
+  if dst=nil then
+  begin
+    result:=false;
+    exit;
+  end;
   FillChar(NameRec,SizeOf(NameRec),0);
   with NameRec do
   begin

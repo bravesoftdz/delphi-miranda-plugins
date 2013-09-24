@@ -156,7 +156,6 @@ var
   res,pc:PAnsiChar;
   {img,}shId,epId:pAnsiChar;
 //  imgw:pWideChar;
-  json:TJSONSERVICEINTERFACE;
   jn,jroot:PJSONNODE;
 begin
   result:=false;
@@ -171,15 +170,13 @@ begin
   res:=SendRequest(buf,REQUEST_GET);
   if uint_ptr(res)>$0FFF then
   begin
-    CallService(MS_JSON_GETINTERFACE,wparam(@json),0);
+    jroot:=json_parse(res);
 
-    jroot:=json.parse(res);
+    jn:=json_get(jroot,'show');
+    shId:=json_as_string(json_get(jn,'id'));
 
-    jn:=json.get(jroot,'show');
-    shId:=json.as_string(json.get(jn,'id'));
-
-    jn:=json.get(jn,'episodes');
-    epId:=json.name(json.at(jn,0));
+    jn:=json_get(jn,'episodes');
+    epId:=json_name(json_at(jn,0));
 {
 kinopoiskId
 image
@@ -206,24 +203,24 @@ episodes:{:{id:
 {
       if si.cover=nil then
       begin
-        jn:=json.get(jroot,'show');
-        img:=json.as_string(json.get(jn,'image'));
+        jn:=json_get(jroot,'show');
+        img:=json_as_string(json_get(jn,'image'));
         si:=pointer(CallService(MS_WAT_RETURNGLOBAL,WAT_INF_UNICODE,0));
         FastAnsiToWide(img,pSongInfoW(si)^.cover);
-        json.free(img);
+        json_free(img);
       end;
 }        
       //!! add option to show it??
       if ServiceExists(MS_POPUP_SHOWMESSAGE)<>0 then
       begin
-        json.free(shId);
-        json.free(epId);
+        json_free(shId);
+        json_free(epId);
 
-        jn:=json.get(jroot,'show');
-        shId:=json.as_string(json.get(jn,'title'));
+        jn:=json_get(jroot,'show');
+        shId:=json_as_string(json_get(jn,'title'));
 
-        jn:=json.get(jn,'episodes');
-        epId:=json.as_string(json.get(jn,'title'));
+        jn:=json_get(jn,'episodes');
+        epId:=json_as_string(json_get(jn,'title'));
 
         StrCopy(
           StrCopyE(
@@ -239,9 +236,9 @@ episodes:{:{id:
       result:=true;
     end;
   end;
-  json.free(shId);
-  json.free(epId);
+  json_free(shId);
+  json_free(epId);
 
-  json.delete_(jroot);
+  json_delete(jroot);
 end;
 
