@@ -425,4 +425,73 @@ begin
   end;
 end;
 }
+
+//----- DLL Handle Cache -----
+type
+  tDLLCacheElement = record
+    DLLName  :PAnsiChar;
+    DLLHandle:THANDLE;
+    count    :word; // count for end-of-macro flag
+    flags    :byte; // handle free mode
+  end;
+  tDLLCache = array of tDLLCacheElement;
+
+const
+  actDLLCache: tDLLCache = nil;
+
+function GetDllHandle(dllname:pAnsiChar;mode:dword=0):THANDLE;
+var
+  i:integer;
+begin
+  result:=LoadLibraryA(dllname);
+exit;
+  i:=0;
+  while i<=HIGH(actDLLCache) do
+  begin
+    if StrCmp(actDLLCache[i].DllName,dllname)=0 then
+    begin
+      result:=actDLLCache[i].DllHandle;
+      // check mode
+      exit;
+    end;
+    inc(i);
+  end;
+  result:=LoadLibraryA(dllname);
+  // check mode
+  SetLength(actDLLCache,i);
+  StrDup(actDLLCache[i].DllName,dllname);
+  actDLLCache[i].DllHandle:=result;
+//  actDLLCache.flags:=;
+end;
+
+procedure CloseDllHandle(handle:THANDLE);
+var
+  i:integer;
+begin
+  FreeLibrary(handle);
+exit;
+  i:=0;
+  while i<=HIGH(actDLLCache) do
+  begin
+    if actDLLCache[i].DllHandle=handle then
+    begin
+      // check mode
+      FreeLibrary(actDLLCache[i].DllHandle);
+      exit;
+    end;
+    inc(i);
+  end;
+  FreeLibrary(handle);
+end;
+
+procedure FreeDllHandleCache;
+var
+  i:integer;
+begin
+  i:=0;
+  while i<=HIGH(actDLLCache) do
+  begin
+  end;
+end;
+
 end.
