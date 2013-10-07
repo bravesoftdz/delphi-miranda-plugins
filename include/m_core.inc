@@ -588,11 +588,11 @@ type
 
 procedure mir_md5_init(pms:pmir_md5_state_t); stdcall;
                        external CoreDLL name 'mir_md5_init';
-procedure mir_md5_append(pms:pmir_md5_state_t; const data:byte; nbytes:int); stdcall;
+procedure mir_md5_append(pms:pmir_md5_state_t; const data:pbyte; nbytes:int); stdcall;
                          external CoreDLL name 'mir_md5_append';
 procedure mir_md5_finish(pms:pmir_md5_state_t; digest:TMD5Hash); stdcall;
                          external CoreDLL name 'mir_md5_finish';
-procedure mir_md5_hash(const data:byte; len:int; digest:TMD5Hash); stdcall;
+procedure mir_md5_hash(const data:pbyte; len:int; digest:TMD5Hash); stdcall;
                        external CoreDLL name 'mir_md5_hash';
 
 
@@ -905,9 +905,15 @@ procedure KillModuleSubclassing(hInst: HMODULE);
 ///////////////////////////////////////////////////////////////////////////////
 
 function IsWinVerVistaPlus():bool; stdcall;
-         external CoreDLL name 'IsWinVerVistaPlus';
+                 external CoreDLL name 'IsWinVerVistaPlus';
 function IsWinVer7Plus():bool; stdcall;
-         external CoreDLL name 'IsWinVer7Plus';
+                 external CoreDLL name 'IsWinVer7Plus';
+function IsFullScreen():int; stdcall;
+                 external CoreDLL name 'IsFullScreen';
+function IsWorkstationLocked():int; stdcall;
+                 external CoreDLL name 'IsWorkstationLocked';
+function IsScreenSaverRunning():int; stdcall;
+                 external CoreDLL name 'IsScreenSaverRunning';
 
 procedure UnloadCoreModule(); stdcall;
           external CoreDLL name 'UnloadCoreModule';

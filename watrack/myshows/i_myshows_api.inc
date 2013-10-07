@@ -68,7 +68,7 @@ function GetMD5(const data;datalen:integer;var digest:TMD5Hash):TMD5Hash;
 begin
   FillChar(digest,16,0);
 
-  mir_md5_hash(pmir_md5_byte_t(data),datalen,digest);
+  mir_md5_hash(pbyte(data),datalen,digest);
 
   result:=digest;
 end;
@@ -154,7 +154,8 @@ var
   buf:array [0..511] of AnsiChar;
 //  bufw:array [0..511] of WideChar;
   res,pc:PAnsiChar;
-  {img,}shId,epId:pAnsiChar;
+  {img,}epId:pAnsiChar;
+  shId:pWideChar;
 //  imgw:pWideChar;
   jn,jroot:PJSONNODE;
 begin
@@ -177,12 +178,6 @@ begin
 
     jn:=json_get(jn,'episodes');
     epId:=json_name(json_at(jn,0));
-{
-kinopoiskId
-image
-ruTitle
-episodes:{:{id:
-}
   end
   else
   begin
@@ -192,7 +187,9 @@ episodes:{:{id:
   end;
 
   // Show mark as "watching"
-  StrCopy(StrCopyE(StrCopyE(buf,API_URL+'profile/shows/'),shId),'/watching');
+  pc:=StrCopyE(buf,API_URL+'profile/shows/');
+  FastWideToAnsiBuf(shId,pc);
+  StrCat(pc,'/watching');
   if SendMSRequest(buf,show) then
   begin
     // Episode check
@@ -220,18 +217,20 @@ episodes:{:{id:
         shId:=json_as_string(json_get(jn,'title'));
 
         jn:=json_get(jn,'episodes');
-        epId:=json_as_string(json_get(jn,'title'));
+        pWideChar(epId):=json_as_string(json_get(jn,'title'));
 
-        StrCopy(
-          StrCopyE(
-            StrCopyE(
-              StrCopyE(
-                StrCopyE(buf,'Show "'),
+        mGetMem(pc,1024);
+        StrCopyW(
+          StrCopyEW(
+            StrCopyEW(
+              StrCopyEW(
+                StrCopyEW(pWideChar(pc),'Show "'),
               shId),
             '"'#13#10'episode "'),
-          epId),
+          pWideChar(epId)),
         '" checked');
-        CallService(MS_POPUP_SHOWMESSAGE,TWPARAM(@buf),SM_NOTIFY);
+        CallService(MS_POPUP_SHOWMESSAGEW,TWPARAM(pc),SM_NOTIFY);
+        mFreeMem(pc);
       end;
       result:=true;
     end;

@@ -294,8 +294,6 @@ const
     Returns: 0 on success, [non zero] on failure
     Notes  : This service is not available unless PF1_MODEMSGSEND is set,
              and PF1_INDIVMODEMSG is *not* set.
-             If PF1_INDIVMODEMSG is set, then see PSS_AWAYMSSG for details
-             of operations of away messages.
              -
              Protocol modules smust support lParam=NULL, it may eithere mean
              to use an empty message or (preferably) not to reply at all to
@@ -775,22 +773,6 @@ const
              lParam=pointer to a null terminated string the containing message
   }
   PSS_GETAWAYMSG = '/GetAwayMsg';
-
-  {
-    CCSDATA: Yes
-    wParam : hProcess
-    lParam : pointer to a buffer to fill with away message to reply with
-    Affect : Sends an away message reply to a user, see notes
-    Returns: 0 on success, [non zero] on failure
-    Notes  : This service must only be called is caps has PF1_MODEMSGSEND set
-             as well as PF1_INDIVMODEMSG otherwise PS_SETAWAYMESSAGE should
-             be used.
-             -
-             Reply will be sent in the form of an ack :
-
-             type=ACKTYPE_AWAYMSG, result=ACKRESULT_SENTREQUEST, lParam=0
-  }
-  PSS_AWAYMSG = '/SendAwayMsg';
 
   {
     CCSDATA: Yes

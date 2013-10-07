@@ -34,7 +34,7 @@ procedure json_delete(node:PJSONNODE); stdcall;
 
 function json_parse(json:pAnsiChar):PJSONNODE; stdcall;
           external CoreDLL name 'json_parse';
-function json_strip_white_space(json:pAnsiChar):pAnsiChar; stdcall;
+function json_strip_white_space(json:pAnsiChar):pWideChar; stdcall;
           external CoreDLL name 'json_strip_white_space';
 
 function json_validate(json:pAnsiChar):PJSONNODE; stdcall;
@@ -84,7 +84,7 @@ function json_name(const node:PJSONNODE):pAnsiChar; stdcall;
 function json_get_comment(const node:PJSONNODE):pAnsiChar; stdcall;
           external CoreDLL name 'json_get_comment';
 
-function json_as_string(const node:PJSONNODE):pAnsiChar; stdcall;
+function json_as_string(const node:PJSONNODE):pWideChar; stdcall;
           external CoreDLL name 'json_as_string';
 function json_as_int(const node:PJSONNODE):long; stdcall;
           external CoreDLL name 'json_as_int';
@@ -97,9 +97,9 @@ function json_as_node(const node:PJSONNODE):PJSONNODE; stdcall;
 function json_as_array(const node:PJSONNODE):PJSONNODE; stdcall;
           external CoreDLL name 'json_as_array';
 
-function json_write(const node:PJSONNODE):pAnsiChar; stdcall;
+function json_write(const node:PJSONNODE):pWideChar; stdcall;
           external CoreDLL name 'json_write';
-function json_write_formatted(const node:PJSONNODE):pAnsiChar; stdcall;
+function json_write_formatted(const node:PJSONNODE):pWideChar; stdcall;
           external CoreDLL name 'json_write_formatted';
 
 //modifiers
