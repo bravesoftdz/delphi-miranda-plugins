@@ -43,6 +43,10 @@ function CreateEventCard  (parent:HWND=0):tmApiCard;
 
 implementation
 
+{
+  mirutils unit is for ConvertFileName function only
+  m_api is for TranslateW and TrandlateDialogDefault
+}
 uses common,io,m_api,mirutils,memini,wrapper;
 
 {$r mApiCard.res}
@@ -114,6 +118,7 @@ begin
 
   StrCopy(buf,GetParamSectionStr(current,paramname,''));
   StrDup(result,@buf);
+
   SendMessage(wnd,CB_RESETCONTENT,0,0);
   if buf[0]<>#0 then
   begin
