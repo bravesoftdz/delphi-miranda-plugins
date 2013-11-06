@@ -12,7 +12,7 @@ var
 const
   IcoLibPrefix = 'action_type_';
 const
-  NoDescription:PWideChar='No Description';
+  NoDescription:PWideChar='No description';
 const
   protostr = '<proto>';
 const
@@ -94,7 +94,7 @@ function ImportContactINI(node:pointer):THANDLE;
 
 implementation
 
-uses Common, global, dbsettings, base64, mirutils;
+uses Common, global, dbsettings, mirutils;
 
 //----- tBaseAction code -----
 const
@@ -308,6 +308,7 @@ var
   dbv:TDBVARIANT;
   tmp:pWideChar;
   is_chat:boolean;
+  bufLen:int; 
 begin
   with xmlparser do
   begin
@@ -336,7 +337,8 @@ begin
         DBVT_UTF8  : WideToUTF8(tmp,dbv.szVal.A);
         DBVT_WCHAR : dbv.szVal.W:=tmp;
         DBVT_BLOB  : begin
-          Base64Decode(FastWideToAnsi(tmp,pAnsiChar(dbv.pbVal)),dbv.pbVal);
+          dbv.pbVal := mir_base64_decode(FastWideToAnsi(tmp,pAnsiChar(dbv.pbVal)),bufLen);
+          dbv.cpbVal := bufLen;
         end;
       end;
     end;
@@ -439,48 +441,84 @@ type
 const
   actDLLCache: tDLLCache = nil;
 
-function GetDllHandle(dllname:pAnsiChar;mode:dword=0):THANDLE;
+function GetDllHandle(adllname:pAnsiChar;mode:dword=0):THANDLE;
 var
-  i:integer;
+  i,zero:integer;
 begin
-  result:=LoadLibraryA(dllname);
-exit;
+  // 1 - search that name in cache
   i:=0;
+  zero:=-1;
   while i<=HIGH(actDLLCache) do
   begin
-    if StrCmp(actDLLCache[i].DllName,dllname)=0 then
+    with actDLLCache[i] do
     begin
-      result:=actDLLCache[i].DllHandle;
-      // check mode
-      exit;
+      // remember first empty slot
+      if DllHandle=0 then
+      begin
+        if zero<0 then
+          zero:=i;
+      end
+      else if StrCmp(DllName,adllname)=0 then
+      begin
+        result:=DllHandle;
+        inc(count);
+        if mode=3 then // per-session
+          flags:=3;
+        exit;
+      end;
     end;
     inc(i);
   end;
-  result:=LoadLibraryA(dllname);
-  // check mode
-  SetLength(actDLLCache,i);
-  StrDup(actDLLCache[i].DllName,dllname);
-  actDLLCache[i].DllHandle:=result;
-//  actDLLCache.flags:=;
+  // 2 - not found, load library
+  result:=LoadLibraryA(adllname);
+  // 3 - add to cache if not per-action
+  if mode<>0 then
+  begin
+    if zero>=0 then
+      i:=zero
+    else
+    begin
+      SetLength(actDLLCache,i);
+      dec(i);
+    end;
+
+    with actDLLCache[i] do
+    begin
+      StrDup(DllName,adllname);
+      DllHandle:=result;
+      count    :=0;
+      flags    :=mode;
+    end;
+  end;
 end;
 
 procedure CloseDllHandle(handle:THANDLE);
 var
   i:integer;
 begin
-  FreeLibrary(handle);
-exit;
-  i:=0;
-  while i<=HIGH(actDLLCache) do
+  i:=HIGH(actDLLCache);
+  while i>=0 do
   begin
-    if actDLLCache[i].DllHandle=handle then
+    with actDLLCache[i] do
     begin
-      // check mode
-      FreeLibrary(actDLLCache[i].DllHandle);
-      exit;
+      if DllHandle=handle then
+      begin
+        dec(count);
+        if count=0 then
+        begin
+          if flags=2 then // per-macro+not needed -> free
+          begin
+            FreeLibrary(DllHandle);
+            DllHandle:=0;
+            mFreeMem(DllName);
+          end;
+        end;
+        exit;
+      end;
     end;
-    inc(i);
+    dec(i);
   end;
+  // if not found in cache
   FreeLibrary(handle);
 end;
 
@@ -488,10 +526,17 @@ procedure FreeDllHandleCache;
 var
   i:integer;
 begin
-  i:=0;
-  while i<=HIGH(actDLLCache) do
+  i:=HIGH(actDLLCache);
+  while i>=0 do
   begin
+    if actDLLCache[i].DllHandle<>0 then
+    begin
+      FreeLibrary(actDLLCache[i].DllHandle);
+      mFreeMem(actDLLCache[i].DllName);
+    end;
+    dec(i);
   end;
+  SetLength(actDLLCache,0);
 end;
 
 end.

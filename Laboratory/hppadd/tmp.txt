@@ -1,0 +1,40 @@
+http://msdn.microsoft.com/en-us/library/windows/desktop/dd145096(v=vs.85).aspx
+
+function TCanvas.TextExtent(const Text: string): TSize;
+begin
+  RequiredState([csHandleValid, csFontValid]);
+  Result.cX := 0;
+  Result.cY := 0;
+  Winapi.Windows.GetTextExtentPoint32(FHandle, Text, Length(Text), Result);
+end;
+
+procedure TCanvas.WTextRect(const Rect: TRect; X, Y: Integer;
+  const WText: KOLWideString);
+var
+  Options: Integer;
+begin
+  RequiredState( HandleValid or FontValid or BrushValid or ChangingCanvas );
+  Options := ETO_CLIPPED;
+  if ( fBrush <> nil ) and (fBrush.fData.Brush.Style <> bsClear)
+  or ( fBrush = nil ) then Inc(Options, ETO_OPAQUE);
+  Windows.ExtTextOutW( fHandle, X, Y, Options,
+                      @Rect, PWideChar(WText),
+                      Length(WText), nil);
+end;
+
+  
+  if fData.Font.Weight >= 700 then Result := [ fsBold ];
+
+
+split GetEventRecord to GetEventName & GetEventIcon
+
+ModuleEventRecords - cache for new/unknown events (have descr)
+
+EventRecords have indexes which calculates from zero. so, 0 or -1 is not suitable
+
+events: first - common interface or custom (HPP) processing
+
+iconpack (ip):
+fill Common icons
+fill events(from ip and skin)
+-------

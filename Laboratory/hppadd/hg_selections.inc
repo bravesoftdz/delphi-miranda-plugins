@@ -8,7 +8,7 @@ begin
   if FGridNotFocused and (SelCount > 0) then
   begin
     FRichCache.ResetItems(FSelItems);
-    FClient.Invalidate;
+    Invalidate;
   end;
 end;
 
@@ -29,41 +29,42 @@ begin
   Result := Length(FSelItems);
 end;
 
-procedure THistoryGrid.MakeSelected(Value: Integer);
+procedure THistoryGrid.MakeSelected(Item: Integer);
 var
   OldSelected: Integer;
 begin
   OldSelected := FSelected;
-  FSelected := Value;
+  FSelected := Item;
 
-  if Value <> -1 then
+  if Item <> -1 then
     MakeVisible(FSelected);
 
   if Assigned(FOnSelect) then
   begin
     if IsVisible(FSelected) then
-      FOnSelect(@Self, FSelected, OldSelected)
+      FOnSelect(FSelected, OldSelected)
     else
-      FOnSelect(@Self, -1, OldSelected);
+      FOnSelect(-1, OldSelected);
   end;
 
   FSelectionStored := False;
+
+  Invalidate;
 end;
 
-procedure THistoryGrid.SetSelected(const Value: Integer);
+procedure THistoryGrid.SetSelected(Item: Integer);
 begin
-  FRichCache.ResetItem(Value);
+  FRichCache.ResetItem(Item);
   FRichCache.ResetItems(FSelItems);
-  if Value <> -1 then
+  if Item <> -1 then
   begin
     SetLength(FSelItems, 1);
-    FSelItems[0] := Value;
+    FSelItems[0] := Item;
   end
   else
     SetLength(FSelItems, 0);
-  MakeSelected(Value);
-  FClient.Invalidate;
-  FClient.Update;
+  MakeSelected(Item);
+  Update;
 end;
 
 procedure THistoryGrid.AddSelected(Item: Integer);
@@ -143,7 +144,6 @@ begin
     MakeSelected(-1)
   else
     MakeSelected(FSelItems[0]);
-  FClient.Invalidate;
 end;
 
 procedure THistoryGrid.SelectAll;
@@ -155,7 +155,6 @@ begin
     MakeSelected(-1)
   else
     MakeSelected(FSelected);
-  FClient.Invalidate;
 end;
 
 procedure THistoryGrid.MakeSelectedTo(Item: Integer);
@@ -171,26 +170,5 @@ begin
   else
     first := FSelected;
   MakeRangeSelected(first, Item);
-end;
-
-function THistoryGrid.GetSelectionString: WideString;
-begin
-  if FSelectionStored then
-  begin
-    Result := FSelectionString;
-    exit;
-  end
-  else
-    Result := '';
-  if Count = 0 then
-    exit;
-
-  if State = gsInline then
-    Result := GetRichString(FRichInline.Handle, True)
-  else if Selected <> -1 then
-  begin
-    FSelectionString := FormatSelected(GridOptions.SelectionFormat);
-    FSelectionStored := True;
-    Result := FSelectionString;
-  end;
+  MakeSelected(Item);
 end;

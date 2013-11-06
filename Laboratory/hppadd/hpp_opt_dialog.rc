@@ -33,9 +33,11 @@ FONT 8, "MS SHELL DLG"
   CONTROL "Recent events on top", IDC_RECENTONTOP     , BUTTON, BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 12, 102, 140, 11
   CONTROL "Group messages"      , IDC_GROUPHISTITEMS  , BUTTON, BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP, 12, 112, 140, 11
 
-  CONTROL "Visit Wiki page for more options", ID_NEEDOPTIONS_LINK, "Hyperlink", WS_CHILD | WS_TABSTOP | 0x1, 23, 217, 268, 10
+  CONTROL "Another options", -1          , BUTTON, BS_GROUPBOX | WS_CHILD | WS_VISIBLE, 6, 152, 148, 55
+  CONTROL "Check Icon Pack", IDC_ICONPACK, BUTTON, BS_AUTOCHECKBOX | WS_CHILD | WS_VISIBLE | WS_TABSTOP,  12, 158, 140, 11
+//  CONTROL "Visit Wiki page for more options", ID_NEEDOPTIONS_LINK, "Hyperlink", WS_CHILD | WS_TABSTOP | 0x1, 23, 217, 268, 10
 
-  CONTROL "Please restart Miranda IM for your changes to take effect.", ID_NEED_RESTART, STATIC, SS_CENTER | NOT WS_VISIBLE, 6, 230, 302, 10
+//  CONTROL "Please restart Miranda IM for your changes to take effect.", ID_NEED_RESTART, STATIC, SS_CENTER | NOT WS_VISIBLE, 6, 230, 302, 10
 }
 
 IDD_OPT_HISTORYPP2 DIALOGEX 0, 0, 314, 240

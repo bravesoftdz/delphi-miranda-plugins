@@ -54,101 +54,80 @@ interface
 uses
   Windows,
   m_api,
-  hpp_global;
+  hpp_global,hpp_icons;
 
 type
   PEventRecord = ^TEventRecord;
   TEventRecord = record
-    Name : WideString;
-    XML  : AnsiString;
-    i    : SmallInt;
-    iName: PAnsiChar;
-    iSkin: SmallInt;
+    Name : pAnsiChar;
+    idx  : Integer;
   end;
 
 const
-  EventRecords: array[TMessageType] of TEventRecord = (
-    (Name:'Unknown';               XML:'';            i:-1; iSkin:-1),
-    (Name:'Incoming events';       XML:'';            i:HPP_ICON_EVENT_INCOMING;  iName:'hppevn_inc';       iSkin:-1),
-    (Name:'Outgoing events';       XML:'';            i:HPP_ICON_EVENT_OUTGOING;  iName:'hppevn_out';       iSkin:-1),
-    (Name:'Message';               XML:'MSG';         i:HPP_SKIN_EVENT_MESSAGE;                             iSkin:SKINICON_EVENT_MESSAGE),
-    (Name:'Link';                  XML:'URL';         i:HPP_SKIN_EVENT_URL;                                 iSkin:SKINICON_EVENT_URL),
-    (Name:'File transfer';         XML:'FILE';        i:HPP_SKIN_EVENT_FILE;                                iSkin:SKINICON_EVENT_FILE),
-    (Name:'System message';        XML:'SYS';         i:HPP_ICON_EVENT_SYSTEM;    iName:'hppevn_sys';       iSkin:-1),
-    (Name:'Contacts';              XML:'ICQCNT';      i:HPP_ICON_EVENT_CONTACTS;  iName:'hppevn_icqcnt';    iSkin:-1),
-    (Name:'SMS message';           XML:'SMS';         i:HPP_ICON_EVENT_SMS;       iName:'hppevn_sms';       iSkin:-1),
-    (Name:'Webpager message';      XML:'ICQWP';       i:HPP_ICON_EVENT_WEBPAGER;  iName:'hppevn_icqwp';     iSkin:-1),
-    (Name:'EMail Express message'; XML:'ICQEX';       i:HPP_ICON_EVENT_EEXPRESS;  iName:'hppevn_icqex';     iSkin:-1),
-    (Name:'Status changes';        XML:'STATUSCNG';   i:HPP_ICON_EVENT_STATUS;    iName:'hppevn_status';    iSkin:-1),
-    (Name:'SMTP Simple Email';     XML:'SMTP';        i:HPP_ICON_EVENT_SMTPSIMPLE;iName:'hppevn_smtp';      iSkin:-1),
-    (Name:'Other events (unknown)';XML:'OTHER';       i:HPP_SKIN_OTHER_MIRANDA;                             iSkin:SKINICON_OTHER_MIRANDA),
-    (Name:'Nick changes';          XML:'NICKCNG';     i:HPP_ICON_EVENT_NICK;      iName:'hppevn_nick';      iSkin:-1),
-    (Name:'Avatar changes';        XML:'AVACNG';      i:HPP_ICON_EVENT_AVATAR;    iName:'hppevn_avatar';    iSkin:-1),
-    (Name:'WATrack notify';        XML:'WATRACK';     i:HPP_ICON_EVENT_WATRACK;   iName:'hppevn_watrack';   iSkin:-1),
-    (Name:'Status message changes';XML:'STATUSMSGCHG';i:HPP_ICON_EVENT_STATUSMES; iName:'hppevn_statuschng';iSkin:-1),
-    (Name:'Voice call';            XML:'VCALL';       i:HPP_ICON_EVENT_VOICECALL; iName:'hppevn_vcall';     iSkin:-1),
-    (Name:'Custom';                XML:'';            i:-1; iSkin:-1)
+  EventRecords: array[TBuiltinMessageType] of TEventRecord = (
+    (Name:'Unknown';               idx:9999),
+    (Name:'Message';               idx:-HPP_SKIN_EVENT_MESSAGE),
+    (Name:'Link';                  idx:-HPP_SKIN_EVENT_URL),
+    (Name:'File transfer';         idx:-HPP_SKIN_EVENT_FILE),
+    (Name:'System message';        idx:ord(HPP_ICON_EVENT_SYSTEM)),
+    (Name:'Contacts';              idx:ord(HPP_ICON_EVENT_CONTACTS)),
+    (Name:'SMS message';           idx:ord(HPP_ICON_EVENT_SMS)),
+    (Name:'Webpager message';      idx:ord(HPP_ICON_EVENT_WEBPAGER)),
+    (Name:'EMail Express message'; idx:ord(HPP_ICON_EVENT_EEXPRESS)),
+    (Name:'Status changes';        idx:ord(HPP_ICON_EVENT_STATUS)),
+    (Name:'SMTP Simple Email';     idx:ord(HPP_ICON_EVENT_SMTPSIMPLE)),
+    (Name:'Other events (unknown)';idx:-HPP_SKIN_OTHER_MIRANDA),
+    (Name:'Nick changes';          idx:ord(HPP_ICON_EVENT_NICK)),
+    (Name:'Avatar changes';        idx:ord(HPP_ICON_EVENT_AVATAR)),
+    (Name:'WATrack notify';        idx:ord(HPP_ICON_EVENT_WATRACK)),
+    (Name:'Status message changes';idx:ord(HPP_ICON_EVENT_STATUSMES)),
+    (Name:'Voice call';            idx:ord(HPP_ICON_EVENT_VOICECALL)),
+    (Name:'Custom';                idx:9999)
   );
 
+const
+  EVENTTYPE_AVATARCHANGE        = 9003;   // from pescuma
+
+// general routine
+procedure ReadEvent          (hDBEvent: THANDLE; var hi: THistoryItem; UseCP: Cardinal = CP_ACP);
+procedure GetEventInfo       (hDBEvent: THANDLE; var EventInfo: TDBEventInfo);
+function  GetEventTimestamp  (hDBEvent: THANDLE): DWord;
+function  GetEventMessageType(hDBEvent: THANDLE): ThppMessageType;
+function  GetEventDateTime   (hDBEvent: THANDLE): TDateTime;
+
+function  GetEventName(const Hi: THistoryItem):pAnsiChar;
+function  GetEventIcon(const Hi: THistoryItem):HICON;
+
+function IsIncomingEvent(const Hi: THistoryItem):boolean;
+function IsOutgoingEvent(const Hi: THistoryItem):boolean;
+
+implementation
+
+uses
+  common,
+  hpp_contacts;
+
+var
+  RecentEvent: THandle = 0;
+  RecentEventInfo: TDBEventInfo;
+
+var
+  EventBuffer: THppBuffer;
+  TextBuffer : THppBuffer;
+
+{$include m_music.inc}
 const
   EVENTTYPE_STATUSCHANGE        = 25368;  // from srmm's
   EVENTTYPE_SMTPSIMPLE          = 2350;   // from SMTP Simple
   EVENTTYPE_NICKNAMECHANGE      = 9001;   // from pescuma
   EVENTTYPE_STATUSMESSAGECHANGE = 9002;   // from pescuma
-  EVENTTYPE_AVATARCHANGE        = 9003;   // from pescuma
   EVENTTYPE_CONTACTLEFTCHANNEL  = 9004;   // from pescuma
   EVENTTYPE_VOICE_CALL          = 8739;   // from pescuma
 
-// general routine
-function ReadEvent(hDBEvent: THandle; UseCP: Cardinal = CP_ACP): THistoryItem;
-function GetEventInfo(hDBEvent: THANDLE): TDBEventInfo;
-function GetEventTimestamp(hDBEvent: THandle): DWord;
-function GetEventMessageType(hDBEvent: THandle): TMessageTypes;
-function GetEventDateTime(hDBEvent: THandle): TDateTime;
-function GetEventRecord(const Hi: THistoryItem): PEventRecord;
-function GetMessageType(EventInfo: TDBEventInfo; var EventIndex: Integer): TMessageTypes;
-// global routines
-function GetEventCoreText(EventInfo: TDBEventInfo; var Hi: THistoryItem): Boolean;
-function GetEventModuleText(EventInfo: TDBEventInfo; var Hi: THistoryItem): Boolean;
-// specific routines
-procedure GetEventTextForMessage(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextForFile(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextForUrl(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextForAuthRequest(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextForYouWereAdded(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextForSms(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextForContacts(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextForWebPager(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextForEmailExpress(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextForStatusChange(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextForAvatarChange(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextForICQAuthGranted(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextForICQAuthDenied(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextForICQSelfRemove(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextForICQFutureAuth(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextForICQClientChange(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextForICQCheckStatus(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextForICQIgnoreCheckStatus(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextForICQBroadcast(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextForJabberChatStates(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextWATrackRequest(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextWATrackAnswer(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextWATrackError(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-procedure GetEventTextForOther(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-
-implementation
-
-uses
-  kol,
-  common,
-  hpp_contacts, hpp_options;
-
-{$include m_music.inc}
-
 const // registered Jabber db event types (not public)
-  JABBER_DB_EVENT_TYPE_CHATSTATES          = 2000;
-//  JS_DB_GETEVENTTEXT_CHATSTATES            = '/GetEventText2000';
-  JABBER_DB_EVENT_CHATSTATES_GONE          = 1;
+  JABBER_DB_EVENT_TYPE_CHATSTATES = 2000;
+//  JS_DB_GETEVENTTEXT_CHATSTATES   = '/GetEventText2000';
+  JABBER_DB_EVENT_CHATSTATES_GONE = 1;
 
 const // ICQ db events (didn't found anywhere)
   //auth
@@ -170,142 +149,15 @@ const // ICQ db events (didn't found anywhere)
   //ASCIIZ    from e-mail
   ICQEVENTTYPE_BROADCAST      = 2006;    //database event type
 
-type
-  TModuleEventRecord = record
-    EventDesc: PDBEVENTTYPEDESCR;
-    EventRecord: TEventRecord;
-  end;
-
-  TTextFunction = procedure(EventInfo: TDBEventInfo; var Hi: THistoryItem);
-
-  TEventTableItem = record
-    EventType   : Word;
-    MessageType : TMessageType;
-    TextFunction: TTextFunction;
-  end;
-
-var
-  EventTable: array[0..28] of TEventTableItem = (
-    // must be the first item in array for unknown events
-    (EventType: MaxWord;                         MessageType: mtOther;         TextFunction: GetEventTextForOther),
-    // events definitions
-    (EventType: EVENTTYPE_MESSAGE;               MessageType: mtMessage;       TextFunction: GetEventTextForMessage),
-    (EventType: EVENTTYPE_FILE;                  MessageType: mtFile;          TextFunction: GetEventTextForFile),
-    (EventType: EVENTTYPE_URL;                   MessageType: mtUrl;           TextFunction: GetEventTextForUrl),
-    (EventType: EVENTTYPE_AUTHREQUEST;           MessageType: mtSystem;        TextFunction: GetEventTextForAuthRequest),
-    (EventType: EVENTTYPE_ADDED;                 MessageType: mtSystem;        TextFunction: GetEventTextForYouWereAdded),
-    (EventType: EVENTTYPE_CONTACTS;              MessageType: mtContacts;      TextFunction: GetEventTextForContacts),
-    (EventType: EVENTTYPE_STATUSCHANGE;          MessageType: mtStatus;        TextFunction: GetEventTextForStatusChange),
-    (EventType: EVENTTYPE_SMTPSIMPLE;            MessageType: mtSMTPSimple;    TextFunction: GetEventTextForMessage),
-    (EventType: ICQEVENTTYPE_SMS;                MessageType: mtSMS;           TextFunction: GetEventTextForSMS),
-    (EventType: ICQEVENTTYPE_WEBPAGER;           MessageType: mtWebPager;      TextFunction: GetEventTextForWebPager),
-    (EventType: ICQEVENTTYPE_EMAILEXPRESS;       MessageType: mtEmailExpress;  TextFunction: GetEventTextForEmailExpress),
-    (EventType: EVENTTYPE_NICKNAMECHANGE;        MessageType: mtNickChange;    TextFunction: GetEventTextForMessage),
-    (EventType: EVENTTYPE_STATUSMESSAGECHANGE;   MessageType: mtStatusMessage; TextFunction: GetEventTextForMessage),
-    (EventType: EVENTTYPE_AVATARCHANGE;          MessageType: mtAvatarChange;  TextFunction: GetEventTextForAvatarChange),
-    (EventType: ICQEVENTTYPE_AUTH_GRANTED;       MessageType: mtSystem;        TextFunction: GetEventTextForICQAuthGranted),
-    (EventType: ICQEVENTTYPE_AUTH_DENIED;        MessageType: mtSystem;        TextFunction: GetEventTextForICQAuthDenied),
-    (EventType: ICQEVENTTYPE_SELF_REMOVE;        MessageType: mtSystem;        TextFunction: GetEventTextForICQSelfRemove),
-    (EventType: ICQEVENTTYPE_FUTURE_AUTH;        MessageType: mtSystem;        TextFunction: GetEventTextForICQFutureAuth),
-    (EventType: ICQEVENTTYPE_CLIENT_CHANGE;      MessageType: mtSystem;        TextFunction: GetEventTextForICQClientChange),
-    (EventType: ICQEVENTTYPE_CHECK_STATUS;       MessageType: mtSystem;        TextFunction: GetEventTextForICQCheckStatus),
-    (EventType: ICQEVENTTYPE_IGNORECHECK_STATUS; MessageType: mtSystem;        TextFunction: GetEventTextForICQIgnoreCheckStatus),
-    (EventType: ICQEVENTTYPE_BROADCAST;          MessageType: mtSystem;        TextFunction: GetEventTextForICQBroadcast),
-    (EventType: JABBER_DB_EVENT_TYPE_CHATSTATES; MessageType: mtStatus;        TextFunction: GetEventTextForJabberChatStates),
-    (EventType: EVENTTYPE_CONTACTLEFTCHANNEL;    MessageType: mtStatus;        TextFunction: GetEventTextForMessage),
-    (EventType: EVENTTYPE_WAT_REQUEST;           MessageType: mtWATrack;       TextFunction: GetEventTextWATrackRequest),
-    (EventType: EVENTTYPE_WAT_ANSWER;            MessageType: mtWATrack;       TextFunction: GetEventTextWATrackAnswer),
-    (EventType: EVENTTYPE_WAT_ERROR;             MessageType: mtWATrack;       TextFunction: GetEventTextWATrackError),
-    (EventType: EVENTTYPE_VOICE_CALL;            MessageType: mtVoiceCall;     TextFunction: GetEventTextForMessage)
-  );
-
-var
-  ModuleEventRecords: array of TModuleEventRecord;
-  RecentEvent: THandle = 0;
-  RecentEventInfo: TDBEventInfo;
-
-var
-  EventBuffer: THppBuffer;
-  TextBuffer: THppBuffer;
-
 const
   // 1970-01-01T00:00:00 in TDateTime
   UnixTimeStart = 25569;
   SecondsPerDay = 60*60*24;
 
-function GetEventTimestamp(hDBEvent: THandle): DWord;
-begin
-  if RecentEvent <> hDBEvent then
-  begin
-    ZeroMemory(@RecentEventInfo, SizeOf(RecentEventInfo));
-    RecentEventInfo.cbSize := SizeOf(RecentEventInfo);
-    RecentEventInfo.cbBlob := 0;
-    CallService(MS_DB_EVENT_GET, hDBEvent, LPARAM(@RecentEventInfo));
-    RecentEvent := hDBEvent;
-  end;
-  Result := RecentEventInfo.timestamp;
-end;
+(*
+//----- Support functions -----
 
-function GetEventMessageType(hDBEvent: THandle): TMessageTypes;
-var
-  EventIndex: Integer;
-begin
-  if RecentEvent <> hDBEvent then
-  begin
-    ZeroMemory(@RecentEventInfo, SizeOf(RecentEventInfo));
-    RecentEventInfo.cbSize := SizeOf(RecentEventInfo);
-    RecentEventInfo.cbBlob := 0;
-    CallService(MS_DB_EVENT_GET, hDBEvent, LPARAM(@RecentEventInfo));
-    RecentEvent := hDBEvent;
-  end;
-  Result := GetMessageType(RecentEventInfo,EventIndex);
-end;
-
-function GetEventDateTime(hDBEvent: THandle): TDateTime;
-begin
-  Result := TimestampToDateTime(GetEventTimestamp(hDBEvent));
-end;
-
-function GetEventRecord(const Hi: THistoryItem): PEventRecord;
-var
-  MesType: TMessageTypes;
-  mt: TMessageType;
-  etd: PDBEVENTTYPEDESCR;
-  i,count: integer;
-begin
-  MesType := Hi.MessageType;
-  exclude(MesType, mtIncoming);
-  exclude(MesType, mtOutgoing);
-  exclude(MesType, mtOther);
-  for mt := Low(EventRecords) to High(EventRecords) do
-  begin
-    if mt in MesType then
-    begin
-      Result := @EventRecords[mt];
-      exit;
-    end;
-  end;
-  etd := Pointer(CallService(MS_DB_EVENT_GETTYPE, WPARAM(PAnsiChar(Hi.Module)),
-    LPARAM(Hi.EventType)));
-  if etd = nil then
-  begin
-    Result := @EventRecords[mtOther];
-    exit;
-  end;
-  count := Length(ModuleEventRecords);
-  for i := 0 to count - 1 do
-    if ModuleEventRecords[i].EventDesc = etd then
-    begin
-      Result := @ModuleEventRecords[i].EventRecord;
-      exit;
-    end;
-  SetLength(ModuleEventRecords, count + 1);
-  ModuleEventRecords[count].EventDesc := etd;
-  ModuleEventRecords[count].EventRecord := EventRecords[mtOther];
-  ModuleEventRecords[count].EventRecord.Name := AnsiToWideString(etd.descr, CP_ACP);
-  Result := @ModuleEventRecords[count].EventRecord;
-end;
-
+{2 times}
 function Utf8ToWideChar(Dest: PWideChar; MaxDestChars: Integer; Source: PAnsiChar; SourceBytes: Integer; CodePage: Cardinal = CP_ACP): Integer;
 const
   MB_ERR_INVALID_CHARS = 8;
@@ -369,196 +221,8 @@ begin
   end;
 end;
 
-function TextHasUrls(var Text: WideString): Boolean;
-var
-  i,len,lenW: Integer;
-  pText,pPos: PWideChar;
-begin
-  Result := False;
-  len := Length(Text);
-  if len=0 then exit;
 
-  pText := PWideChar(Text);
-  for i := 0 to High(UrlPrefix) do
-  begin
-    pPos := StrPosW(pText, PWideChar(UrlPrefix[i]));
-    if not Assigned(pPos) then
-      continue;
-    Result := ((uint_ptr(pPos) = uint_ptr(pText)) or not IsWideCharAlphaNumeric((pPos - 1)^)) and
-      IsWideCharAlphaNumeric((pPos + Length(UrlPrefix[i]))^);
-    if Result then
-      exit;
-  end;
-
-  if not Assigned(StrPosW(PWideChar(Text),':/')) then exit;
-
-  lenW := (len+1)*SizeOf(WideChar);
-
-  TextBuffer.Lock;
-  TextBuffer.Allocate(lenW);
-  Move(Text[1],TextBuffer.Buffer^,lenW);
-  CharLowerBuffW(PWideChar(TextBuffer.Buffer),len);
-  for i := 0 to High(UrlProto) do
-  begin
-    pPos := StrPosW(PWideChar(TextBuffer.Buffer), PWideChar(UrlProto[i].proto));
-    if not Assigned(pPos) then
-      continue;
-    Result := ((uint_ptr(pPos) = uint_ptr(TextBuffer.Buffer)) or
-      not IsWideCharAlphaNumeric((pPos - 1)^));
-    if Result then
-      break;
-  end;
-  TextBuffer.Unlock;
-end;
-
-function GetEventInfo(hDBEvent: THANDLE): TDBEventInfo;
-var
-  BlobSize: integer;
-begin
-  ZeroMemory(@Result, SizeOf(Result));
-  Result.cbSize := SizeOf(Result);
-  BlobSize := CallService(MS_DB_EVENT_GETBLOBSIZE, hDBEvent, 0);
-  if BlobSize > 0 then
-  begin
-    EventBuffer.Allocate(BlobSize);
-    Result.pBlob := EventBuffer.Buffer;
-  end
-  else
-    BlobSize := 0;
-  Result.cbBlob := BlobSize;
-  if CallService(MS_DB_EVENT_GET, hDBEvent, LPARAM(@Result)) = 0 then
-    Result.cbBlob := BlobSize
-  else
-    Result.cbBlob := 0;
-end;
-
-function GetMessageType(EventInfo: TDBEventInfo; var EventIndex: Integer): TMessageTypes;
-var
-  i: Integer;
-begin
-  EventIndex := 0;
-  for i := 1 to High(EventTable) do
-    if EventTable[i].EventType = EventInfo.EventType then
-    begin
-      EventIndex := i;
-      break;
-    end;
-  Result := [EventTable[EventIndex].MessageType];
-  if (EventInfo.flags and DBEF_SENT) = 0 then
-    include(Result, mtIncoming)
-  else
-    include(Result, mtOutgoing);
-end;
-
-// copy from SysUtils
-function AdjustLineBreaks(const S: WideString): WideString;
-var
-  Source, SourceEnd, Dest: PWideChar;
-  Extra: Integer;
-begin
-  Source := Pointer(S);
-  SourceEnd := Source + Length(S);
-  Extra := 0;
-  while Source < SourceEnd do
-  begin
-    case Source^ of
-      #10:
-        Inc(Extra);
-      #13:
-        if Source[1] = #10 then
-          Inc(Source)
-        else
-          Inc(Extra);
-{
-    else
-      if Source^ in LeadBytes then
-        Inc(Source)
-}
-    end;
-    Inc(Source);
-  end;
-  if Extra = 0 then Result := S else
-  begin
-    Source := Pointer(S);
-    SetString(Result, nil, SourceEnd - Source + Extra);
-    Dest := Pointer(Result);
-    while Source < SourceEnd do
-      case Source^ of
-        #10:
-          begin
-            Dest^ := #13;
-            Inc(Dest);
-            Dest^ := #10;
-            Inc(Dest);
-            Inc(Source);
-          end;
-        #13:
-          begin
-            Dest^ := #13;
-            Inc(Dest);
-            Dest^ := #10;
-            Inc(Dest);
-            Inc(Source);
-            if Source^ = #10 then Inc(Source);
-          end;
-      else
-{
-        if Source^ in LeadBytes then
-        begin
-          Dest^ := Source^;
-          Inc(Dest);
-          Inc(Source);
-        end;
-}
-        Dest^ := Source^;
-        Inc(Dest);
-        Inc(Source);
-      end;
-  end;
-end;
-
-// reads event from hDbEvent handle
-// reads all THistoryItem fields
-// *EXCEPT* Proto field. Fill it manually, plz
-function ReadEvent(hDBEvent: THandle; UseCP: Cardinal = CP_ACP): THistoryItem;
-var
-  EventInfo: TDBEventInfo;
-  EventIndex: integer;
-  Handled: Boolean;
-begin
-  ZeroMemory(@Result,SizeOf(Result));
-  Result.Height := -1;
-  EventBuffer.Lock;
-  EventInfo := GetEventInfo(hDBEvent);
-  try
-    Result.Module := EventInfo.szModule;
-    Result.proto := '';
-    Result.Time := EventInfo.Timestamp;
-    Result.EventType := EventInfo.EventType;
-    Result.IsRead := Boolean(EventInfo.flags and DBEF_READ);
-    // enable autoRTL feature
-    if Boolean(EventInfo.flags and DBEF_RTL) then
-      Result.RTLMode := hppRTLEnable;
-    Result.MessageType := GetMessageType(EventInfo, EventIndex);
-    Result.CodePage := UseCP;
-    // Handled := true;
-    // if Handled then Handled := GetEventCoreText(EventInfo,Result);
-    { if Handled then } Handled := GetEventModuleText(EventInfo, Result);
-    if not Handled then
-      EventTable[EventIndex].TextFunction(EventInfo, Result);
-    Result.Text := AdjustLineBreaks(Result.Text);
-    Result.Text := TrimRight(Result.Text);
-    if mtMessage in Result.MessageType then
-      if TextHasUrls(Result.Text) then
-      begin
-        exclude(Result.MessageType, mtMessage);
-        include(Result.MessageType, mtUrl);
-      end;
-  finally
-    EventBuffer.Unlock;
-  end;
-end;
-
+{24 times}
 procedure ReadStringTillZeroA(Text: PAnsiChar; Size: LongWord; var Result: AnsiString; var Pos: LongWord);
 begin
   while (Pos < Size) and ((Text+Pos)^ <> #0) do
@@ -569,6 +233,7 @@ begin
   Inc(Pos);
 end;
 
+{4 times in one place}
 //?? need to check text+pos
 procedure ReadStringTillZeroW(Text: PWideChar; Size: LongWord; var Result: WideString; var Pos: LongWord);
 begin
@@ -580,63 +245,7 @@ begin
   Inc(Pos,SizeOf(WideChar));
 end;
 
-function GetEventCoreText(EventInfo: TDBEventInfo; var Hi: THistoryItem): Boolean;
-var
-  dbegt: TDBEVENTGETTEXT;
-  msg: Pointer;
-begin
-  Result := False;
-  dbegt.dbei := @EventInfo;
-  dbegt.datatype := DBVT_WCHAR;
-  dbegt.codepage := hi.Codepage;
-  msg := nil;
-  try
-    msg := Pointer(CallService(MS_DB_EVENT_GETTEXT,0,LPARAM(@dbegt)));
-    Result := Assigned(msg);
-  except
-    if Assigned(msg) then mir_free(msg);
-  end;
-  if Result then
-  begin
-    SetString(hi.Text,PWideChar(msg),StrLenW(PWideChar(msg)));
-    mir_free(msg);
-  end;
-end;
-
-function GetEventModuleText(EventInfo: TDBEventInfo; var Hi: THistoryItem): Boolean;
-const
-  maxServiceLength = 99;
-var
-  dbegt: TDBEVENTGETTEXT;
-  msg: Pointer;
-  szServiceName: array[0..maxServiceLength] of AnsiChar;
-begin
-  Result := False;
-  dbegt.dbei := @EventInfo;
-  dbegt.datatype := DBVT_WCHAR;
-  dbegt.codepage := hi.Codepage;
-  try
-    IntToStr(StrCopyE(StrCopyE(szServiceName,EventInfo.szModule),'/GetEventText'),EventInfo.eventType);
-//    StrLFmt(szServiceName,maxServiceLength,'%s/GetEventText%u',[EventInfo.szModule,EventInfo.eventType]);
-    Result := Boolean(ServiceExists(szServiceName));
-  except
-  end;
-  if not Result then
-    exit;
-  msg := nil;
-  try
-    msg := Pointer(CallService(szServiceName,0,LPARAM(@dbegt)));
-    Result := Assigned(msg);
-  except
-    if Assigned(msg) then
-      mir_free(msg);
-  end;
-  if Result then
-  begin
-    SetString(hi.Text,PWideChar(msg),StrLenW(PWideChar(msg)));
-    mir_free(msg);
-  end;
-end;
+//----- Event to text translation -----
 
 procedure GetEventTextForMessage(EventInfo: TDBEventInfo; var Hi: THistoryItem);
 var
@@ -647,7 +256,7 @@ var
 begin
   msgA := PAnsiChar(EventInfo.pBlob);
   msgW := nil;
-  msglen := lstrlenA(PAnsiChar(EventInfo.pBlob)) + 1;
+  msglen := StrLen(PAnsiChar(EventInfo.pBlob)) + 1;
   if msglen > integer(EventInfo.cbBlob) then
     msglen := EventInfo.cbBlob;
   if Boolean(EventInfo.flags and DBEF_UTF) then
@@ -662,10 +271,10 @@ begin
   else
   begin
     lenW := 0;
-    if Cardinal(EventInfo.cbBlob) >= msglen * SizeOf(WideChar) then
+    if integer(EventInfo.cbBlob) >= msglen * SizeOf(WideChar) then
     begin
       msgW := PWideChar(msgA + msglen);
-      for i := 0 to ((Cardinal(EventInfo.cbBlob) - msglen) div SizeOf(WideChar)) - 1 do
+      for i := 0 to ((integer(EventInfo.cbBlob) - msglen) div SizeOf(WideChar)) - 1 do
         if msgW[i] = #0 then
         begin
           lenW := i;
@@ -728,7 +337,7 @@ var
 begin
   // blob is: uin(DWORD), hContact(THANDLE), nick(ASCIIZ), first(ASCIIZ), last(ASCIIZ), email(ASCIIZ)
   uin := PDWord(EventInfo.pBlob)^;
-  hContact := PInt_ptr(int_ptr(Pointer(EventInfo.pBlob)) + SizeOf(dword))^;
+  hContact := PInt_ptr(uint_ptr(Pointer(EventInfo.pBlob)) + SizeOf(dword))^;
   BytePos := SizeOf(dword) + SizeOf(THandle);
   // read nick
   ReadStringTillZeroA(Pointer(EventInfo.pBlob), EventInfo.cbBlob, Nick, BytePos);
@@ -771,7 +380,7 @@ var
 begin
   // blob is: uin(DWORD), hContact(THANDLE), nick(ASCIIZ), first(ASCIIZ), last(ASCIIZ), email(ASCIIZ)
   uin := PDWord(EventInfo.pBlob)^;
-  hContact := PInt_ptr(int_ptr(Pointer(EventInfo.pBlob)) + SizeOf(dword))^;
+  hContact := PInt_ptr(uint_ptr(Pointer(EventInfo.pBlob)) + SizeOf(dword))^;
   BytePos := SizeOf(dword) + SizeOf(THandle);
   // read nick
   ReadStringTillZeroA(Pointer(EventInfo.pBlob), EventInfo.cbBlob, Nick, BytePos);
@@ -1035,16 +644,16 @@ var
   Artist,Title,Album,Template: WideString;
 begin
   BytePos := 0;
-  ReadStringTillZeroW(Pointer(EventInfo.pBlob),EventInfo.cbBlob,Artist,BytePos);
-  ReadStringTillZeroW(Pointer(EventInfo.pBlob),EventInfo.cbBlob,Title,BytePos);
-  ReadStringTillZeroW(Pointer(EventInfo.pBlob),EventInfo.cbBlob,Album,BytePos);
+  ReadStringTillZeroW(Pointer(EventInfo.pBlob),EventInfo.cbBlob,Artist  ,BytePos);
+  ReadStringTillZeroW(Pointer(EventInfo.pBlob),EventInfo.cbBlob,Title   ,BytePos);
+  ReadStringTillZeroW(Pointer(EventInfo.pBlob),EventInfo.cbBlob,Album   ,BytePos);
   ReadStringTillZeroW(Pointer(EventInfo.pBlob),EventInfo.cbBlob,Template,BytePos);
   if (Artist <> '') or (Title <> '') or (Album <> '') then
   begin
     if Template <> '' then
       Template := Template + #13#10;
     Template := Template + Format//WideFormat
-      (FormatCString(TranslateW('Artist: %s\r\nTitle: %s\r\nAlbum: %s')),
+      (TranslateW('Artist: %s'#13#10'Title: %s'#13#10'Album: %s'),
       [Artist, Title, Album]);
   end;
   hi.Text := Format(TranslateW('WATrack: %s'),[Template]);
@@ -1060,12 +669,397 @@ var
   cp: Cardinal;
 begin
   TextBuffer.Allocate(EventInfo.cbBlob+1);
-  StrLCopy(TextBuffer.Buffer,PAnsiChar(EventInfo.pBlob),EventInfo.cbBlob);
+  StrCopy(TextBuffer.Buffer,PAnsiChar(EventInfo.pBlob),EventInfo.cbBlob);
   if Boolean(EventInfo.flags and DBEF_UTF) then
     cp := CP_UTF8
   else
     cp := Hi.CodePage;
   hi.Text := AnsiToWideString(PAnsiChar(TextBuffer.Buffer),cp);
+end;
+
+*)
+
+type
+  TTextFunction = procedure(EventInfo: TDBEventInfo; var Hi: THistoryItem);
+
+  TEventTableItem = record
+    EventType   : Word;
+    MessageType : TBuiltinMessageType;
+//!!    TextFunction: TTextFunction;
+  end;
+
+var
+  EventTable: array[0..28] of TEventTableItem = (
+    // must be the first item in array for unknown events
+    (EventType: MaxWord;                         MessageType: mtOther;         {TextFunction: GetEventTextForOther}),
+    // events definitions
+    (EventType: EVENTTYPE_MESSAGE;               MessageType: mtMessage;       {TextFunction: GetEventTextForMessage}),
+    (EventType: EVENTTYPE_FILE;                  MessageType: mtFile;          {TextFunction: GetEventTextForFile}),
+    (EventType: EVENTTYPE_URL;                   MessageType: mtUrl;           {TextFunction: GetEventTextForUrl}),
+    (EventType: EVENTTYPE_AUTHREQUEST;           MessageType: mtSystem;        {TextFunction: GetEventTextForAuthRequest}),
+    (EventType: EVENTTYPE_ADDED;                 MessageType: mtSystem;        {TextFunction: GetEventTextForYouWereAdded}),
+    (EventType: EVENTTYPE_CONTACTS;              MessageType: mtContacts;      {TextFunction: GetEventTextForContacts}),
+    (EventType: EVENTTYPE_STATUSCHANGE;          MessageType: mtStatus;        {TextFunction: GetEventTextForStatusChange}),
+    (EventType: EVENTTYPE_SMTPSIMPLE;            MessageType: mtSMTPSimple;    {TextFunction: GetEventTextForMessage}),
+    (EventType: ICQEVENTTYPE_SMS;                MessageType: mtSMS;           {TextFunction: GetEventTextForSMS}),
+    (EventType: ICQEVENTTYPE_WEBPAGER;           MessageType: mtWebPager;      {TextFunction: GetEventTextForWebPager}),
+    (EventType: ICQEVENTTYPE_EMAILEXPRESS;       MessageType: mtEmailExpress;  {TextFunction: GetEventTextForEmailExpress}),
+    (EventType: EVENTTYPE_NICKNAMECHANGE;        MessageType: mtNickChange;    {TextFunction: GetEventTextForMessage}),
+    (EventType: EVENTTYPE_STATUSMESSAGECHANGE;   MessageType: mtStatusMessage; {TextFunction: GetEventTextForMessage}),
+    (EventType: EVENTTYPE_AVATARCHANGE;          MessageType: mtAvatarChange;  {TextFunction: GetEventTextForAvatarChange}),
+    (EventType: ICQEVENTTYPE_AUTH_GRANTED;       MessageType: mtSystem;        {TextFunction: GetEventTextForICQAuthGranted}),
+    (EventType: ICQEVENTTYPE_AUTH_DENIED;        MessageType: mtSystem;        {TextFunction: GetEventTextForICQAuthDenied}),
+    (EventType: ICQEVENTTYPE_SELF_REMOVE;        MessageType: mtSystem;        {TextFunction: GetEventTextForICQSelfRemove}),
+    (EventType: ICQEVENTTYPE_FUTURE_AUTH;        MessageType: mtSystem;        {TextFunction: GetEventTextForICQFutureAuth}),
+    (EventType: ICQEVENTTYPE_CLIENT_CHANGE;      MessageType: mtSystem;        {TextFunction: GetEventTextForICQClientChange}),
+    (EventType: ICQEVENTTYPE_CHECK_STATUS;       MessageType: mtSystem;        {TextFunction: GetEventTextForICQCheckStatus}),
+    (EventType: ICQEVENTTYPE_IGNORECHECK_STATUS; MessageType: mtSystem;        {TextFunction: GetEventTextForICQIgnoreCheckStatus}),
+    (EventType: ICQEVENTTYPE_BROADCAST;          MessageType: mtSystem;        {TextFunction: GetEventTextForICQBroadcast}),
+    (EventType: JABBER_DB_EVENT_TYPE_CHATSTATES; MessageType: mtStatus;        {TextFunction: GetEventTextForJabberChatStates}),
+    (EventType: EVENTTYPE_CONTACTLEFTCHANNEL;    MessageType: mtStatus;        {TextFunction: GetEventTextForMessage}),
+    (EventType: EVENTTYPE_WAT_REQUEST;           MessageType: mtWATrack;       {TextFunction: GetEventTextWATrackRequest}),
+    (EventType: EVENTTYPE_WAT_ANSWER;            MessageType: mtWATrack;       {TextFunction: GetEventTextWATrackAnswer}),
+    (EventType: EVENTTYPE_WAT_ERROR;             MessageType: mtWATrack;       {TextFunction: GetEventTextWATrackError}),
+    (EventType: EVENTTYPE_VOICE_CALL;            MessageType: mtVoiceCall;     {TextFunction: GetEventTextForMessage})
+  );
+
+function GetMessageType(EventInfo: TDBEventInfo; var EventIndex: Integer): THppMessageType;
+var
+  i: Integer;
+begin
+  EventIndex := 0;
+
+  for i := 1 to High(EventTable) do
+    if EventTable[i].EventType = EventInfo.EventType then
+    begin
+      EventIndex := i;
+      break;
+    end;
+  Result.event:=EventInfo.EventType;
+  Result.code :=EventTable[EventIndex].MessageType;
+
+  if (EventInfo.flags and DBEF_SENT) = 0 then
+    Result.direction:=mtIncoming
+  else
+    Result.direction:=mtOutgoing;
+end;
+
+procedure GetEventInfo(hDBEvent: THANDLE; var EventInfo: TDBEventInfo);
+var
+  BlobSize: integer;
+begin
+  ZeroMemory(@EventInfo, SizeOf(EventInfo));
+  EventInfo.cbSize := SizeOf(EventInfo);
+  BlobSize := db_event_getBlobSize(hDBEvent);
+  if BlobSize > 0 then
+  begin
+    EventBuffer.Allocate(BlobSize+2); // cheat, for possible crash avoid
+    EventInfo.pBlob := EventBuffer.Buffer;
+  end
+  else
+    BlobSize := 0;
+  EventInfo.cbBlob := BlobSize;
+  if db_event_get(hDBEvent, @EventInfo) = 0 then
+  begin
+    EventInfo.cbBlob := BlobSize;
+    pAnsiChar(EventInfo.pBlob)[BlobSize  ]:=#0;
+    pAnsiChar(EventInfo.pBlob)[BlobSize+1]:=#0;
+  end
+  else
+    EventInfo.cbBlob := 0;
+end;
+
+function GetEventCoreText(EventInfo: TDBEventInfo; var Hi: THistoryItem): Boolean;
+var
+  dbegt: TDBEVENTGETTEXT;
+  msg: pWideChar;
+begin
+  dbegt.dbei     := @EventInfo;
+  dbegt.datatype := DBVT_WCHAR;
+  dbegt.codepage := hi.Codepage;
+
+  msg := pWideChar(CallService(MS_DB_EVENT_GETTEXT,0,LPARAM(@dbegt)));
+  Result := Assigned(msg);
+
+  if Result then
+  begin
+    StrDupW(hi.Text,msg,StrLenW(msg));
+    mir_free(msg);
+  end;
+end;
+
+const
+  UrlPrefix: array[0..1] of pWideChar = (
+    'www.',
+    'ftp.');
+
+const
+  UrlProto: array[0..12] of record
+      Proto: PWideChar;
+      Idn  : Boolean;
+    end = (
+    (Proto: 'http:/';     Idn: True;),
+    (Proto: 'ftp:/';      Idn: True;),
+    (Proto: 'file:/';     Idn: False;),
+    (Proto: 'mailto:/';   Idn: False;),
+    (Proto: 'https:/';    Idn: True;),
+    (Proto: 'gopher:/';   Idn: False;),
+    (Proto: 'nntp:/';     Idn: False;),
+    (Proto: 'prospero:/'; Idn: False;),
+    (Proto: 'telnet:/';   Idn: False;),
+    (Proto: 'news:/';     Idn: False;),
+    (Proto: 'wais:/';     Idn: False;),
+    (Proto: 'outlook:/';  Idn: False;),
+    (Proto: 'callto:/';   Idn: False;));
+
+function TextHasUrls(Text: pWideChar): Boolean;
+var
+  i,len,lenW: Integer;
+  pPos: PWideChar;
+begin
+  Result := False;
+  len := StrLenW(Text);
+  if len=0 then exit;
+
+  // search in URL Prefixes like "www"
+  // make Case-insensitive??
+
+  for i := 0 to High(UrlPrefix) do
+  begin
+    pPos := StrPosW(Text, UrlPrefix[i]);
+    if not Assigned(pPos) then
+      continue;
+    Result := ((uint_ptr(pPos) = uint_ptr(Text)) or not IsWideCharAlphaNumeric((pPos - 1)^)) and
+      IsWideCharAlphaNumeric((pPos + Length(UrlPrefix[i]))^);
+    if Result then
+      exit;
+  end;
+
+  // search in url protos like "http:/"
+
+  if StrPosW(Text,':/') = nil then exit;
+
+  lenW := (len+1)*SizeOf(WideChar);
+
+  TextBuffer.Lock;
+  TextBuffer.Allocate(lenW);
+
+  Move(Text^,TextBuffer.Buffer^,lenW);
+
+  CharLowerBuffW(PWideChar(TextBuffer.Buffer),len);
+  for i := 0 to High(UrlProto) do
+  begin
+    pPos := StrPosW(PWideChar(TextBuffer.Buffer), UrlProto[i].proto);
+    if not Assigned(pPos) then
+      continue;
+    Result := ((uint_ptr(pPos) = uint_ptr(TextBuffer.Buffer)) or
+      not IsWideCharAlphaNumeric((pPos - 1)^));
+    if Result then
+      break;
+  end;
+  TextBuffer.Unlock;
+end;
+
+function AdjustLineBreaks(S:pWideChar):pWideChar;
+var
+  Source, Dest: PWideChar;
+  Extra, len: Integer;
+begin
+  Result := nil;
+  len := StrLenW(S);
+  if len=0 then
+    exit;
+
+  Source := S;
+  Extra := 0;
+  while Source^ <> #0 do
+  begin
+    case Source^ of
+      #10:
+        Inc(Extra);
+      #13:
+        if Source[1] = #10 then
+          Inc(Source)
+        else
+          Inc(Extra);
+    end;
+    Inc(Source);
+  end;
+
+  if Extra = 0 then
+  begin
+    Result := S;
+  end
+  else
+  begin
+    Source := S;
+    mGetMem(Result, len + Extra + 1);
+    Dest := Result;
+    while Source^ <> #0 do
+    begin
+      case Source^ of
+        #10: begin
+          Dest^ := #13;
+          Inc(Dest);
+          Dest^ := #10;
+        end;
+        #13: begin
+          Dest^ := #13;
+          Inc(Dest);
+          Dest^ := #10;
+          if Source[1] = #10 then
+            Inc(Source);
+        end;
+      else
+        Dest^ := Source^;
+      end;
+      Inc(Dest);
+      Inc(Source);
+    end;
+    Dest^ := #0;
+    mFreeMem(S); //!!
+  end;
+end;
+
+// reads event from hDbEvent handle
+// reads all THistoryItem fields
+// *EXCEPT* Proto field. Fill it manually, plz
+procedure ReadEvent(hDBEvent: THandle; var hi: THistoryItem; UseCP: Cardinal = CP_ACP);
+var
+  EventInfo: TDBEventInfo;
+  EventIndex: integer;
+  Handled: Boolean;
+begin
+  ZeroMemory(@hi,SizeOf(hi));
+  hi.Height := -1;
+  EventBuffer.Lock;
+  GetEventInfo(hDBEvent, EventInfo);
+
+  hi.Module      := EventInfo.szModule;
+  hi.proto       := nil;
+  hi.Time        := EventInfo.Timestamp;
+  hi.EventType   := EventInfo.EventType;
+  hi.IsRead      := Boolean(EventInfo.flags and DBEF_READ);
+  hi.MessageType := GetMessageType(EventInfo, EventIndex);
+  hi.CodePage    := UseCP;
+  // enable autoRTL feature
+  if Boolean(EventInfo.flags and DBEF_RTL) then
+    hi.RTLMode := hppRTLEnable;
+
+  Handled := GetEventCoreText(EventInfo, hi);
+{!!
+  if not Handled then
+    EventTable[EventIndex].TextFunction(EventInfo, hi);
+}
+  hi.Text := AdjustLineBreaks(hi.Text);
+  hi.Text := rtrimw(hi.Text);
+
+  if hi.MessageType.code=mtMessage then
+    if TextHasUrls(hi.Text) then
+    begin
+      hi.MessageType.code:=mtUrl;
+    end;
+
+  EventBuffer.Unlock;
+end;
+
+procedure CheckRecent(hDBEvent: THandle);
+begin
+  if RecentEvent <> hDBEvent then
+  begin
+    ZeroMemory(@RecentEventInfo, SizeOf(RecentEventInfo));
+    RecentEventInfo.cbSize := SizeOf(RecentEventInfo);
+    RecentEventInfo.cbBlob := 0;
+    db_event_get(hDBEvent, @RecentEventInfo);
+    RecentEvent := hDBEvent;
+  end;
+end;
+
+function GetEventMessageType(hDBEvent: THandle): THppMessageType;
+var
+  EventIndex: Integer;
+begin
+  CheckRecent(hDBEvent);
+  Result := GetMessageType(RecentEventInfo,EventIndex);
+end;
+
+function GetEventTimestamp(hDBEvent: THandle): DWord;
+begin
+  CheckRecent(hDBEvent);
+  Result := RecentEventInfo.timestamp;
+end;
+
+function GetEventDateTime(hDBEvent: THandle): TDateTime;
+begin
+  Result := TimestampToDateTime(GetEventTimestamp(hDBEvent));
+end;
+
+function GetEventName(const Hi: THistoryItem):pAnsiChar;
+var
+  MesType: THppMessageType;
+  mt: TBuiltinMessageType;
+  etd: PDBEVENTTYPEDESCR;
+begin
+  MesType := Hi.MessageType;
+  for mt := Low(EventRecords) to High(EventRecords) do
+  begin
+    if MesType.code = mt then
+    begin
+      Result := EventRecords[mt].Name;
+      exit;
+    end;
+  end;
+
+  etd := Pointer(CallService(MS_DB_EVENT_GETTYPE, WPARAM(Hi.Module), LPARAM(Hi.EventType)));
+  if etd = nil then
+  begin
+    Result := EventRecords[mtOther].Name;
+  end
+  else
+    Result := etd.descr;
+end;
+
+function GetEventIcon(const Hi: THistoryItem):HICON;
+var
+  idx:integer;
+  MesType: THppMessageType;
+  mt: TbuiltinMessageType;
+begin
+  idx:=-HPP_SKIN_OTHER_MIRANDA;
+
+  MesType := Hi.MessageType;
+
+  for mt := Low(EventRecords) to High(EventRecords) do
+  begin
+    if MesType.code = mt then
+    begin
+      idx := EventRecords[mt].idx;
+      break;
+    end;
+  end;
+
+  if idx = 9999 then
+  begin
+    result:=0;
+    exit;
+  end
+  else if idx < 0 then
+    result := skinIcons[-idx-1000].Handle
+  else
+    result := hppIcons[tHppIconName(idx)].Handle;
+
+  if result = 0 then
+    result := hppIcons[HPP_ICON_CONTACTHISTORY].Handle;
+end;
+
+function IsIncomingEvent(const Hi: THistoryItem):boolean;
+begin
+  result:=(Hi.MessageType.direction and mtIncoming)<>0; 
+end;
+
+function IsOutgoingEvent(const Hi: THistoryItem):boolean;
+begin
+  result:=(Hi.MessageType.direction and mtOutgoing)<>0; 
 end;
 
 initialization
@@ -1075,6 +1069,5 @@ initialization
 finalization
   EventBuffer.Destroy;
   TextBuffer.Destroy;
-  SetLength(ModuleEventRecords,0);
 
 end.

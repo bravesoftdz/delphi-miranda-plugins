@@ -2,14 +2,30 @@
 library hppadd;
 
 uses
-  m_api, Windows, kol,
+//  fastmm4,
+  Windows,
+  tmpl,
+  m_api in '..\include\m_api.pas',
+  wrapdlgs in '..\utils\wrapdlgs.pas',
+  wrapper in '..\utils\wrapper.pas',
+  common in '..\utils\common.pas',
+  CustomGraph in '..\utils\CustomGraph.pas',
+  io in '..\utils\io.pas',
+  mirutils in '..\utils\mirutils.pas',
+  hpp_arrays in 'hpp_arrays.pas',
+  hpp_contacts in 'hpp_contacts.pas',
+  hpp_events in 'hpp_events.pas',
+  hpp_global in 'hpp_global.pas',
+  hpp_itemprocess in 'hpp_itemprocess.pas',
+  hpp_opt_dialog in 'hpp_opt_dialog.pas',
+  hpp_richedit in 'hpp_richedit.pas',
+  hpp_strparser in 'hpp_strparser.pas',
+  hpp_icons in 'hpp_icons.pas',
+  my_grid in 'my_grid.pas',
   my_GridOptions in 'my_GridOptions.pas',
   my_RichCache in 'my_RichCache.pas',
-  my_grid in 'my_grid.pas',
-//  hpp_external in 'hpp_external.pas',
-  hpp_options in 'hpp_options.pas',
-  hpp_opt_dialog in 'hpp_opt_dialog.pas',
-  hpp_global in 'hpp_global.pas';
+  my_richedit in 'my_richedit.pas',
+  my_rtf in 'my_rtf.pas';
 
 var
   PluginInterfaces:array [0..1] of MUUID;
@@ -35,20 +51,14 @@ begin
   // this is called by Miranda, thus has to use the cdecl calling convention
   // all services and hooks need this.
 
-  NewHistoryGrid(nil).FillHistory(wParam);
+  tmpl.sample(wparam);
 end;
-
-var
-  HookOptInit,
-  onloadhook:THANDLE;
 
 function OnModulesLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
   mi:TCListMenuItem;
 begin
   Result:=0;
-  UnhookEvent(onloadhook);
-
   CreateServiceFunction('TestPlug/MenuCommand', @PluginMenuCommand);
   FillChar(mi,SizeOf(mi),0);
   mi.cbSize    :=SizeOf(mi);
@@ -59,22 +69,18 @@ begin
   mi.pszService:='TestPlug/MenuCommand';
   Menu_AddContactMenuItem(@mi);
 
-  RegisterOptions;
-  LoadIcons;
-  LoadIcons2;
-  LoadIntIcons;
-  Applet:=NewApplet('');
-  Applet.Visible:=false;
+  RegisterIcons;
+
   GridOptions:=TGridOptions.Create;
   GridOptions.LoadOptions;
 
-  HookOptInit := HookEvent(ME_OPT_INITIALISE, OnOptInit);
+  HookEvent(ME_OPT_INITIALISE, OnOptInit);
 end;
 
 function Load():int; cdecl;
 begin
   Langpack_register;
-  onloadhook:=HookEvent(ME_SYSTEM_MODULESLOADED,@OnModulesLoaded);
+  HookEvent(ME_SYSTEM_MODULESLOADED,@OnModulesLoaded);
 
   Result:=0;
 end;
@@ -96,5 +102,6 @@ exports
   MirandaPluginInterfaces,MirandaPluginInfoEx;
 
 begin
+  DisableThreadLibraryCalls(hInstance);
   GridOptions:=nil;
 end.

@@ -43,8 +43,6 @@ hg_mouse
 hg_paint
   assign
   (color)
-hpp_options
-  (fontservice)
 my_GridOptions.pas
 
 Rich:

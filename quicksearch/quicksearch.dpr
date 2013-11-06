@@ -27,10 +27,10 @@ begin
   PluginInfo.shortName  :='Quick Search';
   PluginInfo.version    :=$01040112;
   PluginInfo.description:=
-    'This Plugin allow you to quick search for nickname,'+
-    'firstname, lastname, email, uin in your contact list.'+
-    'And now you may add any setting to display - for example'+
-    'users version of miranda,group or city.';
+    'This Plugin allow you to quick search for nickname, '+
+    'firstname, lastname, email, uin in your contact list. '+
+    'And now you may add any setting to display - for example '+
+    'user''s version of miranda,group or city.';
   PluginInfo.author     :='Awkward, based on Bethoven sources';
   PluginInfo.authorEmail:='panda75@bk.ru; awk1975@ya.ru';
   PluginInfo.copyright  :='(c) 2004,2005 Bethoven; 2006-2013 Awkward';
@@ -171,8 +171,6 @@ end;
 
 function OnModulesLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
-  CallService(MS_DBEDIT_REGISTERSINGLEMODULE,twparam(qs_module),0);
-
   RegisterIcons;
   RegisterColors;
 

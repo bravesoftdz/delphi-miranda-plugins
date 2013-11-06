@@ -6,19 +6,30 @@ interface
 
 uses
   Windows,
-  kol,
+  CustomGraph,
   hpp_global;
 
-//type
-//  TColor = Integer;
+// hppFontItems indexes for special Font/Color arrays
+const
+  fiGrid     = 0;
+  fiSelected = 1;
+  fiSession  = 2;
+  fiContact  = 3;
+  fiProfile  = 4;
+  fiInTime   = 5;
+  fiOutTime  = 6;
+  fiDivider  = 7;
+  fiLink     = 8;
 
 type
   TItemOption = record
-    MessageType  : TMessageTypes;
-    textFont     : PFont;
-    textColor    : TColor;
-    FontItemIndex: integer; // hppFontItems index
+    MessageType  : THppMessageType;
+    Handle       : HFONT;
+    textFont     : LOGFONTW;
+    textColor    : TCOLORREF;
+    textBkColor  : TCOLORREF;
   end;
+
   TItemOptions = array of TItemOption;
 
   TGridOptions = class
@@ -29,20 +40,6 @@ type
 
     FLocks: Integer;
     Changed: Integer;
-
-    FColorDivider     : TColor;
-    FColorSelectedText: TColor;
-    FColorSelected    : TColor;
-    FColorSessHeader  : TColor;
-    FColorBackground  : TColor;
-    FColorLink        : TColor;
-
-    FFontProfile          : PFont;
-    FFontContact          : PFont;
-    FFontIncomingTimestamp: PFont;
-    FFontOutgoingTimestamp: PFont;
-    FFontSessHeader       : PFont;
-    FFontMessage          : PFont;
 
     FItemOptions: TItemOptions;
 
@@ -58,64 +55,54 @@ type
 
     FTextFormatting: Boolean;
 
-    FClipCopyTextFormat   : WideString;
-    FClipCopyFormat       : WideString;
-    FReplyQuotedFormat    : WideString;
-    FReplyQuotedTextFormat: WideString;
-    FSelectionFormat      : WideString;
-    FDateTimeFormat       : WideString;
-
+    FTemplates:array [0..5] of pWideChar;
 
     FForceProfileName: Boolean;
-    FProfileName: WideString;
+    FProfileName: pWideChar;
 
     procedure SetShowIcons(const Value: Boolean);
-
     procedure SetTextFormatting(const Value: Boolean);
-    procedure SetProfileName(const Value: WideString);
+
+    procedure SetProfileName(const Value: pWideChar);
 
     function GetLocked: Boolean;
     procedure DoChange(mask: dword=HGOPT_ALL);
+
+    function LoadFont(idx:integer):boolean;
+    function GetFont(idx:integer):HFONT;
+    function GetColor(idx:integer):TCOLORREF;
+    function GetTextColor(idx:integer):TCOLORREF;
+    function GetTemplate(idx:integer):pWideChar;
+    procedure SetTemplate(idx:integer;value:pWideChar);
   public
     constructor Create;
     destructor Destroy; override;
 
-    procedure FontReload();
+    function FontReload():boolean;
     procedure ColourReload();
+
     procedure LoadOptions;
     procedure SaveOptions;
     procedure SaveTemplates;
 
+    function GetItemIndex(Mes: THppMessageType): Integer;
+
     procedure StartChange;
     procedure EndChange(mask: dword=HGOPT_ALL; const Forced: Boolean = False);
-
-    function AddItemOptions: Integer;
-    function GetItemOptions(Mes: TMessageTypes; out textFont: PFont; out textColor: TColor): Integer;
-
-    property ClipCopyFormat       : WideString read FClipCopyFormat        write FClipCopyFormat;
-    property ClipCopyTextFormat   : WideString read FClipCopyTextFormat    write FClipCopyTextFormat;
-    property ReplyQuotedFormat    : WideString read FReplyQuotedFormat     write FReplyQuotedFormat;
-    property ReplyQuotedTextFormat: WideString read FReplyQuotedTextFormat write FReplyQuotedTextFormat;
-    property SelectionFormat      : WideString read FSelectionFormat       write FSelectionFormat;
-    property DateTimeFormat       : WideString read FDateTimeFormat        write FDateTimeFormat;
-
     property Locked: Boolean read GetLocked;
 
-    property ColorDivider     : TColor read FColorDivider      write FColorDivider;
-    property ColorSelectedText: TColor read FColorSelectedText write FColorSelectedText;
-    property ColorSelected    : TColor read FColorSelected     write FColorSelected;
-    property ColorSessHeader  : TColor read FColorSessHeader   write FColorSessHeader;
-    property ColorBackground  : TColor read FColorBackground   write FColorBackground;
-    property ColorLink        : TColor read FColorLink         write FColorLink;
+    property ClipCopyFormat       : pWideChar index 0 read GetTemplate write SetTemplate;
+    property ClipCopyTextFormat   : pWideChar index 1 read GetTemplate write SetTemplate;
+    property ReplyQuotedFormat    : pWideChar index 2 read GetTemplate write SetTemplate;
+    property ReplyQuotedTextFormat: pWideChar index 3 read GetTemplate write SetTemplate;
+    property SelectionFormat      : pWideChar index 4 read GetTemplate write SetTemplate;
+    property DateTimeFormat       : pWideChar index 5 read GetTemplate write SetTemplate;
 
-    property FontProfile          : PFont read FFontProfile;
-    property FontContact          : PFont read FFontContact;
-    property FontIncomingTimestamp: PFont read FFontIncomingTimestamp;
-    property FontOutgoingTimestamp: PFont read FFontOutgoingTimestamp;
-    property FontSessHeader       : PFont read FFontSessHeader;
-    property FontMessage          : PFont read FFontMessage;
-
+    // to private? public just for export
     property ItemOptions: TItemOptions read FItemOptions write FItemOptions;
+    property Font     [i:integer]:HFONT     read GetFont;
+    property ColorBack[i:integer]:TCOLORREF read GetColor;
+    property ColorText[i:integer]:TCOLORREF read GetTextColor;
 
     property RTLEnabled: Boolean read FRTLEnabled write FRTLEnabled;
     property ShowIcons : Boolean read FShowIcons  write SetShowIcons;
@@ -126,11 +113,10 @@ type
     property RawRTFEnabled        : Boolean read FRawRTFEnabled         write FRawRTFEnabled;
     property AvatarsHistoryEnabled: Boolean read FAvatarsHistoryEnabled write FAvatarsHistoryEnabled;
 
+    property TextFormatting: Boolean read FTextFormatting write SetTextFormatting;
     property OpenDetailsMode: Boolean read FOpenDetailsMode write FOpenDetailsMode;
     property ForceProfileName: Boolean read FForceProfileName;
-    property ProfileName: WideString read FProfileName write SetProfileName;
-
-    property TextFormatting: Boolean read FTextFormatting write SetTextFormatting;
+    property ProfileName: pWideChar read FProfileName write SetProfileName;
   end;
 
 var
@@ -142,7 +128,7 @@ uses
   m_api,
   Common, dbsettings,
   hpp_contacts,
-  hpp_options;
+  hpp_icons;
 
 const
   DEFFORMAT_CLIPCOPY        = '%nick%, %smart_datetime%:\n%mes%\n';
@@ -152,16 +138,147 @@ const
   DEFFORMAT_SELECTION       = '%selmes%\n';
   DEFFORMAT_DATETIME        = 'dd.MM.yy HH:mm:ss'; // ShortDateFormat + LongTimeFormat
 
+type
+  ThppFontType = set of (hppFont, hppColor);
 
-function GetDBWideStr(setting:PAnsiChar;default:pWideChar):WideString;
-var
-  tmp:pWideChar;
-begin
-  tmp:=DBReadUnicode(0,hppDBName,setting,default);
-  result:=WideString(tmp);
-  FreeMem(tmp);
-end;
+  ThppFontsRec = record
+    _type    : ThppFontType;
+    name     : PWideChar;
+    nameColor: PWideChar;
+    Mes      : THppMessageType;
+    style    : byte;
+    size     : ShortInt;
+    color    : TCOLORREF;
+    back     : TCOLORREF;
+  end;
 
+const
+  hppFontItems: array[0..30] of ThppFontsRec = (
+    (_type: [hppFont,hppColor]; name: 'Grid messages'; nameColor: nil{'Grid background'}; // message
+       Mes:(event:0; direction:0; code:mtUnknown);
+       style:0; size: -11; color: $000000; back: $E9EAEB),
+
+    (_type: [hppFont,hppColor]; name: 'Selected text'; nameColor: nil{'Selected background'};
+       Mes:(event:0; direction:0; code:mtUnknown);
+       style:0; size: -11; color: clHighlightText; back: clHighlight),
+
+    (_type: [hppFont,hppColor]; name: 'Conversation header'; nameColor: nil; // session
+       Mes:(event:0; direction:0; code:mtUnknown);
+       style:0; size: -11; color: $000000; back: $00D7FDFF),
+
+    (_type: [hppFont]; name: 'Incoming nick'; nameColor: nil;
+       Mes:(event:0; direction:0; code:mtUnknown);
+       style:DBFONTF_BOLD; size: -11; color: $6B3FC8; back: $000000),
+
+    (_type: [hppFont]; name: 'Outgoing nick'; nameColor: nil;
+       Mes:(event:0; direction:0; code:mtUnknown);
+       style:DBFONTF_BOLD; size: -11; color: $BD6008; back: $000000),
+
+    (_type: [hppFont]; name: 'Incoming timestamp'; nameColor: nil;
+       Mes:(event:0; direction:0; code:mtUnknown);
+       style:0; size: -11; color: $000000; back: $000000),
+
+    (_type: [hppFont]; name: 'Outgoing timestamp'; nameColor: nil;
+       Mes:(event:0; direction:0; code:mtUnknown);
+       style:0; size: -11; color: $000000; back: $000000),
+
+    (_type: [hppColor]; name: nil; nameColor: 'Divider';
+       Mes:(event:0; direction:0; code:mtUnknown);
+       style:0; size: -11; color: $000000; back: clGray),
+
+    (_type: [hppColor]; name: nil; nameColor: 'Link';
+       Mes:(event:0; direction:0; code:mtUnknown);
+       style:0; size: -11; color: $000000; back: clBlue),
+
+
+    (_type: [hppFont,hppColor]; name: 'Incoming message'; nameColor: nil;
+       Mes:(event:0; direction:mtIncoming; code:mtMessage);
+       style:0; size: -11; color: $000000; back: $DBDBDB),
+
+    (_type: [hppFont,hppColor]; name: 'Outgoing message'; nameColor: nil;
+       Mes:(event:0; direction:mtOutgoing; code:mtMessage);
+       style:0; size: -11; color: $000000; back: $EEEEEE),
+
+    (_type: [hppFont,hppColor]; name: 'Incoming file'; nameColor: nil;
+       Mes:(event:0; direction:mtIncoming; code:mtFile);
+       style:0; size: -11; color: $000000; back: $9BEEE3),
+
+    (_type: [hppFont,hppColor]; name: 'Outgoing file'; nameColor: nil;
+       Mes:(event:0; direction:mtOutgoing; code:mtFile);
+       style:0; size: -11; color: $000000; back: $9BEEE3),
+
+    (_type: [hppFont,hppColor]; name: 'Incoming url'; nameColor: nil;
+       Mes:(event:0; direction:mtIncoming; code:mtUrl);
+       style:0; size: -11; color: $000000; back: $F4D9CC),
+    
+    (_type: [hppFont,hppColor]; name: 'Outgoing url'; nameColor: nil;
+       Mes:(event:0; direction:mtOutgoing; code:mtUrl);
+       style:0; size: -11; color: $000000; back: $F4D9CC),
+
+    (_type: [hppFont,hppColor]; name: 'Incoming SMS Message'; nameColor: nil;
+       Mes:(event:0; direction:mtIncoming; code:mtSMS);
+       style:0; size: -11; color: $000000; back: $CFF4FE),
+
+    (_type: [hppFont,hppColor]; name: 'Outgoing SMS Message'; nameColor: nil;
+       Mes:(event:0; direction:mtOutgoing; code:mtSMS);
+       style:0; size: -11; color: $000000; back: $CFF4FE),
+
+    (_type: [hppFont,hppColor]; name: 'Incoming contacts'; nameColor: nil;
+       Mes:(event:0; direction:mtIncoming; code:mtContacts);
+       style:0; size: -11; color: $000000; back: $FEF4CF),
+
+    (_type: [hppFont,hppColor]; name: 'Outgoing contacts'; nameColor: nil;
+       Mes:(event:0; direction:mtOutgoing; code:mtContacts);
+       style:0; size: -11; color: $000000; back: $FEF4CF),
+
+    (_type: [hppFont,hppColor]; name: 'System message'; nameColor: nil;
+       Mes:(event:0; direction:mtIncoming+mtOutgoing; code:mtSystem);
+       style:0; size: -11; color: $000000; back: $CFFEDC),
+
+    (_type: [hppFont,hppColor]; name: 'Status changes'; nameColor: nil;
+       Mes:(event:0; direction:mtIncoming+mtOutgoing; code:mtStatus);
+       style:0; size: -11; color: $000000; back: $F0F0F0),
+
+    (_type: [hppFont,hppColor]; name: 'SMTP Simple Email'; nameColor: nil;
+       Mes:(event:0; direction:mtIncoming+mtOutgoing; code:mtSMTPSimple);
+       style:0; size: -11; color: $000000; back: $FFFFFF),
+
+    (_type: [hppFont,hppColor]; name: 'Other events (unknown)'; nameColor: nil;
+       Mes:(event:0; direction:mtIncoming+mtOutgoing; code:mtOther);
+       style:0; size: -11; color: $000000; back: $FFFFFF),
+
+    (_type: [hppFont,hppColor]; name: 'Nick changes'; nameColor: nil;
+       Mes:(event:0; direction:mtIncoming+mtOutgoing; code:mtNickChange);
+       style:0; size: -11; color: $000000; back: $00D7FDFF),
+
+    (_type: [hppFont,hppColor]; name: 'Avatar changes'; nameColor: nil;
+       Mes:(event:0; direction:mtIncoming+mtOutgoing; code:mtAvatarChange);
+       style:0; size: -11; color: $000000; back: $00D7FDFF),
+
+    (_type: [hppFont,hppColor]; name: 'Incoming WATrack notify'; nameColor: nil;
+       Mes:(event:0; direction:mtIncoming; code:mtWATrack);
+       style:0; size: -11; color: $C08000; back: $C8FFFF),
+
+    (_type: [hppFont,hppColor]; name: 'Outgoing WATrack notify'; nameColor: nil;
+       Mes:(event:0; direction:mtOutgoing; code:mtWATrack);
+       style:0; size: -11; color: $C08000; back: $C8FFFF),
+
+    (_type: [hppFont,hppColor]; name: 'Status message changes'; nameColor: nil;
+       Mes:(event:0; direction:mtIncoming+mtOutgoing; code:mtStatusMessage);
+       style:0; size: -11; color: $000000; back: $F0F0F0),
+
+    (_type: [hppFont,hppColor]; name: 'Voice calls'; nameColor: nil;
+       Mes:(event:0; direction:mtIncoming+mtOutgoing; code:mtVoiceCall);
+       style:0; size: -11; color: $000000; back: $E9DFAB),
+
+    (_type: [hppFont,hppColor]; name: 'Webpager message'; nameColor: nil;
+       Mes:(event:0; direction:mtIncoming+mtOutgoing; code:mtWebPager);
+       style:0; size: -11; color: $000000; back: $FFFFFF),
+
+    (_type: [hppFont,hppColor]; name: 'EMail Express message'; nameColor: nil;
+       Mes:(event:0; direction:mtIncoming+mtOutgoing; code:mtEmailExpress);
+       style:0; size: -11; color: $000000; back: $FFFFFF)
+  );
 
 function OnFontChanged(wParam: WPARAM; lParam: LPARAM): Integer; cdecl;
 begin
@@ -175,22 +292,201 @@ begin
   GridOptions.ColourReload();
 end;
 
-{ TGridOptions }
+procedure RegisterFont(Order:integer);
+var
+  fid: TFontIDW;
+begin
+  fid.cbSize := sizeof(fid);
+  StrCopyW(fid.group, hppName);
+  StrCopy (fid.dbSettingsGroup, hppDBName);
+  fid.flags := FIDF_DEFAULTVALID+FIDF_ALLOWEFFECTS;
+  fid.order := Order;
+  StrCopyW(fid.name,hppFontItems[Order].Name);
+  IntToStr(StrCopyE(fid.prefix,'Font'),Order);
+  StrCopyW(fid.deffontsettings.szFace, 'Tahoma');
+  fid.deffontsettings.charset:= DEFAULT_CHARSET;
+  fid.deffontsettings.size   := hppFontItems[Order].size;
+  fid.deffontsettings.style  := hppFontItems[Order].style;
+  fid.deffontsettings.colour := ColorToRGB(hppFontItems[Order].color);
+  FontRegisterW(@fid);
+end;
 
-function TGridOptions.AddItemOptions: Integer;
+procedure RegisterColor(Order:integer);
+var
+  cid: TColourIDW;
+begin
+  cid.cbSize := sizeof(cid);
+  StrCopyW(cid.group, hppName);
+  StrCopy (cid.dbSettingsGroup, hppDBName);
+  cid.order := Order;
+  if hppFontItems[Order].NameColor=nil then
+    StrCopyW(cid.name,hppFontItems[Order].Name)
+  else
+    StrCopyW(cid.name,hppFontItems[Order].NameColor);
+  IntToStr(StrCopyE(cid.setting,'Color'),Order);
+  cid.defcolour := ColorToRGB(hppFontItems[Order].back);
+  ColourRegisterW(@cid);
+end;
+
+
+{ TGridOptions }
+function TGridOptions.GetTemplate(idx:integer):pWideChar;
+begin
+  result:=FTemplates[idx];
+end;
+
+procedure TGridOptions.SetTemplate(idx:integer;value:pWideChar);
+begin
+  if value<>FTemplates[idx] then
+  begin
+    mFreeMem(FTemplates[idx]);
+    //!! strdup
+    FTemplates[idx]:=value;
+  end;
+end;
+
+function TGridOptions.GetItemIndex(Mes: THppMessageType): Integer;
 var
   i: Integer;
 begin
-  i := Length(FItemOptions);
-  SetLength(FItemOptions, i + 1);
-  FItemOptions[i].MessageType := [mtOther];
-  FItemOptions[i].textFont    := NewFont;
-  Result := i;
+  i := 0;
+  Result := 0;
+  while i <= High(FItemOptions) do
+  begin
+    if (FItemOptions[i].MessageType.code = Mes.code) and
+      ((FItemOptions[i].MessageType.direction and Mes.direction)<>0) then
+    begin
+      Result := i;
+      break;
+    end
+    else
+    begin
+      if FItemOptions[i].MessageType.code = mtOther then
+      begin
+        Result := i;
+      end;
+      Inc(i);
+    end;
+  end;
+end;
+
+function TGridOptions.LoadFont(idx:integer):boolean;
+var
+  fid: TFontIDW;
+  lf : LOGFONTW;
+  col: TCOLORREF;
+begin
+  FillChar(lf,SizeOf(lf),0);
+
+//  fid.cbSize := sizeof(fid);
+  StrCopyW(fid.group, hppName);
+  StrCopyW(fid.name , hppFontItems[idx].name);
+  col := CallService(MS_FONT_GETW, WPARAM(@fid), LPARAM(@lf));
+
+  with FItemOptions[idx] do
+    if (col<>textColor) or not CompareMem(@lf,@textFont,SizeOf(lf)) then
+    begin
+      // font was not used before
+      if (col=textColor) and (Handle=0) then
+        result:=false
+      else
+        result:=true;
+      textColor:=col;
+      move(lf,textFont,SizeOf(lf));
+      if Handle<>0 then
+      begin
+        DeleteObject(Handle);
+        Handle:=0; // new will be created on demand
+      end;
+    end
+    else
+      result:=false;
+end;
+
+function TGridOptions.FontReload():boolean;
+var
+  i: integer;
+begin
+  result:=false;
+
+  for i := 0 to High(ItemOptions) do
+  begin
+    //## read font settings just for fonts
+    if hppFont in hppFontItems[i]._type then
+      if LoadFont(i) then
+        result:=True;
+//      result:=LoadFont(i) or result;
+  end;
+
+  if result then
+    DoChange(HGOPT_FONTSERVICE);
+end;
+
+procedure TGridOptions.ColourReload();
+var
+  cid: TColourIDW;
+  lcolor:TCOLORREF;
+  i: integer;
+  changed:boolean;
+begin
+  StrCopyW(cid.group, hppName);
+  changed:=false;
+  for i := 0 to High(ItemOptions) do
+  begin
+    //## just if color here
+    if hppColor in hppFontItems[i]._type then
+    begin
+      StrCopyW(cid.name, hppFontItems[i].name);
+      with ItemOptions[i] do
+      begin
+        lcolor := CallService(MS_COLOUR_GETW, WPARAM(@cid), 0);
+        if lcolor <> textBkColor then
+        begin
+          textBkColor:=lcolor;
+          changed:=true;
+        end;
+      end;
+    end;
+  end;
+
+  if changed then
+    DoChange(HGOPT_FONTSERVICE);
+end;
+
+function TGridOptions.GetFont(idx:integer):HFONT;
+begin
+  with FItemOptions[idx] do
+  begin
+    if Handle=0 then
+    begin
+      Handle:=CreateFontIndirectW({$IFDEF FPC}@{$ENDIF}textFont);
+    end;
+    result:=Handle;
+  end;
+end;
+
+function TGridOptions.GetColor(idx:integer):TCOLORREF;
+begin
+  with FItemOptions[idx] do
+  begin
+    result:=textBkColor;
+  end;
+end;
+
+function TGridOptions.GetTextColor(idx:integer):TCOLORREF;
+begin
+  with FItemOptions[idx] do
+  begin
+    if textFont.lfFaceName[0]=#0 then
+      result:=textBkColor
+    else
+      result:=textColor;
+  end;
 end;
 
 constructor TGridOptions.Create;
 var
-  i,index: integer;
+  i: integer;
 begin
   inherited;
 
@@ -205,46 +501,30 @@ begin
 
   FOpenDetailsMode := False;
 
-  FProfileName := '';
+  FProfileName := nil;
   FForceProfileName := False;
+
+  FillChar(FTemplates,SizeOf(FTemplates),0);
 
   FTextFormatting := True;
 
   FLocks  := 0;
   Changed := 0;
 
-  FFontContact           := NewFont;
-  FFontProfile           := NewFont;
-  FFontIncomingTimestamp := NewFont;
-  FFontOutgoingTimestamp := NewFont;
-  FFontSessHeader        := NewFont;
-  FFontMessage           := NewFont;
+  SetLength(FItemOptions,Length(hppFontItems));
 
-  // cycle 1: calculate
-  index := 0;
   for i := 0 to High(hppFontItems) do
   begin
-    if hppFontItems[i].Mes <> [] then
+    FillChar(FItemOptions[i], SizeOf(TItemOption),0);
+    with FItemOptions[i] do
     begin
-      Inc(index);
+      MessageType := hppFontItems[i].Mes;
     end;
-  end;
-  SetLength(FItemOptions,index);
 
-  // cycle 2: initialize
-  index := 0;
-  for i := 0 to High(hppFontItems) do
-  begin
-    if hppFontItems[i].Mes <> [] then
-    begin
-      with FItemOptions[index] do
-      begin
-        FontItemIndex := i;
-        MessageType   := hppFontItems[i].Mes;
-        textFont      := NewFont;
-      end;
-      Inc(index);
-    end;
+    if hppFont in hppFontItems[i]._type then
+      RegisterFont(i);
+    if hppColor in hppFontItems[i]._type then
+      RegisterColor(i);
   end;
 
   hOptionsChanged:=CreateHookableEvent(ME_HPP_OPTIONSCHANGED);
@@ -262,101 +542,22 @@ begin
   UnHookEvent(hFontChanged);
   UnHookEvent(hColourChanged);
 
-  FFontContact.Free;
-  FFontProfile.Free;
-  FFontIncomingTimestamp.Free;
-  FFontOutgoingTimestamp.Free;
-  FFontSessHeader.Free;
-  FFontMessage.Free;
   for i := 0 to HIGH(FItemOptions) do
   begin
-    FItemOptions[i].textFont.Free;
+    if FItemOptions[i].Handle<>0 then
+      DeleteObject(FItemOptions[i].Handle);
   end;
   Finalize(FItemOptions);
 
+  ClipCopyFormat       :=nil;
+  ClipCopyTextFormat   :=nil;
+  ReplyQuotedFormat    :=nil;
+  ReplyquotedTextFormat:=nil;
+  SelectionFormat      :=nil;
+  DateTimeFormat       :=nil;
+
+  mFreeMem(FProfileName);
   inherited;
-end;
-
-procedure LoadFont(Order: Integer; aFont:PFont);
-var
-  fid: TFontIDW;
-  lf: TLogFontW;
-  col: TColor;
-begin
-  fid.cbSize := sizeof(fid);
-  StrCopyW(fid.group, hppName);
-  StrCopyW(fid.name, hppFontItems[Order].name);
-  col := CallService(MS_FONT_GETW, WPARAM(@fid), LPARAM(@lf));
-
-  aFont.LogFontStruct:={$IFDEF FPC}PLogFontA(@lf)^{$ELSE}lf{$ENDIF};
-  aFont.Color:=col;
-end;
-
-procedure TGridOptions.FontReload();
-var
-  i: integer;
-begin
-  // load fonts
-  LoadFont(0 , FontContact);
-  LoadFont(1 , FontProfile);
-  LoadFont(17, FontSessHeader);
-  LoadFont(20, FontIncomingTimestamp);
-  LoadFont(21, FontOutgoingTimestamp);
-  LoadFont(22, FontMessage);
-
-  // load mestype-related
-  for i := 0 to High(ItemOptions) do
-  begin
-    with ItemOptions[i] do
-    begin
-      LoadFont(FontItemIndex, textFont);
-    end;
-  end;
-
-  // blocking automatically
-  DoChange(HGOPT_FONTSERVICE);
-end;
-
-function LoadColour(Order: integer): TColor;
-var
-  cid: TColourIDW;
-begin
-  StrCopyW(cid.group, hppName);
-  StrCopyW(cid.name, hppFontItems[Order].name);
-  result := CallService(MS_COLOUR_GETW, WPARAM(@cid), 0);
-end;
-
-function LoadColourDB(Order: integer): TColor;
-var
-  buf:array [0..31] of AnsiChar;
-begin
-  IntToStr(StrCopyE(buf,'Color'),Order);
-  Result := DBReadDword(0,hppDBName,@buf, Color2RGB(hppFontItems[Order].back));
-end;
-
-procedure TGridOptions.ColourReload();
-var
-  i: integer;
-begin
-  // load colors
-  ColorDivider      := LoadColourDB(0);
-  ColorSelectedText := LoadColourDB(1);
-  ColorSelected     := LoadColourDB(2);
-  ColorSessHeader   := LoadColourDB(17);
-  ColorBackground   := LoadColourDB(22);
-  ColorLink         := LoadColourDB(29);
-
-  // load mestype-related
-  for i := 0 to High(ItemOptions) do
-  begin
-    with ItemOptions[i] do
-    begin
-      textColor := LoadColour{DB}(FontItemIndex);
-    end;
-  end;
-
-  // blocking automatically
-  DoChange(HGOPT_FONTSERVICE);
 end;
 
 procedure TGridOptions.LoadOptions;
@@ -383,14 +584,14 @@ begin
     OpenDetailsMode := DBReadByte(0,hppDBName, 'OpenDetailsMode', 0)<>0;
     TextFormatting  := DBReadByte(0,hppDBName, 'InlineTextFormatting', 1)<>0;
 
-    ProfileName := GetDBWideStr('ProfileName', '');
+    FProfileName := DBReadUnicode(0,hppDBName,'ProfileName', nil);
 
-    ClipCopyFormat        := GetDBWideStr('FormatCopy'           , DEFFORMAT_CLIPCOPY);
-    ClipCopyTextFormat    := GetDBWideStr('FormatCopyText'       , DEFFORMAT_CLIPCOPYTEXT);
-    ReplyQuotedFormat     := GetDBWideStr('FormatReplyQuoted'    , DEFFORMAT_REPLYQUOTED);
-    ReplyQuotedTextFormat := GetDBWideStr('FormatReplyQuotedText', DEFFORMAT_REPLYQUOTEDTEXT);
-    SelectionFormat       := GetDBWideStr('FormatSelection'      , DEFFORMAT_SELECTION);
-    DateTimeFormat        := GetDBWideStr('DateTimeFormat'       , DEFFORMAT_DATETIME);
+    ClipCopyFormat        := DBReadUnicode(0,hppDBName,'FormatCopy'           , DEFFORMAT_CLIPCOPY);
+    ClipCopyTextFormat    := DBReadUnicode(0,hppDBName,'FormatCopyText'       , DEFFORMAT_CLIPCOPYTEXT);
+    ReplyQuotedFormat     := DBReadUnicode(0,hppDBName,'FormatReplyQuoted'    , DEFFORMAT_REPLYQUOTED);
+    ReplyQuotedTextFormat := DBReadUnicode(0,hppDBName,'FormatReplyQuotedText', DEFFORMAT_REPLYQUOTEDTEXT);
+    SelectionFormat       := DBReadUnicode(0,hppDBName,'FormatSelection'      , DEFFORMAT_SELECTION);
+    DateTimeFormat        := DBReadUnicode(0,hppDBName,'DateTimeFormat'       , DEFFORMAT_DATETIME);
 
   finally
     EndChange(HGOPT_OPTIONS or HGOPT_TEMPLATES);
@@ -422,12 +623,12 @@ procedure TGridOptions.SaveTemplates;
 begin
   StartChange;
   try
-    DBWriteUnicode(0, hppDBName, 'FormatCopy'           , pWideChar(ClipCopyFormat));
-    DBWriteUnicode(0, hppDBName, 'FormatCopyText'       , pWideChar(ClipCopyTextFormat));
-    DBWriteUnicode(0, hppDBName, 'FormatReplyQuoted'    , pWideChar(ReplyQuotedFormat));
-    DBWriteUnicode(0, hppDBName, 'FormatReplyQuotedText', pWideChar(ReplyQuotedTextFormat));
-    DBWriteUnicode(0, hppDBName, 'FormatSelection'      , pWideChar(SelectionFormat));
-    DBWriteUnicode(0, hppDBName, 'DateTimeFormat'       , pWideChar(DateTimeFormat));
+    DBWriteUnicode(0, hppDBName, 'FormatCopy'           , ClipCopyFormat);
+    DBWriteUnicode(0, hppDBName, 'FormatCopyText'       , ClipCopyTextFormat);
+    DBWriteUnicode(0, hppDBName, 'FormatReplyQuoted'    , ReplyQuotedFormat);
+    DBWriteUnicode(0, hppDBName, 'FormatReplyQuotedText', ReplyQuotedTextFormat);
+    DBWriteUnicode(0, hppDBName, 'FormatSelection'      , SelectionFormat);
+    DBWriteUnicode(0, hppDBName, 'DateTimeFormat'       , DateTimeFormat);
   finally
     EndChange(HGOPT_TEMPLATES);
   end;
@@ -465,35 +666,6 @@ begin
     DoChange(mask);
 end;
 
-function TGridOptions.GetItemOptions(Mes: TMessageTypes; out textFont: PFont; out textColor: TColor): Integer;
-var
-  i: Integer;
-begin
-  i := 0;
-  Result := 0;
-  while i <= High(FItemOptions) do
-  begin
-    if (MessageTypesToDWord(FItemOptions[i].MessageType) and MessageTypesToDWord(Mes)) >=
-        MessageTypesToDWord(Mes) then
-    begin
-      textFont  := FItemOptions[i].textFont;
-      textColor := FItemOptions[i].textColor;
-      Result := i;
-      break;
-    end
-    else
-    begin
-      if mtOther in FItemOptions[i].MessageType then
-      begin
-        textFont  := FItemOptions[i].textFont;
-        textColor := FItemOptions[i].textColor;
-        Result := i;
-      end;
-      Inc(i);
-    end;
-  end;
-end;
-
 procedure TGridOptions.SetTextFormatting(const Value: Boolean);
 begin
   if FTextFormatting = Value then
@@ -513,22 +685,23 @@ begin
   if FShowIcons = Value then
     exit;
   FShowIcons := Value;
-  Self.StartChange;
+  StartChange;
   try
     if Value then
-      LoadIcons;
+      LoadSkinIcons;
     DoChange(HGOPT_OPTIONS);
   finally
-    Self.EndChange;
+    EndChange;
   end;
 end;
 
-procedure TGridOptions.SetProfileName(const Value: WideString);
+procedure TGridOptions.SetProfileName(const Value: pWideChar);
 begin
-  if Value = FProfileName then
+  if StrCmpW(Value,FProfileName)=0 then
     exit;
-  FProfileName := Value;
-  FForceProfileName := (Value <> '');
+  mFreeMem(FProfileName);
+  StrDupW(FProfileName,Value); //!!!!
+  FForceProfileName := (Value <> nil);
   DoChange(HGOPT_TEMPLATES);
 end;
 

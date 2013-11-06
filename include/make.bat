@@ -9,6 +9,8 @@ if /i '%2' == 'fpc' (
   ..\XE2\bin\dcc32.exe %myopts% %1 %3 %4 %5 %6 %7 %8 %9
 ) else if /i '%2' == 'xe64' (
   ..\XE2\bin\dcc64.exe %myopts% %1 %3 %4 %5 %6 %7 %8 %9
+) else if /i '%2' == 'xe5' (
+  ..\XE5\bin\dcc32.exe %myopts% %1 %3 %4 %5 %6 %7 %8 %9
 ) else (
   ..\delphi\dcc32 %myopts% %1 %2 %3 %4 %5 %6 %7 %8 %9
 )

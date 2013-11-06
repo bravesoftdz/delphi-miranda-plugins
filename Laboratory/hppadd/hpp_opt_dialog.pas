@@ -35,11 +35,10 @@ implementation
 
 uses
   Messages, CommCtrl,
-  m_api,
+  common, wrapper,
+  m_api,dbsettings,
   hpp_global,
-  dbsettings,
-  my_GridOptions,
-  hpp_options
+  my_GridOptions
 //  hpp_services,
 //  hpp_database,
 //  hpp_external,
@@ -86,12 +85,12 @@ begin
   if GetChecked(IDC_RECENTONTOP   ) <> (DBReadByte(0,hppDBName,'SortOrder',0)<>0) then exit;
   if GetChecked(IDC_GROUPHISTITEMS) <> (DBReadByte(0,hppDBName,'GroupHistoryItems',0)<>0) then exit;
 
-  {$IFNDEF NO_EXTERNALGRID}
   if GetChecked(IDC_IEVIEWAPI)     <> (DBReadByte(0,hppDBName,'IEViewAPI',0)<>0) then exit;
   if GetChecked(IDC_GROUPLOGITEMS) <> (DBReadByte(0,hppDBName,'GroupLogItems',0)<>0) then exit;
   if GetChecked(IDC_DISABLEBORDER) <> (DBReadByte(0,hppDBName,'NoLogBorder',0)<>0) then exit;
   if GetChecked(IDC_DISABLESCROLL) <> (DBReadByte(0,hppDBName,'NoLogScrollBar',0)<>0) then exit;
-  {$ENDIF}
+
+  if GetChecked(IDC_ICONPACK) <> (DBReadByte(0,hppDBName,'CheckIconPack',0)<>0) then exit;
 
   Result := False;
 end;
@@ -105,8 +104,8 @@ begin
   ShowRestart := False;
   GridOptions.StartChange;
   try
-    GridOptions.ShowIcons := GetChecked(IDC_SHOWEVENTICONS);
-    GridOptions.RTLEnabled := GetChecked(IDC_RTLDEFAULT);
+    GridOptions.ShowIcons       := GetChecked(IDC_SHOWEVENTICONS);
+    GridOptions.RTLEnabled      := GetChecked(IDC_RTLDEFAULT);
     GridOptions.OpenDetailsMode := GetChecked(IDC_OPENDETAILS);
 
     ShowHistoryCount := GetChecked(IDC_SHOWEVENTSCOUNT);
@@ -151,7 +150,6 @@ begin
 }
   end;
 
-  {$IFNDEF NO_EXTERNALGRID}
   Checked := GetChecked(IDC_IEVIEWAPI);
   if Checked <> (DBReadByte(0,hppDBName,'IEViewAPI',0)<>0) then
     DBWriteByte(0,hppDBName,'IEViewAPI',Ord(Checked));
@@ -173,7 +171,10 @@ begin
   if Checked <> (DBReadByte(0,hppDBName,'NoLogScrollBar',0)<>0) then
     DBWriteByte(0,hppDBName,'NoLogScrollBar',Ord(Checked));
   //ShowRestart := ShowRestart or (Checked <> DisableLogScrollbar);
-  {$ENDIF}
+
+  Checked := GetChecked(IDC_ICONPACK);
+  if Checked <> (DBReadByte(0,hppDBName,'CheckIconPack',0)<>0) then
+    DBWriteByte(0,hppDBName,'CheckIconPack',Ord(Checked));
 
   if ShowRestart then
     ShowWindow(GetDlgItem(hDlg,ID_NEED_RESTART),SW_SHOW)
@@ -205,7 +206,7 @@ begin
       SetChecked(IDC_RAWRTF,GridOptions.RawRTFEnabled);
       SetChecked(IDC_AVATARSHISTORY,GridOptions.AvatarsHistoryEnabled);
 
-      SetChecked(IDC_RECENTONTOP,DBReadByte(0,hppDBName,'SortOrder',0)<>0);
+      SetChecked(IDC_RECENTONTOP   ,DBReadByte(0,hppDBName,'SortOrder',0)<>0);
       SetChecked(IDC_GROUPHISTITEMS,DBReadByte(0,hppDBName,'GroupHistoryItems',0)<>0);
 
       SetChecked(IDC_IEVIEWAPI    ,DBReadByte(0,hppDBName,'IEViewAPI',0)<>0);
@@ -213,11 +214,13 @@ begin
       SetChecked(IDC_DISABLEBORDER,DBReadByte(0,hppDBName,'NoLogBorder',0)<>0);
       SetChecked(IDC_DISABLESCROLL,DBReadByte(0,hppDBName,'NoLogScrollBar',0)<>0);
 
+      SetChecked(IDC_ICONPACK,DBReadByte(0,hppDBName,'CheckIconPack',1)<>0);
+
       TranslateDialogDefault(hwndDlg);
     end;
 
     WM_NOTIFY: begin
-      if PNMHDR(lParam)^.code = PSN_APPLY then
+      if integer(PNMHDR(lParam)^.code) = PSN_APPLY then
       begin
         Result := 1;
         // apply changes here
@@ -241,15 +244,6 @@ begin
     end;
 
   end;
-end;
-
-function GetText(hDlg: HWND; idCtrl: Integer): WideString;
-var
-  dlg_text: array[0..1023] of WideChar;
-begin
-  ZeroMemory(@dlg_text,SizeOf(dlg_text));
-  GetDlgItemTextW(hDlg,idCtrl,@dlg_text,1023);
-  Result := dlg_text;
 end;
 
 function OptDialogProc2(hwndDlg: HWND; uMsg: UInt; wParam: WPARAM; lParam: LPARAM): lresult; stdcall;
@@ -289,17 +283,16 @@ begin
     end;
 
     WM_NOTIFY: begin
-      if PNMHDR(lParam)^.code = PSN_APPLY then
+      if integer(PNMHDR(lParam)^.code) = PSN_APPLY then
       begin
         Result := 1;
 
-        GridOptions.ClipCopyFormat       :=GetText(hwndDlg,IDC_TMPL_COPY);
-        GridOptions.ClipCopyTextFormat   :=GetText(hwndDlg,IDC_TMPL_COPYTEXT);
-        GridOptions.ReplyQuotedFormat    :=GetText(hwndDlg,IDC_TMPL_QUOTED);
-        GridOptions.ReplyquotedTextFormat:=GetText(hwndDlg,IDC_TMPL_QUOTEDTEXT);
-        GridOptions.SelectionFormat      :=GetText(hwndDlg,IDC_TMPL_SELECTION);
-
-        GridOptions.DateTimeFormat:=GetText(hwndDlg,IDC_TMPL_DATETIME);
+        GridOptions.ClipCopyFormat       :=GetDlgText(hwndDlg,IDC_TMPL_COPY);
+        GridOptions.ClipCopyTextFormat   :=GetDlgText(hwndDlg,IDC_TMPL_COPYTEXT);
+        GridOptions.ReplyQuotedFormat    :=GetDlgText(hwndDlg,IDC_TMPL_QUOTED);
+        GridOptions.ReplyquotedTextFormat:=GetDlgText(hwndDlg,IDC_TMPL_QUOTEDTEXT);
+        GridOptions.SelectionFormat      :=GetDlgText(hwndDlg,IDC_TMPL_SELECTION);
+        GridOptions.DateTimeFormat       :=GetDlgText(hwndDlg,IDC_TMPL_DATETIME);
 
         GridOptions.SaveTemplates;
       end;

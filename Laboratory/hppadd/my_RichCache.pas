@@ -3,9 +3,9 @@ unit my_RichCache;
 interface
 
 uses
-  KOL,
   RichEdit,
   my_richedit,
+  CustomGraph,
   Windows;
 
 type
@@ -15,7 +15,7 @@ type
     oldbitmap:HBITMAP; // to restore
     Width,
     Height: integer;
-    Color: tColor;
+    Color: TCOLORREF;
   end;
 type
   PRichItem = ^TRichItem;
@@ -33,10 +33,9 @@ type
     SaveRect: TRect;     // can get rect from RichItem.Rich?
   end;
 
-  tOnRichApply = procedure (Sender: PControl; Item:integer; Rich:PHPPRichEdit) of object;
+  tOnRichApply = procedure (Item:integer; Rich:PHPPRichEdit) of object;
 
-  PRichCache = ^TRichCache;
-  TRichCache = object(TObj)
+  TRichCache = class
   private
     LogX, LogY: Integer;   // used for Bitmap creating
     RichEventMasks: DWord; // (ENM_LINK), in ApplyItemToRich
@@ -56,7 +55,7 @@ type
     procedure MoveToTop(Index: Integer);  // current Item to top of cache
     procedure SetWidth(const Value: Integer);
   public
-    destructor Destroy; virtual;
+    destructor Destroy; override;
 
     // make Height = -1 to recalc
     procedure ResetAllItems;
@@ -80,7 +79,7 @@ type
     function UnlockItem(Item: Integer): TRect;
   end;
 
-function NewRichCache(aParent:PControl):PRichCache;
+function NewRichCache(aParent:HWND):TRichCache;
 
 implementation
 
@@ -94,7 +93,7 @@ begin
   if Assigned(FOnRichApply) then
   begin
     SendMessage(Item^.Rich.Handle, EM_SETEVENTMASK, 0, 0);
-    OnRichApply(@Self,Item^.GridItem,Item^.Rich);
+    OnRichApply(Item^.GridItem,Item^.Rich);
 
     SendMessage(Item^.Rich.Handle, EM_SETEVENTMASK, 0, ENM_REQUESTRESIZE);
     SendMessage(Item^.Rich.Handle, EM_REQUESTRESIZE, 0, 0);
@@ -195,7 +194,7 @@ end;
 
 function TRichCache.UnlockItem(Item: Integer): TRect;
 begin
-  SetRect(Result, 0, 0, 0, 0);
+  SetRectEmpty(Result);
   if Item = -1 then
     exit;
   if fLockedList[Item].RichItem=nil then
@@ -380,7 +379,10 @@ var
 begin
   tmp := NewHPPRichEdit(aParent);
   if tmp = nil then
+  begin
+    result:=nil;
     exit;
+  end;
 
   New(result);
   result.Bitmap.Width :=0;
@@ -393,29 +395,12 @@ begin
   result^.GridItem := -1;
 
   result^.Rich := tmp;
-{
-  result^.Rich := NewHPPRichEdit(aParent,[eoNoHScroll, eoNoVScroll,eoMultiline]);
-  result^.Rich.RE_Bottomless;
-  // make richedit transparent:
-  ExStyle := GetWindowLongPtr(result^.Rich.Handle, GWL_EXSTYLE);
-  ExStyle := ExStyle or WS_EX_TRANSPARENT;
-  SetWindowLongPtr(result^.Rich.Handle, GWL_EXSTYLE, ExStyle);
-  // workaround of SmileyAdd making richedit visible all the time
-  result^.Rich.Top     := -MaxInt;
-  result^.Rich.Height  := -1;
-  result^.Rich.Visible := False;
-
-  result^.Rich.WordWrap:= True;
-  result^.Rich.Border  := 0;
-  result^.Rich.Brush.BrushStyle := bsClear;
-}
 end;
 
 destructor TRichCache.Destroy;
 var
   i: Integer;
 begin
-messagebox(0,'destroy Cache','',0);
 
 //  Finalize(fLockedList);
   fLockedList := nil;
@@ -433,17 +418,15 @@ messagebox(0,'destroy Cache','',0);
   end;
   Finalize(Items);
   inherited;
-messagebox(0,'destroyed Cache','',0);
 end;
 
-function NewRichCache(aParent:PControl):PRichCache;
+function NewRichCache(aParent:HWND):TRichCache;
 var
   dc:HDC;
   i:integer;
-  lparent:HWND;
 begin
-  New(Result,Create);
-  with result^ do
+  Result:=TRichCache.Create;
+  with result do
   begin
     FRichWidth  := -1;
     FRichHeight := -1;
@@ -456,10 +439,9 @@ begin
     ReleaseDC(0, dc);
 
     SetLength(Items, CACHE_SIZE);
-    lparent:=aParent.GetWindowHandle;
     for i := 0 to HIGH(Items) do
     begin
-      Items[i]:=NewRichItem(lparent);
+      Items[i]:=NewRichItem(aParent);
     end;
   end;
 end;

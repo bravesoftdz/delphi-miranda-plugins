@@ -41,6 +41,7 @@ function CmdLine_GetOption(ptszParameter:PWideChar):PWideChar; stdcall;
 // database functions
 
 const
+  DBVT_ASIS            = 0;   // in, for db_get_s, to not translate output value
   DBVT_DELETED         = 0;   // setting got deleted, no values are valid
   DBVT_BYTE            = 1;   // bVal, cVal are valid
   DBVT_WORD            = 2;   // wVal, sVal are valid
@@ -702,6 +703,10 @@ typedef INT_PTR (__cdecl PROTO_INTERFACE::*ProtoServiceFuncParam)(WPARAM, LPARAM
 procedure ProtoCreateServiceParam(PROTO_INTERFACE *pThis, const char* szService, ProtoServiceFuncParam, LPARAM);
 }
 
+procedure ProtoLogA(pThis:pointer{PPROTO_INTERFACE}; szFormat :pAnsiChar; args:va_list); stdcall;
+                 external CoreDLL name 'ProtoLogA';
+procedure ProtoLogW(pThis:pointer{PPROTO_INTERFACE}; wszFormat:pWideChar; args:va_list); stdcall;
+                 external CoreDLL name 'ProtoLogW';
 
 // returns image extension by a PA_* constant or empty string for PA_FORMAT_UNKNOWN
 function ProtoGetAvatarExtension(format:int):PWideChar; stdcall;

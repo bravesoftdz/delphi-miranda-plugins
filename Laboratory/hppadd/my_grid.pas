@@ -3,10 +3,11 @@ unit my_grid;
 interface
 
 uses
-  windows, KOL,
+  windows,
   hpp_global,
   hpp_events,
   my_richedit,
+  uRect,
   my_RichCache;
 
 type
@@ -20,60 +21,59 @@ type
   TGridUpdates = set of TGridUpdate;
 type // From Classes
   TBiDiMode = (bdLeftToRight, bdRightToLeft, bdRightToLeftNoAlign, bdRightToLeftReadingOnly);
-type
-  TOnSelect          = procedure(Sender: PObj; Item, OldItem: Integer) of object;
-  TGetItemData       = procedure(Sender: PObj; Index: Integer; var Item: THistoryItem) of object;
-  TGetNameData       = procedure(Sender: PObj; Index: Integer; var Name: WideString) of object;
-  TOnProcessRichText = procedure(Sender: PObj; Handle: THandle; Item: Integer) of object;
-  TOnItemFilter      = procedure(Sender: PObj; Index: Integer; var Show: Boolean) of object;
-  TOnState           = procedure(Sender: PObj; State: TGridState) of object;
 
 type
-  PHistoryGrid = ^THistoryGrid;
-  THistoryGrid = object(TObj{TControl})
+  TOnSelect          = procedure(Item, OldItem: Integer) of object;
+  TOnItemFilter      = procedure(Index: Integer; var Show: Boolean) of object;
+  TGetItemData       = procedure(Index: Integer; var Item: THistoryItem) of object;
+  TGetNameData       = procedure(Index: Integer; var Name: pWideChar) of object;
+  TOnProcessRichText = procedure(Handle: THandle; Item: Integer) of object;
+  TOnState           = procedure(State: TGridState) of object;
+
+type
+  THistoryGrid = class
   private
-FForm:PControl;
-
-FContact:THANDLE;
-harray:array of THANDLE;
-HistoryLength:integer;
+    FHandle: THANDLE;
     //----- properties fields -----
-    FRichCache:PRichCache;
+    FRichCache:TRichCache;
     FRich: PHPPRichEdit;           // Current item
     FRichInline:PHPPRichEdit;      // inline (pesudo-editor) control
     FItems: array of THistoryItem;
     FGetNameData: TGetNameData;    // reassignable procedure to get Name Data
     FGetItemData: TGetItemData;    // reassignable procedure to get Item Data
     FOnProcessRichText: TOnProcessRichText; // RTF postprocessing
-    FOnItemFilter: TOnItemFilter;  // Additional item fliter
+    FOnItemFilter: TOnItemFilter;  // Additional item filter
     FOnState: TOnState;            // Grid state changing
 
     FGridNotFocused: Boolean;      // if Grid window not in focus
     FSelected: Integer;            // first selected item
     FMultiSelect: Boolean;         // several items selected
+    FHideSelection: Boolean;
     FSelItems,
     TempSelItems: array of Integer;
     FState:TGridState;
     FReversed: Boolean;            // Latest at top or bottom
     FReversedHeader: Boolean;      // Header placement
-    FContactName: WideString;      // Saved name of contact
-    FProfileName: WideString;      // Saved our name
     FRTLMode: TRTLMode;            // Grid "global" RTL mode
     FBiDiMode: TBiDiMode;          // form field emulation
-    FHideSelection: Boolean;
+    //**********************
+    FContactName: pWideChar;       // Saved name of contact
+    FProfileName: pWideChar;       // Saved our name
 
-    FVertScrollBar:PControl;       // Scrollbar
-    FClient: PControl;             // painting client area
+    //----- Client Area -----
+    FClient    : HWND;             // painting client area
+    FClientDC  : HDC;              // memory buffer DC 
+    FClientBuf : HBITMAP;          // memory buffer bitmap
+    FClientRect: TRect;            // Client area rect
+
     FRichHeight:integer;
 
-    FFilter     : TMessageTypes;
+    FFilter     : TMessageTypes;   // event types mask to show
     FGroupLinked: Boolean; // combine history/log messages to group or not
     FShowBottomAligned: Boolean;
+
     //----- Text messages -----
-    FTxtNoItems : WideString; // Empty history / no items
-    FTxtStartup : WideString; // Stsrting message
-    FTxtNoSuch  : WideString; // no items for filter
-    FTxtSessions: WideString; // session header text
+    FMessages: array [0..3] of pWideChar;
 
     DownHitTests: TGridHitTests;
     HintHitTests: TGridHitTests;
@@ -83,24 +83,29 @@ HistoryLength:integer;
     FOnSelect: TOnSelect;
 
     hHookChange:THANDLE;
-    LogX, LogY: Integer;
 
     SessHeaderHeight,         // Session header height
     CHeaderHeight,            // Contact and Profile headers height,
     PHeaderHeight  : integer; // Calculates on settings changes
     LockCount      : integer;
-    ShowBookmarks  : Boolean; // Show bookmarks sign
-    ShowHeaders    : Boolean; // Show session sign (to open session header) or not
+    FShowBookmarks : Boolean; // Show bookmarks sign
+    FShowHeaders   : Boolean; // Show session sign (to open session header) or not
     ExpandHeaders  : Boolean; // Show session header in history
     GridUpdates    : TGridUpdates; // set of types of updates
-    GridWidth      : integer; // Saved grdi width to recognize width changes
 
     //----- ScrollBar related -----
+    FScrollBar      : HWND;    // scrollbar control handle
+    FSBPosition     : integer; // Current position (item number)
+    FSBMax          : integer; // Item count - page (for scroll box moving)
+    FSBHidden       : boolean; // Visible scrollbar or not
     TopItemOffset   : integer; // Top item "offscreen" offset
     MaxSBPos        : integer;
-    NeededSBPosition: integer; // required (manual) SB position after scroll
     BarAdjusted     : boolean; // ScrollBar requires adjust
     VLineScrollSize : integer;
+
+    //----- Physic -----
+    LogX, LogY: Integer;      // DEVICEPIXELS (to not call WinAPI all time)
+
     //----- Mouse wheel handler temporary variables -----
     FWheelLastTick   :Cardinal;
     FWheelAccumulator:integer;
@@ -112,152 +117,176 @@ HistoryLength:integer;
     IsCanvasClean  : Boolean; // Canvas ready to draw progress
     ProgressPercent: byte;
 
-procedure hgItemData(Sender: PObj; Index: Integer; var Item: THistoryItem);
-function GetItemData(Index: Integer): THistoryItem;
-procedure GridProcessRichText(Sender: PObj; Handle: THandle; Item: Integer);
+    procedure InitDefaults;
 
     procedure CheckBusy;
     
     //----- properties helpers -----
-    procedure SetState(const Value: TGridState);
-    function GetSelectionString: WideString;
-    procedure SetGroupLinked(const Value: Boolean);
-    procedure SetReversed(const Value: Boolean);
+    procedure SetState         (const Value: TGridState);
+    procedure SetGroupLinked   (const Value: Boolean);
+    procedure SetShowHeaders   (const Value: Boolean);
+    procedure SetReversed      (const Value: Boolean);
     procedure SetReversedHeader(const Value: Boolean);
-    procedure SetFilter(const Value: TMessageTypes);
-    procedure SetRTLMode(const Value: TRTLMode);
-    procedure SetHideSelection(const Value: Boolean);
-
-    function GetSelCount: Integer;
-    procedure SetSelected(const Value: Integer);
-
-    function GetCount: Integer;
-    function GetItems(Index: Integer): THistoryItem;
-    function GetSelItems(Index: Integer): Integer;
+    procedure SetFilter        (const Value: TMessageTypes);
+    procedure SetRTLMode       (const Value: TRTLMode);
+    procedure SetHideSelection (const Value: Boolean);
+    procedure SetSelected(Item: Integer);
+    function  GetSelectionString: WideString;
+    function  GetSelCount: Integer;
+    function  GetCount: Integer;
+    function  GetItems   (Index: Integer): THistoryItem;
+    function  GetSelItems(Index: Integer): Integer;
     procedure SetSelItems(Index: Integer; Item: Integer);
+    function  GetGMessage(idx:integer):pWideChar;
+    procedure SetGMessage(idx:integer;value:pWideChar);
+
     //----- Grid settings related -----
     procedure DoOptionsChanged;
     procedure GridUpdateSize;
     procedure UpdateFilter;
 
-    function GetProfileName: WideString;
-    procedure SetProfileName(const Value: WideString);
-    procedure SetContactName(const Value: WideString);
+    function  GetProfileName: pWideChar;
+    procedure SetProfileName(Value: pWideChar);
+    procedure SetContactName(Value: pWideChar);
 
     procedure SetRichRTL(RTL: Boolean; aRichEdit: PHPPRichEdit);
-    function GetItemRTL(Item: Integer): Boolean;
+    function  GetItemRTL(Item: Integer): Boolean;
+
     //----- Select-related functions -----
-    procedure MakeSelected(Value: Integer);
-    procedure AddSelected(Item: Integer);
-    procedure RemoveSelected(Item: Integer);
-    procedure MakeSelectedTo(Item: Integer);
+    procedure MakeSelected     (Item: Integer);
+    procedure AddSelected      (Item: Integer);
+    procedure RemoveSelected   (Item: Integer);
+    procedure MakeSelectedTo   (Item: Integer);
     procedure MakeRangeSelected(FromItem, ToItem: Integer);
+
     //----- Item-related functions -----
     function FindItemAt(X, Y: Integer; out ItemRect: TRect): Integer; overload;
     function FindItemAt(P: TPoint; out ItemRect: TRect): Integer; overload;
     function FindItemAt(P: TPoint): Integer; overload;
     function FindItemAt(X, Y: Integer): Integer; overload;
     function GetDown(Item: Integer): Integer;
-    function GetUp(Item: Integer): Integer;
-    function GetIdx(Index: Integer): Integer;
-    function GetFirstVisible: Integer;
+    function GetUp  (Item: Integer): Integer;
+    function GetIdx (Index: Integer): Integer;
+
+    function  GetFirstVisible: Integer;
     procedure MakeVisible(Item: Integer);
+
     function IsUnknown(Index: Integer): Boolean;
     function IsMatched(Index: Integer): Boolean; // Item is in filter
-    procedure LoadItem(Item: Integer; LoadHeight: Boolean = True; Reload: Boolean = False);
-    function CalcItemHeight(Item: Integer): Integer;
-    procedure ApplyItemToRich(Item: Integer; aRichEdit: PHPPRichEdit = nil; ForceInline: Boolean = False);
-    procedure ApplyItemToRichCache(Sender: PControl; Item: Integer; aRichEdit: PHPPRichEdit);
+
+    procedure LoadItem            (Item: Integer; LoadHeight: Boolean = True; Reload: Boolean = False);
+    function  CalcItemHeight      (Item: Integer): Integer;
+    procedure ApplyItemToRich     (Item: Integer; aRichEdit: PHPPRichEdit = nil; ForceInline: Boolean = False);
+    procedure ApplyItemToRichCache(Item: Integer; aRichEdit: PHPPRichEdit);
     // replace templates by values (internal)
-    function FormatItems(ItemList: array of Integer; Format: WideString): WideString;
+    function  FormatItems(ItemList: array of Integer; Format: WideString): WideString;
     procedure IntFormatItem(Item: Integer; var Tokens: TWideStrArray; var SpecialTokens: TIntArray);
 
     function GetHintAtPoint(X, Y: Integer; var ObjectHint: WideString; var ObjectRect: TRect): Boolean;
+
     //----- painting functions -----
-    procedure EraseBkgnd(Sender: PControl; DC: HDC);
-    procedure MyPaint(Sender: PControl; DC: HDC);
-    procedure PaintHeader(Index: Integer; ItemRect: TRect);
-    procedure PaintItem(Index: Integer; ItemRect: TRect);
-    procedure Paint;
-    procedure DrawMessage(const aText: WideString);
+    procedure PaintHeader(Index: Integer; var ItemRect: TRect);
+    procedure PaintItem  (Index: Integer; var ItemRect: TRect; const ClipRect: TRect);
+    function  Paint(const ClipRect:TRect):lresult;
+    procedure DrawMessage(aText: pWideChar);
     procedure DrawProgress;
     procedure DoProgress(lPos, Max: Integer);
+
+    procedure Invalidate;
+    procedure Update;
+
     //----- Scrollbar functions -----
-    procedure ScrollGridBy(Offset: Integer; Update: Boolean = True);
+    procedure ScrollGridBy(Offset: Integer; DoUpdate: Boolean = True);
     procedure SetSBPos(Position: Integer);
     procedure AdjustScrollBar;
-    //----- Messages (events) processing -----
-    procedure OnGridBeforeScroll(Sender: PControl; OldPos, NewPos: Integer;
-      Cmd: Word; var AllowChange: Boolean);
-    procedure OnGridScroll(Sender: PControl; Cmd: Word);
-    procedure OnGridResize(Sender:PObj);
-    function OnGridMessage(var Msg:TMsg; var Rslt:Integer):Boolean;
-    //----- Mouse-related events -----
-    procedure DoLButtonDown(var Mouse:TMouseEventData);
-    procedure DoLButtonUp  (var Mouse:TMouseEventData);
-    procedure OnGridMouseWheel   (Sender:PControl; var Mouse:TMouseEventData);
-    procedure OnGridMouseDown    (Sender:PControl; var Mouse:TMouseEventData);
-    procedure OnGridMouseUp      (Sender:PControl; var Mouse:TMouseEventData);
-    procedure OnGridMouseDblClick(Sender:PControl; var Mouse:TMouseEventData);
-    procedure OnGridMouseMove    (Sender:PControl; var Mouse:TMouseEventData);
-    
+    procedure SetSBPosition(value:integer);
+    procedure SetSBMax     (value:integer);
+    procedure SetSBHidden(value:boolean);
+
+    procedure OnGridSCroll(wParam:WPARAM);
+
+//    function  OnGridMessage(lParam:LPARAM):boolean;
+    function  OnGridNotify(lParam:LPARAM):boolean;
+
+    //----- Keys-related messages -----
+    function OnKeyMessage(hMessage:UInt; wParam:WPARAM; lParam:LPARAM):lresult;
+
+    //----- Mouse-related messages -----
+    procedure OnMouseMessage(hMessage:UInt; wParam:WPARAM; lParam:LPARAM);
+    procedure DoLButtonUp     (X,Y:integer);
+    procedure OnGridMouseWheel(shift:SmallInt);
+
     function GetHitTests(X, Y: Integer): TGridHitTests;
 
-function GetRichEditRect(Item: Integer; DontClipTop: Boolean): TRect;
+	  function GetItemRect    (Item: Integer): TRect;
+    function GetRichEditRect(Item: Integer; DontClipTop: Boolean): TRect;
     function GetLinkAtPoint(X, Y: Integer): AnsiString;
-    function IsLinkAtPoint(RichEditRect: TRect; X, Y, Item: Integer): Boolean;
+    function IsLinkAtPoint (RichEditRect: TRect; X, Y, Item: Integer): Boolean;
+
+    //----- Scroll bar properties -----
+    property SBPosition: integer read FSBPosition write SetSBPosition;
+    property SBMax: integer read FSBMax write SetSBMax;
+
   public
-	  function GetItemRect(Item: Integer): TRect;
-function FillHistory(hContact:THANDLE):integer;
+    property Handle:THANDLE read FHandle;
+	  
     property SelectionString: WideString read GetSelectionString;
     property ShowBottomAligned: Boolean read FShowBottomAligned write FShowBottomAligned;
-    property GroupLinked: Boolean read FGroupLinked write SetGroupLinked default False;
+    property GroupLinked: Boolean read FGroupLinked write SetGroupLinked;
+    property ShowBookmarks: Boolean read FShowBookmarks write FShowBookmarks;
+    property ShowHeaders: Boolean read FShowHeaders write SetShowHeaders;
     property State: TGridState read FState write SetState;
-    property Reversed: Boolean read FReversed write SetReversed;
+    property Reversed      : Boolean read FReversed write SetReversed;
     property ReversedHeader: Boolean read FReversedHeader write SetReversedHeader;
     property Filter: TMessageTypes read FFilter write SetFilter;
-    property RTLMode: TRTLMode read FRTLMode write SetRTLMode;
+    property RTLMode : TRTLMode  read FRTLMode  write SetRTLMode;
     property BiDiMode: TBiDiMode read FBiDiMode write FBiDiMode;
-    property HideSelection: Boolean read FHideSelection write SetHideSelection default False;
+    property HideSelection: Boolean read FHideSelection write SetHideSelection;
 
-    property VertScrollBar:PControl read FVertScrollBar;
-    property RichEdit: PHPPRichEdit read FRich write FRich;
+    property RichEdit      : PHPPRichEdit read FRich       write FRich;
     property InlineRichEdit: PHPPRichEdit read FRichInline write FRichInline;
-    property OnProcessRichText: TOnProcessRichText read FOnProcessRichText write FOnProcessRichText;
+{*} property OnProcessRichText: TOnProcessRichText read FOnProcessRichText write FOnProcessRichText;
     //----- Item properties -----
     property Count: Integer read GetCount;
     property Items[Index: Integer]: THistoryItem read GetItems;
-    property OnItemData: TGetItemData read FGetItemData write FGetItemData;
-    property OnNameData: TGetNameData read FGetNameData write FGetNameData;
+{*} property OnItemData: TGetItemData read FGetItemData write FGetItemData;
+{*} property OnNameData: TGetNameData read FGetNameData write FGetNameData;
+{*} property OnItemFilter: TOnItemFilter read FOnItemFilter write FOnItemFilter;
 
-    property OnSelect: TOnSelect read FOnSelect write FOnSelect;
+{*} property OnState: TOnState read FOnState write FOnState;
+
+{*} property OnSelect: TOnSelect read FOnSelect write FOnSelect;
     property SelectedItems[Index: Integer]: Integer read GetSelItems write SetSelItems;
     property Selected: Integer read FSelected write SetSelected;
     property SelCount: Integer read GetSelCount;
     property MultiSelect: Boolean read FMultiSelect write FMultiSelect;
 
-    property ProfileName: WideString read GetProfileName write SetProfileName;
-    property ContactName: WideString read FContactName write SetContactName;
+    property ProfileName: pWideChar read GetProfileName write SetProfileName;
+    property ContactName: pWideChar read FContactName   write SetContactName;
     //----- Text messages properties -----
-    property TxtStartup : WideString read FTxtStartup  write FTxtStartup;
-    property TxtNoItems : WideString read FTxtNoItems  write FTxtNoItems;
-    property TxtNoSuch  : WideString read FTxtNoSuch   write FTxtNoSuch;
-    property TxtSessions: WideString read FTxtSessions write FTxtSessions;
+    property TxtStartup : pWideChar index 0 read GetGMessage write SetGMessage; // Empty history / no items
+    property TxtNoItems : pWideChar index 1 read GetGMessage write SetGMessage; // Stsrting message        
+    property TxtNoSuch  : pWideChar index 2 read GetGMessage write SetGMessage; // no items for filter     
+    property TxtSessions: pWideChar index 3 read GetGMessage write SetGMessage; // session header text     
+    //----- Scroll bar properties -----
+    property SBHidden: boolean read FSBHidden write SetSBHidden;
 
-    destructor Destroy; virtual;
+    destructor Destroy; override;
     procedure Allocate(ItemsCount: Integer; Scroll: Boolean = True);
+
     //----- Grid settings related -----
     procedure BeginUpdate;
     procedure EndUpdate;
     procedure GridUpdate(Updates: TGridUpdates);
+
     //----- Scrollbar functions -----
     procedure ScrollToBottom;
 
-    function GetTopItem: Integer;
+    function GetTopItem   : Integer;
     function GetBottomItem: Integer;
     function GetNext(Item: Integer; Force: Boolean = False): Integer;
     function GetPrev(Item: Integer; Force: Boolean = False): Integer;
-    function IsVisible(Item: Integer; Partially: Boolean = True): Boolean;
+    function IsVisible (Item: Integer; Partially: Boolean = True): Boolean;
     function IsSelected(Item: Integer): Boolean;
     procedure SelectAll;
     procedure SelectRange(FromItem, ToItem: Integer);
@@ -265,7 +294,8 @@ function FillHistory(hContact:THANDLE):integer;
     function FormatSelected(const Format: WideString): WideString;
   end;
 
-function NewHistoryGrid(aParent:PControl):PHistoryGrid;
+
+function NewHistoryGrid(aParent:HWND):THistoryGrid;
 
 
 implementation
@@ -273,48 +303,61 @@ implementation
 uses
   Messages,
   RichEdit,
-//  KolOleRe2, //!!
-  Common,
+  Common, CustomGraph,
   m_api,
   hpp_richedit,
-  hpp_options,
   hpp_arrays,
   hpp_strparser,
   hpp_itemprocess,
+  hpp_icons,
   my_rtf,
   my_GridOptions;
 
 const
+  SBPageSize = 20;
   Padding = 4;
 
-function PointInRect(Pnt: TPoint; Rct: TRect): Boolean;
-begin
-  Result := (Pnt.X >= Rct.Left) and (Pnt.X <= Rct.Right) and (Pnt.Y >= Rct.Top) and
-    (Pnt.Y <= Rct.Bottom);
-end;
-
-function DoRectsIntersect(R1, R2: TRect): Boolean;
-begin
-  Result := (Max(R1.Left, R2.Left) < Min(R1.Right, R2.Right)) and
-    (Max(R1.Top, R2.Top) < Min(R1.Bottom, R2.Bottom));
-end;
-
-function GetDateTimeString(Time:Dword):WideString;
+function GetDateTimeString(Time:Dword):pWideChar;
 var
   buf:array [0..300] of WideChar;
   ST: TSystemTime;
+  aft,lft:TFILETIME;
 begin
   if Assigned(GridOptions) then
   begin
-    if DateTime2SystemTime(TimestampToDateTime(Time)+VCLDate0,ST) then
-    begin
-      GetDateFormatW(LOCALE_USER_DEFAULT,0,@ST,pWideChar(GridOptions.DateTimeFormat),@buf,300);
-      GetTimeFormatW(LOCALE_USER_DEFAULT,0,@ST,@buf,@buf,300);
-      result:=buf;
-      exit;
-    end;
+    UnixTimeToFileTime(Time,aft);
+    FileTimeToLocalFileTime(aft, lft);
+    FileTimeToSystemTime(aft,ST);
+    GetDateFormatW(LOCALE_USER_DEFAULT,0,@ST,GridOptions.DateTimeFormat,@buf,300);
+    GetTimeFormatW(LOCALE_USER_DEFAULT,0,@ST,@buf,@buf,300);
+    StrDupW(result,buf);
+  end
+  else
+    result:=nil;
+end;
+
+function THistoryGrid.GetGMessage(idx:integer):pWideChar;
+begin
+  result:=FMessages[idx];
+end;
+
+procedure THistoryGrid.SetGMessage(idx:integer;value:pWideChar);
+begin
+  if StrCmpW(value,FMessages[idx])<>0 then
+  begin
+    mFreeMem(FMessages[idx]);
+    StrDupW (FMessages[idx],value);
   end;
-  result:='';
+end;
+
+procedure THistoryGrid.Update;
+begin
+  UpdateWindow(FHandle);
+end;
+
+procedure THistoryGrid.Invalidate;
+begin
+  InvalidateRect(FHandle, nil, true);
 end;
 
 //----- History Grid implementation -----
@@ -333,7 +376,7 @@ begin
   ZeroMemory(@pf, SizeOf(pf));
   pf.cbSize := SizeOf(pf);
   pf.dwMask := PFM_RTLPARA;
-  lExStyle := DWord(GetWindowLongPtr(aRichEdit.Handle, GWL_EXSTYLE)) and
+  lExStyle := DWord(GetWindowLongPtrW(aRichEdit.Handle, GWL_EXSTYLE)) and
     not(WS_EX_RTLREADING or WS_EX_LEFTSCROLLBAR or WS_EX_RIGHT or WS_EX_LEFT);
   if RTL then
   begin
@@ -346,7 +389,7 @@ begin
     {$IFDEF FPC}pf.wEffects{$ELSE}pf.wReserved{$ENDIF} := 0;
   end;
   SendMessage(RichEdit.Handle, EM_SETPARAFORMAT, 0, lParam(@pf));
-  SetWindowLongPtr(aRichEdit.Handle, GWL_EXSTYLE, lExStyle);
+  SetWindowLongPtrW(aRichEdit.Handle, GWL_EXSTYLE, lExStyle);
 
   aRichEdit.RTL := RTL;
 end;
@@ -355,13 +398,18 @@ end;
 {$include hg_gridsettings.inc}
 {$include hg_format.inc}
 {$include hg_items.inc}
-{$include hg_scroll.inc}
+{$include i_scroll.inc}
 {$include hg_selections.inc}
 {$include hg_re.inc}
-{$include hg_paint.inc}
-{$include hg_messages.inc}
-{$include hg_mouse.inc}
 {$include hg_hint.inc}
+
+{$include i_messages.inc}
+{$include i_mouse.inc}
+{$include i_keys.inc}
+{$include i_paint.inc}
+
+{$include i_cwproc.inc}
+{$include i_gwproc.inc}
 
 procedure THistoryGrid.Allocate(ItemsCount: Integer; Scroll: Boolean = True);
 var
@@ -373,12 +421,11 @@ begin
   for i := PrevCount to ItemsCount - 1 do
   begin
     FItems[i].Height := -1;
-    FItems[i].MessageType := [mtUnknown];
+    FItems[i].MessageType.code := mtUnknown;
     FRichCache.ResetItem(i); //?? if was before? or after deleting?
   end;
 
-  VertScrollBar.SBMax := ItemsCount + FVertScrollBar.SBPageSize - 1;
-//??  VertScrollBar.Range := ItemsCount + FVertScrollBar.SBPageSize - 1;
+  SBMax := ItemsCount + SBPageSize - 1;
   BarAdjusted := False;
 
   Allocated := True;
@@ -393,177 +440,149 @@ begin
   else
     AdjustScrollBar;
 
-  FClient.Invalidate;
+  Invalidate;
 end;
 
 destructor THistoryGrid.Destroy;
+var
+  i:integer;
 begin
-messagebox(0,'destroy Grid','',0);
   UnhookEvent(hHookChange);
-
-  FVertScrollBar.Free;
+  
+  // Destroy GDI objects
+  DestroyWindow(FHandle); // FClient+FScrollBar are child windows, muse destroy automatically
+  DeleteDC(FClientDC);
+  if FClientBuf<>0 then
+    DeleteObject(FClientBuf);
 
 //  FRichInline.Free;
 
-  FRich := nil; //!!
+  // Destroy cache
+  FRich := nil; //!! check for FreeHPPRichEdit in cache??
   FRichCache.Free;
 
-  FClient.Free;
+  // Destroy strings
+  mFreeMem(FContactName);
+  mFreeMem(FProfileName);
+  for i:=0 to HIGH(FMessages) do
+    mFreeMem(FMessages[i]);
+
+  //!!
   Finalize(FItems);
 
   inherited;
-messagebox(0,'destroyed Grid','',0);
 end;
 
-function NewHistoryGrid(aParent:PControl):PHistoryGrid;
+// all class fields must be initialized by 0, false, nil
+procedure THistoryGrid.InitDefaults;
 var
   dc:HDC;
 begin
-  New(Result,Create);
+//  ShowBottomAligned := False;
+  CHeaderHeight := -1;
+  PHeaderheight := -1;
+//  ExpandHeaders := False;
 
-  result.ShowBottomAligned := False;
-  result.GridWidth := 0;
-  result.CHeaderHeight := -1;
-  result.PHeaderheight := -1;
-  result.ExpandHeaders := False;
-  result.TxtStartup := 'Starting up...';
-  result.TxtNoItems := 'History is empty';
-  result.TxtNoSuch := 'No such items';
-  result.TxtSessions := 'Conversation started at %s';
-  result.FReversed := False;
-  result.FReversedHeader := False;
-  result.FState := gsIdle;
-  result.IsCanvasClean := False;
-  result.Multiselect := true;
-//  result.BarAdjusted := False;
-  result.Allocated := False;
+  TxtStartup  := 'Starting up...';
+  TxtNoItems  := 'History is empty';
+  TxtNoSuch   := 'No such items';
+  TxtSessions := 'Conversation started at %s';
 
-  result.FSelected := -1;
-//  result.FContact := 0;
-//  result.FProtocol := '';
-  result.ShowBookmarks := True;
+//  FReversed := False;
+//  FReversedHeader := False;
+  FState := gsIdle;
+//  IsCanvasClean := False;
+  Multiselect := true;
+//  Allocated := False;
 
-  result.FSelectionString := '';
-  result.FSelectionStored := False;
+//  BarAdjusted := False;
+//  FSBHidden := false;
 
-  result.LockCount:=0;
+  FSelected := -1;
+//  FContact := 0;
+//  FProtocol := '';
+  ShowBookmarks := True;
+
+  FSelectionString := ''; //?? need to change to PWideChar;
+//  FSelectionStored := False;
+
+//  LockCount:=0;
+
+  FFilter:=[mtUnknown, //!!mtIncoming, mtOutgoing,
+           mtMessage, mtUrl, mtFile, mtSystem];
+
+//  FHideSelection:=false;
+  FGridNotFocused:=true;
+
+  FClientDC:=CreateCompatibleDC(0);
+
+  // Physic
   dc := GetDC(0);
-  result.LogX := GetDeviceCaps(dc, LOGPIXELSX);
-  result.LogY := GetDeviceCaps(dc, LOGPIXELSY);
+  LogX := GetDeviceCaps(dc, LOGPIXELSX);
+  LogY := GetDeviceCaps(dc, LOGPIXELSY);
   ReleaseDC(0, dc);
-  result.VLineScrollSize := (result.LogY*13) div 96;//MulDiv(result.LogY, 13, 96);
 
-{##}
-  result.FForm := NewForm(nil,'History Grid').SetSize(400,200);
-  result.FForm.Show;
-  result.FClient := NewPanel(result.FForm,esNone).SetAlign(caClient);
-//  result.FClient := NewAlienPanel(0,esNone);
-//  result.FClient := NewForm(nil{aParent},'panel');
+  VLineScrollSize := (LogY*13) div 96;//MulDiv(LogY, 13, 96);
 
-  result.FRichCache:=NewRichCache(result.FClient);
-  result.FRichCache.OnRichApply:=result.ApplyItemToRichCache;
-//  result.InlineRichEdit:=NewHPPRichEdit(result.FClient,[]);
+//  FWheelLastTick   := 0;
+//  FWheelAccumulator:= 0;
 
-  result.FWheelLastTick   := 0;
-  result.FWheelAccumulator:= 0;
-  result.FForm.OnMouseWheel :=result.OnGridMouseWheel;
-  result.FForm.OnMouseDown  :=result.OnGridMouseDown;
-  result.FForm.OnMouseUp    :=result.OnGridMouseUp;
-  result.FForm.OnMouseDblClk:=result.OnGridMouseDblClick;
-  result.FForm.OnMouseMove  :=result.OnGridMouseMove;
+end;
 
-  if result.FClient<>nil then
+function NewHistoryGrid(aParent:HWND):THistoryGrid;
+//var rc:TRect;
+begin
+  result:=THistoryGrid.Create;
+
+  // Create Main window
+  result.FHandle:=CreateWindowExW(0,'STATIC',nil,WS_CHILD+WS_VISIBLE,
+      CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,
+      aParent,0,hInstance,result);
+  if result.FHandle<>0 then
   begin
-    with result.FClient^ do
+    SetWindowLongPtrW(result.FHandle,GWL_WNDPROC,LONG_PTR(@GridWndProc));
+    SetWindowLongPtrW(result.FHandle,GWLP_USERDATA,long_ptr(result));
+
+//    GetClientRect(result.FHandle, rc);
+
+    // Create the scroll bar.
+    result.FScrollBar := CreateWindowExW(0,'SCROLLBAR',nil,
+        WS_CHILD or WS_VISIBLE or SBS_VERT or SBS_RIGHTALIGN,
+        CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,
+//        rc.Left,rc.Top,rc.Right,rc.Bottom,
+        result.FHandle,0,hInstance,nil);
+
+    if result.FScrollBar<>0 then
     begin
-//      SetSize(400,200);
-
-      OnEraseBkgnd:=result.EraseBkgnd;
-      OnPaint     :=result.MyPaint;
-      OnResize    :=result.OnGridResize;
-      OnMessage   :=result.OnGridMessage;
-//      Show;
-      OnMouseWheel :=result.OnGridMouseWheel;
-      OnMouseDown  :=result.OnGridMouseDown;
-      OnMouseUp    :=result.OnGridMouseUp;
-      OnMouseDblClk:=result.OnGridMouseDblClick;
-      OnMouseMove  :=result.OnGridMouseMove;
-
-//      GetWindowHandle;
-      Visible:=true;
+      SetWindowLongPtrW(result.FScrollBar,GWLP_USERDATA,long_ptr(result));
     end;
-    result.FVertScrollBar:=NewScrollBar(result.FForm, sbVertical).SetAlign(caRight);
-    result.FVertScrollBar.OnSBBeforeScroll:=result.OnGridBeforeScroll;
-    result.FVertScrollBar.OnSBScroll      :=result.OnGridScroll;
+
+    // Create client window (Log)
+    result.FClient:=CreateWindowExW(0,'STATIC',nil,WS_CHILD+WS_VISIBLE,
+        CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,
+//        rc.Left,rc.Top,rc.Right,rc.Bottom,
+        result.FHandle,0,hInstance,nil);
+
+    if result.FClient<>0 then
+    begin
+      SetWindowLongPtrW(result.FClient,GWL_WNDPROC,LONG_PTR(@ClientWndProc));
+      SetWindowLongPtrW(result.FClient,GWLP_USERDATA,long_ptr(result));
+
+      // Create cache
+      result.FRichCache:=NewRichCache(result.FClient);
+      result.FRichCache.OnRichApply:=result.ApplyItemToRichCache;
+
+      // Inline Editor
+  //    result.InlineRichEdit:=NewHPPRichEdit(result.FClient,[]);
+
+    end;
+
+    result.InitDefaults;
+
+    result.hHookChange:=HookEventObj(ME_HPP_OPTIONSCHANGED,@OnChange,result);
+
+    result.GridUpdate([guSize,guOptions]); // not sure about guSize here really
   end;
-
-  result.hHookChange:=HookEventObj(ME_HPP_OPTIONSCHANGED,@OnChange,result);
-
-  result.GridUpdate([guSize,guOptions]);
-
-  result.FGetItemData := result.hgItemData;
-  result.OnProcessRichText := result.GridProcessRichText;
-
-  result.FFilter:=[mtUnknown, mtIncoming, mtOutgoing,
-                  mtMessage, mtUrl, mtFile, mtSystem];
-
-  result.FHideSelection:=false;
-  result.FGridNotFocused:=true;
 end;
-
-function THistoryGrid.FillHistory(hContact:THANDLE):integer;
-var
-  i:integer;
-  hDBEvent:THANDLE;
-begin
-FContact:=hContact;
-  HistoryLength := CallService(MS_DB_EVENT_GETCOUNT, hContact, 0);
-  SetLength(harray,HistoryLength);
-  hDBEvent := CallService(MS_DB_EVENT_FINDFIRST, hContact, 0);
-  for i:=0 to HistoryLength-1 do
-  begin
-    harray[i]:=hDBEvent;
-    hDBEvent := CallService(MS_DB_EVENT_FINDNEXT, hDBEvent, 0);
-  end;
-  result:=HistoryLength;
-  Allocate(result);
-end;
-
-function THistoryGrid.GetItemData(Index: Integer): THistoryItem;
-var
-  hDBEvent: THandle;
-begin
-  hDBEvent := harray[Index];
-  Result := ReadEvent(hDBEvent);
-end;
-
-procedure THistoryGrid.hgItemData(Sender: PObj; Index: Integer; var Item: THistoryItem);
-begin
-  Item := GetItemData(Index);
-end;
-
-procedure THistoryGrid.GridProcessRichText(Sender: PObj; Handle: THandle; Item: Integer);
-var
-  ItemRenderDetails: TItemRenderDetails;
-begin
-  ZeroMemory(@ItemRenderDetails, SizeOf(ItemRenderDetails));
-  ItemRenderDetails.cbSize      := SizeOf(ItemRenderDetails);
-  ItemRenderDetails.hContact    := FContact;
-  ItemRenderDetails.hDBEvent    := harray[Item];
-  ItemRenderDetails.pProto      := PAnsiChar(Items[Item].Proto);
-  ItemRenderDetails.pModule     := PAnsiChar(Items[Item].Module);
-  ItemRenderDetails.pText       := nil;
-  ItemRenderDetails.pExtended   := PAnsiChar(Items[Item].Extended);
-  ItemRenderDetails.dwEventTime := Items[Item].Time;
-  ItemRenderDetails.wEventType  := Items[Item].EventType;
-  ItemRenderDetails.IsEventSent := (mtOutgoing in Items[Item].MessageType);
-
-  if IsSelected(Item) then
-    ItemRenderDetails.dwFlags := ItemRenderDetails.dwFlags or IRDF_SELECTED;
-  ItemRenderDetails.bHistoryWindow := IRDHW_CONTACTHISTORY;//IRDHW_EXTERNALGRID;
-  AllHistoryRichEditProcess(WParam(Handle), LParam(@ItemRenderDetails));
-//  NotifyEventHooks(hHppRichEditItemProcess, WParam(Handle), LParam(@ItemRenderDetails));
-end;
-
 
 end.

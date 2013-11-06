@@ -536,12 +536,27 @@ begin
   result:=0;
 end;
 
+type
+  tdbetd = record
+    flags:dword;
+    event:int;
+    descr:pAnsiChar;
+  end;
+
+const
+  cdbetd: array [0..3] of tdbetd = (
+    (flags:DETF_HISTORY or DETF_MSGWINDOW; event:EVENTTYPE_WAT_REQUEST; descr:'WATrack: information request'),
+    (flags:DETF_HISTORY or DETF_MSGWINDOW; event:EVENTTYPE_WAT_ANSWER ; descr:nil),
+    (flags:DETF_HISTORY or DETF_MSGWINDOW; event:EVENTTYPE_WAT_ERROR  ; descr:'WATrack: request denied'),
+    (flags:DETF_HISTORY or DETF_NONOTIFY ; event:EVENTTYPE_WAT_MESSAGE; descr:nil)
+  );
+
 function OnModulesLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
 var
   p:PAnsiChar;
+  dbetd:TDBEVENTTYPEDESCR;
+  i:integer;
 begin
-
-  CallService(MS_DBEDIT_REGISTERSINGLEMODULE,twparam(PluginShort),0);
 
   hTimer:=0;
 
@@ -575,6 +590,22 @@ begin
 
   IsMultiThread:=true;
 
+  // Register WATrack events
+  dbetd.cbSize     :=DBEVENTTYPEDESCR_SIZE;
+  dbetd.module     :=PluginShort;
+  dbetd.textService:=nil;
+  dbetd.iconService:=nil;
+  dbetd.eventIcon  :=0;
+
+  for i:=0 to HIGH(cdbetd) do
+  begin
+    dbetd.flags      :=cdbetd[i].flags;
+    dbetd.eventType  :=cdbetd[i].event;
+    dbetd.descr      :=cdbetd[i].descr;
+    CallService(MS_DB_EVENT_REGISTERTYPE,0,TLPARAM(@dbetd));
+  end;
+
+  // Load WATrack modules
   hEvent:=CreateEvent(nil,true,true,nil);
   if hEvent<>0 then
   begin

@@ -31,19 +31,19 @@ end;
 
 function THistoryGrid.IsUnknown(Index: Integer): Boolean;
 begin
-  Result := (mtUnknown in FItems[Index].MessageType);
+  Result := (FItems[Index].MessageType.code=mtUnknown);
 end;
 
 function THistoryGrid.IsMatched(Index: Integer): Boolean;
 var
-  mts: TMessageTypes;
+  mts: THppMessageType;
 begin
   mts := FItems[Index].MessageType;
-  Result := ((MessageTypesToDWord(FFilter) and MessageTypesToDWord(mts)) >=
-    MessageTypesToDWord(mts));
+  //!! need in/out filter check too
+  Result := mts.code in FFilter;
 
   if Assigned(FOnItemFilter) then
-    FOnItemFilter(@Self, Index, Result);
+    FOnItemFilter(Index, Result);
 end;
 
 function THistoryGrid.GetItemRect(Item: Integer): TRect;
@@ -51,7 +51,7 @@ var
   tmp, idx, SumHeight: Integer;
   succ: Boolean;
 begin
-  SetRect(Result, 0, 0, 0, 0);
+  SetRectEmpty(Result);
   SumHeight := -TopItemOffset;
   if Item = -1 then
     exit;
@@ -86,7 +86,7 @@ begin
       Inc(SumHeight,FItems[i].Height);
       end;
     }
-    SetRect(Result, 0, -SumHeight, FClient.ClientWidth, -SumHeight + FItems[Item].Height);
+    SetRect(Result, 0, -SumHeight, FClientRect.Right, -SumHeight + FItems[Item].Height);
     exit;
   end;
 
@@ -101,7 +101,7 @@ begin
       break;
   end;
 
-  SetRect(Result, 0, SumHeight, FClient.ClientWidth, SumHeight + FItems[Item].Height);
+  SetRect(Result, 0, SumHeight, FClientRect.Right, SumHeight + FItems[Item].Height);
 end;
 
 //----- navigation -----
@@ -121,7 +121,7 @@ var
   WasLoaded: Boolean;
 begin
   Result := -1;
-  { REV }
+
   if not Force then
     if Reversed then
     begin
@@ -131,9 +131,10 @@ begin
   Inc(Item);
   Max := Count - 1;
   WasLoaded := False;
-  { AF 31.03.03 }
+
   if Item < 0 then
     Item := 0;
+
   while (Item >= 0) and (Item < Count) do
   begin
     if ShowProgress then
@@ -169,7 +170,7 @@ begin
       exit;
     end;
   Dec(Item);
-  { AF 31.03.03 }
+
   if Item >= Count then
     Item := Count - 1;
 
@@ -189,9 +190,9 @@ function THistoryGrid.GetFirstVisible: Integer;
 var
   Pos: Integer;
 begin
-  Pos := VertScrollBar.SBPosition;
+  Pos := SBPosition;
   if MaxSBPos > -1 then
-    Pos := Min(MaxSBPos, VertScrollBar.SBPosition);
+    Pos := Min(MaxSBPos, SBPosition);
 
   Result := GetDown(GetIdx(Pos - 1));
   if Result = -1 then
@@ -215,14 +216,14 @@ begin
   SumHeight := -TopItemOffset;
   idx := GetFirstVisible;
   LoadItem(idx, True);
-  while (SumHeight < FClient.ClientHeight) and (Item <> -1) and (Item < Count) do
+  while (SumHeight < FClientRect.Bottom) and (Item <> -1) and (Item < Count) do
   begin
     if Item = idx then
     begin
       if Partially then
         Result := True
       else
-        Result := (SumHeight + FItems[idx].Height <= FClient.ClientHeight);
+        Result := (SumHeight + FItems[idx].Height <= FClientRect.Bottom);
       break;
     end;
     Inc(SumHeight, FItems[idx].Height);
@@ -250,11 +251,11 @@ begin
   first := GetFirstVisible;
   if Item = first then
   begin
-    if FItems[Item].Height > FClient.ClientHeight then
+   if FItems[Item].Height > FClientRect.Bottom then
     begin
-      if BottomAlign or (TopItemOffset > FItems[Item].Height - FClient.ClientHeight) then
+      if BottomAlign or (TopItemOffset > FItems[Item].Height - FClientRect.Bottom) then
       begin
-        TopItemOffset := FItems[Item].Height - FClient.ClientHeight;
+        TopItemOffset := FItems[Item].Height - FClientRect.Bottom;
       end;
       ScrollGridBy(0, False);
     end
@@ -273,7 +274,7 @@ begin
     while (Item >= 0) and (Item < Count) do
     begin
       LoadItem(Item, True);
-      if (SumHeight + FItems[Item].Height) >= FClient.ClientHeight then
+      if (SumHeight + FItems[Item].Height) >= FClientRect.Bottom then
         break;
       Inc(SumHeight, FItems[Item].Height);
       Item := GetUp(Item);
@@ -292,7 +293,7 @@ begin
     begin
       SetSBPos(GetIdx(Item));
       if Item <> first then
-        TopItemOffset := (SumHeight + FItems[Item].Height) - FClient.ClientHeight;
+        TopItemOffset := (SumHeight + FItems[Item].Height) - FClientRect.Bottom;
     end;
 
   end;
@@ -316,7 +317,7 @@ begin
 
   if FGroupLinked and FItems[Item].LinkedToPrev then
     hh := 0
-  else if mtIncoming in FItems[Item].MessageType then
+  else if IsIncomingEvent(FItems[Item]) then
     hh := CHeaderHeight
   else
     hh := PHeaderheight;
@@ -339,7 +340,7 @@ procedure THistoryGrid.LoadItem(Item: Integer; LoadHeight: Boolean = True; Reloa
 begin
   if Reload or IsUnknown(Item) then
     if Assigned(FGetItemData) then
-      OnItemData(@Self, Item, FItems[Item]);
+      OnItemData(Item, FItems[Item]);
 
   if LoadHeight then
     if FItems[Item].Height = -1 then
@@ -370,13 +371,40 @@ begin
     Result := (FItems[Item].RTLMode = hppRTLEnable)
 end;
 
-function MakeColorLines(Color:TColor):AnsiString;
+function MakeColorLines(Color:TCOLORREF):AnsiString;
 var
-  b1,b2,b3:array [0..15] of AnsiChar;
+  b1,b2,b3:array [0..3] of AnsiChar;
 begin
-  result:=AnsiString('\red'  )+IntToStr(b1,Color and $FF)+
-          AnsiString('\green')+IntToStr(b2,(Color shr 8) and $FF)+
-          AnsiString('\blue' )+IntToStr(b3,(Color shr 16) and $FF)+';'
+  result:=AnsiString('\red'  )+IntToStr(b1, Color and $FF)+
+          AnsiString('\green')+IntToStr(b2,(Color shr   8) and $FF)+
+          AnsiString('\blue' )+IntToStr(b3,(Color shr  16) and $FF)+';'
+end;
+
+function MakeFontSettingStr(pFont:pLogFontW;LogY:integer):AnsiString;
+var
+  buf: array [0..31] of AnsiChar;
+begin
+  StrCopy(buf,'\f0\b0\i0\ul0\strike0\fs');
+  buf[5 ]:=AnsiChar(ORD('0')+integer(pFont.lfWeight>=700));
+  buf[8 ]:=AnsiChar(ORD('0')+pFont.lfItalic);
+  buf[12]:=AnsiChar(ORD('0')+pFont.lfUnderline);
+  buf[20]:=AnsiChar(ORD('0')+pFont.lfStrikeOut);
+  IntToStr(PAnsiChar(@buf[24]),(-(pFont.lfHeight * 72) div LogY) shl 1);
+  result:=buf;
+end;
+
+function MakeFontTableElement(pFont:pLogFontW):AnsiString;
+var
+  buf:array [0..LF_FACESIZE+3+31] of AnsiChar;
+  p:pAnsiChar;
+begin
+  p:=StrCopyE(buf,'{\f0\fnil\fcharset');
+  IntToStr(p,pFont.lfCharSet); p:=StrEnd(p);
+  p^:=' '; inc(p);
+  FastWideToAnsiBuf(pFont.lfFaceName,p);
+  p:=StrEnd(p);
+  p^:='}'; inc(p); p^:=#0;
+  result:=buf;
 end;
 
 procedure THistoryGrid.ApplyItemToRich(Item: Integer; aRichEdit: PHPPRichEdit = nil; ForceInline: Boolean = False);
@@ -385,12 +413,12 @@ var
   reItemSelected: Boolean;
   reItemUseFormat: Boolean;
   reItemUseLinkColor: Boolean;
-  textFont: PFont;
-  textColor, BackColor: TColor;
+  textColor, BackColor: TCOLORREF;
   RichItem: PRichItem;
   RTF, lText: AnsiString;
   cf, cf2: CharFormat2;
-  lsize:integer;
+  numItem:integer;
+  pFont:PLogFontW;
 begin
   // get from cache
   if aRichEdit = nil then
@@ -405,21 +433,24 @@ begin
   reItemSelected := (not reItemInline) and IsSelected(Item);
   reItemUseFormat := not(reItemInline) or GridOptions.TextFormatting;
 //  reItemUseFormat := not(reItemInline and (not GridOptions.TextFormatting));
-  reItemUseLinkColor := not(GridOptions.ColorLink = clBlue);
+
+  reItemUseLinkColor := not(GridOptions.ColorBack[fiLink] = CustomGraph.clBlue);
 
   if not reItemInline then
     FRich := aRichEdit;
 
-  GridOptions.GetItemOptions(FItems[Item].MessageType, textFont, BackColor);
+  //!!
+  numItem:=GridOptions.GetItemIndex(FItems[Item].MessageType);
+  pFont:=@GridOptions.ItemOptions[numItem].textFont;
   if reItemSelected then
   begin
-    textColor := GridOptions.ColorSelectedText;
-    BackColor := GridOptions.ColorSelected;
+    textColor := GridOptions.ColorText[fiSelected];
+    BackColor := GridOptions.ColorBack[fiSelected];
   end
   else
   begin
-    textColor := textFont.Color;
-    BackColor := BackColor;
+    textColor := GridOptions.ItemOptions[numItem].textColor;
+    BackColor := GridOptions.ItemOptions[numItem].textBkColor;
   end;
 
   SendMessage(aRichEdit.Handle, WM_SETTEXT,0,0);
@@ -438,7 +469,8 @@ begin
   begin
     RTF := '{\rtf1\ansi\deff0{\fonttbl ';
     // RTF := Format('{\rtf1\ansi\ansicpg%u\deff0\deflang%u{\fonttbl ',[FItems[Item].Codepage,GetLCIDfromCodepage(CodePage)]);
-    RTF := RTF + AnsiString(Format('{\f0\fnil\fcharset%u %s}', [textFont.FontCharSet, textFont.FontName]));
+//    RTF := RTF + AnsiString(Format('{\f0\fnil\fcharset%u %s}', [textFont.FontCharSet, textFont.FontName]));
+    RTF := RTF + MakeFontTableElement(pFont);
     RTF := RTF + '}{\colortbl';
     RTF := RTF + MakeColorLines(textColor);
     RTF := RTF + MakeColorLines(BackColor);
@@ -446,7 +478,7 @@ begin
     if GridOptions.BBCodesEnabled then
     begin
       // link color ro [url][/url], [img][/img]
-      RTF := RTF + MakeColorLines(GridOptions.ColorLink);
+      RTF := RTF + MakeColorLines(GridOptions.ColorText[fiLink]);
       if reItemUseFormat then
         RTF := RTF + rtf_ctable_text;
     end;
@@ -457,16 +489,8 @@ begin
     else
       RTF := RTF + '\ltrpar\rtlch\ltrch ';
 
-    lsize := -(textFont.FontHeight * 72) div LogY;
-    RTF := RTF + AnsiString(Format('\f0\b%d\i%d\ul%d\strike%d\fs%u',
-      [Integer(fsBold      in textFont.FontStyle),
-       Integer(fsItalic    in textFont.FontStyle),
-       Integer(fsUnderline in textFont.FontStyle),
-       Integer(fsStrikeOut in textFont.FontStyle),
-       Integer(lsize shl 1)]));
+    RTF := RTF + MakeFontSettingStr(pFont,LogY);
 // RE_FmtFontSize
-       // Font.Size = -Font.Height * 72 / Font.PixelsPerInch (ScreenLogPixels)
-       //   ScreenLogPixels := GetDeviceCaps(DC, LOGPIXELSY);
     lText := FormatString2RTFW(FItems[Item].Text);
     { if FGroupLinked and FItems[Item].LinkedToPrev then
       Text := FormatString2RTF(GetTime(FItems[Item].Time)+': '+FItems[Item].Text) else
@@ -483,7 +507,7 @@ begin
   if reItemUseFormat and Assigned(FOnProcessRichText) then
   begin
     try
-      FOnProcessRichText(@Self, aRichEdit.Handle, Item);
+      FOnProcessRichText(aRichEdit.Handle, Item);
     except
     end;
 
@@ -523,7 +547,7 @@ begin
         cf.dwEffects := CFE_LINK;
         cf2.dwMask      := CFM_LINK or CFM_REVISED or CFM_COLOR;
         cf2.dwEffects   := CFE_REVISED;
-        cf2.crTextColor := GridOptions.ColorLink;
+        cf2.crTextColor := GridOptions.ColorText[fiLink]; //?? check
         ReplaceCharFormat(RichEdit.Handle, cf, cf2);
       end;
     end;
@@ -532,7 +556,7 @@ begin
 
 end;
 
-procedure THistoryGrid.ApplyItemToRichCache(Sender: PControl; Item: Integer; aRichEdit: PHPPRichEdit);
+procedure THistoryGrid.ApplyItemToRichCache(Item: Integer; aRichEdit: PHPPRichEdit);
 begin
   ApplyItemToRich(Item,aRichEdit);
 end;
@@ -543,7 +567,7 @@ var
   idx: Integer;
 begin
   Result := -1;
-  SetRect(ItemRect, 0, 0, 0, 0);
+  SetRectEmpty(ItemRect);
   if Count = 0 then
     exit;
 
@@ -583,10 +607,10 @@ begin
     if idx = -1 then
       break;
   end;
-  { FIX: 2004-08-20, can have AV here, how could I miss this line? }
+
   if Result = -1 then
     exit;
-  SetRect(ItemRect, 0, SumHeight, FClient.ClientWidth, SumHeight + FItems[Result].Height);
+  SetRect(ItemRect, 0, SumHeight, FClientRect.Right, SumHeight + FItems[Result].Height);
 end;
 
 function THistoryGrid.FindItemAt(P: TPoint; out ItemRect: TRect): Integer;

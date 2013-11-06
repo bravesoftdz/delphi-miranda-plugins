@@ -1,0 +1,125 @@
+hpp_arrays.pas
+  (hpp_global, windows)
+  Сортированный массив целых чисел (заменить списком?)
+  Используется для хранения/обработки выделенных записей
+
+hpp_contacts.pas
+  (Windows,
+   m_api, common, dbsettings,
+   hpp_global)
+  Получение информации о контакте
+{
+  string
+    GetContactDisplayName
+    GetContactID - EventDetailForm and export
+}
+
+hpp_events.pas
+  (Windows,
+   kol,common,m_api,
+   hpp_global,hpp_contacts)
+  Перевод эвентов в читабельный вид (трансляция)
+  KOL
+    Format    - 12
+    Trim      - 2
+    TrimRight - 1
+
+hpp_global.pas
+{
+  string
+    THistoryItem
+    TWideStrArray
+
+    AnsiToWideString
+    WideToAnsiString
+    TranslateAnsiW
+    CopyToClip
+    HppMessageBox
+    IsRTF
+    StringReplace
+}
+
+hpp_icons.pas
+  (Windows,ShellAPI,
+   common,io,
+   dbsettings, m_api,
+   my_GridOptions, <notification>
+   hpp_global,
+   [hpp_event])
+  Чтение иконпака, регистрация в иколибе
+
+
+hpp_itemprocess.pas
+  (Windows,Messages,
+   m_api,common,
+   my_rtf,my_GridOptions,hpp_richedit,hpp_global,hpp_events)
+  Обработка текста сторонними плагинами и на экспорт
+{
+  string
+    DoSupportBBCodesHTML
+    DoSupportBBCodesRTF
+    DoStripBBCodes
+}
+
+hpp_opt_dialog.pas
+  (Messages,CommCtrl,
+   m_api,dbsettings,
+   hpp_global,my_GridOptions)
+  Диалог настроек
+
+hpp_richedit.pas
+  (Windows, Messages, RichEdit, ActiveX)
+  OLE интерфейс для RTF контролов
+
+hpp_strparser.pas
+  (hpp_global)
+  Токенайзер строки
+{
+  string
+    TokenizeString
+}
+
+my_grid.pas
+  (windows,Messages,RichEdit,
+   KOL,Common,m_api,
+   hpp_global,hpp_events,my_richedit,my_RichCache,hpp_richedit,
+   hpp_arrays,hpp_strparser,hpp_itemprocess,my_rtf,my_GridOptions)
+  Основной контейнер
+
+my_GridOptions.pas
+  (Windows,
+   CustomGraph,m_api,Common,dbsettings,
+   hpp_global,hpp_contacts)
+  В теории: настройки, касающиеся грида
+
+my_RichCache.pas
+  (RichEdit,Windows
+   my_richedit,CustomGraph)
+   Объект-кэш для визуализации записи
+
+my_richedit.pas
+  (Windows,Messages,RichEdit,
+   hpp_richedit)
+  Создание/удаление PHPPRichEdit элемента
+{
+  string
+    all interfaces
+    BitmapToRTF
+}
+
+my_rtf.pas
+  (richedit,windows,
+   common,
+   hpp_global)
+  манипуляции с окном-потоком RTF
+{
+  string
+    GetRichRTFW
+    GetRichRTFA
+    GetRichString
+    SetRichRTFW
+    SetRichRTFA
+    FormatString2RTFW
+    FormatString2RTFA
+    GetTextRange
+}

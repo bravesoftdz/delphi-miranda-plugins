@@ -69,9 +69,9 @@ type
   TFontID_tag = record
     cbSize         : int;
     // [TRANSLATED-BY-CORE] group the font belongs to - this is the 'Font Group' list in the options page
-    group          : array[0..63] of AnsiChar; 
+    group          : array[0..63] of AnsiChar;
     // [TRANSLATED-BY-CORE] the name of the font setting e.g. 'contacts' in the 'contact list' group
-    name           : array[0..63] of AnsiChar; 
+    name           : array[0..63] of AnsiChar;
     // the 'module' in the database where the font data is stored
     dbSettingsGroup: array[0..31] of AnsiChar;
     // prepended to the settings used to store this font's data in the db
@@ -92,9 +92,9 @@ type
   TFontIDW_tag = record
     cbSize         : int;
     // [TRANSLATED-BY-CORE] group the font belongs to - this is the 'Font Group' list in the options page
-    group          : array[0..63] of WideChar; 
+    group          : array[0..63] of WideChar;
     // [TRANSLATED-BY-CORE] the name of the font setting e.g. 'contacts' in the 'contact list' group
-    name           : array[0..63] of WideChar; 
+    name           : array[0..63] of WideChar;
     // the 'module' in the database where the font data is stored
     dbSettingsGroup: array[0..31] of AnsiChar;
     // prepended to the settings used to store this font's data in the db

@@ -975,7 +975,7 @@ function RichEdit_InsertBitmap(Wnd: HWND; Bitmap: hBitmap; cp: Cardinal): Boolea
 procedure OleCheck(OleResult: HResult);
 procedure ReleaseObject(var Obj);
 
-function BitmapToRTF(pict: HBitmap): AnsiString;
+//function BitmapToRTF(pict: HBitmap): AnsiString;
 
 procedure InitRichEditLibrary;
 
@@ -1210,7 +1210,7 @@ function TImageDataObject.GetData(const formatetcIn: TFormatEtc; out medium: TSt
 begin
   FillChar(medium,SizeOf(medium),0);
   medium.tymed         := TYMED_GDI;
-  medium.hBitmap       :=  FMedium.hBitmap;
+  medium.hBitmap       := FMedium.hBitmap;
 (*
 {$IFDEF FPC}
   medium.punkForRelease := nil;
@@ -1329,7 +1329,7 @@ begin
 end;
 
 { Direct Bitmap to RTF insertion }
-
+(*
 function BytesPerScanline(PixelsPerScanline, BitsPerPixel, Alignment: Longint): Longint;
 begin
   Dec(Alignment);
@@ -1337,8 +1337,7 @@ begin
   Result := Result div 8;
 end;
 
-procedure InitializeBitmapInfoHeader(Bitmap: HBITMAP; var BI: TBitmapInfoHeader;
-  Colors: Integer);
+procedure InitializeBitmapInfoHeader(Bitmap: HBITMAP; var BI: TBitmapInfoHeader; Colors: Integer);
 var
   DS: TDIBSection;
   Bytes: Integer;
@@ -1451,7 +1450,7 @@ begin
   GetDIBSizes(pict, bis, bbs);
   SetLength(bi, bis);
   SetLength(bb, bbs);
-  GetDIB(pict, {pict.Palette}0, PChar(bi)^, PChar(bb)^);
+  GetDIB(pict, {pict.Palette}0, PAnsiChar(bi)^, PAnsiChar(bb)^);
   rtf := '{\rtf1 {\pict\dibitmap ';
   SetLength(hexpict, (Length(bb) + Length(bi)) * 2);
   I := 2;
@@ -1472,7 +1471,7 @@ begin
   rtf := rtf + hexpict + ' }}';
   Result := rtf;
 end;
-
+*)
 const
   RichEditLibnames: array[ 0..3 ] of PAnsiChar =
       ( 'msftedit', 'riched20', 'riched32', 'riched' );

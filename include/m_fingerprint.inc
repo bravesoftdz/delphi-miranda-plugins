@@ -36,8 +36,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 const
 {
   Service SameClients MS_FP_SAMECLIENTS
-  wParam - TChar first MirVer value 
-  lParam - TChar second MirVer value 
+  wParam - TChar first MirVer value
+  lParam - TChar second MirVer value
   return pointer to AnsiChar string - client desription (DO NOT DESTROY) if clients are same otherwise NULL
 }
 //  MS_FP_SAMECLIENTS :PAnsiChar = 'Fingerprint/SameClients';
