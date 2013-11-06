@@ -50,10 +50,23 @@ type
     tszUserName   :TChar;
     szModuleName  :PAnsiChar;
     hProtoIcon    :THandle;
-
+    hNetlibUser   :THandle;
 	//////////////////////////////////////////////////////////////////////////////////////
 	// Helpers
 (*!!
+	__forceinline void debugLogA(LPCSTR szFormat, ...)
+	{
+		va_list args;
+		va_start(args, szFormat);
+		ProtoLogA(this, szFormat, args);
+	}
+	__forceinline void debugLogW(LPCWSTR wszFormat, ...)
+	{
+		va_list args;
+		va_start(args, wszFormat);
+		ProtoLogW(this, wszFormat, args);
+	}
+
 	__forceinline INT_PTR ProtoBroadcastAck(HANDLE hContact, int type, int hResult, HANDLE hProcess, LPARAM lParam) {
 		return ::ProtoBroadcastAck(m_szModuleName, hContact, type, hResult, hProcess, lParam); }
 

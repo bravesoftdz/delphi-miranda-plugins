@@ -26,7 +26,7 @@ begin
   EndUpdate;
 end;
 
-function OnChange(Grid:PHistoryGrid;wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function OnChange(Grid:THistoryGrid;wParam:WPARAM;lParam:LPARAM):int;cdecl;
 begin
   result:=0;
 Grid.DoOptionsChanged; //!!
@@ -46,7 +46,7 @@ begin
   FState := Value;
 
   if Assigned(FOnState) then
-    FOnState(@Self, FState);
+    FOnState(FState);
 end;
 
 procedure THistoryGrid.SetGroupLinked(const Value: Boolean);
@@ -68,7 +68,29 @@ begin
   BarAdjusted := False;
   AdjustScrollBar;
 
-  FClient.Invalidate;
+  Invalidate;
+end;
+
+procedure THistoryGrid.SetShowHeaders(const Value: Boolean);
+var
+  i: Integer;
+begin
+  if FShowHeaders = Value then
+    exit;
+  FShowHeaders := Value;
+  for i := 0 to HIGH(FItems) do
+  begin
+    if FItems[i].HasHeader then
+    begin
+      FItems[i].Height := -1;
+      FRichCache.ResetItem(i);
+    end;
+  end;
+
+  BarAdjusted := False;
+  AdjustScrollBar;
+
+  Invalidate;
 end;
 
 procedure THistoryGrid.SetReversed(const Value: Boolean);
@@ -100,8 +122,9 @@ begin
   AdjustScrollBar;
 
   MakeVisible(vis_idx);
-  FClient.Invalidate;
-  FClient.Update;
+
+  Invalidate;
+  Update;
 end;
 
 procedure THistoryGrid.SetReversedHeader(const Value: Boolean);
@@ -113,8 +136,8 @@ begin
   if not Allocated then
     exit;
 
-  FClient.Invalidate;
-  FClient.Update;
+  Invalidate;
+  Update;
 end;
 
 procedure THistoryGrid.SetRTLMode(const Value: TRTLMode);
@@ -125,8 +148,9 @@ begin
   begin
     FRTLMode := Value;
     FRichCache.ResetAllItems;
-    FClient.Invalidate;
-    FClient.Update;
+
+    Invalidate;
+    Update;
   end;
   if (RTLMode = hppRTLEnable) or ((RTLMode = hppRTLDefault) and GridOptions.RTLEnabled) then
     NewBiDiMode := bdRightToLeft
@@ -142,7 +166,7 @@ begin
   end;
 end;
 
-function THistoryGrid.GetProfileName: WideString;
+function THistoryGrid.GetProfileName: pWideChar;
 begin
   if Assigned(GridOptions) and GridOptions.ForceProfileName then
     Result := GridOptions.ProfileName
@@ -150,22 +174,26 @@ begin
     Result := FProfileName;
 end;
 
-procedure THistoryGrid.SetProfileName(const Value: WideString);
+procedure THistoryGrid.SetProfileName(Value: pWideChar);
 begin
-  if FProfileName = Value then
+  if StrCmpW(Value,FProfileName)=0 then
     exit;
-  FProfileName := Value;
+  mFreeMem(FProfileName);
+  StrDupW(FProfileName,Value); //!!!!
+
   if Assigned(GridOptions) and GridOptions.ForceProfileName then
     exit;
-  FClient.Update;
+  Update;
 end;
 
-procedure THistoryGrid.SetContactName(const Value: WideString);
+procedure THistoryGrid.SetContactName(Value: pWideChar);
 begin
-  if FContactName = Value then
+  if StrCmpW(Value,FContactName)=0 then
     exit;
-  FContactName := Value;
-  FClient.Update;
+  mFreeMem(FContactName);
+  StrDupW(FContactName,Value); //!!!!
+
+  Update;
 end;
 
 procedure THistoryGrid.SetFilter(const Value: TMessageTypes);
@@ -184,6 +212,8 @@ procedure THistoryGrid.DoOptionsChanged;
 var
   i: Integer;
   Ch, ph, pth, cth, sh: Integer;
+  sz:TSize;
+  oldf:HFONT;
 begin
   // recalc fonts
   for i := 0 to HIGH(FItems) do
@@ -192,14 +222,14 @@ begin
   end;
   FRichCache.ResetAllItems;
 
-  with FClient.Canvas^ do
-  begin
-    Font.Assign(GridOptions.FontProfile);             ph := TextExtent('Wy').cY;
-    Font.Assign(GridOptions.FontContact);             Ch := TextExtent('Wy').cY;
-    Font.Assign(GridOptions.FontOutgoingTimestamp);  pth := TextExtent('Wy').cY;
-    Font.Assign(GridOptions.FontIncomingTimestamp);  cth := TextExtent('Wy').cY;
-    Font.Assign(GridOptions.FontSessHeader);          sh := TextExtent('Wy').cY;
-  end;
+  oldf:=
+  SelectObject(FClientDC,GridOptions.Font[fiProfile]); GetTextExtentPoint32(FClientDC,'Wy',2,sz); ph :=sz.cY;
+  SelectObject(FClientDC,GridOptions.Font[fiContact]); GetTextExtentPoint32(FClientDC,'Wy',2,sz); Ch :=sz.cY;
+  SelectObject(FClientDC,GridOptions.Font[fiOutTime]); GetTextExtentPoint32(FClientDC,'Wy',2,sz); pth:=sz.cY;
+  SelectObject(FClientDC,GridOptions.Font[fiInTime] ); GetTextExtentPoint32(FClientDC,'Wy',2,sz); cth:=sz.cY;
+  SelectObject(FClientDC,GridOptions.Font[fiSession]); GetTextExtentPoint32(FClientDC,'Wy',2,sz); sh :=sz.cY;
+  SelectObject(FClientDC,oldf);
+  
   // find heighest and don't forget about icons
   PHeaderheight := Max(ph, pth);
   CHeaderHeight := Max(Ch, cth);
@@ -221,37 +251,73 @@ begin
   BarAdjusted := False;
   AdjustScrollBar;
 
-  FClient.Invalidate;
-  FClient.Update; // cos when you change from GridOptions it updates with lag
+  Invalidate;
+  Update;
 end;
 
 procedure THistoryGrid.GridUpdateSize;
 var
-  w: Integer;
-  i: Integer;
+  rc,rc1: TRect;
+  dc:HDC;
+  hbmp:HBITMAP;
+  i,x,w: Integer;
 begin
 {!!
   if State = gsInline then
     CancelInline;
 }
   IsCanvasClean := False;
+{}
+  GetClientRect(FHandle,rc);
 
-  w := FClient.ClientWidth;
-
-  if (GridWidth <> w) then
+  // Resize ScrollBar
+  if not FSBHidden then
   begin
-    FRichCache.Width := w - 2 * Padding;
-    GridWidth := w;
+    GetWindowRect(FScrollBar,rc1);
+    w:=rc1.Right-rc1.Left;
+    x:=rc.Right-w;
+    MoveWindow(FScrollBar, x, rc.Top, w, rc.Bottom, false);
+  end
+  else
+    x:=0;
+
+  // Resize memory bitmap
+  if (rc.Bottom<>FClientRect.Bottom) or
+     (x<>FClientRect.Right) then
+  begin
+    dc:=GetDC(0);
+    hBmp:=CreateCompatibleBitmap(dc,x,rc.Bottom);
+    ReleaseDC(0,dc);
+    SelectObject(FClientDC,hBmp);
+    if FClientBuf<>0 then
+      DeleteObject(FClientBuf);
+    FClientBuf:=hBmp;
+  end;
+
+  // Resize Client area
+  if x<>FClientRect.Right then
+  begin
+    FClientRect.Right := x;
+
+    FRichCache.Width := FClientRect.Right - 2 * Padding;
     for i := 0 to Count - 1 do
       FItems[i].Height := -1;
   end;
+  FClientRect.Bottom:=rc.Bottom;
+  MoveWindow(FClient,
+      FClientRect.Left,
+      FClientRect.Top,
+      FClientRect.Right,
+      FClientRect.Bottom,
+      false);
+{}
 
   BarAdjusted := False;
   if Allocated then
     AdjustScrollBar;
 
-  FClient.Invalidate;
-  FClient.Update;
+  Invalidate;
+  Update;
 end;
 
 procedure THistoryGrid.UpdateFilter;
@@ -265,9 +331,8 @@ begin
   State := gsLoad;
   try
 
-    VertScrollBar.Visible := True;
-    VertScrollBar.SBMax := Count + FVertScrollBar.SBPageSize - 1;
-//??    VertScrollBar.Range := Count + FVertScrollBar.SBPageSize - 1;
+    SBHidden:=false;
+    SBMax := Count + SBPageSize - 1;
     BarAdjusted := False;
 
     if (FSelected = -1) or (not IsMatched(FSelected)) then
@@ -298,7 +363,6 @@ begin
     State := gsIdle;
     Selected := FSelected;
   end;
-  FClient.Invalidate;
-  FClient.Update;
+  Invalidate;
+  Update;
 end;
-

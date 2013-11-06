@@ -124,13 +124,72 @@
 			<DelphiCompile Include="$(MainSource)">
 				<MainSource>MainSource</MainSource>
 			</DelphiCompile>
+			<DCCReference Include="..\libs\kol.pas"/>
+			<DCCReference Include="..\include\m_api.pas"/>
+			<DCCReference Include="..\utils\wrapdlgs.pas"/>
+			<DCCReference Include="..\utils\wrapper.pas"/>
+			<DCCReference Include="..\utils\common.pas"/>
+			<DCCReference Include="..\utils\CustomGraph.pas"/>
+			<DCCReference Include="..\utils\io.pas"/>
+			<DCCReference Include="..\utils\mirutils.pas"/>
+			<DCCReference Include="hpp_arrays.pas"/>
+			<DCCReference Include="hpp_contacts.pas"/>
+			<DCCReference Include="hpp_events.pas"/>
+			<DCCReference Include="hpp_global.pas"/>
+			<DCCReference Include="hpp_itemprocess.pas"/>
+			<DCCReference Include="hpp_opt_dialog.pas"/>
+			<DCCReference Include="hpp_options.pas"/>
+			<DCCReference Include="hpp_richedit.pas"/>
+			<DCCReference Include="hpp_strparser.pas"/>
+			<DCCReference Include="my_grid.pas"/>
 			<DCCReference Include="my_GridOptions.pas"/>
 			<DCCReference Include="my_RichCache.pas"/>
-			<DCCReference Include="my_grid.pas"/>
-			<DCCReference Include="hpp_options.pas"/>
-			<DCCReference Include="hpp_opt_dialog.pas"/>
-			<DCCReference Include="hpp_global.pas"/>
+			<DCCReference Include="my_richedit.pas"/>
+			<DCCReference Include="my_rtf.pas"/>
 			<None Include="hppadd.dpr"/>
+			<None Include="resource.inc"/>
+			<None Include="hg_format.inc"/>
+			<None Include="hg_gridsettings.inc"/>
+			<None Include="hg_hint.inc"/>
+			<None Include="hg_items.inc"/>
+			<None Include="hg_messages.inc"/>
+			<None Include="hg_mouse.inc"/>
+			<None Include="hg_paint.inc"/>
+			<None Include="hg_re.inc"/>
+			<None Include="hg_scroll.inc"/>
+			<None Include="hg_selections.inc"/>
+			<None Include="hg_support.inc"/>
+			<None Include="m_historypp.inc"/>
+			<None Include="m_mathmodule.inc"/>
+			<None Include="m_music.inc"/>
+			<None Include="m_speak.inc"/>
+			<None Include="ModelSupport_hppadd\hppadd\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\hppadd\default.txaPackage"/>
+			<None Include="ModelSupport_hppadd\default.txaPackage"/>
+			<None Include="ModelSupport_hppadd\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\common\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\CustomGraph\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\io\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\mirutils\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\my_grid\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\hpp_arrays\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\hpp_global\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\hpp_richedit\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\hpp_opt_dialog\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\hpp_strparser\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\wrapdlgs\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\hpp_options\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\hpp_contacts\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\my_rtf\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\my_RichCache\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\my_GridOptions\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\wrapper\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\my_richedit\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\hpp_events\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\hpp_itemprocess\default.txvpck"/>
+			<None Include="ModelSupport_hppadd\wrapdlgs\default.txaPackage"/>
+			<None Include="ModelSupport_hppadd\io\default.txaPackage"/>
+			<None Include="ModelSupport_hppadd\my_RichCache\default.txaPackage"/>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>
@@ -188,7 +247,7 @@
 					<Platform value="Win64">True</Platform>
 					<Platform value="Win32">True</Platform>
 				</Platforms>
-				<ModelSupport>False</ModelSupport>
+				<ModelSupport>True</ModelSupport>
 			</BorlandProject>
 			<ProjectFileVersion>12</ProjectFileVersion>
 		</ProjectExtensions>

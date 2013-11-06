@@ -8,26 +8,26 @@ begin
   if Item = -1 then
     exit;
   Result := GetItemRect(Item);
-  Inc(Result.Left, Padding);
+  Inc(Result.Left , Padding);
   Dec(Result.Right, Padding);
   /// avatars!.!
   // Dec(Result.Right,64+Padding);
   if FGroupLinked and FItems[Item].LinkedToPrev then
     hh := 0
-  else if mtIncoming in FItems[Item].MessageType then
+  else if IsIncomingEvent(FItems[Item]) then
     hh := CHeaderHeight
   else
     hh := PHeaderheight;
-  Inc(Result.Top, hh + Padding);
+  Inc(Result.Top   , hh + Padding);
   Dec(Result.Bottom, Padding + 1);
   if (Items[Item].HasHeader) and (ShowHeaders) and (ExpandHeaders) then
   begin
     if Reversed xor ReversedHeader then
-      Inc(Result.Top, SessHeaderHeight)
+      Inc(Result.Top   , SessHeaderHeight)
     else
       Dec(Result.Bottom, SessHeaderHeight);
   end;
-  res := FClient.ClientRect;
+  res := FClientRect;
 
   if DontClipTop and (Result.Top < res.Top) then
     res.Top := Result.Top;
@@ -43,7 +43,7 @@ var
   res: DWord;
 begin
   Result := False;
-  P := MakePoint(X - RichEditRect.Left, Y - RichEditRect.Top);
+  Point(P, X - RichEditRect.Left, Y - RichEditRect.Top);
   ApplyItemToRich(Item);
 
   cp := SendMessage(FRich.Handle, EM_CHARFROMPOS, 0, lParam(@P));
@@ -72,7 +72,8 @@ var
   cf: CharFormat2;
   res: DWord;
   RichEditRect: TRect;
-  Max, Item: Integer;
+  cp, Max, Item: Integer;
+  P: TPoint;
 begin
   Result := '';
   Item := FindItemAt(X, Y);
@@ -81,7 +82,29 @@ begin
   RichEditRect := GetRichEditRect(Item, True);
 
   if not IsLinkAtPoint(RichEditRect, X, Y, Item) then exit;
+{}
+  Point(P, X - RichEditRect.Left, Y - RichEditRect.Top);
+  cp := SendMessage(FRich.Handle, EM_CHARFROMPOS, 0, lParam(@P));
+  cr.cpMin := cp;
+  cr.cpMax := cp + 1;
+{}
+{!old
+  cp := FRich.Perform(EM_CHARFROMPOS, 0, lParam(@P));
+  if cp = -1 then
+    exit; // out of richedit area
+  cr.cpMin := cp;
+  cr.cpMax := cp + 1;
+  FRich.Perform(EM_EXSETSEL, 0, lParam(@cr));
 
+  ZeroMemory(@cf, SizeOf(cf));
+  cf.cbSize := SizeOf(cf);
+  cf.dwMask := CFM_LINK or CFM_REVISED;
+  res := FRich.Perform(EM_GETCHARFORMAT, SCF_SELECTION, lParam(@cf));
+  // no link under point
+  if (((res and CFM_LINK) = 0) or ((cf.dwEffects and CFE_LINK) = 0)) and
+    (((res and CFM_REVISED) = 0) or ((cf.dwEffects and CFE_REVISED) = 0)) then
+    exit;
+}
   while cr.cpMin > 0 do
   begin
     Dec(cr.cpMin);
@@ -89,8 +112,8 @@ begin
     cf.cbSize := SizeOf(cf);
     cf.dwMask := CFM_LINK or CFM_REVISED;
     res := SendMessage(FRich.Handle, EM_GETCHARFORMAT, SCF_SELECTION, lParam(@cf));
-    if (((res and CFM_LINK) = 0) or ((cf.dwEffects and CFE_LINK) = 0)) and
-      (((res and CFM_REVISED) = 0) or ((cf.dwEffects and CFE_REVISED) = 0)) then
+    if (((res and CFM_LINK   ) = 0) or ((cf.dwEffects and CFE_LINK   ) = 0)) and
+       (((res and CFM_REVISED) = 0) or ((cf.dwEffects and CFE_REVISED) = 0)) then
     begin
       Inc(cr.cpMin);
       break;
@@ -105,8 +128,8 @@ begin
     cf.cbSize := SizeOf(cf);
     cf.dwMask := CFM_LINK or CFM_REVISED;
     res := SendMessage(FRich.Handle, EM_GETCHARFORMAT, SCF_SELECTION, lParam(@cf));
-    if (((res and CFM_LINK) = 0) or ((cf.dwEffects and CFE_LINK) = 0)) and
-      (((res and CFM_REVISED) = 0) or ((cf.dwEffects and CFE_REVISED) = 0)) then
+    if (((res and CFM_LINK   ) = 0) or ((cf.dwEffects and CFE_LINK   ) = 0)) and
+       (((res and CFM_REVISED) = 0) or ((cf.dwEffects and CFE_REVISED) = 0)) then
     begin
       Dec(cr.cpMax);
       break;

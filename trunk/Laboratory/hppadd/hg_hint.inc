@@ -83,7 +83,7 @@ begin
   if Item = -1 then
     exit;
   RichEditRect := GetRichEditRect(Item, True);
-  P := MakePoint(X - RichEditRect.Left, Y - RichEditRect.Top);
+  Point(P, X - RichEditRect.Left, Y - RichEditRect.Top);
   ApplyItemToRich(Item);
 
   if not Assigned(FRich.iOle) then
@@ -93,6 +93,7 @@ begin
     if not Assigned(FRich.itextDoc) then
 //    if FRich.iOle.QueryInterface(IID_ITextDocument, textDoc) <> S_OK then
       break;
+    textDoc:=FRich.itextDoc;
     ClientToScreen(FRich.Handle, P);
     textRange := textDoc.RangeFromPoint(P.X, P.Y);
     if not Assigned(textRange) then
@@ -129,7 +130,8 @@ begin
     OffsetRect(ObjectRect, RichEditRect.Left, RichEditRect.Top);
     InflateRect(ObjectRect, 1, 1);
 
-    Result := PtInRect(ObjectRect, MakePoint(X, Y));
+    Point(P, X, Y);
+    Result := PointInRect(P, ObjectRect);
   until True;
 
   if not Result then

@@ -97,10 +97,6 @@ implementation
     [1] -> 3
 }
 procedure TokenizeString(const Template: WideString; var Tokens: TWideStrArray; var SpecialTokens: TIntArray);
-var
-  i,len: Integer;
-  token_s: Integer;
-  in_token: Boolean;
 
   procedure PushToken(StartIdx,EndIdx: Integer; Special: Boolean = False);
   begin
@@ -127,6 +123,10 @@ var
     end;
   end;
 
+var
+  i,len: Integer;
+  token_s: Integer;
+  in_token: Boolean;
 begin
   len := Length(Template);
   SetLength(Tokens,0);

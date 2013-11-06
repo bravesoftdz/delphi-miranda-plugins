@@ -41,7 +41,7 @@ begin
   end
   else
   begin
-    lptr:=pointer(GetWindowLongPtr(Dialog, GWL_USERDATA));
+    lptr:=pointer(GetWindowLongPtrW(Dialog, GWL_USERDATA));
     result:=CallWindowProc(lptr{re.oldproc},Dialog,hMessage,wParam,lParam);
   end;
 end;

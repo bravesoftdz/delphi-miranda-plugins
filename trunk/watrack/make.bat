@@ -2,7 +2,7 @@
 set myopts=-dMiranda
 set dprname=watrack.dpr
 
-for /R %%I in (*.rc) do ..\delphi\brcc32.exe %myopts% %%I -fo%%~npI.res
+for /R %%I in (*.rc) do ..\delphi\brcc32.exe %myopts% %%I -fo%%~npI.res>nul
 
 if /i '%1' == 'fpc' (
   ..\FPC\bin\fpc.exe %myopts% %dprname% %2 %3 %4 %5 %6 %7 %8 %9
@@ -12,7 +12,9 @@ if /i '%1' == 'fpc' (
   ..\XE2\BIN\dcc32.exe %myopts% %dprname% %2 %3 %4 %5 %6 %7 %8 %9
 ) else if /i '%1' == 'xe64' (
   ..\XE2\BIN\dcc64.exe %myopts% %dprname% %2 %3 %4 %5 %6 %7 %8 %9
+) else if /i '%1' == 'xe5' (
+  ..\XE5\BIN\dcc32.exe %myopts% %dprname% %2 %3 %4 %5 %6 %7 %8 %9
 ) else (
   ..\delphi\dcc32 -b -dKOL_MCK -dUNICODE_CTRLS %myopts% %dprname% %1 %2 %3 %4 %5 %6 %7 %8 %9
 )
-del /Q /S *.res
+del /Q /S *.res >nul

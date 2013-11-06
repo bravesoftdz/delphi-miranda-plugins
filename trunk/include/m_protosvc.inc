@@ -27,9 +27,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ******************************************
 
 Only new style protocols (Miranda 0.9+) with m_iVersion set to 2 or higher
-support Unicode services documented below, all other support only ANSI. 
+support Unicode services documented below, all other support only ANSI.
 
-For all other that do not support Unicode services, Miranda core will 
+For all other that do not support Unicode services, Miranda core will
 convert Unicode to ANSI and call the appropriate service.
 }
 
@@ -179,10 +179,11 @@ const
 
   // for PSR_MESSAGE
 
-  PREF_CREATEREAD = 1; // create the database event with the 'read' flag set
-  PREF_UNICODE    = 2;
-  PREF_RTL        = 4; // 0.5+ addition: support for right-to-left messages
-  PREF_UTF        = 8; // message is in utf-8 (0.7.0+)
+  PREF_CREATEREAD =  1; // create the database event with the 'read' flag set
+  PREF_UNICODE    =  2;
+  PREF_RTL        =  4; // 0.5+ addition: support for right-to-left messages
+  PREF_UTF        =  8; // message is in utf-8 (0.7.0+)
+  PREF_SENT       = 16; // message will be created with the DBEF_SENT flag
 
   // for PS_FILERESUME
 
@@ -594,7 +595,7 @@ const
  Asks protocol for the status message for a status
  wParam=(WORD) 0 for current status or a status id
  lParam=SGMA_xxx
- Returns status msg or NULL if there is none.  The protocol have to handle only the current 
+ Returns status msg or NULL if there is none.  The protocol have to handle only the current
  status. Handling messages for other statuses is optional.
  Remember to mir_free the return value
 }
@@ -648,6 +649,14 @@ const
   Returns the max length
 }
   PS_GETMYWAYDMAXLENGTH = '/GetMyWAYDMaxLength';
+
+{
+  Get the unread email message count, optional
+  wParam = (WPARAM)0
+  lParam = (LPARAM)0
+  Returns the number of unread emails
+}
+  PS_GETUNREADEMAILCOUNT = '/GetUnreadEmailCount';
 
 // these should be called with CallContactService()
 

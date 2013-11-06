@@ -55,52 +55,57 @@ interface
 
 uses
   Windows,Messages,
-  kol,
   m_api;
 
-// KOL unit needs for this type only
-type
-  TFont = KOL.TGraphicTool;
-  PFont = ^TFont;
-type
+const // direction
+  mtIncoming = 1;
+  mtOutgoing = 2;
 
+type
   // note: add new message types to the end, or it will mess users' saved filters
   //       don't worry about customization filters dialog, as mtOther will always
   //       be show as the last entry
-  TMessageType = (mtUnknown,
-                  mtIncoming, mtOutgoing,
-                  mtMessage, mtUrl, mtFile, mtSystem,
-                  mtContacts, mtSMS, mtWebPager, mtEmailExpress, mtStatus, mtSMTPSimple,
-                  mtOther,
-                  mtNickChange,mtAvatarChange,mtWATrack,mtStatusMessage,mtVoiceCall,mtCustom);
+  TBuiltinMessageType = (
+    mtUnknown,
+    mtMessage, mtUrl, mtFile, mtSystem,
+    mtContacts, mtSMS, mtWebPager, mtEmailExpress, mtStatus, mtSMTPSimple,
+    mtOther,
+    mtNickChange,mtAvatarChange,mtWATrack,mtStatusMessage,mtVoiceCall,mtCustom);
+
+  THppMessageType = record
+    event    : word;                // event code in database
+    direction: byte;                // 0, incoming, outgoing, both
+    code     : TBuiltinMessageType; // number (code) of predefined event
+  end;
 
   PMessageTypes = ^TMessageTypes;
-  TMessageTypes = set of TMessageType;
+  TMessageTypes = set of TBuiltinMessageType;
 
+type
+  TMessageRecord = record
+    Name : pAnsiChar;
+    idx  : Integer;
+  end;
+
+type
   TRTLMode = (hppRTLDefault,hppRTLEnable,hppRTLDisable);
 
   PHistoryItem = ^THistoryItem;
   THistoryItem = record
-    Time        : DWord;
-    MessageType : TMessageTypes;
-    EventType   : Word;
-    Height      : Integer;
-    Module      : AnsiString;
-    Proto       : AnsiString;
-    Text        : WideString;
+    Module      : pAnsiChar;
+    Proto       : pAnsiChar;
+    Text        : pWideChar;
+    Extended    : pAnsiChar;
     CodePage    : Cardinal;
+    Time        : DWord;
+    Height      : Integer;
+    MessageType : ThppMessageType;
+    EventType   : Word;
     RTLMode     : TRTLMode;
     HasHeader   : Boolean;    // header for sessions
     LinkedToPrev: Boolean;    // for future use to group messages from one contact together
     Bookmarked  : Boolean;
     IsRead      : Boolean;
-    Extended    : AnsiString;
-  end;
-
-  TCodePage = record
-    cp: Cardinal;
-    lid: LCID;
-    name: WideString;
   end;
 
   TSaveFormat = (sfAll,sfHTML,sfXML,sfRTF,sfMContacts,sfUnicode,sfText);
@@ -111,11 +116,6 @@ type
   TIntArray = array of Integer;
 
   TSendMethod = (smSend,smPost);
-
-  TUrlProto = record
-    Proto: PWideChar;
-    Idn  : Boolean;
-  end;
 
 const
   HM_BASE = WM_APP + 10214; // (+$27E6) base for all history++ messages
@@ -146,6 +146,7 @@ const
   HM_MIEV_CONTACTDELETED  = HM_MIEV_BASE + 4; // ME_DB_CONTACT_DELETED
   HM_MIEV_METADEFCHANGED  = HM_MIEV_BASE + 5; // ME_MC_DEFAULTTCHANGED
 
+//----- Options changing events -----
 const
   ME_HPP_OPTIONSCHANGED = 'History++/OptionsChanged';
 const
@@ -156,6 +157,7 @@ const
   HGOPT_OPTIONS     = $0008; // inline,RTL, externals,bbcodes
   HGOPT_ALL         = $00FF;
 
+//----- Plugin info -----
 const
   hppName       = 'History++';
   hppShortName  = 'History++ (2in1)';
@@ -178,12 +180,24 @@ const
   hppHomePageURL  = 'http://themiron.miranda.im/';
   hppChangelogURL = 'http://themiron.miranda.im/changelog';
 
-  hppIPName     = 'historypp_icons.dll';
-
+const
   hppLoadBlock  = 4096;
   hppFirstLoadBlock = 200;
 
-  cpTable: array[0..14] of TCodePage = (
+{
+type
+  TCodePage = record
+    cp: Cardinal;
+    lid: LCID;
+    name: WideString;
+  end;
+}
+const
+  cpTable: array[0..14] of record
+      cp: Cardinal;
+      lid: LCID;
+      name: pWideChar;
+    end = (
     (cp:  874; lid: $041E; name: 'Thai'),
     (cp:  932; lid: $0411; name: 'Japanese'),
     (cp:  936; lid: $0804; name: 'Simplified Chinese'),
@@ -200,108 +214,27 @@ const
     (cp: 1258; lid: $042A; name: 'Vietnamese'),
     (cp: 1361; lid: $0412; name: 'Korean (Johab)'));
 
-const
-  HPP_ICON_CONTACTHISTORY    = 0;
-  HPP_ICON_GLOBALSEARCH      = 1;
-  HPP_ICON_SESS_DIVIDER      = 2;
-  HPP_ICON_SESSION           = 3;
-  HPP_ICON_SESS_SUMMER       = 4;
-  HPP_ICON_SESS_AUTUMN       = 5;
-  HPP_ICON_SESS_WINTER       = 6;
-  HPP_ICON_SESS_SPRING       = 7;
-  HPP_ICON_SESS_YEAR         = 8;
-  HPP_ICON_HOTFILTER         = 9;
-  HPP_ICON_HOTFILTERWAIT     = 10;
-  HPP_ICON_SEARCH_ALLRESULTS = 11;
-  HPP_ICON_TOOL_SAVEALL      = 12;
-  HPP_ICON_HOTSEARCH         = 13;
-  HPP_ICON_SEARCHUP          = 14;
-  HPP_ICON_SEARCHDOWN        = 15;
-  HPP_ICON_TOOL_DELETEALL    = 16;
-  HPP_ICON_TOOL_DELETE       = 17;
-  HPP_ICON_TOOL_SESSIONS     = 18;
-  HPP_ICON_TOOL_SAVE         = 19;
-  HPP_ICON_TOOL_COPY         = 20;
-  HPP_ICON_SEARCH_ENDOFPAGE  = 21;
-  HPP_ICON_SEARCH_NOTFOUND   = 22;
-  HPP_ICON_HOTFILTERCLEAR    = 23;
-  HPP_ICON_SESS_HIDE         = 24;
-  HPP_ICON_DROPDOWNARROW     = 25;
-  HPP_ICON_CONTACDETAILS     = 26;
-  HPP_ICON_CONTACTMENU       = 27;
-  HPP_ICON_BOOKMARK          = 28;
-  HPP_ICON_BOOKMARK_ON       = 29;
-  HPP_ICON_BOOKMARK_OFF      = 30;
-  HPP_ICON_SEARCHADVANCED    = 31;
-  HPP_ICON_SEARCHRANGE       = 32;
-  HPP_ICON_SEARCHPROTECTED   = 33;
-
-  HPP_ICON_EVENT_INCOMING    = 34;
-  HPP_ICON_EVENT_OUTGOING    = 35;
-  HPP_ICON_EVENT_SYSTEM      = 36;
-  HPP_ICON_EVENT_CONTACTS    = 37;
-  HPP_ICON_EVENT_SMS         = 38;
-  HPP_ICON_EVENT_WEBPAGER    = 39;
-  HPP_ICON_EVENT_EEXPRESS    = 40;
-  HPP_ICON_EVENT_STATUS      = 41;
-  HPP_ICON_EVENT_SMTPSIMPLE  = 42;
-  HPP_ICON_EVENT_NICK        = 43;
-  HPP_ICON_EVENT_AVATAR      = 44;
-  HPP_ICON_EVENT_WATRACK     = 45;
-  HPP_ICON_EVENT_STATUSMES   = 46;
-  HPP_ICON_EVENT_VOICECALL   = 47;
-
-  HppIconsCount              = 48;
-
-  HPP_SKIN_EVENT_MESSAGE     = 0;
-  HPP_SKIN_EVENT_URL         = 1;
-  HPP_SKIN_EVENT_FILE        = 2;
-  HPP_SKIN_OTHER_MIRANDA     = 3;
-
-  SkinIconsCount             = 4;
-
-const
-  UrlPrefix: array[0..1] of WideString = (
-    'www.',
-    'ftp.');
-  UrlProto: array[0..12] of TUrlProto = (
-    (Proto: 'http:/';     Idn: True;),
-    (Proto: 'ftp:/';      Idn: True;),
-    (Proto: 'file:/';     Idn: False;),
-    (Proto: 'mailto:/';   Idn: False;),
-    (Proto: 'https:/';    Idn: True;),
-    (Proto: 'gopher:/';   Idn: False;),
-    (Proto: 'nntp:/';     Idn: False;),
-    (Proto: 'prospero:/'; Idn: False;),
-    (Proto: 'telnet:/';   Idn: False;),
-    (Proto: 'news:/';     Idn: False;),
-    (Proto: 'wais:/';     Idn: False;),
-    (Proto: 'outlook:/';  Idn: False;),
-    (Proto: 'callto:/';   Idn: False;));
-
 var
   hppCodepage: Cardinal;
   hppRichEditVersion: Integer;
 
 {$I m_historypp.inc}
 
-function MessageTypesToDWord(mt: TMessageTypes): DWord;
-function TimestampToDateTime(const Timestamp: DWord): TDateTime;
+function MessageTypesToDWord(mt: TMessageTypes): DWord; //??
 
 function AnsiToWideString(const S: AnsiString; CodePage: Cardinal; InLength: Integer = -1): WideString;
 function WideToAnsiString(const WS: WideString; CodePage: Cardinal; InLength: Integer = -1): AnsiString;
 function TranslateAnsiW(const S: AnsiString{TRANSLATE-IGNORE}): WideString;
 procedure CopyToClip(const WideStr: WideString; Handle: Hwnd; CodePage: Cardinal = CP_ACP; Clear: Boolean = True);
 
-procedure OpenUrl(const URLText: WideString; NewWindow: Boolean);
+procedure OpenUrl(const URLText: pWideChar; NewWindow: Boolean);
 
 function HppMessageBox(Handle: THandle; const Text: WideString; const Caption: WideString; Flags: Integer): Integer;
 
-function FormatCString(const Text: WideString): WideString;
 function PassMessage(Handle: THandle; Message: DWord; wParam: WPARAM; lParam: LPARAM; Method: TSendMethod = smSend): Boolean;
 
 //----- added from TNT ------
-function IsRTF(const Value: WideString): Boolean;
+function IsRTF(const Value: pWideChar): Boolean;
 
 function IsWideCharUpper(WC: WideChar): Boolean;
 function IsWideCharLower(WC: WideChar): Boolean;
@@ -342,10 +275,21 @@ type
     property Size: Integer read FSize;
   end;
 
+// Was in options before
+var
+  ShowHistoryCount: Boolean;
+var
+  MetaContactsProto: PAnsiChar;
+
+function SmileyAddExists:boolean;
+function MathModuleExists:boolean;
+function MetaContactsExists:boolean;
+function MeSpeakExists:boolean;
 
 implementation
 
 uses common;
+
 
 function MessageTypesToDWord(mt: TMessageTypes): DWord;
 begin
@@ -353,20 +297,9 @@ begin
   Move(mt,Result,SizeOf(mt));
 end;
 
-const
-  // 1970-01-01T00:00:00 in TDateTime
-  UnixTimeStart = 25569;
-  SecondsPerDay = 60*60*24;
-
-function TimestampToDateTime(const Timestamp: DWord): TDateTime;
+procedure OpenUrl(const URLText: pWideChar; NewWindow: Boolean);
 begin
-  Result := UnixTimeStart +
-    CallService(MS_DB_TIME_TIMESTAMPTOLOCAL,WPARAM(Timestamp),0) / SecondsPerDay;
-end;
-
-procedure OpenUrl(const URLText: WideString; NewWindow: Boolean);
-begin
-  CallService(MS_UTILS_OPENURL,OUF_UNICODE + WPARAM(NewWindow),LPARAM(@URLText[1]));
+  CallService(MS_UTILS_OPENURL,OUF_UNICODE + WPARAM(NewWindow),LPARAM(URLText));
 end;
 
 function AnsiToWideString(const S: AnsiString; CodePage: Cardinal; InLength: Integer = -1): WideString;
@@ -508,32 +441,6 @@ begin
   Result := MessageBoxW(Handle,PWideChar(Text),PWideChar(Caption),Flags);
 end;
 
-function FormatCString(const Text: WideString): WideString;
-var
-  inlen,inpos,outpos: integer;
-begin
-  inlen := Length(Text);
-  SetLength(Result,inlen);
-  if inlen = 0 then exit;
-  inpos := 1;
-  outpos := 0;
-  while inpos <= inlen do begin
-    inc(outpos);
-    if (Text[inpos] = '\') and (inpos < inlen) then begin
-      case Text[inpos+1] of
-        'r': begin Result[outpos] := #13; inc(inpos); end;
-        'n': begin Result[outpos] := #10; inc(inpos); end;
-        't': begin Result[outpos] := #09; inc(inpos); end;
-        '\': begin Result[outpos] := '\'; inc(inpos); end;
-      else         Result[outpos] := Text[inpos];
-      end;
-    end else
-      Result[outpos] := Text[inpos];
-    inc(inpos);
-  end;
-  SetLength(Result,outpos);
-end;
-
 function PassMessage(Handle: THandle; Message: DWord; wParam: WPARAM; lParam: LPARAM; Method: TSendMethod = smSend): Boolean;
 var
   Tries: integer;
@@ -553,13 +460,13 @@ begin
   end;
 end;
 
-function IsRTF(const Value: WideString): Boolean;
+function IsRTF(const Value: pWideChar): Boolean;
 const
-  RTF_BEGIN_1  = WideString('{\RTF');
-  RTF_BEGIN_2  = WideString('{URTF');
+  RTF_BEGIN_1  = '{\RTF';
+  RTF_BEGIN_2  = '{URTF';
 begin
-  Result := (Pos(RTF_BEGIN_1, Value) = 1)
-         or (Pos(RTF_BEGIN_2, Value) = 1);
+  Result := (StrPosW(Value,RTF_BEGIN_1) = Value)
+         or (StrPosW(Value,RTF_BEGIN_2) = Value);
 end;
 
 function _WideCharType(WC: WideChar; dwInfoType: Cardinal): Word;
@@ -654,6 +561,39 @@ begin
     end;
     SearchStr := Copy(SearchStr, Offset + Length(Patt), MaxInt);
   end;
+end;
+
+{ From options }
+
+{$include m_mathmodule.inc}
+{$include m_speak.inc}
+
+function SmileyAddExists:boolean;
+begin
+  result:=boolean(ServiceExists(MS_SMILEYADD_REPLACESMILEYS));
+end;
+
+function MetaContactsExists:boolean;
+begin
+  result:=boolean(ServiceExists(MS_MC_GETMOSTONLINECONTACT));
+  if result then
+  begin
+    MetaContactsProto:=PAnsiChar(CallService(MS_MC_GETPROTOCOLNAME, 0, 0));
+    if not Assigned(MetaContactsProto) then
+      result:=false;
+  end
+  else
+    MetaContactsProto:=nil;
+end;
+
+function MathModuleExists:boolean;
+begin
+  result:=boolean(ServiceExists(MATH_RTF_REPLACE_FORMULAE));
+end;
+
+function MeSpeakExists:boolean;
+begin
+  result:=boolean(ServiceExists(MS_SPEAK_SAY_W));
 end;
 
 { THppBuffer }

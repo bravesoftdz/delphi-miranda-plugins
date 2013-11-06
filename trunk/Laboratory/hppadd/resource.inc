@@ -22,13 +22,15 @@ const
   IDC_DISABLEBORDER    = 303; // "Disable border" checkbox
   IDC_DISABLESCROLL    = 304; // "Disable scrollbar" checkbox
 
-  ID_HISTORYVIEW_GROUP = 500;// "History view options" group
+  ID_HISTORYVIEW_GROUP = 500; // "History view options" group
   IDC_RECENTONTOP      = 501; // "Recent events on top" checkbox
   IDC_GROUPHISTITEMS   = 502; // "Group messages" checkbox
 
   ID_NEEDOPTIONS_LINK  = 250; // "Visit Wiki page for more options" hyperlink
 
   ID_NEED_RESTART      = 999; // "Please restart Miranda IM..."
+
+  IDC_ICONPACK         = 400; // "Check Icon Pack"
 
   // second Templates dialog
 

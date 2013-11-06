@@ -337,7 +337,7 @@ const
 {
   Assign a Netlib user handle a set of dynamic HTTP headers to be used with all
 
-  HTTP connections that enable the HTTP-use-sticky headers flag. 
+  HTTP connections that enable the HTTP-use-sticky headers flag.
   The headers persist until cleared with lParam=NULL.
 
   All memory should be allocated by the caller using malloc() from MS_SYSTEM_GET_MMI
@@ -488,12 +488,12 @@ const
   MS_NETLIB_STRINGTOADDRESS:PAnsiChar = 'Netlib/StringToAddress';
 
 {
-  Converts numerical representation of IP in SOCKADDR_INET into string representation with IP and port 
+  Converts numerical representation of IP in SOCKADDR_INET into string representation with IP and port
   IPv4 will be supplied in formats address:port or address
   IPv6 will be supplied in formats [address]:port or [address]
   wParam=(WPARAM)(int) 0 - lParam - (SOCKADDR_INET*); 1 - lParam - (unsigned) in host byte order
   lParam=(LPARAM)(SOCKADDR_INET*) or (unsigned) numeric IP address structure
-  Returns pointer to the string or NULL if not successful 
+  Returns pointer to the string or NULL if not successful
 }
   MS_NETLIB_ADDRESSTOSTRING:PAnsiChar = 'Netlib/AddressToString';
 
@@ -512,7 +512,7 @@ const
   IPv6 will be supplied in formats [address]:port or [address]
   wParam=(WPARAM)(HANDLE)hConnection
   lParam=(LPARAM)(NETLIBCONNINFO*) pointer to the connection information structure to fill
-  Returns 0 if successful  
+  Returns 0 if successful
 }
   MS_NETLIB_GETCONNECTIONINFO:PAnsiChar = 'Netlib/GetConnectionInfo';
 
@@ -526,7 +526,7 @@ const
 {
   Get connection Information
   wParam=(WPARAM)IP filter 1 - return global only IPv6 address, 0 all IPs
-  Returns (INT_PTR)(NETLIBIPLIST*) numeric IP address address array 
+  Returns (INT_PTR)(NETLIBIPLIST*) numeric IP address address array
   the last element of the array is all 0s, 0 if not successful
 }
   MS_NETLIB_GETMYIP:PAnsiChar = 'Netlib/GetMyIP';
@@ -687,7 +687,7 @@ const
   Shutdown connection
   wParam=(WPARAM)(HANDLE)hConnection
   lParam=(LPARAM)0
-  Returns 0 
+  Returns 0
 }
   MS_NETLIB_SHUTDOWN:PAnsiChar = 'Netlib/Shutdown';
 
@@ -759,7 +759,7 @@ const
   MS_NETLIB_SETPOLLINGTIMEOUT:PAnsiChar = 'Netlib/SetPollingTimeout';
 
 {
-  Makes connection SSL 
+  Makes connection SSL
   wParam=(WPARAM)(HANDLE)hConn
   lParam=0
   Returns 0 on failure 1 on success

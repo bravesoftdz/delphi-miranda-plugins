@@ -47,8 +47,6 @@
  Contributors: theMIROn, Art Fedorov
 -----------------------------------------------------------------------------}
 
-{.$DEFINE USE_URL_BBCODE}
-
 unit hpp_itemprocess;
 
 interface
@@ -56,15 +54,25 @@ interface
 uses
   Windows, m_api;
 
-var
-  rtf_ctable_text: AnsiString;
+const
+  rtf_ctable_text = 
+    '\red0\green0\blue0;'+
+    '\red0\green0\blue255;'+
+    '\red0\green255\blue0;'+
+    '\red255\green0\blue0;'+
+    '\red255\green0\blue255;'+
+    '\red0\green255\blue255;'+
+    '\red255\green255\blue0;'+
+    '\red255\green255\blue255;';
+
+//var  rtf_ctable_text: AnsiString;
 
 function DoSupportBBCodesHTML(const S: AnsiString): AnsiString;
-function DoSupportBBCodesRTF(const S: AnsiString; StartColor: integer; doColorBBCodes: boolean): AnsiString;
-function DoStripBBCodes(const S: wideString): WideString;
+function DoSupportBBCodesRTF (const S: AnsiString; StartColor: integer; doColorBBCodes: boolean): AnsiString;
+function DoStripBBCodes      (const S: wideString): WideString;
 
-function DoSupportSmileys(awParam:WPARAM; alParam: LPARAM): Integer;
-function DoSupportMathModule(awParam:WPARAM; alParam: LPARAM): Integer;
+function DoSupportSmileys      (awParam:WPARAM; alParam: LPARAM): Integer;
+function DoSupportMathModule   (awParam:WPARAM; alParam: LPARAM): Integer;
 function DoSupportAvatarHistory(awParam:WPARAM; alParam: LPARAM): Integer;
 
 function AllHistoryRichEditProcess(wParam { hRichEdit } : WPARAM; lParam { PItemRenderDetails } : LPARAM): Int; cdecl;
@@ -73,12 +81,12 @@ implementation
 
 uses
   Messages,
-  kol,
+{  RichEdit, -- used for CHARRANGE and EM_EXTSETSEL}
   common,
   my_rtf,
   my_GridOptions,
   hpp_richedit,
-  hpp_global, hpp_events{, hpp_richedit, }{, RichEdit -- used for CHARRANGE and EM_EXTSETSEL};
+  hpp_global, hpp_events;
 
 {$include m_mathmodule.inc}
 
@@ -89,7 +97,7 @@ type
 
   TRTFColorTable = record
     sz: PAnsiChar;
-    col: COLORREF;
+    col: TCOLORREF;
   end;
 
   TBBCodeClass = (bbStart,bbEnd);
@@ -97,16 +105,15 @@ type
 
   TBBCodeString = record
     ansi: PAnsiChar;
-    wide: WideString;
+    wide: PWideChar;//WideString;
   end;
 
   TBBCodeInfo = record
     prefix: TBBCodeString;
     suffix: TBBCodeString;
     bbtype: TBBCodeType;
-    rtf: PAnsiChar;
-    html: PAnsiChar;
-    minRE: Integer;
+    rtf   : PAnsiChar;
+    html  : PAnsiChar;
   end;
 
 const
@@ -122,32 +129,61 @@ const
     (sz:'white';  col:$FFFFFF));
 
 const
-  bbCodesCount = {$IFDEF USE_URL_BBCODE}7{$ELSE}6{$ENDIF};
+  bbCodesCount = 7;
 
 var
-  bbCodes: array[0..bbCodesCount,bbStart..bbEnd] of TBBCodeInfo = (
-    ((prefix:(ansi:'[b]');      suffix:(ansi:nil); bbtype:bbSimple; rtf:'{\b ';      html:'<b>';  minRE: 10),
-     (prefix:(ansi:'[/b]');     suffix:(ansi:nil); bbtype:bbSimple; rtf:'}';         html:'</b>')),
-    ((prefix:(ansi:'[i]');      suffix:(ansi:nil); bbtype:bbSimple; rtf:'{\i ';      html:'<i>';  minRE: 10),
-     (prefix:(ansi:'[/i]');     suffix:(ansi:nil); bbtype:bbSimple; rtf:'}';         html:'</i>')),
-    ((prefix:(ansi:'[u]');      suffix:(ansi:nil); bbtype:bbSimple; rtf:'{\ul ';     html:'<u>';  minRE: 10),
-     (prefix:(ansi:'[/u]');     suffix:(ansi:nil); bbtype:bbSimple; rtf:'}';         html:'</u>')),
-    ((prefix:(ansi:'[s]');      suffix:(ansi:nil); bbtype:bbSimple; rtf:'{\strike '; html:'<s>';  minRE: 10),
-     (prefix:(ansi:'[/s]');     suffix:(ansi:nil); bbtype:bbSimple; rtf:'}';         html:'</s>')),
-    ((prefix:(ansi:'[color=');  suffix:(ansi:']'); bbtype:bbColor;  rtf:'{\cf%u ';   html:'<font style="color:%s">'; minRE: 10),
-     (prefix:(ansi:'[/color]'); suffix:(ansi:nil); bbtype:bbSimple; rtf:'}';         html:'</font>')),
-    {$IFDEF USE_URL_BBCODE}
-    ((prefix:(ansi:'[url=');    suffix:(ansi:']'); bbtype:bbUrl;    rtf:'{\field{\*\fldinst{HYPERLINK ":%s"}}{\fldrslt{\ul\cf%u'; html:'<a href="%s">'; minRE: 41),
-     (prefix:(ansi:'[/url]');   suffix:(ansi:nil); bbtype:bbSimple; rtf:'}}}';      html:'</a>')),
-    {$ENDIF}
-    ((prefix:(ansi:'[size=');   suffix:(ansi:']'); bbtype:bbSize;   rtf:'{\fs%u ';   html:'<font style="font-size:%spt">'; minRE: 10),
-     (prefix:(ansi:'[/size]');  suffix:(ansi:nil); bbtype:bbSimple; rtf:'}';         html:'</font>')),
-    ((prefix:(ansi:'[img]');    suffix:(ansi:nil); bbtype:bbImage;  rtf:'[{\revised\ul\cf%u '; html:'['; minRE: 20),
-     (prefix:(ansi:'[/img]');   suffix:(ansi:nil); bbtype:bbSimple; rtf:'}]';        html:']'))
+  bbCodes: array[0..bbCodesCount, bbStart..bbEnd] of TBBCodeInfo = (
+    ((prefix:(ansi:'[b]'     ; wide:'[b]');      suffix:(ansi:nil; wide:nil);
+      bbtype:bbSimple; rtf:'{\b ';      html:'<b>'),
+
+     (prefix:(ansi:'[/b]'    ; wide:'[/b]');     suffix:(ansi:nil; wide:nil);
+      bbtype:bbSimple; rtf:'}';         html:'</b>')),
+
+    ((prefix:(ansi:'[i]'     ; wide:'[i]');      suffix:(ansi:nil; wide:nil);
+      bbtype:bbSimple; rtf:'{\i ';      html:'<i>'),
+
+     (prefix:(ansi:'[/i]'    ; wide:'[/i]');     suffix:(ansi:nil; wide:nil);
+      bbtype:bbSimple; rtf:'}';         html:'</i>')),
+
+    ((prefix:(ansi:'[u]'     ; wide:'[u]');      suffix:(ansi:nil; wide:nil);
+      bbtype:bbSimple; rtf:'{\ul ';     html:'<u>'),
+
+     (prefix:(ansi:'[/u]'    ; wide:'[/u]');     suffix:(ansi:nil; wide:nil);
+      bbtype:bbSimple; rtf:'}';         html:'</u>')),
+
+    ((prefix:(ansi:'[s]'     ; wide:'[s]');      suffix:(ansi:nil; wide:nil);
+      bbtype:bbSimple; rtf:'{\strike '; html:'<s>'),
+
+     (prefix:(ansi:'[/s]'    ; wide:'[/s]');     suffix:(ansi:nil; wide:nil);
+      bbtype:bbSimple; rtf:'}';         html:'</s>')),
+
+    ((prefix:(ansi:'[color=' ; wide:'[color=');  suffix:(ansi:']'; wide:']');
+      bbtype:bbColor;  rtf:'{\cf%u ';   html:'<font style="color:%s">'),
+
+     (prefix:(ansi:'[/color]'; wide:'[/color]'); suffix:(ansi:nil; wide:nil);
+      bbtype:bbSimple; rtf:'}';         html:'</font>')),
+
+    ((prefix:(ansi:'[url='   ; wide:'[url]');    suffix:(ansi:']'; wide:']');
+      bbtype:bbUrl;    rtf:'{\field{\*\fldinst{HYPERLINK ":%s"}}{\fldrslt{\ul\cf%u'; html:'<a href="%s">'),
+
+     (prefix:(ansi:'[/url]'  ; wide:'[/url]');   suffix:(ansi:nil; wide:nil);
+      bbtype:bbSimple; rtf:'}}}';      html:'</a>')),
+
+    ((prefix:(ansi:'[size='  ; wide:'[size=');   suffix:(ansi:']'; wide:']');
+      bbtype:bbSize;   rtf:'{\fs%u ';   html:'<font style="font-size:%spt">'),
+
+     (prefix:(ansi:'[/size]' ; wide:'[/size]');  suffix:(ansi:nil; wide:nil);
+      bbtype:bbSimple; rtf:'}';         html:'</font>')),
+
+    ((prefix:(ansi:'[img]'   ; wide:'[img]');    suffix:(ansi:nil; wide:nil);
+      bbtype:bbImage;  rtf:'[{\revised\ul\cf%u '; html:'['),
+
+     (prefix:(ansi:'[/img]'  ; wide:'[/img]');   suffix:(ansi:nil; wide:nil);
+      bbtype:bbSimple; rtf:'}]';        html:']'))
   );
 
 const
-  MAX_FMTBUF     = 4095;
+  MAX_FMTBUF = 4095;
 
 var
   TextBuffer: THppBuffer;
@@ -295,8 +331,6 @@ begin
 (*!!
   for i := 0 to High(bbCodes) do
   begin
-    if hppRichEditVersion < bbCodes[i, bbStart].minRE then
-      continue;
     bufPos := TextBuffer.Buffer;
     repeat
       newCode := nil;
@@ -322,7 +356,7 @@ begin
               n:=StrToInt(pAnsiChar(code));
               newCode := StrLFmt(fmt_buffer, MAX_FMTBUF, bbCodes[i, bbStart].rtf, [n shl 1]);
             end;
-{$IFDEF USE_URL_BBCODE}
+
           bbUrl:
             begin
               SetString(code, strCode, lenCode);
@@ -332,7 +366,7 @@ begin
                 n := 0;
               newCode := StrLFmt(fmt_buffer, MAX_FMTBUF, bbCodes[i, bbStart].rtf, [PAnsiChar(code), n]);
             end;
-{$ENDIF}
+
           bbImage:
             begin
               if doColorBBCodes then
@@ -558,32 +592,33 @@ begin
   if GridOptions.MathModuleEnabled     then Result := Result or DoSupportMathModule(wParam, lParam);
   if GridOptions.AvatarsHistoryEnabled then Result := Result or DoSupportAvatarHistory(wParam, lParam);
 end;
-
+(*
 procedure FillTables;
 var
   i: integer;
+  buf:array [0..25] of AnsiChar;
+  p:pAnsiChar;
 begin
+  rtf_ctable_text := '';
   for i := 0 to High(rtf_ctable) do
   begin
-    rtf_ctable_text := rtf_ctable_text + AnsiString(Format('\red%d\green%d\blue%d;',
+{    rtf_ctable_text := rtf_ctable_text + AnsiString(Format('\red%d\green%d\blue%d;',
       [rtf_ctable[i].col and $FF,
       (rtf_ctable[i].col shr 8) and $FF,
       (rtf_ctable[i].col shr 16) and $FF]));
-  end;
+}
+    p:=@buf;
+    p:=StrEnd(IntToStr(StrCopyE(p,'\red'  ), rtf_ctable[i].col and $FF));
+    p:=StrEnd(IntToStr(StrCopyE(p,'\green'),(rtf_ctable[i].col shr 8) and $FF));
+    p:=StrEnd(IntToStr(StrCopyE(p,'\blue' ),(rtf_ctable[i].col shr 16) and $FF));
+    p^:=';'; inc(p);
+    rtf_ctable_text := rtf_ctable_text + AnsiString(buf);
 
-  for i := 0 to High(bbCodes) do
-  begin
-    bbCodes[i, bbStart].prefix.wide := WideString(bbCodes[i, bbStart].prefix.ansi);
-    bbCodes[i, bbStart].suffix.wide := WideString(bbCodes[i, bbStart].suffix.ansi);
-    bbCodes[i, bbEnd  ].prefix.wide := WideString(bbCodes[i, bbEnd  ].prefix.ansi);
-    bbCodes[i, bbEnd  ].suffix.wide := WideString(bbCodes[i, bbEnd  ].suffix.ansi);
   end;
 end;
-
+*)
 initialization
-  rtf_ctable_text := '';
-
-  FillTables;
+//  FillTables;
 
   TextBuffer := THppBuffer.Create;
 

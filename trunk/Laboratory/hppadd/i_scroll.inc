@@ -1,42 +1,90 @@
 {}
-procedure THistoryGrid.OnGridBeforeScroll(Sender: PControl; OldPos, NewPos: Integer;
-      Cmd: Word; var AllowChange: Boolean);
+procedure THistoryGrid.SetSBHidden(value:boolean);
+begin
+  if FSBHidden<>value then
+  begin
+    FSBHidden:=value;
+    ShowScrollBar(FScrollBar, SB_CTL, not value);
+    GridUpdate([guSize]);
+  end;
+end;
+
+procedure THistoryGrid.SetSBMax(value:integer);
+var
+  SI: TScrollInfo;
+begin
+  if value<>FSBMax then
+  begin
+    FSBMax:=value;
+    SI.cbSize:=SizeOf(SI);
+    SI.fMask :=SIF_RANGE + SIF_PAGE;
+    SI.nPage :=SBPageSize;
+    SI.nMin  :=0;
+    SI.nMax  :=value;
+    SetScrollInfo(FScrollBar, SB_CTL, SI, true);
+  end;
+end;
+
+procedure THistoryGrid.SetSBPosition(value:integer);
+var
+  SI: TScrollInfo;
+begin
+  if value<>FSBPosition then
+  begin
+    FSBPosition := value;
+//    SetScrollPos(FScrollBar, SB_CTL, value, true);
+    // Check position range??
+    SI.cbSize:=SizeOf(SI);
+    SI.fMask :=SIF_POS;
+    SI.nPos  :=value;
+    SetScrollInfo(FScrollBar, SB_CTL, SI, true);
+  end;
+end;
+
+procedure THistoryGrid.OnGridScroll(wParam:WPARAM);
+var
+  idx,ScrollCode: Integer;
 begin
   CheckBusy;
 
-  if Cmd = SB_ENDSCROLL then
+  ScrollCode := Loword(wParam);
+
+  if ScrollCode = SB_ENDSCROLL then
     exit;
-  if Cmd in [SB_LINEUP, SB_LINEDOWN, SB_PAGEDOWN, SB_PAGEUP] then
+  
+  BeginUpdate;
+
+  if ScrollCode in [SB_LINEUP, SB_LINEDOWN, SB_PAGEDOWN, SB_PAGEUP] then
   begin
-    case Cmd of
-      SB_LINEDOWN: ScrollGridBy(VLineScrollSize);
-      SB_LINEUP  : ScrollGridBy(-VLineScrollSize);
-      SB_PAGEDOWN: ScrollGridBy(FClient.ClientHeight);
-      SB_PAGEUP  : ScrollGridBy(-FClient.ClientHeight);
+    case ScrollCode of
+      SB_LINEDOWN: ScrollGridBy( VLineScrollSize);
+      SB_LINEUP:   ScrollGridBy(-VLineScrollSize);
+      SB_PAGEDOWN: ScrollGridBy( FClientRect.Bottom);
+      SB_PAGEUP:   ScrollGridBy(-FClientRect.Bottom);
     end;
-    NeededSBPosition := VertScrollBar.SBPosition; // set through ScrollGridBy
-    exit;
+  end
+  else
+  begin
+    if ScrollCode in [SB_THUMBTRACK, SB_THUMBPOSITION] then
+    begin
+      idx := GetNext(GetIdx(Hiword(wParam)));
+      if idx = -1 then
+      begin
+        SetSBPos(MaxSBPos+1);
+      end
+      else
+        SetSBPos(idx);
+    end;
+
+    AdjustScrollBar;
+    InvalidateRect(FHandle, @FClientRect, False);
   end;
-  NeededSBPosition := NewPos;
-  FClient.Invalidate;
+
+  EndUpdate;
+  Update;
 end;
 
-procedure THistoryGrid.OnGridScroll(Sender: PControl; Cmd: Word);
-var
-  idx: Integer;
-begin
-  // scrolled position to real item number position
-  VertScrollBar.SBPosition := NeededSBPosition;
-{##}
-  if Cmd in [SB_THUMBTRACK, SB_THUMBPOSITION] then
-  begin
-    idx := GetNext(GetIdx(VertScrollBar.SBPosition));
-    if idx = -1 then
-    begin
-      SetSBPos(MaxSBPos+1);
-    end;
-  end;
-end;
+//----- main work -----
 
 procedure THistoryGrid.SetSBPos(Position: Integer);
 var
@@ -44,14 +92,14 @@ var
   idx: Integer;
 begin
   TopItemOffset := 0;
-  VertScrollBar.SBPosition := Position;
+  SBPosition := Position;
   AdjustScrollBar;
-  if GetUp(GetIdx(VertScrollBar.SBPosition)) = -1 then
-    VertScrollBar.SBPosition := 0;
+  if GetUp(GetIdx(SBPosition)) = -1 then
+    SBPosition := 0;
   if MaxSBPos = -1 then
     exit;
 
-  if VertScrollBar.SBPosition > MaxSBPos then
+  if SBPosition > MaxSBPos then
   begin
     SumHeight := 0;
     idx := GetIdx(HIGH(FItems));
@@ -62,11 +110,11 @@ begin
       idx := GetUp(idx);
       if idx = -1 then
         break;
-    until ((SumHeight >= FClient.ClientHeight) or (idx < 0) or (idx >= Length(FItems)));
+    until ((SumHeight >= FClientRect.Bottom) or (idx < 0) or (idx >= Length(FItems)));
 
-    if SumHeight > FClient.ClientHeight then
+    if SumHeight > FClientRect.Bottom then
     begin
-      TopItemOffset := SumHeight - FClient.ClientHeight;
+      TopItemOffset := SumHeight - FClientRect.Bottom;
     end;
   end;
 end;
@@ -82,8 +130,7 @@ begin
   MaxSBPos := -1;
   if Count = 0 then
   begin
-    VertScrollBar.SBMax := 0;
-//??    VertScrollBar.Range := 0;
+    SBMax := 0;
     exit;
   end;
 
@@ -96,7 +143,7 @@ begin
       if IsMatched(idx) then
         Inc(SumHeight, FItems[idx].Height);
       idx := GetDown(idx);
-    until ((SumHeight > FClient.ClientHeight) or (idx < 0) or (idx >= Length(FItems)));
+    until ((SumHeight > FClientRect.Bottom) or (idx < 0) or (idx >= Length(FItems)));
 
   maxidx := idx;
   // see if the idx is the last
@@ -118,41 +165,38 @@ begin
       LoadItem(maxidx, True);
       if IsMatched(maxidx) then
         Inc(SumHeight, FItems[maxidx].Height);
-    until ((SumHeight >= FClient.ClientHeight) or (maxidx < 0) or (maxidx >= Length(FItems)));
+    until ((SumHeight >= FClientRect.Bottom) or (maxidx < 0) or (maxidx >= Length(FItems)));
     BarAdjusted := True;
-    VertScrollBar.Visible := (idx <> -1);
+    SBHidden := (idx = -1);
 
-    VertScrollBar.SBMax := GetIdx(maxidx) + VertScrollBar.SBPageSize - 1 + 1;
-//??    VertScrollBar.Range := GetIdx(maxidx) + VertScrollBar.SBPageSize - 1 + 1;
+    SBMax := GetIdx(maxidx) + SBPageSize - 1 + 1;
 
     MaxSBPos := GetIdx(maxidx);
     // if VertScrollBar.Position > MaxSBPos then
-    SetSBPos(VertScrollBar.SBPosition);
+    SetSBPos(SBPosition);
 //!!    AdjustInlineRichedit;
     exit;
   end;
 
   if SumHeight = 0 then
   begin
-    VertScrollBar.SBMax := 0;
-//??    VertScrollBar.Range := 0;
+    SBMax := 0;
     exit;
   end;
 
-  VertScrollBar.Visible := True;
+  SBHidden := False;
 
-  VertScrollBar.SBMax := Count + VertScrollBar.SBPageSize - 1;
-//??  VertScrollBar.Range := Count + VertScrollBar.SBPageSize - 1;
+  SBMax := Count + SBPageSize - 1;
 
   MaxSBPos := Count - 1;
   exit;
 
-  if SumHeight < FClient.ClientHeight then
+  if SumHeight < FClientRect.Bottom then
   begin
     idx := GetPrev(GetIdx(Count));
 //??    if idx = -1 then Assert(False);
     R1 := GetItemRect(idx);
-    idx := FindItemAt(0, R1.Bottom - FClient.ClientHeight);
+    idx := FindItemAt(0, R1.Bottom - FClientRect.Bottom);
     if idx = -1 then
     begin
       idx := GetIdx(0);
@@ -161,7 +205,7 @@ begin
     begin
       ind := idx;
       R2 := GetItemRect(idx);
-      if R1.Bottom - R2.Top > FClient.ClientHeight then
+      if R1.Bottom - R2.Top > FClientRect.Bottom then
       begin
         idx := GetNext(idx);
         if idx = -1 then
@@ -169,17 +213,14 @@ begin
       end;
     end;
     BarAdjusted := True;
-    VertScrollBar.SBMax := GetIdx(idx) + VertScrollBar.SBPageSize - 1;
-//??    VertScrollBar.Range := GetIdx(idx) + VertScrollBar.SBPageSize - 1;
+    SBMax := GetIdx(idx) + SBPageSize - 1;
 
     MaxSBPos := GetIdx(idx) - 1;
-    SetSBPos(VertScrollBar.SBMax);
-//??    SetSBPos(VertScrollBar.Range);
+    SetSBPos(SBMax);
   end
   else
   begin
-    VertScrollBar.SBMax := Count + VertScrollBar.SBPageSize - 1;
-//??    VertScrollBar.Range := Count + VertScrollBar.SBPageSize - 1;
+    SBMax := Count + SBPageSize - 1;
 
     MaxSBPos := Count - 1;
   end;
@@ -191,7 +232,7 @@ begin
   UpdateWindow(hwnd);
 end;
 
-procedure THistoryGrid.ScrollGridBy(Offset: Integer; Update: Boolean = True);
+procedure THistoryGrid.ScrollGridBy(Offset: Integer; DoUpdate: Boolean = True);
 var
   previdx, idx, first: Integer;
   SumHeight: Integer;
@@ -208,15 +249,16 @@ begin
     repeat
       LoadItem(idx, True);
       Inc(SumHeight, FItems[idx].Height);
-      if SumHeight > (Offset + FClient.ClientHeight) then // guarantee outside our screen
+      if SumHeight > (Offset + FClientRect.Bottom) then // guarantee outside our screen
         break;
       idx := GetDown(idx);
       // we scroll to the last item, let's SetSBPos do the job
       if idx = -1 then
       begin
         SetSBPos(MaxSBPos + 1);
-        FClient.Invalidate;
-        FClient.Update;
+
+        Invalidate;
+        Update;
         exit;
       end;
     until false;
@@ -229,10 +271,10 @@ begin
       LoadItem(idx, True);
       if (SumHeight + FItems[idx].Height) > Offset then
       begin
-        VertScrollBar.SBPosition := GetIdx(idx);
+        SBPosition := GetIdx(idx);
         TopItemOffset := Offset - SumHeight;
-        if Update then
-          SmoothScrollWindow(FClient.Handle, 0, -Offset, nil, nil);
+        if DoUpdate then
+          SmoothScrollWindow(FClient, 0, -Offset, nil, nil);
         exit;
       end;
       Inc(SumHeight, FItems[idx].Height);
@@ -248,14 +290,14 @@ begin
       if SumHeight <= Offset then
       begin
         if idx = -1 then
-          VertScrollBar.SBPosition := 0
+          SBPosition := 0
         else
-          VertScrollBar.SBPosition := GetIdx(previdx);
+          SBPosition := GetIdx(previdx);
 
         TopItemOffset := Offset - SumHeight;
-        if Update then
+        if DoUpdate then
         begin
-          SmoothScrollWindow(FClient.Handle, 0, -Offset, nil, nil);
+          SmoothScrollWindow(FClient, 0, -Offset, nil, nil);
         end;
         break;
       end;
@@ -263,15 +305,16 @@ begin
       if idx = -1 then
       begin
         if previdx = first then
-          VertScrollBar.SBPosition := 0
+          SBPosition := 0
         else
-          VertScrollBar.SBPosition := GetIdx(previdx);
+          SBPosition := GetIdx(previdx);
+
         TopItemOffset := 0;
         // to lazy to calculate proper offset
-        if Update then
+        if DoUpdate then
         begin
-          FClient.Invalidate;
-          FClient.Update;
+          Invalidate;
+          Update;
         end;
         break;
       end;

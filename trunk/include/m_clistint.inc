@@ -549,6 +549,7 @@ type
 
 	  pfnGetContactIcon: function(hContact:THANDLE):int; cdecl;
 	  pfnTrayCalcChanged:function(szChangedProto:pAnsiChar; averageMode:int; iProtoCount:int):int; cdecl;
+    pfnGetAverageMode:function(pNetProtoCount:pint):int; cdecl;
   end;
 
 {

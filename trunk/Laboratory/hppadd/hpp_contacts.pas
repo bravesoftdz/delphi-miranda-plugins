@@ -49,27 +49,29 @@ uses
   Windows,
   hpp_global;
 
-function GetContactDisplayName(hContact: THandle; Proto: AnsiString = ''; Contact: boolean = false): WideString;
-function GetContactProto(hContact: THandle): AnsiString; overload;
-function GetContactProto(hContact: THandle; var SubContact: THandle; var SubProtocol: AnsiString): AnsiString; overload;
-function GetContactID(hContact: THandle; Proto: AnsiString = ''; Contact: boolean = false): AnsiString;
-function GetContactCodePage(hContact: THandle; const Proto: AnsiString = ''): Cardinal; overload;
-function GetContactCodePage(hContact: THandle; const Proto: AnsiString; var UsedDefault: boolean): Cardinal; overload;
-function WriteContactCodePage(hContact: THandle; CodePage: Cardinal; Proto: AnsiString = ''): boolean;
-function GetContactRTLMode(hContact: THandle; Proto: AnsiString = ''): boolean;
-function GetContactRTLModeTRTL(hContact: THandle; Proto: AnsiString = ''): TRTLMode;
-function WriteContactRTLMode(hContact: THandle; RTLMode: TRTLMode; Proto: AnsiString = ''): boolean;
+function GetContactDisplayName(hContact: THandle; Proto: pAnsiChar = nil; Contact: boolean = false): WideString;
+function GetContactProto(hContact: THandle): pAnsiChar; overload;
+function GetContactProto(hContact: THandle; var SubContact: THandle; var SubProtocol: pAnsiChar): pAnsiChar; overload;
+function GetContactID(hContact: THandle; Proto: pAnsiChar = nil; Contact: boolean = false): AnsiString;
+
+function GetContactCodePage(hContact: THandle; const Proto: pAnsiChar = nil): Cardinal; overload;
+function GetContactCodePage(hContact: THandle; const Proto: pAnsiChar; var UsedDefault: boolean): Cardinal; overload;
+function WriteContactCodePage(hContact: THandle; CodePage: Cardinal; Proto: pAnsiChar = nil): boolean;
+
+function GetContactRTLMode(hContact: THandle; Proto: pAnsiChar = nil): boolean;
+function GetContactRTLModeTRTL(hContact: THandle; Proto: pAnsiChar = nil): TRTLMode;
+function WriteContactRTLMode(hContact: THandle; RTLMode: TRTLMode; Proto: pAnsiChar = nil): boolean;
 
 implementation
 
-uses hpp_options, m_api, common, dbsettings;
+uses m_api, common, dbsettings;
 
-function GetContactProto(hContact: THandle): AnsiString;
+function GetContactProto(hContact: THandle): pAnsiChar;
 begin
   Result := PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO, hContact, 0));
 end;
 
-function GetContactProto(hContact: THandle; var SubContact: THandle; var SubProtocol: AnsiString): AnsiString;
+function GetContactProto(hContact: THandle; var SubContact: THandle; var SubProtocol: pAnsiChar): pAnsiChar;
 begin
   Result := PAnsiChar(CallService(MS_PROTO_GETCONTACTBASEPROTO, hContact, 0));
   if MetaContactsExists and (Result = MetaContactsProto) then
@@ -84,7 +86,7 @@ begin
   end;
 end;
 
-function GetContactDisplayName(hContact: THandle; Proto: AnsiString = ''; Contact: boolean = false): WideString;
+function GetContactDisplayName(hContact: THandle; Proto: pAnsiChar = nil; Contact: boolean = false): WideString;
 var
   ci: TContactInfo;
   RetPWideChar, UW: PWideChar;
@@ -93,16 +95,16 @@ begin
     Result := TranslateW('Server')
   else
   begin
-    if Proto = '' then
+    if Proto = nil then
       Proto := GetContactProto(hContact);
-    if Proto = '' then
+    if Proto = nil then
       Result := TranslateW('''(Unknown Contact)''' { TRANSLATE-IGNORE } )
     else
     begin
-      ci.cbSize := SizeOf(ci);
+      ci.cbSize   := SizeOf(ci);
       ci.hContact := hContact;
-      ci.szProto := PAnsiChar(Proto);
-      ci.dwFlag := CNF_DISPLAY + CNF_UNICODE;
+      ci.szProto  := Proto;
+      ci.dwFlag   := CNF_DISPLAY + CNF_UNICODE;
       if CallService(MS_CONTACT_GETCONTACTINFO, 0, LPARAM(@ci)) = 0 then
       begin
         RetPWideChar := ci.retval.szVal.w;
@@ -123,26 +125,31 @@ begin
   end;
 end;
 
-function GetContactID(hContact: THandle; Proto: AnsiString = ''; Contact: boolean = false): AnsiString;
+function GetContactID(hContact: THandle; Proto: pAnsiChar = nil; Contact: boolean = false): AnsiString;
 var
   uid: PAnsiChar;
   dbv: TDBVARIANT;
-  cgs: TDBCONTACTGETSETTING;
+//  cgs: TDBCONTACTGETSETTING;
   tmp: WideString;
   buf: array [0..15] of AnsiChar;
 begin
   Result := '';
   if not((hContact = 0) and Contact) then
   begin
-    if Proto = '' then
+    if Proto = nil then
       Proto := GetContactProto(hContact);
-    uid := PAnsiChar(CallProtoService(PAnsiChar(Proto), PS_GETCAPS, PFLAG_UNIQUEIDSETTING, 0));
-    if (Cardinal(uid) <> CALLSERVICE_NOTFOUND) and (uid <> nil) then
+    uid := PAnsiChar(CallProtoService(Proto, PS_GETCAPS, PFLAG_UNIQUEIDSETTING, 0));
+    if (uint_ptr(uid) <> CALLSERVICE_NOTFOUND) and (uid <> nil) then
     begin
+{
       cgs.szModule := PAnsiChar(Proto);
       cgs.szSetting := uid;
       cgs.pValue := @dbv;
       if CallService(MS_DB_CONTACT_GETSETTING, hContact, LPARAM(@cgs)) = 0 then
+}
+      // DBGetContactSettingStr comparing to DBGetContactSetting don't translate strings
+      // when uType=0 (DBVT_ASIS)
+      if DBGetContactSettingStr(hContact, PAnsiChar(Proto), uid, @dbv, DBVT_ASIS) = 0 then
       begin
         case dbv._type of
           DBVT_BYTE: begin
@@ -174,42 +181,42 @@ begin
   end;
 end;
 
-function WriteContactCodePage(hContact: THandle; CodePage: Cardinal; Proto: AnsiString = ''): boolean;
+function WriteContactCodePage(hContact: THandle; CodePage: Cardinal; Proto: pAnsiChar = nil): boolean;
 begin
   Result := false;
-  if Proto = '' then
+  if Proto = nil then
     Proto := GetContactProto(hContact);
-  if Proto = '' then
+  if Proto = nil then
     exit;
-  DBWriteWord(hContact, PAnsiChar(Proto), 'AnsiCodePage', CodePage);
+  DBWriteWord(hContact, Proto, 'AnsiCodePage', CodePage);
   Result := True;
 end;
 
-function _GetContactCodePage(hContact: THandle; Proto: AnsiString; var UsedDefault: boolean) : Cardinal;
+function _GetContactCodePage(hContact: THandle; Proto: pAnsiChar; var UsedDefault: boolean) : Cardinal;
 begin
-  if Proto = '' then
+  if Proto = nil then
     Proto := GetContactProto(hContact);
-  if Proto = '' then
+  if Proto = nil then
     Result := hppCodepage
   else
   begin
-    Result := DBReadWord(hContact, PAnsiChar(Proto), 'AnsiCodePage', $FFFF);
+    Result := DBReadWord(hContact, Proto, 'AnsiCodePage', $FFFF);
     If Result = $FFFF then
-      Result := DBReadWord(0, PAnsiChar(Proto), 'AnsiCodePage', CP_ACP);
+      Result := DBReadWord(0, Proto, 'AnsiCodePage', CP_ACP);
     UsedDefault := (Result = CP_ACP);
     if UsedDefault then
       Result := GetACP();
   end;
 end;
 
-function GetContactCodePage(hContact: THandle; const Proto: AnsiString = ''): Cardinal;
+function GetContactCodePage(hContact: THandle; const Proto: pAnsiChar = nil): Cardinal;
 var
   def: boolean;
 begin
   Result := _GetContactCodePage(hContact, Proto, def);
 end;
 
-function GetContactCodePage(hContact: THandle; const Proto: AnsiString; var UsedDefault: boolean): Cardinal; overload;
+function GetContactCodePage(hContact: THandle; const Proto: pAnsiChar; var UsedDefault: boolean): Cardinal; overload;
 begin
   Result := _GetContactCodePage(hContact, Proto, UsedDefault);
 end;
@@ -218,15 +225,15 @@ end;
 // Changed default RTL mode from SysLocale.MiddleEast to
 // Application.UseRightToLeftScrollBar because it's more correct and
 // doesn't bug on MY SYSTEM!
-function GetContactRTLMode(hContact: THandle; Proto: AnsiString = ''): boolean;
+function GetContactRTLMode(hContact: THandle; Proto: pAnsiChar = nil): boolean;
 var
   Temp: Byte;
 begin
-  if Proto = '' then
+  if Proto = nil then
     Proto := GetContactProto(hContact);
-  if Proto <> '' then
+  if Proto <> nil then
   begin
-    Temp := DBReadByte(hContact, PAnsiChar(Proto), 'RTL', 255);
+    Temp := DBReadByte(hContact, Proto, 'RTL', 255);
     if Temp <> 255 then
     begin
       result:=Temp<>0;
@@ -237,30 +244,30 @@ begin
 //orig  Result := DBReadByte(0,hppDBName, 'RTL', Application.UseRightToLeftScrollBar)<>0;
 end;
 
-function WriteContactRTLMode(hContact: THandle; RTLMode: TRTLMode; Proto: AnsiString = ''): boolean;
+function WriteContactRTLMode(hContact: THandle; RTLMode: TRTLMode; Proto: pAnsiChar = nil): boolean;
 begin
   Result := false;
-  if Proto = '' then
+  if Proto = nil then
     Proto := GetContactProto(hContact);
-  if Proto = '' then
+  if Proto = nil then
     exit;
   case RTLMode of
-    hppRTLDefault: DBDeleteContactSetting(hContact, PAnsiChar(Proto), 'RTL');
-    hppRTLEnable:  DBWriteByte(hContact, PAnsiChar(Proto), 'RTL', Byte(True));
-    hppRTLDisable: DBWriteByte(hContact, PAnsiChar(Proto), 'RTL', Byte(false));
+    hppRTLDefault: DBDeleteContactSetting(hContact, Proto, 'RTL');
+    hppRTLEnable:  DBWriteByte(hContact, Proto, 'RTL', Byte(True));
+    hppRTLDisable: DBWriteByte(hContact, Proto, 'RTL', Byte(false));
   end;
   Result := True;
 end;
 
-function GetContactRTLModeTRTL(hContact: THandle; Proto: AnsiString = ''): TRTLMode;
+function GetContactRTLModeTRTL(hContact: THandle; Proto: pAnsiChar = nil): TRTLMode;
 begin
-  if Proto = '' then
+  if Proto = nil then
     Proto := GetContactProto(hContact);
-  if Proto = '' then
+  if Proto = nil then
     Result := hppRTLDefault
   else
   begin
-    case DBReadByte(hContact, PAnsiChar(Proto), 'RTL', 255) of
+    case DBReadByte(hContact, Proto, 'RTL', 255) of
       0: Result := hppRTLDisable;
       1: Result := hppRTLEnable;
     else

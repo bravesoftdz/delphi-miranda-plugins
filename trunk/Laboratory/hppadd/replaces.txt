@@ -1,0 +1,26 @@
+FClient.Handle = HWND FCanvas
+FClient.Canvas.Handle = DC FCanvasDC
+FClient.Canvas.ClipRect = GetClipBox(FCanvasDC,ClipRect);
+FClient.ClientRect = Windows.GetClientRect(FClient, ClientRect);
+FClient.ClientWidth = FClient.ClientRect.Right
+FClient.ClientHeight = FClient.ClientRect.Bottom
+FClient.Invalidate = InvalidateRect(FClient, nil, true);
+FClient.Update = UpdateWindow(FClient);
+
+
+Grid.ClipRect:
+  Paint
+  PaintItem
+  PrePaintWindow = Rect(0, 0, ClientWidth, ClientHeight)
+  WMPaint = ps.rcPaint
+  WMNotify = Canvas.ClipRect
+
+VerticalScrollBar
+  SBPosition       -> SBPosition
+  Visible (WinAPI) -> SBHidden
+  Handle  (WinAPI) -> FScrollBar
+  SBMax            ->
+  Range (?)
+  SBPageSize       -> SBPageSize=20
+
+Perform = postmessage
