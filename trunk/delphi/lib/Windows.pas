@@ -23,6 +23,7 @@ type
   Int32  = Integer;
   DWORD = LongWord;
   BOOL = LongBool;
+  LONG = Longint;
   PBOOL = ^BOOL;
   PByte = ^Byte;
   PINT = ^Integer;
