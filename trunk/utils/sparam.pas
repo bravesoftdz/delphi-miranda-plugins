@@ -28,14 +28,18 @@ const
   ACF_RUNICODE = $00020000; // Service result is Widestring
   ACF_RSTRUCT  = $00040000; // Service result in structure
   ACF_RFREEMEM = $00080000; // Need to free memory
+  ACF_RHEXNUM  = $00100000; // Show number as hex
+  ACF_RSIGNED  = $00200000; // Show number as signed
 
   ACF_RTYPE    = ACF_RSTRING or ACF_RUNICODE or
-                 ACF_RSTRUCT or ACF_RFREEMEM;
+                 ACF_RSTRUCT or ACF_RFREEMEM or
+                 ACF_RHEXNUM or ACF_RSIGNED;
 
   // parameter / result block creation flags
   ACF_NOSTATIC = $01000000; // No label text in block
   ACF_NOBORDER = $02000000; // No group border around block
   ACF_NOSTRUCT = $04000000; // don't add structure as param type
+  ACF_NOVISUAL = $08000000; // don't show number view styles
 
 function CreateParamBlock(parent:HWND;x,y,width:integer;flags:dword=0):THANDLE;
 function ClearParamFields(Dialog:HWND):HWND;
@@ -68,6 +72,8 @@ const
 
   IDC_RES_TYPE    = 2160;
   IDC_RES_FREEMEM = 2161;
+  IDC_RES_SIGNED  = 2162;
+  IDC_RES_HEXNUM  = 2163;
 
 
 procedure InsertString(wnd:HWND;num:dword;str:PAnsiChar);
@@ -645,25 +651,66 @@ end;
 function DlgResultProc(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
   proc:pointer;
-  i:integer;
+  wnd:HWND;
+  b:bool;
+  i,j:integer;
 begin
   result:=0;
 
   case hMessage of
     WM_COMMAND: begin
       case wParam shr 16 of
+        BN_CLICKED: begin
+          case loword(wParam) of
+            IDC_RES_SIGNED: begin
+              if IsDlgButtonChecked(Dialog,IDC_RES_SIGNED)=BST_UNCHECKED then
+              begin
+                b:=true;
+              end
+              else
+              begin
+                b:=false;
+              end;
+              EnableWindow(GetDlgItem(Dialog,IDC_RES_HEXNUM),b);
+            end;
+            IDC_RES_HEXNUM: begin
+              if IsDlgButtonChecked(Dialog,IDC_RES_HEXNUM)=BST_UNCHECKED then
+              begin
+                b:=true;
+              end
+              else
+              begin
+                b:=false;
+              end;
+              EnableWindow(GetDlgItem(Dialog,IDC_RES_SIGNED),b);
+            end;
+          end;
+        end;
+
         CBN_SELCHANGE:  begin
           case loword(wParam) of
             IDC_RES_TYPE: begin
               case CB_GetData(lParam) of
-                ACF_RNUMBER,ACF_RSTRUCT: begin
+                ACF_RNUMBER: begin
                   i:=SW_HIDE;
+                  j:=SW_SHOW;
+                end;
+                ACF_RSTRUCT: begin
+                  i:=SW_HIDE;
+                  j:=SW_HIDE;
                 end;
                 ACF_RSTRING,ACF_RUNICODE: begin
                   i:=SW_SHOW;
+                  j:=SW_HIDE;
                 end;
               end;
               ShowWindow(GetDlgItem(Dialog,IDC_RES_FREEMEM),i);
+              wnd:=GetDlgItem(Dialog,IDC_RES_HEXNUM);
+              if wnd<>0 then
+              begin
+                ShowWindow(wnd,j);
+                ShowWindow(GetDlgItem(Dialog,IDC_RES_SIGNED),j);
+              end;
             end;
           end;
         end;
@@ -761,6 +808,21 @@ begin
   SendMessageW(ctrl,WM_SETFONT,hf,0);
   inc(yo,rc.bottom+4);
 
+  if (flags and ACF_NOVISUAL)=0 then
+  begin
+    dec(yo,rc.bottom+4);
+
+    ctrl:=CreateWindowW('BUTTON','Signed',WS_CHILD+WS_VISIBLE+BS_AUTOCHECKBOX,
+          gx,yo,dx-gx*2,rc.bottom, result,IDC_RES_SIGNED,hInstance,nil);
+    SendMessageW(ctrl,WM_SETFONT,hf,0);
+    inc(yo,rc.bottom+2);
+
+    ctrl:=CreateWindowW('BUTTON','As hex',WS_CHILD+WS_VISIBLE+BS_AUTOCHECKBOX,
+          gx,yo,dx-gx*2,rc.bottom, result,IDC_RES_HEXNUM,hInstance,nil);
+    SendMessageW(ctrl,WM_SETFONT,hf,0);
+    inc(yo,rc.bottom+4);
+  end;
+
   // resize group and dialog
   MoveWindow(result,x,y,dx,yo,false);
   if (flags and ACF_NOBORDER)=0 then
@@ -771,11 +833,14 @@ end;
 
 function SetResultValue(Dialog:HWND;flags:dword):integer;
 var
+  w:HWND;
   btn:cardinal;
-  sh:integer;
+  sh,sh1:integer;
 begin
   // RESULT
-  sh:=SW_HIDE;
+  sh :=SW_HIDE;
+  sh1:=SW_HIDE;
+  w:=GetDlgItem(Dialog,IDC_RES_HEXNUM);
   if (flags and ACF_RSTRUCT)<>0 then
     result:=ACF_RSTRUCT
   else if (flags and (ACF_RSTRING or ACF_RUNICODE))<>0 then
@@ -796,8 +861,27 @@ begin
   else
   begin
     result:=ACF_RNUMBER;
+    if w<>0 then
+    begin
+      sh1:=SW_SHOW;
+      if (flags and ACF_RSIGNED)<>0 then
+        btn:=BST_CHECKED
+      else
+        btn:=BST_UNCHECKED;
+      CheckDlgButton(Dialog,IDC_RES_SIGNED,btn);
+      if (flags and ACF_RHEXNUM)<>0 then
+        btn:=BST_CHECKED
+      else
+        btn:=BST_UNCHECKED;
+      CheckDlgButton(Dialog,IDC_RES_HEXNUM,btn);
+    end;
   end;
   ShowWindow(GetDlgItem(Dialog,IDC_RES_FREEMEM),sh);
+  if w<>0 then
+  begin
+    ShowWindow(GetDlgItem(Dialog,IDC_RES_HEXNUM),sh1);
+    ShowWindow(GetDlgItem(Dialog,IDC_RES_SIGNED),sh1);
+  end;
   CB_SelectData(Dialog,IDC_RES_TYPE,result);
 end;
 
@@ -817,6 +901,13 @@ begin
     ACF_RSTRUCT: result:=ACF_RSTRUCT;
   else
     result:=ACF_RNUMBER;
+    if GetDlgItem(Dialog,IDC_RES_HEXNUM)<>0 then
+    begin
+      if IsDlgButtonChecked(Dialog,IDC_RES_SIGNED)=BST_CHECKED then
+        result:=result or ACF_RSIGNED
+      else if IsDlgButtonChecked(Dialog,IDC_RES_HEXNUM)=BST_CHECKED then
+        result:=result or ACF_RHEXNUM;
+    end;
   end;
 
 end;

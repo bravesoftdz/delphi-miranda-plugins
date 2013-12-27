@@ -76,14 +76,17 @@ end;
 
 //----- Item fill -----
 
-function int2strw(i:integer):PWideChar;
+function int2strw(i:uint_ptr;signed:bool=false):PWideChar;
 var
   buf:array [0..31] of WideChar;
 begin
-  StrDupW(result,IntToStr(buf,i));
+  if signed then
+    StrDupW(result,IntToStr(buf,int_ptr(i)))
+  else
+    StrDupW(result,IntToStr(buf,i));
 end;
 
-function int2hexw(i:integer):PWideChar;
+function int2hexw(i:uint_ptr):PWideChar;
 var
   buf:array [0..31] of WideChar;
 begin
@@ -258,10 +261,11 @@ end;
 procedure LoadOneItem(hContact:THANDLE;column:pcolumnitem;proto:integer; var res:tQSRec);
 var
   tmp:uint_ptr;
-  lmodule:PAnsiChar;
+  lmodule,srv:PAnsiChar;
+  DbEvent:HDBEVENT;
   cni:TCONTACTINFO;
   dbei:TDBEVENTINFO;
-  hDbEvent:cardinal;
+  b:bool;
 begin
   FillChar(res,SizeOf(tQSRec),0);
   res.data:=uint_ptr(-1);
@@ -277,18 +281,29 @@ begin
       QST_SERVICE: begin
         if wparam._type=ACF_CURRENT then wparam.value:=hContact;
         if lparam._type=ACF_CURRENT then lparam.value:=hContact;
-        tmp:=uint_ptr(CallService(service,TWPARAM(wparam.value),TLPARAM(lparam.value)));
+
+        if (restype and ACF_SCRIPT_SERVICE)<>0 then
+          srv:=ParseVarString(service,hContact,nil)
+        else
+          srv:=service;
+        tmp:=uint_ptr(CallService(srv,TWPARAM(wparam.value),TLPARAM(lparam.value)));
+        if (restype and ACF_SCRIPT_SERVICE)<>0 then
+          mFreeMem(srv);
+
         if tmp=CALLSERVICE_NOTFOUND then exit;
-        case restype of
-          ACF_RSTRING: begin
-            AnsiToWide(PAnsiChar(tmp),res.text);
-          end;
-          ACF_RUNICODE: begin
-            StrDupW(res.text,PWideChar(tmp));
-          end;
-          ACF_RNUMBER:begin
-            res.data:=tmp;
-            res.text:=int2strw(tmp);
+        if (restype and ACF_RSTRING)<>0 then
+          AnsiToWide(PAnsiChar(tmp),res.text)
+        else if (restype and ACF_RUNICODE)<>0 then
+          StrDupW(res.text,PWideChar(tmp))
+        else// if (restype and ACF_RNUMBER)<>0 then
+        begin
+          res.data:=tmp;
+          if (restype and ACF_RHEXNUM)<>0 then
+            res.text:=int2hexw(tmp)
+          else
+          begin
+            b:=(restype and ACF_RSIGNED)<>0;
+            res.text:=int2strw(tmp,b);
           end;
         end;
       end;
@@ -360,6 +375,16 @@ begin
             end;
           end;
 
+          QSTS_SIGNED: begin
+            res.data:=DBReadDWord(hContact,lmodule,setting,0);
+            res.text:=int2strw(res.data,true);
+          end;
+
+          QSTS_HEXNUM: begin
+            res.data:=DBReadDWord(hContact,lmodule,setting,0);
+            res.text:=int2hexw(res.data);
+          end;
+
           QSTS_IP: begin
             res.data:=DBReadDWord(hContact,lmodule,setting,0);
             if res.data<>0 then
@@ -381,12 +406,12 @@ begin
         end;
 
         QSTO_LASTEVENT: begin
-          hDbEvent:=db_event_last(hContact);
-          if hDbEvent<>0 then
+          DbEvent:=db_event_last(hContact);
+          if DbEvent<>0 then
           begin
             ZeroMemory(@dbei,sizeof(dbei));
             dbei.cbSize:=SizeOf(dbei);
-            db_event_get(hDbEvent, @dbei);
+            db_event_get(DbEvent, @dbei);
             res.data:=dbei.timestamp;
             res.text:=TimeToStrW(res.data);
           end

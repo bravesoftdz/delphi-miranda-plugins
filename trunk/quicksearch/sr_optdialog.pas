@@ -24,6 +24,8 @@ const
   stByte       :PWideChar = 'Byte';
   stWord       :PWideChar = 'Word';
   stDWord      :PWideChar = 'DWord';
+  stSigned     :PWideChar = 'Signed';
+  stHexnum     :PWideChar = 'As hex';
   stString     :PWideChar = 'String';
   stLastSeen   :PWideChar = 'LastSeen';
   stIP         :PWideChar = 'IP';
@@ -461,6 +463,8 @@ begin
   CB_AddStrDataW(list,stByte     ,QSTS_BYTE);
   CB_AddStrDataW(list,stWord     ,QSTS_WORD);
   CB_AddStrDataW(list,stDword    ,QSTS_DWORD);
+  CB_AddStrDataW(list,stSigned   ,QSTS_SIGNED);
+  CB_AddStrDataW(list,stHexnum   ,QSTS_HEXNUM);
   CB_AddStrDataW(list,stString   ,QSTS_STRING);
   CB_AddStrDataW(list,stIP       ,QSTS_IP);
   CB_AddStrDataW(list,stTimeStamp,QSTS_TIMESTAMP);
