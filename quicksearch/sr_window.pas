@@ -160,8 +160,12 @@ begin
     begin
       if ((qsopt.flags and QSO_SHOWOFFLINE)<>0) or (p^.status<>ID_STATUS_OFFLINE) then
       begin
-        p^.flags:=p^.flags or QSF_ACTIVE;
-        AddContactToList(p^.contact,num);
+        // check for proto in combo
+        if (LoByte(AdvFilter)=0) or (p^.proto=LoByte(AdvFilter)) then
+        begin
+          p^.flags:=p^.flags or QSF_ACTIVE;
+          AddContactToList(p^.contact,num);
+        end;
       end;
     end
   end
@@ -1415,7 +1419,7 @@ begin
       if (qsopt.flags and QSO_SHOWOFFLINE)<>0 then
         ChangeStatusPicture(j,wParam,lParam)
       else
-        ProcessLine(j,false) // why false? need to filter!
+        ProcessLine(j,true) // why false? need to filter!
     end
     else if {(oldstat<>ID_STATUS_OFFLINE) and} (newstat=ID_STATUS_OFFLINE) then
     begin

@@ -374,29 +374,19 @@ begin
 end;
 
 function loaddefaultcolumns(var columns:array of tcolumnitem):integer;
+var
+  i:integer;
 begin
   clear_columns(columns);
-
-  // protocol
-  with columns[0] do
-  begin
-    StrDupW(title,'Protocol');
-    width          :=82;
-    flags          :=COL_ON;
-    setting_type   :=QST_SERVICE;
-    StrDup (service,MS_PROTO_GETCONTACTBASEPROTO);
-    restype        :=ACF_RSTRING;
-    wparam._type   :=ACF_CURRENT;
-    lparam._type   :=ACF_NUMBER;
-    lparam.value   :=0;
-  end;
+  // lazy to renumber if changes
+  i:=0;
 
   // account
-  with columns[1] do
+  with columns[i] do
   begin
     StrDupW(title,'Account');
     width          :=82;
-    flags          :=0;
+    flags          :=COL_ON;
     setting_type   :=QST_SERVICE;
     StrDup (service,MS_PROTO_GETCONTACTBASEACCOUNT);
     restype        :=ACF_RSTRING;
@@ -404,20 +394,10 @@ begin
     lparam._type   :=ACF_NUMBER;
     lparam.value   :=0;
   end;
-{
-  with columns[1] do
-  begin
-    StrDupW(title,'Real Protocol');
-    width          :=82;
-    flags          :=COL_ON;
-    setting_type   :=QST_SETTING;
-    datatype       :=QSTS_STRING;
-    StrDup(module ,'Protocol');
-    StrDup(setting,'p');
-  end;
-}
+  inc(i);
+
   // gender
-  with columns[2] do
+  with columns[i] do
   begin
     StrDupW(title,'Gender');
     width          :=20;
@@ -425,9 +405,10 @@ begin
     setting_type   :=QST_CONTACTINFO;
     cnftype        :=CNF_GENDER;
   end;
+  inc(i);
 
   // uin
-  with columns[3] do
+  with columns[i] do
   begin
     StrDupW(title,'UserID');
     width          :=80;
@@ -435,9 +416,10 @@ begin
     setting_type   :=QST_CONTACTINFO;
     cnftype        :=CNF_UNIQUEID;
   end;
+  inc(i);
 
   // username(displayname)
-  with columns[4] do
+  with columns[i] do
   begin
     StrDupW(title,'Nickname');
     width          :=76;
@@ -449,9 +431,10 @@ begin
     lparam._type   :=ACF_NUMBER;
     lparam.value   :=2; // 0 for ANSI
   end;
+  inc(i);
 
   // firstname
-  with columns[5] do
+  with columns[i] do
   begin
     StrDupW(title,'First name');
     width          :=68;
@@ -459,9 +442,10 @@ begin
     setting_type   :=QST_CONTACTINFO;
     cnftype        :=CNF_FIRSTNAME;
   end;
+  inc(i);
 
   // lastname
-  with columns[6] do
+  with columns[i] do
   begin
     StrDupW(title,'Last name');
     width          :=66;
@@ -469,9 +453,10 @@ begin
     setting_type   :=QST_CONTACTINFO;
     cnftype        :=CNF_LASTNAME;
   end;
+  inc(i);
 
   // group
-  with columns[7] do
+  with columns[i] do
   begin
     StrDupW(title,'Group');
     width          :=80;
@@ -481,9 +466,10 @@ begin
     StrDup(module ,'CList');
     StrDup(setting,'Group');
   end;
+  inc(i);
 
   // email
-  with columns[8] do
+  with columns[i] do
   begin
     StrDupW(title,'E-mail');
     width          :=116;
@@ -491,9 +477,10 @@ begin
     setting_type   :=QST_CONTACTINFO;
     cnftype        :=CNF_EMAIL;
   end;
+  inc(i);
 
  // miranda version
-  with columns[9] do
+  with columns[i] do
   begin
     StrDupW(title,'Client ID');
     width       :=60;
@@ -502,9 +489,10 @@ begin
     datatype    :=QSTS_STRING;
     StrDup(setting,'MirVer');
   end;
+  inc(i);
 
  // IP version
-  with columns[10] do
+  with columns[i] do
   begin
     StrDupW(title,'Ext IP');
     width       :=100;
@@ -514,9 +502,10 @@ begin
     StrDup(module ,'ICQ');
     StrDup(setting,'IP');
   end;
+  inc(i);
 
  // LastSeen
-  with columns[11] do
+  with columns[i] do
   begin
     StrDupW(title,'LastSeen');
     width       :=116;
@@ -524,9 +513,10 @@ begin
     setting_type:=QST_OTHER;
     other       :=QSTO_LASTSEEN;
   end;
+  inc(i);
 
  // last event
-  with columns[12] do
+  with columns[i] do
   begin
     StrDupW(title,'Last Event');
     width       :=100;
@@ -534,9 +524,10 @@ begin
     setting_type:=QST_OTHER;
     other       :=QSTO_LASTEVENT;
   end;
+  inc(i);
 
  // online since
-  with columns[13] do
+  with columns[i] do
   begin
     StrDupW(title,'Online since');
     width       :=100;
@@ -546,9 +537,10 @@ begin
     StrDup(module ,'ICQ');
     StrDup(setting,'LogonTS');
   end;
+  inc(i);
 
  // metacontacts
-  with columns[14] do
+  with columns[i] do
   begin
     StrDupW(title,'Metacontact');
     width       :=50;
@@ -556,9 +548,10 @@ begin
     setting_type:=QST_OTHER;
     other       :=QSTO_METACONTACT;
   end;
+  inc(i);
 
   // events
-  with columns[15] do
+  with columns[i] do
   begin
     StrDupW(title,'Event count');
     width       :=50;
@@ -566,8 +559,9 @@ begin
     setting_type:=QST_OTHER;
     other       :=QSTO_EVENTCOUNT;
   end;
+  inc(i);
 
-  result:=16;
+  result:=i;
 end;
 
 // -------- save/load settings ---------
