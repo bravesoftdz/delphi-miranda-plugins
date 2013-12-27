@@ -277,15 +277,20 @@ var
   ctrl,wnd,srv,srvs:HWND;
   proc:pointer;
   ApiCard:tmApiCard;
-  rc:TRECT;
+  rc,rc1:TRECT;
   dx,dy:integer;
   ux,uy:integer;
+  h:integer;
 begin
   hf:=SendMessageW(parent,WM_GETFONT,0,0);
   GetUnitSize(parent,ux,uy);
 
   // let think what x,y and width is dialog-related
-  SetRect(rc,x,y,x+width,y+height);
+  if height=0 then
+    h:=100
+  else
+    h:=height;
+  SetRect(rc,x,y,x+width,y+h);
   dx:=rc.right-rc.left;
 
   result:=CreateWindowExW(WS_EX_CONTROLPARENT,'STATIC',nil,WS_CHILD+WS_VISIBLE,
@@ -320,6 +325,7 @@ begin
   wnd:=CreateParamBlock(result,0,dy,dx,flags);
   SetWindowLongPtrW(ctrl,GWLP_USERDATA,wnd);
   SetParamLabel(wnd,'wParam');
+  GetClientRect(wnd,rc1);
 
   // lParam button+block
   ctrl:=CreateWindowW('BUTTON','lParam',WS_CHILD+WS_VISIBLE+BS_AUTOCHECKBOX+BS_PUSHLIKE,
@@ -337,7 +343,19 @@ begin
   SendMessageW(ctrl,WM_SETFONT,hf,0);
   inc(dy,rc.bottom+4);
 
-  SetWindowLongPtrW(ctrl,GWLP_USERDATA,CreateResultBlock(result,0,dy,dx,flags));
+  wnd:=CreateResultBlock(result,0,dy,dx,flags);
+  SetWindowLongPtrW(ctrl,GWLP_USERDATA,wnd);
+  GetClientRect(wnd,rc);
+
+  // autoresize panel
+  if height=0 then
+  begin
+    if rc1.bottom>rc.bottom then
+      h:=rc1.bottom
+    else
+      h:=rc.bottom;
+    MoveWindow(result,x,y,dx,dy+h,false);
+  end;
 
   // additional
   ApiCard:=CreateServiceCard(result);

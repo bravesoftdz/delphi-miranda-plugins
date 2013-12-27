@@ -15,7 +15,7 @@ const
 implementation
 
 uses messages,commctrl,sr_global,common,dbsettings,mirutils,
-    wrapper,protocols,sparam;
+    wrapper,protocols,sparam,srvblock;
 
 const
   IDM_STAYONTOP = WM_USER+1;

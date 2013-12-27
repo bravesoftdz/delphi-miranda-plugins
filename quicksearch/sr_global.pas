@@ -29,6 +29,8 @@ const //types
   QSTS_STRING    = 3;
   QSTS_IP        = 4;
   QSTS_TIMESTAMP = 5;
+  QSTS_SIGNED    = 6;
+  QSTS_HEXNUM    = 7;
 
   // must be non-zero for empty-column checking
   QST_SETTING     = 100;
