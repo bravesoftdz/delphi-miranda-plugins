@@ -396,7 +396,7 @@ begin
   begin
     StrDupW(title,'Account');
     width          :=82;
-    flags          :=COL_ON;
+    flags          :=0;
     setting_type   :=QST_SERVICE;
     StrDup (service,MS_PROTO_GETCONTACTBASEACCOUNT);
     restype        :=ACF_RSTRING;
@@ -717,7 +717,24 @@ var
   p,pp:PAnsiChar;
   i:integer;
 begin
-  result:=GetWord(so_numcolumns,0);
+  if DBGetSettingType(0,qs_module,so_flags)=DBVT_DELETED then
+  begin
+    DBDeleteModule(qs_module);
+    qsopt.flags:=
+        QSO_SORTBYSTATUS or QSO_DRAWGRID or
+        QSO_CLIENTICONS  or QSO_COLORIZE or
+        QSO_SORTASC;
+    result:=0;
+  end
+  else
+  begin
+    qsopt.flags:=GetInt(so_flags,
+        QSO_SORTBYSTATUS or QSO_DRAWGRID or
+        QSO_CLIENTICONS  or QSO_COLORIZE or
+        QSO_SORTASC);
+    result:=GetWord(so_numcolumns,0);
+  end;
+
   if result=0 then
   begin
     result:=loaddefaultcolumns(columns);
