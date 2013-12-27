@@ -541,7 +541,7 @@ type
 	 * version 7 additions (0.11.0.x) - extra images
 	 *************************************************************************************)
     pfnReloadExtraIcons: procedure; cdecl;
-    pfnSetAllExtraIcons: procedure(hwndList:HWND; hContact:THANDLE); cdecl;
+    pfnSetAllExtraIcons: procedure(hContact:THANDLE); cdecl;
 
 	(*************************************************************************************
 	 * Miranda NG additions
