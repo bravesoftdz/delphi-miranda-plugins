@@ -16,7 +16,6 @@ uses
   sr_optdialog,
   sr_global,
   sr_window,
-  sr_frame,
   mirutils,
   common;
 
@@ -25,7 +24,7 @@ begin
   result:=@PluginInfo;
   PluginInfo.cbSize     :=SizeOf(TPLUGININFOEX);
   PluginInfo.shortName  :='Quick Search';
-  PluginInfo.version    :=$01040112;
+  PluginInfo.version    :=$01040200;
   PluginInfo.description:=
     'This Plugin allow you to quick search for nickname, '+
     'firstname, lastname, email, uin in your contact list. '+
@@ -88,12 +87,6 @@ begin
   sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_NEW),IMAGE_ICON,16,16,0);
   sid.pszName        :=QS_NEW;
   sid.szDescription.a:='New Column';
-  Skin_AddIcon(@sid);
-  DestroyIcon(sid.hDefaultIcon);
-
-  sid.hDefaultIcon   :=LoadImage(hInstance,MAKEINTRESOURCE(IDI_ITEM),IMAGE_ICON,16,16,0);
-  sid.pszName        :=QS_ITEM;
-  sid.szDescription.a:='Save Column';
   Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
 
@@ -163,10 +156,7 @@ end;
 function OpenSearchWindow(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 begin
   result:=0;
-  if not opened then
-    OpenSrWindow(pointer(wParam),lParam)
-  else
-    BringToFront;
+  OpenSrWindow(pointer(wParam),lParam)
 end;
 
 function OnModulesLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -179,13 +169,9 @@ begin
 
   reghotkeys;
 
-  HookEvent(ME_DB_CONTACT_ADDED        ,@OnContactAdded);
-  HookEvent(ME_DB_CONTACT_DELETED      ,@OnContactDeleted);
-  HookEvent(ME_CLIST_CONTACTICONCHANGED,@OnStatusChanged);
-//  HookEvent(ME_PROTO_ACCLISTCHANGED    ,@OnAccountChanged);
   HookEvent(ME_TTB_MODULELOADED,@OnTTBLoaded);
 
-  CreateFrame(0);
+//  CreateFrame(0);
   Result:=0;
 end;
 
@@ -195,20 +181,20 @@ begin
   Langpack_register;
   HookEvent(ME_OPT_INITIALISE      ,@OnOptInitialise);
   HookEvent(ME_SYSTEM_MODULESLOADED,@OnModulesLoaded);
-  loadopt_db(true);
+  qsopt.numcolumns:=loadopt_db(qsopt.columns);
 end;
 
 function Unload:Integer;cdecl;
 begin
   result:=0;
   removetoolbar; //??
-  DestroyFrame;
+//  DestroyFrame;
 
 //  unreghotkeys;
 
   CloseSrWindow;
 
-  clear_columns;
+  clear_columns(qsopt.columns);
 end;
 
 exports

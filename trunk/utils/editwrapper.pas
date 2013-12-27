@@ -6,8 +6,8 @@ uses windows;
 
 // exported flags
 const
-  EF_SCRIPT = 1;
-  EF_ALL    = EF_SCRIPT; // what can be changed
+  EF_SCRIPT = 1;         // right now, just "Variables" script
+  EF_ALL    = EF_SCRIPT; // what can be changed in runtime
   EF_FORCES = $80;
   EF_FORCET = $40;
   EF_FORCE  = EF_FORCES or EF_FORCET;

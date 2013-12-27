@@ -119,6 +119,9 @@ begin
   StrCopy(buf,GetParamSectionStr(current,paramname,''));
   StrDup(result,@buf);
 
+  if wnd=0 then
+    exit;
+
   SendMessage(wnd,CB_RESETCONTENT,0,0);
   if buf[0]<>#0 then
   begin
