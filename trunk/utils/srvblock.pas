@@ -7,6 +7,7 @@ uses
 
 const
   ACF_SCRIPT_SERVICE = $01000000; // high byte of dword
+  ACF_SCRIPT_EXPAND  = $10000000; // all subblocks are visible
 
 type
   pServiceValue = ^tServiceValue;
@@ -19,11 +20,14 @@ type
     flags:dword; // result etc
   end;
 
-function CreateServiceBlock(parent:HWND;x,y,width,height:integer;flags:dword=0):HWND;
+function  CreateServiceBlock(parent:HWND;x,y,width,height:integer;flags:dword=0):HWND;
+procedure ClearServiceBlock(Dialog:HWND);
+procedure SetServiceListMode(Dialog:HWND;mode:integer);
 
 function SetSrvBlockValue(Dialog:HWND;const value:tServiceValue):boolean;
 function GetSrvBlockValue(Dialog:HWND;var   value:tServiceValue):boolean;
 
+// service setting will load templates
 procedure SetSrvBlockService(Dialog:HWND; service:pAnsiChar);
 function  GetSrvBlockService(Dialog:HWND):pAnsiChar;
 
@@ -41,6 +45,11 @@ const
   IDC_CLOSE_WPAR = 2042;
   IDC_CLOSE_LPAR = 2043;
   IDC_CLOSE_RES  = 2044;
+
+function GetApiCard(Dialog:HWND):tmApiCard;
+begin
+  result:=tmApiCard(GetWindowLongPtrW(GetDlgItem(Dialog,IDC_S_SERVICE),GWLP_USERDATA));
+end;
 
 function GetWPar(Dialog:HWND):HWND;
 begin
@@ -152,10 +161,10 @@ var
   ApiCard:tmApiCard;
   flag:dword;
 begin
-  ApiCard:=tmApiCard(GetWindowLongPtrW(GetDlgItem(Dialog,IDC_S_SERVICE),GWLP_USERDATA));
+  ApiCard:=GetApiCard(Dialog);
   ApiCard.Service:=srv;
 
-  pc:=ApiCard.FillParams(0,true);
+  pc:=ApiCard.GetParam(true);
   if pc<>nil then
   begin
     FillParam(GetWPar(Dialog),pc);
@@ -182,7 +191,7 @@ begin
     mFreeMem(pc);
   end;
 
-  pc:=ApiCard.FillParams(0,false);
+  pc:=ApiCard.GetParam(false);
   if pc<>nil then
   begin
     FillParam(GetLPar(Dialog),pc);
@@ -228,7 +237,7 @@ begin
 
   case hMessage of
     WM_DESTROY: begin
-      ApiCard:=tmApiCard(GetWindowLongPtrW(GetDlgItem(Dialog,IDC_S_SERVICE),GWLP_USERDATA));
+      ApiCard:=GetApiCard(Dialog);
       if ApiCard<>nil then
         ApiCard.Free;
     end;
@@ -255,7 +264,7 @@ begin
         end;
         //!!
         WM_HELP: begin
-          ApiCard:=tmApiCard(GetWindowLongPtrW(GetDlgItem(Dialog,IDC_S_SERVICE),GWLP_USERDATA));
+          ApiCard:=GetApiCard(Dialog);
           pc:=ApiCard.NameFromList(GetDlgItem(Dialog,IDC_C_SERVICE));
           ApiCard.Service:=pc;
           mFreeMem(pc);
@@ -280,7 +289,7 @@ var
   rc,rc1:TRECT;
   dx,dy:integer;
   ux,uy:integer;
-  h:integer;
+  h,bs:integer;
 begin
   hf:=SendMessageW(parent,WM_GETFONT,0,0);
   GetUnitSize(parent,ux,uy);
@@ -315,33 +324,45 @@ begin
   inc(dy,rc.bottom+2);
   MakeEditField(result,IDC_C_SERVICE);
 
+  if (flags and ACF_SCRIPT_EXPAND)<>0 then
+    bs:=WS_CHILD+BS_AUTOCHECKBOX+BS_PUSHLIKE
+  else
+    bs:=WS_CHILD+WS_VISIBLE+BS_AUTOCHECKBOX+BS_PUSHLIKE;
+
   // wParam button+block
   rc.bottom:=11*uy div 8;
-  ctrl:=CreateWindowW('BUTTON','wParam',WS_CHILD+WS_VISIBLE+BS_AUTOCHECKBOX+BS_PUSHLIKE,
+  ctrl:=CreateWindowW('BUTTON','wParam',bs,
         0,dy,dx,rc.bottom, result,IDC_CLOSE_WPAR,hInstance,nil);
   SendMessageW(ctrl,WM_SETFONT,hf,0);
-  inc(dy,rc.bottom+4);
+  if (flags and ACF_SCRIPT_EXPAND)=0 then
+    inc(dy,rc.bottom+4);
 
   wnd:=CreateParamBlock(result,0,dy,dx,flags);
   SetWindowLongPtrW(ctrl,GWLP_USERDATA,wnd);
   SetParamLabel(wnd,'wParam');
   GetClientRect(wnd,rc1);
+  if (flags and ACF_SCRIPT_EXPAND)<>0 then
+    inc(dy,rc1.bottom+4);
 
   // lParam button+block
-  ctrl:=CreateWindowW('BUTTON','lParam',WS_CHILD+WS_VISIBLE+BS_AUTOCHECKBOX+BS_PUSHLIKE,
+  ctrl:=CreateWindowW('BUTTON','lParam',bs,
         0,dy,dx,rc.bottom, result,IDC_CLOSE_LPAR,hInstance,nil);
   SendMessageW(ctrl,WM_SETFONT,hf,0);
-  inc(dy,rc.bottom+4);
+  if (flags and ACF_SCRIPT_EXPAND)=0 then
+    inc(dy,rc.bottom+4);
 
   wnd:=CreateParamBlock(result,0,dy,dx,flags);
   SetWindowLongPtrW(ctrl,GWLP_USERDATA,wnd);
   SetParamLabel(wnd,'lParam');
+  if (flags and ACF_SCRIPT_EXPAND)<>0 then
+    inc(dy,rc1.bottom+4);
 
   // result button+block
-  ctrl:=CreateWindowW('BUTTON','Result',WS_CHILD+WS_VISIBLE+BS_AUTOCHECKBOX+BS_PUSHLIKE,
+  ctrl:=CreateWindowW('BUTTON','Result',bs,
         0,dy,dx,rc.bottom, result,IDC_CLOSE_RES,hInstance,nil);
   SendMessageW(ctrl,WM_SETFONT,hf,0);
-  inc(dy,rc.bottom+4);
+  if (flags and ACF_SCRIPT_EXPAND)=0 then
+    inc(dy,rc.bottom+4);
 
   wnd:=CreateResultBlock(result,0,dy,dx,flags);
   SetWindowLongPtrW(ctrl,GWLP_USERDATA,wnd);
@@ -350,10 +371,17 @@ begin
   // autoresize panel
   if height=0 then
   begin
-    if rc1.bottom>rc.bottom then
-      h:=rc1.bottom
+    if (flags and ACF_SCRIPT_EXPAND)=0 then
+    begin
+      if rc1.bottom>rc.bottom then
+        h:=rc1.bottom
+      else
+        h:=rc.bottom;
+    end
     else
+    begin
       h:=rc.bottom;
+    end;
     MoveWindow(result,x,y,dx,dy+h,false);
   end;
 
@@ -362,11 +390,42 @@ begin
   ApiCard.FillList(srv);
   SetWindowLongPtrW(srvs,GWLP_USERDATA,long_ptr(ApiCard));
 
-  ShowBlock(result,IDC_CLOSE_WPAR);
+  if (flags and ACF_SCRIPT_EXPAND)=0 then
+    ShowBlock(result,IDC_CLOSE_WPAR);
+end;
+
+procedure ClearServiceBlock(Dialog:HWND);
+begin
+  if Dialog=0 then
+    exit;
+
+  SetDlgItemTextA(Dialog,IDC_C_SERVICE,'');
+  SetEditFlags(GetDlgItem(Dialog,IDC_C_SERVICE),EF_SCRIPT,0);
+
+  SetParamValue (GetWPar(Dialog),ACF_NUMBER,nil);
+  SetParamValue (GetLPar(Dialog),ACF_NUMBER,nil);
+  SetResultValue(GetRes (Dialog),ACF_RNUMBER);
+end;
+
+procedure SetServiceListMode(Dialog:HWND;mode:integer);
+var
+  ApiCard:tmApiCard;
+begin
+  if Dialog=0 then
+    exit;
+
+  ApiCard:=GetApiCard(Dialog);
+  ApiCard.FillList(GetDlgItem(Dialog,IDC_C_SERVICE),mode);
 end;
 
 function SetSrvBlockValue(Dialog:HWND;const value:tServiceValue):boolean;
 begin
+  if Dialog=0 then
+  begin
+    result:=false;
+    exit;
+  end;
+
   result:=true;
 
   if CB_SelectData(Dialog,IDC_C_SERVICE,Hash(value.service,StrLen(value.service)))<>CB_ERR then
@@ -388,9 +447,15 @@ function GetSrvBlockValue(Dialog:HWND;var value:tServiceValue):boolean;
 var
   ApiCard:tmApiCard;
 begin
+  if Dialog=0 then
+  begin
+    result:=false;
+    exit;
+  end;
+
   result:=true;
 
-  ApiCard:=tmApiCard(GetWindowLongPtrW(GetDlgItem(Dialog,IDC_S_SERVICE),GWLP_USERDATA));
+  ApiCard:=GetApiCard(Dialog);
   value.service:=ApiCard.NameFromList(GetDlgItem(Dialog,IDC_C_SERVICE));
 
   GetParamValue(GetWPar(Dialog),value.w_flag,value.wparam);
@@ -403,11 +468,20 @@ end;
 
 procedure SetSrvBlockService(Dialog:HWND; service:pAnsiChar);
 begin
+  if Dialog=0 then
+    exit;
+
   ReloadService(Dialog,service,true);
 end;
 
 function GetSrvBlockService(Dialog:HWND):pAnsiChar;
 begin
+  if Dialog=0 then
+  begin
+    result:=nil;
+    exit;
+  end;
+
   result:=GetDlgText(Dialog,IDC_C_SERVICE);
 end;
 

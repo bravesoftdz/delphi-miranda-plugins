@@ -50,6 +50,7 @@ function SetParamLabel   (Dialog:HWND; lbl:pWideChar):HWND;
 
 procedure ClearParam    (flags:dword; var param);
 function  DuplicateParam(flags:dword; var sparam,dparam):dword;
+function  TranslateParam(param:uint_ptr;flags:dword;hContact:THANDLE):uint_ptr;
 
 function CreateResultBlock(parent:HWND;x,y,width:integer;flags:dword=0):THANDLE;
 function ClearResultFields(Dialog:HWND):HWND;
@@ -61,7 +62,8 @@ implementation
 uses
   messages,
   common, editwrapper, wrapper, syswin,
-  m_api, sedit, strans;
+  m_api, sedit, strans,
+  mirutils;
 
 const
   IDC_FLAG_PAR  = 2150;
@@ -459,6 +461,10 @@ var
   wnd:HWND;
 begin
   result:=Dialog;
+
+  if Dialog=0 then
+    exit;
+
   wnd:=GetDlgItem(Dialog,IDC_LABEL_PAR);
   if wnd<>0 then
     SendMessageW(wnd,WM_SETTEXT,0,LPARAM(lbl))
@@ -474,10 +480,16 @@ function SetParamValue(Dialog:HWND;flags:dword;value:pointer):boolean;
 var
   wnd,wnd1:HWND;
   pc:pAnsiChar;
+  pcw:pWideChar;
   vtype:integer;
 begin
+  if Dialog=0 then
+  begin
+    result:=false;
+    exit;
+  end;
+
   result:=true;
-//?? Check for "Apply" activation
 
   wnd:=GetDlgItem(Dialog,IDC_EDIT_PAR);
   if (flags and ACF_TEMPLATE)<>0 then
@@ -519,7 +531,11 @@ begin
   else if (flags and ACF_NUMBER)<>0 then
   begin
     vtype:=ACF_NUMBER;
-    SendMessageW(wnd,WM_SETTEXT,0,LPARAM(value));
+    if value=nil then
+      pcw:='0'
+    else
+      pcw:=value;
+    SendMessageW(wnd,WM_SETTEXT,0,LPARAM(pcw));
   end
   else if (flags and ACF_UNICODE)<>0 then
   begin
@@ -541,6 +557,12 @@ function GetParamValue(Dialog:HWND;var flags:dword;var value:pointer):boolean;
 var
   wnd:HWND;
 begin
+  if Dialog=0 then
+  begin
+    result:=false;
+    exit;
+  end;
+
   result:=true;
   flags:=0;
   value:=nil;
@@ -573,6 +595,8 @@ begin
   if (GetEditFlags(wnd) and EF_SCRIPT)<>0 then
      flags:=flags or ACF_SCRIPT_PARAM;
 end;
+
+//----- Additional functions -----
 
 procedure ClearParam(flags:dword; var param);
 begin
@@ -627,14 +651,49 @@ begin
   result:=flags;
 end;
 
+function TranslateParam(param:uint_ptr;flags:dword;hContact:THANDLE):uint_ptr;
+var
+  tmp1:pWideChar;
+begin
+  if (flags and ACF_SCRIPT_PARAM)<>0 then
+    result:=uint_ptr(ParseVarString(pWideChar(param),hContact));
+
+  tmp1:=pWideChar(result);
+  if (flags and ACF_NUMBER)=0 then
+  begin
+    if (flags and ACF_UNICODE)=0 then
+      WideToAnsi(tmp1,pAnsiChar(result),MirandaCP)
+    else
+      StrDupW(pWideChar(result),tmp1);
+  end
+  else
+    result:=NumToInt(tmp1);
+
+  if (flags and ACF_SCRIPT_PARAM)<>0 then
+    mFreeMem(tmp1);
+end;
+
 //===== result block =====
 
 function ClearResultFields(Dialog:HWND):HWND;
+var
+  w:HWND;
 begin
+  result:=Dialog;
+
+  if Dialog=0 then
+    exit;
+
   CheckDlgButton(Dialog,IDC_RES_FREEMEM,BST_UNCHECKED);
   ShowWindow(GetDlgItem(Dialog,IDC_RES_FREEMEM),SW_HIDE);
   CB_SelectData(Dialog,IDC_RES_TYPE,ACF_RNUMBER);
-  result:=Dialog;
+
+  w:=GetDlgItem(Dialog,IDC_RES_HEXNUM);
+  if w<>0 then
+  begin
+    ShowWindow(w,SW_SHOW);
+    ShowWindow(GetDlgItem(Dialog,IDC_RES_SIGNED),SW_SHOW);
+  end;
 end;
 
 procedure MakeResultTypeList(wnd:HWND;flags:dword);
@@ -837,6 +896,12 @@ var
   btn:cardinal;
   sh,sh1:integer;
 begin
+  if Dialog=0 then
+  begin
+    result:=ACF_RNUMBER;
+    exit;
+  end;
+
   // RESULT
   sh :=SW_HIDE;
   sh1:=SW_HIDE;
@@ -879,7 +944,7 @@ begin
   ShowWindow(GetDlgItem(Dialog,IDC_RES_FREEMEM),sh);
   if w<>0 then
   begin
-    ShowWindow(GetDlgItem(Dialog,IDC_RES_HEXNUM),sh1);
+    ShowWindow(w,sh1);
     ShowWindow(GetDlgItem(Dialog,IDC_RES_SIGNED),sh1);
   end;
   CB_SelectData(Dialog,IDC_RES_TYPE,result);
@@ -887,6 +952,12 @@ end;
 
 function GetResultValue(Dialog:HWND):dword;
 begin
+  if Dialog=0 then
+  begin
+    result:=ACF_RNUMBER;
+    exit;
+  end;
+
   case CB_GetData(GetDlgItem(Dialog,IDC_RES_TYPE)) of
     ACF_RSTRING: begin
       result:=ACF_RSTRING;
