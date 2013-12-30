@@ -220,6 +220,7 @@ begin
   // script
   SetDlgItemTextW(Dialog,IDC_E_SCRIPT,nil);
   // service
+  ClearServiceBlock(ServiceBlock);
   // contact info
   SendMessage(GetDlgItem(Dialog,IDC_C_CNFTYPE),CB_SETCURSEL,0,0);
   // others

@@ -20,6 +20,7 @@ type
     function NameFromList(cb:HWND):pAnsiChar;
     function HashToName(ahash:longword):pAnsiChar;
     function FillParams(wnd:HWND{;item:pAnsiChar};wparam:boolean):pAnsiChar;
+    function GetParam(wparam:boolean):pAnsiChar;
     procedure Show;//(item:pAnsiChar);
 
     property Description:pAnsiChar read GetDescription;
@@ -95,6 +96,23 @@ end;
 function tmApiCard.GetWindowStatus:boolean;
 begin
   result:=HelpWindow<>0;
+end;
+
+function tmApiCard.GetParam(wparam:boolean):pAnsiChar;
+var
+  paramname:pAnsiChar;
+begin
+  if storage=nil then
+  begin
+    result:=nil;
+    exit;
+  end;
+  if wparam then
+    paramname:='wparam'
+  else
+    paramname:='lparam';
+
+  StrDup(result,GetParamSectionStr(current,paramname,''));
 end;
 
 function tmApiCard.FillParams(wnd:HWND{;item:pAnsiChar};wparam:boolean):pAnsiChar;
