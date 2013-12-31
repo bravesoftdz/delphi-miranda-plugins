@@ -342,7 +342,7 @@ begin
   SetParamLabel(wnd,'wParam');
   GetClientRect(wnd,rc1);
   if (flags and ACF_SCRIPT_EXPAND)<>0 then
-    inc(dy,rc1.bottom+4);
+    inc(dy,rc1.bottom+8);
 
   // lParam button+block
   ctrl:=CreateWindowW('BUTTON','lParam',bs,
@@ -355,7 +355,7 @@ begin
   SetWindowLongPtrW(ctrl,GWLP_USERDATA,wnd);
   SetParamLabel(wnd,'lParam');
   if (flags and ACF_SCRIPT_EXPAND)<>0 then
-    inc(dy,rc1.bottom+4);
+    inc(dy,rc1.bottom+8);
 
   // result button+block
   ctrl:=CreateWindowW('BUTTON','Result',bs,
