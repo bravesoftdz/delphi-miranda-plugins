@@ -457,6 +457,51 @@ begin
     FillGrid;
 end;
 
+procedure MoveToContainer(container:PWideChar);
+var
+  col:pcolumnitem;
+  contact:THANDLE;
+  i,j,grcol:integer;
+begin
+  j:=ListView_GetItemCount(grid)-1;
+  // search group column in QS window (if presents)
+  grcol:=-1;
+{
+  for i:=0 to qsopt.numcolumns-1 do
+  begin
+    with qsopt.columns[i] do
+      if (flags and COL_GROUP)<>0 then
+      begin
+        if (flags and COL_ON)=0 then
+          flags:=flags and not COL_INIT
+        else
+          grcol:=i;
+        break;
+      end
+  end;
+  if grcol>=0 then 
+    col:=@qsopt.columns[i];
+}
+  // move to new group and changing in LV if needs
+  for i:=0 to j do
+  begin
+    if ListView_GetItemState(grid,i,LVIS_SELECTED)<>0 then
+    begin
+      contact:=FlagBuf[LV_GetLParam(grid,i)].contact;
+      if container^=#0 then
+        DBDeleteSetting(contact,'Tab_SRMsg','containerW')
+      else
+        DBWriteUnicode(contact,'Tab_SRMsg','containerW',container);
+      if ((qsopt.flags and QSO_AUTOCLOSE)=0) and (grcol>=0) then
+      begin
+         LoadOneItem(contact,col,0,MainBuf[i,grcol]);
+      end;
+    end;
+  end;
+  if ((qsopt.flags and QSO_AUTOCLOSE)=0) and (grcol>=0) then
+    FillGrid;
+end;
+
 // right now - memory column order, not screen
 procedure CopyMultiLinesW;
 var
@@ -623,9 +668,44 @@ begin
     result:=0;
 end;
 
+function MyStrSort(para1:pointer; para2:pointer):int; cdecl;
+begin
+  result:=StrCmpW(pWideChar(para1),pWideChar(para2));
+end;
+
+function MakeContainerMenu(idxfrom:integer=100):HMENU;
+var
+  sl:TSortedList;
+  i:integer;
+  b:array [0..15] of AnsiChar;
+  p:pWideChar;
+begin
+  result:=CreatePopupMenu;
+  AppendMenuW(result,MF_STRING,idxfrom,TranslateW('default'));
+  AppendMenuW(result,MF_SEPARATOR,0,nil);
+  FillChar(sl,SizeOf(sl),0);
+  sl.increment:=16;
+  sl.sortFunc:=@MyStrSort;
+  i:=1;
+  repeat
+    p:=DBReadUnicode(0,'TAB_ContainersW',IntToStr(b,i),nil);
+    if p=nil then break;
+    List_InsertPtr(@sl,p);
+    inc(i);
+  until false;
+  inc(idxfrom);
+  for i:=0 to sl.realCount-1 do
+  begin
+    p:=pWideChar(sl.Items[i]);
+    AppendMenuW(result,MF_STRING,idxfrom+i,p);
+    mFreeMem(p);
+  end;
+  List_Destroy(@sl);
+end;
+
 procedure ShowMultiPopup(cnt:integer);
 var
-  mmenu,grpmenu:HMENU;
+  mmenu,grpmenu,cntmenu:HMENU;
   p:PWideChar;
   pt:TPOINT;
   buf:array [0..255] of WideChar;
@@ -652,10 +732,12 @@ begin
   if ServiceExists(MS_MC_CONVERTTOMETA)<>0 then
     AppendMenuW(mmenu,MF_STRING,103,TranslateW('C&onvert to Meta'));
 
-  grpmenu:=MakeGroupMenu(400);
+  cntmenu:=MakeContainerMenu(300);
+  AppendMenuW(mmenu,MF_POPUP,cntmenu,TranslateW('Move to &Tab container'));
 
-//    grpmenu:=CallService(MS_CLIST_GROUPBUILDMENU,0,0);
+  grpmenu:=MakeGroupMenu(400);
   AppendMenuW(mmenu,MF_POPUP,grpmenu,TranslateW('&Move to Group'));
+//    grpmenu:=CallService(MS_CLIST_GROUPBUILDMENU,0,0);
 
   GetCursorPos(pt);
   i:=integer(TrackPopupMenu(mmenu,TPM_RETURNCMD+TPM_NONOTIFY,pt.x,pt.y,0,mainwnd,nil));
@@ -665,9 +747,16 @@ begin
       CopyMultiLinesW({ListView_GetSelectedCount(grid)})
     end;
     103: ConvertToMeta;
-  else
-    if i>0 then
-    begin // move to group
+    300..399: begin
+      if i=300 then // default container, just delete setting
+        buf[0]:=#0
+      else
+      begin
+        GetMenuStringW(cntmenu,i,buf,SizeOf(buf),MF_BYCOMMAND);
+      end;
+      MoveToContainer(buf);
+    end;
+    400..499: begin
       if i=400 then // root group
         buf[0]:=#0
       else

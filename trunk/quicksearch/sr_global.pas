@@ -470,6 +470,19 @@ begin
   end;
   inc(i);
 
+  // TabSRMM container
+  with columns[i] do
+  begin
+    StrDupW(title,'Container');
+    width          :=80;
+    flags          :=COL_ON;
+    setting_type   :=QST_SETTING;
+    datatype       :=QSTS_STRING;
+    StrDup(module ,'Tab_SRMsg');
+    StrDup(setting,'containerW');
+  end;
+  inc(i);
+
   // email
   with columns[i] do
   begin
