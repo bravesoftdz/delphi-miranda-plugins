@@ -733,7 +733,7 @@ begin
     AppendMenuW(mmenu,MF_STRING,103,TranslateW('C&onvert to Meta'));
 
   cntmenu:=MakeContainerMenu(300);
-  AppendMenuW(mmenu,MF_POPUP,cntmenu,TranslateW('Move to &Tab container'));
+  AppendMenuW(mmenu,MF_POPUP,cntmenu,TranslateW('Attach to &Tab container'));
 
   grpmenu:=MakeGroupMenu(400);
   AppendMenuW(mmenu,MF_POPUP,grpmenu,TranslateW('&Move to Group'));

@@ -714,6 +714,7 @@ const
   InitDlg:bool = true;
   hook:THANDLE = 0;
 var
+  pc:pWideChar;
   i,idx:integer;
   itemsel:integer;
   listhwnd:hwnd;
@@ -985,6 +986,49 @@ begin
         end;
       end;
     end;
+
+    WM_HELP: begin
+      case CB_GetData(GetDlgItem(Dialog,IDC_C_VARTYPE)) of
+        QST_SETTING: begin
+          MessageBoxW(0,
+              TranslateW('Column content is simple database setting.'),
+              TranslateW('DB setting'),0);
+        end;
+        QST_SCRIPT: begin
+          MessageBoxW(0,
+              TranslateW('Column content is script result.'#13#10+
+                         'More help from "Help" button in script dialog.'),
+              TranslateW('Script'),0);
+        end;
+        QST_SERVICE: begin
+          SendMessage(ServiceBlock,WM_HELP,0,0);
+        end;
+        QST_CONTACTINFO: begin
+          MessageBoxW(0,
+              TranslateW('Column content is contact property (see list). Can be empty.'),
+              TranslateW('ContactInfo'),0);
+        end;
+        QST_OTHER: begin
+          case CB_GetData(GetDlgItem(Dialog,IDC_C_OTHER)) of
+            QSTO_LASTSEEN: begin
+              pc:='Content is last online time.';
+            end;
+            QSTO_LASTEVENT: begin
+              pc:='Content is time of last contact event.';
+            end;
+            QSTO_METACONTACT: begin
+              pc:='Content is metacontact info.';
+            end;
+            QSTO_EVENTCOUNT: begin
+              pc:='Content is count of ALL contact events (not messages only)';
+            end;
+          end;
+          MessageBoxW(0,TranslateW(pc),TranslateW('Other info'),0);
+        end;
+      end;
+      result:=1;
+    end;
+
 //  else
 //    result:=DefWindowProc(Dialog,hMessage,wParam,lParam);
   end;
