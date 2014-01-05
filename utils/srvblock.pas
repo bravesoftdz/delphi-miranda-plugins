@@ -242,6 +242,16 @@ begin
         ApiCard.Free;
     end;
 
+    WM_HELP: begin
+      ApiCard:=GetApiCard(Dialog);
+      pc:=ApiCard.NameFromList(GetDlgItem(Dialog,IDC_C_SERVICE));
+      ApiCard.Service:=pc;
+      mFreeMem(pc);
+      ApiCard.Show;
+
+      result:=1;
+    end;
+
     WM_COMMAND: begin
       case wParam shr 16 of
         CBN_EDITCHANGE,
@@ -261,16 +271,6 @@ begin
           case loword(wParam) of
             IDC_C_SERVICE: FillTemplate(Dialog);
           end;
-        end;
-        //!!
-        WM_HELP: begin
-          ApiCard:=GetApiCard(Dialog);
-          pc:=ApiCard.NameFromList(GetDlgItem(Dialog,IDC_C_SERVICE));
-          ApiCard.Service:=pc;
-          mFreeMem(pc);
-          ApiCard.Show;
-
-          result:=1;
         end;
       end;
     end;
