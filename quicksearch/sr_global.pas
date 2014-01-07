@@ -47,6 +47,7 @@ const //types
 const
   COL_ON      = $0001; // Show column
   COL_INIT    = $0002; // No need to update
+  COL_FILTER  = $0004; // Filter column by pattern
   // QS window runtime flags
   COL_XSTATUS = $0100;
   COL_GENDER  = $0200;
