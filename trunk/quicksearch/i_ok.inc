@@ -773,7 +773,7 @@ begin
 
     for i:=0 to qsopt.numcolumns-1 do
     begin
-      if ((qsopt.columns[i].flags and COL_ON)<>0) and
+      if ((qsopt.columns[i].flags and (COL_ON or COL_FILTER))=(COL_ON or COL_FILTER)) and
          (MainBuf[cnt,i].text<>nil) then
       begin
         StrCopyW(lstr,MainBuf[cnt,i].text,HIGH(lstr));

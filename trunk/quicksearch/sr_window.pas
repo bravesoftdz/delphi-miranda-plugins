@@ -783,7 +783,8 @@ begin
   zeromemory(@hdi,sizeof(hdi));
   // clear sort mark
   hdi.mask:=HDI_FORMAT;
-  hdi.fmt :=HDF_LEFT or HDF_STRING;
+  SendMessage(header,HDM_GETITEM,qsopt.columnsort,lparam(@hdi));
+  hdi.fmt:=hdi.fmt and not (HDF_SORTDOWN or HDF_SORTUP);
   SendMessage(header,HDM_SETITEM,qsopt.columnsort,lparam(@hdi));
 
   if qsopt.columnsort<>num then
@@ -795,11 +796,11 @@ begin
     qsopt.flags:=qsopt.flags xor QSO_SORTASC;
 
   // set new sort mark
+  SendMessage(header,HDM_GETITEM,qsopt.columnsort,lparam(@hdi));
   if (qsopt.flags and QSO_SORTASC)<>0 then
-    hdi.fmt:=HDF_LEFT or HDF_STRING or HDF_SORTDOWN
+    hdi.fmt:=hdi.fmt or HDF_SORTDOWN
   else
-    hdi.fmt:=HDF_LEFT or HDF_STRING or HDF_SORTUP;
-
+    hdi.fmt:=hdi.fmt or HDF_SORTUP;
   SendMessage(header,HDM_SETITEM,qsopt.columnsort,lparam(@hdi));
 
   Sort;
@@ -1151,14 +1152,37 @@ end;
         end;
       end;
     end;
-{
+
     WM_NOTIFY: begin
-      if integer(PNMHdr(lParam)^.code)=HDN_ENDDRAG then
-      begin
-        ShiftColumns(PHDNotify(lParam)^.Item,PHDNotify(lParam)^.pitem^.iOrder);
+      case integer(PNMHdr(lParam)^.code) of
+        HDN_ITEMSTATEICONCLICK: begin
+          if ((PHDNotify(lParam)^.pitem^.mask and HDI_FORMAT  )<>0) and
+             ((PHDNotify(lParam)^.pitem^.fmt  and HDF_CHECKBOX)<>0) then
+          begin
+            i:=ListViewToColumn(PHDNotify(lParam)^.Item);
+
+            if (PHDNotify(lParam)^.pitem^.fmt and HDF_CHECKED)=0 then // OLD state
+            begin
+              qsopt.columns[i].flags:=qsopt.columns[i].flags or COL_FILTER;
+              PHDNotify(lParam)^.pitem^.fmt:=PHDNotify(lParam)^.pitem^.fmt or HDF_CHECKED
+            end
+            else
+            begin
+              qsopt.columns[i].flags:=qsopt.columns[i].flags and not COL_FILTER;
+              PHDNotify(lParam)^.pitem^.fmt:=PHDNotify(lParam)^.pitem^.fmt and not HDF_CHECKED
+            end;
+            SendMessage(
+              PHDNotify(lParam)^.hdr.hWndFrom,HDM_SETITEM,
+              PHDNotify(lParam)^.Item,tlparam(PHDNotify(lParam)^.pitem));
+//            result:=1;
+            FillGrid;
+            exit;
+          end;
+        end;
+        HDN_ENDDRAG: begin
+        end;
       end;
     end;
-}
   end;
   result:=CallWindowProc(OldLVProc,Dialog,hMessage,wParam,lParam);
 end;
@@ -1433,10 +1457,16 @@ end;
 procedure PrepareTable(reset:boolean=false);
 var
   lvcol:LV_COLUMNW;
+  hdi:THDITEM;
+  header:HWND;
   i:integer;
   old:integer;
 begin
   SendMessage(grid,LVM_DELETEALLITEMS,0,0);
+  header:=ListView_GetHeader(grid);
+
+  zeromemory(@hdi,sizeof(hdi));
+  hdi.mask:=HDI_FORMAT;
 
   old:=tablecolumns;
   tablecolumns:=0;
@@ -1452,6 +1482,14 @@ begin
         lvcol.cx     :=width;
         SendMessageW(grid,LVM_INSERTCOLUMNW,tablecolumns,tlparam(@lvcol));
 //        addcolumn(grid,tablecolumns,width,TranslateW(title));
+
+        // set checkbox in column header
+        if (flags and COL_FILTER)<>0 then
+          hdi.fmt:=HDF_LEFT or HDF_STRING or HDF_CHECKBOX or HDF_CHECKED
+        else
+          hdi.fmt:=HDF_LEFT or HDF_STRING or HDF_CHECKBOX;
+        SendMessage(header,HDM_SETITEM,tablecolumns,tlparam(@hdi));
+
         inc(tablecolumns);
       end;
 
@@ -1667,6 +1705,8 @@ end;
 function QSMainWndProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
 var
   smenu:HMENU;
+  header:HWND;
+  hdi:THDITEM;
   w,h:uint_ptr;
   tmp:LONG_PTR;
   buf:array [0..255] of WideChar;
@@ -1745,6 +1785,7 @@ begin
 
       CheckDlgButton(Dialog,IDC_CH_COLORIZE,ORD((qsopt.flags and QSO_COLORIZE)<>0));
 
+      // Window
       mainwnd:=Dialog;
       tmp:=GetWindowLongPtrW(Dialog,GWL_EXSTYLE);
       if (qsopt.flags and QSO_TOOLSTYLE)<>0 then
@@ -1757,6 +1798,7 @@ begin
         CallService(MS_SKIN2_GETICON,0,tlparam(QS_QS)));
       grid:=GetDlgItem(Dialog,IDC_LIST);
 
+      // ListView
       ListView_SetImageList(grid,
          CallService(MS_CLIST_GETICONSIMAGELIST,0,0),LVSIL_SMALL);
 
@@ -1765,6 +1807,11 @@ begin
       if (qsopt.flags and QSO_DRAWGRID)<>0 then
         tmp:=tmp or LVS_EX_GRIDLINES;
       SendMessage(grid,LVM_SETEXTENDEDLISTVIEWSTYLE,0,tmp);
+
+      // ListView header
+      header:=ListView_GetHeader(grid);
+      SetWindowLongPtrW(header,GWL_STYLE,
+        GetWindowLongPtrW(header,GWL_STYLE) or HDS_CHECKBOXES);
 
       OldLVProc  :=pointer(SetWindowLongPtrW(grid,GWL_WNDPROC,LONG_PTR(@NewLVProc)));
       OldEditProc:=pointer(SetWindowLongPtrW(GetDlgItem(Dialog,IDC_E_SEARCHTEXT),
@@ -1788,6 +1835,17 @@ begin
         SetDlgItemTextW(Dialog,IDC_E_SEARCHTEXT,@buf);
         FillGrid;
       end;
+
+      // Show sorting column
+      zeromemory(@hdi,sizeof(hdi));
+      hdi.mask:=HDI_FORMAT;
+      SendMessageW(header,HDM_GETITEM,qsopt.columnsort,tlparam(@hdi));
+      if (qsopt.flags and QSO_SORTASC)<>0 then
+        hdi.fmt:=hdi.fmt or HDF_SORTDOWN
+      else
+        hdi.fmt:=hdi.fmt or HDF_SORTUP;
+      SendMessageW(header,HDM_SETITEM,qsopt.columnsort,tlparam(@hdi));
+
 
       TranslateDialogDefault(Dialog);
 
