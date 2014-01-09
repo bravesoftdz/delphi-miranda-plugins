@@ -15,7 +15,7 @@ const
 implementation
 
 uses messages,commctrl,sr_global,common,dbsettings,mirutils,
-    wrapper,protocols,sparam,srvblock;
+    wrapper,protocols,sparam,srvblock,editwrapper;
 
 const
   IDM_STAYONTOP = WM_USER+1;
@@ -95,6 +95,24 @@ begin
   end
   else
     result:=num;
+end;
+
+function GetLVSubItem(x,y:integer):integer;
+var
+  pinfo:LV_HITTESTINFO;
+begin
+  pinfo.flags:=0;
+  pinfo.pt.x:=x;
+  pinfo.pt.y:=y;
+  ScreenToClient(grid,pinfo.pt);
+  result:=-1;
+  if integer(SendMessage(grid,LVM_SUBITEMHITTEST,0,tlparam(@pinfo)))<>-1 then
+  begin
+    if (pinfo.flags and LVHT_ONITEM)<>0 then
+    begin
+      result:=pinfo.iSubItem;
+    end;
+  end;
 end;
 
 procedure AddContactToList(hContact:THANDLE;num:integer);
@@ -650,12 +668,140 @@ begin
   mFreeMem(pp);
 end;
 }
-function ShowContactMenu(wnd:HWND;hContact:THANDLE):HMENU;
+const
+  srvhandle:THANDLE=0;
+  mnuhandle:THANDLE=0;
+  cmcolumn :integer=-1;
+
+function ColChangeFunc(wParam:WPARAM;lParam:LPARAM):int_ptr; cdecl;
 var
+  pc,pc1:pWideChar;
+  p:pAnsiChar;
+  tbuf:array [0..255] of WideChar;
+  li:LV_ITEMW;
+  lmodule:pAnsiChar;
+  contact:integer;
+  col:pcolumnitem;
+  qsr:pQSRec;
+begin
+  col:=@qsopt.columns[cmcolumn];
+  StrCopyW(StrCopyEW(@tbuf,TranslateW('Editing of column ')),col.title);
+  contact:=FindBufNumber(wParam);
+  qsr:=@MainBuf[contact,cmcolumn];
+  pc:=qsr.text;
+  result:=ShowEditBox(grid,pc,@tbuf);
+  if result=-1 then
+    exit
+  else if result=1 then
+  begin
+    pc1:=pc;
+    pc:=ParseVarString(pc1,wParam);
+    mFreeMem(pc1);
+  end;
+  // change buffer value
+  mFreeMem(qsr.text);
+  qsr.text:=pc;
+  if col.datatype<>QSTS_STRING then
+  begin
+    qsr.data:=NumToInt(qsr.text);
+  end;
+  // change database setting value
+  if col.module<>nil then
+    lmodule:=col.module
+  else
+  begin
+    lmodule:=GetProtoName(FlagBuf[contact].proto);
+  end;
+
+  case col.datatype of
+    QSTS_BYTE: begin
+      DBWriteByte(wParam,lmodule,
+          col.setting,qsr.data);
+    end;
+    QSTS_WORD: begin
+      DBWriteWord(wParam,lmodule,
+          col.setting,qsr.data);
+    end;
+    QSTS_DWORD,QSTS_SIGNED,QSTS_HEXNUM: begin
+      DBWriteDWord(wParam,lmodule,
+          col.setting,dword(qsr.data));
+    end;
+    QSTS_STRING: begin
+      case DBGetSettingType(wParam,lmodule,col.setting) of
+        DBVT_ASCIIZ: begin
+          WideToAnsi(qsr.text,p,MirandaCP);
+          DBWriteString(wParam,lmodule,col.setting,p);
+          mFreeMem(p);
+        end;
+        DBVT_UTF8: begin
+          WidetoUTF8(qsr.text,p);
+          DBWriteUTF8(wParam,lmodule,col.setting,p);
+          mFreeMem(p);
+        end;
+        DBVT_WCHAR: begin
+          DBWriteUnicode(wParam,lmodule,
+              col.setting,qsr.text);
+        end;
+      end;
+    end;
+  end;
+
+  // rewrite LV cell
+  zeromemory(@li,sizeof(li));
+  li.mask    :=LVIF_TEXT;
+  li.iItem   :=SendMessage(grid,LVM_GETNEXTITEM,-1,LVNI_FOCUSED);
+  li.iSubItem:=ColumnToListview(cmcolumn);
+  li.pszText :=pc;
+  SendMessageW(grid,LVM_SETITEMW,0,tlparam(@li));
+
+  // if need to filter and sort, do it
+  if (col.flags and COL_FILTER)<>0 then
+    ProcessLine(contact);
+  if qsopt.columnsort=li.iSubItem then
+    Sort;
+end;
+
+function ShowContactMenu(wnd:HWND;hContact:THANDLE;col:integer=-1):HMENU;
+var
+  mi:TCListMenuItem;
   pt:tpoint;
+  doit:bool;
 begin
   if hContact<>0 then
   begin
+    doit:=false;
+    if col>=0 then
+    begin
+      col:=ListViewToColumn(col);
+      if (qsopt.columns[col].setting_type=QST_SETTING) and
+         // right now, not time or IP
+         (qsopt.columns[col].datatype<>QSTS_IP) and 
+         (qsopt.columns[col].datatype<>QSTS_TIMESTAMP) then
+      begin
+        doit:=true;
+
+        if srvhandle=0 then
+          srvhandle:=CreateServiceFunction('QS/dummy',@ColChangeFunc);
+
+        cmcolumn:=col;
+
+        FillChar(mi,SizeOf(mi),0);
+        mi.cbSize:=SizeOf(mi);
+        if mnuhandle=0 then
+        begin
+          mi.flags     :=CMIF_UNICODE;
+          mi.szName.w  :='Change setting through QS';
+          mi.pszService:='QS/dummy';
+          mnuhandle:=Menu_AddContactMenuItem(@mi);
+        end
+        else
+        begin
+          mi.flags :=CMIM_FLAGS;
+          CallService(MS_CLIST_MODIFYMENUITEM,mnuhandle,LPARAM(@mi));
+        end;
+      end;
+    end;
+
     GetCursorPos(pt);
     result:=CallService(MS_CLIST_MENUBUILDCONTACT,hContact,0);
     if result<>0 then
@@ -663,6 +809,14 @@ begin
       TrackPopupMenu(result,0,pt.x,pt.y,0,wnd,nil);
       DestroyMenu(result);
     end;
+    // Due to stupid miranda logic, we need to clear tails at service processing, not earlier
+    if doit then
+    begin
+      mi.cbSize:=SizeOf(mi);
+      mi.flags :=CMIM_FLAGS or CMIF_HIDDEN;
+      CallService(MS_CLIST_MODIFYMENUITEM,mnuhandle,LPARAM(@mi));
+    end;
+
   end
   else
     result:=0;
@@ -1719,6 +1873,9 @@ begin
   result:=0;
   case hMessage of
     WM_DESTROY: begin
+      if srvhandle<>0 then DestroyServiceFunction(srvhandle);
+      if mnuhandle<>0 then CallService(MO_REMOVEMENUITEM,mnuhandle,0);
+      
       UnhookEvent(hAdd);
       UnhookEvent(hDelete);
       UnhookEvent(hChange);
@@ -1761,6 +1918,8 @@ begin
     end;
 
     WM_INITDIALOG: begin
+      srvhandle:=0;
+      mnuhandle:=0;
 
       SetWindowTextW(Dialog,'Quick Search');
 
@@ -1923,7 +2082,10 @@ begin
         if w>1 then
           ShowMultiPopup(w)
         else
-          ShowContactMenu(Dialog,GetFocusedhContact);
+        begin
+          ShowContactMenu(Dialog,GetFocusedhContact,
+            GetLVSubItem(loword(lParam),hiword(lParam)));
+        end;
       end;
     end;
 
