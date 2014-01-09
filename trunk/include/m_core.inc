@@ -74,15 +74,15 @@ type
     );
   end;
 
-
+const
+  DBEF_FIRST     =  1; // internally only, do not use
+  DBEF_SENT      =  2; // if set, the event was sent by the user, otherwise it was received
+  DBEF_READ      =  4; // event has been read by the user -- only needed for history
+  DBEF_RTL       =  8; // event contains the right-to-left aligned text
+  DBEF_UTF       = 16; // event contains a text in utf-8
+  DBEF_ENCRYPTED = 32; // event is encrypted (never reported outside a driver)
 
 const
-  DBEF_FIRST =  1; // internally only, do not use
-  DBEF_SENT  =  2; // if set, the event was sent by the user, otherwise it was received
-  DBEF_READ  =  4; // event has been read by the user -- only needed for history
-  DBEF_RTL   =  8; // event contains the right-to-left aligned text
-  DBEF_UTF   = 16; // event contains a text in utf-8
-
   EVENTTYPE_MESSAGE     = 0;
   EVENTTYPE_URL         = 1;
   EVENTTYPE_CONTACTS    = 2;     // v0.1.2.2+

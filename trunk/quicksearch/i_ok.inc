@@ -830,12 +830,11 @@ begin
   for i:=0 to qsopt.numcolumns-1 do
   begin
     if (qsopt.columns[i].flags and COL_ON)<>0 then
-    begin
       inc(result);
-      dec(col);
-      if col<0 then
-        break;
-    end;
+
+    dec(col);
+    if col<0 then
+      break;
   end;
 end;
 
