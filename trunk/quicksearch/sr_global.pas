@@ -53,6 +53,8 @@ const
   COL_GENDER  = $0200;
   COL_CLIENT  = $0400;
   COL_GROUP   = $0800;
+  COL_CNTNR   = $1000;
+  COL_REFRESH = $FF00; // mask
 
 const
   QSO_SORTBYSTATUS = $00000001; // Sort by status

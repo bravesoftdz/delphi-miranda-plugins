@@ -435,11 +435,43 @@ begin
   end;
 end;
 
+procedure UpdateLVCell(item,column:integer;text:pWideChar=pWideChar(-1));
+var
+  li:LV_ITEMW;
+  contact:THANDLE;
+  row:integer;
+begin
+  contact:=FlagBuf[LV_GetLParam(grid,item)].contact;
+  // get buffer row from LV item
+  row:=FindBufNumber(contact);
+  // get cell text
+  if text=pWideChar(-1) then
+  begin
+    if (qsopt.columns[column].flags or COL_INIT)<>0 then //??
+      mFreeMem(MainBuf[row,column].text);
+    LoadOneItem(contact,@qsopt.columns[column],0,MainBuf[row,column]);
+    text:=MainBuf[row,column].text;
+  end;
+
+  // rewrite LV cell
+  zeromemory(@li,sizeof(li));
+  li.mask    :=LVIF_TEXT;
+  li.iItem   :=item;
+  li.iSubItem:=ColumnToListview(column); // buffer column to LV subitem
+  li.pszText :=text;
+  SendMessageW(grid,LVM_SETITEMW,0,tlparam(@li));
+
+  // if need to filter and sort, do it
+  if (qsopt.columns[column].flags and COL_FILTER)<>0 then
+    ProcessLine(row);
+  if qsopt.columnsort=li.iSubItem then
+    Sort;
+end;
+
 procedure MoveToGroup(group:PWideChar);
 var
-  col:pcolumnitem;
   contact:THANDLE;
-  i,j,grcol:integer;
+  i,j,grcol,row:integer;
 begin
   j:=ListView_GetItemCount(grid)-1;
   // search group column in QS window (if presents)
@@ -456,39 +488,42 @@ begin
         break;
       end
   end;
-  if grcol>=0 then 
-    col:=@qsopt.columns[i];
   // move to new group and changing in LV if needs
   for i:=0 to j do
   begin
     if ListView_GetItemState(grid,i,LVIS_SELECTED)<>0 then
     begin
       contact:=FlagBuf[LV_GetLParam(grid,i)].contact;
+      // change settings
       DBWriteUnicode(contact,strCList,'Group',group);
+      // update buffer and LV
       if ((qsopt.flags and QSO_AUTOCLOSE)=0) and (grcol>=0) then
       begin
-         LoadOneItem(contact,col,0,MainBuf[i,grcol]);
+        row:=FindBufNumber(contact);
+
+        mFreeMem(MainBuf[row,grcol].text);
+        StrDupW(MainBuf[row,grcol].text,group);
+
+//        LoadOneItem(contact,qsopt.columns[grcol],0,MainBuf[row,grcol]);
+        UpdateLVCell(i,grcol);
       end;
     end;
   end;
-  if ((qsopt.flags and QSO_AUTOCLOSE)=0) and (grcol>=0) then
-    FillGrid;
 end;
 
 procedure MoveToContainer(container:PWideChar);
 var
-  col:pcolumnitem;
   contact:THANDLE;
-  i,j,grcol:integer;
+  i,j,grcol,row:integer;
 begin
   j:=ListView_GetItemCount(grid)-1;
-  // search group column in QS window (if presents)
+  // search container column in QS window (if presents)
   grcol:=-1;
-{
+
   for i:=0 to qsopt.numcolumns-1 do
   begin
     with qsopt.columns[i] do
-      if (flags and COL_GROUP)<>0 then
+      if (flags and COL_CNTNR)<>0 then
       begin
         if (flags and COL_ON)=0 then
           flags:=flags and not COL_INIT
@@ -497,10 +532,8 @@ begin
         break;
       end
   end;
-  if grcol>=0 then 
-    col:=@qsopt.columns[i];
-}
-  // move to new group and changing in LV if needs
+
+  // attach to new container and changing in LV if needs
   for i:=0 to j do
   begin
     if ListView_GetItemState(grid,i,LVIS_SELECTED)<>0 then
@@ -512,12 +545,16 @@ begin
         DBWriteUnicode(contact,'Tab_SRMsg','containerW',container);
       if ((qsopt.flags and QSO_AUTOCLOSE)=0) and (grcol>=0) then
       begin
-         LoadOneItem(contact,col,0,MainBuf[i,grcol]);
+        row:=FindBufNumber(contact);
+
+        mFreeMem(MainBuf[row,grcol].text);
+        StrDupW(MainBuf[row,grcol].text,container);
+
+//        LoadOneItem(contact,qsopt.columns[grcol],0,MainBuf[row,grcol]);
+        UpdateLVCell(i,grcol);
       end;
     end;
   end;
-  if ((qsopt.flags and QSO_AUTOCLOSE)=0) and (grcol>=0) then
-    FillGrid;
 end;
 
 // right now - memory column order, not screen
@@ -678,7 +715,6 @@ var
   pc,pc1:pWideChar;
   p:pAnsiChar;
   tbuf:array [0..255] of WideChar;
-  li:LV_ITEMW;
   lmodule:pAnsiChar;
   contact:integer;
   col:pcolumnitem;
@@ -746,19 +782,7 @@ begin
     end;
   end;
 
-  // rewrite LV cell
-  zeromemory(@li,sizeof(li));
-  li.mask    :=LVIF_TEXT;
-  li.iItem   :=SendMessage(grid,LVM_GETNEXTITEM,-1,LVNI_FOCUSED);
-  li.iSubItem:=ColumnToListview(cmcolumn);
-  li.pszText :=pc;
-  SendMessageW(grid,LVM_SETITEMW,0,tlparam(@li));
-
-  // if need to filter and sort, do it
-  if (col.flags and COL_FILTER)<>0 then
-    ProcessLine(contact);
-  if qsopt.columnsort=li.iSubItem then
-    Sort;
+  UpdateLVCell(SendMessage(grid,LVM_GETNEXTITEM,-1,LVNI_FOCUSED),cmcolumn,qsr.text);
 end;
 
 function ShowContactMenu(wnd:HWND;hContact:THANDLE;col:integer=-1):HMENU;
@@ -1568,6 +1592,13 @@ begin
          (StrCmp(setting,'Group')=0) then
       begin
         flags:=flags or COL_GROUP
+      end
+
+      else if (datatype=QSTS_STRING) and
+         (StrCmp(module ,'Tab_SRMsg' )=0) and
+         (StrCmp(setting,'containerW')=0) then
+      begin
+        flags:=flags or COL_CNTNR
       end
 
       else if (datatype=QSTS_BYTE) and
