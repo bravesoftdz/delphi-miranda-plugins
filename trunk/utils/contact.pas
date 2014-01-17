@@ -38,7 +38,7 @@ begin
   lGroup  :=StrPosW(format,'%group%')<>nil;
   lAccount:=StrPosW(format,'%account%')<>nil;
   lUID    :=StrPosW(format,'%uid%')<>nil;
-  
+
   while hContact<>0 do
   begin
     if ((not filter) and ((IsContactActive(hContact)+1)>=0)) or // + disabled (not deleted)

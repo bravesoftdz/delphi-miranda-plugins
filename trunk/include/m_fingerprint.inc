@@ -40,7 +40,6 @@ const
   lParam - TChar second MirVer value
   return pointer to AnsiChar string - client desription (DO NOT DESTROY) if clients are same otherwise NULL
 }
-//  MS_FP_SAMECLIENTS :PAnsiChar = 'Fingerprint/SameClients';
   MS_FP_SAMECLIENTSW:PAnsiChar = 'Fingerprint/SameClientsW';
 
 {
@@ -48,7 +47,6 @@ const
   wParam - TChar MirVer value to get client for.
   lParam - int noCopy - if wParam is equal to "1"  will return icon handler without copiing icon.
 }
-//  MS_FP_GETCLIENTICON :PAnsiChar = 'Fingerprint/GetClientIcon';
   MS_FP_GETCLIENTICONW:PAnsiChar = 'Fingerprint/GetClientIconW';
 
 {

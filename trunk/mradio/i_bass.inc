@@ -53,7 +53,7 @@ begin
   end
   else
     pcw:=FastAnsiToWideBuf(BASS_ERRORS[idx],@buf);
-    
+
   MessageBoxW(0,TranslateW(pcw),
       TranslateW('Oops! BASS error'),MB_ICONERROR)
 end;
@@ -140,7 +140,7 @@ begin
         else
           result:=true;
       end;
-    
+
     end;
   end;
 
@@ -582,7 +582,7 @@ begin
           end
           else
             needtofree:=true;
-          
+
           // to avoid mem leak and wrong tag process
           result:=true;
         end;
@@ -732,7 +732,7 @@ begin
           end;
         end;
       end;
-{$IFDEF Debug}      
+{$IFDEF Debug}
 //logmeta(tag,artist,title);
 {$ENDIF}
       mFreeMem(oldartist);
@@ -888,7 +888,7 @@ begin
 
   if chan=0 then
   begin
-    if (CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_GET)=RD_STATUS_ABORT) or 
+    if (CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_GET)=RD_STATUS_ABORT) or
        (plist=nil) then
     begin
       CallService(MS_RADIO_COMMAND,MRC_STOP,1);

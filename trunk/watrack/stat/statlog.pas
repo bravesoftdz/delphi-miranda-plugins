@@ -358,7 +358,7 @@ begin
         begin
           CurCell^.next:=Cell;
           CurCell:=Cell;
-        end;  
+        end;
       end;
     end;
     inc(p,2); p1:=p;

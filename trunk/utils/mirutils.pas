@@ -56,7 +56,6 @@ function  GetContactStatus(hContact:THANDLE):integer;
 function  IsContactActive(hContact:THANDLE;proto:pAnsiChar=nil):integer;
 
 function CreateGroupW(name:pWideChar;hContact:THANDLE):integer;
-function CreateGroup (name:pAnsiChar;hContact:THANDLE):integer;
 
 function MakeGroupMenu(idxfrom:integer=100):HMENU;
 function GetNewGroupName(parent:HWND):pWideChar;
@@ -84,7 +83,7 @@ uses
 
 const
   clGroup = 'Group';
-// Save / Load contact 
+// Save / Load contact
 const
   opt_cproto   = 'cproto';
   opt_cuid     = 'cuid';
@@ -112,7 +111,6 @@ begin
     else
       pc:=nil;
     PathToAbsoluteW(src,dst);
-//    CallService(MS_UTILS_PATHTOABSOLUTEW,wparam(src),lparam(dst));
     mFreeMem(pc);
   end;
 end;
@@ -143,7 +141,6 @@ begin
     else
       pc:=nil;
     PathToAbsolute(src,dst);
-//    CallService(MS_UTILS_PATHTOABSOLUTE,wparam(src),lparam(dst));
     mFreeMem(pc);
   end;
 end;
@@ -305,8 +302,7 @@ var
   tmp:pWideChar;
 begin
   mGetMem(tmp,(StrLen(sz)+1)*SizeOf(WideChar));
-//  Result:=PWideChar(CallService(MS_LANGPACK_TRANSLATESTRING,LANG_UNICODE,
-//          lParam(FastAnsiToWideBuf(sz,tmp))));
+
   Result:=TranslateW(FastAnsiToWideBuf(sz,tmp));
   if Result<>tmp then
   begin
@@ -495,7 +491,6 @@ begin
     if path<>nil then
     begin
       PathToAbsolute(path,buf);
-//      CallService(MS_UTILS_PATHTOABSOLUTE,wparam(path),lparam(@buf));
       p:=StrEnd(buf);
       if p^<>'\' then
       begin
@@ -607,7 +602,7 @@ begin
   gce.szText.w:=pszText;
   gce.dwFlags :=GCEF_ADDTOLOG;
   gce.time    :=GetCurrentTime;
-  
+
   CallServiceSync(MS_GC_EVENT,0,lparam(@gce));
 end;
 
@@ -749,7 +744,7 @@ begin
     if proto<>nil then
       proto^:=#0;
   end;
- 
+
 end;
 
 // Import plugin function adaptation
@@ -773,7 +768,7 @@ begin
   groupId:=0;
   repeat
     p:=DBReadUnicode(0,'CListGroups',IntToStr(groupIdStr,groupId));
-    if p=nil then  
+    if p=nil then
       break;
 
     if StrCmpW(p+1,@grbuf[1])=0 then
@@ -800,58 +795,6 @@ begin
   begin
     p^:=#0;
     CreateGroupW(grbuf+1,0);
-  end;
-
-  result:=1;
-end;
-
-function CreateGroup(name:pAnsiChar;hContact:THANDLE):integer;
-var
-  groupId:integer;
-  groupIdStr:array [0..10] of AnsiChar;
-  grbuf:array [0..127] of AnsiChar;
-  p:pAnsiChar;
-begin
-  if (name=nil) or (name^=#0) then
-  begin
-    result:=0;
-    exit;
-  end;
-
-  StrCopy(@grbuf[1],name);
-  grbuf[0]:=AnsiChar(1 or GROUPF_EXPANDED);
-
-  // Check for duplicate & find unused id
-  groupId:=0;
-  repeat
-    p:=DBReadString(0,'CListGroups',IntToStr(groupIdStr,groupId));
-    if p=nil then  
-      break;
-
-    if StrCmp(p+1,@grbuf[1])=0 then
-    begin
-      if hContact<>0 then
-      DBWriteString(hContact,strCList,clGroup,@grbuf[1]);
-
-      mFreeMem(p);
-      result:=0;
-      exit;
-    end;
-
-    mFreeMem(p);
-    inc(groupId);
-  until false;
-
-  DBWriteString(0,'CListGroups',groupIdStr,grbuf);
-
-  if hContact<>0 then
-    DBWriteString(hContact,strCList,clGroup,@grbuf[1]);
-
-  p:=StrRScan(grbuf,'\');
-  if p<>nil then
-  begin
-    p^:=#0;
-    CreateGroup(grbuf+1,0);
   end;
 
   result:=1;

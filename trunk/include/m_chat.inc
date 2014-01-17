@@ -46,8 +46,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
   NOTE. Chat keeps its own copies of strings passed.
 
-  
-  * * Example of implementing this rule * *: 
+
+  * * Example of implementing this rule * *:
   * * This is a code snippet that is common in protocols * *:
 
 
@@ -190,7 +190,7 @@ type
     szName         :TCHAR;   //The name of the session as it will be displayed to the user
     szID           :TCHAR;   //The unique identifier for the session.
     szStatusbarText:TCHAR;   //Optional text to set in the statusbar of the chat room window, or NULL.
-    dwFlags        :dword;  
+    dwFlags        :dword;
     dwItemData     :int_ptr; //Set user defined data for this session. Retrieve it by using the GC_EVENT_GETITEMDATA event
   end;
 
@@ -389,7 +389,7 @@ const
 //  pszText    - The text
   GC_EVENT_SENDMESSAGE = $1008;
 
-//  GC_EVENT_SETSTATUSEX - not shown in the log (Space or tab delimited list of pszUID's to indicate as away). 
+//  GC_EVENT_SETSTATUSEX - not shown in the log (Space or tab delimited list of pszUID's to indicate as away).
 //  Used by IRC to mark users as away in the nicklist. If UIDs can contain spaces, use tabs
 //  pszText    - Space or tab delimited list of pszUID's
 

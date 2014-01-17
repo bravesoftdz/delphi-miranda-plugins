@@ -32,10 +32,10 @@ const
 
 // Parse ptszCmdLine. it must NOT be a constant (content will be patched)
 procedure CmdLine_Parse(ptszCmdLine:PWideChar); stdcall;
-                        external CoreDLL name 'CmdLine_Parse';
+                 external CoreDLL name 'CmdLine_Parse';
 
 function CmdLine_GetOption(ptszParameter:PWideChar):PWideChar; stdcall;
-                           external CoreDLL name 'CmdLine_GetOption';
+                 external CoreDLL name 'CmdLine_GetOption';
 
 ///////////////////////////////////////////////////////////////////////////////
 // database functions
@@ -259,43 +259,43 @@ Returns a handle to the contact after hContact in the db on success or NULL if
 hContact was the last contact in the db or hContact was invalid.
 }
 function db_find_next(hContact:THANDLE; const szModule:pAnsiChar=nil):THANDLE; stdcall;
-                  external CoreDLL name 'db_find_next';
+                 external CoreDLL name 'db_find_next';
 
 (******************************************************************************
  * DATABASE SETTINGS
  *)
 
 function db_get(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; dbv:PDBVARIANT):int_ptr; stdcall;
-                external CoreDLL name 'db_get';
+                 external CoreDLL name 'db_get';
 function db_get_b(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; errorValue:int):int; stdcall;
-                  external CoreDLL name 'db_get_b';
+                 external CoreDLL name 'db_get_b';
 function db_get_w(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; errorValue:int):int; stdcall;
-                  external CoreDLL name 'db_get_w';
+                 external CoreDLL name 'db_get_w';
 function db_get_dw(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; errorValue:dword):dword; stdcall;
-                   external CoreDLL name 'db_get_dw';
+                 external CoreDLL name 'db_get_dw';
 function db_get_s(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; dbv:PDBVARIANT; const nType:int=DBVT_ASCIIZ):int_ptr; stdcall;
-                  external CoreDLL name 'db_get_s';
+                 external CoreDLL name 'db_get_s';
 function db_get_sa(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar):pAnsiChar; stdcall;
-                   external CoreDLL name 'db_get_sa';
+                 external CoreDLL name 'db_get_sa';
 function db_get_wsa(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar):pWideChar; stdcall;
-                    external CoreDLL name 'db_get_wsa';
+                 external CoreDLL name 'db_get_wsa';
 
 function db_set(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; dbv:PDBVARIANT):int_ptr; stdcall;
-                external CoreDLL name 'db_set';
+                 external CoreDLL name 'db_set';
 function db_set_b(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; val:byte):int_ptr; stdcall;
-                  external CoreDLL name 'db_set_b';
+                 external CoreDLL name 'db_set_b';
 function db_set_w(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; val:word):int_ptr; stdcall;
-                  external CoreDLL name 'db_set_w';
+                 external CoreDLL name 'db_set_w';
 function db_set_dw(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; val:dword):int_ptr; stdcall;
-                   external CoreDLL name 'db_set_dw';
+                 external CoreDLL name 'db_set_dw';
 function db_set_s(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; const val:pAnsiChar):int_ptr; stdcall;
-                  external CoreDLL name 'db_set_s';
+                 external CoreDLL name 'db_set_s';
 function db_set_ws(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; const val:pWideChar):int_ptr; stdcall;
-                   external CoreDLL name 'db_set_ws';
+                 external CoreDLL name 'db_set_ws';
 function db_set_utf(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; const val:pAnsiChar):int_ptr; stdcall;
-                    external CoreDLL name 'db_set_utf';
+                 external CoreDLL name 'db_set_utf';
 function db_set_blob(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; val:pointer; len:uint):int_ptr; stdcall;
-                     external CoreDLL name 'db_set_blob';
+                 external CoreDLL name 'db_set_blob';
 
 function db_unset(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar):int_ptr; stdcall;
                   external CoreDLL name 'db_unset';
@@ -307,36 +307,36 @@ function db_set_resident(const szModule:pAnsiChar; const szSetting:pAnsiChar; bE
 function DBFreeVariant(dbv:PDBVARIANT):int_ptr; stdcall;
                  external CoreDLL name 'db_free';
 function DBDeleteContactSetting(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar):int_ptr; stdcall;
-                  external CoreDLL name 'db_unset';
+                 external CoreDLL name 'db_unset';
 function DBGetContactSettingByte(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; errorValue:int):int; stdcall;
-                                 external CoreDLL name 'db_get_b';
+                 external CoreDLL name 'db_get_b';
 function DBGetContactSettingWord(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; errorValue:int):int; stdcall;
-                                 external CoreDLL name 'db_get_w';
+                 external CoreDLL name 'db_get_w';
 function DBGetContactSettingDWord(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; errorValue:dword):dword; stdcall;
-                                  external CoreDLL name 'db_get_dw';
+                 external CoreDLL name 'db_get_dw';
 function DBGetContactSetting(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; dbv:PDBVARIANT):int_ptr; stdcall;
-                             external CoreDLL name 'db_get';
+                 external CoreDLL name 'db_get';
 function DBGetContactSettingStr(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; dbv:PDBVARIANT; const nType:int=DBVT_ASCIIZ):int_ptr; stdcall;
-                                external CoreDLL name 'db_get_s';
+                 external CoreDLL name 'db_get_s';
 function DBGetContactSettingString(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar):pAnsiChar; stdcall;
-                                   external CoreDLL name 'db_get_sa';
+                 external CoreDLL name 'db_get_sa';
 function DBGetContactSettingWString(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar):pWideChar; stdcall;
-                                    external CoreDLL name 'db_get_wsa';
+                 external CoreDLL name 'db_get_wsa';
 
 function DBWriteContactSettingByte(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; val:byte):int_ptr; stdcall;
-                                   external CoreDLL name 'db_set_b';
+                 external CoreDLL name 'db_set_b';
 function DBWriteContactSettingWord(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; val:word):int_ptr; stdcall;
-                                   external CoreDLL name 'db_set_w';
+                 external CoreDLL name 'db_set_w';
 function DBWriteContactSettingDWord(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; val:dword):int_ptr; stdcall;
-                                    external CoreDLL name 'db_set_dw';
+                 external CoreDLL name 'db_set_dw';
 function DBWriteContactSettingString(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; const val:pAnsiChar):int_ptr; stdcall;
-                                     external CoreDLL name 'db_set_s';
+                 external CoreDLL name 'db_set_s';
 function DBWriteContactSettingWString(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; const val:pWideChar):int_ptr; stdcall;
-                                      external CoreDLL name 'db_set_ws';
+                 external CoreDLL name 'db_set_ws';
 function DBWriteContactSettingUTF8String(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; const val:pAnsiChar):int_ptr; stdcall;
-                                         external CoreDLL name 'db_set_utf';
+                 external CoreDLL name 'db_set_utf';
 function DBWriteContactSettingBlob(hContact:THANDLE; const szModule:pAnsiChar; const szSetting:pAnsiChar; val:pointer; len:uint):int_ptr; stdcall;
-                                   external CoreDLL name 'db_set_blob';
+                 external CoreDLL name 'db_set_blob';
 
 ///////////////////////////////////////////////////////////////////////////////
 // events, hooks & services
@@ -357,70 +357,70 @@ type
 
 const
   {$IFDEF WIN64}
-  CALLSERVICE_NOTFOUND = uint($8000000000000000);
+  CALLSERVICE_NOTFOUND = int_ptr($8000000000000000);
   {$ELSE}
-  CALLSERVICE_NOTFOUND = $80000000;
+  CALLSERVICE_NOTFOUND = int_ptr($80000000);
   {$ENDIF}
 
 function CreateHookableEvent(const name: PAnsiChar): THANDLE; stdcall;
-                             external CoreDLL name 'CreateHookableEvent';
+                 external CoreDLL name 'CreateHookableEvent';
 function DestroyHookableEvent(hEvent:THANDLE): int; stdcall;
-                              external CoreDLL name 'DestroyHookableEvent';
+                 external CoreDLL name 'DestroyHookableEvent';
 function SetHookDefaultForHookableEvent(hEvent:THANDLE; pfnHook:TMIRANDAHOOK):int; stdcall;
-                                        external CoreDLL name 'SetHookDefaultForHookableEvent';
+                 external CoreDLL name 'SetHookDefaultForHookableEvent';
 function CallPluginEventHook(hInst:HINST; hEvent:THANDLE; wParam:WPARAM; lParam:LPARAM):int; stdcall;
-                             external CoreDLL name 'CallPluginEventHook';
+                 external CoreDLL name 'CallPluginEventHook';
 function NotifyEventHooks(hEvent:THANDLE; wParam:WPARAM; lParam:LPARAM): int; stdcall;
-                          external CoreDLL name 'NotifyEventHooks';
+                 external CoreDLL name 'NotifyEventHooks';
 function NotifyFastHook(hEvent:THANDLE; wParam:WPARAM; lParam:LPARAM): int; stdcall;
-                          external CoreDLL name 'NotifyFastHook';
+                 external CoreDLL name 'NotifyFastHook';
 
 function HookEvent(const name:PAnsiChar; hookProc: TMIRANDAHOOK): THANDLE; stdcall;
-                   external CoreDLL name 'HookEvent';
+                 external CoreDLL name 'HookEvent';
 function HookEventParam(const name:PAnsiChar; hookProc:TMIRANDAHOOKPARAM;lParam:LPARAM):THANDLE; stdcall;
-                        external CoreDLL name 'HookEventParam';
+                 external CoreDLL name 'HookEventParam';
 function HookEventObj(const name:PAnsiChar; hookProc:TMIRANDAHOOKOBJ;ptr:pointer):THANDLE; stdcall;
-                      external CoreDLL name 'HookEventObj';
+                 external CoreDLL name 'HookEventObj';
 function HookEventObjParam(const name:PAnsiChar; hookProc:TMIRANDAHOOKOBJPARAM;ptr:pointer;lParam:LPARAM):THANDLE; stdcall;
-                           external CoreDLL name 'HookEventObjParam';
+                 external CoreDLL name 'HookEventObjParam';
 function HookEventMessage(const name:PAnsiChar; Wnd:HWND; wMsg:uint):THANDLE; stdcall;
-                          external CoreDLL name 'HookEventMessage';
+                 external CoreDLL name 'HookEventMessage';
 function UnhookEvent(hHook:THANDLE): int; stdcall;
-                     external CoreDLL name 'UnhookEvent';
+                 external CoreDLL name 'UnhookEvent';
 procedure KillObjectEventHooks(var ptr); stdcall;
-                               external CoreDLL name 'KillObjectEventHooks';
+                 external CoreDLL name 'KillObjectEventHooks';
 procedure KillModuleEventHooks(pModule:HINST); stdcall;
-                               external CoreDLL name 'KillModuleEventHooks';
+                 external CoreDLL name 'KillModuleEventHooks';
 
 function CreateServiceFunction(const name:PAnsiChar; serviceProc:TMIRANDASERVICE): THANDLE; stdcall;
-                               external CoreDLL name 'CreateServiceFunction';
+                 external CoreDLL name 'CreateServiceFunction';
 function CreateServiceFunctionParam(const name:PAnsiChar; serviceProc:TMIRANDASERVICEPARAM;lParam:LPARAM):THANDLE; stdcall;
-                                    external CoreDLL name 'CreateServiceFunctionParam';
+                 external CoreDLL name 'CreateServiceFunctionParam';
 function CreateServiceFunctionObj(const name:PAnsiChar; serviceProc:TMIRANDASERVICEOBJ;ptr:pointer):THANDLE; stdcall;
-                                  external CoreDLL name 'CreateServiceFunctionObj';
+                 external CoreDLL name 'CreateServiceFunctionObj';
 function CreateServiceFunctionObjParam(const name:PAnsiChar; serviceProc:TMIRANDASERVICEOBJPARAM;ptr:pointer;lParam:LPARAM):THANDLE; stdcall;
-                                       external CoreDLL name 'CreateServiceFunctionObjParam';
+                 external CoreDLL name 'CreateServiceFunctionObjParam';
 function DestroyServiceFunction(hService:THANDLE):int; stdcall;
-                                external CoreDLL name 'DestroyServiceFunction';
+                 external CoreDLL name 'DestroyServiceFunction';
 function ServiceExists(const name:PAnsiChar):int; stdcall;
-                       external CoreDLL name 'ServiceExists';
+                 external CoreDLL name 'ServiceExists';
 
 function CallService(const name:PAnsiChar; wParam:WPARAM; lParam:LPARAM):int_ptr; stdcall;
-                     external CoreDLL name 'CallService';
+                 external CoreDLL name 'CallService';
 function CallServiceSync(const name:PAnsiChar; wParam:WPARAM; lParam:LPARAM):int_ptr; stdcall;
-                         external CoreDLL name 'CallServiceSync';
+                 external CoreDLL name 'CallServiceSync';
 
 function CallFunctionAsync(ptr1,ptr2:pointer):int; stdcall;
-                           external CoreDLL name 'CallFunctionAsync';
+                 external CoreDLL name 'CallFunctionAsync';
 procedure KillModuleServices(hInst:HINST); stdcall;
-                             external CoreDLL name 'KillModuleServices';
+                 external CoreDLL name 'KillModuleServices';
 procedure KillObjectServices(var ptr); stdcall;
-                             external CoreDLL name 'KillObjectServices';
+                 external CoreDLL name 'KillObjectServices';
 
 function CallContactService(hContact:THANDLE;const name:PAnsiChar;wParam:WPARAM;lParam:LPARAM):int_ptr; cdecl;
-                            external CoreDLL name 'CallContactService';
+                 external CoreDLL name 'CallContactService';
 function CallProtoService(const szModule:PAnsiChar;const szService:PAnsiChar;wParam:WPARAM;lParam:LPARAM):int_ptr; cdecl;
-                          external CoreDLL name 'CallProtoService';
+                 external CoreDLL name 'CallProtoService';
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -428,7 +428,7 @@ function CallProtoService(const szModule:PAnsiChar;const szService:PAnsiChar;wPa
 
 // returned result must be freed using mir_free()
 function mir_urlEncode(url:pAnsiChar): pAnsiChar; stdcall;
-                            external CoreDLL name 'mir_urlEncode';
+                 external CoreDLL name 'mir_urlEncode';
 
 ///////////////////////////////////////////////////////////////////////////////
 // exceptions
@@ -438,9 +438,9 @@ type
   pfnExceptionFilter = function(code:dword; info:PEXCEPTION_POINTERS):dword; cdecl;
 
 function GetExceptionFilter():pfnExceptionFilter; stdcall;
-                            external CoreDLL name 'GetExceptionFilter';
+                 external CoreDLL name 'GetExceptionFilter';
 function SetExceptionFilter(pMirandaExceptFilter:pfnExceptionFilter):pfnExceptionFilter; stdcall;
-                            external CoreDLL name 'SetExceptionFilter';
+                 external CoreDLL name 'SetExceptionFilter';
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -468,11 +468,11 @@ type
   tagIconItemW = tIconItemW;
 
 procedure mir_Icon_Register(hInst:HINST; const szSection:pAnsiChar; pIcons:pIconItem;
-    iCount:size_t; prefix:PAnsiChar=NIL; hLangpack:int=0); stdcall;
-                        external CoreDLL name 'Icon_Register';
+    iCount:size_t; prefix:PAnsiChar; hLangpack:int=0); stdcall;
+                 external CoreDLL name 'Icon_Register';
 procedure mir_Icon_RegisterW(hInst:HINST; const szSection:pWideChar; pIcons:pIconItemW;
-    iCount:size_t; prefix:PAnsiChar=NIL; hLangpack:int=0); stdcall;
-                        external CoreDLL name 'Icon_RegisterT';
+    iCount:size_t; prefix:PAnsiChar; hLangpack:int=0); stdcall;
+                 external CoreDLL name 'Icon_RegisterT';
 
 ///////////////////////////////////////////////////////////////////////////////
 // language packs support
@@ -481,32 +481,32 @@ const
   LANG_UNICODE = $1000;
 
 procedure Langpack_SortDuplicates(); stdcall;
-                                  external CoreDLL name 'Langpack_SortDuplicates';
+                 external CoreDLL name 'Langpack_SortDuplicates';
 function Langpack_GetDefaultCodePage():int; stdcall;
-                                  external CoreDLL name 'Langpack_GetDefaultCodePage';
+                 external CoreDLL name 'Langpack_GetDefaultCodePage';
 function Langpack_GetDefaultLocale():int; stdcall;
-                                  external CoreDLL name 'Langpack_GetDefaultLocale';
+                 external CoreDLL name 'Langpack_GetDefaultLocale';
 function Langpack_PcharToTchar(const pszStr:pAnsiChar):pWideChar; stdcall;
-                              external CoreDLL name 'Langpack_PcharToTchar';
+                 external CoreDLL name 'Langpack_PcharToTchar';
 
 function LoadLangPackModule():int; stdcall;
-                            external CoreDLL name 'LoadLangPackModule';
+                 external CoreDLL name 'LoadLangPackModule';
 function LoadLangPack(const szLangPack:pWideChar):int; stdcall;
-                      external CoreDLL name 'LoadLangPack';
+                 external CoreDLL name 'LoadLangPack';
 procedure ReloadLangpack(pszStr:pWideChar); stdcall;
-                         external CoreDLL name 'ReloadLangpack';
+                 external CoreDLL name 'ReloadLangpack';
 
 function TranslateA_LP(const str:pAnsiChar; hLang:int):pAnsiChar; stdcall;
-                       external CoreDLL name 'TranslateA_LP';
+                 external CoreDLL name 'TranslateA_LP';
 function TranslateW_LP(const str:pWideChar; hLang:int):pWideChar; stdcall;
-                       external CoreDLL name 'TranslateW_LP';
+                 external CoreDLL name 'TranslateW_LP';
 procedure TranslateMenu_LP(hMenu:HMENU; hLang:int); stdcall;
-                           external CoreDLL name 'TranslateMenu_LP';
+                 external CoreDLL name 'TranslateMenu_LP';
 procedure TranslateDialog_LP(hDlg:HWND; hLang:int); stdcall;
-                             external CoreDLL name 'TranslateDialog_LP';
+                 external CoreDLL name 'TranslateDialog_LP';
 
 function mir_hash(const key:pointer; len:uint):uint; stdcall;
-                  external CoreDLL name 'mir_hash';
+                 external CoreDLL name 'mir_hash';
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -515,9 +515,9 @@ function mir_hash(const key:pointer; len:uint):uint; stdcall;
 type
   TFSortFunc = function (para1:pointer; para2:pointer):int;cdecl;
 {
-// Assumes first 32 bit value of the data is the numeric key 
+// Assumes first 32 bit value of the data is the numeric key
 // and uses it to perform sort/search operations, this results
-// in much better performance as no compare function calls needed 
+// in much better performance as no compare function calls needed
 // Incredibly useful for Hash Tables
 }
 const
@@ -537,32 +537,32 @@ type
 
 // BUGGED with limit <> 0. list pointer must befreed by mir_free
 function List_Create(limit:int; increment:int):PSortedList;stdcall;
-                     external CoreDLL name 'List_Create';
+                 external CoreDLL name 'List_Create';
 
 procedure List_Destroy(list:PSortedList);stdcall;
-                       external CoreDLL name 'List_Destroy';
+                 external CoreDLL name 'List_Destroy';
 function List_Find(list:PSortedList; value:pointer):pointer;stdcall;
-                   external CoreDLL name 'List_Find';
+                 external CoreDLL name 'List_Find';
 function List_GetIndex(list:PSortedList; value:pointer; index:Pint):int;stdcall;
-                       external CoreDLL name 'List_GetIndex';
+                 external CoreDLL name 'List_GetIndex';
 function List_IndexOf(list:PSortedList; value:pointer):int;stdcall;
-                      external CoreDLL name 'List_IndexOf';
+                 external CoreDLL name 'List_IndexOf';
 function List_Insert(list:PSortedList; value:pointer; index:int):int;stdcall;
-                     external CoreDLL name 'List_Insert';
+                 external CoreDLL name 'List_Insert';
 function List_InsertPtr(list:PSortedList; p:pointer):int;stdcall;
-                        external CoreDLL name 'List_InsertPtr';
+                 external CoreDLL name 'List_InsertPtr';
 function List_Remove(list:PSortedList; index:int):int;stdcall;
-                     external CoreDLL name 'List_Remove';
+                 external CoreDLL name 'List_Remove';
 function List_RemovePtr(list:PSortedList; p:pointer):int;stdcall;
-                        external CoreDLL name 'List_RemovePtr';
+                 external CoreDLL name 'List_RemovePtr';
 procedure List_Copy(src:PSortedList; dst:PSortedList; size:size_t); stdcall;
-                    external CoreDLL name 'List_Copy';
+                 external CoreDLL name 'List_Copy';
 procedure List_ObjCopy(src:PSortedList; dst:PSortedList; size:size_t); stdcall;
-                       external CoreDLL name 'List_ObjCopy';
+                 external CoreDLL name 'List_ObjCopy';
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// logging functions
+// log functions
 
 function mir_createLog(pszName:PAnsiChar; ptszDescr, ptszFile:PWideChar; options:Cardinal):THandle;stdcall;
                  external CoreDLL name 'mir_createLog';
@@ -600,68 +600,68 @@ procedure mir_md5_hash(const data:pbyte; len:int; digest:TMD5Hash); stdcall;
 // memory functions
 
 function mir_alloc(para1:size_t):pointer; cdecl;
-                   external CoreDLL name 'mir_alloc';
+                 external CoreDLL name 'mir_alloc';
 function mir_calloc(para1:size_t):pointer; cdecl;
-                    external CoreDLL name 'mir_calloc';
+                 external CoreDLL name 'mir_calloc';
 function mir_realloc(para1:pointer; para2:size_t):pointer; cdecl;
-                     external CoreDLL name 'mir_realloc';
+                 external CoreDLL name 'mir_realloc';
 procedure mir_free(para1:pointer); cdecl;
-                   external CoreDLL name 'mir_free';
+                 external CoreDLL name 'mir_free';
 function mir_strdup(const src:PAnsiChar):PAnsiChar; stdcall;
-                    external CoreDLL name 'mir_strdup';
+                 external CoreDLL name 'mir_strdup';
 function mir_wstrdup(const src:PWideChar):PWideChar; stdcall;
-                     external CoreDLL name 'mir_wstrdup';
+                 external CoreDLL name 'mir_wstrdup';
 function mir_strndup(const src:PAnsiChar; len:size_t):PAnsiChar; stdcall;
-                     external CoreDLL name 'mir_strndup';
+                 external CoreDLL name 'mir_strndup';
 function mir_wstrndup(const src:PWideChar; len:size_t):PWideChar; stdcall;
-                     external CoreDLL name 'mir_wstrndup';
+                 external CoreDLL name 'mir_wstrndup';
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // modules
 
 procedure RegisterModule(hInst:HINST); stdcall;
-                         external CoreDLL name 'RegisterModule';
+                 external CoreDLL name 'RegisterModule';
 procedure UnregisterModule(hInst:HINST); stdcall;
-                           external CoreDLL name 'UnregisterModule';
+                 external CoreDLL name 'UnregisterModule';
 
 function GetInstByAddress(codePtr:pointer):HINST; stdcall;
-                          external CoreDLL name 'GetInstByAddress';
+                 external CoreDLL name 'GetInstByAddress';
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // path utils
 
 procedure CreatePathToFile(wszFilePath:pAnsiChar); stdcall;
-                           external CoreDLL name 'CreatePathToFile';
+                 external CoreDLL name 'CreatePathToFile';
 function CreateDirectoryTree(const szDir:pAnsiChar):int; stdcall;
-                             external CoreDLL name 'CreateDirectoryTree';
+                 external CoreDLL name 'CreateDirectoryTree';
 function PathToAbsolute(const pSrc:pAnsiChar; pOut:pAnsiChar; base:pAnsiChar=nil):int; stdcall;
-                        external CoreDLL name 'PathToAbsolute';
+                 external CoreDLL name 'PathToAbsolute';
 function PathToRelative(const pSrc:pAnsiChar; pOut:pAnsiChar):int; stdcall;
-                        external CoreDLL name 'PathToRelative';
+                 external CoreDLL name 'PathToRelative';
 
 procedure CreatePathToFileW(wszFilePath:pWideChar); stdcall;
-                            external CoreDLL name 'CreatePathToFileW';
+                 external CoreDLL name 'CreatePathToFileW';
 function CreateDirectoryTreeW(const szDir:pWideChar):int; stdcall;
-                              external CoreDLL name 'CreateDirectoryTreeW';
+                 external CoreDLL name 'CreateDirectoryTreeW';
 function PathToAbsoluteW(const pSrc:pWideChar; pOut:pWideChar; base:pWideChar=nil):int; stdcall;
-                         external CoreDLL name 'PathToAbsoluteW';
+                 external CoreDLL name 'PathToAbsoluteW';
 function PathToRelativeW(const pSrc:pWideChar; pOut:pWideChar):int; stdcall;
-                         external CoreDLL name 'PathToRelativeW';
+                 external CoreDLL name 'PathToRelativeW';
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // print functions
 
 function mir_snprintf(buffer:pAnsiChar;count:size_t;fmt:pAnsiChar{, ...}):int; stdcall;
-                      external CoreDLL name 'mir_snprintf';
+                 external CoreDLL name 'mir_snprintf';
 function mir_snwprintf(buffer:pWideChar;count:size_t;fmt:pWideChar{, ...}):int; stdcall;
-                       external CoreDLL name 'mir_snwprintf';
+                 external CoreDLL name 'mir_snwprintf';
 function mir_vsnprintf(buffer:pAnsiChar;count:size_t;fmt:pAnsiChar;va:va_list):int; stdcall;
-                       external CoreDLL name 'mir_vsnprintf';
+                 external CoreDLL name 'mir_vsnprintf';
 function mir_vsnwprintf(buffer:pWideChar;count:size_t;fmt:pWideChar;va:va_list):int; stdcall;
-                        external CoreDLL name 'mir_vsnwprintf';
+                 external CoreDLL name 'mir_vsnwprintf';
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -743,13 +743,13 @@ type
   SHA1Hash = array [0..MIR_SHA1_HASH_SIZE-1] of byte;
 
 procedure mir_sha1_init(ctx:pmir_sha1_ctx); stdcall;
-                        external CoreDLL name 'mir_sha1_init';
+                 external CoreDLL name 'mir_sha1_init';
 procedure mir_sha1_append(ctx:pmir_sha1_ctx; dataIn:pbyte; len:int); stdcall;
-                          external CoreDLL name 'mir_sha1_append';
+                 external CoreDLL name 'mir_sha1_append';
 procedure mir_sha1_finish(ctx:pmir_sha1_ctx; hashout:SHA1Hash); stdcall;
-                          external CoreDLL name 'mir_sha1_finish';
+                 external CoreDLL name 'mir_sha1_finish';
 procedure mir_sha1_hash(dataIn:pbyte; len:int;hashout:SHA1Hash); stdcall;
-                        external CoreDLL name 'mir_sha1_hash';
+                 external CoreDLL name 'mir_sha1_hash';
 
 procedure mir_hmac_sha1(hashout:SHA1Hash; const key:pbyte; keyLen:size_t;
                         const dataIn:pbyte; dataLen:size_t); stdcall;
@@ -809,11 +809,11 @@ function bin2hexW(data:pointer; dataLen:size_t; pDest:pWideChar):pWideChar; stdc
 // text conversion functions
 
 function mir_a2u_cp(src:PAnsiChar;codepage:int):pWideChar; stdcall;
-                    external CoreDLL name 'mir_a2u_cp';
+                 external CoreDLL name 'mir_a2u_cp';
 function mir_a2u(src:PAnsiChar):pWideChar; stdcall;
                  external CoreDLL name 'mir_a2u';
 function mir_u2a_cp(src:pWideChar;codepage:int):PAnsiChar; stdcall;
-                    external CoreDLL name 'mir_u2a_cp';
+                 external CoreDLL name 'mir_u2a_cp';
 function mir_u2a(src:pWideChar):PAnsiChar; stdcall;
                  external CoreDLL name 'mir_u2a';
 
@@ -826,87 +826,88 @@ type
   pThreadFuncOwner = function (owner:pointer;param:pointer):uint_ptr; cdecl;
 
 function Thread_Push(hInst:HINST; Owner:pointer):int_ptr; stdcall;
-                     external CoreDLL name 'Thread_Push';
+                 external CoreDLL name 'Thread_Push';
 function Thread_Pop():int_ptr; stdcall;
-                    external CoreDLL name 'Thread_Pop';
+                 external CoreDLL name 'Thread_Pop';
 procedure Thread_Wait(); stdcall;
-                      external CoreDLL name 'Thread_Wait';
+                 external CoreDLL name 'Thread_Wait';
 
 function forkthread(func:pThreadFunc; stacksize:uint; arg:pointer):uint_ptr; stdcall;
-                    external CoreDLL name 'forkthread';
+                 external CoreDLL name 'forkthread';
 function forkthreadex(sec:pointer; stacksize:uint; func:pThreadFuncEx; owner:pointer; arg:pointer; thraddr:puint_ptr):uint_ptr; stdcall;
-                      external CoreDLL name 'forkthreadex';
+                 external CoreDLL name 'forkthreadex';
 
 procedure Thread_SetName(const szThreadName:pAnsiChar); stdcall;
-                         external CoreDLL name 'Thread_SetName';
+                 external CoreDLL name 'Thread_SetName';
 
 procedure KillObjectThreads(pObject:pointer); stdcall;
-                            external CoreDLL name 'KillObjectThreads';
+                 external CoreDLL name 'KillObjectThreads';
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // utf8 interface
 { commented to avoid newer Delphi version conflicts
 function Utf8Decode(str:PAnsiChar; var ucs2:pWideChar):PAnsiChar;stdcall;
-                    external CoreDLL name 'Utf8Decode';
+                 external CoreDLL name 'Utf8Decode';
 function Utf8DecodeCP(str:PAnsiChar; codepage:int; var ucs2:pWideChar):PAnsiChar;stdcall;
-                      external CoreDLL name 'Utf8DecodeCP';
+                 external CoreDLL name 'Utf8DecodeCP';
 
 function Utf8DecodeW(const str:PAnsiChar):pWideChar;stdcall;
-                     external CoreDLL name 'Utf8DecodeW';
+                 external CoreDLL name 'Utf8DecodeW';
 
 function Utf8Encode(const src:PAnsiChar):PAnsiChar;stdcall;
-                    external CoreDLL name 'Utf8Encode';
+                 external CoreDLL name 'Utf8Encode';
 function Utf8EncodeCP(const src:PAnsiChar;codepage:int):PAnsiChar;stdcall;
-                      external CoreDLL name 'Utf8EncodeCP';
+                 external CoreDLL name 'Utf8EncodeCP';
 
 function Utf8EncodeW(const src:PWideChar):PAnsiChar;stdcall;
-                     external CoreDLL name 'Utf8EncodeW';
+                 external CoreDLL name 'Utf8EncodeW';
 
 function Ucs2toUtf8Len(const src:pWideChar):int; stdcall;
-                       external CoreDLL name 'Ucs2toUtf8Len';
+                 external CoreDLL name 'Ucs2toUtf8Len';
 
 function Utf8CheckString(const astr:PAnsiChar):bool;stdcall;
-                         external CoreDLL name 'Utf8CheckString';
+                 external CoreDLL name 'Utf8CheckString';
 }
 // aliases
 function mir_utf8decode(str:PAnsiChar; var ucs2:pWideChar):PAnsiChar;stdcall;
-                       external CoreDLL name 'Utf8Decode';
+                 external CoreDLL name 'Utf8Decode';
 function mir_utf8decodecp(str:PAnsiChar; codepage:int; var ucs2:pWideChar):PAnsiChar;stdcall;
-                          external CoreDLL name 'Utf8DecodeCP';
+                 external CoreDLL name 'Utf8DecodeCP';
 function mir_utf8decodew(const str:PAnsiChar):pWideChar;stdcall;
-                         external CoreDLL name 'Utf8DecodeW';
+                 external CoreDLL name 'Utf8DecodeW';
 
 function mir_utf8encode(const src:PAnsiChar):PAnsiChar;stdcall;
-                        external CoreDLL name 'Utf8Encode';
+                 external CoreDLL name 'Utf8Encode';
 function mir_utf8encodecp(const src:PAnsiChar;codepage:int):PAnsiChar;stdcall;
-                          external CoreDLL name 'Utf8EncodeCP';
+                 external CoreDLL name 'Utf8EncodeCP';
 
 function mir_utf8encodew(const src:PWideChar):PAnsiChar;stdcall;
-                         external CoreDLL name 'Utf8EncodeW';
+                 external CoreDLL name 'Utf8EncodeW';
 
 function mir_utf8lenW(const src:pWideChar):int; stdcall;
-                       external CoreDLL name 'Ucs2toUtf8Len';
+                 external CoreDLL name 'Ucs2toUtf8Len';
 
 function mir_utf8checkstring(const astr:PAnsiChar):bool;stdcall;
-                         external CoreDLL name 'Utf8CheckString';
+                 external CoreDLL name 'Utf8CheckString';
 
 ///////////////////////////////////////////////////////////////////////////////
 // Window subclassing
 
 procedure mir_subclassWindow(Wnd:HWND; WndProc:TWNDPROC); stdcall;
-                       external CoreDLL name 'mir_subclassWindow';
+                 external CoreDLL name 'mir_subclassWindow';
 procedure mir_subclassWindowFull(Wnd:HWND; WndProc, OldWndProc:TWNDPROC); stdcall;
-                       external CoreDLL name 'mir_subclassWindowFull';
+                 external CoreDLL name 'mir_subclassWindowFull';
 function  mir_callNextSubclass(Wnd:HWND; WndProc:TWNDPROC; uMsg:uint; wParam:WPARAM; lParam:LPARAM ):LRESULT; stdcall;
-                       external CoreDLL name 'mir_callNextSubclass';
+                 external CoreDLL name 'mir_callNextSubclass';
 procedure mir_unsubclassWindow(Wnd:HWND; WndProc:TWNDPROC); stdcall;
-                       external CoreDLL name 'mir_unsubclassWindow';
+                 external CoreDLL name 'mir_unsubclassWindow';
 
 procedure KillModuleSubclassing(hInst: HMODULE);
                        external CoreDLL name 'KillModuleSubclassing';
 
 ///////////////////////////////////////////////////////////////////////////////
+// Windows utilities
 
 function IsWinVerVistaPlus():bool; stdcall;
                  external CoreDLL name 'IsWinVerVistaPlus';

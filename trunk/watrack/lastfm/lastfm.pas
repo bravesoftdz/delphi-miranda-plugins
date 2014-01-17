@@ -116,7 +116,7 @@ begin
       mi.flags :=CMIM_FLAGS+flag;
       CallService(MS_CLIST_MODIFYMENUITEM,hMenuLast,tlparam(@mi));
     end;
-    
+
     WAT_EVENT_PLAYERSTATUS: begin
       case Integer(loword(lParam)) of
         WAT_PLS_NOMUSIC,WAT_PLS_NOTFOUND: begin
@@ -200,7 +200,7 @@ begin
   sid.szDescription.a:='LastFM';
   Skin_AddIcon(@sid);
   DestroyIcon(sid.hDefaultIcon);
-  
+
   FillChar(mi, sizeof(mi), 0);
   mi.cbSize       :=sizeof(mi);
   mi.szPopupName.a:=PluginShort;
@@ -289,7 +289,7 @@ begin
   last.Next      :=ModuleLink;
   last.Init      :=@InitProc;
   last.DeInit    :=@DeInitProc;
-  last.AddOption:=@AddOptionsPage;
+  last.AddOption :=@AddOptionsPage;
   last.Check     :=nil;
   last.ModuleName:='Last.FM';
   ModuleLink     :=@last;

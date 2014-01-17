@@ -134,7 +134,6 @@ type
 	//////////////////////////////////////////////////////////////////////////////////////
 	// Virtual functions
 
-    
     AddToList       :function(intf:PPROTO_INTERFACE;flags:int; var psr:TPROTOSEARCHRESULT):THANDLE; cdecl;
     AddToListByEvent:function(intf:PPROTO_INTERFACE;flags:int; iContact:int; hDbEvent:THANDLE):THANDLE; cdecl;
 

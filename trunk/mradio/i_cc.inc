@@ -21,7 +21,7 @@ var
   p:pWideChar;
 begin
   astrlen:=StrLenW(artist);
-  
+
   tstrlen:=0;
   // if need to remove duplicate
   if (title<>nil) and (title^<>#0) then
@@ -159,7 +159,7 @@ begin
               if PlayFirst=BST_UNCHECKED then
                 plist.Track:=DBReadWord(ActiveContact,PluginName,optCurElement);
             end;
-            
+
             mFreeMem(ActiveURLw);
             ActiveURLw:=plist.GetSong;
           end;
@@ -425,7 +425,7 @@ begin
         mFreeMem(artist);
         mFreeMem(title);
       end;
-      
+
       NotifyEventHooks(hhRadioStatus,code,arg);
     end;
 
