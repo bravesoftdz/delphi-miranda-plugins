@@ -190,7 +190,7 @@ begin
   if NumTries<1 then NumTries:=1;
 
   SetStatus(0,ID_STATUS_OFFLINE);
-  
+
   StatusTmpl:=DBReadUnicode(0,PluginName,optStatusTmpl,'%radio_title%');
 
   CallService(MS_RADIO_COMMAND,MRC_STATUS,RD_STATUS_NOSTATION);

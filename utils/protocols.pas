@@ -460,7 +460,7 @@ begin
       StrCopy(p,PS_SET_LISTENINGTO);
       if ServiceExists(buf)<>0 then
         status:=status or psf_tunes;
-        
+
     end;
     inc(proto);
   end;
@@ -479,7 +479,7 @@ begin
         dec(i);
       end;
 
-      hContact:=db_find_first(hContact);
+      hContact:=db_find_next(hContact);
     end;
   end;
 }

@@ -46,31 +46,31 @@ implementation
 uses common;
 
 function DBReadByte(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;default:byte=0):byte;
-{$IFDEF AllowInline}inline;{$ENDIF}
+  {$IFDEF AllowInline}inline;{$ENDIF}
 begin
   result:=db_get_b(hContact, szModule, szSetting, default);
 end;
 
 function DBReadWord(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;default:word=0):word;
-{$IFDEF AllowInline}inline;{$ENDIF}
+  {$IFDEF AllowInline}inline;{$ENDIF}
 begin
   result:=db_get_w(hContact, szModule, szSetting, default);
 end;
 
 function DBReadDWord(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;default:dword=0):dword;
-{$IFDEF AllowInline}inline;{$ENDIF}
+  {$IFDEF AllowInline}inline;{$ENDIF}
 begin
   result:=db_get_dw(hContact, szModule, szSetting, default);
 end;
 
 function DBReadSetting(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;dbv:PDBVARIANT):int_ptr;
-{$IFDEF AllowInline}inline;{$ENDIF}
+  {$IFDEF AllowInline}inline;{$ENDIF}
 begin
   result:=db_get(hContact, szModule, szSetting, dbv);
 end;
 
 function DBReadSettingStr(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;dbv:PDBVARIANT):int_ptr;
-{$IFDEF AllowInline}inline;{$ENDIF}
+  {$IFDEF AllowInline}inline;{$ENDIF}
 begin
   result:=db_get_s(hContact, szModule, szSetting, dbv, DBVT_ASCIIZ);
 end;
@@ -110,7 +110,7 @@ begin
 end;
 
 function DBReadUTF8(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;default:PAnsiChar=nil):PAnsiChar;
-{$IFDEF AllowInline}inline;{$ENDIF}
+  {$IFDEF AllowInline}inline;{$ENDIF}
 begin
   result:=DBReadString(hContact,szModule,szSetting,default,DBVT_UTF8);
 end;
@@ -156,56 +156,56 @@ end;
 
 function DBWriteStruct(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;
          ptr:pointer;size:dword):Integer;
-{$IFDEF AllowInline}inline;{$ENDIF}
+  {$IFDEF AllowInline}inline;{$ENDIF}
 begin
   result:=db_set_blob(hContact, szModule, szSetting, ptr, size);
 end;
 
 function DBWriteSetting(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;dbv:PDBVARIANT):int_ptr;
-{$IFDEF AllowInline}inline;{$ENDIF}
+  {$IFDEF AllowInline}inline;{$ENDIF}
 begin
   Result:=db_set(hContact, szModule, szSetting, dbv);
 end;
 
 function DBWriteByte(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:Byte):int_ptr;
-{$IFDEF AllowInline}inline;{$ENDIF}
+  {$IFDEF AllowInline}inline;{$ENDIF}
 begin
   result:=db_set_b(hContact, szModule, szSetting, val);
 end;
 
 function DBWriteWord(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:Word):int_ptr;
-{$IFDEF AllowInline}inline;{$ENDIF}
+  {$IFDEF AllowInline}inline;{$ENDIF}
 begin
   result:=db_set_w(hContact, szModule, szSetting, val);
 end;
 
 function DBWriteDWord(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:dword):int_ptr;
-{$IFDEF AllowInline}inline;{$ENDIF}
+  {$IFDEF AllowInline}inline;{$ENDIF}
 begin
   result:=db_set_dw(hContact, szModule, szSetting, val);
 end;
 
 function DBWriteString(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;
          val:PAnsiChar;enc:integer=DBVT_ASCIIZ):int_ptr;
-{$IFDEF AllowInline}inline;{$ENDIF}
+  {$IFDEF AllowInline}inline;{$ENDIF}
 begin
   result:=db_set_s(hContact, szModule, szSetting, val);
 end;
 
 function DBWriteUTF8(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:PAnsiChar):int_ptr;
-{$IFDEF AllowInline}inline;{$ENDIF}
+  {$IFDEF AllowInline}inline;{$ENDIF}
 begin
   result:=db_set_utf(hContact, szModule, szSetting, val);
 end;
 
 function DBWriteUnicode(hContact:THANDLE;szModule:PAnsiChar;szSetting:PAnsiChar;val:PWideChar):int_ptr;
-{$IFDEF AllowInline}inline;{$ENDIF}
+  {$IFDEF AllowInline}inline;{$ENDIF}
 begin
   result:=db_set_ws(hContact, szModule, szSetting, val);
 end;
 
 function DBDeleteSetting(hContact:THandle;szModule:PAnsiChar;szSetting:PAnsiChar):int_ptr;
-{$IFDEF AllowInline}inline;{$ENDIF}
+  {$IFDEF AllowInline}inline;{$ENDIF}
 begin
   result:=db_unset(hContact, szModule, szSetting);
 end;

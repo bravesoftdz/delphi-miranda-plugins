@@ -56,7 +56,7 @@ begin
     if lstorage<>nil then
     begin
       list:=GetSectionList(lstorage);
-      
+
       pc:=list;
       while pc^<>#0 do
       begin
@@ -82,7 +82,7 @@ begin
   pc:=DBReadString(hContact,strCList,optMyHandle);
   WritePrivateProfileStringA(section,'Name',pc,fname);
   mFreeMem(pc);
-          
+
   pc:=DBReadString(hContact,PluginName,optStationURL);
   WritePrivateProfileStringA(section,'URL',pc,fname);
   mFreeMem(pc);
@@ -220,7 +220,7 @@ begin
   SetButtonIcon(ti.uId,IcoBtnAdd);
 
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,lparam(@ti));
-  
+
   ti.uId     :=GetDlgItem(Dialog,IDC_EQ_DEL);
   ti.lpszText:=TranslateW('Delete');
   SetButtonIcon(ti.uId,IcoBtnDel);
@@ -285,7 +285,7 @@ begin
       CheckDlgButton(Dialog,IDC_OFFLINE  ,AsOffline);
 
       SetDlgItemTextW(Dialog,IDC_STATUS,StatusTmpl);
-      
+
       DlgInit:=0;
     end;
 
@@ -324,7 +324,7 @@ begin
             end;
 
             IDC_BN_URLPATH: begin
-   
+
               dst:=ConstructFilter;
               if ShowDlgW(@buf,nil,dst) then
                 SetDlgItemTextW(Dialog,IDC_STATIONURL,@buf);
@@ -980,7 +980,7 @@ begin
       DBWriteString(wParam,PluginName,optBitrate,IntToStr(buf,i));
       exit;
     end;
-    
+
     case value._type of
       DBVT_DELETED,
       DBVT_ASCIIZ ,

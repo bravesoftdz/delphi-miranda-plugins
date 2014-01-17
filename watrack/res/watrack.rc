@@ -72,7 +72,7 @@ FONT 8, "MS Shell Dlg", 0, 0
 {
  GROUPBOX "Switch ON these modules", IDC_MODULEGROUP, 2, 2, 188, 218, WS_TABSTOP
 }
-
+/*
 LANGUAGE 0,0 
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION 0,0,6,12 
@@ -102,3 +102,4 @@ BEGIN
       VALUE "Translation",0,1200 
   END
 END
+*/

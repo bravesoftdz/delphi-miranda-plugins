@@ -109,7 +109,7 @@ const
     ((descr:'Play'               ;name:'WATrack_Play'   ; id:IDI_PLAY_NORMAL),
      (descr:'Play Hovered'       ;name:'WATrack_PlayH'  ; id:IDI_PLAY_HOVERED),
      (descr:'Play Pushed'        ;name:'WATrack_PlayP'  ; id:IDI_PLAY_PRESSED)),
-    
+
     ((descr:'Pause'              ;name:'WATrack_Pause'  ; id:IDI_PAUSE_NORMAL),
      (descr:'Pause Hovered'      ;name:'WATrack_PauseH' ; id:IDI_PAUSE_HOVERED),
      (descr:'Pause Pushed'       ;name:'WATrack_PauseP' ; id:IDI_PAUSE_PRESSED)),

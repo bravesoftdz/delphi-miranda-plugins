@@ -29,9 +29,6 @@ type
 type
   pMyActionItem = ^tMyActionItem;
   tMyActionItem = record
-    flags               :dword;
-    dwActID             :dword;     // action ID
-    wSortIndex          :word;      // list/menu/toolbar order
     // UseActions/Action_ID
     szNameID            :pAnsiChar; // uaction ID
     szActDescr          :pWideChar; // action name
@@ -50,6 +47,10 @@ type
     lastContact         :THANDLE;   // for contact menu
     hMenuService        :THANDLE;   // common menu service
     UAMenuItem          :array [tMenuType] of tUAMenuItem;
+    // moved to the end for better align
+    flags               :dword;
+    dwActID             :dword;     // action ID
+    wSortIndex          :word;      // list/menu/toolbar order
   end;
 
 const

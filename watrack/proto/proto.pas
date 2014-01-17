@@ -233,7 +233,7 @@ begin
   isNewRequest:=StrCmp(PPROTORECVEVENT(ccs^.lParam)^.szMessage.a,
      wpRequestNew,Length(wpRequestNew))=0;
 
-  if isNewRequest or 
+  if isNewRequest or
      (StrCmp(PPROTORECVEVENT(ccs^.lParam)^.szMessage.a,
              wpRequest,Length(wpRequest))=0) then
   begin

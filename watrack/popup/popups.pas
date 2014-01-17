@@ -261,7 +261,7 @@ begin
           StrCopyW(ppdu^.lpwzContactName,title,MAX_CONTACTNAME-1);
           lpwzText[0]:=' ';
         end;
-        
+
         lchIcon         :=Icon;
         PluginWindowProc:=@DumbPopupDlgProc;
         iSeconds        :=sec;

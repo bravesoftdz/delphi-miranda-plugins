@@ -31,10 +31,8 @@ const MIID_CLIST         :MUUID='{9D8DA8BF-665B-4908-9E61-9F7598AE330E}';
 const MIID_CHAT          :MUUID='{23576A43-3A26-4357-9B1B-4A719E425D48}';
 const MIID_SRMM          :MUUID='{58C7EEA6-F9DB-4DD9-8036-AE802BC0414C}';
 const MIID_IMPORT        :MUUID='{5F3BCAD4-75F8-476E-B36B-2B307032490C}';
-const MIID_IMGSERVICES   :MUUID='{F3974915-C9D5-4C87-8564-A0EBF9D25AA0}';
 const MIID_TESTPLUGIN    :MUUID='{53B974F4-3C74-4DBA-8FC2-6F92FE013B8C}';
 
-// Common plugin interfaces (non-core plugins)
 {
  Special exception interface for protocols.
    This interface allows more than one plugin to implement it at the same time
