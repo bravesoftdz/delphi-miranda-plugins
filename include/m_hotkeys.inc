@@ -40,13 +40,6 @@ type
   PHOTKEYDESC = ^THOTKEYDESC;
 
 const
-  {$IFNDEF Win64}
-  HOTKEYDESC_SIZE_V1 = 7*SizeOf(dword); //(offsetof(HOTKEYDESC, dwFlags))
-  {$ELSE}
-  HOTKEYDESC_SIZE_V1 = SizeOf(HOTKEYDESC);
-  {$ENDIF}
-
-const
   HKF_MIRANDA_LOCAL = $8000;
 
 { use this macro to defile hotkey codes like this:
