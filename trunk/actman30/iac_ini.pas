@@ -158,6 +158,7 @@ begin
           else
             AnsiToWide(buf,pWideChar(WorkData.LastResult),MirandaCP);
           WorkData.ResultType:=rtWide;
+          mFreeMem(buf);
         end;
 
         mFreeMem(ainifile);
