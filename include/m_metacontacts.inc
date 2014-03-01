@@ -22,14 +22,10 @@
 {$DEFINE M_METACONTACTS}
 
 const
-  { get the handle for a contact's parent metacontact
-    wParam=(HANDLE)hSubContact
-    lParam=0
-    returns a handle to the parent metacontact, or null if this contact is not
-    a subcontact
-  }
-  MS_MC_GETMETACONTACT = 'MetaContacts/GetMeta';
+// standard module for all mc-related information
+  META_PROTO = 'MetaContacts';
 
+const
   { gets the handle for the default contact
     wParam=(HANDLE)hMetaContact
     lParam=0
@@ -39,7 +35,7 @@ const
   { gets the contact number for the default contact
     wParam=(HANDLE)hMetaContact
     lParam=0
-    returns a DWORD contact number, or -1 on failure }
+    returns a dword contact number, or -1 on failure }
   MS_MC_GETDEFAULTCONTACTNUM = 'MetaContacts/GetDefaultNum';
 
   { gets the handle for the 'most online' contact
@@ -51,18 +47,18 @@ const
   { gets the number of subcontacts for a metacontact
     wParam=(HANDLE)hMetaContact
     lParam=0
-    returns a DWORD representing the number of subcontacts for the given metacontact }
+    returns a dword representing the number of subcontacts for the given metacontact }
   MS_MC_GETNUMCONTACTS = 'MetaContacts/GetNumContacts';
 
   { gets the handle of a subcontact, using the subcontact's number
     wParam=(HANDLE)hMetaContact
-    lParam=(DWORD)contact number
+    lParam=(dword)contact number
     returns a handle to the specified subcontact }
   MS_MC_GETSUBCONTACT = 'MetaContacts/GetSubContact';
 
   { sets the default contact, using the subcontact's contact number
     wParam=(HANDLE)hMetaContact
-    lParam=(DWORD)contact number
+    lParam=(dword)contact number
     returns 0 on success }
   MS_MC_SETDEFAULTCONTACTNUM = 'MetaContacts/SetDefault';
 
@@ -74,7 +70,7 @@ const
 
   { forces the metacontact to send using a specific subcontact, using the subcontact's contact number
     wParam=(HANDLE)hMetaContact
-    lParam=(DWORD)contact number
+    lParam=(dword)contact number
     returns 0 on success }
   MS_MC_FORCESENDCONTACTNUM = 'MetaContacts/ForceSendContact';
 
@@ -100,9 +96,9 @@ const
 
   { method to get state of 'force' for a metacontact
     wParam=(HANDLE)hMetaContact
-    lParam= (DWORD)&contact_number or NULL
+    lParam= (dword)&contact_number or NULL
     if lparam supplied, the contact_number of the contatct 'in force' will be copied to the address it points to,
-    or if none is in force, the value (DWORD)-1 will be copied
+    or if none is in force, the value (dword)-1 will be copied
     (v0.8.0.8+ returns 1 if 'force default' is true with *lParam == default contact number, else returns 0 with *lParam as above) }
   MS_MC_GETFORCESTATE = 'MetaContacts/GetForceState';
 
@@ -128,34 +124,26 @@ const
     lParam=0  }
   ME_MC_UNFORCESEND = 'MetaContacts/UnforceSend';
 
-  { method to get protocol name - used to be sure you're dealing with a "real" metacontacts plugin :)
-    wParam=lParam=0 }
-  MS_MC_GETPROTOCOLNAME = 'MetaContacts/GetProtoName';
-
-  { added 0.9.5.0 (22/3/05)
-    wParam=(HANDLE)hContact
+  { wParam=(HANDLE)hContact
     lParam=0
     convert a given contact into a metacontact
   }
   MS_MC_CONVERTTOMETA = 'MetaContacts/ConvertToMetacontact';
 
-  { added 0.9.5.0 (22/3/05)
-    wParam=(HANDLE)hContact
+  { wParam=(HANDLE)hContact
     lParam=(HANDLE)hMeta
     add an existing contact to a metacontact
   }
   MS_MC_ADDTOMETA = 'MetaContacts/AddToMetacontact';
 
-  { added 0.9.5.0 (22/3/05)
-    wParam=0
+  { wParam=0
     lParam=(HANDLE)hContact
     remove a contact from a metacontact
   }
   MS_MC_REMOVEFROMMETA = 'MetaContacts/RemoveFromMetacontact';
 
 
-  { added 0.9.13.2 (6/10/05)
-    wParam=(BOOL)disable
+  { wParam=(bool)disable
     lParam=0
     enable/disable the 'hidden group hack' - for clists that support subcontact
     hiding using 'IsSubcontact' setting. Should be called once in the clist
@@ -164,5 +152,21 @@ const
     hiding is usually done)
   }
   MS_MC_DISABLEHIDDENGROUP = 'MetaContacts/DisableHiddenGroup';
+
+
+{ returns true if a contact is a metacontact or false otherwise
+}
+function db_mc_isMeta(hContact:TMCONTACT):int; stdcall;
+                 external CoreDLL name 'db_mc_isMeta';
+
+{ returns true if a contact is a subcontact or false otherwise
+}
+function db_mc_isSub(hContact:TMCONTACT):int; stdcall;
+                 external CoreDLL name 'db_mc_isSub';
+
+{ returns a meta contact for a subcontact or 0 otherwise
+}
+function db_mc_getMeta(hContact:TMCONTACT):TMCONTACT; stdcall;
+                 external CoreDLL name 'db_mc_getMeta';
 
 {$ENDIF}

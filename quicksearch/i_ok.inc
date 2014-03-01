@@ -209,7 +209,7 @@ begin
 
 end;
 
-function DoMeta(hContact:THANDLE):pointer;
+function DoMeta(hContact:TMCONTACT):pointer;
 var
   pw:pWideChar;
   i:integer;
@@ -233,7 +233,7 @@ begin
         end
         else if (flags and QSF_SUBMETA)<>0 then
         begin
-          lparam:=FindMeta(CallService(MS_MC_GETMETACONTACT,hContact,0),wparam);
+          lparam:=FindMeta(db_mc_getMeta(hContact),wparam);
         end;
 
         if wparam>0 then
@@ -433,7 +433,7 @@ end;
 
 //----- Initial table filling -----
 
-procedure AddContact(num:integer;hContact:THANDLE);
+procedure AddContact(num:integer;hContact:TMCONTACT);
 var
   col:pcolumnitem;
   tmpstr:array [0..63] of AnsiChar;
@@ -476,7 +476,7 @@ end;
 function PrepareToFill:boolean;
 var
   cnt,cnt1:integer;
-  hContact:THANDLE;
+  hContact:TMCONTACT;
   i:integer;
 begin
   result:=false;

@@ -10,39 +10,39 @@ type
   PMIRANDAJUMPLISTITEM = ^TMIRANDAJUMPLISTITEM;
   TMIRANDAJUMPLISTITEM = record
     iconSource:int;
-    iconName  :pAnsiChar;
+    iconName  :PAnsiChar;
     iconIdx   :int;
-    szTitle   :pWideChar;
-    szPrefix  :pWideChar;
-    szArgument:pWideChar;
+    szTitle   :PWideChar;
+    szPrefix  :PWideChar;
+    szArgument:PWideChar;
   end;
 
 const
 // Force jumplist rebuild
-  MS_JUMPLIST_REBUILD:pAnsiChar = 'w7/JumpList/Rebuild';
+  MS_JUMPLIST_REBUILD:PAnsiChar = 'w7/JumpList/Rebuild';
 
 // ---
-  ME_JUMPLIST_BUILDCATEGORIES:pAnsiChar = 'w7/JumpList/BuildCategories';
+  ME_JUMPLIST_BUILDCATEGORIES:PAnsiChar = 'w7/JumpList/BuildCategories';
 
 // lParam = (WCHAR *)category name
-  ME_JUMPLIST_BUILDITEMS:pAnsiChar = 'w7/JumpList/BuildItems';
+  ME_JUMPLIST_BUILDITEMS:PAnsiChar = 'w7/JumpList/BuildItems';
 
 // lParam = (WCHAR *)category name
-  MS_JUMPLIST_ADDCATEGORY:pAnsiChar = 'w7/JumpList/AddCategory';
+  MS_JUMPLIST_ADDCATEGORY:PAnsiChar = 'w7/JumpList/AddCategory';
 
 // lParam = (MIRANDAJUMPLISTITEM *)item
-  MS_JUMPLIST_ADDITEM:pAnsiChar = 'w7/JumpList/AddItem';
+  MS_JUMPLIST_ADDITEM:PAnsiChar = 'w7/JumpList/AddItem';
 
 // wParam = prefix
 // lParam = argument
-  ME_JUMPLIST_PROCESS:pAnsiChar = 'w7/JumpList/Process';
+  ME_JUMPLIST_PROCESS:PAnsiChar = 'w7/JumpList/Process';
 
-procedure MJumpList_AddCategory(name:pWideChar);
+procedure MJumpList_AddCategory(name:PWideChar);
 begin
 	CallService(MS_JUMPLIST_ADDCATEGORY, 0, LPARAM(name));
 end;
 
-procedure MJumpList_AddItem(mir_icon:pAnsiChar; title, prefix, argument:pWideChar); overload;
+procedure MJumpList_AddItem(mir_icon:PAnsiChar; title, prefix, argument:PWideChar); overload;
 var
   item:TMIRANDAJUMPLISTITEM;
 begin
@@ -55,7 +55,7 @@ begin
 	CallService(MS_JUMPLIST_ADDITEM, 0, LPARAM(@item));
 end;
 
-procedure MJumpList_AddItem(skinicon:int; title, prefix, argument:pWideChar); overload;
+procedure MJumpList_AddItem(skinicon:int; title, prefix, argument:PWideChar); overload;
 var
   item:TMIRANDAJUMPLISTITEM;
 begin
@@ -68,7 +68,7 @@ begin
 	CallService(MS_JUMPLIST_ADDITEM, 0, LPARAM(@item));
 end;
 
-procedure MJumpList_AddItem(proto:pansiChar; skinicon:int; title, prefix, argument:pWideChar); overload;
+procedure MJumpList_AddItem(proto:pansiChar; skinicon:int; title, prefix, argument:PWideChar); overload;
 var
   item:TMIRANDAJUMPLISTITEM;
 begin

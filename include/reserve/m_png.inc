@@ -57,7 +57,7 @@ type
   PPNG2DIB = ^TPNG2DIB;
   TPNG2DIB = record
     pSource      : PBYTE;
-    cbSourceSize : DWORD;
+    cbSourceSize : dword;
     pResult      : ^PBITMAPINFOHEADER;
   end;
 

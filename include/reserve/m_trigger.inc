@@ -82,7 +82,7 @@ const
 
 // Parameters:
 // ------------------------
-// lParam = (LPARAM)(DWORD)triggerID
+// lParam = (LPARAM)(dword)triggerID
 //   The trigger ID for which the options are to be set. This can be a new ID
 //   or an ID of a trigger which is being edited. Initialize your options
 //   dialog accordingly. There are helper function at the end of this header
@@ -96,7 +96,7 @@ const
 
 // Parameters:
 // ------------------------
-// wParam = (WPARAM)(DWORD)triggerID
+// wParam = (WPARAM)(dword)triggerID
 //   The trigger ID for which the settings are to be stored. There are helper
 //   function at the end of this header file to store your settings with a 
 //   certain trigger ID.
@@ -109,7 +109,7 @@ const
 
 // Parameters:
 // ------------------------
-// wParam = (WPARAM)(DWORD)triggerID
+// wParam = (WPARAM)(dword)triggerID
 //   The trigger ID for which the settings are to be removed. There is a
 //   helper service at the end of this header file to easily cleanup settings
 //   for a certain trigger ID.
@@ -134,7 +134,7 @@ const
 
 // Parameters:
 // ------------------------
-// wParam = (WPARAM)(DWORD)triggerID
+// wParam = (WPARAM)(dword)triggerID
 //   0 to retrieve the first trigger ID for your trigger or the previous ID
 //   returned by this service to get the next one.
 // lParam = 0
@@ -181,7 +181,7 @@ type
   PREPORTINFO = ^TREPORTINFO;
   TREPORTINFO = record
     cbSize   :int;          // Set to sizeof(REPORTINFO).
-    triggerID:DWORD;        // The trigger ID of the event to trigger or 0 if
+    triggerID:dword;        // The trigger ID of the event to trigger or 0 if
                             // this does not apply.
     pszName  :PAnsiChar;        // The name of the trigger (this may be NULL if
                             // triggerID is not 0).
@@ -224,7 +224,7 @@ type
     cbSize     :int;      // Set to sizeof(ACTIONREGISTER).
     pszName    :PAnsiChar;    // The name of this action, it must be a unique string.
     pszService :PAnsiChar;    // A service (called with wParam = 
-                          // (WPARAM)(DWORD)actionID, lParam = 
+                          // (WPARAM)(dword)actionID, lParam = 
                           // (LPARAM)(REPORTINFO *)&ri) or function to be called
                           // when the action has to be performed.
 // or actionFunction: function (actionID:dword; ri:PREPORTINFO):int;
@@ -265,7 +265,7 @@ const
 
 // Parameters:
 // ------------------------
-// lParam = (LPARAM)(DWORD)actionID
+// lParam = (LPARAM)(dword)actionID
 //   The action ID for which the options are to be set. This can be a new ID
 //   or an ID of an action which is being edited. Initialize your options
 //   dialog accordingly. There are helper function at the end of this header
@@ -280,7 +280,7 @@ const
 
 // Parameters:
 // ------------------------
-// wParam = (WPARAM)(DWORD)actionID
+// wParam = (WPARAM)(dword)actionID
 //   The action ID for which the settings are to be saved. There are helper
 //   functions at the end of this header file to store settings with a certain
 //   action ID.
@@ -340,7 +340,7 @@ type
   TCONDITIONREGISTER = record
     cbSize     :int;       // Set to sizeof(CONDITIONREGISTER).
     pszName    :PAnsiChar;     // The name identifying this condition, must be unique.
-    pszService :PAnsiChar;     // The service (wParam = (WPARAM)(DWORD)conditionID,
+    pszService :PAnsiChar;     // The service (wParam = (WPARAM)(dword)conditionID,
                            // lParam = (LPARAM)(REPORTINFO *)&ri) or function which
                            // is called to see whether the condition holds. Must
                            // return CRV_TRUE if the condition holds, CRV_FALSE
@@ -400,7 +400,7 @@ const
 
 // Parameters:
 // ------------------------
-// lParam = (LPARAM)(DWORD)conditionID
+// lParam = (LPARAM)(dword)conditionID
 //   The condition ID for which the options are to be set. This can be a new ID
 //   or an ID of a condition which is being edited. Initialize your options
 //   dialog accordingly. There are helper function at the end of this header
@@ -415,7 +415,7 @@ const
 
 // Parameters:
 // ------------------------
-// wParam = (WPARAM)(DWORD)conditionID
+// wParam = (WPARAM)(dword)conditionID
 //   The condition ID for which the settings are to be saved. There are helper
 //   functions at the end of this header file to store settings with a certain
 //   condition ID.
@@ -434,7 +434,7 @@ const
 
 // Parameters:
 // ------------------------
-// wParam = (WPARAM)(DWORD)triggerID
+// wParam = (WPARAM)(dword)triggerID
 //   The triggerID to set or get the state from or 0 for the global state.
 // lParam = (LPARAM)(int)type
 //   One of ETT_* (see below).
@@ -480,7 +480,7 @@ type
     cbSize  :int;     // Set to sizeof(REMOVETRIGGERSETTINGS).
     prefix  :PAnsiChar;   // A string indicating what kind of setting are to be
                       // removed, see below.
-    id      :DWORD;   // The ID of the set of settings to be removed.
+    id      :dword;   // The ID of the set of settings to be removed.
     szModule:PAnsiChar;   // The module where the settings are stored.
     hContact:THANDLE; // The contact for which the setting are to be removed. Can
                       // be INVALID_HANDLE_VALUE to remove the settings for all
@@ -503,7 +503,7 @@ const
 // ------------------------
 // Remove all settings from the DB given the triggerID and module.
 
-static __inline int RemoveAllTriggerSettings(DWORD triggerID, AnsiChar *szModule) {
+static __inline int RemoveAllTriggerSettings(dword triggerID, AnsiChar *szModule) {
 
   REMOVETRIGGERSETTINGS rts;
 
@@ -520,7 +520,7 @@ static __inline int RemoveAllTriggerSettings(DWORD triggerID, AnsiChar *szModule
 // ------------------------
 // Remove all settings from the DB given the actionID and module.
 
-static __inline int RemoveAllActionSettings(DWORD actionID, AnsiChar *szModule) {
+static __inline int RemoveAllActionSettings(dword actionID, AnsiChar *szModule) {
 
   REMOVETRIGGERSETTINGS rts;
 
@@ -537,7 +537,7 @@ static __inline int RemoveAllActionSettings(DWORD actionID, AnsiChar *szModule) 
 // ------------------------
 // Remove all settings from the DB given the conditionID and module.
 
-static __inline int RemoveAllConditionSettings(DWORD conditionID, AnsiChar *szModule) {
+static __inline int RemoveAllConditionSettings(dword conditionID, AnsiChar *szModule) {
 
   REMOVETRIGGERSETTINGS rts;
 
@@ -558,17 +558,17 @@ static __inline int RemoveAllConditionSettings(DWORD conditionID, AnsiChar *szMo
 // getting/setting DB settings. There is one extra parameter, the ID for the
 // trigger/action/condition. The settings are named as follows:
 
-// DBWriteTriggerSetting*(DWORD triggerID, ...) to write a setting given a
+// DBWriteTriggerSetting*(dword triggerID, ...) to write a setting given a
 // trigger ID.
-// DBGetTriggerSetting*(DWORD triggerID, ...) to read a setting given a
+// DBGetTriggerSetting*(dword triggerID, ...) to read a setting given a
 // trigger ID.
-// DBWriteActionSetting*(DWORD actionID, ...) to write a setting given an
+// DBWriteActionSetting*(dword actionID, ...) to write a setting given an
 // action ID.
-// DBGetActionSetting*(DWORD actionID, ...) to read a setting given an
+// DBGetActionSetting*(dword actionID, ...) to read a setting given an
 // action ID.
-// DBWriteConditionSetting*(DWORD conditionID, ...) to write a setting given a
+// DBWriteConditionSetting*(dword conditionID, ...) to write a setting given a
 // condition ID.
-// DBGetConditionSetting*(DWORD conditionID, ...) to read a setting given a
+// DBGetConditionSetting*(dword conditionID, ...) to read a setting given a
 // condition ID.
 
 #define MAX_SETTING_LEN  255  // Max. length of a DB setting including the
@@ -578,7 +578,7 @@ static __inline int RemoveAllConditionSettings(DWORD conditionID, AnsiChar *szMo
 // Database Helper Functions: Triggers
 // --------------------------------------------------------------------------
 
-static int __inline DBWriteTriggerSettingByte(DWORD triggerID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,BYTE val) {
+static int __inline DBWriteTriggerSettingByte(dword triggerID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,BYTE val) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -586,7 +586,7 @@ static int __inline DBWriteTriggerSettingByte(DWORD triggerID, HANDLE hContact,c
 	return DBWriteContactSettingByte(hContact, szModule, dbSetting, val);
 }
 
-static int __inline DBWriteTriggerSettingWord(DWORD triggerID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,WORD val) {
+static int __inline DBWriteTriggerSettingWord(dword triggerID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,word val) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -594,7 +594,7 @@ static int __inline DBWriteTriggerSettingWord(DWORD triggerID, HANDLE hContact,c
 	return DBWriteContactSettingWord(hContact, szModule, dbSetting, val);
 }
 
-static int __inline DBWriteTriggerSettingDword(DWORD triggerID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,DWORD val) {
+static int __inline DBWriteTriggerSettingDword(dword triggerID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,dword val) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -602,7 +602,7 @@ static int __inline DBWriteTriggerSettingDword(DWORD triggerID, HANDLE hContact,
 	return DBWriteContactSettingDword(hContact, szModule, dbSetting, val);
 }
 
-static int __inline DBWriteTriggerSettingString(DWORD triggerID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const AnsiChar *val) {
+static int __inline DBWriteTriggerSettingString(dword triggerID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const AnsiChar *val) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -610,7 +610,7 @@ static int __inline DBWriteTriggerSettingString(DWORD triggerID, HANDLE hContact
 	return DBWriteContactSettingString(hContact, szModule, dbSetting, val);
 }
 
-static int __inline DBWriteTriggerSettingTString(DWORD triggerID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const TCHAR *val) {
+static int __inline DBWriteTriggerSettingTString(dword triggerID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const TCHAR *val) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -618,7 +618,7 @@ static int __inline DBWriteTriggerSettingTString(DWORD triggerID, HANDLE hContac
 	return DBWriteContactSettingTString(hContact, szModule, dbSetting, val);
 }
 
-static int __inline DBWriteTriggerSettingWString(DWORD triggerID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const WCHAR *val) {
+static int __inline DBWriteTriggerSettingWString(dword triggerID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const WCHAR *val) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -626,7 +626,7 @@ static int __inline DBWriteTriggerSettingWString(DWORD triggerID, HANDLE hContac
 	return DBWriteContactSettingWString(hContact, szModule, dbSetting, val);
 }
 
-static int __inline DBWriteTriggerSettingStringUtf(DWORD triggerID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const AnsiChar *val) {
+static int __inline DBWriteTriggerSettingStringUtf(dword triggerID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const AnsiChar *val) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -634,7 +634,7 @@ static int __inline DBWriteTriggerSettingStringUtf(DWORD triggerID, HANDLE hCont
 	return DBWriteContactSettingStringUtf(hContact, szModule, dbSetting, val);
 }
 
-static int __inline DBGetTriggerSettingByte(DWORD triggerID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, int errorValue) {
+static int __inline DBGetTriggerSettingByte(dword triggerID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, int errorValue) {
 
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
@@ -643,7 +643,7 @@ static int __inline DBGetTriggerSettingByte(DWORD triggerID, HANDLE hContact, co
 	return DBGetContactSettingByte(hContact, szModule, dbSetting, errorValue);
 }
 
-static WORD __inline DBGetTriggerSettingWord(DWORD triggerID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, int errorValue) {
+static word __inline DBGetTriggerSettingWord(dword triggerID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, int errorValue) {
 
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
@@ -652,7 +652,7 @@ static WORD __inline DBGetTriggerSettingWord(DWORD triggerID, HANDLE hContact, c
 	return DBGetContactSettingWord(hContact, szModule, dbSetting, errorValue);
 }
 
-static DWORD __inline DBGetTriggerSettingDword(DWORD triggerID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, int errorValue) {
+static dword __inline DBGetTriggerSettingDword(dword triggerID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, int errorValue) {
 
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
@@ -661,7 +661,7 @@ static DWORD __inline DBGetTriggerSettingDword(DWORD triggerID, HANDLE hContact,
 	return DBGetContactSettingDword(hContact, szModule, dbSetting, errorValue);
 }
 
-static int __inline DBGetTriggerSetting(DWORD triggerID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, DBVARIANT *dbv) {
+static int __inline DBGetTriggerSetting(dword triggerID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, DBVARIANT *dbv) {
 
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
@@ -670,7 +670,7 @@ static int __inline DBGetTriggerSetting(DWORD triggerID, HANDLE hContact, const 
 	return DBGetContactSetting(hContact, szModule, dbSetting, dbv);
 }
 
-static int __inline DBGetTriggerSettingW(DWORD triggerID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
+static int __inline DBGetTriggerSettingW(dword triggerID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -678,7 +678,7 @@ static int __inline DBGetTriggerSettingW(DWORD triggerID, HANDLE hContact,const 
 	return DBGetContactSettingW(hContact, szModule, dbSetting, dbv);
 }
 
-static int __inline DBGetTriggerSettingTString(DWORD triggerID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
+static int __inline DBGetTriggerSettingTString(dword triggerID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -686,7 +686,7 @@ static int __inline DBGetTriggerSettingTString(DWORD triggerID, HANDLE hContact,
 	return DBGetContactSettingTString(hContact, szModule, dbSetting, dbv);
 }
 
-static int __inline DBGetTriggerSettingWString(DWORD triggerID, HANDLE hContact,const AnsiChar *szModule,	const AnsiChar *szSetting,DBVARIANT *dbv) {
+static int __inline DBGetTriggerSettingWString(dword triggerID, HANDLE hContact,const AnsiChar *szModule,	const AnsiChar *szSetting,DBVARIANT *dbv) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -694,7 +694,7 @@ static int __inline DBGetTriggerSettingWString(DWORD triggerID, HANDLE hContact,
 	return DBGetContactSettingWString(hContact, szModule, dbSetting, dbv);
 }
 
-static int __inline DBGetTriggerSettingStringUtf(DWORD triggerID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
+static int __inline DBGetTriggerSettingStringUtf(dword triggerID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -702,7 +702,7 @@ static int __inline DBGetTriggerSettingStringUtf(DWORD triggerID, HANDLE hContac
 	return DBGetContactSettingStringUtf(hContact, szModule, dbSetting, dbv);
 }
 
-static int __inline DBDeleteTriggerSetting(DWORD triggerID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting) {
+static int __inline DBDeleteTriggerSetting(dword triggerID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -714,7 +714,7 @@ static int __inline DBDeleteTriggerSetting(DWORD triggerID, HANDLE hContact,cons
 // Database Helper Functions: Actions
 // --------------------------------------------------------------------------
 
-static int __inline DBWriteActionSettingByte(DWORD actionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,BYTE val) {
+static int __inline DBWriteActionSettingByte(dword actionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,BYTE val) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -722,7 +722,7 @@ static int __inline DBWriteActionSettingByte(DWORD actionID, HANDLE hContact,con
 	return DBWriteContactSettingByte(hContact, szModule, dbSetting, val);
 }
 
-static int __inline DBWriteActionSettingWord(DWORD actionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,WORD val) {
+static int __inline DBWriteActionSettingWord(dword actionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,word val) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -730,7 +730,7 @@ static int __inline DBWriteActionSettingWord(DWORD actionID, HANDLE hContact,con
 	return DBWriteContactSettingWord(hContact, szModule, dbSetting, val);
 }
 
-static int __inline DBWriteActionSettingDword(DWORD actionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,DWORD val) {
+static int __inline DBWriteActionSettingDword(dword actionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,dword val) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -738,7 +738,7 @@ static int __inline DBWriteActionSettingDword(DWORD actionID, HANDLE hContact,co
 	return DBWriteContactSettingDword(hContact, szModule, dbSetting, val);
 }
 
-static int __inline DBWriteActionSettingString(DWORD actionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const AnsiChar *val) {
+static int __inline DBWriteActionSettingString(dword actionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const AnsiChar *val) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -746,7 +746,7 @@ static int __inline DBWriteActionSettingString(DWORD actionID, HANDLE hContact,c
 	return DBWriteContactSettingString(hContact, szModule, dbSetting, val);
 }
 
-static int __inline DBWriteActionSettingTString(DWORD actionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const TCHAR *val) {
+static int __inline DBWriteActionSettingTString(dword actionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const TCHAR *val) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -754,7 +754,7 @@ static int __inline DBWriteActionSettingTString(DWORD actionID, HANDLE hContact,
 	return DBWriteContactSettingTString(hContact, szModule, dbSetting, val);
 }
 
-static int __inline DBWriteActionSettingWString(DWORD actionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const WCHAR *val) {
+static int __inline DBWriteActionSettingWString(dword actionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const WCHAR *val) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -762,7 +762,7 @@ static int __inline DBWriteActionSettingWString(DWORD actionID, HANDLE hContact,
 	return DBWriteContactSettingWString(hContact, szModule, dbSetting, val);
 }
 
-static int __inline DBWriteActionSettingStringUtf(DWORD actionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const AnsiChar *val) {
+static int __inline DBWriteActionSettingStringUtf(dword actionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const AnsiChar *val) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -770,7 +770,7 @@ static int __inline DBWriteActionSettingStringUtf(DWORD actionID, HANDLE hContac
 	return DBWriteContactSettingStringUtf(hContact, szModule, dbSetting, val);
 }
 
-static int __inline DBGetActionSettingByte(DWORD actionID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, int errorValue) {
+static int __inline DBGetActionSettingByte(dword actionID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, int errorValue) {
 
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
@@ -779,7 +779,7 @@ static int __inline DBGetActionSettingByte(DWORD actionID, HANDLE hContact, cons
 	return DBGetContactSettingByte(hContact, szModule, dbSetting, errorValue);
 }
 
-static WORD __inline DBGetActionSettingWord(DWORD actionID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, int errorValue) {
+static word __inline DBGetActionSettingWord(dword actionID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, int errorValue) {
 
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
@@ -788,7 +788,7 @@ static WORD __inline DBGetActionSettingWord(DWORD actionID, HANDLE hContact, con
 	return DBGetContactSettingWord(hContact, szModule, dbSetting, errorValue);
 }
 
-static DWORD __inline DBGetActionSettingDword(DWORD actionID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, int errorValue) {
+static dword __inline DBGetActionSettingDword(dword actionID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, int errorValue) {
 
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
@@ -797,7 +797,7 @@ static DWORD __inline DBGetActionSettingDword(DWORD actionID, HANDLE hContact, c
 	return DBGetContactSettingDword(hContact, szModule, dbSetting, errorValue);
 }
 
-static int __inline DBGetActionSetting(DWORD actionID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, DBVARIANT *dbv) {
+static int __inline DBGetActionSetting(dword actionID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, DBVARIANT *dbv) {
 
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
@@ -806,7 +806,7 @@ static int __inline DBGetActionSetting(DWORD actionID, HANDLE hContact, const An
 	return DBGetContactSetting(hContact, szModule, dbSetting, dbv);
 }
 
-static int __inline DBGetActionSettingW(DWORD actionID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
+static int __inline DBGetActionSettingW(dword actionID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -814,7 +814,7 @@ static int __inline DBGetActionSettingW(DWORD actionID, HANDLE hContact,const An
 	return DBGetContactSettingW(hContact, szModule, dbSetting, dbv);
 }
 
-static int __inline DBGetActionSettingTString(DWORD actionID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
+static int __inline DBGetActionSettingTString(dword actionID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -822,7 +822,7 @@ static int __inline DBGetActionSettingTString(DWORD actionID, HANDLE hContact,co
 	return DBGetContactSettingTString(hContact, szModule, dbSetting, dbv);
 }
 
-static int __inline DBGetActionSettingWString(DWORD actionID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
+static int __inline DBGetActionSettingWString(dword actionID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -830,7 +830,7 @@ static int __inline DBGetActionSettingWString(DWORD actionID, HANDLE hContact,co
 	return DBGetContactSettingWString(hContact, szModule, dbSetting, dbv);
 }
 
-static int __inline DBGetActionSettingStringUtf(DWORD actionID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
+static int __inline DBGetActionSettingStringUtf(dword actionID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -838,7 +838,7 @@ static int __inline DBGetActionSettingStringUtf(DWORD actionID, HANDLE hContact,
 	return DBGetContactSettingStringUtf(hContact, szModule, dbSetting, dbv);
 }
 
-static int __inline DBDeleteActionSetting(DWORD actionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting) {
+static int __inline DBDeleteActionSetting(dword actionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -850,7 +850,7 @@ static int __inline DBDeleteActionSetting(DWORD actionID, HANDLE hContact,const 
 // Database Helper Functions: Conditions
 // --------------------------------------------------------------------------
 
-static int __inline DBWriteConditionSettingByte(DWORD conditionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,BYTE val) {
+static int __inline DBWriteConditionSettingByte(dword conditionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,BYTE val) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -858,7 +858,7 @@ static int __inline DBWriteConditionSettingByte(DWORD conditionID, HANDLE hConta
 	return DBWriteContactSettingByte(hContact, szModule, dbSetting, val);
 }
 
-static int __inline DBWriteConditionSettingWord(DWORD conditionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,WORD val) {
+static int __inline DBWriteConditionSettingWord(dword conditionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,word val) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -866,7 +866,7 @@ static int __inline DBWriteConditionSettingWord(DWORD conditionID, HANDLE hConta
 	return DBWriteContactSettingWord(hContact, szModule, dbSetting, val);
 }
 
-static int __inline DBWriteConditionSettingDword(DWORD conditionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,DWORD val) {
+static int __inline DBWriteConditionSettingDword(dword conditionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,dword val) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -874,7 +874,7 @@ static int __inline DBWriteConditionSettingDword(DWORD conditionID, HANDLE hCont
 	return DBWriteContactSettingDword(hContact, szModule, dbSetting, val);
 }
 
-static int __inline DBWriteConditionSettingString(DWORD conditionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const AnsiChar *val) {
+static int __inline DBWriteConditionSettingString(dword conditionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const AnsiChar *val) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -882,7 +882,7 @@ static int __inline DBWriteConditionSettingString(DWORD conditionID, HANDLE hCon
 	return DBWriteContactSettingString(hContact, szModule, dbSetting, val);
 }
 
-static int __inline DBWriteConditionSettingTString(DWORD conditionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const TCHAR *val) {
+static int __inline DBWriteConditionSettingTString(dword conditionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const TCHAR *val) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -890,7 +890,7 @@ static int __inline DBWriteConditionSettingTString(DWORD conditionID, HANDLE hCo
 	return DBWriteContactSettingTString(hContact, szModule, dbSetting, val);
 }
 
-static int __inline DBWriteConditionSettingWString(DWORD conditionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const WCHAR *val) {
+static int __inline DBWriteConditionSettingWString(dword conditionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const WCHAR *val) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -898,7 +898,7 @@ static int __inline DBWriteConditionSettingWString(DWORD conditionID, HANDLE hCo
 	return DBWriteContactSettingWString(hContact, szModule, dbSetting, val);
 }
 
-static int __inline DBWriteConditionSettingStringUtf(DWORD conditionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const AnsiChar *val) {
+static int __inline DBWriteConditionSettingStringUtf(dword conditionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting,const AnsiChar *val) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -906,7 +906,7 @@ static int __inline DBWriteConditionSettingStringUtf(DWORD conditionID, HANDLE h
 	return DBWriteContactSettingStringUtf(hContact, szModule, dbSetting, val);
 }
 
-static int __inline DBGetConditionSettingByte(DWORD conditionID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, int errorValue) {
+static int __inline DBGetConditionSettingByte(dword conditionID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, int errorValue) {
 
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
@@ -915,7 +915,7 @@ static int __inline DBGetConditionSettingByte(DWORD conditionID, HANDLE hContact
 	return DBGetContactSettingByte(hContact, szModule, dbSetting, errorValue);
 }
 
-static WORD __inline DBGetConditionSettingWord(DWORD conditionID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, int errorValue) {
+static word __inline DBGetConditionSettingWord(dword conditionID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, int errorValue) {
 
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
@@ -924,7 +924,7 @@ static WORD __inline DBGetConditionSettingWord(DWORD conditionID, HANDLE hContac
 	return DBGetContactSettingWord(hContact, szModule, dbSetting, errorValue);
 }
 
-static DWORD __inline DBGetConditionSettingDword(DWORD conditionID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, int errorValue) {
+static dword __inline DBGetConditionSettingDword(dword conditionID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, int errorValue) {
 
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
@@ -933,7 +933,7 @@ static DWORD __inline DBGetConditionSettingDword(DWORD conditionID, HANDLE hCont
 	return DBGetContactSettingDword(hContact, szModule, dbSetting, errorValue);
 }
 
-static int __inline DBGetConditionSetting(DWORD conditionID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, DBVARIANT *dbv) {
+static int __inline DBGetConditionSetting(dword conditionID, HANDLE hContact, const AnsiChar *szModule, const AnsiChar *szSetting, DBVARIANT *dbv) {
 
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
@@ -942,7 +942,7 @@ static int __inline DBGetConditionSetting(DWORD conditionID, HANDLE hContact, co
 	return DBGetContactSetting(hContact, szModule, dbSetting, dbv);
 }
 
-static int __inline DBGetConditionSettingW(DWORD conditionID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
+static int __inline DBGetConditionSettingW(dword conditionID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -950,7 +950,7 @@ static int __inline DBGetConditionSettingW(DWORD conditionID, HANDLE hContact,co
 	return DBGetContactSettingW(hContact, szModule, dbSetting, dbv);
 }
 
-static int __inline DBGetConditionSettingTString(DWORD conditionID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
+static int __inline DBGetConditionSettingTString(dword conditionID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -958,7 +958,7 @@ static int __inline DBGetConditionSettingTString(DWORD conditionID, HANDLE hCont
 	return DBGetContactSettingTString(hContact, szModule, dbSetting, dbv);
 }
 
-static int __inline DBGetConditionSettingWString(DWORD conditionID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
+static int __inline DBGetConditionSettingWString(dword conditionID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -966,7 +966,7 @@ static int __inline DBGetConditionSettingWString(DWORD conditionID, HANDLE hCont
 	return DBGetContactSettingWString(hContact, szModule, dbSetting, dbv);
 }
 
-static int __inline DBGetConditionSettingStringUtf(DWORD conditionID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
+static int __inline DBGetConditionSettingStringUtf(dword conditionID, HANDLE hContact,const AnsiChar *szModule, const AnsiChar *szSetting,DBVARIANT *dbv) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 
@@ -974,7 +974,7 @@ static int __inline DBGetConditionSettingStringUtf(DWORD conditionID, HANDLE hCo
 	return DBGetContactSettingStringUtf(hContact, szModule, dbSetting, dbv);
 }
 
-static int __inline DBDeleteConditionSetting(DWORD conditionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting) {
+static int __inline DBDeleteConditionSetting(dword conditionID, HANDLE hContact,const AnsiChar *szModule,const AnsiChar *szSetting) {
 
 	AnsiChar dbSetting[MAX_SETTING_LEN];
 

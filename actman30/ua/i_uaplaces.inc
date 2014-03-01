@@ -50,7 +50,7 @@ end;
 
 procedure SetTABState(hContact:THANDLE;const ActionItem:tMyActionItem;pressed:integer);
 var
-  tabb:BBButton;
+  tabb:TBBButton;
   pc:pWideChar;
 begin
   FillChar(tabb,SizeOf(tabb),0);
@@ -463,7 +463,7 @@ begin
 
 end;
 
-function PreBuildMenu(mtype:tMenuType;hContact:THANDLE=0):int;
+function PreBuildMenu(mtype:tMenuType;hContact:TMCONTACT=0):int;
 var
   i:integer;
   mi:TCListMenuItem;
@@ -626,8 +626,8 @@ begin
     if ActionItem.szTTBTooltip =nil then
       pc1:=pc
     else pc1:=ActionItem.szTTBTooltip;
-    
-    if ((ActionItem.flags and UAF_2STATE)=0) or 
+
+    if ((ActionItem.flags and UAF_2STATE)=0) or
        (ActionItem.szTTBTooltipPressed=nil) then
       pc2:=pc1
     else
@@ -703,7 +703,7 @@ const
 
 procedure AddTabBBButton(var ActionItem:tMyActionItem);
 var
-  tabb:BBButton;
+  tabb:TBBButton;
 begin
   if not NamesArray[uaTAB].enable then exit;
 
@@ -736,7 +736,7 @@ end;
 
 procedure DeleteTabBBButton(var ActionItem:tMyActionItem);
 var
-  tabb:BBButton;
+  tabb:TBBButton;
 begin
   if (ActionItem.flags and UAF_TBREGGED)<>0 then
   begin

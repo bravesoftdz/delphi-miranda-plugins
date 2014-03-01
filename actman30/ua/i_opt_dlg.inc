@@ -372,7 +372,7 @@ begin
     li.iItem   :=i;
     li.lParam  :=i;
     li.pszText :=UActionList[i].szActDescr;
-    li.iImage:=ImageList_AddIcon(il,
+    li.iImage:=ImageList_ReplaceIcon(il, -1,
         HICON(CallService(MS_SKIN2_GETICONBYHANDLE,0,LPARAM(UActionList[i].hIcolibIcon))));
     li.iItem   :=SendMessageW(wnd,LVM_INSERTITEMW,0,LPARAM(@li));
 
@@ -405,7 +405,7 @@ begin
     li.mask    :=LVIF_IMAGE;
     li.iSubItem:=0;
     li.iItem   :=i;
-    li.iImage:=ImageList_AddIcon(il,
+    li.iImage:=ImageList_ReplaceIcon(il, -1,
         HICON(CallService(MS_SKIN2_GETICONBYHANDLE,0,TLPARAM(UActionList[i].hIcolibIcon))));
     SendMessageW(wnd,LVM_SETITEM,0,TLPARAM(@li));
   end;
@@ -413,7 +413,7 @@ begin
 //!!refresh?
 end;
 
-function DlgProcOpt(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
+function DlgProcOpt(Dialog:HWND;hMessage:uint;wParam:WPARAM;lParam:LPARAM):LRESULT; stdcall;
 var
   wnd:HWND;
   lv:LV_COLUMNW;

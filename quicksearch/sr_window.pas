@@ -51,7 +51,7 @@ type
   end;
   pQSFRec = ^tQSFRec;
   tQSFRec = record // row (contact)
-    contact:THANDLE;
+    contact:TMCONTACT;
     proto  :uint_ptr;
     flags  :dword;
     status :dword;
@@ -115,7 +115,7 @@ begin
   end;
 end;
 
-procedure AddContactToList(hContact:THANDLE;num:integer);
+procedure AddContactToList(hContact:TMCONTACT;num:integer);
 var
   li:LV_ITEMW;
   i:integer;
@@ -337,7 +337,7 @@ end;
 
 //----- contacts actions -----
 
-function GetFocusedhContact:THANDLE;
+function GetFocusedhContact:TMCONTACT;
 var
   i:integer;
 begin
@@ -348,7 +348,7 @@ begin
     result:=FlagBuf[i].contact;
 end;
 
-procedure ShowContactMsgDlg(hContact:THANDLE);
+procedure ShowContactMsgDlg(hContact:TMCONTACT);
 begin
   if hContact<>0 then
   begin
@@ -357,7 +357,7 @@ begin
   end;
 end;
 
-procedure DeleteOneContact(hContact:THANDLE);
+procedure DeleteOneContact(hContact:TMCONTACT);
 begin
   if ServiceExists(strCListDel)>0 then
     CallService(strCListDel,hContact,0)
@@ -388,8 +388,8 @@ end;
 
 procedure ConvertToMeta;
 var
-  hMeta:THANDLE;
-  tmp:THANDLE;
+  hMeta:TMCONTACT;
+  tmp:TMCONTACT;
   i,j:integer;
 begin
   j:=ListView_GetItemCount(grid)-1;
@@ -399,7 +399,7 @@ begin
   begin
     if ListView_GetItemState(grid,i,LVIS_SELECTED)<>0 then
     begin
-      tmp:=CallService(MS_MC_GETMETACONTACT,FlagBuf[LV_GetLParam(grid,i)].contact,0);
+      tmp:=db_mc_getMeta(FlagBuf[LV_GetLParam(grid,i)].contact);
       if tmp<>0 then
         if hMeta=0 then
           hMeta:=tmp
@@ -438,7 +438,7 @@ end;
 procedure UpdateLVCell(item,column:integer;text:pWideChar=pWideChar(-1));
 var
   li:LV_ITEMW;
-  contact:THANDLE;
+  contact:TMCONTACT;
   row:integer;
 begin
   contact:=FlagBuf[LV_GetLParam(grid,item)].contact;
@@ -469,7 +469,7 @@ end;
 
 procedure MoveToGroup(group:PWideChar);
 var
-  contact:THANDLE;
+  contact:TMCONTACT;
   i,j,grcol,row:integer;
 begin
   j:=ListView_GetItemCount(grid)-1;
@@ -512,7 +512,7 @@ end;
 
 procedure MoveToContainer(container:PWideChar);
 var
-  contact:THANDLE;
+  contact:TMCONTACT;
   i,j,grcol,row:integer;
 begin
   j:=ListView_GetItemCount(grid)-1;
@@ -784,7 +784,7 @@ begin
   UpdateLVCell(SendMessage(grid,LVM_GETNEXTITEM,-1,LVNI_FOCUSED),cmcolumn,qsr.text);
 end;
 
-function ShowContactMenu(wnd:HWND;hContact:THANDLE;col:integer=-1):HMENU;
+function ShowContactMenu(wnd:HWND;hContact:TMCONTACT;col:integer=-1):HMENU;
 var
   mi:TCListMenuItem;
   pt:tpoint;
@@ -1096,7 +1096,7 @@ begin
   end;
 end;
 
-function NewLVHProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
+function NewLVHProc(Dialog:HWND;hMessage:uint;wParam:WPARAM;lParam:LPARAM):LRESULT; stdcall;
 begin
   case hMessage of
     WM_RBUTTONUP: begin
@@ -1114,7 +1114,7 @@ end;
 var
   HintWnd:HWND;
 
-function NewLVProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
+function NewLVProc(Dialog:HWND;hMessage:uint;wParam:WPARAM;lParam:LPARAM):LRESULT; stdcall;
 const
   OldHItem   :integer=0;
   OldHSubItem:integer=0;
@@ -1526,7 +1526,7 @@ begin
 end;
 
 
-function NewEditProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
+function NewEditProc(Dialog:HWND;hMessage:uint;wParam:WPARAM;lParam:LPARAM):LRESULT; stdcall;
 var
   li:LV_ITEM;
   count,current,next,perpage:integer;
@@ -1881,7 +1881,7 @@ begin
   end;
 end;
 
-function QSMainWndProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
+function QSMainWndProc(Dialog:HWND;hMessage:uint;wParam:WPARAM;lParam:LPARAM):LRESULT; stdcall;
 var
   smenu:HMENU;
   header:HWND;
