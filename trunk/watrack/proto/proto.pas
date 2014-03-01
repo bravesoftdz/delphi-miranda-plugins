@@ -57,7 +57,7 @@ var
 {$include i_proto_opt.inc}
 {$include i_proto_dlg.inc}
 
-procedure AddEvent(hContact:THANDLE;atype,flag:integer;data:pointer;size:integer;time:dword=0);
+procedure AddEvent(hContact:TMCONTACT;atype,flag:integer;data:pointer;size:integer;time:dword=0);
 var
   dbeo:TDBEVENTINFO;
 begin
@@ -206,7 +206,7 @@ begin
 end;
 *)
 
-function ReceiveMessageProcW(wParam:WPARAM; lParam:LPARAM):integer; cdecl;
+function ReceiveMessageProcW(wParam:WPARAM; lParam:LPARAM):int_ptr; cdecl;
 const
   bufsize = 4096*SizeOf(WideChar);
 var
@@ -300,7 +300,7 @@ begin
             data:=PByte(s);
             dataSize:=(StrLenW(textpos)+3+1)*SizeOf(PWideChar);
           end;
-          encodedStr:=mir_base64_encode(pAnsiChar(data),dataSize);
+          encodedStr:=mir_base64_encode(data,dataSize);
           mGetMem(encbuf,Length(encodedStr)+1+Length(wpAnswer));
           StrCopy(PAnsiChar(encbuf),wpAnswer);
           StrCopy(PAnsiChar(encbuf)+Length(wpAnswer),encodedStr);
@@ -390,7 +390,7 @@ begin
   mFreeMem(buf);
 end;
 
-function SendRequest(hContact:WPARAM;lParam:LPARAM):integer; cdecl;
+function SendRequest(hContact:WPARAM;lParam:LPARAM):int_ptr; cdecl;
 var
   buf:array [0..2047] of AnsiChar;
 begin
@@ -404,7 +404,7 @@ end;
 
 procedure RegisterContacts;
 var
-  hContact:integer;
+  hContact:TMCONTACT;
 begin
   hContact:=db_find_first();
   while hContact<>0 do
@@ -415,7 +415,7 @@ begin
   end;
 end;
 
-function HookAddUser(hContact:WPARAM;lParam:LPARAM):integer; cdecl;
+function HookAddUser(hContact:WPARAM;lParam:LPARAM):int; cdecl;
 begin
   result:=0;
   if not IsChat(hContact) then

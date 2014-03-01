@@ -38,7 +38,7 @@ const
 var
   WinampWindow:HWND;
 
-function proc(awnd:hwnd;param:pdword):boolean; stdcall;
+function proc(awnd:HWND;param:pdword):boolean; stdcall;
 var
   s:array [0..255] of AnsiChar;
 begin

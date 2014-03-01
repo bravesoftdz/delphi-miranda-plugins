@@ -37,7 +37,7 @@ uses
 const
   MenuDisablePos = 500050000;
 
-function MirandaPluginInfoEx(mirandaVersion:DWORD):PPLUGININFOEX; cdecl;
+function MirandaPluginInfoEx(mirandaVersion:dword):PPLUGININFOEX; cdecl;
 begin
   result:=@PluginInfo;
   PluginInfo.cbSize     :=SizeOf(TPLUGININFOEX);
@@ -113,7 +113,7 @@ begin
   result:=int_ptr(ReturnInfo(wParam,lParam));
 end;
 
-function WATGetFileInfo(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function WATGetFileInfo(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
 //  si:TSongInfo;
   dst:pSongInfo;
@@ -163,7 +163,7 @@ begin
   end;
 end;
 
-function WATGetMusicInfo(wParam:WPARAM;lParam:LPARAM):int;cdecl;
+function WATGetMusicInfo(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 type
   ppointer = ^pointer;
 const
@@ -591,7 +591,7 @@ begin
   IsMultiThread:=true;
 
   // Register WATrack events
-  dbetd.cbSize     :=DBEVENTTYPEDESCR_SIZE;
+  dbetd.cbSize     :=SizeOf(TDBEVENTTYPEDESCR);
   dbetd.module     :=PluginShort;
   dbetd.textService:=nil;
   dbetd.iconService:=nil;

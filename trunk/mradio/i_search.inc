@@ -104,7 +104,7 @@ var
   bitrate:integer;
   l:bool;
   columns:array [0..3] of TCHAR;
-  csr:CUSTOMSEARCHRESULTS;
+  csr:TCUSTOMSEARCHRESULTS;
   pc:pAnsiChar;
   buf:array [0..127] of AnsiChar;
 begin
@@ -169,7 +169,7 @@ end;
 procedure ProcessSearch(var filter:TMySearchFilter;ini:PAnsiChar);
 var
   pc:PAnsiChar;
-  csr:CUSTOMSEARCHRESULTS;
+  csr:TCUSTOMSEARCHRESULTS;
   columns:array [0..3] of TCHAR;
   lstorage,section,list:pointer;
 begin
@@ -285,7 +285,7 @@ end;
 
 function Service_GetCaps(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl; forward;
 
-function ExtSearchProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
+function ExtSearchProc(Dialog:HWND;hMessage:uint;wParam:WPARAM;lParam:LPARAM):LRESULT; stdcall;
 var
   buf:array [0..MAX_PATH-1] of AnsiChar;
 begin
@@ -362,7 +362,7 @@ end;
 
 function Service_AddToList(wParam:WPARAM;lParam:LPARAM):int_ptr;cdecl;
 var
-  hContact:THANDLE;
+  hContact:TMCONTACT;
   p:PWideChar;
   lurl:pWideChar;
 begin

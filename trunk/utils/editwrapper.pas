@@ -2,7 +2,7 @@ unit EditWrapper;
 
 interface
 
-uses windows;
+uses windows,m_api;
 
 // exported flags
 const
@@ -32,7 +32,7 @@ function ShowEditBox(parent:HWND;var text:pWideChar;title:pWideChar):int_ptr;
 
 implementation
 
-uses messages,commctrl,common,wrapper,m_api;
+uses messages,commctrl,common,wrapper;
 
 {$R editwrapper.res}
 {$include 'i_text_const.inc'}
@@ -80,7 +80,7 @@ begin
 end;
 
 // if need to change button text, will pass button (not edit field) handle as parameter
-function EditWndProc(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
+function EditWndProc(Dialog:HWND;hMessage:uint;wParam:WPARAM;lParam:LPARAM):LRESULT; stdcall;
 var
   pc:pWideChar;
   btnwnd:HWND;
@@ -253,7 +253,7 @@ end;
 
 //----- Edit button processing -----
 
-function EditControlProc(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
+function EditControlProc(Dialog:HWND;hMessage:uint;wParam:WPARAM;lParam:LPARAM):LRESULT; stdcall;
 var
   oldproc:pointer;
   ptr:pUserData;
@@ -395,7 +395,7 @@ type
     text :pWideChar;
   end;
 
-function EditWndProcSep(Dialog:HWnd;hMessage:uint;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
+function EditWndProcSep(Dialog:HWND;hMessage:uint;wParam:WPARAM;lParam:LPARAM):LRESULT; stdcall;
 var
   pc:pWideChar;
   wnd,wnd1:HWND;

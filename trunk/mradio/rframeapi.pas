@@ -42,7 +42,7 @@ begin
   end;
 end;
 
-function SliderWndProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
+function SliderWndProc(Dialog:HWND;hMessage:uint;wParam:WPARAM;lParam:LPARAM):LRESULT; stdcall;
 begin
   if hMessage=WM_ERASEBKGND then
     result:=1
@@ -70,7 +70,7 @@ begin
   SendMessageW(hwndTooltip,TTM_ADDTOOLW,0,tlparam(@ti));
 end;
 
-function RadioFrameProc(Dialog:HWnd;hMessage:UINT;wParam:WPARAM;lParam:LPARAM):lresult; stdcall;
+function RadioFrameProc(Dialog:HWND;hMessage:uint;wParam:WPARAM;lParam:LPARAM):LRESULT; stdcall;
 var
   urd:TUTILRESIZEDIALOG;
   rc:TRECT;
@@ -220,7 +220,7 @@ begin
       height  :=tr.bottom-tr.top+2;
       Flags   :=F_VISIBLE or F_NOBORDER or F_UNICODE;
       name.w  :=cPluginName;
-      TBName.w:=cPluginName + ' volume control';
+      TBName.w:=TranslateW(cPluginName + ' volume control');
     end;
 
     FrameId:=CallService(MS_CLIST_FRAMES_ADDFRAME,wparam(@Frame),0);
