@@ -381,7 +381,10 @@ begin
   begin
     FillChar(clmi,SizeOf(clmi),0);
     clmi.cbSize:=SizeOf(clmi);
-    clmi.flags :=CMIF_UNICODE{ or CMIF_ICONFROMICOLIB};
+    if (UAMenuItem.menu_opt and UAF_NOTRANS)<>0 then
+      clmi.flags :=CMIF_UNICODE or CMIF_KEEPUNTRANSLATED
+    else
+      clmi.flags :=CMIF_UNICODE{ or CMIF_ICONFROMICOLIB};
 
     if (UAMenuItem.szMenuPopup<>nil) and (UAMenuItem.szMenuPopup^<>#0) then
       clmi.szName.w:=ParseVarString(UAMenuItem.szMenuPopup)
@@ -418,7 +421,10 @@ begin
 {}{}
   FillChar(clmi,SizeOf(clmi),0);
   clmi.cbSize:=SizeOf(clmi);
-  clmi.flags:=CMIF_UNICODE{ or CMIF_ICONFROMICOLIB};
+  if (UAMenuItem.menu_opt and UAF_NOTRANS)<>0 then
+    clmi.flags :=CMIF_UNICODE or CMIF_KEEPUNTRANSLATED
+  else
+    clmi.flags :=CMIF_UNICODE{ or CMIF_ICONFROMICOLIB};
   if (ActionItem.flags and (UAF_2STATE+UAF_PRESSED))<>(UAF_2STATE+UAF_PRESSED) then
   begin
     clmi.hIcon:=ActionItem.hIcolibIcon;
@@ -427,7 +433,7 @@ begin
   else
   begin
     clmi.hIcon:=ActionItem.hIcolibIconPressed;
-    clmi.flags:=CMIF_UNICODE {or CMIF_ICONFROMICOLIB }or CMIF_CHECKED;
+    clmi.flags:=clmi.flags or CMIF_CHECKED;
     extra:='1';
   end;
 
