@@ -78,6 +78,7 @@ const
   // menu options
   UAF_MENUSEP = 1 shl 1; // menu item separated
   UAF_MENUUSE = 1 shl 8; // use this menu
+  UAF_NOTRANS = 1 shl 9; // do not translate menus
 
 type
   tNameRec = record
