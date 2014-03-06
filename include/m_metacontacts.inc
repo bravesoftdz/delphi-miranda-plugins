@@ -98,7 +98,7 @@ const
     wParam=(HANDLE)hMetaContact
     lParam= (dword)&contact_number or NULL
     if lparam supplied, the contact_number of the contatct 'in force' will be copied to the address it points to,
-    or if none is in force, the value (dword)-1 will be copied
+    or if none is in force, the value INVALID_CONTACT_ID will be copied
     (v0.8.0.8+ returns 1 if 'force default' is true with *lParam == default contact number, else returns 0 with *lParam as above) }
   MS_MC_GETFORCESTATE = 'MetaContacts/GetForceState';
 
@@ -143,16 +143,8 @@ const
   MS_MC_REMOVEFROMMETA = 'MetaContacts/RemoveFromMetacontact';
 
 
-  { wParam=(bool)disable
-    lParam=0
-    enable/disable the 'hidden group hack' - for clists that support subcontact
-    hiding using 'IsSubcontact' setting. Should be called once in the clist
-    'onmodulesloaded' event handler (which, since it's loaded after the db, will
-    be called before the metacontact onmodulesloaded handler where the subcontact
-    hiding is usually done)
-  }
-  MS_MC_DISABLEHIDDENGROUP = 'MetaContacts/DisableHiddenGroup';
-
+/////////////////////////////////////////////////////////////////////////////////////////
+// binary interface to MC
 
 { returns true if a contact is a metacontact or false otherwise
 }

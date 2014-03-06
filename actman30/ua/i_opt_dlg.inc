@@ -160,7 +160,9 @@ end;
 procedure InitActionSettings(Dialog:HWND);
 begin
   MakeEditField(Dialog,IDC_UA_TTNORMALV);
+  SetEditFlags(GetDlgItem(Dialog,IDC_UA_TTNORMALV),EF_FORCE,EF_FORCET);
   MakeEditField(Dialog,IDC_UA_TTPRESSEDV);
+  SetEditFlags(GetDlgItem(Dialog,IDC_UA_TTPRESSEDV),EF_FORCE,EF_FORCET);
 
   MakeEditField(Dialog,IDC_UA_POPUPV);
   MakeEditField(Dialog,IDC_UA_VARNAMESV);

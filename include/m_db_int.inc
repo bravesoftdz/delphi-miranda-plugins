@@ -47,10 +47,10 @@ type
     first  :PDBCachedContactValue;
     last   :PDBCachedContactValue;
     // metacontacts
-    nSubs:int;          // == -1 -> not a metacontact at all
+    nSubs:int;          // == -1 -> not a metacontact
     pSubs:PMCONTACT;
-    parentID,           // == 0 -> not a subcontact
-    activeID:TMCONTACT; // manually chosen active sub
+    parentID:TMCONTACT; // == 0 -> not a subcontact
+    nDefault:int        // default sub number
   end;
 
   PMIDatabaseCache = ^MIDatabaseCache;
@@ -107,6 +107,11 @@ type
     SetSettingResident:function(bIsResident:bool; const pszSettingName:PAnsiChar):bool; stdcall;
     EnumResidentSettings:function(pFunc:TDBMODULEENUMPROC; pParam:pointer):bool; stdcall;
     IsSettingEncrypted:function(szModule:PAnsiChar; szSetting:PAnsiChar):bool; stdcall;
+
+    MetaDetouchSub:function(contact:PDBCachedContact; nSub:int):bool; stdcall;
+    MetaSetDefault:function(contact:PDBCachedContact):bool; stdcall;
+    MetaMergeHistory:function(ccMeta:PDBCachedContact; hSub:TMCONTACT):bool; stdcall;
+    MetaSplitHistory:function(ccMeta:PDBCachedContact; hSub:TMCONTACT):bool; stdcall;
   end;
 
 ///////////////////////////////////////////////////////////////////////////////

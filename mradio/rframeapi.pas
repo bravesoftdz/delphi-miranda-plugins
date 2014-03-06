@@ -239,7 +239,7 @@ begin
 
       StrCopy(cid.name   ,frm_back);
       StrCopy(cid.setting,'frame_back');
-      cid.defcolour:=COLOR_3DFACE;
+      cid.defcolour:=GetSysColor(COLOR_3DFACE);
       cid.order    :=0;
       ColourRegister(@cid);
 
