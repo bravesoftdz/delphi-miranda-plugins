@@ -88,6 +88,10 @@ function Options_OpenPage(ood:POPENOPTIONSDIALOG):HWND;
 procedure MIcoTab_AddItem (hwnd:HWND; lptzName:PAnsiChar; hIcon:HICON; data:LPARAM; bSharedIcon:bool);
 procedure MIcoTab_AddItemW(hwnd:HWND; lptzName:PWideChar; hIcon:HICON; data:LPARAM; bSharedIcon:bool);
 
+function Crypto_RegisterEngine(pProvider:PCRYPTO_PROVIDER):THANDLE;
+procedure Crypto_EnumProviders(var numProvs:int; var pResult:array of PCRYPTO_PROVIDER);
+function Crypto_GetProvider(pszName:PAnsiChar):PCRYPTO_PROVIDER;
+
 {$ELSE}
 
 function CreateVersionString(version:dword;buf:PAnsiChar):PAnsiChar;
@@ -570,4 +574,21 @@ begin
   mit.data     := data;
   SendMessage(hwnd, ITCM_ADDITEM, WPARAM(@mit), 0);
 end;
+
+
+function Crypto_RegisterEngine(pProvider:PCRYPTO_PROVIDER):THANDLE;
+begin
+	result:=THANDLE(CallService(MS_CRYPTO_REGISTER_ENGINE, hLangpack, LPARAM(pProvider)));
+end;
+
+procedure Crypto_EnumProviders(var numProvs:int; var pResult:array of PCRYPTO_PROVIDER);
+begin
+	CallService(MS_CRYPTO_ENUM_PROVIDERS, WPARAM(numProvs), LPARAM(@pResult));
+end;
+
+function Crypto_GetProvider(pszName:PAnsiChar):PCRYPTO_PROVIDER;
+begin
+	result:=PCRYPTO_PROVIDER(CallService(MS_CRYPTO_GET_PROVIDER, 0, LPARAM(pszName)));
+end;
+
 {$ENDIF}

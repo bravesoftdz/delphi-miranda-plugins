@@ -38,13 +38,13 @@ const
   MERR_LEVEL_ERROR   = 3;
 
 // Predefined error types (no need to call MS_ERROR_REGISTER)
-  MERR_TYPE_INFO       :pAnsiChar = 'Core/Info';
-  MERR_TYPE_SRV_INFO   :pAnsiChar = 'Core/SrvInfo';
-  MERR_TYPE_WARNING    :pAnsiChar = 'Core/Warning';
-  MERR_TYPE_SRV_WARNING:pAnsiChar = 'Core/SrvWarning';
-  MERR_TYPE_SRV_ERROR  :pAnsiChar = 'Core/SrvError';
-  MERR_TYPE_NETWORK    :pAnsiChar = 'Core/Network';
-  MERR_TYPE_LOGIN      :pAnsiChar = 'Core/Login';
+  MERR_TYPE_INFO       :PAnsiChar = 'Core/Info';
+  MERR_TYPE_SRV_INFO   :PAnsiChar = 'Core/SrvInfo';
+  MERR_TYPE_WARNING    :PAnsiChar = 'Core/Warning';
+  MERR_TYPE_SRV_WARNING:PAnsiChar = 'Core/SrvWarning';
+  MERR_TYPE_SRV_ERROR  :PAnsiChar = 'Core/SrvError';
+  MERR_TYPE_NETWORK    :PAnsiChar = 'Core/Network';
+  MERR_TYPE_LOGIN      :PAnsiChar = 'Core/Login';
 
 // Specify set of buttons to make query box
   MERR_BTN_NONE             = 0;
@@ -54,8 +54,8 @@ const
 
 // General-purpose error definition
 type
-  PMIRANDAERROR_TYPE = ^MIRANDAERROR_TYPE;
-  MIRANDAERROR_TYPE = record
+  PMIRANDAERROR_TYPE = ^TMIRANDAERROR_TYPE;
+  TMIRANDAERROR_TYPE = record
     cbSize :int;
     flags  :dword;
     level  :int;
@@ -65,10 +65,10 @@ type
 
 // General-purpose error definition
 type
-  MIRANDAERROR = record
+  TMIRANDAERROR = record
     cbSize        :int;
     flags         :dword;
-    _type         :pAnsiChar;
+    _type         :PAnsiChar;
     szModuleTitle :TCHAR;
 
     buttons       :int;
@@ -78,7 +78,7 @@ type
     lParam        :LPARAM;
 
   // information itself
-    hContact      :THANDLE;
+    hContact      :TMCONTACT;
     szTitle       :TCHAR;
     szText        :TCHAR;
 
@@ -89,7 +89,7 @@ type
 
 // Information about particular error handler for options UI
 type
-  MIRANDAERROR_HANDLER = record
+  TMIRANDAERROR_HANDLER = record
     cbSize     :int;
     flags      :dword;
     pszDbModule:PAnsiChar;
