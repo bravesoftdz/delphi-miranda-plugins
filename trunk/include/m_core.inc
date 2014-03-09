@@ -365,7 +365,7 @@ type
 
   TMIRANDASERVICE         = function(wParam: WPARAM; lParam: LPARAM): int_ptr; cdecl;
   TMIRANDASERVICEPARAM    = function(wParam:WPARAM;lParam,lParam1:LPARAM):int_ptr; cdecl;
-  TMIRANDASERVICEOBJ      = function(ptr:pointer;wParam,lParam:LPARAM):int_ptr; cdecl;
+  TMIRANDASERVICEOBJ      = function(ptr:pointer;wParam:WPARAM;lParam:LPARAM):int_ptr; cdecl;
   TMIRANDASERVICEOBJPARAM = function(ptr:pointer;wParam:WPARAM;lParam,lParam1:LPARAM):int_ptr; cdecl;
 
 const

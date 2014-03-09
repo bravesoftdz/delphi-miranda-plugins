@@ -110,8 +110,8 @@ type
 
     MetaDetouchSub:function(contact:PDBCachedContact; nSub:int):bool; stdcall;
     MetaSetDefault:function(contact:PDBCachedContact):bool; stdcall;
-    MetaMergeHistory:function(ccMeta:PDBCachedContact; hSub:TMCONTACT):bool; stdcall;
-    MetaSplitHistory:function(ccMeta:PDBCachedContact; hSub:TMCONTACT):bool; stdcall;
+    MetaMergeHistory:function(ccMeta:PDBCachedContact; ccSub:PDBCachedContact):bool; stdcall;
+    MetaSplitHistory:function(ccMeta:PDBCachedContact; ccSub:PDBCachedContact):bool; stdcall;
   end;
 
 ///////////////////////////////////////////////////////////////////////////////
