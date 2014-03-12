@@ -62,7 +62,7 @@ type
     szEntity:PAnsiChar;   // can be NULL
     hSession:THANDLE; // ""
     dwMsg   :dword;
-    dwTo    :dword
+    dwTo    :dword;
     dwFrom  :dword;   // SDR_*, SDR_ALL is not a good thing
     wParam  :WPARAM;
     lParam  :LPARAM;

@@ -133,6 +133,7 @@ function db_event_add(hContact:TMCONTACT; dbei:PDBEVENTINFO):THANDLE; stdcall;
 Gets the number of events in the chain belonging to a contact in the database.
 Returns the number of events in the chain owned by hContact or -1 if hContact
 is invalid. They can be retrieved using the db_event_first/last() services.
+Returns 0 for Subcontacts (use db_event_last to recognize empty history)
 }
 function db_event_count(hContact:TMCONTACT):int; stdcall;
                  external CoreDLL name 'db_event_count';
@@ -229,7 +230,7 @@ Retrieves a handle to the next event in a chain after hDbEvent
 Returns the handle, or NULL if hDbEvent is invalid or is the last event
 Events in a chain are sorted chronologically automatically
 }
-function db_event_next(hDbEvent:THANDLE):THANDLE; stdcall;
+function db_event_next(hContact:TMCONTACT; hDbEvent:THANDLE):THANDLE; stdcall;
                  external CoreDLL name 'db_event_next';
 
 {
@@ -237,7 +238,7 @@ Retrieves a handle to the previous event in a chain before hDbEvent
 Returns the handle, or NULL if hDbEvent is invalid or is the first event
 Events in a chain are sorted chronologically automatically
 }
-function db_event_prev(hDbEvent:THANDLE):THANDLE; stdcall;
+function db_event_prev(hContact:TMCONTACT; hDbEvent:THANDLE):THANDLE; stdcall;
                  external CoreDLL name 'db_event_prev';
 
 function db_free(dbv:PDBVARIANT):int_ptr; stdcall;
@@ -579,10 +580,12 @@ procedure List_ObjCopy(src:PSortedList; dst:PSortedList; size:size_t); stdcall;
 
 function mir_createLog(pszName:PAnsiChar; ptszDescr, ptszFile:PWideChar; options:Cardinal):THANDLE; stdcall;
                  external CoreDLL name 'mir_createLog';
+procedure mir_closeLog(HANDLE hLogger); stdcall;
+                 external CoreDLL name 'mir_closeLog';
 
-function mir_writeLogA(hLog:THANDLE; format:PAnsiChar):int; cdecl;
+function mir_writeLogA(hLogger:THANDLE; format:PAnsiChar):int; cdecl;
                  external CoreDLL name 'mir_writeLogA';
-function mir_writeLogW(hLog:THANDLE; format:PWideChar):int; cdecl;
+function mir_writeLogW(hLogger:THANDLE; format:PWideChar):int; cdecl;
                  external CoreDLL name 'mir_writeLogW';
 
 ///////////////////////////////////////////////////////////////////////////////
