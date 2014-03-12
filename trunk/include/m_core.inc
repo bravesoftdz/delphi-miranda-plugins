@@ -580,7 +580,7 @@ procedure List_ObjCopy(src:PSortedList; dst:PSortedList; size:size_t); stdcall;
 
 function mir_createLog(pszName:PAnsiChar; ptszDescr, ptszFile:PWideChar; options:Cardinal):THANDLE; stdcall;
                  external CoreDLL name 'mir_createLog';
-procedure mir_closeLog(HANDLE hLogger); stdcall;
+procedure mir_closeLog(hLogger:THANDLE); stdcall;
                  external CoreDLL name 'mir_closeLog';
 
 function mir_writeLogA(hLogger:THANDLE; format:PAnsiChar):int; cdecl;

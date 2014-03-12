@@ -124,7 +124,7 @@ begin
   end;
 
   loaded:=false;
-  hDLL:=GetModuleHandle(dllname);
+  hDLL:=GetModuleHandleA(dllname);
   if hDLL=0 then
   begin
     loaded:=true;
