@@ -92,8 +92,8 @@ type
     FindFirstEvent:function(contactID:TMCONTACT):THANDLE; stdcall;
     FindFirstUnreadEvent:function(contactID:TMCONTACT):THANDLE; stdcall;
     FindLastEvent:function(contactID:TMCONTACT):THANDLE; stdcall;
-    FindNextEvent:function(hDbEvent:THANDLE):THANDLE; stdcall;
-    FindPrevEvent:function(hDbEvent:THANDLE):THANDLE; stdcall;
+    FindNextEvent:function(contactID:TMCONTACT;hDbEvent:THANDLE):THANDLE; stdcall;
+    FindPrevEvent:function(contactID:TMCONTACT;hDbEvent:THANDLE):THANDLE; stdcall;
 
     EnumModuleNames:function(pFunc:TDBMODULEENUMPROC; pParam:pointer):bool; stdcall;
 
@@ -208,6 +208,12 @@ type
     }
     CheckDB : function (const profile:PWideChar; error:pint):PMIDatabaseChecker;cdecl;
   end;
+
+///////////////////////////////////////////////////////////////////////////////
+// cache access functions
+
+function db_get_contact(hContact:TMCONTACT):PDBCachedContact; stdcall;
+                 external CoreDLL name 'db_get_contact';
 
 ///////////////////////////////////////////////////////////////////////////////
 // Database list's services
