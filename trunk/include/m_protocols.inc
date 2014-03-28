@@ -199,7 +199,7 @@ const
 { determines if a protocol module is loaded or not
   wParam=0
   lParam=(LPARAM)(const AnsiChar*)szName
-  Returns a pointer to the PROTOCOLDESCRIPTOR if the protocol is loaded, or
+  Returns a pointer to the PROTOACCOUNT if the protocol is loaded, or
   NULL if it isn't.
 }
   MS_PROTO_ISPROTOCOLLOADED:PAnsiChar = 'Proto/IsProtocolLoaded';
@@ -265,7 +265,7 @@ type
     bIsVisible      :ByteBool;         // is account visible?
     bIsVirtual      :ByteBool;         // is account virtual?
     bOldProto       :ByteBool;         // old-styled account (one instance per dll)
-	  bDynDisabled    :ByteBool;         // dynamic disable flag, is never written to db
+    bDynDisabled    :ByteBool;         // dynamic disable flag, is never written to db
     bAccMgrUIChanged:ByteBool;
     hwndAccMgrUI    :HWND;
     iOrder          :int;              // account order in various menus & lists
