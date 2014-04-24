@@ -160,9 +160,9 @@ begin
     v:=CreateOleObject(COMName);
     tmp:=v.Playing;
     if tmp then
-      result:=WAT_MES_PLAYING
+      result:=WAT_PLS_PLAYING
     else
-      result:=WAT_MES_STOPPED;
+      result:=WAT_PLS_STOPPED;
   except
     result:=inherited GetStatus;
   end;
