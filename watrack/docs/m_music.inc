@@ -6,7 +6,7 @@
 
 type
   pSongInfoA = ^tSongInfoA;
-  tSongInfoA = packed record
+  tSongInfoA = record
     artist   :PAnsiChar;
     title    :PAnsiChar;
     album    :PAnsiChar;
@@ -23,10 +23,10 @@ type
     wndtext  :PAnsiChar; // window title
     player   :PAnsiChar; // player name
     plyver   :dword;     // player version
-    icon     :THANDLE;   // player icon
+    icon     :HICON;     // player icon
     fsize    :dword;     // media file size
     vbr      :dword;
-    status   :integer;   // WAT_MES_* const
+    status   :integer;   // WAT_PLS_*
     plwnd    :HWND;      // player window
     // video  part
     codec    :dword;
@@ -43,7 +43,7 @@ type
   end;
 type
   pSongInfo=^tSongInfo;
-  tSongInfo = packed record
+  tSongInfo = record
     artist   :pWideChar;
     title    :pWideChar;
     album    :pWideChar;
@@ -60,10 +60,10 @@ type
     wndtext  :pWideChar; // window title
     player   :pWideChar; // player name
     plyver   :dword;     // player version
-    icon     :THANDLE;   // player icon
+    icon     :HICON;     // player icon
     fsize    :dword;     // media file size
     vbr      :dword;
-    status   :integer;   // WAT_MES_* const
+    status   :integer;   // WAT_PLS_*
     plwnd    :HWND;      // player window
     // video  part
     codec    :dword;
@@ -93,12 +93,6 @@ const
   WAT_RES_NEWFILE   = 3;
   WAT_RES_NEWPLAYER = 4;
 
-// result for MS_WAT_GETMUSICINFO service
-const
-  WAT_PLS_NORMAL   = WAT_RES_OK;
-  WAT_PLS_NOMUSIC  = WAT_RES_DISABLED;
-  WAT_PLS_NOTFOUND = WAT_RES_NOTFOUND;
-
 const
   WAT_INF_UNICODE = 0;
   WAT_INF_ANSI    = 1;
@@ -114,13 +108,13 @@ const
   wParam : WAT_INF_* constant
   lParam : pointer to pSongInfo (Unicode) or pSongInfoA (ANSI/UTF8)
   Affects: Fill structure by currently played music info
-  returns: WAT_PLS_* constant
+  returns: WAT_RES_* constant
   note: pointer will be point to global SongInfo structure of plugin
   warning: Non-Unicode data filled only by request
   if lParam=0 only internal SongInfo structure will be filled
   Example:
     var p:pSongInfo;
-    PluginLink^.CallService(MS_WAT_GETMUSICINFO,0,dword(@p));
+    CallService(MS_WAT_GETMUSICINFO,0,lparam(@p));
 }
   MS_WAT_GETMUSICINFO:PAnsiChar = 'WATrack/GetMusicInfo';
 {
@@ -129,7 +123,7 @@ const
   Affects: Fill structure by info from file named in SongInfo.mfile
   returns: 0, if success
   note: fields, which values can't be obtained, leaves old values.
-    you must free given strings by miranda mmi.free
+    you must free given strings by miranda mir_free
 }
   MS_WAT_GETFILEINFO:PAnsiChar = 'WATrack/GetFileInfo';
 
@@ -182,10 +176,16 @@ const
 }
   MS_WAT_PLUGINSTATUS:PAnsiChar = 'WATrack/PluginStatus';
 
+// ---------- events ------------
+
+{
+  ME_WAT_MODULELOADED
+  wParam: 0, lParam: 0
+}
   ME_WAT_MODULELOADED:PAnsiChar = 'WATrack/ModuleLoaded';
 
 const
-  WAT_EVENT_PLAYERSTATUS = 1; // WAT_PLS_* const
+  WAT_EVENT_PLAYERSTATUS = 1; // WAT_PLS_*
   WAT_EVENT_NEWTRACK     = 2; // SongInfo ptr
   WAT_EVENT_PLUGINSTATUS = 3; // 0-enabled; 1-dis.temporary; 2-dis.permanent
   WAT_EVENT_NEWPLAYER    = 4; //
@@ -234,13 +234,12 @@ const
 
 // ----------- Formats and players -----------
 
-// media file status
-
-const
-  WAT_MES_STOPPED = 0;
-  WAT_MES_PLAYING = 1;
-  WAT_MES_PAUSED  = 2;
-  WAT_MES_UNKNOWN = -1;
+const // player status
+  WAT_PLS_NOTFOUND = 0; // player not found
+  WAT_PLS_PLAYING  = 1;
+  WAT_PLS_PAUSED   = 2;
+  WAT_PLS_STOPPED  = 3; // player stopped, no music even searched
+  WAT_PLS_UNKNOWN  = 4; // player found with unknown state
 
 const
   WAT_ACT_REGISTER   = 1;
@@ -253,30 +252,32 @@ const
 
 const
   // flags
-  WAT_OPT_DISABLED    = $00000001; // registered but disabled
-  WAT_OPT_ONLYONE     = $00000002; // can't be overwriten
-  WAT_OPT_PLAYERINFO  = $00000004; // song info from player
-  WAT_OPT_WINAMPAPI   = $00000008; // Winamp API support
-  WAT_OPT_CHECKTIME   = $00000010; // check file time for changes
-  WAT_OPT_VIDEO       = $00000020; // only for format registering used
+  WAT_OPT_DISABLED    = $00000001; // [formats,players,options] registered but disabled
+  WAT_OPT_ONLYONE     = $00000002; // [formats,players] code can't be overwriten
+  WAT_OPT_PLAYERINFO  = $00000004; // [players] song info from player
+  WAT_OPT_WINAMPAPI   = $00000008; // [players] Winamp API support
+  WAT_OPT_CHECKTIME   = $00000010; // [options] check file time for changes
+  WAT_OPT_VIDEO       = $00000020; // [formats,options] format is video
   WAT_OPT_LAST        = $00000040; // (internal-Winamp Clone) put to the end of queue
   WAT_OPT_FIRST       = $00000080; // (internal)
   WAT_OPT_TEMPLATE    = $00000100; // (internal)
-  WAT_OPT_IMPLANTANT  = $00000200; // use process implantation
-  WAT_OPT_HASURL      = $00000400; // (player registration) URL field present
-  WAT_OPT_CHANGES     = $00000800; // obtain only chaged values
+  WAT_OPT_IMPLANTANT  = $00000200; // [options] use process implantation
+  WAT_OPT_HASURL      = $00000400; // [players] URL field present
+  WAT_OPT_CHANGES     = $00000800; // (internal) obtain only chaged values
                                    // (volume, status, window text, elapsed time)
-  WAT_OPT_APPCOMMAND  = $00001000; // Special (multimedia) key support
-  WAT_OPT_CHECKALL    = $00002000; // Check all players
-  WAT_OPT_KEEPOLD     = $00004000; // Keep Old opened file
-  WAT_OPT_MULTITHREAD = $00008000; // Use multithread scan
-  WAT_OPT_SINGLEINST  = $00010000; // Single player instance
+  WAT_OPT_APPCOMMAND  = $00001000; // [options] Special (multimedia) key support
+  WAT_OPT_CHECKALL    = $00002000; // [options] Check all players
+  WAT_OPT_KEEPOLD     = $00004000; // [options] Keep Old opened file
+//  WAT_OPT_MULTITHREAD = $00008000; // [options] Use multithread scan
+  WAT_OPT_SINGLEINST  = $00010000; // [players] Single player instance
   WAT_OPT_PLAYERDATA  = $00020000; // (internal) to obtain player data
+  WAT_OPT_CONTAINER   = $00040000; // [formats] format is container (need to check full)
+  WAT_OPT_UNKNOWNFMT  = $00080000; // [formats] check unknown (not disabled) formats (info from player)
 
 type
   tReadFormatProc = function(var Info:tSongInfo):boolean; cdecl;
   pMusicFormat = ^tMusicFormat;
-  tMusicFormat = packed record
+  tMusicFormat = record
     proc :tReadFormatProc;
     ext  :array [0..7] of AnsiChar;
     flags:cardinal;
@@ -314,9 +315,9 @@ type
   tCommandProc = function(wnd:HWND;command:integer;value:integer):integer;cdecl;
 
   pPlayerCell = ^tPlayerCell;
-  tPlayerCell = packed record
+  tPlayerCell = record
     Desc     :PAnsiChar; // Short player name
-    flags    :cardinal;
+    flags    :dword;
     Icon     :HICON;     // can be 0. for registration only
     Init     :pointer;   // tInitProc;    can be NIL. initialize any data
     DeInit   :pointer;   // tDeInitProc;  can be NIL. finalize player processing
@@ -340,6 +341,20 @@ const
 }
   MS_WAT_PLAYER:PAnsiChar = 'WATrack/Player';
 
+// --------- MyShows.ru ---------
+
+{
+  Toggle MyShows scrobbling status
+  wParam,lParam=0
+  Returns: previous state
+}
+const
+  MS_WAT_MYSHOWS:pAnsiChar = 'WATrack/MyShows';
+
+
+const
+  MS_WAT_MYSHOWSINFO:pAnsiChar = 'WATrack/MyShowsInfo';
+
 // --------- Last FM  ---------
 
 {
@@ -357,7 +372,7 @@ const
 }
 type
   pLastFMInfo = ^tLastFMInfo;
-  tLastFMInfo = packed record
+  tLastFMInfo = record
     request:cardinal;   // 0 - artist, 1 - album, 2 - track
     artist :pWideChar; // artist
     album  :pWideChar; // album or similar artists for Artist info request

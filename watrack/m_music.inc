@@ -23,10 +23,10 @@ type
     wndtext  :PAnsiChar; // window title
     player   :PAnsiChar; // player name
     plyver   :dword;     // player version
-    icon     :THANDLE;   // player icon
+    icon     :HICON;     // player icon
     fsize    :dword;     // media file size
     vbr      :dword;
-    status   :integer;   // WAT_MES_* const
+    status   :integer;   // WAT_PLS_*
     plwnd    :HWND;      // player window
     // video  part
     codec    :dword;
@@ -60,10 +60,10 @@ type
     wndtext  :pWideChar; // window title
     player   :pWideChar; // player name
     plyver   :dword;     // player version
-    icon     :THANDLE;   // player icon
+    icon     :HICON;     // player icon
     fsize    :dword;     // media file size
     vbr      :dword;
-    status   :integer;   // WAT_MES_* const
+    status   :integer;   // WAT_PLS_*
     plwnd    :HWND;      // player window
     // video  part
     codec    :dword;
@@ -93,12 +93,6 @@ const
   WAT_RES_NEWFILE   = 3;
   WAT_RES_NEWPLAYER = 4;
 
-// result for MS_WAT_GETMUSICINFO service
-const
-  WAT_PLS_NORMAL   = WAT_RES_OK;
-  WAT_PLS_NOMUSIC  = WAT_RES_DISABLED;
-  WAT_PLS_NOTFOUND = WAT_RES_NOTFOUND;
-
 const
   WAT_INF_UNICODE = 0;
   WAT_INF_ANSI    = 1;
@@ -114,7 +108,7 @@ const
   wParam : WAT_INF_* constant
   lParam : pointer to pSongInfo (Unicode) or pSongInfoA (ANSI/UTF8)
   Affects: Fill structure by currently played music info
-  returns: WAT_PLS_* constant
+  returns: WAT_RES_* constant
   note: pointer will be point to global SongInfo structure of plugin
   warning: Non-Unicode data filled only by request
   if lParam=0 only internal SongInfo structure will be filled
@@ -182,10 +176,16 @@ const
 }
   MS_WAT_PLUGINSTATUS:PAnsiChar = 'WATrack/PluginStatus';
 
+// ---------- events ------------
+
+{
+  ME_WAT_MODULELOADED
+  wParam: 0, lParam: 0
+}
   ME_WAT_MODULELOADED:PAnsiChar = 'WATrack/ModuleLoaded';
 
 const
-  WAT_EVENT_PLAYERSTATUS = 1; // WAT_PLS_* in loword, WAT_MES_* in hiword
+  WAT_EVENT_PLAYERSTATUS = 1; // WAT_PLS_*
   WAT_EVENT_NEWTRACK     = 2; // SongInfo ptr
   WAT_EVENT_PLUGINSTATUS = 3; // 0-enabled; 1-dis.temporary; 2-dis.permanent
   WAT_EVENT_NEWPLAYER    = 4; //
@@ -234,13 +234,12 @@ const
 
 // ----------- Formats and players -----------
 
-// media file status
-
-const
-  WAT_MES_STOPPED = 0;
-  WAT_MES_PLAYING = 1;
-  WAT_MES_PAUSED  = 2;
-  WAT_MES_UNKNOWN = -1;
+const // player status
+  WAT_PLS_NOTFOUND = 0; // player not found
+  WAT_PLS_PLAYING  = 1;
+  WAT_PLS_PAUSED   = 2;
+  WAT_PLS_STOPPED  = 3; // player stopped, no music even searched
+  WAT_PLS_UNKNOWN  = 4; // player found with unknown state
 
 const
   WAT_ACT_REGISTER   = 1;
@@ -269,10 +268,11 @@ const
   WAT_OPT_APPCOMMAND  = $00001000; // [options] Special (multimedia) key support
   WAT_OPT_CHECKALL    = $00002000; // [options] Check all players
   WAT_OPT_KEEPOLD     = $00004000; // [options] Keep Old opened file
-  WAT_OPT_MULTITHREAD = $00008000; // [options] Use multithread scan
+//  WAT_OPT_MULTITHREAD = $00008000; // [options] Use multithread scan
   WAT_OPT_SINGLEINST  = $00010000; // [players] Single player instance
   WAT_OPT_PLAYERDATA  = $00020000; // (internal) to obtain player data
   WAT_OPT_CONTAINER   = $00040000; // [formats] format is container (need to check full)
+  WAT_OPT_UNKNOWNFMT  = $00080000; // [formats] check unknown (not disabled) formats (info from player)
 
 type
   tReadFormatProc = function(var Info:tSongInfo):boolean; cdecl;
