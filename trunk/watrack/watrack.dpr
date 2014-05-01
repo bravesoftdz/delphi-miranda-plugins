@@ -252,8 +252,10 @@ begin
            isContainer(WorkSI.mfile))) then      // ... or container like CUE
         begin
           // requirement: old artist/title for remote files
-          result:=GetInfo(WorkSI,flags);
           newtrack:=result=WAT_RES_NEWFILE;
+          result:=GetInfo(WorkSI,flags);
+          if not newtrack then
+            newtrack:=result=WAT_RES_NEWFILE;
         end;
       end;
     end;
