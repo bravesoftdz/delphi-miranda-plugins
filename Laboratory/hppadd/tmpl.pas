@@ -4,15 +4,15 @@ interface
 
 uses
   windows,
+  m_api,
   my_grid;
 
-function Sample(hContact:THANDLE):int_ptr;
+function Sample(hContact:TMCONTACT):int_ptr;
 
 implementation
 
 uses
   messages,
-  m_api,
   hpp_global, hpp_events, hpp_itemprocess, hpp_contacts;
 
 type
@@ -20,8 +20,8 @@ type
   private
     Handle:HWND;
     Grid: THistoryGrid;
-    FContact   : THANDLE;
-    FSubContact: THANDLE;
+    FContact   : TMCONTACT;
+    FSubContact: TMCONTACT;
     FProtocol   : PAnsiChar;
     FSubProtocol: PAnsiChar;
     harray:array of THANDLE;
@@ -30,12 +30,12 @@ type
     procedure hgItemData (Index: Integer; var Item: THistoryItem);
     function  GetItemData(Index: Integer): THistoryItem;
 
-    procedure hgProcessRichText(Handle: THandle; Item: Integer);
+    procedure hgProcessRichText(Handle: THANDLE; Item: Integer);
 
   public
     procedure WndCreate;
 
-    function FillHistory(hContact:THANDLE):integer;
+    function FillHistory(hContact:TMCONTACT):integer;
   end;
 {
 OnDblClick = hgDblClick
@@ -72,7 +72,7 @@ HistoryLength:integer;
 
 procedure hgItemData(Index: Integer; var Item: THistoryItem);
 function GetItemData(Index: Integer): THistoryItem;
-procedure GridProcessRichText(Handle: THandle; Item: Integer);
+procedure GridProcessRichText(Handle: THANDLE; Item: Integer);
 }
 
 function tTmplWindow.GetItemData(Index: Integer): THistoryItem;
@@ -83,9 +83,10 @@ end;
 procedure tTmplWindow.hgItemData(Index: Integer; var Item: THistoryItem);
 begin
   Item := GetItemData(Index);
+  Item.HasHeader := true;
 end;
 
-procedure tTmplWindow.hgProcessRichText(Handle: THandle; Item: Integer);
+procedure tTmplWindow.hgProcessRichText(Handle: THANDLE; Item: Integer);
 var
   ItemRenderDetails: TItemRenderDetails;
   lItem:THistoryItem;
@@ -112,23 +113,23 @@ begin
 end;
 
 
-function tTmplWindow.FillHistory(hContact:THANDLE):integer;
+function tTmplWindow.FillHistory(hContact:TMCONTACT):integer;
 var
   i:integer;
   hDBEvent:THANDLE;
 begin
-  FContact:=hContact;
+//  FContact:=hContact;
+FContact:=0;
   HistoryLength := db_event_count(hContact);
   SetLength(harray,HistoryLength);
   hDBEvent := db_event_first(hContact);
   for i:=0 to HistoryLength-1 do
   begin
     harray[i]:=hDBEvent;
-    hDBEvent := db_event_next(hDBEvent);
+    hDBEvent := db_event_next(hContact,hDBEvent);
   end;
   result:=HistoryLength;
 
-  FContact := hContact;
   FProtocol := GetContactProto(hContact, FSubContact, FSubProtocol);
   // hContact,hSubContact,Protocol,SubProtocol should be
   // already filled by calling hContact := Value;
@@ -141,7 +142,7 @@ begin
 end;
 
 {
-function OpenContactHistory(hContact: THandle; Index: Integer = -1): THistoryFrm;
+function OpenContactHistory(hContact: THANDLE; Index: Integer = -1): THistoryFrm;
 var
   wHistory: THistoryFrm;
   NewWindow: Boolean;
@@ -250,11 +251,13 @@ begin
 
   Grid.OnProcessRichText := hgProcessRichText;
 
+  Grid.ShowHeaders := true;
+  
   SendMessage(Handle,WM_SIZE,0,0);
   Grid.EndUpdate;
 end;
 
-function Sample(hContact:THANDLE):int_ptr;
+function Sample(hContact:TMCONTACT):int_ptr;
 var
   twnd:tTmplWindow;
 begin

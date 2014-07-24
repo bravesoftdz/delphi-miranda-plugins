@@ -29,3 +29,7 @@ ParentWindow = Grid.Handle in WMSize message - guarantee for existing window
 отдельно хранить список открытых окон?
 (для журналов - тоже)
 ----------
+свойства и методы:
+1 - внутренние
+2 - для настроек
+3 - для оболочек

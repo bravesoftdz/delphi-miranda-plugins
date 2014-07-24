@@ -318,8 +318,6 @@ const
  * flags for internal use ONLY
 }
 
-  MC_ISMASTERCONTACT    = 1;
-  MC_ISSUBCONTACT       = 2;
   AVH_MUSTNOTIFY        = 4; // node->dwFlags (loader thread must notify avatar
                              // history about change/delete event)
   AVS_DELETENODEFOREVER = 8;

@@ -47,15 +47,18 @@ type
     FRTLEnabled     : Boolean;
     FShowIcons      : Boolean;
     FOpenDetailsMode: Boolean;
+//    SpeakOnDblClck  : Boolean;
 
     FBBCodesEnabled       : Boolean;
     FSmileysEnabled       : Boolean;
-    FMathModuleEnabled    : Boolean;
     FAvatarsHistoryEnabled: Boolean;
 
     FTextFormatting: Boolean;
 
     FTemplates:array [0..5] of pWideChar;
+
+    FDefCursor :HCURSOR;
+    FHandCursor:HCURSOR;
 
     FForceProfileName: Boolean;
     FProfileName: pWideChar;
@@ -98,6 +101,9 @@ type
     property SelectionFormat      : pWideChar index 4 read GetTemplate write SetTemplate;
     property DateTimeFormat       : pWideChar index 5 read GetTemplate write SetTemplate;
 
+    property CursorHand   :HCURSOR read FHandCursor;
+    property CursorDefault:HCURSOR read FDefCursor;
+
     // to private? public just for export
     property ItemOptions: TItemOptions read FItemOptions write FItemOptions;
     property Font     [i:integer]:HFONT     read GetFont;
@@ -106,10 +112,10 @@ type
 
     property RTLEnabled: Boolean read FRTLEnabled write FRTLEnabled;
     property ShowIcons : Boolean read FShowIcons  write SetShowIcons;
+//    property SpeakOnDblClck: Boolean read FSpeakOnDblClck write FSpeakOnDblClck;
 
     property BBCodesEnabled       : Boolean read FBBCodesEnabled        write FBBCodesEnabled;
     property SmileysEnabled       : Boolean read FSmileysEnabled        write FSmileysEnabled;
-    property MathModuleEnabled    : Boolean read FMathModuleEnabled     write FMathModuleEnabled;
     property RawRTFEnabled        : Boolean read FRawRTFEnabled         write FRawRTFEnabled;
     property AvatarsHistoryEnabled: Boolean read FAvatarsHistoryEnabled write FAvatarsHistoryEnabled;
 
@@ -490,12 +496,14 @@ var
 begin
   inherited;
 
+  FHandCursor := LoadCursor(0,windows.IDC_HAND);
+  FDefCursor  := LoadCursor(0,windows.IDC_ARROW);
+  
   FRTLEnabled := False;
   FShowIcons := False;
 
   FSmileysEnabled        := False;
   FBBCodesEnabled        := False;
-  FMathModuleEnabled     := False;
   FRawRTFEnabled         := False;
   FAvatarsHistoryEnabled := False;
 
@@ -561,6 +569,8 @@ begin
 end;
 
 procedure TGridOptions.LoadOptions;
+var
+  default:integer;
 begin
   StartChange;
   try
@@ -569,16 +579,17 @@ begin
     ColourReload();
 
     // load others
-    ShowIcons := DBReadByte(0,hppDBName, 'ShowIcons', 1)<>0;
-    RTLEnabled := GetContactRTLMode(0, '');
+//    SpeakOnDblClck := DBReadByte(0,hppDBName, 'DoubleSpeak', 1)<>0;
+    ShowIcons      := DBReadByte(0,hppDBName, 'ShowIcons', 1)<>0;
+    RTLEnabled     := GetContactRTLMode(0, '');
     // we have no per-proto rtl setup ui, use global instead
     // GridOptions.ShowAvatars := GetDBBool(hppDBName,'ShowAvatars',False);
 
     RawRTFEnabled  := DBReadByte(0,hppDBName, 'RawRTF' , 1)<>0;
     BBCodesEnabled := DBReadByte(0,hppDBName, 'BBCodes', 1)<>0;
 
-    SmileysEnabled        := DBReadByte(0,hppDBName, 'Smileys'       , byte(SmileyAddExists))<>0;
-    MathModuleEnabled     := DBReadByte(0,hppDBName, 'MathModule'    , byte(MathModuleExists))<>0;
+    default:=byte(ServiceExists(MS_SMILEYADD_REPLACESMILEYS)<>0);
+    SmileysEnabled        := DBReadByte(0,hppDBName, 'Smileys'       , default)<>0;
     AvatarsHistoryEnabled := DBReadByte(0,hppDBName, 'AvatarsHistory', 1)<>0;
 
     OpenDetailsMode := DBReadByte(0,hppDBName, 'OpenDetailsMode', 0)<>0;
@@ -601,37 +612,37 @@ end;
 procedure TGridOptions.SaveOptions;
 begin
   StartChange;
-  try
-    DBWriteByte(0, hppDBName, 'ShowIcons', byte(ShowIcons));
-    DBWriteByte(0, hppDBName, 'RTL'      , byte(RTLEnabled));
+//  try
+    DBWriteByte(0, hppDBName, 'ShowIcons'  , byte(ShowIcons));
+    DBWriteByte(0, hppDBName, 'RTL'        , byte(RTLEnabled));
+//    DBWriteByte(0, hppDBName, 'DoubleSpeak', byte(SpeakOnDblClck));
     // DBWriteByte(0, hppDBName, 'ShowAvatars', byte(ShowAvatars));
 
     DBWriteByte(0, hppDBName, 'RawRTF' , byte(RawRTFEnabled));
     DBWriteByte(0, hppDBName, 'BBCodes', byte(BBCodesEnabled));
 
     DBWriteByte(0, hppDBName, 'Smileys'       , byte(SmileysEnabled));
-    DBWriteByte(0, hppDBName, 'MathModule'    , byte(MathModuleEnabled));
     DBWriteByte(0, hppDBName, 'AvatarsHistory', byte(AvatarsHistoryEnabled));
 
     DBWriteByte(0, hppDBName, 'OpenDetailsMode', byte(OpenDetailsMode));
-  finally
+//  finally
     EndChange(HGOPT_OPTIONS);
-  end;
+//  end;
 end;
 
 procedure TGridOptions.SaveTemplates;
 begin
   StartChange;
-  try
+//  try
     DBWriteUnicode(0, hppDBName, 'FormatCopy'           , ClipCopyFormat);
     DBWriteUnicode(0, hppDBName, 'FormatCopyText'       , ClipCopyTextFormat);
     DBWriteUnicode(0, hppDBName, 'FormatReplyQuoted'    , ReplyQuotedFormat);
     DBWriteUnicode(0, hppDBName, 'FormatReplyQuotedText', ReplyQuotedTextFormat);
     DBWriteUnicode(0, hppDBName, 'FormatSelection'      , SelectionFormat);
     DBWriteUnicode(0, hppDBName, 'DateTimeFormat'       , DateTimeFormat);
-  finally
+//  finally
     EndChange(HGOPT_TEMPLATES);
-  end;
+//  end;
 end;
 
 procedure TGridOptions.DoChange(mask: dword=HGOPT_ALL);

@@ -3,37 +3,39 @@ unit my_rtf;
 interface
 
 uses
- richedit,
- windows;
+  richedit,
+  windows;
 
 //function InitRichEditLibrary: Integer;
 
-function GetRichRTFW(RichEditHandle: THandle; var RTFStream: WideString;
-                    SelectionOnly, PlainText, NoObjects, PlainRTF: Boolean): Integer;// overload;
-function GetRichRTFA(RichEditHandle: THandle; var RTFStream: AnsiString;
-                    SelectionOnly, PlainText, NoObjects, PlainRTF: Boolean): Integer;// overload;
-function GetRichString(RichEditHandle: THandle; SelectionOnly: Boolean = false): WideString;
+//used for Export only
+function GetRichRTFW(RichEditHandle: THANDLE; var RTFStream: PWideChar;
+                    SelectionOnly, PlainText, NoObjects, PlainRTF: Boolean): Integer;
+function GetRichRTFA(RichEditHandle: THANDLE; var RTFStream: PAnsiChar;
+                    SelectionOnly, PlainText, NoObjects, PlainRTF: Boolean): Integer;
 
-function SetRichRTFW(RichEditHandle: THandle; const RTFStream: WideString;
-                    SelectionOnly, PlainText, PlainRTF: Boolean): Integer;// overload;
-function SetRichRTFA(RichEditHandle: THandle; const RTFStream: AnsiString;
-                    SelectionOnly, PlainText, PlainRTF: Boolean): Integer;// overload;
+function GetRichString(RichEditHandle: THANDLE; SelectionOnly: Boolean = false): PWideChar;
 
-function FormatString2RTFW(const Source: WideString; const Suffix: AnsiString = ''): AnsiString;// overload;
-function FormatString2RTFA(const Source: AnsiString; const Suffix: AnsiString = ''): AnsiString;// overload;
+function SetRichRTFW(RichEditHandle: THANDLE; const RTFStream: PWideChar;
+                    SelectionOnly, PlainText, PlainRTF: Boolean): Integer;
+function SetRichRTFA(RichEditHandle: THANDLE; const RTFStream: PAnsiChar;
+                    SelectionOnly, PlainText, PlainRTF: Boolean): Integer;
 
-procedure ReplaceCharFormatRange(RichEditHandle: THandle;
+function FormatString2RTFW(Source: PWideChar; Suffix: PAnsiChar = nil): PAnsiChar;
+function FormatString2RTFA(Source: PAnsiChar; Suffix: PAnsiChar = nil): PAnsiChar;
+
+procedure ReplaceCharFormatRange(RichEditHandle: THANDLE;
      const fromCF, toCF: CHARFORMAT2; idx, len: Integer);
-procedure ReplaceCharFormat(RichEditHandle: THandle; const fromCF, toCF: CHARFORMAT2);
+procedure ReplaceCharFormat(RichEditHandle: THANDLE; const fromCF, toCF: CHARFORMAT2);
 
-function GetTextLength(RichEditHandle:THandle): Integer;
+function GetTextLength(RichEditHandle:THANDLE): Integer;
 
-function GetTextRange(RichEditHandle:THandle; cpMin,cpMax: Integer): AnsiString;
+function GetTextRange(RichEditHandle:THANDLE; cpMin,cpMax: Integer): PWideChar;
 
 implementation
 
 uses
-  common, // inttostr
+  common,
   hpp_global; // AnsiToWideString, WideToAnsiString
 
 type
@@ -46,10 +48,10 @@ type
   end;
 {
 var
-  FRichEditModule:  THandle = 0;
+  FRichEditModule:  THANDLE = 0;
   FRichEditVersion: Integer = 0;
 
-function GetModuleVersionFile(hModule: THandle): Integer;
+function GetModuleVersionFile(hModule: THANDLE): Integer;
 var
   dwVersion: Cardinal;
 begin
@@ -68,7 +70,7 @@ const
   RICHED20_DLL = 'RICHED20.DLL';
   MSFTEDIT_DLL = 'MSFTEDIT.DLL';
 var
-  hModule : THandle;
+  hModule : THANDLE;
   hVersion: Integer;
 
   emError : DWord;
@@ -146,7 +148,7 @@ begin
   Result := 0;
 end;
 
-function _GetRichRTF(RichEditHandle: THandle; TextStream: PTextStream;
+function _GetRichRTF(RichEditHandle: THANDLE; TextStream: PTextStream;
                     SelectionOnly, PlainText, NoObjects, PlainRTF, Unicode: Boolean): Integer;
 var
   es: TEditStream;
@@ -183,7 +185,7 @@ begin
   Result := es.dwError;
 end;
 
-function GetRichRTFW(RichEditHandle: THandle; var RTFStream: WideString;
+function GetRichRTFW(RichEditHandle: THANDLE; var RTFStream: PWideChar;
                     SelectionOnly, PlainText, NoObjects, PlainRTF: Boolean): Integer;
 var
   Stream: TTextStream;
@@ -193,14 +195,16 @@ begin
   if Assigned(Stream.DataW) then
   begin
     if PlainText then
-      SetString(RTFStream, Stream.DataW, Stream.Size div SizeOf(WideChar))
+      StrDupW(RTFStream, Stream.DataW, Stream.Size div SizeOf(WideChar))
     else
-      RTFStream := AnsiToWideString(Stream.Data, CP_ACP);
+      AnsiToWide(Stream.Data, RTFStream, CP_ACP);
     FreeMem(Stream.Data, Stream.Size);
-  end;
+  end
+  else
+    RTFStream := nil;
 end;
 
-function GetRichRTFA(RichEditHandle: THandle; var RTFStream: AnsiString;
+function GetRichRTFA(RichEditHandle: THANDLE; var RTFStream: PAnsiChar;
                     SelectionOnly, PlainText, NoObjects, PlainRTF: Boolean): Integer;
 var
   Stream: TTextStream;
@@ -209,18 +213,20 @@ begin
                         SelectionOnly, PlainText, NoObjects, PlainRTF, False);
   if Assigned(Stream.Data) then
   begin
-    SetString(RTFStream, Stream.Data, Stream.Size - 1);
+    StrDup(RTFStream, Stream.Data, Stream.Size - 1);
     FreeMem(Stream.Data, Stream.Size);
-  end;
+  end
+  else
+    RTFStream := nil;
 end;
 
-function GetRichString(RichEditHandle: THandle; SelectionOnly: Boolean = false): WideString;
+function GetRichString(RichEditHandle: THANDLE; SelectionOnly: Boolean = false): PWideChar;
 begin
   GetRichRTFW(RichEditHandle,Result,SelectionOnly,True,True,False);
 end;
 
 
-function _SetRichRTF(RichEditHandle: THandle; TextStream: PTextStream;
+function _SetRichRTF(RichEditHandle: THANDLE; TextStream: PTextStream;
                     SelectionOnly, PlainText, PlainRTF, Unicode: Boolean): Integer;
 var
   es: TEditStream;
@@ -249,111 +255,181 @@ begin
   Result := es.dwError;
 end;
 
-function SetRichRTFW(RichEditHandle: THandle; const RTFStream: WideString;
+function SetRichRTFW(RichEditHandle: THANDLE; const RTFStream: PWideChar;
                     SelectionOnly, PlainText, PlainRTF: Boolean): Integer;
 var
   Stream: TTextStream;
-  Buffer: AnsiString;
+  Buffer: PAnsiChar;
 begin
   if PlainText then
   begin
-    Stream.DataW := @RTFStream[1];
-    Stream.Size := Length(RTFStream) * SizeOf(WideChar);
+    Stream.DataW := RTFStream;
+    Stream.Size  := StrLenW(RTFStream) * SizeOf(WideChar);
+    Buffer := nil;
   end
   else
   begin
-    Buffer := WideToAnsiString(RTFStream, CP_ACP);
-    Stream.Data := @Buffer[1];
-    Stream.Size := Length(Buffer);
+    WideToAnsi(RTFStream, Buffer, CP_ACP);
+    Stream.Data := Buffer;
+    Stream.Size := StrLen(Buffer);
   end;
   Result := _SetRichRTF(RichEditHandle, @Stream,
                         SelectionOnly, PlainText, PlainRTF, PlainText);
+  mFreeMem(Buffer);
 end;
 
-function SetRichRTFA(RichEditHandle: THandle; const RTFStream: AnsiString;
+function SetRichRTFA(RichEditHandle: THANDLE; const RTFStream: PAnsiChar;
                     SelectionOnly, PlainText, PlainRTF: Boolean): Integer;
 var
   Stream: TTextStream;
 begin
-  Stream.Data := @RTFStream[1];
-  Stream.Size := Length(RTFStream);
+  Stream.Data := RTFStream;
+  Stream.Size := StrLen(RTFStream);
   Result := _SetRichRTF(RichEditHandle, @Stream,
                         SelectionOnly, PlainText, PlainRTF, False);
 end;
 
-function FormatString2RTFW(const Source: WideString; const Suffix: AnsiString = ''): AnsiString;
+function FormatString2RTFW(Source: PWideChar; Suffix: PAnsiChar = nil): PAnsiChar;
 var
   Text: PWideChar;
-  buf:array [0..15] of AnsiChar;
+  res: PAnsiChar;
+  buf: array [0..15] of AnsiChar;
+  len: integer;
 begin
+  // calculate len
+  len:=Length('{\uc1 ');
   Text := PWideChar(Source);
-  Result := '{\uc1 ';
   while Text[0] <> #0 do
   begin
     if (Text[0] = #13) and (Text[1] = #10) then
     begin
-      Result := Result + '\par ';
+      inc(len,Length('\par '));
       Inc(Text);
     end
     else
       case Text[0] of
-        #10:
-          Result := Result + '\par ';
-        #09:
-          Result := Result + '\tab ';
+        #10: inc(len,Length('\par '));
+        #09: inc(len,Length('\tab '));
         '\', '{', '}':
-          Result := Result + '\' + AnsiChar(Text[0]);
+          inc(len,2);
       else
         if Word(Text[0]) < 128 then
-          Result := Result + AnsiChar(Word(Text[0]))
+          inc(len)
         else
-          Result := Result + '\u'+IntToStr(buf,Word(Text[0]))+'?';
+          inc(len,3+IntStrLen(Word(Text[0]),10));
       end;
     Inc(Text);
   end;
-  Result := Result + Suffix + '}';
-end;
+  inc(len,StrLen(Suffix)+2);
 
-function FormatString2RTFA(const Source: AnsiString; const Suffix: AnsiString = ''): AnsiString;
-var
-  Text: PAnsiChar;
-begin
-  Text := PAnsiChar(Source);
-  Result := '{';
+  // replace
+  Text := PWideChar(Source);
+  GetMem(Result,len);
+  res:=StrCopyE(Result,'{\uc1 ');
   while Text[0] <> #0 do
   begin
     if (Text[0] = #13) and (Text[1] = #10) then
     begin
-      Result := Result + '\line ';
+      res:=StrCopyE(res,'\par ');
       Inc(Text);
     end
     else
       case Text[0] of
-        #10:
-          Result := Result + '\line ';
-        #09:
-          Result := Result + '\tab ';
-        '\', '{', '}':
-          Result := Result + '\' + Text[0];
+        #10: res:=StrCopyE(res,'\par ');
+        #09: res:=StrCopyE(res,'\tab ');
+        '\', '{', '}': begin
+          res^:='\'; inc(res);
+          res^:=AnsiChar(Text[0]); inc(res);
+        end;
       else
-        Result := Result + Text[0];
+        if Word(Text[0]) < 128 then
+        begin
+          res^:=AnsiChar(Word(Text[0])); inc(res);
+        end
+        else
+        begin
+          res:=StrCopyE(
+            StrCopyE(res,'\u'),
+            IntToStr(buf,Word(Text[0])));
+          res^:='?'; inc(res);
+        end;
       end;
     Inc(Text);
   end;
-  Result := Result + Suffix + '}';
+
+  res:=StrCopyE(res, Suffix);
+  res^:='}'; inc(res); res^:=#0;
 end;
 
-function GetTextLength(RichEditHandle: THandle): Integer;
+function FormatString2RTFA(Source: PAnsiChar; Suffix: PAnsiChar = nil): PAnsiChar;
+var
+  Text,res: PAnsiChar;
+  len: integer;
+begin
+  // calculate len
+  len:=1;
+  Text := PAnsiChar(Source);
+  while Text[0] <> #0 do
+  begin
+    if (Text[0] = #13) and (Text[1] = #10) then
+    begin
+      inc(len,Length('\line '));
+      Inc(Text);
+    end
+    else
+      case Text[0] of
+        #10: inc(len,Length('\line '));
+        #09: inc(len,Length('\tab '));
+        '\', '{', '}':
+          inc(len,2);
+      else
+        inc(len);
+      end;
+    Inc(Text);
+  end;
+  inc(len,StrLen(Suffix)+2);
+
+  // replace
+  Text := PAnsiChar(Source);
+  GetMem(Result,len);
+  res:=Result;
+  res^ := '{'; inc(res);
+  while Text[0] <> #0 do
+  begin
+    if (Text[0] = #13) and (Text[1] = #10) then
+    begin
+      res:=StrCopyE(res,'\line ');
+      Inc(Text);
+    end
+    else
+      case Text[0] of
+        #10: res:=StrCopyE(res,'\line ');
+        #09: res:=StrCopyE(res,'\tab ');
+        '\', '{', '}': begin
+          res^:='\'; inc(res);
+          res^:=Text[0]; inc(res);
+        end;
+      else
+        res^:=Text[0]; inc(res);
+      end;
+    Inc(Text);
+  end;
+
+  res:=StrCopyE(res, Suffix);
+  res^:='}'; inc(res); res^:=#0;
+end;
+
+function GetTextLength(RichEditHandle: THANDLE): Integer;
 var
   gtxl: GETTEXTLENGTHEX;
 begin
-  gtxl.flags := GTL_DEFAULT or GTL_PRECISE;
-  gtxl.codepage := 1200;
-  gtxl.flags := gtxl.flags or GTL_NUMCHARS;
+  gtxl.flags    := GTL_DEFAULT or GTL_PRECISE;
+  gtxl.codepage := 1200; // Unicode
+  gtxl.flags    := gtxl.flags or GTL_NUMCHARS;
   Result := SendMessage(RichEditHandle, EM_GETTEXTLENGTHEX, WPARAM(@gtxl), 0);
 end;
 
-procedure ReplaceCharFormatRange(RichEditHandle: THandle;
+procedure ReplaceCharFormatRange(RichEditHandle: THANDLE;
      const fromCF, toCF: CHARFORMAT2; idx, len: Integer);
 var
   cr: CHARRANGE;
@@ -395,22 +471,22 @@ begin
     SendMessage(RichEditHandle, EM_SETCHARFORMAT, SCF_SELECTION, LPARAM(@toCF));
 end;
 
-procedure ReplaceCharFormat(RichEditHandle: THandle; const fromCF, toCF: CHARFORMAT2);
+procedure ReplaceCharFormat(RichEditHandle: THANDLE; const fromCF, toCF: CHARFORMAT2);
 begin
   ReplaceCharFormatRange(RichEditHandle,fromCF,toCF,0,GetTextLength(RichEditHandle));
 end;
 
 
-function GetTextRange(RichEditHandle: THandle; cpMin,cpMax: Integer): AnsiString;
+function GetTextRange(RichEditHandle: THANDLE; cpMin,cpMax: Integer): PWideChar;
 var
-  tr: TextRange;
+  tr: TextRangeW;
 begin
   tr.chrg.cpMin := cpMin;
   tr.chrg.cpMax := cpMax;
-  SetLength(Result,cpMax-cpMin);
-  tr.lpstrText := @Result[1];
+  GetMem(Result,(cpMax-cpMin+1)*SizeOf(WideChar));
+  tr.lpstrText := Result;
 
-  SendMessage(RichEditHandle,EM_GETTEXTRANGE,0,LPARAM(@tr));
+  SendMessageW(RichEditHandle,EM_GETTEXTRANGE,0,LPARAM(@tr));
 end;
 
 initialization

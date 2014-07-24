@@ -47,10 +47,12 @@ interface
 uses
   hpp_global;
 
-procedure TokenizeString(const Template: WideString; var Tokens: TWideStrArray; var SpecialTokens: TIntArray);
+procedure TokenizeString(const Template: PWideChar; var Tokens: TWideStrArray; var SpecialTokens: TIntArray);
 
 implementation
 
+uses
+  common;
 {
   This procedure splits AnsiString into array.
 
@@ -96,9 +98,12 @@ implementation
     [0] -> 1
     [1] -> 3
 }
-procedure TokenizeString(const Template: WideString; var Tokens: TWideStrArray; var SpecialTokens: TIntArray);
+procedure TokenizeString(const Template: PWideChar; var Tokens: TWideStrArray; var SpecialTokens: TIntArray);
 
   procedure PushToken(StartIdx,EndIdx: Integer; Special: Boolean = False);
+  var
+    pc:PWideChar;
+    len:integer;
   begin
     if EndIdx < StartIdx then
       exit;
@@ -109,13 +114,19 @@ procedure TokenizeString(const Template: WideString; var Tokens: TWideStrArray; 
         if not ((Length(SpecialTokens) > 0) and
         (SpecialTokens[High(SpecialTokens)] = High(Tokens))) then  // previous was not special
         begin
-          Tokens[High(Tokens)] := Tokens[High(Tokens)] + Copy(Template,StartIdx,EndIdx-StartIdx+1);
+          len:=StrLenW(Tokens[High(Tokens)]) + (EndIdx-StartIdx+1);
+          mGetMem(pc, (len + 1) * SizeOf(WideChar));
+          StrCopyEW(
+            StrCopyEW(pc,Tokens[High(Tokens)]),
+            Template + StartIdx, EndIdx-StartIdx+1);
+          mFreeMem(Tokens[High(Tokens)]);
+          Tokens[High(Tokens)] := pc;
           exit;
         end;
       end;
     end;
     SetLength(Tokens,Length(Tokens)+1);
-    Tokens[High(Tokens)] := Copy(Template,StartIdx,EndIdx-StartIdx+1);
+    StrDupW(Tokens[High(Tokens)], Template + StartIdx, EndIdx-StartIdx+1);
     if Special then
     begin
       SetLength(SpecialTokens,Length(SpecialTokens)+1);
@@ -128,13 +139,13 @@ var
   token_s: Integer;
   in_token: Boolean;
 begin
-  len := Length(Template);
+  len := StrLenW(Template)-1;
   SetLength(Tokens,0);
   SetLength(SpecialTokens,0);
 
-  token_s := 1;
+  token_s := 0;
   in_token := False;
-  i := 1;
+  i := 0;
   while i <= len do
   begin
     if (Template[i]='\') or (Template[i]='%') then

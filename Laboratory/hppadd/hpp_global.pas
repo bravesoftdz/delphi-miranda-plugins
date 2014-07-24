@@ -57,6 +57,10 @@ uses
   Windows,Messages,
   m_api;
 
+type
+  TMouseKey = (mkControl, mkLButton, mkMButton, mkRButton, mkShift);
+  TMouseKeys = set of TMouseKey;
+
 const // direction
   mtIncoming = 1;
   mtOutgoing = 2;
@@ -81,15 +85,41 @@ type
   PMessageTypes = ^TMessageTypes;
   TMessageTypes = set of TBuiltinMessageType;
 
-type
-  TMessageRecord = record
-    Name : pAnsiChar;
-    idx  : Integer;
-  end;
+const
+  EventNames: array[TBuiltinMessageType] of PAnsiChar = (
+    'Unknown',
+    'Message',
+    'Link',
+    'File transfer',
+    'System message',
+    'Contacts',
+    'SMS message',
+    'Webpager message',
+    'EMail Express message',
+    'Status changes',
+    'SMTP Simple Email',
+    'Other events (unknown)',
+    'Nick changes',
+    'Avatar changes',
+    'WATrack notify',
+    'Status message changes',
+    'Voice call',
+    'Custom'
+  );
 
 type
   TRTLMode = (hppRTLDefault,hppRTLEnable,hppRTLDisable);
 
+{  TDBEVENTINFO = record
+    cbSize   : int;  // size of the structure
+*    szModule : PAnsiChar; // module that 'owns' this event and controls the data format
+*    timestamp: dword; // timestamp in UNIX time
+x    flags    : dword; // the DBEF_* flags above
+*    eventType: word;  // event type, such as message, can be module defined
+    cbBlob   : dword; // size in bytes of pBlob^
+    pBlob    : PByte; // pointer to buffer containing the module defined event data
+  end;
+}
   PHistoryItem = ^THistoryItem;
   THistoryItem = record
     Module      : pAnsiChar;
@@ -100,7 +130,6 @@ type
     Time        : DWord;
     Height      : Integer;
     MessageType : ThppMessageType;
-    EventType   : Word;
     RTLMode     : TRTLMode;
     HasHeader   : Boolean;    // header for sessions
     LinkedToPrev: Boolean;    // for future use to group messages from one contact together
@@ -108,17 +137,15 @@ type
     IsRead      : Boolean;
   end;
 
-  TSaveFormat = (sfAll,sfHTML,sfXML,sfRTF,sfMContacts,sfUnicode,sfText);
-  TSaveFormats = set of TSaveFormat;
-  TSaveStage = (ssInit,ssDone);
-
-  TWideStrArray = array of WideString;
-  TIntArray = array of Integer;
-
+type
+  TWideStrArray = array of PWideChar;
+  TIntArray     = array of Integer;
+type
   TSendMethod = (smSend,smPost);
 
 const
   HM_BASE = WM_APP + 10214; // (+$27E6) base for all history++ messages
+
   HM_HIST_BASE = HM_BASE + 100; // base for contact's history specific messages
   HM_SRCH_BASE = HM_BASE + 200; // base for global search specific messages
   HM_SESS_BASE = HM_BASE + 300; // base for session thread specific messages
@@ -181,7 +208,7 @@ const
   hppChangelogURL = 'http://themiron.miranda.im/changelog';
 
 const
-  hppLoadBlock  = 4096;
+  hppLoadBlock      = 4096;
   hppFirstLoadBlock = 200;
 
 {
@@ -218,40 +245,30 @@ var
   hppCodepage: Cardinal;
   hppRichEditVersion: Integer;
 
-{$I m_historypp.inc}
+var // Was in options before
+  ShowHistoryCount: Boolean;
 
 function MessageTypesToDWord(mt: TMessageTypes): DWord; //??
 
-function AnsiToWideString(const S: AnsiString; CodePage: Cardinal; InLength: Integer = -1): WideString;
-function WideToAnsiString(const WS: WideString; CodePage: Cardinal; InLength: Integer = -1): AnsiString;
-function TranslateAnsiW(const S: AnsiString{TRANSLATE-IGNORE}): WideString;
-procedure CopyToClip(const WideStr: WideString; Handle: Hwnd; CodePage: Cardinal = CP_ACP; Clear: Boolean = True);
+procedure CopyToClip(const WideStr: PWideChar; Handle: Hwnd; CodePage: Cardinal = CP_ACP; Clear: Boolean = True);
 
-procedure OpenUrl(const URLText: pWideChar; NewWindow: Boolean);
+procedure OpenUrl(const URLText: pWideChar);
 
-function HppMessageBox(Handle: THandle; const Text: WideString; const Caption: WideString; Flags: Integer): Integer;
-
-function PassMessage(Handle: THandle; Message: DWord; wParam: WPARAM; lParam: LPARAM; Method: TSendMethod = smSend): Boolean;
+function PassMessage(Handle: THANDLE; Message: DWord; wParam: WPARAM; lParam: LPARAM; Method: TSendMethod = smSend): Boolean;
 
 //----- added from TNT ------
 function IsRTF(const Value: pWideChar): Boolean;
 
-function IsWideCharUpper(WC: WideChar): Boolean;
-function IsWideCharLower(WC: WideChar): Boolean;
-function IsWideCharDigit(WC: WideChar): Boolean;
-function IsWideCharSpace(WC: WideChar): Boolean;
-function IsWideCharPunct(WC: WideChar): Boolean;
-function IsWideCharCntrl(WC: WideChar): Boolean;
-function IsWideCharBlank(WC: WideChar): Boolean;
-function IsWideCharXDigit(WC: WideChar): Boolean;
-function IsWideCharAlpha(WC: WideChar): Boolean;
+function IsWideCharUpper       (WC: WideChar): Boolean;
+function IsWideCharLower       (WC: WideChar): Boolean;
+function IsWideCharDigit       (WC: WideChar): Boolean;
+function IsWideCharSpace       (WC: WideChar): Boolean;
+function IsWideCharPunct       (WC: WideChar): Boolean;
+function IsWideCharCntrl       (WC: WideChar): Boolean;
+function IsWideCharBlank       (WC: WideChar): Boolean;
+function IsWideCharXDigit      (WC: WideChar): Boolean;
+function IsWideCharAlpha       (WC: WideChar): Boolean;
 function IsWideCharAlphaNumeric(WC: WideChar): Boolean;
-
-//----- from SysUtils -----
-type
-  TReplaceFlags = set of (rfReplaceAll, rfIgnoreCase);
-
-function StringReplace(const S, OldPattern, NewPattern: WideString; Flags: TReplaceFlags): WideString;
 
 
 type
@@ -267,24 +284,17 @@ type
   public
     constructor Create;
     destructor Destroy; override;
+
     function Reallocate(NewSize: Integer): Integer;
-    function Allocate(NewSize: Integer): Integer;
+    function Allocate  (NewSize: Integer): Integer;
+
     procedure Lock;
     procedure Unlock;
+
     property Buffer: Pointer read FBuffer;
     property Size: Integer read FSize;
   end;
 
-// Was in options before
-var
-  ShowHistoryCount: Boolean;
-var
-  MetaContactsProto: PAnsiChar;
-
-function SmileyAddExists:boolean;
-function MathModuleExists:boolean;
-function MetaContactsExists:boolean;
-function MeSpeakExists:boolean;
 
 implementation
 
@@ -297,75 +307,10 @@ begin
   Move(mt,Result,SizeOf(mt));
 end;
 
-procedure OpenUrl(const URLText: pWideChar; NewWindow: Boolean);
+procedure OpenUrl(const URLText: pWideChar);
 begin
-  CallService(MS_UTILS_OPENURL,OUF_UNICODE + WPARAM(NewWindow),LPARAM(URLText));
+  CallService(MS_UTILS_OPENURL,OUF_UNICODE,LPARAM(URLText));
 end;
-
-function AnsiToWideString(const S: AnsiString; CodePage: Cardinal; InLength: Integer = -1): WideString;
-var
-  InputLength,
-  OutputLength: Integer;
-  pcw:pWideChar;
-begin
-  Result := '';
-  if S = '' then
-    exit;
-  if CodePage = CP_UTF8 then
-  begin
-    pcw := mir_utf8decodew(PAnsiChar(S));
-    Result := Widestring(pcw);
-    mir_free(pcw);
-//    Result := UTF8ToWideString(S); // CP_UTF8 not supported on Windows 95
-  end
-  else
-  begin
-    if InLength < 0 then
-      InputLength := Length(S)
-    else
-      InputLength := InLength;
-    OutputLength := MultiByteToWideChar(CodePage, 0, PAnsiChar(S), InputLength, nil, 0);
-    SetLength(Result, OutputLength);
-    MultiByteToWideChar(CodePage, MB_PRECOMPOSED, PAnsiChar(S), InputLength, PWideChar(Result),
-      OutputLength);
-  end;
-end;
-
-function WideToAnsiString(const WS: WideString; CodePage: Cardinal; InLength: Integer = -1): AnsiString;
-var
-  InputLength,
-  OutputLength: Integer;
-  pc:PAnsiChar;
-begin
-  Result := '';
-  if WS = '' then
-    exit;
-  if CodePage = CP_UTF8 then
-  begin
-    pc := mir_utf8encodew(PWideChar(WS));
-    Result := AnsiString(pc);
-    mir_free(pc);
-//    Result := UTF8Encode(WS) // CP_UTF8 not supported on Windows 95
-  end
-  else
-  begin
-    if InLength < 0 then
-      InputLength := Length(WS)
-    else
-      InputLength := InLength;
-    OutputLength := WideCharToMultiByte(CodePage, 0, PWideChar(WS), InputLength, nil, 0,
-      nil, nil);
-    SetLength(Result, OutputLength);
-    WideCharToMultiByte(CodePage, 0, PWideChar(WS), InputLength, PAnsiChar(Result),
-      OutputLength, nil, nil);
-  end;
-end;
-
-function TranslateAnsiW(const S: AnsiString{TRANSLATE-IGNORE}): WideString;
-begin
-  Result := AnsiToWideString(Translate(PAnsiChar(S)),hppCodepage{TRANSLATE-IGNORE});
-end;
-
 
 function GetLCIDfromCodepage(Codepage: Cardinal): LCID;
 var
@@ -390,19 +335,19 @@ begin
   Result := $0405;
 end;
 
-procedure CopyToClip(const WideStr: WideString; Handle: Hwnd; CodePage: Cardinal = CP_ACP; Clear: Boolean = True);
+procedure CopyToClip(const WideStr: PWideChar; Handle: HWND; CodePage: Cardinal = CP_ACP; Clear: Boolean = True);
 var
-  WData, AData, LData: THandle;
+  WData, AData, LData: THANDLE;
   LDataPtr: ^Cardinal;
   WDataPtr: PWideChar;
   ADataPtr: PAnsiChar;
+  AnsiStr: PAnsiChar;
   ASize,WSize: Integer;
-  AnsiStr: AnsiString;
 begin
-  WSize := (Length(WideStr)+1)*SizeOf(WideChar);
+  WSize := (StrLenW(WideStr)+1)*SizeOf(WideChar);
   if WSize = SizeOf(WideChar) then exit;
-  AnsiStr := WideToAnsiString(WideStr,CodePage);
-  ASize := Length(AnsiStr)+1;
+  WideToAnsi(WideStr,AnsiStr,CodePage);
+  ASize := StrLen(AnsiStr)+1;
   OpenClipboard(Handle);
   try
     if Clear then EmptyClipboard;
@@ -414,12 +359,12 @@ begin
       ADataPtr := GlobalLock(AData);
       LDataPtr := GlobalLock(LData);
       try
-        Move(WideStr[1],WDataPtr^,WSize);
-        Move(AnsiStr[1],ADataPtr^,ASize);
+        Move(WideStr^,WDataPtr^,WSize);
+        Move(AnsiStr^,ADataPtr^,ASize);
         LDataPtr^ := GetLCIDfromCodepage(CodePage);
         SetClipboardData(CF_UNICODETEXT, WData);
-        SetClipboardData(CF_TEXT, AData);
-        SetClipboardData(CF_LOCALE, LData);
+        SetClipboardData(CF_TEXT       , AData);
+        SetClipboardData(CF_LOCALE     , LData);
       finally
         GlobalUnlock(WData);
         GlobalUnlock(AData);
@@ -433,15 +378,11 @@ begin
     end;
   finally
     CloseClipBoard;
+    mFreeMem(AnsiStr);
   end;
 end;
 
-function HppMessageBox(Handle: THandle; const Text: WideString; const Caption: WideString; Flags: Integer): Integer;
-begin
-  Result := MessageBoxW(Handle,PWideChar(Text),PWideChar(Caption),Flags);
-end;
-
-function PassMessage(Handle: THandle; Message: DWord; wParam: WPARAM; lParam: LPARAM; Method: TSendMethod = smSend): Boolean;
+function PassMessage(Handle: THANDLE; Message: DWord; wParam: WPARAM; lParam: LPARAM; Method: TSendMethod = smSend): Boolean;
 var
   Tries: integer;
 begin
@@ -522,78 +463,6 @@ end;
 function IsWideCharAlphaNumeric(WC: WideChar): Boolean;
 begin
   Result := (_WideCharType(WC, CT_CTYPE1) and (C1_ALPHA + C1_DIGIT)) <> 0;
-end;
-
-{ From SysUtils }
-
-function StringReplace(const S, OldPattern, NewPattern: WideString; Flags: TReplaceFlags): WideString;
-var
-  SearchStr, Patt, NewStr: WideString;
-  Offset: Integer;
-begin
-{
-  if rfIgnoreCase in Flags then
-  begin
-    SearchStr := AnsiUpperCase(S);
-    Patt := AnsiUpperCase(OldPattern);
-  end else
-}
-  begin
-    SearchStr := S;
-    Patt := OldPattern;
-  end;
-  NewStr := S;
-  Result := '';
-  while SearchStr <> '' do
-  begin
-    Offset := Pos(Patt, SearchStr);
-    if Offset = 0 then
-    begin
-      Result := Result + NewStr;
-      Break;
-    end;
-    Result := Result + Copy(NewStr, 1, Offset - 1) + NewPattern;
-    NewStr := Copy(NewStr, Offset + Length(OldPattern), MaxInt);
-    if not (rfReplaceAll in Flags) then
-    begin
-      Result := Result + NewStr;
-      Break;
-    end;
-    SearchStr := Copy(SearchStr, Offset + Length(Patt), MaxInt);
-  end;
-end;
-
-{ From options }
-
-{$include m_mathmodule.inc}
-{$include m_speak.inc}
-
-function SmileyAddExists:boolean;
-begin
-  result:=boolean(ServiceExists(MS_SMILEYADD_REPLACESMILEYS));
-end;
-
-function MetaContactsExists:boolean;
-begin
-  result:=boolean(ServiceExists(MS_MC_GETMOSTONLINECONTACT));
-  if result then
-  begin
-    MetaContactsProto:=PAnsiChar(CallService(MS_MC_GETPROTOCOLNAME, 0, 0));
-    if not Assigned(MetaContactsProto) then
-      result:=false;
-  end
-  else
-    MetaContactsProto:=nil;
-end;
-
-function MathModuleExists:boolean;
-begin
-  result:=boolean(ServiceExists(MATH_RTF_REPLACE_FORMULAE));
-end;
-
-function MeSpeakExists:boolean;
-begin
-  result:=boolean(ServiceExists(MS_SPEAK_SAY_W));
 end;
 
 { THppBuffer }

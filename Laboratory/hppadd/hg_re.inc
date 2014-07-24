@@ -36,6 +36,7 @@ end;
 
 function THistoryGrid.IsLinkAtPoint(RichEditRect: TRect; X, Y, Item: Integer): Boolean;
 var
+  FRich: PHPPRichEdit;
   P: TPoint;
   cr: CHARRANGE;
   cf: CharFormat2;
@@ -44,11 +45,11 @@ var
 begin
   Result := False;
   Point(P, X - RichEditRect.Left, Y - RichEditRect.Top);
-  ApplyItemToRich(Item);
+  FRich := GetRichFromCache(Item);
 
   cp := SendMessage(FRich.Handle, EM_CHARFROMPOS, 0, lParam(@P));
   if cp = -1 then
-    exit; // out of richedit area
+    exit; // out of rich_edit area
   cr.cpMin := cp;
   cr.cpMax := cp + 1;
   SendMessage(FRich.Handle, EM_EXSETSEL, 0, lParam(@cr));
@@ -66,22 +67,26 @@ end;
 // Call it when you are sure that the point has a link,
 // if no link at a point, the result is ''
 // To know if there's a link, use GetHitTests and look for ghtLink
-function THistoryGrid.GetLinkAtPoint(X, Y: Integer): AnsiString;
+function THistoryGrid.GetLinkAtPoint(X, Y: Integer): PWideChar;
 var
+  FRich: PHPPRichEdit;
+  pc,pc1:pWideChar;
   cr: CHARRANGE;
   cf: CharFormat2;
-  res: DWord;
   RichEditRect: TRect;
-  cp, Max, Item: Integer;
   P: TPoint;
+  cp, Max, Item: Integer;
+  res: DWord;
 begin
-  Result := '';
+  Result := nil;
   Item := FindItemAt(X, Y);
   if Item = -1 then
     exit;
   RichEditRect := GetRichEditRect(Item, True);
 
   if not IsLinkAtPoint(RichEditRect, X, Y, Item) then exit;
+
+  FRich := GetRichFromCache(Item);
 {}
   Point(P, X - RichEditRect.Left, Y - RichEditRect.Top);
   cp := SendMessage(FRich.Handle, EM_CHARFROMPOS, 0, lParam(@P));
@@ -91,7 +96,7 @@ begin
 {!old
   cp := FRich.Perform(EM_CHARFROMPOS, 0, lParam(@P));
   if cp = -1 then
-    exit; // out of richedit area
+    exit; // out of rich_edit area
   cr.cpMin := cp;
   cr.cpMax := cp + 1;
   FRich.Perform(EM_EXSETSEL, 0, lParam(@cr));
@@ -138,17 +143,15 @@ begin
 
   Result := GetTextRange(FRich.Handle, cr.cpMin, cr.cpMax);
 
-  if (Length(Result) > 10) and (Pos('HYPERLINK', Result) = 1) then
+  if (StrLenW(Result) > 10) and (StrPosW(Result, 'HYPERLINK') = Result) then
   begin
-//!!    cr.cpMin := PosEx('"', Result, 10);
-    if cr.cpMin > 0 then
-      Inc(cr.cpMin)
-    else
-      exit;
-//!!    cr.cpMax := PosEx('"', Result, cr.cpMin);
-    if cr.cpMin = 0 then
-      exit;
-    Result := Copy(Result, cr.cpMin, cr.cpMax - cr.cpMin);
+    pc:=StrPosW(Result+10,'"');
+    if pc<>nil then
+    begin
+      inc(pc);
+      pc1:=StrPosW(pc,'"');
+      if pc1<>nil then
+        StrCopyW(Result,pc,pc1-pc);
+    end;
   end;
-
 end;

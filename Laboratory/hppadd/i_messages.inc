@@ -1,9 +1,43 @@
 {}
+function THistoryGrid.OnGridTextMessage(Message:uint; wParam:WPARAM; lParam:LPARAM):LRESULT;
+var
+  len: integer;
+begin
+  result:=0;
+  case Message of
+    EM_GETSEL: begin 
+      if wParam<>0 then PDword(wParam)^ := 0;
+      if lParam<>0 then PDword(lParam)^ := StrLenW(SelectionString);
+    end;
+    EM_EXGETSEL: begin
+      if lParam <> 0 then
+      begin
+        PCharRange(lParam)^.cpMin := 0;
+        PCharRange(lParam)^.cpMax := StrLenW(SelectionString);
+      end;
+    end;
+    WM_GETTEXT: begin
+      len := Min(wParam - 1, StrLenW(SelectionString));
+      if len >= 0 then
+        StrCopyW(PWideChar(lParam), SelectionString, len);
+      result:=len;
+    end;
+    WM_GETTEXTLENGTH: begin
+      result:=StrLenW(SelectionString);
+    end;
+    WM_SETTEXT,
+    EM_SETSEL,
+    EM_EXSETSEL: begin
+      FSelectionStored := False;
+    end;
+  end;
+end;
 {
 function THistoryGrid.OnGridMessage(lParam:LPARAM):boolean;
 begin
 end;
 }
+
 type
   PReqSize = ^TReqSize;
   TReqSize = record
@@ -21,36 +55,7 @@ begin
 
   case integer(PNMHdr(lParam)^.code) of
 
-    //----- Cursor form changing -----
-    WM_SETCURSOR: begin
-      if State <> gsIdle then
-        exit;
-      if LoWord(lParam) = word(HTERROR) then
-        exit;
-{
-      NewCursor := crDefault;
-
-GetCursorPos(pt);
-ptScreen2Client(pt);
-
-Msg.pt
-      P := ScreenToClient(Mouse.CursorPos);
-      HintHitTests := GetHitTests(P.X, P.Y);
-
-      if HintHitTests * [ghtButton, ghtLink] <> [] then
-        NewCursor := crHandPoint;
-
-      if Windows.GetCursor <> NewCursor then
-      begin
-        Windows.SetCursor(NewCursor);
-        Rslt := 1;
-      end
-      else
-        Rslt := 0;
-}
-    end;
-
-    //----- Bottomless richedit resize message (for RichCache controls) -----
+    //----- Bottomless rich_edit resize message (for RichCache controls) -----
     EN_REQUESTRESIZE: begin
       FRichCache.ResizeRequest(pReqSize(lParam)^.rc);
     end;

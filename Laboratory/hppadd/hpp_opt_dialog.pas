@@ -28,9 +28,6 @@ uses
 
 function OnOptInit(awParam: WPARAM; alParam: LPARAM): Integer; cdecl;
 
-var
-  hDlg: HWND = 0;
-
 implementation
 
 uses
@@ -48,10 +45,7 @@ uses
 {$include resource.inc}
 {$R 'hpp_opt_dialog.res' 'hpp_opt_dialog.rc'}
 
-const
-  URL_NEEDOPTIONS = 'http://code.google.com/p/historypp/wiki/AdditionalOptions';
-
-procedure SetChecked(idCtrl: Integer; Checked: Boolean);
+procedure SetChecked(hDlg:HWND; idCtrl: Integer; Checked: Boolean);
 begin
   if Checked then
     SendDlgItemMessage(hDlg,idCtrl,BM_SETCHECK,BST_CHECKED,0)
@@ -59,74 +53,40 @@ begin
     SendDlgItemMessage(hDlg,idCtrl,BM_SETCHECK,BST_UNCHECKED,0);
 end;
 
-function GetChecked(idCtrl: Integer): Boolean;
+function GetChecked(hDlg: HWND; idCtrl: Integer): Boolean;
 begin
   Result := (SendDlgItemMessage(hDlg,idCtrl,BM_GETCHECK,0,0) = BST_CHECKED);
 end;
 
-function AreOptionsChanged: Boolean;
-begin
-  Result := True;
-
-  if GetChecked(IDC_SHOWEVENTICONS) <> GridOptions.ShowIcons then exit;
-  if GetChecked(IDC_RTLDEFAULT) <> GridOptions.RTLEnabled then exit;
-  if GetChecked(IDC_OPENDETAILS) <> GridOptions.OpenDetailsMode then exit;
-  if GetChecked(IDC_SHOWEVENTSCOUNT) <> ShowHistoryCount then exit;
-  //if GetChecked(IDC_SHOWAVATARS) <> GridOptions.ShowAvatars then exit;
-
-  if GetChecked(IDC_BBCODE) <> GridOptions.BBCodesEnabled then exit;
-  if SmileyAddExists then
-    if GetChecked(IDC_SMILEY) <> GridOptions.SmileysEnabled then exit;
-  if MathModuleExists then
-    if GetChecked(IDC_MATH) <> GridOptions.MathModuleEnabled then exit;
-  if GetChecked(IDC_RAWRTF) <> GridOptions.RawRTFEnabled then exit;
-  if GetChecked(IDC_AVATARSHISTORY) <> GridOptions.AvatarsHistoryEnabled then exit;
-
-  if GetChecked(IDC_RECENTONTOP   ) <> (DBReadByte(0,hppDBName,'SortOrder',0)<>0) then exit;
-  if GetChecked(IDC_GROUPHISTITEMS) <> (DBReadByte(0,hppDBName,'GroupHistoryItems',0)<>0) then exit;
-
-  if GetChecked(IDC_IEVIEWAPI)     <> (DBReadByte(0,hppDBName,'IEViewAPI',0)<>0) then exit;
-  if GetChecked(IDC_GROUPLOGITEMS) <> (DBReadByte(0,hppDBName,'GroupLogItems',0)<>0) then exit;
-  if GetChecked(IDC_DISABLEBORDER) <> (DBReadByte(0,hppDBName,'NoLogBorder',0)<>0) then exit;
-  if GetChecked(IDC_DISABLESCROLL) <> (DBReadByte(0,hppDBName,'NoLogScrollBar',0)<>0) then exit;
-
-  if GetChecked(IDC_ICONPACK) <> (DBReadByte(0,hppDBName,'CheckIconPack',0)<>0) then exit;
-
-  Result := False;
-end;
-
-procedure SaveChangedOptions;
+procedure SaveChangedOptions(hDlg:HWND);
 var
-  ShowRestart: Boolean;
   Checked: Boolean;
 //  i: Integer;
 begin
-  ShowRestart := False;
   GridOptions.StartChange;
-  try
-    GridOptions.ShowIcons       := GetChecked(IDC_SHOWEVENTICONS);
-    GridOptions.RTLEnabled      := GetChecked(IDC_RTLDEFAULT);
-    GridOptions.OpenDetailsMode := GetChecked(IDC_OPENDETAILS);
+//  try
+    GridOptions.ShowIcons       := GetChecked(hDlg,IDC_SHOWEVENTICONS);
+    GridOptions.RTLEnabled      := GetChecked(hDlg,IDC_RTLDEFAULT);
+    GridOptions.OpenDetailsMode := GetChecked(hDlg,IDC_OPENDETAILS);
 
-    ShowHistoryCount := GetChecked(IDC_SHOWEVENTSCOUNT);
-    if ShowHistoryCount <> (DBReadByte(0,hppDBName,'ShowHistoryCount',0)<>0) then
-      DBWriteByte(0,hppDBName,'ShowHistoryCount',Ord(ShowHistoryCount));
+    ShowHistoryCount := GetChecked(hDlg,IDC_SHOWEVENTSCOUNT);
+    DBWriteByte(0,hppDBName,'ShowHistoryCount',Ord(ShowHistoryCount));
 
     //GridOptions.ShowAvatars := GetChecked(IDC_SHOWAVATARS);
 
-    GridOptions.BBCodesEnabled        := GetChecked(IDC_BBCODE);
-    GridOptions.RawRTFEnabled         := GetChecked(IDC_RAWRTF);
-    GridOptions.AvatarsHistoryEnabled := GetChecked(IDC_AVATARSHISTORY);
+    GridOptions.BBCodesEnabled        := GetChecked(hDlg,IDC_BBCODE);
+    GridOptions.RawRTFEnabled         := GetChecked(hDlg,IDC_RAWRTF);
+    GridOptions.AvatarsHistoryEnabled := GetChecked(hDlg,IDC_AVATARSHISTORY);
 
-    if SmileyAddExists  then GridOptions.SmileysEnabled    := GetChecked(IDC_SMILEY);
-    if MathModuleExists then GridOptions.MathModuleEnabled := GetChecked(IDC_MATH);
+    if ServiceExists(MS_SMILEYADD_REPLACESMILEYS)<>0 then
+      GridOptions.SmileysEnabled := GetChecked(hDlg,IDC_SMILEY);
 
     GridOptions.SaveOptions;
-  finally
+//  finally
     GridOptions.EndChange;
-  end;
+//  end;
 
-  Checked := GetChecked(IDC_RECENTONTOP);
+  Checked := GetChecked(hDlg,IDC_RECENTONTOP);
   if Checked <> (DBReadByte(0,hppDBName,'SortOrder',0)<>0) then
   begin
     DBWriteByte(0,hppDBName,'SortOrder',Ord(Checked));
@@ -140,7 +100,7 @@ begin
 }
   end;
 
-  Checked := GetChecked(IDC_GROUPHISTITEMS);
+  Checked := GetChecked(hDlg,IDC_GROUPHISTITEMS);
   if Checked <> (DBReadByte(0,hppDBName,'GroupHistoryItems',0)<>0) then
   begin
     DBWriteByte(0,hppDBName,'GroupHistoryItems',Ord(Checked));
@@ -150,71 +110,51 @@ begin
 }
   end;
 
-  Checked := GetChecked(IDC_IEVIEWAPI);
-  if Checked <> (DBReadByte(0,hppDBName,'IEViewAPI',0)<>0) then
-    DBWriteByte(0,hppDBName,'IEViewAPI',Ord(Checked));
-//  ShowRestart := ShowRestart or (Checked <> ImitateIEView);
+  DBWriteByte(0,hppDBName,'IEViewAPI',Ord(GetChecked(hDlg,IDC_IEVIEWAPI)));
 
-  Checked := GetChecked(IDC_GROUPLOGITEMS);
-  if Checked <> (DBReadByte(0,hppDBName,'GroupLogItems',0)<>0) then
-  begin
-    DBWriteByte(0,hppDBName,'GroupLogItems',Ord(Checked));
-//!    ExternalGrids.GroupLinked := Checked;
-  end;
+  Checked := GetChecked(hDlg,IDC_GROUPLOGITEMS);
+  DBWriteByte(0,hppDBName,'GroupLogItems',Ord(Checked));
+//!!  ExternalGrids.GroupLinked := Checked;
 
-  Checked := GetChecked(IDC_DISABLEBORDER);
-  if Checked <> (DBReadByte(0,hppDBName,'NoLogBorder',0)<>0) then
-    DBWriteByte(0,hppDBName,'NoLogBorder',Ord(Checked));
-  //ShowRestart := ShowRestart or (Checked <> DisableLogBorder);
+  DBWriteByte(0,hppDBName,'NoLogBorder'   ,Ord(GetChecked(hDlg,IDC_DISABLEBORDER)));
+  DBWriteByte(0,hppDBName,'NoLogScrollBar',Ord(GetChecked(hDlg,IDC_DISABLESCROLL)));
 
-  Checked := GetChecked(IDC_DISABLESCROLL);
-  if Checked <> (DBReadByte(0,hppDBName,'NoLogScrollBar',0)<>0) then
-    DBWriteByte(0,hppDBName,'NoLogScrollBar',Ord(Checked));
-  //ShowRestart := ShowRestart or (Checked <> DisableLogScrollbar);
+  DBWriteByte(0,hppDBName,'CheckIconPack',Ord(GetChecked(hDlg,IDC_ICONPACK)));
 
-  Checked := GetChecked(IDC_ICONPACK);
-  if Checked <> (DBReadByte(0,hppDBName,'CheckIconPack',0)<>0) then
-    DBWriteByte(0,hppDBName,'CheckIconPack',Ord(Checked));
-
-  if ShowRestart then
-    ShowWindow(GetDlgItem(hDlg,ID_NEED_RESTART),SW_SHOW)
-  else
-    ShowWindow(GetDlgItem(hDlg,ID_NEED_RESTART),SW_HIDE);
 end;
 
 function OptDialogProc(hwndDlg: HWND; uMsg: UInt; wParam: WPARAM; lParam: LPARAM): lresult; stdcall;
+var
+  SmileyAddExists:boolean;
 begin
   Result := 0;
   case uMsg of
-    WM_DESTROY: hDlg := 0;
-
     WM_INITDIALOG: begin
-      hDlg := hwndDlg;
-      SetChecked(IDC_SHOWEVENTICONS,GridOptions.ShowIcons);
-      SetChecked(IDC_RTLDEFAULT,GridOptions.RTLEnabled);
-      SetChecked(IDC_OPENDETAILS,GridOptions.OpenDetailsMode);
-      SetChecked(IDC_SHOWEVENTSCOUNT,ShowHistoryCount);
-      //SetChecked(IDC_SHOWAVATARS,GridOptions.ShowAvatars);
+      SetChecked(hwndDlg,IDC_SHOWEVENTICONS,GridOptions.ShowIcons);
+      SetChecked(hwndDlg,IDC_RTLDEFAULT,GridOptions.RTLEnabled);
+      SetChecked(hwndDlg,IDC_OPENDETAILS,GridOptions.OpenDetailsMode);
+      SetChecked(hwndDlg,IDC_SHOWEVENTSCOUNT,ShowHistoryCount);
+      //SetChecked(hwndDlg,IDC_SHOWAVATARS,GridOptions.ShowAvatars);
 
-      SetChecked(IDC_BBCODE,GridOptions.BBCodesEnabled);
-      EnableWindow(GetDlgItem(hDlg,IDC_SMILEY),SmileyAddExists);
+      SetChecked(hwndDlg,IDC_BBCODE,GridOptions.BBCodesEnabled);
+
+      SmileyAddExists := ServiceExists(MS_SMILEYADD_REPLACESMILEYS)<>0;
+      EnableWindow(GetDlgItem(hwndDlg,IDC_SMILEY),SmileyAddExists);
       if SmileyAddExists then
-        SetChecked(IDC_SMILEY,GridOptions.SmileysEnabled);
-      EnableWindow(GetDlgItem(hDlg,IDC_MATH),MathModuleExists);
-      if MathModuleExists then
-        SetChecked(IDC_MATH,GridOptions.MathModuleEnabled);
-      SetChecked(IDC_RAWRTF,GridOptions.RawRTFEnabled);
-      SetChecked(IDC_AVATARSHISTORY,GridOptions.AvatarsHistoryEnabled);
+        SetChecked(hwndDlg,IDC_SMILEY,GridOptions.SmileysEnabled);
 
-      SetChecked(IDC_RECENTONTOP   ,DBReadByte(0,hppDBName,'SortOrder',0)<>0);
-      SetChecked(IDC_GROUPHISTITEMS,DBReadByte(0,hppDBName,'GroupHistoryItems',0)<>0);
+      SetChecked(hwndDlg,IDC_RAWRTF,GridOptions.RawRTFEnabled);
+      SetChecked(hwndDlg,IDC_AVATARSHISTORY,GridOptions.AvatarsHistoryEnabled);
 
-      SetChecked(IDC_IEVIEWAPI    ,DBReadByte(0,hppDBName,'IEViewAPI',0)<>0);
-      SetChecked(IDC_GROUPLOGITEMS,DBReadByte(0,hppDBName,'GroupLogItems',0)<>0);
-      SetChecked(IDC_DISABLEBORDER,DBReadByte(0,hppDBName,'NoLogBorder',0)<>0);
-      SetChecked(IDC_DISABLESCROLL,DBReadByte(0,hppDBName,'NoLogScrollBar',0)<>0);
+      SetChecked(hwndDlg,IDC_RECENTONTOP   ,DBReadByte(0,hppDBName,'SortOrder',0)<>0);
+      SetChecked(hwndDlg,IDC_GROUPHISTITEMS,DBReadByte(0,hppDBName,'GroupHistoryItems',0)<>0);
 
-      SetChecked(IDC_ICONPACK,DBReadByte(0,hppDBName,'CheckIconPack',1)<>0);
+      SetChecked(hwndDlg,IDC_IEVIEWAPI    ,DBReadByte(0,hppDBName,'IEViewAPI',0)<>0);
+      SetChecked(hwndDlg,IDC_GROUPLOGITEMS,DBReadByte(0,hppDBName,'GroupLogItems',0)<>0);
+      SetChecked(hwndDlg,IDC_DISABLEBORDER,DBReadByte(0,hppDBName,'NoLogBorder',0)<>0);
+      SetChecked(hwndDlg,IDC_DISABLESCROLL,DBReadByte(0,hppDBName,'NoLogScrollBar',0)<>0);
+
+      SetChecked(hwndDlg,IDC_ICONPACK,DBReadByte(0,hppDBName,'CheckIconPack',1)<>0);
 
       TranslateDialogDefault(hwndDlg);
     end;
@@ -224,22 +164,13 @@ begin
       begin
         Result := 1;
         // apply changes here
-        SaveChangedOptions;
+        SaveChangedOptions(hwndDlg);
       end;
     end;
 
     WM_COMMAND: begin
-      case LoWord(wParam) of
-        ID_NEEDOPTIONS_LINK: begin
-          CallService(MS_UTILS_OPENURL,TWPARAM(True),TLPARAM(PAnsiChar(URL_NEEDOPTIONS)));
-          Result := 1;
-        end;
-      else
-        if AreOptionsChanged then
-        begin
-          Result := 1;
-          SendMessage(GetParent(hwndDlg),PSM_CHANGED,hwndDlg,0);
-        end;
+      case wParam shr 16 of
+        BN_CLICKED: SendMessage(GetParent(hwndDlg),PSM_CHANGED,hwndDlg,0);
       end;
     end;
 
@@ -274,8 +205,73 @@ begin
         BN_CLICKED: begin
           case loword(wParam) of
             IDC_TMPL_HELP: begin
+{
+Formatting variables
+\n -- new line 
+\t -- tab 
+\\ -- backslash (if you need to output backslash, instead of "Me\You" write "Me\\You") 
+\% -- percent sign (if you need to output percent sign, instead of "Me%You" write "Me\%You") 
+%nick% -- default contact's nickname text 
+%from_nick% -- nick of the sender 
+%to_nick% -- nick of the reciever 
+%mes% -- plain message text 
+%adj_mes% -- message adjusted to fit in 72 symbols 
+%quot_mes% -- the same as %adj_mes%, but every line is prefixed with "> " 
+%selmes% -- the same as %mes% or selected text in pseudo-edit mode 
+%adj_selmes% -- the same as %adj_mes% or applied to selected text in pseudo-edit mode 
+%quot_selmes% -- the same as %quot_mes% or applied to selected text in pseudo-edit mode 
+%datetime% -- date and time of the event 
+%smart_datetime% -- works for only for several messages. Outputs full date & time only for messages with unique date. For other events outputs only time. 
+%date% -- date of the event 
+%time% -- time of the event
+}
             end;
             IDC_DATE_HELP: begin
+{
+http://msdn.microsoft.com/en-us/library/windows/desktop/dd317787(v=vs.85).aspx
+The following table defines the format types used to represent days.Format type	Meaning
+d	Day of the month as digits without leading zeros for single-digit days.
+dd	Day of the month as digits with leading zeros for single-digit days.
+ddd	Abbreviated day of the week as specified by a LOCALE_SABBREVDAYNAME* value, for example, "Mon" in English (United States).
+
+Windows Vista and later: If a short version of the day of the week is required, your application should use the LOCALE_SSHORTESTDAYNAME* constants.
+dddd	Day of the week as specified by a LOCALE_SDAYNAME* value.
+
+
+ 
+
+The following table defines the format types used to represent months.Format type	Meaning
+M	Month as digits without leading zeros for single-digit months.
+MM	Month as digits with leading zeros for single-digit months.
+MMM	Abbreviated month as specified by a LOCALE_SABBREVMONTHNAME* value, for example, "Nov" in English (United States).
+MMMM	Month as specified by a LOCALE_SMONTHNAME* value, for example, "November" for English (United States), and "Noviembre" for Spanish (Spain).
+
+
+ 
+
+The following table defines the format types used to represent years.Format type	Meaning
+y	Year represented only by the last digit.
+yy	Year represented only by the last two digits. A leading zero is added for single-digit years.
+yyyy	Year represented by a full four or five digits, depending on the calendar used. Thai Buddhist and Korean calendars have five-digit years. The "yyyy" pattern shows five digits for these two calendars, and four digits for all other supported calendars. Calendars that have single-digit or two-digit years, such as for the Japanese Emperor era, are represented differently. A single-digit year is represented with a leading zero, for example, "03". A two-digit year is represented with two digits, for example, "13". No additional leading zeros are displayed.
+yyyyy	Behaves identically to "yyyy".
+
+
+ 
+http://msdn.microsoft.com/en-us/library/windows/desktop/dd318131(v=vs.85).aspx
+The following table defines the format types used to represent a period or era.Format type	Meaning
+g, gg	Period/era string formatted as specified by the CAL_SERASTRING value. The "g" and "gg" format pictures in a date string are ignored if there is no associated era or period string.
+Picture	Meaning
+h	Hours with no leading zero for single-digit hours; 12-hour clock
+hh	Hours with leading zero for single-digit hours; 12-hour clock
+H	Hours with no leading zero for single-digit hours; 24-hour clock
+HH	Hours with leading zero for single-digit hours; 24-hour clock
+m	Minutes with no leading zero for single-digit minutes
+mm	Minutes with leading zero for single-digit minutes
+s	Seconds with no leading zero for single-digit seconds
+ss	Seconds with leading zero for single-digit seconds
+t	One character time marker string, such as A or P
+tt	Multi-character time marker string, such as AM or PM
+}
             end;
           end;
         end;

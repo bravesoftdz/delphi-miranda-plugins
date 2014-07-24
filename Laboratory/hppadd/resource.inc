@@ -12,7 +12,6 @@ const
   ID_FORMATTING_GROUP  = 200; // "Text formatting options" group
   IDC_BBCODE           = 201; // "Enable BBCodes" checkbox
   IDC_SMILEY           = 202; // "Enable SmileyAdd support" checkbox
-  IDC_MATH             = 203; // "Enable MathModule support" checkbox
   IDC_RAWRTF           = 204; // "Enable raw RTF support" checkbox
   IDC_AVATARSHISTORY   = 205; // "Display chanage avatars" checkbox
 
@@ -26,9 +25,9 @@ const
   IDC_RECENTONTOP      = 501; // "Recent events on top" checkbox
   IDC_GROUPHISTITEMS   = 502; // "Group messages" checkbox
 
-  ID_NEEDOPTIONS_LINK  = 250; // "Visit Wiki page for more options" hyperlink
+//  ID_NEEDOPTIONS_LINK  = 250; // "Visit Wiki page for more options" hyperlink
 
-  ID_NEED_RESTART      = 999; // "Please restart Miranda IM..."
+//  ID_NEED_RESTART      = 999; // "Please restart Miranda IM..."
 
   IDC_ICONPACK         = 400; // "Check Icon Pack"
 

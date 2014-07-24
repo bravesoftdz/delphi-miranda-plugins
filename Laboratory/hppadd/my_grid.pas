@@ -27,7 +27,7 @@ type
   TOnItemFilter      = procedure(Index: Integer; var Show: Boolean) of object;
   TGetItemData       = procedure(Index: Integer; var Item: THistoryItem) of object;
   TGetNameData       = procedure(Index: Integer; var Name: pWideChar) of object;
-  TOnProcessRichText = procedure(Handle: THandle; Item: Integer) of object;
+  TOnProcessRichText = procedure(Handle: THANDLE; Item: Integer) of object;
   TOnState           = procedure(State: TGridState) of object;
 
 type
@@ -36,7 +36,6 @@ type
     FHandle: THANDLE;
     //----- properties fields -----
     FRichCache:TRichCache;
-    FRich: PHPPRichEdit;           // Current item
     FRichInline:PHPPRichEdit;      // inline (pesudo-editor) control
     FItems: array of THistoryItem;
     FGetNameData: TGetNameData;    // reassignable procedure to get Name Data
@@ -53,7 +52,7 @@ type
     TempSelItems: array of Integer;
     FState:TGridState;
     FReversed: Boolean;            // Latest at top or bottom
-    FReversedHeader: Boolean;      // Header placement
+    FReversedHeader: Boolean;      // Header placement (Reversed xor ReversedHeader = true - above item)
     FRTLMode: TRTLMode;            // Grid "global" RTL mode
     FBiDiMode: TBiDiMode;          // form field emulation
     //**********************
@@ -66,10 +65,8 @@ type
     FClientBuf : HBITMAP;          // memory buffer bitmap
     FClientRect: TRect;            // Client area rect
 
-    FRichHeight:integer;
-
     FFilter     : TMessageTypes;   // event types mask to show
-    FGroupLinked: Boolean; // combine history/log messages to group or not
+    FGroupLinked: Boolean;         // combine history/log messages to group or not
     FShowBottomAligned: Boolean;
 
     //----- Text messages -----
@@ -77,8 +74,9 @@ type
 
     DownHitTests: TGridHitTests;
     HintHitTests: TGridHitTests;
+    FHintWindow : HWND;
     // Selection (inline and block) text and flag for it
-    FSelectionString: WideString;
+    FSelectionString: PWideChar;
     FSelectionStored: Boolean;
     FOnSelect: TOnSelect;
 
@@ -89,8 +87,8 @@ type
     PHeaderHeight  : integer; // Calculates on settings changes
     LockCount      : integer;
     FShowBookmarks : Boolean; // Show bookmarks sign
-    FShowHeaders   : Boolean; // Show session sign (to open session header) or not
-    ExpandHeaders  : Boolean; // Show session header in history
+    FShowHeaders   : Boolean; // Show session header/sign (to open session header) or not
+    FExpandHeaders : Boolean; // Show session header or sign
     GridUpdates    : TGridUpdates; // set of types of updates
 
     //----- ScrollBar related -----
@@ -125,13 +123,14 @@ type
     procedure SetState         (const Value: TGridState);
     procedure SetGroupLinked   (const Value: Boolean);
     procedure SetShowHeaders   (const Value: Boolean);
+    procedure SetExpandHeaders (const Value: Boolean);
     procedure SetReversed      (const Value: Boolean);
     procedure SetReversedHeader(const Value: Boolean);
     procedure SetFilter        (const Value: TMessageTypes);
     procedure SetRTLMode       (const Value: TRTLMode);
     procedure SetHideSelection (const Value: Boolean);
     procedure SetSelected(Item: Integer);
-    function  GetSelectionString: WideString;
+    function  GetSelectionString: PWideChar;
     function  GetSelCount: Integer;
     function  GetCount: Integer;
     function  GetItems   (Index: Integer): THistoryItem;
@@ -176,13 +175,18 @@ type
 
     procedure LoadItem            (Item: Integer; LoadHeight: Boolean = True; Reload: Boolean = False);
     function  CalcItemHeight      (Item: Integer): Integer;
-    procedure ApplyItemToRich     (Item: Integer; aRichEdit: PHPPRichEdit = nil; ForceInline: Boolean = False);
+    function  GetRichHeight       (Item: Integer): Integer;
+    function  GetRichFromCache    (Item: Integer): PHPPRichEdit;
+    procedure ApplyItemToRich     (Item: Integer; aRichEdit: PHPPRichEdit; ForceInline: Boolean = False);
     procedure ApplyItemToRichCache(Item: Integer; aRichEdit: PHPPRichEdit);
     // replace templates by values (internal)
-    function  FormatItems(ItemList: array of Integer; Format: WideString): WideString;
+    function  FormatItems(ItemList: array of Integer; Format: PWideChar): PWideChar;
     procedure IntFormatItem(Item: Integer; var Tokens: TWideStrArray; var SpecialTokens: TIntArray);
+    // not used atm
+    function  FormatItem(Item: Integer; Format: PWideChar): PWideChar;
 
-    function GetHintAtPoint(X, Y: Integer; var ObjectHint: WideString; var ObjectRect: TRect): Boolean;
+    function GetHintAtPoint(X, Y: Integer; var ObjectHint: WideString): Boolean;
+    function HintShow(X, Y: integer):integer;
 
     //----- painting functions -----
     procedure PaintHeader(Index: Integer; var ItemRect: TRect);
@@ -206,7 +210,9 @@ type
     procedure OnGridSCroll(wParam:WPARAM);
 
 //    function  OnGridMessage(lParam:LPARAM):boolean;
+    function  OnGridTextMessage(Message:uint; wParam:WPARAM; lParam:LPARAM):LRESULT;
     function  OnGridNotify(lParam:LPARAM):boolean;
+    function  OnSetCursor (wParam:WPARAM; lParam:LPARAM):lresult;
 
     //----- Keys-related messages -----
     function OnKeyMessage(hMessage:UInt; wParam:WPARAM; lParam:LPARAM):lresult;
@@ -218,32 +224,39 @@ type
 
     function GetHitTests(X, Y: Integer): TGridHitTests;
 
-	  function GetItemRect    (Item: Integer): TRect;
+    function GetItemRect    (Item: Integer): TRect;
     function GetRichEditRect(Item: Integer; DontClipTop: Boolean): TRect;
-    function GetLinkAtPoint(X, Y: Integer): AnsiString;
+    function GetLinkAtPoint(X, Y: Integer): PWideChar;
     function IsLinkAtPoint (RichEditRect: TRect; X, Y, Item: Integer): Boolean;
+    procedure URLClick(Item: Integer; URLText: PWideChar; Button: TMouseKey);
+
+    //----- Other -----
+    procedure OnSpeakMessage(item:integer=-1);
 
     //----- Scroll bar properties -----
     property SBPosition: integer read FSBPosition write SetSBPosition;
-    property SBMax: integer read FSBMax write SetSBMax;
+    property SBMax     : integer read FSBMax write SetSBMax;
 
+  //====================
   public
     property Handle:THANDLE read FHandle;
 	  
-    property SelectionString: WideString read GetSelectionString;
-    property ShowBottomAligned: Boolean read FShowBottomAligned write FShowBottomAligned;
-    property GroupLinked: Boolean read FGroupLinked write SetGroupLinked;
-    property ShowBookmarks: Boolean read FShowBookmarks write FShowBookmarks;
-    property ShowHeaders: Boolean read FShowHeaders write SetShowHeaders;
-    property State: TGridState read FState write SetState;
-    property Reversed      : Boolean read FReversed write SetReversed;
-    property ReversedHeader: Boolean read FReversedHeader write SetReversedHeader;
+    property SelectionString: PWideChar read GetSelectionString;
+    property HideSelection  : Boolean    read FHideSelection write SetHideSelection;
+    property State : TGridState    read FState  write SetState;
     property Filter: TMessageTypes read FFilter write SetFilter;
+    property ShowBottomAligned: Boolean read FShowBottomAligned write FShowBottomAligned;
+
+    property ShowBookmarks : Boolean read FShowBookmarks  write FShowBookmarks;
+    property ShowHeaders   : Boolean read FShowHeaders    write SetShowHeaders;
+    property ExpandHeaders : Boolean read FExpandHeaders  write SetExpandHeaders;
+    property Reversed      : Boolean read FReversed       write SetReversed;
+    property ReversedHeader: Boolean read FReversedHeader write SetReversedHeader;
+
+    property GroupLinked: Boolean read FGroupLinked write SetGroupLinked;
     property RTLMode : TRTLMode  read FRTLMode  write SetRTLMode;
     property BiDiMode: TBiDiMode read FBiDiMode write FBiDiMode;
-    property HideSelection: Boolean read FHideSelection write SetHideSelection;
 
-    property RichEdit      : PHPPRichEdit read FRich       write FRich;
     property InlineRichEdit: PHPPRichEdit read FRichInline write FRichInline;
 {*} property OnProcessRichText: TOnProcessRichText read FOnProcessRichText write FOnProcessRichText;
     //----- Item properties -----
@@ -297,14 +310,15 @@ type
 
 function NewHistoryGrid(aParent:HWND):THistoryGrid;
 
-
 implementation
 
 uses
   Messages,
   RichEdit,
+  commctrl,
   Common, CustomGraph,
   m_api,
+  datetime,
   hpp_richedit,
   hpp_arrays,
   hpp_strparser,
@@ -314,50 +328,14 @@ uses
   my_GridOptions;
 
 const
+  TIMERID_HOVER = 10;
+const
   SBPageSize = 20;
   Padding = 4;
 
 function GetDateTimeString(Time:Dword):pWideChar;
-var
-  buf:array [0..300] of WideChar;
-  ST: TSystemTime;
-  aft,lft:TFILETIME;
 begin
-  if Assigned(GridOptions) then
-  begin
-    UnixTimeToFileTime(Time,aft);
-    FileTimeToLocalFileTime(aft, lft);
-    FileTimeToSystemTime(aft,ST);
-    GetDateFormatW(LOCALE_USER_DEFAULT,0,@ST,GridOptions.DateTimeFormat,@buf,300);
-    GetTimeFormatW(LOCALE_USER_DEFAULT,0,@ST,@buf,@buf,300);
-    StrDupW(result,buf);
-  end
-  else
-    result:=nil;
-end;
-
-function THistoryGrid.GetGMessage(idx:integer):pWideChar;
-begin
-  result:=FMessages[idx];
-end;
-
-procedure THistoryGrid.SetGMessage(idx:integer;value:pWideChar);
-begin
-  if StrCmpW(value,FMessages[idx])<>0 then
-  begin
-    mFreeMem(FMessages[idx]);
-    StrDupW (FMessages[idx],value);
-  end;
-end;
-
-procedure THistoryGrid.Update;
-begin
-  UpdateWindow(FHandle);
-end;
-
-procedure THistoryGrid.Invalidate;
-begin
-  InvalidateRect(FHandle, nil, true);
+  result:=DateTimeToStr(Time, GridOptions.DateTimeFormat);
 end;
 
 //----- History Grid implementation -----
@@ -388,7 +366,7 @@ begin
     lExStyle := lExStyle or WS_EX_RIGHT;
     {$IFDEF FPC}pf.wEffects{$ELSE}pf.wReserved{$ENDIF} := 0;
   end;
-  SendMessage(RichEdit.Handle, EM_SETPARAFORMAT, 0, lParam(@pf));
+  SendMessage(aRichEdit.Handle, EM_SETPARAFORMAT, 0, lParam(@pf));
   SetWindowLongPtrW(aRichEdit.Handle, GWL_EXSTYLE, lExStyle);
 
   aRichEdit.RTL := RTL;
@@ -450,7 +428,7 @@ begin
   UnhookEvent(hHookChange);
   
   // Destroy GDI objects
-  DestroyWindow(FHandle); // FClient+FScrollBar are child windows, muse destroy automatically
+  DestroyWindow(FHandle); // FClient+FScrollBar are child windows, must destroy automatically
   DeleteDC(FClientDC);
   if FClientBuf<>0 then
     DeleteObject(FClientBuf);
@@ -458,7 +436,6 @@ begin
 //  FRichInline.Free;
 
   // Destroy cache
-  FRich := nil; //!! check for FreeHPPRichEdit in cache??
   FRichCache.Free;
 
   // Destroy strings
@@ -478,40 +455,44 @@ procedure THistoryGrid.InitDefaults;
 var
   dc:HDC;
 begin
-//  ShowBottomAligned := False;
   CHeaderHeight := -1;
   PHeaderheight := -1;
-//  ExpandHeaders := False;
 
-  TxtStartup  := 'Starting up...';
-  TxtNoItems  := 'History is empty';
-  TxtNoSuch   := 'No such items';
-  TxtSessions := 'Conversation started at %s';
+  ExpandHeaders := true;
 
+  TxtStartup  := TranslateW('Starting up...');
+  TxtNoItems  := TranslateW('History is empty');
+  TxtNoSuch   := TranslateW('No such items');
+  TxtSessions := TranslateW('Conversation started at %s');
+
+  FState := gsIdle;
+  Multiselect := true;
+
+//  ShowBottomAligned := False;
 //  FReversed := False;
 //  FReversedHeader := False;
-  FState := gsIdle;
 //  IsCanvasClean := False;
-  Multiselect := true;
 //  Allocated := False;
 
 //  BarAdjusted := False;
 //  FSBHidden := false;
 
-  FSelected := -1;
-//  FContact := 0;
-//  FProtocol := '';
-  ShowBookmarks := True;
-
-  FSelectionString := ''; //?? need to change to PWideChar;
 //  FSelectionStored := False;
+//  FHideSelection:=false;
 
 //  LockCount:=0;
+
+//  FWheelLastTick   := 0;
+//  FWheelAccumulator:= 0;
+
+  FSelected := -1;
+  ShowBookmarks := True;
+
+  FSelectionString := nil;
 
   FFilter:=[mtUnknown, //!!mtIncoming, mtOutgoing,
            mtMessage, mtUrl, mtFile, mtSystem];
 
-//  FHideSelection:=false;
   FGridNotFocused:=true;
 
   FClientDC:=CreateCompatibleDC(0);
@@ -524,32 +505,28 @@ begin
 
   VLineScrollSize := (LogY*13) div 96;//MulDiv(LogY, 13, 96);
 
-//  FWheelLastTick   := 0;
-//  FWheelAccumulator:= 0;
-
 end;
 
 function NewHistoryGrid(aParent:HWND):THistoryGrid;
-//var rc:TRect;
+var TI:TToolInfoW;
 begin
   result:=THistoryGrid.Create;
 
   // Create Main window
   result.FHandle:=CreateWindowExW(0,'STATIC',nil,WS_CHILD+WS_VISIBLE,
-      CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,
+      integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
+      integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
       aParent,0,hInstance,result);
   if result.FHandle<>0 then
   begin
     SetWindowLongPtrW(result.FHandle,GWL_WNDPROC,LONG_PTR(@GridWndProc));
     SetWindowLongPtrW(result.FHandle,GWLP_USERDATA,long_ptr(result));
 
-//    GetClientRect(result.FHandle, rc);
-
     // Create the scroll bar.
     result.FScrollBar := CreateWindowExW(0,'SCROLLBAR',nil,
         WS_CHILD or WS_VISIBLE or SBS_VERT or SBS_RIGHTALIGN,
-        CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,
-//        rc.Left,rc.Top,rc.Right,rc.Bottom,
+        integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
+        integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
         result.FHandle,0,hInstance,nil);
 
     if result.FScrollBar<>0 then
@@ -559,8 +536,8 @@ begin
 
     // Create client window (Log)
     result.FClient:=CreateWindowExW(0,'STATIC',nil,WS_CHILD+WS_VISIBLE,
-        CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,CW_USEDEFAULT,
-//        rc.Left,rc.Top,rc.Right,rc.Bottom,
+        integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
+        integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
         result.FHandle,0,hInstance,nil);
 
     if result.FClient<>0 then
@@ -575,6 +552,21 @@ begin
       // Inline Editor
   //    result.InlineRichEdit:=NewHPPRichEdit(result.FClient,[]);
 
+      result.FHintWindow:=CreateWindowW(TOOLTIPS_CLASS,nil,WS_POPUP or TTS_ALWAYSTIP,
+          integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
+          integer(CW_USEDEFAULT),integer(CW_USEDEFAULT),
+          result.FClient,0,hInstance,nil);
+      with TI do
+      begin
+        cbSize   := SizeOf(TI);
+        uFlags   := TTF_SUBCLASS;
+        hWnd     := result.FClient;
+        uId      := result.FClient;
+        hInst    := 0;
+        lpszText := nil;
+        rect     := result.FHintRect;
+      end;
+      SendMessageW(result.FHintWindow, TTM_ADDTOOL, 0, LPARAM(@ti));	
     end;
 
     result.InitDefaults;

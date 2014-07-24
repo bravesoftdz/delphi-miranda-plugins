@@ -9,7 +9,8 @@ unit hpp_icons;
 interface
 
 uses
-  windows;
+  windows,
+  hpp_global;
 
 //----- Icons (iconpack) related constants -----
 const
@@ -77,7 +78,7 @@ const
 
 type
   ThppIntIconsRec = record
-    Handle: hIcon;
+    Handle: HICON;
     id    : THANDLE;
   end;
 
@@ -88,14 +89,14 @@ var
 procedure RegisterIcons;
 function LoadSkinIcons:boolean;
 
+function GetEventIcon(const Hi: THistoryItem):HICON;
+
 implementation
 
 uses
   ShellAPI,
   common,io,
-  dbsettings,m_api,
-  hpp_events,
-  hpp_global;
+  dbsettings,m_api;
 
 const
   IconGroups: array [0..4] of pAnsiChar = (
@@ -139,8 +140,8 @@ const
     (desc:'Clear in-place filter';     group:3), {HPP_ICON_HOTFILTERCLEAR}
     (desc:'Conversation hide';         group:1), {HPP_ICON_SESS_HIDE}
     (desc:'Drop down arrow';           group:2), {HPP_ICON_DROPDOWNARROW}
-    (desc:'User Details';              group:2), {HPP_ICON_CONTACDETAILS}
-    (desc:'User Menu';                 group:2), {HPP_ICON_CONTACTMENU}
+    (desc:'User details';              group:2), {HPP_ICON_CONTACDETAILS}
+    (desc:'User menu';                 group:2), {HPP_ICON_CONTACTMENU}
     (desc:'Bookmarks';                 group:2), {HPP_ICON_BOOKMARK}
     (desc:'Bookmark enabled';          group:0), {HPP_ICON_BOOKMARK_ON}
     (desc:'Bookmark disabled';         group:0), {HPP_ICON_BOOKMARK_OFF}
@@ -162,6 +163,28 @@ const
     (desc:nil; group:4 {idx:HPP_ICON_EVENT_WATRACK}),
     (desc:nil; group:4 {idx:HPP_ICON_EVENT_STATUSMES}),
     (desc:nil; group:4 {idx:HPP_ICON_EVENT_VOICECALL})
+  );
+
+const
+  EventRecords: array[TBuiltinMessageType] of integer = (
+    9999,
+    -HPP_SKIN_EVENT_MESSAGE,
+    -HPP_SKIN_EVENT_URL,
+    -HPP_SKIN_EVENT_FILE,
+    ord(HPP_ICON_EVENT_SYSTEM),
+    ord(HPP_ICON_EVENT_CONTACTS),
+    ord(HPP_ICON_EVENT_SMS),
+    ord(HPP_ICON_EVENT_WEBPAGER),
+    ord(HPP_ICON_EVENT_EEXPRESS),
+    ord(HPP_ICON_EVENT_STATUS),
+    ord(HPP_ICON_EVENT_SMTPSIMPLE),
+    -HPP_SKIN_OTHER_MIRANDA,
+    ord(HPP_ICON_EVENT_NICK),
+    ord(HPP_ICON_EVENT_AVATAR),
+    ord(HPP_ICON_EVENT_WATRACK),
+    ord(HPP_ICON_EVENT_STATUSMES),
+    ord(HPP_ICON_EVENT_VOICECALL),
+    9999
   );
 
 function LoadSkinIcons:boolean;
@@ -307,9 +330,9 @@ begin
       begin
         for j:=Low(TBuiltinMessageType) to High(TBuiltinMessageType) do
         begin
-          if EventRecords[j].idx = ord(i) then
+          if EventRecords[j] = ord(i) then
           begin
-            sid.szDescription.a := EventRecords[j].Name;
+            sid.szDescription.a := EventNames[j];
             break;
           end;
         end;
@@ -323,10 +346,10 @@ begin
   StrCopyW(p,IconGroups[4]);
   for mt := Low(EventRecords) to High(EventRecords) do
   begin
-    if EventRecords[mt].idx > 0 then
+    if EventRecords[mt] > 0 then
     begin
       sid.pszName         := hppIcons[EventRecords[mt].idx].name;
-      sid.szDescription.w := EventRecords[mt].name;
+      sid.szDescription.w := EventNames[mt];
       sid.iDefaultIndex   := EventRecords[mt].i;
       hppIcons[EventRecords[mt].i].id := Skin_AddIcon(@sid);
     end
@@ -339,6 +362,39 @@ begin
   // update icon handles from icolib
   LoadSkinIcons;
   LoadHppIcons;
+end;
+
+function GetEventIcon(const Hi: THistoryItem):HICON;
+var
+  idx:integer;
+  MesType: THppMessageType;
+  mt: TbuiltinMessageType;
+begin
+  idx:=-HPP_SKIN_OTHER_MIRANDA;
+
+  MesType := Hi.MessageType;
+
+  for mt := Low(EventRecords) to High(EventRecords) do
+  begin
+    if MesType.code = mt then
+    begin
+      idx := EventRecords[mt];
+      break;
+    end;
+  end;
+
+  if idx = 9999 then
+  begin
+    result:=0;
+    exit;
+  end
+  else if idx < 0 then
+    result := skinIcons[-idx-1000].Handle
+  else
+    result := hppIcons[tHppIconName(idx)].Handle;
+
+  if result = 0 then
+    result := hppIcons[HPP_ICON_CONTACTHISTORY].Handle;
 end;
 
 end.

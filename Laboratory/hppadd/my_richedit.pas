@@ -9,15 +9,15 @@ uses
 type
   PHPPRichEdit = ^THPPRichEdit;
   THPPRichEdit = record
-    handle  : HWND;
+    Handle  : HWND;
     oldproc : pointer;
     IOle    : IRichEditOle;
     IBck    : TRichEditOleCallback;
-    ITextDoc: ITextDocument;
+//    ITextDoc: ITextDocument;
     RTL     : Boolean;
   end;
 
-function NewHPPRichEdit(parent:HWND):PHPPRichEdit;
+function  NewHPPRichEdit(parent:HWND):PHPPRichEdit;
 procedure FreeHPPRichEdit(var RE:PHPPRichEdit);
 
 implementation
@@ -60,7 +60,7 @@ begin
     exit;
   end;
 
-  GetMem(result,SizeOf(THPPRichEdit));
+  GetMem  (result ,SizeOf(THPPRichEdit));
   FillChar(result^,SizeOf(THPPRichEdit),0);
   // 1 - create RTF window
   result.Handle:=wnd;
@@ -89,11 +89,13 @@ begin
   result^.Rich.Height  := -1;
 
 *)
+
   // 2 - create OLE elements
   result.IBck:=TRichEditOleCallback.Create;
   RichEdit_SetOleCallback (result.Handle, result.IBck as IRichEditOleCallback);
   RichEdit_GetOleInterface(result.Handle, result.IOle);
-  result.Iole.QueryInterface(ITextDocument,result.ITextDoc); //??
+//  result.Iole.QueryInterface(ITextDocument,result.ITextDoc); //??
+
 end;
 
 {

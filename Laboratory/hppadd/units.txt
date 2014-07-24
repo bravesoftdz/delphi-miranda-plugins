@@ -8,36 +8,23 @@ hpp_contacts.pas
    m_api, common, dbsettings,
    hpp_global)
   Получение информации о контакте
-{
-  string
-    GetContactDisplayName
-    GetContactID - EventDetailForm and export
-}
 
 hpp_events.pas
   (Windows,
    kol,common,m_api,
    hpp_global,hpp_contacts)
   Перевод эвентов в читабельный вид (трансляция)
+  IsWide* in TextHasURLs
+  
   KOL
     Format    - 12
     Trim      - 2
     TrimRight - 1
 
 hpp_global.pas
-{
-  string
-    THistoryItem
-    TWideStrArray
-
-    AnsiToWideString
-    WideToAnsiString
-    TranslateAnsiW
-    CopyToClip
-    HppMessageBox
-    IsRTF
-    StringReplace
-}
+  (Windows,Messages,
+   common,
+   m_api)
 
 hpp_icons.pas
   (Windows,ShellAPI,
@@ -51,15 +38,10 @@ hpp_icons.pas
 
 hpp_itemprocess.pas
   (Windows,Messages,
-   m_api,common,
-   my_rtf,my_GridOptions,hpp_richedit,hpp_global,hpp_events)
+   common,
+   m_api,
+   my_rtf,my_GridOptions,hpp_richedit,hpp_global)
   Обработка текста сторонними плагинами и на экспорт
-{
-  string
-    DoSupportBBCodesHTML
-    DoSupportBBCodesRTF
-    DoStripBBCodes
-}
 
 hpp_opt_dialog.pas
   (Messages,CommCtrl,
@@ -74,10 +56,6 @@ hpp_richedit.pas
 hpp_strparser.pas
   (hpp_global)
   Токенайзер строки
-{
-  string
-    TokenizeString
-}
 
 my_grid.pas
   (windows,Messages,RichEdit,
@@ -89,7 +67,7 @@ my_grid.pas
 my_GridOptions.pas
   (Windows,
    CustomGraph,m_api,Common,dbsettings,
-   hpp_global,hpp_contacts)
+   hpp_global,hpp_icons,hpp_contacts)
   В теории: настройки, касающиеся грида
 
 my_RichCache.pas
@@ -104,7 +82,6 @@ my_richedit.pas
 {
   string
     all interfaces
-    BitmapToRTF
 }
 
 my_rtf.pas
@@ -112,14 +89,3 @@ my_rtf.pas
    common,
    hpp_global)
   манипуляции с окном-потоком RTF
-{
-  string
-    GetRichRTFW
-    GetRichRTFA
-    GetRichString
-    SetRichRTFW
-    SetRichRTFA
-    FormatString2RTFW
-    FormatString2RTFA
-    GetTextRange
-}

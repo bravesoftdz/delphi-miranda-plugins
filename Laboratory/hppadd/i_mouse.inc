@@ -1,8 +1,4 @@
 {}
-type
-  TMouseKey = (mkControl, mkLButton, mkMButton, mkRButton, mkShift);
-  TMouseKeys = set of TMouseKey;
-
 function TranslateKeys(Keys: word): TMouseKeys;
 begin
   Result := [];
@@ -13,6 +9,33 @@ begin
   if Keys and MK_SHIFT   > 0 then Result := Result + [mkShift];
 end;
 
+procedure THistoryGrid.URLClick(Item: Integer; URLText: PWideChar; Button: TMouseKey);
+var
+  menu:HMENU;
+  pt:TPOINT;
+begin
+//  SendMessageW(FHintWindow,TTM_POP,0,0);
+  Windows.SetCursor(GridOptions.CursorDefault);
+{
+  if Assigned(OnUrlClick) then
+    OnUrlClick(Self, Item, URLText, Button);
+}
+  if Button in [mkLButton, mkMButton] then
+    OpenUrl(URLText)
+  else if Button = mkRButton then
+  begin
+    GetCursorPos(pt);
+    menu:=CreatePopupMenu;
+    AppendMenuW(menu,MF_STRING,100,TranslateW('Open &Link'));
+    AppendMenuW(menu,MF_STRING,101,TranslateW('&Copy Link'));
+    case integer(TrackPopupMenu(menu,TPM_RETURNCMD+TPM_NONOTIFY,pt.x,pt.y,0,FClient,nil)) of
+      100: OpenUrl   (URLText);
+      101: CopyToClip(URLText, Handle);
+    end;
+    DestroyMenu(menu);
+  end;
+  mFreeMem(URLText);
+end;
 
 var
   // WasDownOnGrid hack was introduced
@@ -200,7 +223,7 @@ begin
 
   else if (ghtLink in ht) then
   begin
-//!!    URLClick(FindItemAt(X, Y), GetLinkAtPoint(X, Y), mkLeft);
+    URLClick(FindItemAt(X, Y), GetLinkAtPoint(X, Y), mkLButton);
   end;
 end;
 
@@ -258,16 +281,16 @@ var
   Keys:tMouseKeys;
   SelectMove: Boolean;
 begin
-  X:=SmallInt(LoWord(lParam));
-  Y:=SmallInt(HiWord(lParam));
-  Keys:=TranslateKeys(LoWord(wParam));
-
   if hMessage = WM_MOUSEWHEEL then
   begin
     OnGridMouseWheel(SmallInt(Hiword(wParam)));
   end
   else
   begin
+    X:=SmallInt(LoWord(lParam));
+    Y:=SmallInt(HiWord(lParam));
+    Keys:=TranslateKeys(LoWord(wParam));
+
     case hMessage of
 {
       //----- Mouse wheel -----
@@ -366,7 +389,7 @@ begin
         WasDownOnGrid := False;
         if (ghtLink in ht) then
         begin
-  //!!        URLClick(FindItemAt(X, Y), GetLinkAtPoint(X, Y), mkMiddle);
+          URLClick(FindItemAt(X, Y), GetLinkAtPoint(X, Y), mkMButton);
         end;
       end;
 
@@ -379,7 +402,7 @@ begin
         ht := GetHitTests(X, Y);
         if (ghtLink in ht) then
         begin
-  //!!        URLClick(Item, GetLinkAtPoint(X, Y), mkRight);
+          URLClick(Item, GetLinkAtPoint(X, Y), mkRButton);
           exit;
         end;
 
@@ -396,10 +419,11 @@ begin
             Selected := Item;
           end;
         end;
-  {!!
+{!!
         if Assigned(FOnPopup) then
           OnPopup(Self);
 }
+OnSpeakMessage;
       end;
 
       WM_LBUTTONUP: begin
@@ -435,7 +459,7 @@ begin
           end
           else
           begin
-  {!!
+{!!
             if Assigned(OnDblClick) then
               OnDblClick(@Self);
 }
@@ -444,4 +468,46 @@ begin
       end;
     end;
   end;
+end;
+
+function THistoryGrid.OnSetCursor(wParam:WPARAM; lParam:LPARAM):lresult;
+var
+  P:TPOINT;
+  NewCursor:HCURSOR;
+  oldHitTest:TGridHitTests;
+  oldHintRect:TRect;
+begin
+  result:=0;
+
+  if State <> gsIdle then
+    exit;
+  if LoWord(lParam) = word(HTERROR) then
+    exit;
+
+  GetCursorPos(P);
+  ScreenToClient(wParam,P);
+  oldHitTest := HintHitTests;
+  oldHintRect:= FHintRect;
+  HintHitTests := GetHitTests(P.X, P.Y);
+
+  // Cursor changing (if needs)
+  if HintHitTests * [ghtButton, ghtLink] <> [] then
+    NewCursor := GridOptions.CursorHand
+  else
+    NewCursor := GridOptions.CursorDefault;
+
+  if Windows.GetCursor <> NewCursor then
+  begin
+    Windows.SetCursor(NewCursor);
+    result := 1;
+  end;
+
+  // Hint (hover) check
+  if (not PointInRect(P,oldHintRect)) or // outside old region
+     (oldHitTest<>HintHitTests) then     // point to another type
+  begin
+    KillTimer(FClient, TIMERID_HOVER);           // old timer gone
+    SetTimer (FClient, TIMERID_HOVER, 450, nil); // new pause
+  end;
+
 end;

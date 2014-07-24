@@ -3,36 +3,37 @@
 procedure THistoryGrid.PaintHeader(Index: Integer; var ItemRect: TRect);
 var
   TextToDraw,timestr: pWideChar;
+  oldf:HFONT;
+  br:HBRUSH;
+  sz:TSize;
+  flags:uint;
   RTL: Boolean;
   RIconOffset, IconOffset, IconTop: Integer;
   IconPosition: integer;
-  sz:TSize;
   left,txtlen:integer;
-  oldf:HFONT;
-  br:HBRUSH;
 begin
   RTL := GetItemRTL(Index);
-{!!
-  if not(RTL = ((Canvas.TextFlags and ETO_RTLREADING) > 0)) then
-  begin
+
+//  if not(RTL = ((Canvas.TextFlags and ETO_RTLREADING) > 0)) then
+//  begin
     if RTL then
-      Canvas.TextFlags := Canvas.TextFlags or ETO_RTLREADING
+      flags := ETO_RTLREADING
     else
-      Canvas.TextFlags := Canvas.TextFlags and not ETO_RTLREADING;
-  end;
-}
+      flags := 0;
+//  end;
+
   Dec(ItemRect.Bottom, 1);
 
   br:=CreateSolidBrush(GridOptions.ColorBack[fiSession]);
   FillRect(FClientDC,ItemRect,br);
   DeleteObject(br);
+  SetBkColor(FClientDC,GridOptions.ColorBack[fiSession]);
 
   InflateRect(ItemRect, -3, -3);
 
   IconOffset := 0;
   RIconOffset := 0;
   IconTop := ((ItemRect.Bottom - ItemRect.Top - 16) div 2);
-
 
   // Draw closing cross
   // checked in Paint function
@@ -81,7 +82,7 @@ begin
   else
     left:=ItemRect.Left;
 
-  ExtTextOutW(FClientDC, left, ItemRect.Top, ETO_CLIPPED,
+  ExtTextOutW(FClientDC, left, ItemRect.Top, ETO_CLIPPED {or ETO_OPAQUE} or flags,
                       @ItemRect, TextToDraw, txtlen, nil);
   SelectObject(FClientDC,oldf);
   mFreeMem(TextToDraw);
@@ -168,15 +169,7 @@ begin
     TimeStamp := GetDateTimeString(FItems[Index].Time);
 
     RTL := GetItemRTL(Index);
-{!!
-    if not(RTL = ((Canvas.TextFlags and ETO_RTLREADING) > 0)) then
-    begin
-      if RTL then
-        Canvas.TextFlags := Canvas.TextFlags or ETO_RTLREADING
-      else
-        Canvas.TextFlags := Canvas.TextFlags and not ETO_RTLREADING;
-    end;
-}
+
     TopIconOffset := ((HeadRect.Bottom - HeadRect.Top) - 16) div 2;
     // header not expanded, draw session sign (clock)
     if (FItems[Index].HasHeader) and (ShowHeaders) and (not ExpandHeaders) then
@@ -275,7 +268,7 @@ begin
   // Draw item body (getbitmap from cache)
   if IntersectRect(ItemRect, ClipRect) then
   begin
-    ApplyItemToRich(Index);
+//??    GetRichFromCache(Index);
     RichBMP := FRichCache.GetItemRichBitmap(Index);
 
     SetRect(ItemClipRect, ItemRect.Left, ItemRect.Top,
@@ -308,9 +301,9 @@ begin
   begin
     result:=1;
     exit;
-  end
-  else
-    result:=0;
+  end;
+
+  result:=0;
 
 
   if not Allocated then
