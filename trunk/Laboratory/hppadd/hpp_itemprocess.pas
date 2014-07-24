@@ -67,12 +67,15 @@ const
 
 //var  rtf_ctable_text: AnsiString;
 
-function DoSupportBBCodesHTML(const S: AnsiString): AnsiString;
-function DoSupportBBCodesRTF (const S: AnsiString; StartColor: integer; doColorBBCodes: boolean): AnsiString;
-function DoStripBBCodes      (const S: wideString): WideString;
+// HTML export
+function DoSupportBBCodesHTML(const S: PAnsiChar): PAnsiChar;
+
+function DoSupportBBCodesRTF (const S: PAnsiChar; StartColor: integer; doColorBBCodes: boolean): PAnsiChar;
+// XML/text export / speak
+function DoStripBBCodes      (const S: PWideChar): PWideChar;
 
 function DoSupportSmileys      (awParam:WPARAM; alParam: LPARAM): Integer;
-function DoSupportMathModule   (awParam:WPARAM; alParam: LPARAM): Integer;
+//function DoSupportMathModule   (awParam:WPARAM; alParam: LPARAM): Integer;
 function DoSupportAvatarHistory(awParam:WPARAM; alParam: LPARAM): Integer;
 
 function AllHistoryRichEditProcess(wParam { hRichEdit } : WPARAM; lParam { PItemRenderDetails } : LPARAM): Int; cdecl;
@@ -84,36 +87,17 @@ uses
 {  RichEdit, -- used for CHARRANGE and EM_EXTSETSEL}
   common,
   my_rtf,
-  my_GridOptions,
+  my_GridOptions, // SmileyAddEnable, AvatarHistoryEnabled
   hpp_richedit,
-  hpp_global, hpp_events;
-
-{$include m_mathmodule.inc}
+  hpp_global;
 
 const
   EM_EXSETSEL = WM_USER + 55; // from RichEdit
 
 type
-
   TRTFColorTable = record
-    sz: PAnsiChar;
+    sz : PAnsiChar;
     col: TCOLORREF;
-  end;
-
-  TBBCodeClass = (bbStart,bbEnd);
-  TBBCodeType = (bbSimple, bbColor, bbSize, bbUrl, bbImage);
-
-  TBBCodeString = record
-    ansi: PAnsiChar;
-    wide: PWideChar;//WideString;
-  end;
-
-  TBBCodeInfo = record
-    prefix: TBBCodeString;
-    suffix: TBBCodeString;
-    bbtype: TBBCodeType;
-    rtf   : PAnsiChar;
-    html  : PAnsiChar;
   end;
 
 const
@@ -128,74 +112,59 @@ const
     (sz:'yellow'; col:$00FFFF),
     (sz:'white';  col:$FFFFFF));
 
+type
+  TBBCodeClass = (bbStart,bbEnd);
+  TBBCodeType = (bbSimple, bbColor, bbSize, bbUrl, bbImage);
+
+  PBBCodeInfo = ^TBBCodeInfo;
+  TBBCodeInfo = record
+    prefix: PAnsiChar;
+    suffix: PAnsiChar;
+    bbtype: TBBCodeType;
+    rtf   : PAnsiChar;
+    html  : PAnsiChar;
+  end;
+
 const
-  bbCodesCount = 7;
+  bbCodesCount = 8;
 
-var
-  bbCodes: array[0..bbCodesCount, bbStart..bbEnd] of TBBCodeInfo = (
-    ((prefix:(ansi:'[b]'     ; wide:'[b]');      suffix:(ansi:nil; wide:nil);
-      bbtype:bbSimple; rtf:'{\b ';      html:'<b>'),
+  bbCodes: array[0..bbCodesCount-1, bbStart..bbEnd] of TBBCodeInfo = (
+    ((prefix:'[b]';      suffix:nil; bbtype:bbSimple; rtf:'{\b ';      html:'<b>'),
+     (prefix:'[/b]';     suffix:nil; bbtype:bbSimple; rtf:'}';         html:'</b>')),
 
-     (prefix:(ansi:'[/b]'    ; wide:'[/b]');     suffix:(ansi:nil; wide:nil);
-      bbtype:bbSimple; rtf:'}';         html:'</b>')),
+    ((prefix:'[i]';      suffix:nil; bbtype:bbSimple; rtf:'{\i ';      html:'<i>'),
+     (prefix:'[/i]';     suffix:nil; bbtype:bbSimple; rtf:'}';         html:'</i>')),
 
-    ((prefix:(ansi:'[i]'     ; wide:'[i]');      suffix:(ansi:nil; wide:nil);
-      bbtype:bbSimple; rtf:'{\i ';      html:'<i>'),
+    ((prefix:'[u]';      suffix:nil; bbtype:bbSimple; rtf:'{\ul ';     html:'<u>'),
+     (prefix:'[/u]';     suffix:nil; bbtype:bbSimple; rtf:'}';         html:'</u>')),
 
-     (prefix:(ansi:'[/i]'    ; wide:'[/i]');     suffix:(ansi:nil; wide:nil);
-      bbtype:bbSimple; rtf:'}';         html:'</i>')),
+    ((prefix:'[s]';      suffix:nil; bbtype:bbSimple; rtf:'{\strike '; html:'<s>'),
+     (prefix:'[/s]';     suffix:nil; bbtype:bbSimple; rtf:'}';         html:'</s>')),
 
-    ((prefix:(ansi:'[u]'     ; wide:'[u]');      suffix:(ansi:nil; wide:nil);
-      bbtype:bbSimple; rtf:'{\ul ';     html:'<u>'),
+    ((prefix:'[color=';  suffix:']'; bbtype:bbColor;  rtf:'{\cf%u ';   html:'<font style="color:%s">'),
+     (prefix:'[/color]'; suffix:nil; bbtype:bbSimple; rtf:'}';         html:'</font>')),
 
-     (prefix:(ansi:'[/u]'    ; wide:'[/u]');     suffix:(ansi:nil; wide:nil);
-      bbtype:bbSimple; rtf:'}';         html:'</u>')),
+    ((prefix:'[url=';    suffix:']'; bbtype:bbUrl;    rtf:'{\field{\*\fldinst{HYPERLINK ":%s"}}{\fldrslt{\ul\cf%u'; html:'<a href="%s">'),
+     (prefix:'[/url]';   suffix:nil; bbtype:bbSimple; rtf:'}}}';      html:'</a>')),
 
-    ((prefix:(ansi:'[s]'     ; wide:'[s]');      suffix:(ansi:nil; wide:nil);
-      bbtype:bbSimple; rtf:'{\strike '; html:'<s>'),
+    ((prefix:'[size=';   suffix:']'; bbtype:bbSize;   rtf:'{\fs%u ';   html:'<font style="font-size:%spt">'),
+     (prefix:'[/size]';  suffix:nil; bbtype:bbSimple; rtf:'}';         html:'</font>')),
 
-     (prefix:(ansi:'[/s]'    ; wide:'[/s]');     suffix:(ansi:nil; wide:nil);
-      bbtype:bbSimple; rtf:'}';         html:'</s>')),
-
-    ((prefix:(ansi:'[color=' ; wide:'[color=');  suffix:(ansi:']'; wide:']');
-      bbtype:bbColor;  rtf:'{\cf%u ';   html:'<font style="color:%s">'),
-
-     (prefix:(ansi:'[/color]'; wide:'[/color]'); suffix:(ansi:nil; wide:nil);
-      bbtype:bbSimple; rtf:'}';         html:'</font>')),
-
-    ((prefix:(ansi:'[url='   ; wide:'[url]');    suffix:(ansi:']'; wide:']');
-      bbtype:bbUrl;    rtf:'{\field{\*\fldinst{HYPERLINK ":%s"}}{\fldrslt{\ul\cf%u'; html:'<a href="%s">'),
-
-     (prefix:(ansi:'[/url]'  ; wide:'[/url]');   suffix:(ansi:nil; wide:nil);
-      bbtype:bbSimple; rtf:'}}}';      html:'</a>')),
-
-    ((prefix:(ansi:'[size='  ; wide:'[size=');   suffix:(ansi:']'; wide:']');
-      bbtype:bbSize;   rtf:'{\fs%u ';   html:'<font style="font-size:%spt">'),
-
-     (prefix:(ansi:'[/size]' ; wide:'[/size]');  suffix:(ansi:nil; wide:nil);
-      bbtype:bbSimple; rtf:'}';         html:'</font>')),
-
-    ((prefix:(ansi:'[img]'   ; wide:'[img]');    suffix:(ansi:nil; wide:nil);
-      bbtype:bbImage;  rtf:'[{\revised\ul\cf%u '; html:'['),
-
-     (prefix:(ansi:'[/img]'  ; wide:'[/img]');   suffix:(ansi:nil; wide:nil);
-      bbtype:bbSimple; rtf:'}]';        html:']'))
+    ((prefix:'[img]';    suffix:nil; bbtype:bbImage;  rtf:'[{\revised\ul\cf%u '; html:'['),
+     (prefix:'[/img]';   suffix:nil; bbtype:bbSimple; rtf:'}]';        html:']'))
   );
-
-const
-  MAX_FMTBUF = 4095;
 
 var
   TextBuffer: THppBuffer;
 
-function GetColorRTF(const code: AnsiString; colcount: integer): integer;
+function GetColorRTF(code: PAnsiChar; colcount: integer): integer;
 var
   i: integer;
 begin
   Result := 0;
   if colcount >= 0 then
     for i := 0 to High(rtf_ctable) do
-      if rtf_ctable[i].sz = code then
+      if StrCmp(rtf_ctable[i].sz, code)=0 then
       begin
         Result := colcount + i;
         break;
@@ -205,27 +174,27 @@ end;
 function StrReplace(strStart, str, strEnd: PAnsiChar; var strTrail: PAnsiChar): PAnsiChar;
 var
   len,delta: integer;
-  {!!tmpStartPos,}tmpEndPos,tmpTrailPos: Integer;
-  {!!tmpStart,}tmpEnd,tmpTrail: PAnsiChar;
+  tmpStartPos,tmpEndPos,tmpTrailPos: Integer;
+  tmpStart,tmpEnd,tmpTrail: PAnsiChar;
 begin
   if str = nil then
     len := 0
   else
     len := StrLen(str);
   delta := len - (strTrail - strStart);
-//!!  tmpStartPos := strStart - TextBuffer.Buffer;
+  tmpStartPos := strStart - TextBuffer.Buffer;
   tmpTrailPos := strTrail - TextBuffer.Buffer;
-  tmpEndPos := strEnd - TextBuffer.Buffer;
+  tmpEndPos   := strEnd - TextBuffer.Buffer;
   TextBuffer.Reallocate(tmpEndPos + delta + 1);
-//!!  tmpStart := PAnsiChar(TextBuffer.Buffer) + tmpStartPos;
+  tmpStart := PAnsiChar(TextBuffer.Buffer) + tmpStartPos;
   tmpTrail := PAnsiChar(TextBuffer.Buffer) + tmpTrailPos;
-  tmpEnd := PAnsiChar(TextBuffer.Buffer) + tmpEndPos;
+  tmpEnd   := PAnsiChar(TextBuffer.Buffer) + tmpEndPos;
   strTrail := tmpTrail + delta;
-{!!
-  StrMove(strTrail, tmpTrail, tmpEnd - tmpTrail + 1);
+
+  StrCopy(strTrail, tmpTrail, tmpEnd - tmpTrail + 1);
   if len > 0 then
-    StrMove(tmpStart, str, len);
-}
+    StrCopy(tmpStart, str, len);
+
   Result := tmpEnd + delta;
 end;
 
@@ -244,7 +213,7 @@ begin
   tmpEndPos := strEnd - TextBuffer.Buffer;
   TextBuffer.Reallocate(tmpEndPos + len + 1);
   tmpEnd := PAnsiChar(TextBuffer.Buffer) + tmpEndPos;
-//!!  StrMove(tmpEnd, str, len + 1);
+  StrCopy(tmpEnd, str, len + 1);
   Result := tmpEnd + len;
 end;
 
@@ -255,9 +224,9 @@ begin
   if strStart = nil then
     exit;
   strCode := strStart + StrLen(prefix);
+  lenCode := 0;
   if suffix = nil then
   begin
-    lenCode := 0;
     strEnd := strCode
   end
   else
@@ -313,77 +282,87 @@ begin
 end;
 *)
 
-function DoSupportBBCodesRTF(const S: AnsiString; StartColor: integer; doColorBBCodes: boolean): AnsiString;
+function DoSupportBBCodesRTF(const S: PAnsiChar; StartColor: integer; doColorBBCodes: boolean): PAnsiChar;
 var
-  {bufPos,}bufEnd: PAnsiChar;
-{
+  fmt_buffer: array[0..127] of AnsiChar;
+  code: PAnsiChar;
+  bufPos,bufEnd: PAnsiChar;
   strStart,strTrail: PAnsiChar;
   strCode,newCode: PAnsiChar;
+  BBSCode,BBECode: PBBCodeInfo;
   i,n,lenCode: Integer;
   sfound,efound: Boolean;
-  fmt_buffer: array[0..MAX_FMTBUF] of AnsiChar;
-  code: AnsiString;
-}
 begin
   TextBuffer.Lock;
-  TextBuffer.Allocate(Length(S)+1);
-  bufEnd := StrCopyE(TextBuffer.Buffer,PAnsiChar(S));
-(*!!
+  TextBuffer.Allocate(StrLen(S)+1);
+  bufEnd := StrCopyE(TextBuffer.Buffer,S);
+
   for i := 0 to High(bbCodes) do
   begin
     bufPos := TextBuffer.Buffer;
+    BBSCode := @bbCodes[i, bbStart];
+    BBECode := @bbCodes[i, bbEnd];
     repeat
       newCode := nil;
-      sfound := StrSearch(TextBuffer.Buffer, bbCodes[i, bbStart].prefix.ansi,
-        bbCodes[i, bbStart].suffix.ansi, strStart, strTrail, strCode, lenCode);
+      sfound := StrSearch(TextBuffer.Buffer,
+          BBSCode.prefix,
+          BBSCode.suffix,
+          strStart, strTrail, strCode, lenCode);
+
       if sfound then
       begin
-        case bbCodes[i, bbStart].bbtype of
+        case BBSCode.bbtype of
           bbSimple:
-            newCode := bbCodes[i, bbStart].rtf;
-          bbColor:
-            begin
-              if doColorBBCodes then
-              begin
-                SetString(code, strCode, lenCode);
-                n := GetColorRTF(code, StartColor);
-                newCode := StrLFmt(fmt_buffer, MAX_FMTBUF, bbCodes[i, bbStart].rtf, [n]);
-              end;
-            end;
-          bbSize:
-            begin
-              SetString(code, strCode, lenCode);
-              n:=StrToInt(pAnsiChar(code));
-              newCode := StrLFmt(fmt_buffer, MAX_FMTBUF, bbCodes[i, bbStart].rtf, [n shl 1]);
-            end;
+            newCode := BBSCode.rtf;
 
-          bbUrl:
+          bbColor: begin
+            if doColorBBCodes then
             begin
-              SetString(code, strCode, lenCode);
-              if doColorBBCodes then
-                n := 2
-              else // link color
-                n := 0;
-              newCode := StrLFmt(fmt_buffer, MAX_FMTBUF, bbCodes[i, bbStart].rtf, [PAnsiChar(code), n]);
+              StrCopy(fmt_buffer, strCode, lenCode);
+              n := GetColorRTF(fmt_buffer, StartColor);
+              newCode := FormatSimple(BBSCode.rtf, [n]);
             end;
+          end;
 
-          bbImage:
-            begin
-              if doColorBBCodes then
-                n := 2
-              else // link color
-                n := 0;
-              newCode := StrLFmt(fmt_buffer, MAX_FMTBUF, bbCodes[i, bbStart].rtf, [n]);
-            end;
+          bbSize: begin
+            StrCopy(fmt_buffer, strCode, lenCode);
+            n:=StrToInt(fmt_buffer);
+            newCode := FormatSimple(BBSCode.rtf, [n shl 1]);
+          end;
+
+          bbUrl: begin
+            StrDup(code, strCode, lenCode);
+            if doColorBBCodes then
+              n := 2
+            else // link color
+              n := 0;
+            newCode := FormatSimple(BBSCode.rtf, [code, n]);
+            mFreeMem(code);
+          end;
+
+          bbImage: begin
+            if doColorBBCodes then
+              n := 2
+            else // link color
+              n := 0;
+            newCode := FormatSimple(BBSCode.rtf, [n]);
+          end;
         end;
+
         bufEnd := StrReplace(strStart, newCode, bufEnd, strTrail);
         bufPos := strTrail;
+
+        if BBSCode.bbtype<>bbSimple then
+          mFreeMem(newCode);
       end;
+
       repeat
-        efound := StrSearch(bufPos, bbCodes[i, bbEnd].prefix.ansi,
-          bbCodes[i, bbEnd].suffix.ansi, strStart, strTrail, strCode, lenCode);
+        efound := StrSearch(bufPos,
+            BBECode.prefix,
+            BBECode.suffix,
+            strStart, strTrail, strCode, lenCode);
         if sfound and (newCode <> nil) then
-          strCode := bbCodes[i, bbEnd].rtf
+          strCode := BBECode.rtf
         else
           strCode := nil;
         if efound then
@@ -394,51 +373,63 @@ begin
         else
           bufEnd := StrAppend(strCode, bufEnd);
       until sfound or not efound;
+
     until not sfound;
   end;
-*)
-  SetString(Result, PAnsiChar(TextBuffer.Buffer), bufEnd - TextBuffer.Buffer);
+
+  StrDup(Result, PAnsiChar(TextBuffer.Buffer), bufEnd - TextBuffer.Buffer);
   TextBuffer.Unlock;
 end;
 
-function DoSupportBBCodesHTML(const S: AnsiString): AnsiString;
+function DoSupportBBCodesHTML(const S: PAnsiChar): PAnsiChar;
 var
   bufPos,bufEnd: PAnsiChar;
-
+  code: PAnsiChar;
   strStart,strTrail,strCode: PAnsiChar;
+  BBSCode,BBECode: PBBCodeInfo;
   i,lenCode: Integer;
   sfound,efound: Boolean;
-//!!  fmt_buffer: array[0..MAX_FMTBUF] of AnsiChar;
-  code: AnsiString;
 
 begin
   TextBuffer.Lock;
-  TextBuffer.Allocate(Length(S) + 1);
-  bufEnd := StrCopyE(TextBuffer.Buffer, PAnsiChar(S));
+  TextBuffer.Allocate(StrLen(S) + 1);
+  bufEnd := StrCopyE(TextBuffer.Buffer, S);
 
   for i := 0 to High(bbCodes) do
   begin
     bufPos := TextBuffer.Buffer;
+    BBSCode := @bbCodes[i, bbStart];
+    BBECode := @bbCodes[i, bbEnd];
     repeat
-      sfound := StrSearch(TextBuffer.Buffer, bbCodes[i, bbStart].prefix.ansi,
-        bbCodes[i, bbStart].suffix.ansi, strStart, strTrail, strCode, lenCode);
+      sfound := StrSearch(TextBuffer.Buffer,
+          BBSCode.prefix,
+          BBSCode.suffix,
+          strStart, strTrail, strCode, lenCode);
+
       if sfound then
       begin
-        if bbCodes[i, bbStart].bbtype = bbSimple then
-          strCode := bbCodes[i, bbStart].html
+        if BBSCode.bbtype = bbSimple then
+          strCode := BBSCode.html
         else
         begin
-          SetString(code, strCode, lenCode);
-//!!          strCode := StrLFmt(fmt_buffer, MAX_FMTBUF, bbCodes[i, bbStart].html, [PAnsiChar(code)]);
+          StrDup(code, strCode, lenCode);
+          strCode := FormatStr(BBSCode.html, [code]);
+          mFreeMem(code);
         end;
         bufEnd := StrReplace(strStart, strCode, bufEnd, strTrail);
         bufPos := strTrail;
+
+        if BBSCode.bbtype <> bbSimple then
+          mFreeMem(strCode);
       end;
+
       repeat
-        efound := StrSearch(bufPos, bbCodes[i, bbEnd].prefix.ansi,
-          bbCodes[i, bbEnd].suffix.ansi, strStart, strTrail, strCode, lenCode);
+        efound := StrSearch(bufPos,
+            BBECode.prefix,
+            BBECode.suffix,
+            strStart, strTrail, strCode, lenCode);
         if sfound then
-          strCode := bbCodes[i, bbEnd].html
+          strCode := BBECode.html
         else
           strCode := nil;
         if efound then
@@ -452,44 +443,56 @@ begin
     until not sfound;
   end;
 
-  SetString(Result,PAnsiChar(TextBuffer.Buffer),bufEnd-TextBuffer.Buffer);
+  StrDup(Result,PAnsiChar(TextBuffer.Buffer),bufEnd-TextBuffer.Buffer);
   TextBuffer.Unlock;
 end;
 
-function DoStripBBCodes(const S: WideString): WideString;
+function DoStripBBCodes(const S: PWideChar): PWideChar;
 var
-  WideStream: WideString;
-  i,spos,epos,cpos,slen: integer;
-  trail: WideString;
+  BBCode:PBBCodeInfo;
+  spos,epos:PWideChar;
+  WideStream: PWideChar;
+  wprefix,wsuffix:array [0..127] of WideChar;
+  i,slen,elen: integer;
   bbClass: TBBCodeClass;
 begin
-  WideStream := S;
+  StrDupW(WideStream, S);
   for i := 0 to High(bbCodes) do
     for bbClass := bbStart to bbEnd do
     begin
-      if bbCodes[i, bbClass].bbtype = bbSimple then
-        WideStream := StringReplace(WideStream, bbCodes[i, bbClass].prefix.wide, '', [rfReplaceAll])
-      else
+      BBCode:=@bbCodes[i, bbClass];
+
+      FastAnsiToWideBuf(BBCode.prefix, wprefix);
+      slen := StrLenW(wprefix);
+
+      if BBCode.bbtype = bbSimple then
+      begin
         repeat
-          spos := Pos(bbCodes[i, bbClass].prefix.wide, WideStream);
-          epos := 0;
-          if spos > 0 then
+          spos := StrPosW(WideStream, wprefix);
+          if spos = nil then break;
+          StrCopyW(spos, spos + slen);
+        until false;
+      end
+      else
+      begin
+        elen := StrLen(BBCode.suffix);
+        if elen>0 then
+          FastAnsiToWideBuf(BBCode.suffix, wsuffix);
+        repeat
+          spos := StrPosW(WideStream, wprefix); // start of BBCode
+          if spos = nil then
+            break;
+          epos := spos + slen; // start of BBCode parameters
+          if elen <> 0 then
           begin
-            cpos := spos + Length(bbCodes[i, bbClass].prefix.wide);
-            slen := Length(bbCodes[i, bbClass].suffix.wide);
-            if slen = 0 then
-              epos := cpos
-            else
-;//!!              epos := PosEx(bbCodes[i, bbClass].suffix.wide, WideStream, cpos);
-            if epos > 0 then
-            begin
-              cpos := epos + slen;
-              trail := Copy(WideStream, cpos, Length(WideStream) - cpos + 1);
-              SetLength(WideStream, spos - 1);
-              WideStream := WideStream + trail;
-            end;
+            epos := StrPosW(epos, wsuffix); // position of end of BBCode
+            if epos = nil then // tag not closed
+              break;
+            inc(epos, elen); // end of BBcode
           end;
-        until (spos = 0) or (epos = 0);
+          StrCopyW(spos, epos);
+        until false;
+      end;
     end;
   Result := WideStream;
 end;
@@ -514,6 +517,7 @@ begin
   Result := 0;
 end;
 
+(*
 function DoSupportMathModule(awParam{hRichEdit}:WPARAM; alParam{PItemRenderDetails}: LPARAM): Integer;
 var
   mrei: TMathRicheditInfo;
@@ -523,7 +527,7 @@ begin
   mrei.disableredraw := integer(false);
   Result := CallService(MATH_RTF_REPLACE_FORMULAE,0,LPARAM(@mrei));
 end;
-
+*)
 (*
 function DoSupportAvatars(wParam:WPARAM; lParam: LPARAM): Integer;
 const
@@ -548,32 +552,35 @@ end;
 function DoSupportAvatarHistory(awParam:WPARAM; alParam: LPARAM): int;
 var
   ird: PItemRenderDetails;
-  Link: AnsiString;
+  pc,Link: PAnsiChar;
   hBmp: hBitmap;
   cr: CHARRANGE;
-  hppProfileDir:AnsiString;
+  hppProfileDir:array [0..MAX_PATH-1] of AnsiChar;
 begin
   Result := 0;
   ird := Pointer(alParam);
 
-  if ird.wEventType <> EVENTTYPE_AVATARCHANGE then
+  if ird.wEventType <> EVENTTYPE_AVATAR_CHANGE then
     exit;
 
-  if (ird.pExtended = nil) or (lstrlenA(ird.pExtended) < 4) then
+  if (ird.pExtended = nil) or (StrLen(ird.pExtended) < 4) then
     exit;
+
   if ((ird.pExtended[0] = '\') and (ird.pExtended[1] = '\')) or
-    ((ird.pExtended[0] in ['A' .. 'Z', 'a' .. 'z']) and (ird.pExtended[1] = ':') and
-    (ird.pExtended[2] = '\')) then
+     ((ird.pExtended[0] in ['A' .. 'Z', 'a' .. 'z']) and (ird.pExtended[1] = ':') and
+      (ird.pExtended[2] = '\')) then
     Link := ird.pExtended
   else
   begin
     // Get profile dir
-    SetLength(hppProfileDir, MAX_PATH);
-    CallService(MS_DB_GETPROFILEPATH, MAX_PATH, lParam(@hppProfileDir[1]));
-    SetLength(hppProfileDir, StrLen(pAnsiChar(@hppProfileDir[1])));
-    Link := AnsiString(hppProfileDir) + '\' + ird.pExtended; //!!
+    CallService(MS_DB_GETPROFILEPATH, MAX_PATH, LPARAM(@hppProfileDir));
+    mGetMem(Link,StrLen(hppProfileDir)+StrLen(ird.pExtended)+2);
+    pc:=StrCopyE(Link,hppProfileDir); pc^ := '\'; inc(pc);
+    StrCopy(pc,ird.pExtended);
   end;
-  hBmp := CallService(MS_UTILS_LOADBITMAP, 0, LPARAM(@Link[1]));
+
+  hBmp := CallService(MS_UTILS_LOADBITMAP, 0, LPARAM(Link));
+  if Link<>ird.pExtended then mFreeMem(Link);
   if hBmp <> 0 then
   begin
     cr.cpMin := SendMessage(awParam, WM_GETTEXTLENGTH, 0, 0);
@@ -589,37 +596,10 @@ function AllHistoryRichEditProcess(wParam { hRichEdit } : WPARAM; lParam { PItem
 begin
   Result := 0;
   if GridOptions.SmileysEnabled        then Result := Result or DoSupportSmileys(wParam, lParam);
-  if GridOptions.MathModuleEnabled     then Result := Result or DoSupportMathModule(wParam, lParam);
   if GridOptions.AvatarsHistoryEnabled then Result := Result or DoSupportAvatarHistory(wParam, lParam);
 end;
-(*
-procedure FillTables;
-var
-  i: integer;
-  buf:array [0..25] of AnsiChar;
-  p:pAnsiChar;
-begin
-  rtf_ctable_text := '';
-  for i := 0 to High(rtf_ctable) do
-  begin
-{    rtf_ctable_text := rtf_ctable_text + AnsiString(Format('\red%d\green%d\blue%d;',
-      [rtf_ctable[i].col and $FF,
-      (rtf_ctable[i].col shr 8) and $FF,
-      (rtf_ctable[i].col shr 16) and $FF]));
-}
-    p:=@buf;
-    p:=StrEnd(IntToStr(StrCopyE(p,'\red'  ), rtf_ctable[i].col and $FF));
-    p:=StrEnd(IntToStr(StrCopyE(p,'\green'),(rtf_ctable[i].col shr 8) and $FF));
-    p:=StrEnd(IntToStr(StrCopyE(p,'\blue' ),(rtf_ctable[i].col shr 16) and $FF));
-    p^:=';'; inc(p);
-    rtf_ctable_text := rtf_ctable_text + AnsiString(buf);
 
-  end;
-end;
-*)
 initialization
-//  FillTables;
-
   TextBuffer := THppBuffer.Create;
 
 finalization

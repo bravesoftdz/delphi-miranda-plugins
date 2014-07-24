@@ -29,12 +29,23 @@ function NewEditProc(Dialog:HWND;hMessage:uint;wParam:WPARAM;lParam:LPARAM):LRES
 begin
 //  result:=0;
   case hMessage of
-    WM_CHAR: if wParam=27 then
-    begin
-      // clear edit field
-      SendMessage(Dialog,WM_SETTEXT,0,0);
+    WM_CHAR: begin
+      if wParam=27 then
+      begin
+        // clear edit field
+        SendMessage(Dialog,WM_SETTEXT,0,0);
+        result:=0;
+      end
+      else if wParam=13 then
+      begin
+        CallService(QS_SHOWSERVICE,twparam(pattern),0);
+        result:=0;
+      end
+      else
+        result:=1;
+      if result=0 then
+        exit;
     end;
-
   end;
   result:=CallWindowProc(OldEditProc,Dialog,hMessage,wParam,lParam);
 end;

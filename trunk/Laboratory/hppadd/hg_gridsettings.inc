@@ -56,6 +56,7 @@ begin
   if FGroupLinked = Value then
     exit;
   FGroupLinked := Value;
+
   for i := 0 to HIGH(FItems) do
   begin
     if FItems[i].LinkedToPrev then
@@ -78,6 +79,30 @@ begin
   if FShowHeaders = Value then
     exit;
   FShowHeaders := Value;
+
+  for i := 0 to HIGH(FItems) do
+  begin
+    if FItems[i].HasHeader then
+    begin
+      FItems[i].Height := -1;
+      FRichCache.ResetItem(i);
+    end;
+  end;
+
+  BarAdjusted := False;
+  AdjustScrollBar;
+
+  Invalidate;
+end;
+
+procedure THistoryGrid.SetExpandHeaders(const Value: Boolean);
+var
+  i: Integer;
+begin
+  if FExpandHeaders = Value then
+    exit;
+  FExpandHeaders := Value;
+
   for i := 0 to HIGH(FItems) do
   begin
     if FItems[i].HasHeader then
@@ -279,7 +304,7 @@ begin
     MoveWindow(FScrollBar, x, rc.Top, w, rc.Bottom, false);
   end
   else
-    x:=0;
+    x:=rc.Right;
 
   // Resize memory bitmap
   if (rc.Bottom<>FClientRect.Bottom) or

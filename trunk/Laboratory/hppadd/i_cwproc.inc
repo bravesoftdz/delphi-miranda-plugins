@@ -4,6 +4,7 @@ var
   dc:HDC;
   ps:tPaintStruct;
   Grid:THistoryGrid;
+  ptCursor:TPOINT;
 begin
   result:=0;
   Grid:=THistoryGrid(GetWindowLongPtrW(Dialog,GWLP_USERDATA));
@@ -50,8 +51,24 @@ begin
     WM_KEYFIRST..WM_KEYLAST:
       result:=Grid.OnKeyMessage(hMessage,wParam,lParam);
 
+    WM_SETCURSOR: begin
+      result:=Grid.OnSetCursor(wParam,lParam);
+    end;
+
     WM_MOUSEFIRST..WM_MOUSELAST:
       Grid.OnMouseMessage(hMessage,wParam,lParam);
+
+    WM_TIMER: begin
+      if wParam=TIMERID_HOVER then
+      begin
+        KillTimer(Dialog,TIMERID_HOVER);
+        GetCursorPos(ptCursor);
+        ScreenToClient(Dialog,ptCursor);
+        if Grid.HintShow(ptCursor.X, ptCursor.Y)=0 then
+        begin
+        end;
+      end;
+    end;
 
     WM_HELP: begin
       result:=1;

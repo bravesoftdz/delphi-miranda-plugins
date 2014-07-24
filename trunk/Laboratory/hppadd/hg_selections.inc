@@ -21,7 +21,9 @@ begin
 
   if Item = -1 then
     exit;
+
   Result := IntSortedArray_Find(TIntArray(FSelItems), Item) <> -1;
+
 end;
 
 function THistoryGrid.GetSelCount: Integer;
@@ -171,4 +173,26 @@ begin
     first := FSelected;
   MakeRangeSelected(first, Item);
   MakeSelected(Item);
+end;
+
+function THistoryGrid.GetSelectionString: PWideChar;
+begin
+  if FSelectionStored then
+  begin
+    Result := FSelectionString; // pointer copy
+    exit;
+  end
+  else
+    Result := nil;
+  if Count = 0 then
+    exit;
+
+  mFreeMem(FSelectionString);
+  if State = gsInline then
+    FSelectionString := GetRichString(FRichInline.Handle, True) // dup
+  else if Selected <> -1 then
+    FSelectionString := FormatSelected(GridOptions.SelectionFormat); // string
+
+  FSelectionStored := True;
+  Result := FSelectionString;
 end;

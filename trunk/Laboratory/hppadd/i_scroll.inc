@@ -51,7 +51,7 @@ begin
 
   if ScrollCode = SB_ENDSCROLL then
     exit;
-  
+
   BeginUpdate;
 
   if ScrollCode in [SB_LINEUP, SB_LINEDOWN, SB_PAGEDOWN, SB_PAGEUP] then
@@ -79,7 +79,6 @@ begin
     AdjustScrollBar;
     InvalidateRect(FHandle, @FClientRect, False);
   end;
-
   EndUpdate;
   Update;
 end;
@@ -121,8 +120,8 @@ end;
 
 procedure THistoryGrid.AdjustScrollBar;
 var
-  maxidx, SumHeight, ind, idx: Integer;
-  R1, R2: TRect;
+  maxidx, SumHeight, idx: Integer;
+//  R1, R2: TRect;
 begin
   if BarAdjusted then
     exit;
@@ -151,6 +150,9 @@ begin
     if GetDown(maxidx) = -1 then
       maxidx := -1;
 
+{
+  As variant, put it to try-finally-end with BeginUpdate-EndUpdate 
+}
   // if we are at the end, look up to find first visible
   if (maxidx = -1) and (SumHeight > 0) then
   begin
@@ -189,8 +191,9 @@ begin
   SBMax := Count + SBPageSize - 1;
 
   MaxSBPos := Count - 1;
-  exit;
 
+  exit;
+{????
   if SumHeight < FClientRect.Bottom then
   begin
     idx := GetPrev(GetIdx(Count));
@@ -203,13 +206,13 @@ begin
     end
     else
     begin
-      ind := idx;
+      maxidx := idx;
       R2 := GetItemRect(idx);
       if R1.Bottom - R2.Top > FClientRect.Bottom then
       begin
         idx := GetNext(idx);
         if idx = -1 then
-          idx := ind;
+          idx := maxidx;
       end;
     end;
     BarAdjusted := True;
@@ -224,12 +227,7 @@ begin
 
     MaxSBPos := Count - 1;
   end;
-end;
-
-function SmoothScrollWindow(hwnd: hwnd; XAmount, YAmount: Integer; Rect, ClipRect: PRect): BOOL;
-begin
-  Result := ScrollWindow(hwnd, XAmount, YAmount, Rect, ClipRect);
-  UpdateWindow(hwnd);
+}
 end;
 
 procedure THistoryGrid.ScrollGridBy(Offset: Integer; DoUpdate: Boolean = True);
@@ -256,9 +254,8 @@ begin
       if idx = -1 then
       begin
         SetSBPos(MaxSBPos + 1);
-
         Invalidate;
-        Update;
+//        Update;
         exit;
       end;
     until false;
@@ -274,7 +271,7 @@ begin
         SBPosition := GetIdx(idx);
         TopItemOffset := Offset - SumHeight;
         if DoUpdate then
-          SmoothScrollWindow(FClient, 0, -Offset, nil, nil);
+          ScrollWindow(FClient, 0, -Offset, nil, nil);
         exit;
       end;
       Inc(SumHeight, FItems[idx].Height);
@@ -283,7 +280,7 @@ begin
   end
   else // if Offset < 0 // scrolling grid to top
   begin
-    while (idx <> -1) and (idx >= 0) and (idx < Count) do
+    while (idx >= 0) and (idx < Count) do
     begin
       previdx := idx;
       idx := GetUp(idx);
@@ -296,9 +293,7 @@ begin
 
         TopItemOffset := Offset - SumHeight;
         if DoUpdate then
-        begin
-          SmoothScrollWindow(FClient, 0, -Offset, nil, nil);
-        end;
+          ScrollWindow(FClient, 0, -Offset, nil, nil);
         break;
       end;
 
@@ -310,11 +305,11 @@ begin
           SBPosition := GetIdx(previdx);
 
         TopItemOffset := 0;
-        // to lazy to calculate proper offset
+        // too lazy to calculate proper offset
         if DoUpdate then
         begin
           Invalidate;
-          Update;
+//          Update;
         end;
         break;
       end;

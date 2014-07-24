@@ -37,15 +37,16 @@ type
 
   TRichCache = class
   private
-    LogX, LogY: Integer;   // used for Bitmap creating
-    RichEventMasks: DWord; // (ENM_LINK), in ApplyItemToRich
+    Items: array of PRichItem;
+    fLockedList:array of TLockedItem; // list of locked items
 
     FOnRichApply:tOnRichApply;
 
+    LogX, LogY: Integer;   // used for Bitmap creating
     FRichWidth: Integer;   // save width to trace width changes only
     FRichHeight: Integer;  // temporary, to set RichItem Height
-    fLockedList:array of TLockedItem; // list of locked items
-    Items: array of PRichItem;
+
+    RichEventMasks: DWord; // (ENM_LINK), in ApplyItemToRich
 
     function FindGridItem(GridItem: Integer): Integer;
     procedure PaintRichToBitmap(Item: PRichItem);
@@ -60,7 +61,7 @@ type
     // make Height = -1 to recalc
     procedure ResetAllItems;
     procedure ResetItems(GridItems: array of Integer);
-    procedure ResetItem(GridItem: Integer);
+    procedure ResetItem (GridItem: Integer);
 
     property OnRichApply:tOnRichApply read FOnRichApply write FOnRichApply;
     procedure ResizeRequest(const rc:TRect);
@@ -73,9 +74,9 @@ type
 
     function RequestItem(GridItem: Integer): PRichItem;
     function GetItemRichBitmap(GridItem: Integer): pCacheBitmap;
-    function GetItemByHandle(Handle: THandle): PRichItem;
+    function GetItemByHandle  (Handle: THANDLE): PRichItem;
     // redraw protection (idk what is for)
-    function LockItem(Item: PRichItem; SaveRect: TRect): Integer;
+    function LockItem  (Item: PRichItem; SaveRect: TRect): Integer;
     function UnlockItem(Item: Integer): TRect;
   end;
 
@@ -121,7 +122,7 @@ begin
     idx := High(Items);
     Result := Items[idx];
     Result.GridItem := GridItem;
-    Result.Height := -1;
+    Result.Height   := -1;
   end;
   if Result.Height = -1 then
   begin
@@ -150,7 +151,7 @@ begin
     end;
 end;
 
-function TRichCache.GetItemByHandle(Handle: THandle): PRichItem;
+function TRichCache.GetItemByHandle(Handle: THANDLE): PRichItem;
 var
   i: Integer;
 begin
@@ -374,7 +375,6 @@ end;
 
 function NewRichItem(aParent:HWND):PRichItem;
 var
-//  ExStyle: dword;
   tmp:PHPPRichEdit;
 begin
   tmp := NewHPPRichEdit(aParent);

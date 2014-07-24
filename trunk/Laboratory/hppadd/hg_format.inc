@@ -1,34 +1,12 @@
 {}
-{ from SysUtils }
-function IsLeadChar(C: WideChar): Boolean;
-begin
-  Result := (C >= #$D800) and (C <= #$DFFF);
-end;
-
-function StrCharLength(const Str: PWideChar): Integer;
-begin
-  if (Str^   >= #$D800) and (Str^   <= #$DBFF) and
-     (Str[1] >= #$DC00) and (Str[1] <= #$DFFF) then
-    Result := SizeOf(WideChar) * 2
-  else
-    Result := SizeOf(WideChar);
-end;
-
-function CharLength(const S: UnicodeString; Index: Integer): Integer;
-begin
-  Result := SizeOf(WideChar);
-  if IsLeadChar(S[Index]) then
-    Result := StrCharLength(PWideChar(S) + Index - 1);
-end;
-
 type
   TSysCharSet = set of AnsiChar;
 
-function WrapText(const Line, BreakStr: WideString; const BreakChars: TSysCharSet;
-  MaxCol: Integer): WideString;
+function WrapText(const Line, BreakStr: PWideChar; const BreakChars: TSysCharSet;
+  MaxCol: Integer): PWideChar;
 const
   QuoteChars = ['''', '"'];
-   sLineBreak = WideString(#13#10);
+  sLineBreak = #13#10;
 var
   Col, Pos: Integer;
   LinePos, LineLen: Integer;
@@ -39,16 +17,17 @@ var
 begin
   Col := 1;
   Pos := 1;
-  LinePos := 1;
+  LinePos  := 1;
   BreakPos := 0;
   QuoteChar := #0;
   ExistingBreak := False;
-  LineLen := Length(Line);
-  BreakLen := Length(BreakStr);
+  LineLen  := StrLenW(Line);
+  BreakLen := StrLenW(BreakStr);
   Result := '';
   while Pos <= LineLen do
   begin
     CurChar := Line[Pos];
+
     if IsLeadChar(CurChar) then
     begin
       L := CharLength(Line, Pos) div SizeOf(WideChar) - 1;
@@ -57,37 +36,39 @@ begin
     end
     else
     begin
-    if AnsiChar(CurChar) in QuoteChars then
+      if AnsiChar(CurChar) in QuoteChars then
+        if QuoteChar = #0 then
+          QuoteChar := CurChar
+        else if CurChar = QuoteChar then
+          QuoteChar := #0;
       if QuoteChar = #0 then
-        QuoteChar := CurChar
-      else if CurChar = QuoteChar then
-        QuoteChar := #0;
-    if QuoteChar = #0 then
-    begin
-      if CurChar = BreakStr[1] then
       begin
-        ExistingBreak := StrCmpW(PWideChar(BreakStr), PWideChar(@Line[Pos]), BreakLen) = 0;
-        if ExistingBreak then
+        if CurChar = BreakStr[1] then
         begin
-          Inc(Pos, BreakLen-1);
-          BreakPos := Pos;
+          ExistingBreak := StrCmpW(PWideChar(BreakStr), PWideChar(@Line[Pos]), BreakLen) = 0;
+          if ExistingBreak then
+          begin
+            Inc(Pos, BreakLen-1);
+            BreakPos := Pos;
+          end;
         end;
-      end;
 
-      if not ExistingBreak then
-        if AnsiChar(CurChar) in BreakChars then
-          BreakPos := Pos;
+        if not ExistingBreak then
+          if AnsiChar(CurChar) in BreakChars then
+            BreakPos := Pos;
       end;
     end;
 
     Inc(Pos);
     Inc(Col);
 
-    if not (AnsiChar(QuoteChar) in QuoteChars) and (ExistingBreak or
-      ((Col > MaxCol) and (BreakPos > LinePos))) then
+    if not (AnsiChar(QuoteChar) in QuoteChars) and
+      (ExistingBreak or ((Col > MaxCol) and (BreakPos > LinePos))) then
     begin
       Col := 1;
+
       Result := Result + Copy(Line, LinePos, BreakPos - LinePos + 1);
+
       if not (AnsiChar(CurChar) in QuoteChars) then
       begin
         while Pos <= LineLen do
@@ -99,9 +80,9 @@ begin
           end
           else
           begin
-            if StrCmpW(PWideChar(@Line[Pos]), sLineBreak, Length(sLineBreak)) = 0 then
+            if StrCmpW(PWideChar(@Line[Pos]), sLineBreak, 2{Length(sLineBreak)}) = 0 then
             begin
-              Inc(Pos, Length(sLineBreak));
+              Inc(Pos, 2{Length(sLineBreak)});
               ExistingBreak := True;
             end
             else
@@ -129,7 +110,7 @@ end;
 
 
 const
-  Substs: array [0 .. 3] of array [0 .. 1] of WideString = (
+  Substs: array [0 .. 3] of array [0 .. 1] of PWideChar = (
     ('\n', #13#10),
     ('\t', #9),
     ('\\', '\'),
@@ -150,34 +131,32 @@ const
   sdate           = 11;
   stime           = 12;
 const
-  mtable : array [0..12] of
-    record
-      name: PWideChar;
-    end = (
-    (name: '%mes%'),
-    (name: '%adj_mes%'),
-    (name: '%quot_mes%'),
-    (name: '%selmes%'),
-    (name: '%adj_selmes%'),
-    (name: '%quot_selmes%'),
-    (name: '%nick%'),
-    (name: '%from_nick%'),
-    (name: '%to_nick%'),
-    (name: '%datetime%'),
-    (name: '%smart_datetime%'),
-    (name: '%date%'),
-    (name: '%time%')
+  mtable : array [0..12] of PWideChar = (
+    '%mes%',
+    '%adj_mes%',
+    '%quot_mes%',
+    '%selmes%',
+    '%adj_selmes%',
+    '%quot_selmes%',
+    '%nick%',
+    '%from_nick%',
+    '%to_nick%',
+    '%datetime%',
+    '%smart_datetime%',
+    '%date%',
+    '%time%'
   );
 procedure THistoryGrid.IntFormatItem(Item: Integer; var Tokens: TWideStrArray; var SpecialTokens: TIntArray);
 var
-  i, j, n, num: Integer;
   tok: TWideStrArray;
   toksp: TIntArray;
-  subst: WideString;
+  FRich: PHPPRichEdit;
   from_nick, to_nick, nick: pWideChar;
-  dt: TDateTime;
-  Mes, selmes: WideString;
   ws:pWideChar;
+  Mes, selmes: PWideChar;
+  subst: PWideChar;
+  i, j, n, num: Integer;
+  ts: DWord;
 begin
   // item MUST be loaded before calling IntFormatItem!
 
@@ -187,7 +166,7 @@ begin
   Mes := FItems[Item].Text;
   if GridOptions.RawRTFEnabled and IsRTF(pWideChar(Mes)) then
   begin
-    ApplyItemToRich(Item);
+    FRich := GetRichFromCache(Item);
     Mes := GetRichString(FRich.Handle, False);
   end;
 
@@ -212,31 +191,27 @@ begin
   else
     nick := from_nick;
 
-  dt := TimestampToDateTime(FItems[Item].Time);
+  ts := FItems[Item].Time;
 
-  for i := 0 to Length(toksp) - 1 do
+  for i := 0 to HIGH(toksp) do
   begin
-    subst := '';
-    if tok[toksp[i]][1] = '\' then
+    subst := nil;
+    if tok[toksp[i]][0] = '\' then
     begin
-      for n := 0 to Length(Substs) - 1 do
-        if tok[toksp[i]] = Substs[n][0] then
+      for n := 0 to HIGH(Substs) do
+        if StrCmpW(tok[toksp[i]], Substs[n][0])=0 then
         begin
-          subst := Substs[n][1];
+          StrDupW(subst, Substs[n][1]);
           break;
         end;
     end
     else
     begin
-      // we are doing many if's here, because I don't want to pre-compose all the
-      // possible tokens into array. That's because some tokens take some time to
-      // be generated, and if they're not used, this time would be wasted.
       ws:=pWideChar(tok[toksp[i]]);
-
       num:=-1;
       for j:=0 to HIGH(mtable) do
       begin
-        if StrCmpW(ws,mtable[j].name)=0 then
+        if StrCmpW(ws,mtable[j])=0 then
         begin
           num:=j;
           break;
@@ -245,7 +220,7 @@ begin
 
       case num of
         sMes: begin
-          subst := Mes;
+          StrDupW(subst, Mes);
         end;
 
         sadj_mes: begin
@@ -258,7 +233,7 @@ begin
         end;
 
         sselmes: begin
-          subst := selmes;
+          StrDupW(subst, selmes);
         end;
 
         sadj_selmes: begin
@@ -270,47 +245,55 @@ begin
           subst := WrapText(subst, #13#10 + '» ', [' ', #9, '-'], 70)
         end;
 
+        // nicknames
         snick: begin
-          subst := nick;
+          StrDupW(subst, nick);
         end;
         sfrom_nick: begin
-          subst := from_nick;
+          StrDupW(subst, from_nick);
         end;
         sto_nick: begin
-          subst := to_nick;
+          StrDupW(subst, to_nick);
         end;
 
+        // date / time
         sdatetime: begin
-//!!        subst := DateTime2StrShort(dt)
+          subst := DateTimeToStr(ts);
         end;
         ssmart_datetime: begin
-//!!        subst := DateTime2StrShort(dt)
+          subst := DateTimeToStr(ts);
         end;
         sdate: begin
-//!!        subst := Date2StrFmt('',dt)
+          subst := DateToStr(ts);
         end;
         stime: begin
-//!!        subst := Time2StrFmt('',dt);
+          subst := TimeToStr(ts);
         end;
       end;
     end;
     tok[toksp[i]] := subst;
   end;
 
+  if State = gsInline then // selmes <> Mes
+    mFreeMem(selmes);
+
+  if Mes <> FItems[Item].Text then
+    mFreeMem(Mes);
+
   if Assigned(FGetNameData) then
     mFreeMem(nick);
 end;
 
-function THistoryGrid.FormatItems(ItemList: array of Integer; Format: WideString): WideString;
+function THistoryGrid.FormatItems(ItemList: array of Integer; Format: PWideChar): PWideChar;
 var
-  ifrom, ito, step, i, n: Integer;
   tok2, tok: TWideStrArray;
   toksp, tok_smartdt: TIntArray;
   prevdt, dt: TDateTime;
+  ifrom, ito, step, i, n, len: Integer;
 begin
   // array of items MUST be a sorted list!
 
-  Result := '';
+  Result := nil;
 
   SetLength(tok_smartdt,0);
   TokenizeString(Format, tok, toksp);
@@ -318,7 +301,7 @@ begin
   // detect if we have smart_datetime in the tokens
   // and cache them if we do
   for n := 0 to Length(toksp) - 1 do
-    if tok[toksp[n]] = '%smart_datetime%' then
+    if StrCmpW(tok[toksp[n]], '%smart_datetime%')=0 then
     begin
       SetLength(tok_smartdt, Length(tok_smartdt) + 1);
       tok_smartdt[High(tok_smartdt)] := toksp[n];
@@ -343,10 +326,11 @@ begin
     step  := 1;
   end;
   i := ifrom;
+
   while (i >= 0) and (i <= High(ItemList)) do
   begin
     LoadItem(ItemList[i], False);
-    tok2 := Copy(tok, 0, Length(tok));
+    tok2 := Copy(tok, 0, Length(tok)); //!!
 
     // handle smart dates:
     if Length(tok_smartdt) > 0 then
@@ -354,47 +338,90 @@ begin
       dt := TimestampToDateTime(FItems[ItemList[i]].Time);
       if prevdt <> 0 then
         if Trunc(dt) = Trunc(prevdt) then
-          for n := 0 to Length(tok_smartdt) - 1 do
-            tok2[tok_smartdt[n]] := '%time%';
+          for n := 0 to HIGH(tok_smartdt) do
+          begin
+            tok2[tok_smartdt[n]] := '%time%'; //!!
+          end;
     end; // end smart dates
 
     IntFormatItem(ItemList[i], tok2, toksp);
-    for n := 0 to Length(tok2) - 1 do
-      Result := Result + tok2[n];
+
+    // calc current item text length
+    len:=1;
+    for n := 0 to HIGH(tok2) do
+      inc(len, StrLenW(tok2[n]));
 
     if i <> ito then // do not put linebr after last item
-      Result := Result + #13#10;
+      inc(len,2);
+
+    //!! create item text or reallocate and fill main buffer?
+    mGetMem(pc, (StrLenW(Result) + len) * SizeOf(WideChar));
+    StrCopyW(pc, Result);
+    mFreeMem(Result);
+    Result:=pc; pc:=StrEnd(pc);
+
+    for n := 0 to HIGH(tok2) do
+      pc := StrCopyEW(pc, tok2[n]);
+
+    if i <> ito then // do not put linebr after last item
+    begin
+      pc^:=#13; inc(pc);
+      pc^:=#10; inc(pc);
+      pc^:=#0;
+    end;
+
     prevdt := dt;
     Inc(i, step);
   end;
+
+  for i = 0 to HIGH(tok) do
+  begin
+    mFreeMem(tok[i]);
+//!!!!    mFreeMem(tok2[i]);
+  end;
+
+  tok        :=nil;
+  tok2       :=nil;
+  toksp      :=nil;
+  tok_smartdt:=nil;
 end;
 
-function THistoryGrid.FormatSelected(const Format: WideString): WideString;
+function THistoryGrid.FormatSelected(const Format: PWideChar): PWideChar;
 begin
   if SelCount = 0 then
-    Result := ''
+    Result := nil
   else
     Result := FormatItems(FSelItems, Format);
 end;
 
-function THistoryGrid.GetSelectionString: WideString;
+function THistoryGrid.FormatItem(Item: Integer; Format: PWideChar): PWideChar;
+var
+  tok: TWideStrArray;
+  toksp: TIntArray;
+  pc:PWideChar;
+  i: Integer;
 begin
-  if FSelectionStored then
+  TokenizeString(Format, tok, toksp);
+  LoadItem(Item, False);
+  IntFormatItem(Item, tok, toksp);
+  len := 0;
+  for i := 0 to HIGH(tok) do
+    inc(len, StrLenW(tok[i]));
+  if len>0 then
   begin
-    Result := FSelectionString;
-    exit;
+    mGetMem(pc, (len + 1) * SizeOf(WideChar));
+    Result := pc;
+    for i := 0 to HIGH(tok) do
+      pc := StrCopyEW(pc, tok[i]);
+
+    for i = 0 to HIGH(tok) do
+    begin
+      mFreeMem(tok[i]);
+    end;
+
+    tok  :=nil;
+    toksp:=nil;
   end
   else
-    Result := '';
-  if Count = 0 then
-    exit;
-
-  if State = gsInline then
-    Result := GetRichString(FRichInline.Handle, True)
-  else if Selected <> -1 then
-  begin
-    FSelectionString := FormatSelected(GridOptions.SelectionFormat);
-    FSelectionStored := True;
-    Result := FSelectionString;
-  end;
+    Result := nil;
 end;

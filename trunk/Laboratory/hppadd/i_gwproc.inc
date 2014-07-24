@@ -37,6 +37,16 @@ begin
       result:=1;
     end;
 
+    //----- external text messages -----
+
+    EM_GETSEL,
+    EM_EXGETSEL,
+    WM_GETTEXT,
+    WM_GETTEXTLENGTH,
+    WM_SETTEXT,
+    EM_SETSEL,
+    EM_EXSETSEL: result := Grid.OnGridTextMessage(hMessage, wParam, lParam);
+
   else
     result:=DefWindowProc(Dialog,hMessage,wParam,lParam);
   end;

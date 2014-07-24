@@ -307,13 +307,11 @@ begin
   if IsUnknown(Item) then
     exit;
 
-  ApplyItemToRich(Item);
+  h:=GetRichHeight(Item);
   // rude hack, but what the fuck??? First item with rtl chars is 1 line heighted always
   // probably fixed, see RichCache.ApplyItemToRich
-  if FRichHeight <= 0 then
-    exit
-  else
-    h := FRichHeight;
+  if h <= 0 then
+    exit;
 
   if FGroupLinked and FItems[Item].LinkedToPrev then
     hh := 0
@@ -371,73 +369,78 @@ begin
     Result := (FItems[Item].RTLMode = hppRTLEnable)
 end;
 
-function MakeColorLines(Color:TCOLORREF):AnsiString;
+function MakeColorLines(buf:PAnsiChar; Color:TCOLORREF):PAnsiChar;
 var
-  b1,b2,b3:array [0..3] of AnsiChar;
+  pc:pAnsiChar;
 begin
-  result:=AnsiString('\red'  )+IntToStr(b1, Color and $FF)+
-          AnsiString('\green')+IntToStr(b2,(Color shr   8) and $FF)+
-          AnsiString('\blue' )+IntToStr(b3,(Color shr  16) and $FF)+';'
+  result:=buf;
+
+  pc:=IntToStr(StrCopyE(buf       ,'\red'  ), Color and $FF);
+  pc:=IntToStr(StrCopyE(StrEnd(pc),'\green'),(Color shr   8) and $FF);
+      IntToStr(StrCopyE(StrEnd(pc),'\blue' ),(Color shr  16) and $FF);
 end;
 
-function MakeFontSettingStr(pFont:pLogFontW;LogY:integer):AnsiString;
-var
-  buf: array [0..31] of AnsiChar;
+function MakeFontSettingStr(buf:PAnsiChar; pFont:pLogFontW; LogY:integer):PAnsiChar;
 begin
+  result:=buf;
+
   StrCopy(buf,'\f0\b0\i0\ul0\strike0\fs');
   buf[5 ]:=AnsiChar(ORD('0')+integer(pFont.lfWeight>=700));
   buf[8 ]:=AnsiChar(ORD('0')+pFont.lfItalic);
   buf[12]:=AnsiChar(ORD('0')+pFont.lfUnderline);
   buf[20]:=AnsiChar(ORD('0')+pFont.lfStrikeOut);
   IntToStr(PAnsiChar(@buf[24]),(-(pFont.lfHeight * 72) div LogY) shl 1);
-  result:=buf;
 end;
 
-function MakeFontTableElement(pFont:pLogFontW):AnsiString;
+function MakeFontTableElement(buf:PAnsiChar; pFont:pLogFontW):PAnsiChar;
 var
-  buf:array [0..LF_FACESIZE+3+31] of AnsiChar;
   p:pAnsiChar;
 begin
+  result:=buf;
+
   p:=StrCopyE(buf,'{\f0\fnil\fcharset');
   IntToStr(p,pFont.lfCharSet); p:=StrEnd(p);
   p^:=' '; inc(p);
   FastWideToAnsiBuf(pFont.lfFaceName,p);
   p:=StrEnd(p);
   p^:='}'; inc(p); p^:=#0;
-  result:=buf;
 end;
 
-procedure THistoryGrid.ApplyItemToRich(Item: Integer; aRichEdit: PHPPRichEdit = nil; ForceInline: Boolean = False);
+function THistoryGrid.GetRichHeight(Item: Integer): Integer;
 var
+  RichItem: PRichItem;
+begin
+  RichItem := FRichCache.RequestItem(Item);
+  result := RichItem^.Height;
+end;
+
+function THistoryGrid.GetRichFromCache(Item: Integer): PHPPRichEdit;
+var
+  RichItem: PRichItem;
+begin
+  RichItem := FRichCache.RequestItem(Item);
+  result := RichItem^.Rich;
+end;
+
+procedure THistoryGrid.ApplyItemToRich(Item: Integer; aRichEdit: PHPPRichEdit; ForceInline: Boolean = False);
+var
+  buf:array [0..127] of AnsiChar;
+  p,pc,RTF:PAnsiChar;
+  pFont:PLogFontW;
+  lText, lTextBB: PAnsiChar;
+  cf, cf2: CharFormat2;
+  textColor, BackColor: TCOLORREF;
+  numItem:integer;
   reItemInline: Boolean;
   reItemSelected: Boolean;
   reItemUseFormat: Boolean;
   reItemUseLinkColor: Boolean;
-  textColor, BackColor: TCOLORREF;
-  RichItem: PRichItem;
-  RTF, lText: AnsiString;
-  cf, cf2: CharFormat2;
-  numItem:integer;
-  pFont:PLogFontW;
 begin
-  // get from cache
-  if aRichEdit = nil then
-  begin
-    RichItem := FRichCache.RequestItem(Item);
-    FRich := RichItem^.Rich;
-    FRichHeight := RichItem^.Height;
-    exit;
-  end;
-
-  reItemInline := ForceInline or (aRichEdit = FRichInline);
-  reItemSelected := (not reItemInline) and IsSelected(Item);
+  reItemInline    := ForceInline or (aRichEdit = FRichInline);
+  reItemSelected  := (not reItemInline) and IsSelected(Item);
   reItemUseFormat := not(reItemInline) or GridOptions.TextFormatting;
-//  reItemUseFormat := not(reItemInline and (not GridOptions.TextFormatting));
 
   reItemUseLinkColor := not(GridOptions.ColorBack[fiLink] = CustomGraph.clBlue);
-
-  if not reItemInline then
-    FRich := aRichEdit;
 
   //!!
   numItem:=GridOptions.GetItemIndex(FItems[Item].MessageType);
@@ -463,44 +466,54 @@ begin
   if reItemUseFormat and GridOptions.RawRTFEnabled and IsRTF(FItems[Item].Text) then
   begin
     // stored text seems to be RTF
-    RTF := WideToAnsiString(FItems[Item].Text, FItems[Item].Codepage) + #0
+    WideToAnsi(FItems[Item].Text, RTF, FItems[Item].Codepage);
   end
   else
   begin
-    RTF := '{\rtf1\ansi\deff0{\fonttbl ';
+    mGetMem(pc,4096);
+
+    p:=StrCopyE(pc,'{\rtf1\ansi\deff0{\fonttbl ');
     // RTF := Format('{\rtf1\ansi\ansicpg%u\deff0\deflang%u{\fonttbl ',[FItems[Item].Codepage,GetLCIDfromCodepage(CodePage)]);
-//    RTF := RTF + AnsiString(Format('{\f0\fnil\fcharset%u %s}', [textFont.FontCharSet, textFont.FontName]));
-    RTF := RTF + MakeFontTableElement(pFont);
-    RTF := RTF + '}{\colortbl';
-    RTF := RTF + MakeColorLines(textColor);
-    RTF := RTF + MakeColorLines(BackColor);
+    p:=StrCopyE(p,MakeFontTableElement(buf,pFont));
+    p:=StrCopyE(p,'}{\colortbl');
+    p:=StrCopyE(p,MakeColorLines(buf,textColor));
+    p:=StrCopyE(p,MakeColorLines(buf,BackColor));
     // add color table for BBCodes
     if GridOptions.BBCodesEnabled then
     begin
       // link color ro [url][/url], [img][/img]
-      RTF := RTF + MakeColorLines(GridOptions.ColorText[fiLink]);
+      p:=StrCopyE(p,MakeColorLines(buf,GridOptions.ColorText[fiLink]));
       if reItemUseFormat then
-        RTF := RTF + rtf_ctable_text;
+        p:=StrCopyE(p,rtf_ctable_text);
     end;
-    RTF := RTF + '}\li30\ri30\fi0\cf0';
+    p:=StrCopyE(p,'}\li30\ri30\fi0\cf0');
 
     if GetItemRTL(Item) then
-      RTF := RTF + '\rtlpar\ltrch\rtlch '
+      p:=StrCopyE(p,'\rtlpar\ltrch\rtlch ')
     else
-      RTF := RTF + '\ltrpar\rtlch\ltrch ';
+      p:=StrCopyE(p,'\ltrpar\rtlch\ltrch ');
 
-    RTF := RTF + MakeFontSettingStr(pFont,LogY);
+    {p:=}StrCopyE(p,MakeFontSettingStr(buf,pFont,LogY));
+
 // RE_FmtFontSize
     lText := FormatString2RTFW(FItems[Item].Text);
     { if FGroupLinked and FItems[Item].LinkedToPrev then
       Text := FormatString2RTF(GetTime(FItems[Item].Time)+': '+FItems[Item].Text) else
       Text := FormatString2RTF(FItems[Item].Text); }
+
     if GridOptions.BBCodesEnabled and reItemUseFormat then
-      lText := DoSupportBBCodesRTF(lText, 3, not reItemSelected);
-    RTF := RTF + lText + '\par }';
+    begin
+      lTextBB := DoSupportBBCodesRTF(lText, 3, not reItemSelected);
+      mFreeMem(lText);
+      lText := lTextBB;
+    end;
+
+    mGetMem(RTF, StrLen(pc) + StrLen(lText) + 8);
+    StrCopy(StrCopyE(StrCopyE(RTF, pc),lText),'\par }');
+    mFreeMem(lText);
+    mFreeMem(pc);
   end;
 
-//  aRichEdit.RE_Text[reRTF,false]:=RTF;
   SetRichRTFA(aRichEdit.Handle, RTF, False, False, True);
   SendMessage(aRichEdit.Handle, EM_SETBKGNDCOLOR, 0, BackColor);
 
@@ -525,7 +538,7 @@ begin
         cf.dwEffects := CFE_LINK;
         cf2.dwMask    := CFM_LINK or CFM_REVISED;
         cf2.dwEffects := CFE_REVISED;
-        ReplaceCharFormat(RichEdit.Handle, cf, cf2);
+        ReplaceCharFormat(aRichEdit.Handle, cf, cf2);
         cf.dwMask      := CFM_COLOR;
         cf.crTextColor := textColor;
         SendMessage(aRichEdit.Handle, EM_SETBKGNDCOLOR, 0, BackColor);
@@ -538,7 +551,7 @@ begin
         cf.dwEffects := CFE_REVISED;
         cf2.dwMask    := CFM_LINK or CFM_REVISED;
         cf2.dwEffects := CFM_LINK;
-        ReplaceCharFormat(RichEdit.Handle, cf, cf2);
+        ReplaceCharFormat(aRichEdit.Handle, cf, cf2);
       end
       else
       begin
@@ -548,7 +561,7 @@ begin
         cf2.dwMask      := CFM_LINK or CFM_REVISED or CFM_COLOR;
         cf2.dwEffects   := CFE_REVISED;
         cf2.crTextColor := GridOptions.ColorText[fiLink]; //?? check
-        ReplaceCharFormat(RichEdit.Handle, cf, cf2);
+        ReplaceCharFormat(aRichEdit.Handle, cf, cf2);
       end;
     end;
 

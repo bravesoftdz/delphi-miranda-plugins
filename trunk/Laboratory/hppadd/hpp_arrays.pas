@@ -25,18 +25,11 @@ interface
 
 uses hpp_global;
 
-type
-  TDynArraySortCompare = function (Item1, Item2: Pointer): Integer;
-
-procedure SortDynArray(const ArrayPtr: Pointer; ElementSize: Cardinal; SortFunc: TDynArraySortCompare);
-function SearchDynArray(const ArrayPtr: Pointer; ElementSize: Cardinal; SortFunc: TDynArraySortCompare;
-  ValuePtr: Pointer; Nearest: Boolean = False): Integer;
-
-function IntSortedArray_Add(var A: TIntArray; Value: Integer): Integer;
-procedure IntSortedArray_Remove(var A: TIntArray; Value: Integer);
-function IntSortedArray_Find(var A: TIntArray; Value: Integer): Integer;
-procedure IntSortedArray_Sort(var A: TIntArray);
-function IntSortedArray_NonIntersect(var A, B: TIntArray): TIntArray;
+function  IntSortedArray_Add         (var A: TIntArray; Value: Integer): Integer;
+procedure IntSortedArray_Remove      (var A: TIntArray; Value: Integer);
+function  IntSortedArray_Find        (var A: TIntArray; Value: Integer): Integer;
+procedure IntSortedArray_Sort        (var A: TIntArray);
+function  IntSortedArray_NonIntersect(var A, B: TIntArray): TIntArray;
 
 procedure IntArrayRemove(var A: TIntArray; Index: Integer);
 procedure IntArrayInsert(var A: TIntArray; Index: Integer; Value: Integer);
@@ -45,12 +38,15 @@ implementation
 
 uses windows;
 
+type
+  TDynArraySortCompare = function (Item1, Item2: Pointer): Integer;
+
 function DynArrayCompareInteger(Item1, Item2: Pointer): Integer;
 begin
   Result := PInteger(Item1)^ - PInteger(Item2)^;
 end;
 
-procedure SortDynArray(const ArrayPtr: Pointer; ElementSize: Cardinal; SortFunc: TDynArraySortCompare);
+procedure SortDynArray(const ArrayPtr: TIntArray; ElementSize: Cardinal; SortFunc: TDynArraySortCompare);
 var
   TempBuf: Array of Byte;
 
@@ -120,12 +116,12 @@ begin
   if ArrayPtr <> nil then
   begin
     SetLength(TempBuf, ElementSize);
-    QuickSort(0, PInteger(uint_ptr(ArrayPtr) - SizeOf(pointer))^ - 1);
+    QuickSort(0, HIGH(ArrayPtr));
   end;
 end;
 
-function SearchDynArray(const ArrayPtr: Pointer; ElementSize: Cardinal; SortFunc: TDynArraySortCompare;
-  ValuePtr: Pointer; Nearest: Boolean): Integer;
+function SearchDynArray(const ArrayPtr: TIntArray; ElementSize: Cardinal; SortFunc: TDynArraySortCompare;
+  ValuePtr: Pointer; Nearest: Boolean = false): Integer;
 var
   L, H, I, C: Integer;
   B: Boolean;
@@ -134,7 +130,7 @@ begin
   if ArrayPtr <> nil then
   begin
     L := 0;
-    H := PInteger(uint_ptr(ArrayPtr) - SizeOf(pointer))^ - 1;
+    H := HIGH(ArrayPtr);
     B := False;
     while L <= H do
     begin

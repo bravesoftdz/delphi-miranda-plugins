@@ -975,7 +975,7 @@ function RichEdit_InsertBitmap(Wnd: HWND; Bitmap: hBitmap; cp: Cardinal): Boolea
 procedure OleCheck(OleResult: HResult);
 procedure ReleaseObject(var Obj);
 
-//function BitmapToRTF(pict: HBitmap): AnsiString;
+function BitmapToRTF(pict: HBitmap): pAnsiChar;
 
 procedure InitRichEditLibrary;
 
@@ -983,6 +983,10 @@ const
   RichEditClass:pAnsiChar = nil;
 
 implementation
+
+uses
+  Common;
+
 {
 type
   EOleError = class(Exception);
@@ -1329,7 +1333,7 @@ begin
 end;
 
 { Direct Bitmap to RTF insertion }
-(*
+
 function BytesPerScanline(PixelsPerScanline, BitsPerPixel, Alignment: Longint): Longint;
 begin
   Dec(Alignment);
@@ -1439,39 +1443,44 @@ const
   HexDigitChr: array [0..15] of AnsiChar = ('0','1','2','3','4','5','6','7',
                                             '8','9','A','B','C','D','E','F');
 
-function BitmapToRTF(pict: HBitmap): AnsiString;
+function BitmapToRTF(pict: HBitmap): pAnsiChar;
+const
+  prefix  = '{\rtf1 {\pict\dibitmap ';
+  postfix = ' }}';
 var
-  bi, bb, rtf: AnsiString;
+  tmp, bi, bb, rtf: pAnsiChar;
   bis, bbs: Cardinal;
-  hexpict: AnsiString;
-  I: Integer;
-  value: cardinal;
+  len,cnt: integer;
 begin
   GetDIBSizes(pict, bis, bbs);
-  SetLength(bi, bis);
-  SetLength(bb, bbs);
-  GetDIB(pict, {pict.Palette}0, PAnsiChar(bi)^, PAnsiChar(bb)^);
-  rtf := '{\rtf1 {\pict\dibitmap ';
-  SetLength(hexpict, (Length(bb) + Length(bi)) * 2);
-  I := 2;
-  for bis := 1 to Length(bi) do
+  GetMem(bi, bis);
+  GetMem(bb, bbs);
+  GetDIB(pict, {pict.Palette}0, bi^, bb^);
+
+  len:=(bis+bbs)*2+Length(prefix)+Length(postfix)+1;
+  GetMem(result,len);
+
+  rtf:=StrCopyE(result,prefix);
+  tmp:=bi;
+  for cnt := 0 to bis-1 do
   begin
-    value := cardinal(bi[bis]);
-    hexpict[I-1] := HexDigitChr[Value shr 4];
-    hexpict[I  ] := HexDigitChr[Value and $F];
-    Inc(I, 2);
+    rtf^ := HexDigitChr[ord(tmp^) shr  4]; inc(rtf);
+    rtf^ := HexDigitChr[ord(tmp^) and $F]; inc(rtf);
+    inc(tmp);
   end;
-  for bbs := 1 to Length(bb) do
+  tmp:=bb;
+  for cnt := 0 to bbs-1 do
   begin
-    value := cardinal(bb[bbs]);
-    hexpict[I-1] := HexDigitChr[Value shr 4];
-    hexpict[I  ] := HexDigitChr[Value and $F];
-    Inc(I, 2);
+    rtf^ := HexDigitChr[ord(tmp^) shr  4]; inc(rtf);
+    rtf^ := HexDigitChr[ord(tmp^) and $F]; inc(rtf);
+    inc(tmp);
   end;
-  rtf := rtf + hexpict + ' }}';
-  Result := rtf;
+  StrCopy(rtf,postfix);
+
+  FreeMem(bi);
+  FreeMem(bb);
 end;
-*)
+
 const
   RichEditLibnames: array[ 0..3 ] of PAnsiChar =
       ( 'msftedit', 'riched20', 'riched32', 'riched' );
