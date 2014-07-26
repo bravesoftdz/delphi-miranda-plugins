@@ -228,6 +228,7 @@ var
   {$include m_popup.inc}
   {$include m_protomod.inc}
   {$include m_skin.inc}
+  {$include m_sms.inc}
   {$include m_ssl.inc}
   {$include statusmodes.inc}
   {$include m_timezones.inc}
