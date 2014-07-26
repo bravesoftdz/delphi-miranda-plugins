@@ -382,8 +382,8 @@ const
 //    (Module:nil; EventType:ICQEVENTTYPE_MISSEDMESSAGE  {; MessageType:}), ICQ_DB_GETEVENTTEXT_MISSEDMESSAGE
 //    (Module:nil; EventType:ICQEVENTTYPE_EMAILEXPRESS   {; MessageType:}),
 //    (Module:nil; EventType:ICQEVENTTYPE_WEBPAGER       {; MessageType:}),
-//    (Module:nil; EventType:ICQEVENTTYPE_SMS            {; MessageType:}),
-//    (Module:nil; EventType:ICQEVENTTYPE_SMSCONFIRMATION{; MessageType:}),
+//    (Module:nil; EventType:EVENTTYPE_SMS               {; MessageType:}),
+//    (Module:nil; EventType:EVENTTYPE_SMSCONFIRMATION   {; MessageType:}),
 //    (Module:nil; EventType:TWITTER_DB_EVENT_TYPE_TWEET {; MessageType:}),
   );
 

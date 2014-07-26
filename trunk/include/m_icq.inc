@@ -86,6 +86,7 @@ const
   wParam=(WPARAM)hContact;
 }
    MS_XSTATUS_SHOWDETAILS = '/ShowXStatusDetails';
+
 {Send an SMS via the ICQ network
 wParam=(WPARAM)(const AnsiChar*)szPhoneNumber
 lParam=(LPARAM)(const AnsiChar*)szMessage
@@ -113,9 +114,6 @@ SMSes received from phones come through this same ack, again to avoid having
 an XML parser in the protocol module. Here's one I got:
 "<sms_message><source>MTN</source><destination_UIN>[UIN of recipient, ie this account]</destination_UIN><sender>[sending phone number, without +]</sender><senders_network>[contains one space, because I sent from ICQ]</senders_network><text>[body of the message]</text><time>Fri, 16 Nov 2001 03:12:33 GMT</time></sms_message>"
 }
-  ICQACKTYPE_SMS   = 1001;
-  ICQEVENTTYPE_SMS = 2001;     {database event type }
-  MS_ICQ_SENDSMS = '/SendSMS';
 
 {
   e-mail express
