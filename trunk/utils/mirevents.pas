@@ -8,31 +8,34 @@ uses
   m_api;
 
 type
-  TBuiltinMessageType = (
+  TBaseEventType = (
     mtUnknown,
     mtMessage, mtUrl, mtFile, mtSystem, mtContacts, mtStatus,
     mtOther);
 
   PMessageTypes = ^TMessageTypes;
-  TMessageTypes = set of TBuiltinMessageType;
+  TMessageTypes = set of TBaseEventType;
 
 const
-  BuiltinEventNames: array[TBuiltinMessageType] of PAnsiChar = (
+  BaseEventNames: array[TBaseEventType] of PAnsiChar = (
     'Unknown',
-    'Message',
-    'Link',
-    'File transfer',
-    'System message',
-    'Contacts',
-    'Status changes',
+    'Message',               // SKINICON_EVENT_MESSAGE
+    'Link',                  // SKINICON_EVENT_URL
+    'File transfer',         // SKINICON_EVENT_FILE
+    'System message',        // SKINICON_OTHER_MIRANDA, SKINICON_OTHER_MIRANDAWEB, 
+    'Contacts',              // SKINICON_OTHER_ADDCONTACT, SKINICON_OTHER_USERDETAILS
+    'Status changes',        // SKINICON_OTHER_STATUS, SKINICON_STATUS_* (MS_SKIN_LOADPROTOICON)
     'Other events (unknown)'
   );
 
+//----- Event info -----
 
 procedure GetEventInfo     (hDBEvent: THANDLE; var EventInfo: TDBEventInfo);
 function  GetEventTimestamp(hDBEvent: THANDLE): DWord;
 function  GetEventDateTime (hDBEvent: THANDLE): TDateTime;
 function  GetEventCoreText (const EventInfo: TDBEventInfo; CP: integer = CP_ACP): PWideChar;
+
+//----- Event check -----
 
 function IsIncomingEvent(const EventInfo: TDBEventInfo):boolean; overload;
 function IsIncomingEvent(hDBEvent: THANDLE):boolean; overload;
@@ -41,8 +44,8 @@ function IsOutgoingEvent(hDBEvent: THANDLE):boolean; overload;
 function IsReadedEvent  (const EventInfo: TDBEventInfo):boolean; overload;
 function IsReadedEvent  (hDBEvent: THANDLE):boolean; overload;
 
-function GetEventMessageType(EventInfo: TDBEventInfo): TBuiltinMessageType; overload;
-function GetEventMessageType(hDBEvent : THANDLE     ): TBuiltinMessageType; overload;
+function GetEventBaseType(EventInfo: TDBEventInfo): TBaseEventType; overload;
+function GetEventBaseType(hDBEvent : THANDLE     ): TBaseEventType; overload;
 
 //----- Custom events processing -----
 
@@ -52,32 +55,14 @@ function GetEventMessageType(hDBEvent : THANDLE     ): TBuiltinMessageType; over
 function GetEventText(hDBEvent: THANDLE            ; custom:boolean; cp:integer=CP_ACP):PWideChar; overload;
 function GetEventText(const EventInfo: TDBEventInfo; custom:boolean; cp:integer=CP_ACP):PWideChar; overload;
 
+
 implementation
 
 uses
   common,
   datetime;
 
-type
-  TEventTableItem = record
-    EventType   : Word;
-    MessageType : TBuiltinMessageType;
-  end;
-
-var
-  BuiltinEventTable: array[0..6] of TEventTableItem = (
-    // must be the first item in array for unknown events
-    (EventType: MaxWord;               MessageType: mtOther),
-    // events definitions
-    (EventType: EVENTTYPE_MESSAGE;     MessageType: mtMessage),
-    (EventType: EVENTTYPE_FILE;        MessageType: mtFile),
-    (EventType: EVENTTYPE_URL;         MessageType: mtUrl),
-    (EventType: EVENTTYPE_AUTHREQUEST; MessageType: mtSystem),
-    (EventType: EVENTTYPE_ADDED;       MessageType: mtSystem),
-    (EventType: EVENTTYPE_CONTACTS;    MessageType: mtContacts)
-  );
-
-//--------------------------------------------
+//----- Event info -----
 
 procedure GetEventInfo(hDBEvent: THANDLE; var EventInfo: TDBEventInfo);
 var
@@ -151,6 +136,8 @@ begin
   Result := TimestampToDateTime(GetEventTimestamp(hDBEvent));
 end;
 
+//----- Event check -----
+
 function IsIncomingEvent(const EventInfo: TDBEventInfo):boolean;
   {$IFDEF AllowInline}inline;{$ENDIF}
 begin
@@ -189,7 +176,26 @@ end;
 
 //----- Not pure miranda functions -----
 
-function GetEventMessageType(EventInfo: TDBEventInfo): TBuiltinMessageType;
+type
+  TEventTableItem = record
+    EventType   : Word;
+    MessageType : TBaseEventType;
+  end;
+
+var
+  BuiltinEventTable: array[0..6] of TEventTableItem = (
+    // must be the first item in array for unknown events
+    (EventType: MaxWord;               MessageType: mtOther),
+    // events definitions
+    (EventType: EVENTTYPE_MESSAGE;     MessageType: mtMessage),
+    (EventType: EVENTTYPE_FILE;        MessageType: mtFile),
+    (EventType: EVENTTYPE_URL;         MessageType: mtUrl),
+    (EventType: EVENTTYPE_AUTHREQUEST; MessageType: mtSystem),
+    (EventType: EVENTTYPE_ADDED;       MessageType: mtSystem),
+    (EventType: EVENTTYPE_CONTACTS;    MessageType: mtContacts)
+  );
+
+function GetEventBaseType(EventInfo: TDBEventInfo): TBaseEventType;
 var
   i: Integer;
   EventIndex: Integer;
@@ -209,10 +215,10 @@ begin
   Result := BuiltinEventTable[EventIndex].MessageType;
 end;
 
-function GetEventMessageType(hDBEvent: THANDLE): TBuiltinMessageType;
+function GetEventBaseType(hDBEvent: THANDLE): TBaseEventType;
 begin
   CheckRecent(hDBEvent);
-  Result := GetEventMessageType(RecentEventInfo);
+  Result := GetEventBaseType(RecentEventInfo);
 end;
 
 //----- Custom events processing -----
@@ -369,7 +375,7 @@ type
   TCustomEvent = record
     Module      : PAnsiChar;
     EventType   : Word;
-    MessageType : TBuiltinMessageType;
+    MessageType : TBaseEventType;
   end;
 const
   CustomEventTable: array [0..4] of TCustomEvent = (
@@ -398,7 +404,7 @@ var
 
   url,desc: PAnsiChar;
   urlw: PWideChar;
-  cp: Cardinal;
+//  cp: Cardinal;
 begin
   //blob is: URL(ASCII) or URL(ASCIIZ),description(ASCIIZ)
   len := StrLen(PAnsiChar(EventInfo.pBlob));
@@ -408,7 +414,10 @@ begin
     lend := StrLen(desc);
   end
   else
+  begin
+    desc := nil;
     lend := 0;
+  end;
 
   lenf := len;
   if lend > 0 then
@@ -437,7 +446,7 @@ var
   pc,filea,fname,desc:PAnsiChar;
   format, filew:PWideChar;
   len:integer;
-  cp: Cardinal;
+//  cp: Cardinal;
 begin
   //blob is: sequenceid(DWORD),filename(ASCIIZ),description(ASCIIZ)
   fname:=PAnsiChar(EventInfo.pBlob) + SizeOf(DWORD);
@@ -490,6 +499,38 @@ var
 begin
    GetEventInfo(hDBEvent, EventInfo);
    result:=GetEventText(EventInfo, custom);
+end;
+
+function GetStandardEventIcon(const EventInfo: TDBEventInfo):HICON;
+var
+  idx:integer;
+begin
+  case GetEventBaseType(EventInfo) of
+    mtMessage : idx:=SKINICON_EVENT_MESSAGE;
+    mtUrl     : idx:=SKINICON_EVENT_URL;
+    mtFile    : idx:=SKINICON_EVENT_FILE;
+//    mtSystem  : idx:=;
+//    mtContacts: idx:=;
+    mtStatus  : begin
+      result:=0;
+      exit;
+    end;
+  else
+    idx:=0;
+  end;
+  result:=CallService(MS_SKIN_LOADICON,idx,0);
+{
+  case EventInfo.eventType of
+    EVENTTYPE_MESSAGE:     idx:=SKINICON_EVENT_MESSAGE;
+    EVENTTYPE_FILE:        idx:=SKINICON_EVENT_FILE;
+    EVENTTYPE_URL:         idx:=SKINICON_EVENT_URL;
+    EVENTTYPE_AUTHREQUEST: idx:=SKINICON_AUTH_REQUEST;
+    EVENTTYPE_ADDED:       idx:=SKINICON_AUTH_ADD;
+    EVENTTYPE_CONTACTS:    idx:=
+    EVENTTYPE_SMS:         idx:=SKINICON_OTHER_SMS;
+  else
+  end;
+}
 end;
 
 end.

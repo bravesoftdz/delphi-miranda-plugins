@@ -219,14 +219,6 @@ const
   MS_CLIST_ADDCONTEXTFRAMEMENUITEM:PAnsiChar = 'CList/AddContextFrameMenuItem';
 
 {
-  remove a item from context frame menu
-  wParam=hMenuItem returned by MS_CLIST_ADDCONTACTMENUITEM
-  lParam=0
-  returns 0 on success, nonzero on failure
-}
-  MS_CLIST_REMOVECONTEXTFRAMEMENUITEM:PAnsiChar = 'CList/RemoveContextFrameMenuItem';
-
-{
   builds the context menu for a frame
   wparam=frameid
   lParam=0
@@ -247,7 +239,7 @@ lparam=
 must be popupname=lparam to place your items in right popup of main menu.
     use
           MS_CLIST_ADDMAINMENUITEM
-          MS_CLIST_REMOVEMAINMENUITEM
+          MO_REMOVEMENUITEM
 
 }
   ME_CLIST_PREBUILDFRAMEMENU:PAnsiChar = 'CList/PreBuildFrameMenu';

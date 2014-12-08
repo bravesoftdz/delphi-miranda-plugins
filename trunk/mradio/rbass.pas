@@ -17,10 +17,10 @@ procedure EQ_OFF;
 procedure SetSndVol(arg:integer);
 procedure SetBassConfig;
 
-procedure MyFreeBASS;
-function MyInitBASS:bool;
+procedure MyFreeBass;
+function MyInitBass:bool;
 procedure MyUnloadBass;
-function MyLoadBASS:bool;
+function MyLoadBass:bool;
 function CheckBassStatus:bool;
 
 implementation
@@ -218,13 +218,13 @@ function MyInitBASS:bool;
 var
   num:integer;
 begin
-  if BassSTatus=rbs_null then
+  if BassStatus=rbs_null then
   begin
     result:=false;
     exit;
     // or can do this:
     MyLoadBass;
-    if BassSTatus=rbs_null then
+    if BassStatus=rbs_null then
     begin
       result:=false;
       exit;
@@ -281,7 +281,7 @@ begin
   MyFreeBASS;
   if BassStatus=rbs_load then
   begin
-    mFreeMem(Proxy);
+    mFreeMem(proxy);
 
     BASS_PluginFree(0);
     Unload_BASSDLL;
@@ -393,7 +393,7 @@ begin
         repeat
           StrCopyW(pc,fd.cFileName);
           if BASS_PluginLoad(pAnsiChar(basspath),BASS_UNICODE)=0 then
-            break;
+;//            break; // ignore if unsuccefull plugin load
         until not FindNextFileW(fh,fd);
         FindClose(fh);
       end;
@@ -423,7 +423,7 @@ begin
   begin
     SetBassConfig;
 
-    mFreeMem(Proxy);
+    mFreeMem(proxy);
     proxy:=GetProxy(hNetLib);
     BASS_SetConfigPtr(BASS_CONFIG_NET_PROXY,proxy);
   end;

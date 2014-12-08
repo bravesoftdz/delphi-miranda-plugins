@@ -100,9 +100,9 @@ function Options_OpenPage(ood:POPENOPTIONSDIALOG):HWND;
 procedure MIcoTab_AddItem (hwnd:HWND; lptzName:PAnsiChar; hIcon:HICON; data:LPARAM; bSharedIcon:bool);
 procedure MIcoTab_AddItemW(hwnd:HWND; lptzName:PWideChar; hIcon:HICON; data:LPARAM; bSharedIcon:bool);
 
-function Crypto_RegisterEngine(pProvider:PCRYPTO_PROVIDER):THANDLE;
+function  Crypto_RegisterEngine(pProvider:PCRYPTO_PROVIDER):THANDLE;
 procedure Crypto_EnumProviders(var numProvs:int; var pResult:array of PCRYPTO_PROVIDER);
-function Crypto_GetProvider(pszName:PAnsiChar):PCRYPTO_PROVIDER;
+function  Crypto_GetProvider(pszName:PAnsiChar):PCRYPTO_PROVIDER;
 
 {$ELSE}
 

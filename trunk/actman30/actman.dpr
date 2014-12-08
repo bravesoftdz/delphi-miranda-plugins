@@ -58,6 +58,7 @@ uses
   iac_contact,
   iac_call,
   iac_ini,
+  iac_notes,
   inoutxml,
   sedit,
   strans,

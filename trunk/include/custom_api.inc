@@ -8,7 +8,6 @@
 {$include custom\m_dropbox.inc}
 {$include custom\m_fingerprint.inc}
 {$include custom\m_flags.inc}
-{$include custom\m_flash.inc}
 {$include custom\m_folders.inc}
 {$include custom\m_ftpfile.inc}
 {$include custom\m_historypp.inc}

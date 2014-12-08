@@ -5,11 +5,12 @@ interface
 uses windows, lowlevelc;
 
 function Import(list:tMacroList;fname:PWideChar;aflags:dword):integer;
+function aExport(list:tMacroList;fname:PWideChar;aflags:dword):integer;
 
 implementation
 
 uses
-  io, common, m_api, question,
+  io, common, m_api, question, inouttext,
   iac_global, global;
 
 const
@@ -150,6 +151,105 @@ begin
     destroyNode(root);
   end;
   mFreeMem(res);
+end;
+
+//=======================================================
+
+procedure SaveActions(Macro:pMacroRecord;buf:tTextExport);
+var
+  p,p1:PAnsiChar;
+  i:integer;
+begin
+  for i:=0 to Macro.ActionCount-1 do
+  begin
+    if i>0 then
+      buf.AddNewLine();
+    buf.AddFlag('ACTION');
+    Macro.ActionList[i].Save(buf,13);
+    buf.ShiftLeft;
+    buf.AddFlag('ENDACTION');
+    buf.AddNewLine();
+  end;
+{
+  p:=StrEnd(section);
+  StrCopy(p,opt_numacts); DBWriteWord(0,DBBranch,section,Macro^.ActionCount);
+
+  // in: section = "Group#/"
+  p1:=StrCopyE(p,opt_actions); // "Group#/Action"
+  DBDeleteGroup(0,DBBranch,section);
+
+  for i:=0 to Macro^.ActionCount-1 do
+  begin
+    p:=StrEnd(IntToStr(p1,i));
+    p^:='/'; inc(p); // "Group#/Action#/"
+
+//??    StrCopy(p,opt_uid); DBWriteDWord(0,DBBranch,section,Macro^.ActionList[i].uid);
+    p^:=#0;
+    Macro^.ActionList[i].Save(section,13);
+  end;
+}
+end;
+
+function aExport(list:tMacroList;fname:PWideChar;aflags:dword):integer;
+var
+  buf:tTextExport;
+  f:THANDLE;
+  
+  Macro:pMacroRecord;
+  NumMacro:integer;
+  i,j:integer;
+  section:array [0..127] of AnsiChar;
+  p,p1:PAnsiChar;
+begin
+// even if crap in settings, skip on read
+//  DBDeleteGroup(0,DBBranch,opt_group);
+  Macro:=list[0];
+  i:=list.Count;
+  NumMacro:=0;
+
+  buf:=tTextExport.Create(list.Count);
+
+  j:=0;
+  while i>0 do
+  begin
+    with Macro^ do
+    begin
+      if (flags and (ACF_ASSIGNED or ACF_VOLATILE))=ACF_ASSIGNED then
+      begin
+        buf.NextItem;
+
+        buf.AddFlag('MACRO');
+        buf.AddDWord('id'   ,id);
+//        buf.AddDWord('flags',flags);
+        buf.AddFlag('FirstRun',(flags and ACF_FIRSTRUN)<>0);
+        buf.AddTextW('descr',descr);
+        buf.AddNewLine();
+        buf.ShiftRight();
+
+        SaveActions(Macro,buf);
+
+        buf.ShiftLeft;
+        buf.AddFlag('ENDMACRO');
+        buf.AddNewLine();
+        buf.AddNewLine();
+        buf.EndItem;
+        inc(NumMacro);
+      end;
+    end;
+    inc(Macro);
+    inc(j);
+    dec(i);
+  end;
+
+  f:=Rewrite(fname);
+  for i:=0 to NumMacro-1 do
+  begin
+    p:=buf.Items[i];
+    BlockWrite(f,p^,StrLen(p));
+  end;
+  CloseHandle(f);
+  
+  buf.Free;
 end;
 
 end.

@@ -9,7 +9,7 @@ uses
   global, iac_global,
   m_api,dbsettings,
   common,mirutils,wrapper,
-  editwrapper,contact,dlgshare;
+  editwrapper,mircontacts,dlgshare;
 
 {$include i_cnst_database.inc}
 {$resource iac_database.res}
@@ -64,6 +64,24 @@ const
   ACF_RW_MODULE  = $00001000; // script for module name
   ACF_RW_SETTING = $00002000; // script for setting name
   ACF_RW_VALUE   = $00004000; // script for data value
+
+const // V2
+  ACF_OLD_DBWRITE  = $00000001;
+  ACF_OLD_DBBYTE   = $00000002;
+  ACF_OLD_DBWORD   = $00000004;
+  ACF_OLD_PARAM    = $00000008;
+  ACF_OLD_CURRENT  = $00000010;
+  ACF_OLD_RESULT   = $00000020;
+  ACF_OLD_LAST     = $00000040;
+  ACF_OLD_DBUTEXT  = $00000080;
+  ACF_OLD_DBANSI   = $00000082;
+  ACF_OLD_DBDELETE = $00000100;
+  ACF_OLD_NOCNTCT  = ACF_OLD_PARAM or ACF_OLD_CURRENT or ACF_OLD_RESULT;
+
+  ACF2_RW_MVAR  = $00000001;
+  ACF2_RW_SVAR  = $00000002;
+  ACF2_RW_TVAR  = $00000004;
+  ACF2_RW_HEX   = $00000008;
 
 type
   tDataBaseAction = class(tBaseAction)
@@ -302,8 +320,10 @@ end;
 procedure tDataBaseAction.Load(node:pointer;fmt:integer);
 var
   section: array [0..127] of AnsiChar;
+  buf:array [0..31] of WideChar;
   pc:pAnsiChar;
   tmp:pWideChar;
+  lflags,flags2:dword;
 begin
   inherited Load(node,fmt);
   case fmt of
@@ -313,11 +333,48 @@ begin
       pc:=StrCopyE(section,pAnsiChar(node));
       StrCopy(pc,opt_module ); dbmodule :=DBReadUnicode(0,DBBranch,section);
       StrCopy(pc,opt_setting); dbsetting:=DBReadUnicode(0,DBBranch,section);
-      if ((flags and ACF_DBDELETE)=0) and
-         ((flags and ACF_LAST)=0)  then
+      if (flags and (ACF_DBDELETE or ACF_LAST))=0 then
       begin
         StrCopy(pc,opt_value); dbvalue:=DBReadUnicode(0,DBBranch,section);
       end;
+    end;
+
+    100: begin
+      if (flags and ACF_OLD_NOCNTCT)=0 then
+        dbcontact:=LoadContact(DBBranch,node);
+      pc:=StrCopyE(section,pAnsiChar(node));
+
+      // auto convert ansi to unicode
+      StrCopy(pc,opt_module ); dbmodule :=DBReadUnicode(0,DBBranch,section);
+      StrCopy(pc,opt_setting); dbsetting:=DBReadUnicode(0,DBBranch,section);
+
+      StrCopy(pc,'flags2'); flags2:=DBReadDWord(0,DBBranch,section,0);
+
+      if (flags and (ACF_OLD_DBDELETE or ACF_OLD_LAST))=0 then
+      begin
+        StrCopy(pc,opt_value);
+        if ((flags and ACF_OLD_DBUTEXT)=0) and ((flags2 and ACF2_RW_TVAR)=0) then
+          StrDupW(dbvalue,IntToStr(buf,DBReadDWord(0,DBBranch,section)))
+        else
+          dbvalue:=DBReadUnicode(0,DBBranch,section);
+      end;
+
+      lflags:=flags;
+      flags:=flags and not ACF_MASK;
+      if (lflags and ACF_OLD_DBWRITE )<>0 then flags:=flags or ACF_DBWRITE;
+      if (lflags and ACF_OLD_DBDELETE)<>0 then flags:=flags or ACF_DBDELETE;
+      if (lflags and ACF_OLD_PARAM   )<>0 then flags:=flags or ACF_PARAM;
+      if (lflags and ACF_OLD_CURRENT )<>0 then flags:=flags or ACF_CURRENT;
+      if (lflags and ACF_OLD_RESULT  )<>0 then flags:=flags or ACF_RESULT;
+      if (lflags and ACF_OLD_LAST    )<>0 then flags:=flags or ACF_LAST;
+      if (lflags and ACF_OLD_DBBYTE  )=ACF_OLD_DBBYTE  then flags:=flags or ACF_DBBYTE;
+      if (lflags and ACF_OLD_DBWORD  )=ACF_OLD_DBWORD  then flags:=flags or ACF_DBWORD;
+      if (lflags and ACF_OLD_DBUTEXT )=ACF_OLD_DBUTEXT then flags:=flags or ACF_DBUTEXT;
+      if (lflags and ACF_OLD_DBANSI  )=ACF_OLD_DBANSI  then flags:=(flags or ACF_DBANSI) and not (ACF_DBBYTE or ACF_DBUTEXT);
+      if (flags2 and ACF2_RW_MVAR)<>0 then flags:=flags or ACF_RW_MODULE;
+      if (flags2 and ACF2_RW_SVAR)<>0 then flags:=flags or ACF_RW_SETTING;
+      if (flags2 and ACF2_RW_TVAR)<>0 then flags:=flags or ACF_RW_VALUE;
+
     end;
 
     1: begin
@@ -420,6 +477,8 @@ begin
     1: begin
     end;
 }
+    13: begin
+    end;
   end;
 end;
 
@@ -554,6 +613,7 @@ begin
 
       CB_SelectData(GetDlgItem(Dialog,IDC_RW_DATATYPE),0);
       CheckDlgButton(Dialog,IDC_RW_READ  ,BST_CHECKED);
+      CheckDlgButton(Dialog,IDC_RW_SAVE  ,BST_CHECKED);
       CheckDlgButton(Dialog,IDC_RW_MANUAL,BST_CHECKED);
 
       EnableWindow(GetDlgItem(Dialog,IDC_CONTACTLIST),true);

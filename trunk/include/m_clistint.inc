@@ -378,7 +378,7 @@ type
     pfnGetDefaultExStyle          : function  :dword; cdecl;
     pfnGetDefaultFontSetting      : procedure (i:int; var lf:LOGFONT; var colour:COLORREF); cdecl;
     pfnGetFontSetting             : procedure (i:int; var lf:LOGFONT; var colour:COLORREF); cdecl;
-    pfnLoadClcOptions             : procedure (hwnd:HWND; var dat:TClcData); cdecl;
+    pfnLoadClcOptions             : procedure (hwnd:HWND; var dat:TClcData; bFirst: int); cdecl;
     pfnRecalculateGroupCheckboxes : procedure (hwnd:HWND; var dat:TClcData); cdecl;
     pfnSetGroupChildCheckboxes    : procedure (var group:TClcGroup; checked:int); cdecl;
     pfnInvalidateItem             : procedure (hwnd:HWND; var dat:TClcData; iItem:int); cdecl;
@@ -484,8 +484,7 @@ type
     pfnStub2           : function (_para1:int):int; cdecl;
 
     pfnGetProtocolVisibility : function (_para1:PAnsiChar):int; cdecl;
-    pfnGetProtoIndexByPos    : function (var proto:PPROTOCOLDESCRIPTOR;
-                               protoCnt:int; Pos:int):int; cdecl;
+    pfnGetProtoIndexByPos    : function (var proto:PPROTOCOLDESCRIPTOR; protoCnt:int; Pos:int):int; cdecl;
     pfnReloadProtoMenus      : procedure ; cdecl;
 
   (*************************************************************************************
@@ -500,12 +499,12 @@ type
     szTip             : TChar;
     bTrayMenuOnScreen : bool;
 
-    pfnGetIconFromStatusMode  : function  (hContact:TMCONTACT; szProto:PAnsiChar;
-                                status:int):HICON; cdecl;
+    pfnGetIconFromStatusMode  : function  (hContact:TMCONTACT; szProto:PAnsiChar; status:int):HICON; cdecl;
 
     pfnInitTray               : procedure ; cdecl;
-    pfnTrayIconAdd            : function  (hwnd:HWND; szProto:PAnsiChar; szIconProto:PAnsiChar;
-                                status:int):int; cdecl;
+    pfnUninitTray             : procedure ; cdecl;
+
+    pfnTrayIconAdd            : function  (hwnd:HWND; szProto:PAnsiChar; szIconProto:PAnsiChar; status:int):int; cdecl;
     pfnTrayIconDestroy        : function  (hwnd:HWND):int; cdecl;
     pfnTrayIconInit           : function  (hwnd:HWND):int; cdecl;
     pfnTrayIconMakeTooltip    : function  (szPrefix:TChar; szProto:PAnsiChar):TChar; cdecl;
@@ -514,10 +513,6 @@ type
     pfnTrayIconTaskbarCreated : procedure (hwnd:HWND); cdecl;
     pfnTrayIconUpdate         : function  (hNewIcon:HICON; szNewTip:TChar;
                                 szPreferredProto:PAnsiChar; isBase:int):int; cdecl;
-
-    pfnUninitTray : procedure ; cdecl;
-    pfnLockTray   : procedure ; cdecl;
-    pfnUnlockTray : procedure ; cdecl;
 
     pfnTrayCycleTimerProc : procedure(hwnd:HWND;message:uint;idEvent:uint_ptr;dwTime:dword); stdcall;
 
@@ -537,10 +532,10 @@ type
 	 * Miranda NG additions
 	 *************************************************************************************)
 
-	  pfnGetContactIcon: function(hContact:TMCONTACT):int; cdecl;
-	  pfnTrayCalcChanged:function(szChangedProto:PAnsiChar; averageMode:int; iProtoCount:int):int; cdecl;
-    pfnGetAverageMode:function(pNetProtoCount:pint):int; cdecl;
-    pfnInitAutoRebuild:procedure(hwnd:HWND); cdecl;
+    pfnGetContactIcon      :function (hContact:TMCONTACT):int; cdecl;
+    pfnTrayCalcChanged     :function (szChangedProto:PAnsiChar; averageMode:int; iProtoCount:int):int; cdecl;
+    pfnGetAverageMode      :function (pNetProtoCount:pint):int; cdecl;
+    pfnInitAutoRebuild     :procedure(hwnd:HWND); cdecl;
     pfnSetContactCheckboxes:procedure(cc:PClcContact; checked:int); cdecl;
   end;
 
