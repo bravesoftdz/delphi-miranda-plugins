@@ -8,7 +8,7 @@ const
 *)
 {$include i_cookies.inc}
 
-const API_URL = 'http://api.myshows.ru/';
+const API_URL = 'http://api.myshows.me/';
 
 const
   defreq = API_URL+'profile/login?login=<login>&password=<password>';
@@ -208,7 +208,7 @@ begin
       end;
 }        
       //!! add option to show it??
-      if ServiceExists(MS_POPUP_SHOWMESSAGE)<>0 then
+      if ServiceExists(MS_POPUP_SHOWMESSAGEW)<>0 then
       begin
         json_free(shId);
         json_free(epId);

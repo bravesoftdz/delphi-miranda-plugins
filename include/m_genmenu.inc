@@ -66,17 +66,15 @@ plugin may add different menu items with some service.
 
 
 25-11-2002    Full support of runtime build of all menus.
-   Contact      MS_CLIST_ADDCONTACTMENUITEM
-           MS_CLIST_REMOVECONTACTMENUITEM
+   Contact MS_CLIST_ADDCONTACTMENUITEM
            MS_CLIST_MENUBUILDCONTACT
            ME_CLIST_PREBUILDCONTACTMENU
 
-   MainMenu    MS_CLIST_ADDMAINMENUITEM
-             MS_CLIST_REMOVEMAINMENUITEM
+   MainMenu  MS_CLIST_ADDMAINMENUITEM
              MS_CLIST_MENUBUILDMAIN
              ME_CLIST_PREBUILDMAINMENU
 
-   FrameMenu    MS_CLIST_ADDCONTEXTFRAMEMENUITEM
+   FrameMenu MS_CLIST_ADDCONTEXTFRAMEMENUITEM
              MS_CLIST_REMOVECONTEXTFRAMEMENUITEM
              MS_CLIST_MENUBUILDFRAMECONTEXT
              ME_CLIST_PREBUILDFRAMEMENU
@@ -89,15 +87,6 @@ plugin may add different menu items with some service.
 }
 
 const
-{
-  SubGroup MENU
-  remove a item from SubGroup menu
-  wParam=hMenuItem returned by MS_CLIST_ADDSubGroupMENUITEM
-  lParam=0
-  returns 0 on success, nonzero on failure
-}
-  MS_CLIST_REMOVESUBGROUPMENUITEM:PAnsiChar = 'CList/RemoveSubGroupMenuItem';
-
 {
   builds the SubGroup menu
   wParam=lParam=0
@@ -130,14 +119,6 @@ type
 
 const
 {
-  remove a item from Group menu
-  wParam=hMenuItem returned by MS_CLIST_ADDGroupMENUITEM
-  lParam=0
-  returns 0 on success, nonzero on failure
-}
-  MS_CLIST_REMOVEGROUPMENUITEM:PAnsiChar = 'CList/RemoveGroupMenuItem';
-
-{
   builds the Group menu
   wParam=lParam=0
   returns a HMENU identifying the menu.
@@ -157,17 +138,8 @@ const
 }
   ME_CLIST_PREBUILDGROUPMENU:PAnsiChar = 'CList/PreBuildGroupMenu';
 
-// Group MENU
 
 // TRAY MENU
-{
-  remove a item from tray menu
-  wParam=hMenuItem returned by MS_CLIST_ADDTRAYMENUITEM
-  lParam=0
-  returns 0 on success, nonzero on failure
-}
-  MS_CLIST_REMOVETRAYMENUITEM:PAnsiChar = 'CList/RemoveTrayMenuItem';
-
 {
   builds the tray menu
   wParam=lParam=0
@@ -204,14 +176,6 @@ const
 //!!  MS_CLIST_ADDSTATUSMENUITEM = 'CList/AddStatusMenuItem'; // defined in m_clist.inc
 
 {
-  remove a item from main menu
-  wParam=hMenuItem returned by MS_CLIST_ADDMAINMENUITEM
-  lParam=0
-  returns 0 on success, nonzero on failure
-}
-  MS_CLIST_REMOVEMAINMENUITEM:PAnsiChar = 'CList/RemoveMainMenuItem';
-
-{
   builds the main menu
   wParam=lParam=0
   returns a HMENU identifying the menu.
@@ -223,14 +187,6 @@ const
   wParam=lParam=0
 }
   ME_CLIST_PREBUILDMAINMENU:PAnsiChar = 'CList/PreBuildMainMenu';
-
-{
-  remove a item from contact menu
-  wParam=hMenuItem returned by MS_CLIST_ADDCONTACTMENUITEM
-  lParam=0
-  returns 0 on success, nonzero on failure
-}
-  MS_CLIST_REMOVECONTACTMENUITEM:PAnsiChar = 'CList/RemoveContactMenuItem';
 
 // GENMENU_MODULE
 

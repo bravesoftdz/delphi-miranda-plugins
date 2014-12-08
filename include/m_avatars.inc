@@ -282,38 +282,6 @@ const
   }
   MS_AV_REPORTMYAVATARCHANGED:PAnsiChar = 'SV_Avatars/ReportMyAvatarChanged';
 
-// Bitmap services //////////////////////////////////////////////////////////////////////
-
-  {
-    Load an image
-    wParam = NULL
-    lParam = filename
-  }
-  MS_AV_LOADBITMAP32:PAnsiChar = 'SV_Avatars/LoadBitmap32';
-
-  {
-    Save an HBITMAP to an image
-    wParam = HBITMAP
-    lParam = full path of filename
-  }
-  MS_AV_SAVEBITMAP :PAnsiChar = 'SV_Avatars/SaveBitmap';
-  MS_AV_SAVEBITMAPW:PAnsiChar = 'SV_Avatars/SaveBitmapW';
-
-  {
-    Returns != 0 if can save that type of image, = 0 if cant
-    wParam = 0
-    lParam = PA_FORMAT_*   // image format
-  }
-  MS_AV_CANSAVEBITMAP:PAnsiChar = 'SV_Avatars/CanSaveBitmap';
-
-  {
-    Returns a copy of the bitmap with the size especified or the original bitmap
-    if nothing has to be changed
-    wParam = ResizeBitmap *
-    lParam = NULL
-  }
-  MS_AV_RESIZEBITMAP:PAnsiChar = 'SV_Avatars/ResizeBitmap';
-
 {
  * flags for internal use ONLY
 }

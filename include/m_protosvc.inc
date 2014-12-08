@@ -129,6 +129,7 @@ const
   PF4_INFOSETTINGSVC   = $00000200; // protocol supports user info translation services (v0.8.0+)
   PF4_NOAUTHDENYREASON = $00000400; // protocol doesn't support authorization deny reason (v0.9.0+)
   PF4_GROUPCHATFILES   = $00000800; // protocol supports sending files to group chats (v0.95.2+)
+  PF4_SINGLEFILEONLY   = $00001000; // protocol supports sending files one by one only
 
   PFLAG_UNIQUEIDTEXT         = 100; // returns a static buffer of text describing the unique field by which this protocol identifies users (already translated), or NULL
   PFLAG_MAXCONTACTSPERPACKET = 200; // v0.1.2.2+: returns the maximum number of contacts which can be sent in a single PSS_CONTACTS. lParam=(LPARAM)hContact.
