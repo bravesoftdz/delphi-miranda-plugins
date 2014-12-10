@@ -188,6 +188,7 @@ begin
       StrCopy(p,opt_flags); DBWriteDWord(0,DBBranch,section,Macro^.flags);
     end;
   end;
+
 end;
 
 function OnModulesLoaded(wParam:WPARAM;lParam:LPARAM):int;cdecl;
@@ -202,7 +203,7 @@ begin
   RegisterIcons;
   
   HookEvent(ME_OPT_INITIALISE ,@OnOptInitialise);
-  HookEvent(ME_SYSTEM_SHUTDOWN{ME_SYSTEM_OKTOEXIT},@PreShutdown);
+  HookEvent(ME_SYSTEM_PRESHUTDOWN{ME_SYSTEM_OKTOEXIT},@PreShutdown);
   NotifyEventHooks(hHookChanged,twparam(ACTM_LOADED),0);
 
   IsMultiThread:=true;

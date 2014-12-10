@@ -46,7 +46,9 @@ var
   p,p1:PAnsiChar;
 begin
 // even if crap in settings, skip on read
-//  DBDeleteGroup(0,DBBranch,opt_group);
+
+  DBDeleteGroup(0,DBBranch,opt_group); //!!
+
   Macro:=MacroList[0];
   i:=MacroList.Count;
   NumMacro:=0;
@@ -78,7 +80,9 @@ begin
   DBWriteWord(0,DBBranch,opt_nummacro,NumMacro);
 end;
 
-//----- Load settings -----
+//===== Load settings =====
+
+//----- V2 settings processing -----
 
 const
   ACT_CONTACT = 1;
@@ -99,15 +103,14 @@ const
   ACF_OLD_FWRITE   = $00000020; // read/write file
   ACF_OLD_FAPPEND  = $00000040; // append file
 
-function LoadNumValue(setting:pAnsiChar;isvar:boolean):PWideChar;
-var
-  buf:array [0..31] of WideChar;
-begin
-  if isvar then
-    result:=DBReadUnicode(0,DBBranch,setting,nil)
-  else
-    StrDupW(result,IntToStr(buf,DBReadDWord(0,DBBranch,setting)));
-end;
+const
+  OldVersion = 'Your Actman settings is for old version. If you ready to upgrade settings, ' +
+               'press OK. Else press Cancel and change manually Actman plugin back to old version ' +
+               'or make settings backup. To keep previously expoted macros please import them back ' +
+               'before conversion';
+  Notes      = 'Please, don''t use macro test for non-saved macros. If you had ''Advanced'' or file ' +
+               'writing actions previously, check it - their logic was changed.';
+  ConvResult = 'Actman settings converted to new version';
 
 procedure CheckActionList(Macro:pMacroRecord;num:integer);
 var
@@ -169,7 +172,6 @@ begin
       end
       else
       begin
-        actm  :=nil;
         action:=nil;
       end;
 
@@ -335,6 +337,8 @@ begin
   end;
 end;
 
+//----- V3 settings processing -----
+
 function LoadActions(Macro:pMacroRecord;section:pAnsiChar):integer; stdcall;
 var
   p,p1:PAnsiChar;
@@ -398,10 +402,22 @@ var
   v2:bool;
 begin
   //!! Check if old actman version used
-  v2:=DBReadWord(0,DBBranch,opt_numacts,$FFFF)<>$FFFF;
+//  v2:=DBReadWord(0,DBBranch,opt_numacts,$FFFF)<>$FFFF;
+  // V2 counts actions from 1, not 0
+  v2:=DBReadDWord(0,DBBranch,'Group0/Action0/flags',$FFFFFFFF)=$FFFFFFFF;
+
+  if v2 then
+  begin
+    if MessageBoxW(0,TranslateW(OldVersion),'Actman',MB_OKCANCEL or MB_ICONWARNING)<>IDOK then
+    begin
+      NumMacros:=0;
+      MacroList:=tMacroList.Create(0);
+      exit;
+    end;
+  end;
 
   // Allocate macro list
-  NumMacros :=DBReadWord(0,DBBranch,opt_nummacro,0);
+  NumMacros:=DBReadWord(0,DBBranch,opt_nummacro,0);
   MacroList:=tMacroList.Create(NumMacros);
 
   // read macro list settings
@@ -436,4 +452,13 @@ begin
       inc(i);
     end;
   end;
+
+  if v2 then
+  begin
+    DBDeleteSetting(0,DBBranch,opt_numacts);
+    DBWriteByte(0,DBBranch,'version'  ,3);
+    SaveMacros;
+    MessageBoxW(0,TranslateW(Notes),TranslateW(ConvResult),MB_ICONINFORMATION);
+  end;
+
 end;
