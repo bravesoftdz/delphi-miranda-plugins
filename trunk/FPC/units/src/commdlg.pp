@@ -20,6 +20,10 @@ interface
 {$ifndef Win64}
   {$packrecords 1}
 {$endif}
+
+{$ifdef FPC_OS_UNICODE}
+  {$define UNICODE}
+{$endif}
 uses windows;
 
 Type
@@ -430,7 +434,7 @@ Type
           nMaxPage : WORD;
           nCopies : WORD;
           hInstance : HINST;
-          lCustData : DWORD;
+          lCustData : LPARAM;
           lpfnPrintHook : LPPRINTHOOKPROC;
           lpfnSetupHook : LPSETUPHOOKPROC;
           lpPrintTemplateName : LPCTSTR;
@@ -458,7 +462,7 @@ Type
           nMaxPage : WORD;
           nCopies : WORD;
           hInstance : HINST;
-          lCustData : DWORD;
+          lCustData : LPARAM;
           lpfnPrintHook : LPPRINTHOOKPROC;
           lpfnSetupHook : LPSETUPHOOKPROC;
           lpPrintTemplateName : LPWSTR;
