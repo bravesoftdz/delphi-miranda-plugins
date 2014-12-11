@@ -40,18 +40,19 @@ end;
 procedure SaveMacros;
 var
   Macro:pMacroRecord;
-  NumMacro:integer;
+  NumMacros:integer;
   i:integer;
   section:array [0..127] of AnsiChar;
   p,p1:PAnsiChar;
 begin
 // even if crap in settings, skip on read
+  DBWriteByte(0,DBBranch,'version'  ,3);
 
-  DBDeleteGroup(0,DBBranch,opt_group); //!!
+  OldNumMacros:=DBReadWord(0,DBBranch,opt_nummacro,0);
 
   Macro:=MacroList[0];
   i:=MacroList.Count;
-  NumMacro:=0;
+  NumMacros:=0;
 
   p1:=StrCopyE(section,opt_group);
   while i>0 do
@@ -71,13 +72,21 @@ begin
 
         SaveActions(Macro,section);
 
-        inc(NumMacro);
+        inc(NumMacros);
       end;
     end;
     inc(Macro);
     dec(i);
   end;
-  DBWriteWord(0,DBBranch,opt_nummacro,NumMacro);
+  DBWriteWord(0,DBBranch,opt_nummacro,NumMacros);
+
+  // deleting old unused macro settings
+  while OldNumMacros>NumMacros do
+  begin
+    dec(OldNumMacro);
+    p:=IntToStr(p1,OldNumMacro);
+    DBDeleteGroup(0,DBBranch,section);
+  end;
 end;
 
 //===== Load settings =====
@@ -401,23 +410,26 @@ var
   NumMacros:cardinal;
   v2:bool;
 begin
-  //!! Check if old actman version used
-//  v2:=DBReadWord(0,DBBranch,opt_numacts,$FFFF)<>$FFFF;
-  // V2 counts actions from 1, not 0
-  v2:=DBReadDWord(0,DBBranch,'Group0/Action0/flags',$FFFFFFFF)=$FFFFFFFF;
+  NumMacros:=DBReadWord(0,DBBranch,opt_nummacro,0);
 
-  if v2 then
+  // Check if old actman version used
+  if NumMacros>0 then
   begin
-    if MessageBoxW(0,TranslateW(OldVersion),'Actman',MB_OKCANCEL or MB_ICONWARNING)<>IDOK then
+    // V2 counts actions from 1, not 0
+    v2:=DBReadDWord(0,DBBranch,'Group0/Action0/flags',$FFFFFFFF)=$FFFFFFFF;
+
+    if v2 then
     begin
-      NumMacros:=0;
-      MacroList:=tMacroList.Create(0);
-      exit;
+      if MessageBoxW(0,TranslateW(OldVersion),'Actman',MB_OKCANCEL or MB_ICONWARNING)<>IDOK then
+      begin
+        NumMacros:=0;
+        MacroList:=tMacroList.Create(0);
+        exit;
+      end;
     end;
   end;
 
   // Allocate macro list
-  NumMacros:=DBReadWord(0,DBBranch,opt_nummacro,0);
   MacroList:=tMacroList.Create(NumMacros);
 
   // read macro list settings
@@ -451,14 +463,13 @@ begin
       inc(Macro);
       inc(i);
     end;
-  end;
 
-  if v2 then
-  begin
-    DBDeleteSetting(0,DBBranch,opt_numacts);
-    DBWriteByte(0,DBBranch,'version'  ,3);
-    SaveMacros;
-    MessageBoxW(0,TranslateW(Notes),TranslateW(ConvResult),MB_ICONINFORMATION);
+    if v2 then
+    begin
+      DBDeleteSetting(0,DBBranch,opt_numacts);
+      SaveMacros;
+      MessageBoxW(0,TranslateW(Notes),TranslateW(ConvResult),MB_ICONINFORMATION);
+    end;
   end;
 
 end;
