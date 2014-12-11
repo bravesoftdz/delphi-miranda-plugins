@@ -20,7 +20,7 @@ Unit ActiveX;
 
 Interface
 
-Uses {variants,}Windows,ctypes,types;
+Uses variants,Windows,ctypes,types;
 
 
 type
@@ -60,7 +60,12 @@ type
    BSTR	               = POLESTR;
    TOleDate	       = DATE;
    POleDate	       = ^TOleDate;	
+   TOleBool	       = wordbool;
    OLE_HANDLE	       = UINT;
+   OLE_XSIZE_HIMETRIC = LONG;
+   OLE_YSIZE_HIMETRIC = LONG;
+   OLE_XPOS_HIMETRIC = LONG;
+   OLE_YPOS_HIMETRIC = LONG;
    LPOLE_HANDLE        = ^OLE_HANDLE;
    OLE_COLOR	       = DWORD;
    LPOLE_COLOR         = ^OLE_COLOR;
@@ -68,11 +73,92 @@ type
    POleHandle          = LPOLE_HANDLE;
    TOleColor           = OLE_COLOR;
    POleColor           = LPOle_Color;
+   HHandle             = UINT_PTR;
 
 CONST
    GUID_NULL  : TGUID =  '{00000000-0000-0000-0000-000000000000}';
    IID_IPrint : TGUID = '{B722BCC9-4E68-101B-A2BC-00AA00404770}';
    IID_IOleCommandTarget : TGUID = '{B722BCCB-4E68-101B-A2BC-00AA00404770}';
+   LIBID_OC : TGUID = '{A6663F44-FC7D-4FC4-861A-37BA700330E3}';
+
+   IID_IEnumConnections : TGUID = '{B196B287-BAB4-101A-B69C-00AA00341D07}';
+   IID_IEnumConnectionPoints : TGUID = '{B196B285-BAB4-101A-B69C-00AA00341D07}';
+   IID_IConnectionPoint : TGUID = '{B196B286-BAB4-101A-B69C-00AA00341D07}';
+   IID_IConnectionPointContainer : TGUID = '{B196B284-BAB4-101A-B69C-00AA00341D07}';
+   IID_IClassFactory : TGUID = '{00000001-0000-0000-C000-000000000046}';
+   IID_IClassFactory2 : TGUID = '{B196B28F-BAB4-101A-B69C-00AA00341D07}';
+   IID_IProvideClassInfo : TGUID = '{B196B283-BAB4-101A-B69C-00AA00341D07}';
+   IID_ITypeInfo : TGUID = '{00020401-0000-0000-C000-000000000046}';
+   IID_ITypeComp : TGUID = '{00020403-0000-0000-C000-000000000046}';
+   IID_ITypeLib : TGUID = '{00020402-0000-0000-C000-000000000046}';
+   IID_IProvideClassInfo2 : TGUID = '{A6BC3AC0-DBAA-11CE-9DE3-00AA004BB851}';
+   IID_IProvideMultipleClassInfo : TGUID = '{A7ABA9C1-8983-11CF-8F20-00805F2CD064}';
+   IID_IOleControl : TGUID = '{B196B288-BAB4-101A-B69C-00AA00341D07}';
+   IID_IOleControlSite : TGUID = '{B196B289-BAB4-101A-B69C-00AA00341D07}';
+   IID_IPropertyPage : TGUID = '{B196B28D-BAB4-101A-B69C-00AA00341D07}';
+   IID_IPropertyPageSite : TGUID = '{B196B28C-BAB4-101A-B69C-00AA00341D07}';
+   IID_IPropertyPage2 : TGUID = '{01E44665-24AC-101B-84ED-08002B2EC713}';
+   IID_IPropertyNotifySink : TGUID = '{9BFBBC02-EFF1-101A-84ED-00AA00341D07}';
+   IID_ISpecifyPropertyPages : TGUID = '{B196B28B-BAB4-101A-B69C-00AA00341D07}';
+   IID_IPersist : TGUID = '{0000010C-0000-0000-C000-000000000046}';
+   IID_IPersistMemory : TGUID = '{BD1AE5E0-A6AE-11CE-BD37-504200C10000}';
+   IID_IPersistStreamInit : TGUID = '{7FD52380-4E07-101B-AE2D-08002B2EC713}';
+   IID_IStream : TGUID = '{0000000C-0000-0000-C000-000000000046}';
+   IID_ISequentialStream : TGUID = '{0C733A30-2A1C-11CE-ADE5-00AA0044773D}';
+   IID_IPersistPropertyBag : TGUID = '{37D84F60-42CB-11CE-8135-00AA004BB851}';
+   IID_IPropertyBag : TGUID = '{55272A00-42CB-11CE-8135-00AA004BB851}';
+   IID_IErrorLog : TGUID = '{3127CA40-446E-11CE-8135-00AA004BB851}';
+   IID_ISimpleFrameSite : TGUID = '{742B0E01-14E6-101B-914E-00AA00300CAB}';
+   IID_IFont : TGUID = '{BEF6E002-A874-101A-8BBA-00AA00300CAB}';
+   IID_IPicture : TGUID = '{7BF80980-BF32-101A-8BBB-00AA00300CAB}';
+   IID_IFontEventsDisp : TGUID = '{4EF6100A-AF88-11D0-9846-00C04FC29993}';
+   IID_IFontDisp : TGUID = '{BEF6E003-A874-101A-8BBA-00AA00300CAB}';
+   IID_IPictureDisp : TGUID = '{7BF80981-BF32-101A-8BBB-00AA00300CAB}';
+   IID_IAdviseSink : TGUID = '{0000010F-0000-0000-C000-000000000046}';
+   IID_IMoniker : TGUID = '{0000000F-0000-0000-C000-000000000046}';
+   IID_IPersistStream : TGUID = '{00000109-0000-0000-C000-000000000046}';
+   IID_IBindCtx : TGUID = '{0000000E-0000-0000-C000-000000000046}';
+   IID_IRunningObjectTable : TGUID = '{00000010-0000-0000-C000-000000000046}';
+   IID_IEnumMoniker : TGUID = '{00000102-0000-0000-C000-000000000046}';
+   IID_IEnumString : TGUID = '{00000101-0000-0000-C000-000000000046}';
+   IID_IAdviseSinkEx : TGUID = '{3AF24290-0C96-11CE-A0CF-00AA00600AB8}';
+   IID_IOleWindow : TGUID = '{00000114-0000-0000-C000-000000000046}';
+   IID_IOleInPlaceObject : TGUID = '{00000113-0000-0000-C000-000000000046}';
+   IID_IOleInPlaceObjectWindowless : TGUID = '{1C2056CC-5EF4-101B-8BC8-00AA003E3B29}';
+   IID_IDropTarget : TGUID = '{00000122-0000-0000-C000-000000000046}';
+   IID_IDataObject : TGUID = '{0000010E-0000-0000-C000-000000000046}';
+   IID_IEnumFORMATETC : TGUID = '{00000103-0000-0000-C000-000000000046}';
+   IID_IEnumSTATDATA : TGUID = '{00000105-0000-0000-C000-000000000046}';
+   IID_IOleInPlaceSite : TGUID = '{00000119-0000-0000-C000-000000000046}';
+   IID_IOleInPlaceFrame : TGUID = '{00000116-0000-0000-C000-000000000046}';
+   IID_IOleInPlaceUIWindow : TGUID = '{00000115-0000-0000-C000-000000000046}';
+   IID_IOleInPlaceActiveObject : TGUID = '{00000117-0000-0000-C000-000000000046}';
+   IID_IOleInPlaceSiteEx : TGUID = '{9C2CAD80-3424-11CF-B670-00AA004CD6D8}';
+   IID_IOleInPlaceSiteWindowless : TGUID = '{922EADA0-3424-11CF-B670-00AA004CD6D8}';
+   IID_IViewObject : TGUID = '{0000010D-0000-0000-C000-000000000046}';
+   IID_IViewObject2 : TGUID = '{00000127-0000-0000-C000-000000000046}';
+   IID_IViewObjectEx : TGUID = '{3AF24292-0C96-11CE-A0CF-00AA00600AB8}';
+   IID_IOleUndoUnit : TGUID = '{894AD3B0-EF97-11CE-9BC9-00AA00608E01}';
+   IID_IOleUndoManager : TGUID = '{D001F200-EF97-11CE-9BC9-00AA00608E01}';
+   IID_IOleParentUndoUnit : TGUID = '{A1FAF330-EF97-11CE-9BC9-00AA00608E01}';
+   IID_IEnumOleUndoUnits : TGUID = '{B3E7C340-EF97-11CE-9BC9-00AA00608E01}';
+   IID_IPointerInactive : TGUID = '{55980BA0-35AA-11CF-B671-00AA004CD6D8}';
+   IID_IObjectWithSite : TGUID = '{FC4801A3-2BA9-11CF-A229-00AA003D7352}';
+   IID_IPerPropertyBrowsing : TGUID = '{376BD3AA-3845-101B-84ED-08002B2EC713}';
+   IID_IPropertyBag2 : TGUID = '{22F55882-280B-11D0-A8A9-00A0C90C2004}';
+   IID_IPersistPropertyBag2 : TGUID = '{22F55881-280B-11D0-A8A9-00A0C90C2004}';
+   IID_IQuickActivate : TGUID = '{CF51ED10-62FE-11CF-BF86-00A0C9034836}';
+   IID_IOleClientSite : TGUID = '{00000118-0000-0000-C000-000000000046}';
+   IID_IOleContainer : TGUID = '{0000011B-0000-0000-C000-000000000046}';
+   IID_IParseDisplayName : TGUID = '{0000011A-0000-0000-C000-000000000046}';
+   IID_IEnumUnknown : TGUID = '{00000100-0000-0000-C000-000000000046}';
+   IID_IBindHost : TGUID = '{FC4801A1-2BA9-11CF-A229-00AA003D7352}';
+   IID_IBindStatusCallback : TGUID = '{79EAC9C1-BAF9-11CE-8C82-00AA004BA90B}';
+   IID_IBinding : TGUID = '{79EAC9C0-BAF9-11CE-8C82-00AA004BA90B}';
+   IID_IServiceProvider : TGUID = '{6D5140C1-7436-11CE-8034-00AA006009FA}';
+   IID_IOleControlTypes : TGUID = '{00000000-0000-0000-0000-000000000000}';
+   IID_IPicture2 : TGUID = '{F5185DD8-2012-4B0B-AAD9-F052C6BD482B}';
+
 
      // bit flags for IExternalConnection
 CONST
@@ -485,6 +571,78 @@ Const
     DISPID_DESTRUCTOR           = -7;
     DISPID_COLLECT              = -8;
 
+    DISPID_AUTOSIZE             = -500;
+    DISPID_BACKCOLOR            = -501;
+    DISPID_BACKSTYLE            = -502;
+    DISPID_BORDERCOLOR          = -503;
+    DISPID_BORDERSTYLE          = -504;
+    DISPID_BORDERWIDTH          = -505;
+    DISPID_DRAWMODE             = -507;
+    DISPID_DRAWSTYLE            = -508;
+    DISPID_DRAWWIDTH            = -509;
+    DISPID_FILLCOLOR            = -510;
+    DISPID_FILLSTYLE            = -511;
+    DISPID_FONT                 = -512;
+    DISPID_FORECOLOR            = -513;
+    DISPID_ENABLED              = -514;
+    DISPID_HWND                 = -515;
+    DISPID_TABSTOP              = -516;
+    DISPID_TEXT                 = -517;
+    DISPID_CAPTION              = -518;
+    DISPID_BORDERVISIBLE        = -519;
+    DISPID_APPEARANCE           = -520;
+    DISPID_MOUSEPOINTER         = -521;
+    DISPID_MOUSEICON            = -522;
+    DISPID_PICTURE              = -523;
+    DISPID_VALID                = -524;
+    DISPID_READYSTATE           = -525;
+    DISPID_REFRESH              = -550;
+    DISPID_DOCLICK              = -551;
+    DISPID_ABOUTBOX             = -552;
+    DISPID_CLICK                = -600;
+    DISPID_DBLCLICK             = -601;
+    DISPID_KEYDOWN              = -602;
+    DISPID_KEYPRESS             = -603;
+    DISPID_KEYUP                = -604;
+    DISPID_MOUSEDOWN            = -605;
+    DISPID_MOUSEMOVE            = -606;
+    DISPID_MOUSEUP              = -607;
+    DISPID_ERROREVENT           = -608;
+    DISPID_READYSTATECHANGE     = -609;
+
+    DISPID_AMBIENT_BACKCOLOR              = -701;
+    DISPID_AMBIENT_DISPLAYNAME            = -702;
+    DISPID_AMBIENT_FONT                   = -703;
+    DISPID_AMBIENT_FORECOLOR              = -704;
+    DISPID_AMBIENT_LOCALEID               = -705;
+    DISPID_AMBIENT_MESSAGEREFLECT         = -706;
+    DISPID_AMBIENT_SCALEUNITS             = -707;
+    DISPID_AMBIENT_TEXTALIGN              = -708;
+    DISPID_AMBIENT_USERMODE               = -709;
+    DISPID_AMBIENT_UIDEAD                 = -710;
+    DISPID_AMBIENT_SHOWGRABHANDLES        = -711;
+    DISPID_AMBIENT_SHOWHATCHING           = -712;
+    DISPID_AMBIENT_DISPLAYASDEFAULT       = -713;
+    DISPID_AMBIENT_SUPPORTSMNEMONICS      = -714;
+    DISPID_AMBIENT_AUTOCLIP               = -715;
+    DISPID_AMBIENT_APPEARANCE             = -716;
+    DISPID_AMBIENT_CODEPAGE               = -725;
+    DISPID_AMBIENT_PALETTE                = -726;
+    DISPID_AMBIENT_CHARSET                = -727;
+    DISPID_AMBIENT_TRANSFERPRIORITY       = -728;
+    DISPID_AMBIENT_RIGHTTOLEFT            = -732;
+    DISPID_AMBIENT_TOPTOBOTTOM            = -733;
+    DISPID_WINDOWOBJECT                   = -5500;
+    DISPID_AMBIENT_OFFLINEIFNOTCONNECTED  = -5501;
+    DISPID_AMBIENT_SILENT                 = -5502;
+    DISPID_LOCATIONOBJECT                 = -5506;
+    DISPID_HISTORYOBJECT                  = -5507;
+    DISPID_NAVIGATOROBJECT                = -5508;
+    DISPID_SECURITYCTX                    = -5511;
+    DISPID_AMBIENT_DLCONTROL              = -5512;
+    DISPID_AMBIENT_USERAGENT              = -5513;
+    DISPID_SECURITYDOMAIN                 = -5514;
+
     DISPATCH_METHOD         = $1;
     DISPATCH_PROPERTYGET    = $2;
     DISPATCH_PROPERTYPUT    = $4;
@@ -821,6 +979,12 @@ Const
     OLECMDF_INVISIBLE 	  = $0000000000000010;
     OLECMDF_DEFHIDEONCTXTMENU = $0000000000000020;
 
+    OLECMDERR_E_UNKNOWNGROUP = -2147221244;
+    OLECMDERR_E_CANCELED     = -2147221245;
+    OLECMDERR_E_NOHELP       = -2147221246;
+    OLECMDERR_E_DISABLED     = -2147221247;
+    OLECMDERR_E_NOTSUPPORTED = -2147221248;
+
     OLECMDTEXTF_NONE      = $0000000000000000;
     OLECMDTEXTF_NAME      = $0000000000000001;
     OLECMDTEXTF_STATUS    = $0000000000000002;
@@ -885,6 +1049,44 @@ Const
     OLECMDID_UPDATEVSCROLL= $0000000000000035;
     OLECMDID_UPDATEHSCROLL= $0000000000000036;
     OLECMDID_FITTOSCREEN  = $0000000000000037;
+
+    OLECLOSE_SAVEIFDIRTY  = 0;
+    OLECLOSE_NOSAVE       = 1;
+    OLECLOSE_PROMPTSAVE   = 2;
+
+    OLEMISC_RECOMPOSEONRESIZE             = $1;
+    OLEMISC_ONLYICONIC                    = $2;
+    OLEMISC_INSERTNOTREPLACE              = $4;
+    OLEMISC_STATIC                        = $8;
+    OLEMISC_CANTLINKINSIDE                = $10;
+    OLEMISC_CANLINKBYOLE1                 = $20;
+    OLEMISC_ISLINKOBJECT                  = $40;
+    OLEMISC_INSIDEOUT                     = $80;
+    OLEMISC_ACTIVATEWHENVISIBLE           = $100;
+    OLEMISC_RENDERINGISDEVICEINDEPENDENT  = $200;
+    OLEMISC_INVISIBLEATRUNTIME            = $400;
+    OLEMISC_ALWAYSRUN                     = $800;
+    OLEMISC_ACTSLIKEBUTTON                = $1000;
+    OLEMISC_ACTSLIKELABEL                 = $2000;
+    OLEMISC_NOUIACTIVATE                  = $4000;
+    OLEMISC_ALIGNABLE                     = $8000;
+    OLEMISC_SIMPLEFRAME                   = $10000;
+    OLEMISC_SETCLIENTSITEFIRST            = $20000;
+    OLEMISC_IMEMODE                       = $40000;
+    OLEMISC_IGNOREACTIVATEWHENVISIBLE     = $80000;
+    OLEMISC_WANTSTOMENUMERGE              = $100000;
+    OLEMISC_SUPPORTSMULTILEVELUNDO        = $200000;
+
+    OLERENDER_NONE    = 0;
+    OLERENDER_DRAW    = 1;
+    OLERENDER_FORMAT  = 2;
+    OLERENDER_ASIS    = 3;
+
+    XFORMCOORDS_POSITION                  = $1;
+    XFORMCOORDS_SIZE                      = $2;
+    XFORMCOORDS_HIMETRICTOCONTAINER       = $4;
+    XFORMCOORDS_CONTAINERTOHIMETRIC       = $8;
+    XFORMCOORDS_EVENTCOMPAT               = $10;
 
 TYPE
     TVarType            = USHORT;
@@ -1251,6 +1453,7 @@ TYPE
    wireHFONT                    = ^RemotableHandle;
    wireHDC                      = ^RemotableHandle;
    wireHICON                    = ^RemotableHandle;
+   wireHRGN                     = ^RemotableHandle;
    HCursor                      = HICON;
 
 
@@ -1664,7 +1867,7 @@ TYPE
                                       0 : (idldesc    : IDLDESC);
                                       1 : (paramdesc  : PARAMDESC);
                                       END;
-
+   TElemDesc	                = tagELEMDESC;
    ELEMDESC                     = tagELEMDESC;
    LPELEMDESC                   = ^ELEMDESC;
    tagVARDESC                   = Record
@@ -2090,11 +2293,77 @@ TYPE
              end;
      PROPVARIANT=TPROPVARIANT;
      TagPROPVARIANT = TPROPVARIANT;
+
+
+     tagCONTROLINFO = packed record
+                        cb      : LongWord;
+                        hAccel  : wireHACCEL;
+                        cAccel  : Word;
+                        dwFlags : LongWord;
+                      end;
+     PtagCONTROLINFO = ^TagControlInfo;
+     PCONTROLINFO    = PtagCONTROLINFO;
+     TCONTROLINFO    = tagCONTROLINFO;
+
+     PtagPOINTF = ^tagPOINTF;
+     tagPOINTF = packed record
+                  x : Single;
+                  y : Single;
+                  end;
+     PPOINTF = PtagPOINTF;
+     TPOINTF = tagPOINTF;
+
+     PtagRECT = ^tagRECT;
+
+     tagRECT = packed record
+                left : Integer;
+                top : Integer;
+                right : Integer;
+                bottom : Integer;
+                end;
+
+     PtagOLEVERB = ^tagOLEVERB;
+
+     tagOLEVERB = packed record
+                lVerb : Integer;
+                lpszVerbName : PWideChar;
+                fuFlags : LongWord;
+                grfAttribs : LongWord;
+                end;
+     TOLEVERB = tagOLEVERB;
+     POLEVERB = PtagOLEVERB;
+
+     tagPROPPAGEINFO = packed record
+                 cb : LongWord;
+                 pszTitle : PWideChar;
+                 size : tagSIZE;
+                 pszDocString : PWideChar;
+                 pszHelpFile : PWideChar;
+                 dwHelpContext : LongWord;
+                 end;
+     PtagCAUUID = ^tagCAUUID;
+
+     tagCAUUID = packed record
+                  cElems : LongWord;
+                  pElems : PGUID;
+                 end;
+
+     PtagCALPOLESTR = ^tagCALPOLESTR;
+
+     tagCALPOLESTR = packed record
+                  cElems : LongWord;
+                  pElems : PPWideChar;
+                 end;
+     PtagCADWORD = ^tagCADWORD;
+
+     tagCADWORD = packed record
+                  cElems : LongWord;
+                  pElems : PLongWord;
+                 end;
+
 // Unknwn.idl
 
 // IUnknown is in classesh.inc
-
-
 
    AsyncIUnknown = Interface(IUnknown)
       ['{000e0000-0000-0000-C000-000000000046}']
@@ -2280,6 +2549,32 @@ TYPE
        Function Save(Const stm: IStream;fClearDirty:Bool):HResult;StdCall;
        Function GetSizeMax(Out cbSize:ULarge_Integer):HResult; StdCall;
        End;
+
+     IPersistStreamInit = interface(IPersist)
+       ['{7FD52380-4E07-101B-AE2D-08002B2EC713}']
+       Function IsDirty:HResult;StdCall;
+       Function Load(pstm:IStream):HResult;StdCall;
+       Function Save(pstm:IStream;fClearDirty:Integer):HResult;StdCall;
+       Function GetSizeMax(out pCbSize:_ULARGE_INTEGER):HResult;StdCall;
+       Function InitNew:HResult;StdCall;
+       End;
+       // IPersistMemory :
+
+     IPersistMemory = interface(IPersist)
+       ['{BD1AE5E0-A6AE-11CE-BD37-504200C10000}']
+        // IsDirty :
+       function IsDirty:HResult;StdCall;
+        // Load :
+       function Load(var pMem:pointer;cbSize:LongWord):HResult;StdCall;
+        // Save :
+       function Save(out pMem:pointer;fClearDirty:Integer;cbSize:LongWord):HResult;StdCall;
+        // GetSizeMax :
+       function GetSizeMax(out pCbSize:LongWord):HResult;StdCall;
+        // InitNew :
+       function InitNew:HResult;StdCall;
+      end;
+
+
 
     PIMoniker = ^IMoniker;
     IMoniker = Interface (IPersistStream)
@@ -2961,9 +3256,9 @@ TYPE
    IEnumVARIANT = Interface (IUnknown)
      ['{00020404-0000-0000-C000-000000000046}']
      {$ifndef Call_as}
-      Function  Next(celt: ULONG; OUT rgVar: VARIANT;  pCeltFetched: pULONG=nil):HResult;StdCall;
+      Function  Next(celt: ULONG; OUT rgVar: OLEVARIANT;  out pCeltFetched: ULONG):HResult;StdCall;
      {$else}
-      Function  Next(celt: ULONG; OUT rgVar: VARIANT;  pCeltFetched: pULONG=nil):HResult;StdCall;
+      Function  Next(celt: ULONG; OUT rgVar: OLEVARIANT;  pCeltFetched: pULONG=nil):HResult;StdCall;
      {$endif}
      Function  Skip(celt: ULONG):HResult;StdCall;
      Function  Reset():HResult;StdCall;
@@ -3217,6 +3512,13 @@ TYPE
      Function  Write(pszPropName: pOleStr; CONST pVar: VARIANT):HResult;StdCall;
      End;
 
+   IPersistPropertyBag = interface(IPersist)
+     ['{37D84F60-42CB-11CE-8135-00AA004BB851}']
+     function InitNew:HResult;stdcall;
+     function Load(pPropBag:IPropertyBag;pErrorLog:IErrorLog):HResult;stdcall;
+     function Save(pPropBag:IPropertyBag;fClearDirty:Integer;fSaveAllProperties:Integer):HResult;stdcall;
+     end;
+
    IEnumGUID = interface(IUnknown)
      ['{0002E000-0000-0000-C000-000000000046}']
      Function Next(celt: UINT; OUT rgelt: TGUID;  pceltFetched: pUINT=nil):HResult;StdCall;
@@ -3293,6 +3595,274 @@ type
     function GetGUID(dwguid:DWord;out pguid:TGUID):HResult; StdCall;
   end;
 
+  IProvideMultipleClassInfo = interface(IProvideClassInfo2)
+   ['{A7ABA9C1-8983-11CF-8F20-00805F2CD064}']
+    // GetMultiTypeInfoCount :
+   function GetMultiTypeInfoCount(out pcti:LongWord):HResult; StdCall;
+    // GetInfoOfIndex :
+   function GetInfoOfIndex(iti:LongWord;dwFlags:LongWord;out pptiCoClass:ITypeInfo;out pdwTIFlags:LongWord;out pcdispidReserved:LongWord;out piidPrimary:GUID;out piidSource:GUID):HResult; StdCall;
+  end;
+  // IOleControl :
+
+ IOleControl = interface(IUnknown)
+   ['{B196B288-BAB4-101A-B69C-00AA00341D07}']
+    // GetControlInfo :
+   function GetControlInfo(var pCI:tagCONTROLINFO):HRESULT;stdcall;
+    // OnMnemonic :
+   function OnMnemonic(var pMsg:tagMSG):HRESULT;stdcall;
+    // OnAmbientPropertyChange :
+   function OnAmbientPropertyChange(dispID:Integer):HRESULT;stdcall;
+    // FreezeEvents :
+   function FreezeEvents(bFreeze:Integer):HRESULT;stdcall;
+  end;
+
+// IOleControlSite :
+
+ IOleControlSite = interface(IUnknown)
+   ['{B196B289-BAB4-101A-B69C-00AA00341D07}']
+    // OnControlInfoChanged :
+   function OnControlInfoChanged:HRESULT;stdcall;
+    // LockInPlaceActive :
+   function LockInPlaceActive(fLock:Integer):HRESULT;stdcall;
+    // GetExtendedControl :
+   function GetExtendedControl(out ppDisp:IDispatch):HRESULT;stdcall;
+    // TransformCoords :
+   function TransformCoords(var pPtlHimetric:_POINTL;var pPtfContainer:tagPOINTF;dwFlags:LongWord):HRESULT;stdcall;
+    // TranslateAccelerator :
+   function TranslateAccelerator(var pMsg:tagMSG;grfModifiers:LongWord):HRESULT;stdcall;
+    // OnFocus :
+   function OnFocus(fGotFocus:Integer):HRESULT;stdcall;
+    // ShowPropertyFrame :
+   function ShowPropertyFrame:HRESULT;stdcall;
+  end;
+
+// IPerPropertyBrowsing :
+
+  IPerPropertyBrowsing = interface(IUnknown)
+  ['{376BD3AA-3845-101B-84ED-08002B2EC713}']
+   // GetDisplayString :
+  function GetDisplayString(dispID:Integer;out pBstr:WideString):HRESULT;stdcall;
+   // MapPropertyToPage :
+  function MapPropertyToPage(dispID:Integer;out pClsid:GUID):HRESULT;stdcall;
+   // GetPredefinedStrings :
+  function GetPredefinedStrings(dispID:Integer;out pCaStringsOut:tagCALPOLESTR;out pCaCookiesOut:tagCADWORD):HRESULT;stdcall;
+   // GetPredefinedValue :
+  function GetPredefinedValue(dispID:Integer;dwCookie:LongWord;out pVarOut:OleVariant):HRESULT;stdcall;
+ end;
+
+// IPropertyPage :
+
+ IPropertyPageSite = interface;
+
+ IPropertyPage = interface(IUnknown)
+   ['{B196B28D-BAB4-101A-B69C-00AA00341D07}']
+    // SetPageSite :
+   function SetPageSite(pPageSite:IPropertyPageSite):HRESULT;stdcall;
+    // Activate :
+   function Activate(hWndParent:wireHWND;var pRect:TRECT;bModal:Integer):HRESULT;stdcall;
+    // Deactivate :
+   function Deactivate:HRESULT;stdcall;
+    // GetPageInfo :
+   function GetPageInfo(out pPageInfo:tagPROPPAGEINFO):HRESULT;stdcall;
+    // SetObjects :
+   function SetObjects(cObjects:LongWord;var ppUnk:IUnknown):HRESULT;stdcall;
+    // Show :
+   function Show(nCmdShow:UInt):HRESULT;stdcall;
+    // Move :
+   function Move(var pRect:TRECT):HRESULT;stdcall;
+    // IsPageDirty :
+   function IsPageDirty:HRESULT;stdcall;
+    // Apply :
+   function Apply:HRESULT;stdcall;
+    // Help :
+   function Help(pszHelpDir:PWideChar):HRESULT;stdcall;
+    // TranslateAccelerator :
+   function TranslateAccelerator(var pMsg:tagMSG):HRESULT;stdcall;
+  end;
+
+// IPropertyPageSite :
+
+ IPropertyPageSite = interface(IUnknown)
+   ['{B196B28C-BAB4-101A-B69C-00AA00341D07}']
+    // OnStatusChange :
+   function OnStatusChange(dwFlags:LongWord):HRESULT;stdcall;
+    // GetLocaleID :
+   function GetLocaleID(out pLocaleID:LongWord):HRESULT;stdcall;
+    // GetPageContainer :
+   function GetPageContainer(out ppUnk:IUnknown):HRESULT;stdcall;
+    // TranslateAccelerator :
+   function TranslateAccelerator(var pMsg:tagMSG):HRESULT;stdcall;
+  end;
+
+// IPropertyPage2 :
+
+ IPropertyPage2 = interface(IPropertyPage)
+   ['{01E44665-24AC-101B-84ED-08002B2EC713}']
+    // EditProperty :
+   function EditProperty(dispID:Integer):HRESULT;stdcall;
+  end;
+
+// IPropertyNotifySink :
+
+ IPropertyNotifySink = interface(IUnknown)
+   ['{9BFBBC02-EFF1-101A-84ED-00AA00341D07}']
+    // OnChanged :
+   function OnChanged(dispID:Integer):HRESULT;stdcall;
+    // OnRequestEdit :
+   function OnRequestEdit(dispID:Integer):HRESULT;stdcall;
+  end;
+
+  // ISpecifyPropertyPages :
+
+ ISpecifyPropertyPages = interface(IUnknown)
+   ['{B196B28B-BAB4-101A-B69C-00AA00341D07}']
+    // GetPages :
+   function GetPages(out pPages:tagCAUUID):HRESULT;stdcall;
+  end;
+
+// ISimpleFrameSite :
+
+ ISimpleFrameSite = interface(IUnknown)
+   ['{742B0E01-14E6-101B-914E-00AA00300CAB}']
+    // PreMessageFilter :
+   function PreMessageFilter(hwnd:wireHWND;msg:UInt;wp:UINT_PTR;lp:LONG_PTR;out plResult:LONG_PTR;out pdwCookie:LongWord):HRESULT;stdcall;
+    // PostMessageFilter :
+   function PostMessageFilter(hwnd:wireHWND;msg:UInt;wp:UINT_PTR;lp:LONG_PTR;out plResult:LONG_PTR;dwCookie:LongWord):HRESULT;stdcall;
+  end;
+
+// IFont :
+
+ IFont = interface(IUnknown)
+   ['{BEF6E002-A874-101A-8BBA-00AA00300CAB}']
+    // get_Name :
+   function get_Name(out pName:WideString):HRESULT;stdcall;
+    // put_Name :
+   function put_Name(name:WideString):HRESULT;stdcall;
+    // get_Size :
+   function get_Size(out pSize:Currency):HRESULT;stdcall;
+    // put_Size :
+   function put_Size(size:Currency):HRESULT;stdcall;
+    // get_Bold :
+   function get_Bold(out pBold:Integer):HRESULT;stdcall;
+    // put_Bold :
+   function put_Bold(bold:Integer):HRESULT;stdcall;
+    // get_Italic :
+   function get_Italic(out pItalic:Integer):HRESULT;stdcall;
+    // put_Italic :
+   function put_Italic(italic:Integer):HRESULT;stdcall;
+    // get_Underline :
+   function get_Underline(out pUnderline:Integer):HRESULT;stdcall;
+    // put_Underline :
+   function put_Underline(underline:Integer):HRESULT;stdcall;
+    // get_Strikethrough :
+   function get_Strikethrough(out pStrikethrough:Integer):HRESULT;stdcall;
+    // put_Strikethrough :
+   function put_Strikethrough(strikethrough:Integer):HRESULT;stdcall;
+    // get_Weight :
+   function get_Weight(out pWeight:Smallint):HRESULT;stdcall;
+    // put_Weight :
+   function put_Weight(weight:Smallint):HRESULT;stdcall;
+    // get_Charset :
+   function get_Charset(out pCharset:Smallint):HRESULT;stdcall;
+    // put_Charset :
+   function put_Charset(charset:Smallint):HRESULT;stdcall;
+    // get_hFont :
+   function get_hFont(out phFont:wireHFONT):HRESULT;stdcall;
+    // Clone :
+   function Clone(out ppFont:IFont):HRESULT;stdcall;
+    // IsEqual :
+   function IsEqual(pFontOther:IFont):HRESULT;stdcall;
+    // SetRatio :
+   function SetRatio(cyLogical:Integer;cyHimetric:Integer):HRESULT;stdcall;
+    // QueryTextMetrics :
+   function QueryTextMetrics(out pTM:tagTEXTMETRICW):HRESULT;stdcall;
+    // AddRefHfont :
+   function AddRefHfont(hFont:wireHFONT):HRESULT;stdcall;
+    // ReleaseHfont :
+   function ReleaseHfont(hFont:wireHFONT):HRESULT;stdcall;
+    // SetHdc :
+   function SetHdc(hDC:wireHDC):HRESULT;stdcall;
+  end;
+
+// IPicture :
+
+ IPicture = interface(IUnknown)
+   ['{7BF80980-BF32-101A-8BBB-00AA00300CAB}']
+    // get_Handle :
+   function get_Handle(out pHandle:OLE_HANDLE):HRESULT;stdcall;
+    // get_hPal :
+   function get_hPal(out phPal:OLE_HANDLE):HRESULT;stdcall;
+    // get_Type :
+   function get_Type(out pType:SHORT):HRESULT;stdcall;
+    // get_Width :
+   function get_Width(out pWidth:OLE_XSIZE_HIMETRIC):HRESULT;stdcall;
+    // get_Height :
+   function get_Height(out pHeight:OLE_YSIZE_HIMETRIC):HRESULT;stdcall;
+    // Render :
+   function Render(hDC:wireHDC;x:Integer;y:Integer;cx:Integer;cy:Integer;xSrc:OLE_XPOS_HIMETRIC;ySrc:OLE_YPOS_HIMETRIC;cxSrc:OLE_XSIZE_HIMETRIC;cySrc:OLE_YSIZE_HIMETRIC;var pRcWBounds:TRECT):HRESULT;stdcall;
+    // set_hPal :
+   function set_hPal(hPal:OLE_HANDLE):HRESULT;stdcall;
+    // get_CurDC :
+   function get_CurDC(out phDC:wireHDC):HRESULT;stdcall;
+    // SelectPicture :
+   function SelectPicture(hDCIn:wireHDC;out phDCOut:wireHDC;out phBmpOut:OLE_HANDLE):HRESULT;stdcall;
+    // get_KeepOriginalFormat :
+   function get_KeepOriginalFormat(out pKeep:Integer):HRESULT;stdcall;
+    // put_KeepOriginalFormat :
+   function put_KeepOriginalFormat(keep:Integer):HRESULT;stdcall;
+    // PictureChanged :
+   function PictureChanged:HRESULT;stdcall;
+    // SaveAsFile :
+   function SaveAsFile(pStream:IStream;fSaveMemCopy:Integer;out pCbSize:Integer):HRESULT;stdcall;
+    // get_Attributes :
+   function get_Attributes(out pDwAttr:LongWord):HRESULT;stdcall;
+  end;
+
+  IPicture2 = interface(IUnknown)
+   ['{F5185DD8-2012-4b0b-AAD9-F052C6BD482B}']
+    // get_Handle :
+   function get_Handle(out pHandle:HHANDLE):HRESULT;stdcall;
+    // get_hPal :
+   function get_hPal(out phPal:HHANDLE):HRESULT;stdcall;
+    // get_Type :
+   function get_Type(out pType:SHORT):HRESULT;stdcall;
+    // get_Width :
+   function get_Width(out pWidth:OLE_XSIZE_HIMETRIC):HRESULT;stdcall;
+    // get_Height :
+   function get_Height(out pHeight:OLE_YSIZE_HIMETRIC):HRESULT;stdcall;
+    // Render :
+   function Render(hDC:wireHDC;x:LONG;y:LONG;cx:LONG;cy:LONG;xSrc:OLE_XPOS_HIMETRIC;ySrc:OLE_YPOS_HIMETRIC;cxSrc:OLE_XSIZE_HIMETRIC;cySrc:OLE_YSIZE_HIMETRIC;var pRcWBounds:TRECT):HRESULT;stdcall;
+    // set_hPal :
+   function set_hPal(hPal:HHANDLE):HRESULT;stdcall;
+    // get_CurDC :
+   function get_CurDC(out phDC:HDC):HRESULT;stdcall;
+    // SelectPicture :
+   function SelectPicture(hDCIn:HDC;out phDCOut:HDC;out phBmpOut:HHANDLE):HRESULT;stdcall;
+    // get_KeepOriginalFormat :
+   function get_KeepOriginalFormat(out pKeep:WinBOOL):HRESULT;stdcall;
+    // put_KeepOriginalFormat :
+   function put_KeepOriginalFormat(keep:WinBOOL):HRESULT;stdcall;
+    // PictureChanged :
+   function PictureChanged:HRESULT;stdcall;
+    // SaveAsFile :
+   function SaveAsFile(pStream:IStream;fSaveMemCopy:LONG;out pCbSize:LONG):HRESULT;stdcall;
+    // get_Attributes :
+   function get_Attributes(out pDwAttr:LongWord):HRESULT;stdcall;
+  end;
+
+
+// IFontDisp :
+
+ IFontDisp = interface(IDispatch)
+   ['{BEF6E003-A874-101A-8BBA-00AA00300CAB}']
+  end;
+
+// IPictureDisp :
+
+ IPictureDisp = interface(IDispatch)
+   ['{7BF80981-BF32-101A-8BBB-00AA00300CAB}']
+  end;
+
 { ******************************************************************************************************************
                                                           stuff from objbase.h
   ****************************************************************************************************************** }
@@ -3332,6 +3902,8 @@ type
        cmdID : LongWord;
        cmdf : LongWord;
    end;
+   POLECMD = P_tagOLECMD;
+   TOLECMD = _tagOLECMD;
 
    P_tagOLECMDTEXT = ^_tagOLECMDTEXT;
 
@@ -3341,6 +3913,8 @@ type
        cwBuf : LongWord;
        rgwz : PWord;
    end;
+   POLECMDTEXT = P_tagOLECMDTEXT;
+   TOLECMDTEXT = _tagOLECMDTEXT;
 
 { redefinitions }
   function CoCreateGuid(out _para1:TGUID):HRESULT;stdcall;external 'ole32.dll' name 'CoCreateGuid';
@@ -3473,6 +4047,29 @@ type
       function OnPosRectChange(lprcPosRect:LPRect):hresult; stdcall;
       end;
 
+   IOleInPlaceSiteEx = interface(IOleInPlaceSite)
+      ['{9C2CAD80-3424-11CF-B670-00AA004CD6D8}']
+      function OnInPlaceActivateEx(out pfNoRedraw:Integer;dwFlags:LongWord):HResult;stdcall;
+      function OnInPlaceDeactivateEx(fNoRedraw:Integer):HResult;stdcall;
+      function RequestUIActivate:HResult;stdcall;
+      end;
+
+   IOleInPlaceSiteWindowless = interface(IOleInPlaceSiteEx)
+      ['{922EADA0-3424-11CF-B670-00AA004CD6D8}']
+      function CanWindowlessActivate:HResult;stdcall;
+      function GetCapture:HResult;stdcall;
+      function SetCapture(fCapture:Integer):HResult;stdcall;
+      function GetFocus:HResult;stdcall;
+      function SetFocus(fFocus:Integer):HResult;stdcall;
+      function GetDC(var pRect:tagRECT;grfFlags:LongWord;out phDC:wireHDC):HResult;stdcall;
+      function ReleaseDC(hDC:wireHDC):HResult;stdcall;
+      function InvalidateRect(var pRect:tagRECT;fErase:Integer):HResult;stdcall;
+      function InvalidateRgn(hRGN:wireHRGN;fErase:Integer):HResult;stdcall;
+      function ScrollRect(dx:SYSINT;dy:SYSINT;var pRectScroll:tagRECT;var pRectClip:tagRECT):HResult;stdcall;
+      function AdjustRect(var prc:tagRECT):HResult;stdcall;
+      function OnDefWindowMessage(msg:UInt;wParam:UINT_PTR;lParam:LONG_PTR;out plResult:LONG_PTR):HResult;stdcall;
+      end;
+
     IOleInPlaceObject = interface(IOleWindow)
       ['{00000113-0000-0000-C000-000000000046}']
       function InPlaceDeactivate : HResult;stdcall;
@@ -3480,6 +4077,12 @@ type
       function SetObjectRects(lprcPosRect:LPRect;lprcClipRect:LPRect):hresult; stdcall;
       function ReactivateAndUndo : HResult;stdcall;
      end;
+
+    IOleInPlaceObjectWindowless = interface(IOleInPlaceObject)
+      ['{1C2056CC-5EF4-101B-8BC8-00AA003E3B29}']
+      function OnWindowMessage(msg:UInt;wParam:UINT_PTR;lParam:LONG_PTR;out plResult:LONG_PTR):HRESULT;stdcall;
+      function GetDropTarget(out ppDropTarget:IDropTarget):HRESULT;stdcall;
+    end;
 
     IOleDocumentView = interface(IUnknown)
         ['{b722bcc6-4e68-101b-a2bc-00aa00404770}']
@@ -3671,6 +4274,7 @@ Type
      OLEIVERB_UIACTIVATE = -(4);
      OLEIVERB_INPLACEACTIVATE = -(5);
      OLEIVERB_DISCARDUNDOSTATE = -(6);
+     OLEIVERB_PROPERTIES = -(7);
   { for OleCreateEmbeddingHelper flags; roles low word; options high word }
      EMBDHLP_INPROC_HANDLER = $0000;
      EMBDHLP_INPROC_SERVER = $0001;
@@ -3978,8 +4582,8 @@ type
   function DllGetClassObject(const _para1:TCLSID; const _para2:TIID; out _para3):HRESULT;stdcall; external  'ole32.dll' name 'DllGetClassObject';
   function DllCanUnloadNow:HRESULT;stdcall; external  'ole32.dll' name 'DllCanUnloadNow';
 {$endif wince}
-  function CoTaskMemAlloc(_para1:ULONG):PVOID;stdcall; external  'ole32.dll' name 'CoTaskMemAlloc';
-  function CoTaskMemRealloc(_para1:PVOID; _para2:ULONG):PVOID;stdcall; external  'ole32.dll' name 'CoTaskMemRealloc';
+  function CoTaskMemAlloc(_para1:SIZE_T):PVOID;stdcall; external  'ole32.dll' name 'CoTaskMemAlloc';
+  function CoTaskMemRealloc(_para1:PVOID; _para2:SIZE_T):PVOID;stdcall; external  'ole32.dll' name 'CoTaskMemRealloc';
   procedure CoTaskMemFree(_para1:PVOID);stdcall; external  'ole32.dll' name 'CoTaskMemFree';
 
 {$ifndef wince}
